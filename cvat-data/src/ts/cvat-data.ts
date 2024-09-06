@@ -98,7 +98,8 @@ export class FrameDecoder {
     // used for video chunks to get correct side after decoding
     private renderWidth: number;
     private renderHeight: number;
-    private zipWorker: Worker;
+    private zipWorker: Worker | null;
+    private videoWorker: Worker | null;
 
     constructor(
         blockType: BlockType,
@@ -108,6 +109,8 @@ export class FrameDecoder {
     ) {
         this.mutex = new Mutex();
         this.orderedStack = [];
+        this.zipWorker = null;
+        this.videoWorker = null;
 
         this.cachedChunksLimit = Math.max(1, cachedBlockCount);
         this.dimension = dimension;
@@ -139,6 +142,14 @@ export class FrameDecoder {
             if (typeof lastChunk === 'undefined') {
                 return;
             }
+
+            for (const frame of Object.keys(this.decodedChunks[lastChunk])) {
+                const data = this.decodedChunks[lastChunk][frame];
+                if (data instanceof ImageBitmap) {
+                    data.close();
+                }
+            }
+
             delete this.decodedChunks[lastChunk];
             length--;
         }
@@ -200,9 +211,47 @@ export class FrameDecoder {
         return null;
     }
 
+    static cropImage(
+        imageBuffer: ArrayBuffer,
+        imageWidth: number,
+        imageHeight: number,
+        width: number,
+        height: number,
+    ): ImageData {
+        if (width === imageWidth && height === imageHeight) {
+            return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
+        }
+        const source = new Uint32Array(imageBuffer);
+
+        const bufferSize = width * height * 4;
+        if (imageWidth === width) {
+            return new ImageData(new Uint8ClampedArray(imageBuffer, 0, bufferSize), width, height);
+        }
+
+        const buffer = new ArrayBuffer(bufferSize);
+        const rgbaInt32 = new Uint32Array(buffer);
+        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
+        let writeIdx = 0;
+        for (let row = 0; row < height; row++) {
+            const start = row * imageWidth;
+            rgbaInt32.set(source.subarray(start, start + width), writeIdx);
+            writeIdx += width;
+        }
+
+        return new ImageData(rgbaInt8Clamped, width, height);
+    }
+
     async startDecode(): Promise<void> {
         const blockToDecode = { ...this.requestedChunkToDecode };
-        const release = await this.mutex.acquire();
+        const releaseMutex = await this.mutex.acquire();
+        const release = (): void => {
+            if (this.videoWorker) {
+                this.videoWorker.terminate();
+                this.videoWorker = null;
+            }
+
+            releaseMutex();
+        };
         try {
             const { start, end, block } = this.requestedChunkToDecode;
             if (start !== blockToDecode.start) {
@@ -221,12 +270,12 @@ export class FrameDecoder {
             this.requestedChunkToDecode = null;
 
             if (this.blockType === BlockType.MP4VIDEO) {
-                const worker = new Worker(
+                this.videoWorker = new Worker(
                     new URL('./3rdparty/Decoder.worker', import.meta.url),
                 );
                 let index = start;
 
-                worker.onmessage = (e) => {
+                this.videoWorker.onmessage = (e) => {
                     if (e.data.consoleLog) {
                         // ignore initialization message
                         return;
@@ -239,8 +288,13 @@ export class FrameDecoder {
                     const height = Math.round(this.renderHeight / scaleFactor);
                     const width = Math.round(this.renderWidth / scaleFactor);
 
-                    const array = new Uint8ClampedArray(e.data.buf.slice(0, width * height * 4));
-                    createImageBitmap(new ImageData(array, width)).then((bitmap) => {
+                    createImageBitmap(FrameDecoder.cropImage(
+                        e.data.buf,
+                        e.data.width,
+                        e.data.height,
+                        width,
+                        height,
+                    )).then((bitmap) => {
                         decodedFrames[keptIndex] = bitmap;
                         this.chunkIsBeingDecoded.onDecode(keptIndex, decodedFrames[keptIndex]);
 
@@ -248,7 +302,6 @@ export class FrameDecoder {
                             this.decodedChunks[chunkNumber] = decodedFrames;
                             this.chunkIsBeingDecoded.onDecodeAll();
                             this.chunkIsBeingDecoded = null;
-                            worker.terminate();
                             release();
                         }
                     });
@@ -256,14 +309,13 @@ export class FrameDecoder {
                     index++;
                 };
 
-                worker.onerror = (event: ErrorEvent) => {
+                this.videoWorker.onerror = (event: ErrorEvent) => {
                     release();
-                    worker.terminate();
                     this.chunkIsBeingDecoded.onReject(event.error);
                     this.chunkIsBeingDecoded = null;
                 };
 
-                worker.postMessage({
+                this.videoWorker.postMessage({
                     type: 'Broadway.js - Worker init',
                     options: {
                         rgb: true,
@@ -279,12 +331,12 @@ export class FrameDecoder {
                 const sps = avc.sps[0];
                 const pps = avc.pps[0];
 
-                worker.postMessage({ buf: sps, offset: 0, length: sps.length });
-                worker.postMessage({ buf: pps, offset: 0, length: pps.length });
+                this.videoWorker.postMessage({ buf: sps, offset: 0, length: sps.length });
+                this.videoWorker.postMessage({ buf: pps, offset: 0, length: pps.length });
 
                 for (let sample = 0; sample < video.getSampleCount(); sample++) {
                     video.getSampleNALUnits(sample).forEach((nal) => {
-                        worker.postMessage({ buf: nal, offset: 0, length: nal.length });
+                        this.videoWorker.postMessage({ buf: nal, offset: 0, length: nal.length });
                     });
                 }
             } else {
@@ -331,6 +383,20 @@ export class FrameDecoder {
             this.chunkIsBeingDecoded = null;
             release();
         }
+    }
+
+    public close(): void {
+        if (this.zipWorker) {
+            this.zipWorker.terminate();
+            this.zipWorker = null;
+        }
+
+        if (this.videoWorker) {
+            this.videoWorker.terminate();
+            this.videoWorker = null;
+        }
+
+        this.cleanup(Number.MAX_SAFE_INTEGER);
     }
 
     public cachedChunks(includeInProgress = false): number[] {

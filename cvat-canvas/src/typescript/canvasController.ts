@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ import {
     Configuration,
     MasksEditData,
     HighlightedElements,
+    PolyEditData,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -30,7 +31,7 @@ export interface CanvasController {
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
-    readonly editData: MasksEditData;
+    readonly editData: MasksEditData | PolyEditData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
@@ -44,14 +45,7 @@ export interface CanvasController {
 
     zoom(x: number, y: number, direction: number): void;
     draw(drawData: DrawData): void;
-    edit(editData: MasksEditData): void;
-    interact(interactionData: InteractionData): void;
-    merge(mergeData: MergeData): void;
-    split(splitData: SplitData): void;
-    group(groupData: GroupData): void;
-    join(joinData: JoinData): void;
-    slice(sliceData: SliceData): void;
-    selectRegion(enabled: boolean): void;
+    edit(editData: MasksEditData | PolyEditData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -103,36 +97,8 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.draw(drawData);
     }
 
-    public edit(editData: MasksEditData): void {
+    public edit(editData: MasksEditData | PolyEditData): void {
         this.model.edit(editData);
-    }
-
-    public interact(interactionData: InteractionData): void {
-        this.model.interact(interactionData);
-    }
-
-    public merge(mergeData: MergeData): void {
-        this.model.merge(mergeData);
-    }
-
-    public split(splitData: SplitData): void {
-        this.model.split(splitData);
-    }
-
-    public group(groupData: GroupData): void {
-        this.model.group(groupData);
-    }
-
-    public join(joinData: JoinData): void {
-        this.model.join(joinData);
-    }
-
-    public slice(sliceData: SliceData): void {
-        this.model.slice(sliceData);
-    }
-
-    public selectRegion(enable: boolean): void {
-        this.model.selectRegion(enable);
     }
 
     public get geometry(): Geometry {
@@ -171,7 +137,7 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.drawData;
     }
 
-    public get editData(): MasksEditData {
+    public get editData(): MasksEditData | PolyEditData {
         return this.model.editData;
     }
 

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +27,7 @@ import {
 
 interface Props {
     readonly: boolean;
-    parentID: number;
+    parentID: number | null;
     objectType: ObjectType;
     shapeType: ShapeType;
     occluded: boolean;
@@ -39,6 +40,7 @@ interface Props {
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
     switchOccludedShortcut: string;
+    switchPinnedShortcut: string;
     switchOutsideShortcut: string;
     switchLockShortcut: string;
     switchHiddenShortcut: string;
@@ -167,9 +169,11 @@ function SwitchOccluded(props: Props): JSX.Element {
 }
 
 function SwitchPinned(props: Props): JSX.Element {
-    const { pinned, pin, unpin } = props;
+    const {
+        switchPinnedShortcut, pinned, pin, unpin,
+    } = props;
     return (
-        <CVATTooltip title='Switch pinned property'>
+        <CVATTooltip title={`Switch pinned property ${switchPinnedShortcut}`}>
             {pinned ? (
                 <PushpinFilled {...classes.pinned.enabled} onClick={unpin} />
             ) : (
@@ -224,9 +228,9 @@ function SwitchKeyframe(props: Props): JSX.Element {
     return (
         <CVATTooltip title={`Switch keyframe property ${switchKeyFrameShortcut}`}>
             {keyframe ? (
-                <StarFilled {...classes.keyframe.enabled} onClick={unsetKeyframe} style={keyframeStyle} />
+                <StarFilled style={keyframeStyle} onClick={unsetKeyframe} {...classes.keyframe.enabled} />
             ) : (
-                <StarOutlined {...classes.keyframe.disabled} onClick={setKeyframe} style={keyframeStyle} />
+                <StarOutlined style={keyframeStyle} onClick={setKeyframe} {...classes.keyframe.disabled} />
             )}
         </CVATTooltip>
     );

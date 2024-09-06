@@ -12,8 +12,8 @@ This document provides guidance on how to perform these operations effectively.
 
 See:
 
-- [Joining CVAT labels](#joining-cvat-labels)
-- [Slicing CVAT labels](#slicing-cvat-labels)
+- [Joining masks](#joining-masks)
+- [Slicing polygons and masks](#slicing-polygons-and-masks)
 
 ## Joining masks
 
@@ -28,7 +28,7 @@ and there is a need to merge these shapes into a single one.
 
 To join masks, do the following:
 
-1. From the [**Edit**](/docs/manual/basics/controls-sidebar/#edit) block,
+1. From the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar#edit" "**Edit**" >}} block,
    select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
 2. Click on the canvas area, to select masks that you want to join.
 3. (Optional) To remove the selection click the mask one more time.
@@ -56,7 +56,7 @@ and there is a need to slice this shape into multiple parts.
 
 To slice mask or polygon, do the following:
 
-1. From the [**Edit**](/docs/manual/basics/controls-sidebar/#edit) block,
+1. From the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar#edit" "**Edit**" >}} block,
    select **Slice mask/polygon** ![Slicing tool icon](/images/slicing-tool-icon.jpg).
 2. Click on the shape you intend to slice.
    A black contour will appear around the selected shape.

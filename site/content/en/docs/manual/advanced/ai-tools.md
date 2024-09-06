@@ -7,7 +7,7 @@ description: 'Overview of semi-automatic and automatic annotation tools availabl
 
 Label and annotate your data in semi-automatic and automatic mode with the help of **AI** and **OpenCV** tools.
 
-While [interpolation](/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/)
+While {{< ilink "/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons" "interpolation" >}}
 is good for annotation of the videos made by the security cameras,
 **AI** and **OpenCV** tools are good for both:
 videos where the camera is stable and videos, where it
@@ -130,10 +130,10 @@ During the drawing process, you can remove the last point by clicking on it with
 ### Settings
 
 - On how to adjust the polygon,
-  see [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance).
+  see [Objects sidebar](/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar#appearance).
 
 - For more information about polygons in general, see
-  [Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
+  {{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}.
 
 ### Interactors models
 
@@ -193,7 +193,7 @@ To annotate with detectors, do the following:
 
 This action will automatically annotate one frame.
 For automatic annotation of multiple frames,
-see [Automatic annotation](/docs/manual/advanced/automatic-annotation/).
+see {{< ilink "/docs/manual/advanced/automatic-annotation" "Automatic annotation" >}}.
 
 ### Detectors models
 

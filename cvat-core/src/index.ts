@@ -12,7 +12,7 @@ import { AnnotationFormats } from './annotation-formats';
 import logger from './logger';
 import * as enums from './enums';
 import config from './config';
-import { mask2Rle, rle2Mask } from './object-utils';
+import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -32,6 +32,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
+import { Request } from './request';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
@@ -66,11 +67,10 @@ export default interface CVATCore {
         changePassword: any;
         requestPasswordReset: any;
         resetPassword: any;
-        authorized: any;
+        authenticated: any;
         healthCheck: any;
         request: any;
         setAuthData: any;
-        removeAuthData: any;
         installedApps: any;
         apiSchema: typeof serverProxy.server.apiSchema;
     };
@@ -105,11 +105,11 @@ export default interface CVATCore {
     projects: {
         get: (
             filter: {
-                id: number;
-                page: number;
-                search: string;
-                sort: string;
-                filter: string;
+                id?: number;
+                page?: number;
+                search?: string;
+                sort?: string;
+                filter?: string;
             }
         ) => Promise<PaginatedResource<Project>>;
         searchNames: any;
@@ -141,10 +141,25 @@ export default interface CVATCore {
         };
         performance: {
             reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
+            calculate: (
+                body: { jobID?: number; taskID?: number; projectID?: number; },
+                onUpdate: (status: enums.RQStatus, progress: number, message: string) => void,
+            ) => Promise<void>;
         };
     };
     frames: {
         getMeta: any;
+    };
+    requests: {
+        list: () => Promise<PaginatedResource<Request>>;
+        listen: (
+            rqID: string,
+            options: {
+                callback: (request: Request) => void,
+                initialRequest?: Request,
+            }
+        ) => Promise<Request>;
+        cancel: (rqID: string) => Promise<void>;
     };
     actions: {
         list: typeof listActions;
@@ -160,8 +175,9 @@ export default interface CVATCore {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
         };
-        onOrganizationChange: typeof config.onOrganizationChange;
+        onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
+        requestsStatusDelay: typeof config.requestsStatusDelay;
     },
     client: {
         version: string;
@@ -197,5 +213,6 @@ export default interface CVATCore {
     utils: {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
+        propagateShapes: typeof propagateShapes;
     };
 }

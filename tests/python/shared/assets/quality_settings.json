@@ -1,5 +1,5 @@
 {
-  "count": 17,
+  "count": 20,
   "next": null,
   "previous": null,
   "results": [
@@ -14,9 +14,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 2
     },
     {
@@ -30,9 +33,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 5
     },
     {
@@ -46,9 +52,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 6
     },
     {
@@ -62,9 +71,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 7
     },
     {
@@ -78,9 +90,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 8
     },
     {
@@ -94,9 +109,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 9
     },
     {
@@ -110,9 +128,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 11
     },
     {
@@ -126,9 +147,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 12
     },
     {
@@ -142,9 +166,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 13
     },
     {
@@ -158,9 +185,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 14
     },
     {
@@ -174,9 +204,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 15
     },
     {
@@ -190,9 +223,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 17
     },
     {
@@ -206,9 +242,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 18
     },
     {
@@ -222,9 +261,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 19
     },
     {
@@ -238,9 +280,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 20
     },
     {
@@ -254,9 +299,12 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 21
     },
     {
@@ -270,10 +318,70 @@
       "line_orientation_threshold": 0.1,
       "line_thickness": 0.01,
       "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
       "task_id": 22
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 18,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
+      "task_id": 23
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 19,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
+      "task_id": 24
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 20,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
+      "task_id": 25
     }
   ]
 }

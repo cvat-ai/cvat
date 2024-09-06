@@ -21,14 +21,14 @@ import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
-import Dropdown from 'antd/lib/dropdown';
 import Switch from 'antd/lib/switch';
-import lodash from 'lodash';
+import lodash, { omit } from 'lodash';
 
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
     getCore, Label, MLModel, ObjectState, Job,
+    LabelType,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -44,12 +44,12 @@ import {
 import DetectorRunner, { DetectorRequestBody } from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import CVATMarkdown from 'components/common/cvat-markdown';
 
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { switchToolsBlockerState } from 'actions/settings-actions';
-import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -57,7 +57,7 @@ interface StateToProps {
     canvasInstance: Canvas;
     labels: Label[];
     states: ObjectState[];
-    activeLabelID: number;
+    activeLabelID: number | null;
     jobInstance: Job;
     isActivated: boolean;
     frame: number;
@@ -71,12 +71,12 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onInteractionStart(activeInteractor: MLModel, activeLabelID: number): void;
-    updateAnnotations(statesToUpdate: any[]): void;
-    createAnnotations(statesToCreate: any[]): void;
-    fetchAnnotations(): void;
-    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
-    switchNavigationBlocked(navigationBlocked: boolean): void;
+    updateAnnotations: (states: ObjectState[]) => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => Promise<void>;
+    fetchAnnotations: () => Promise<void>;
+    onInteractionStart: typeof interactWithCanvas;
+    onSwitchToolsBlockerState: typeof switchToolsBlockerState;
+    switchNavigationBlocked: typeof switchNavigationBlockedAction;
 }
 
 const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
@@ -114,7 +114,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         labels,
         states,
         canvasInstance: canvasInstance as Canvas,
-        jobInstance,
+        jobInstance: jobInstance as Job,
         frame,
         curZOrder,
         defaultApproxPolyAccuracy,
@@ -142,8 +142,9 @@ interface TrackedShape {
 
 interface State {
     activeInteractor: MLModel | null;
-    activeLabelID: number;
+    activeLabelID: number | null;
     activeTracker: MLModel | null;
+    startInteractingWithBox: boolean;
     convertMasksToPolygons: boolean;
     trackedShapes: TrackedShape[];
     fetching: boolean;
@@ -152,6 +153,10 @@ interface State {
     mode: 'detection' | 'interaction' | 'tracking';
     portals: React.ReactPortal[];
 }
+
+type InteractorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { mask: number[][] }>;
+type TrackerResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { states: any[]; shapes: number[][] }>;
+type DetectedShapes = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { length: number }>;
 
 function trackedRectangleMapper(shape: number[]): number[] {
     return shape.reduce(
@@ -211,9 +216,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         isAborted: boolean;
         latestResponse: {
             rle: number[];
-            points: number[][];
+            points: [number, number][];
             bounds?: [number, number, number, number];
         };
+        latestPostponedEvent: Event | null;
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
             interactor: MLModel;
@@ -221,6 +227,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frame: number;
                 neg_points: number[][];
                 pos_points: number[][];
+                obj_bbox: number[][];
             };
         } | null;
         hideMessage: (() => void) | null;
@@ -230,9 +237,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             convertMasksToPolygons: false,
+            startInteractingWithBox: false,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
-            activeLabelID: props.labels.length ? props.labels[0].id : null,
+            activeLabelID: props.labels.length ? props.labels[0].id as number : null,
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             trackedShapes: [],
             fetching: false,
@@ -244,6 +252,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction = {
             id: null,
             isAborted: false,
+            latestPostponedEvent: null,
             latestResponse: {
                 rle: [],
                 points: [],
@@ -263,13 +272,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             portals: this.collectTrackerPortals(),
         });
+
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
         canvasInstance.html().addEventListener('canvas.canceled', this.cancelListener);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, canvasInstance, states,
+            isActivated, defaultApproxPolyAccuracy, canvasInstance, states, toolsBlockerState,
         } = this.props;
         const { approxPolyAccuracy, mode, activeTracker } = this.state;
 
@@ -291,6 +301,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction = {
                 id: null,
                 isAborted: false,
+                latestPostponedEvent: null,
                 latestResponse: { rle: [], points: [] },
                 lastestApproximatedPoints: [],
                 latestRequest: null,
@@ -304,6 +315,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             window.addEventListener('contextmenu', this.contextmenuDisabler);
         }
 
+        if (
+            prevProps.toolsBlockerState.algorithmsLocked &&
+            !toolsBlockerState.algorithmsLocked &&
+            isActivated && mode === 'interaction' && this.interaction.latestPostponedEvent
+        ) {
+            this.onInteraction(this.interaction.latestPostponedEvent);
+        }
+
         if (prevState.approxPolyAccuracy !== approxPolyAccuracy) {
             if (isActivated && mode === 'interaction' && this.interaction.latestResponse.points.length) {
                 this.approximateResponsePoints(this.interaction.latestResponse.points)
@@ -315,7 +334,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 shapeType: ShapeType.POLYGON,
                                 points: this.interaction.lastestApproximatedPoints.flat(),
                             },
-                            onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                         });
                     });
             }
@@ -374,11 +392,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
+
                 const response = await core.lambda.call(
                     jobInstance.taskId,
                     interactor,
                     { ...data, job: jobInstance.id },
-                );
+                ) as InteractorResults;
 
                 // if only mask presented, let's receive points
                 if (response.mask && !response.points) {
@@ -388,7 +407,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 }
 
                 // approximation with cv.approxPolyDP
-                const approximated = await this.approximateResponsePoints(response.points);
+                const approximated = await this.approximateResponsePoints(response.points as [number, number][]);
                 const rle = core.utils.mask2Rle(response.mask.flat());
                 if (response.bounds) {
                     rle.push(...response.bounds);
@@ -398,8 +417,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     rle.push(0, 0, width - 1, height - 1);
                 }
 
-                response.mask = rle;
-
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
                     return;
@@ -407,12 +424,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 this.interaction.latestResponse = {
                     bounds: response.bounds,
-                    points: response.points,
+                    points: response.points as [number, number][],
                     rle,
                 };
                 this.interaction.lastestApproximatedPoints = approximated;
 
-                this.setState({ pointsReceived: !!response.points.length });
+                this.setState({ pointsReceived: !!response.points?.length });
             } finally {
                 if (this.interaction.id === interactionId && this.interaction.hideMessage) {
                     this.interaction.hideMessage();
@@ -430,14 +447,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         points: convertMasksToPolygons ? this.interaction.lastestApproximatedPoints.flat() :
                             this.interaction.latestResponse.rle,
                     },
-                    onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
             }
 
             setTimeout(() => this.runInteractionRequest(interactionId));
         } catch (error: any) {
             notification.error({
-                description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                 message: 'Interaction error occurred',
                 duration: null,
             });
@@ -472,8 +488,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 interactor,
                 data: {
                     frame,
-                    pos_points: convertShapesForInteractor(shapes, 0),
-                    neg_points: convertShapesForInteractor(shapes, 2),
+                    obj_bbox: convertShapesForInteractor(shapes, 'rectangle', 0),
+                    pos_points: convertShapesForInteractor(shapes, 'points', 0),
+                    neg_points: convertShapesForInteractor(shapes, 'points', 2),
                 },
             };
 
@@ -482,16 +499,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private onTracking = async (e: Event): Promise<void> => {
-        const { trackedShapes, activeTracker } = this.state;
+        const { trackedShapes, activeTracker, activeLabelID } = this.state;
         const {
             isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
         } = this.props;
 
-        if (!isActivated) {
+        if (!isActivated || !activeLabelID) {
             return;
         }
 
-        const { activeLabelID } = this.state;
         const [label] = jobInstance.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
         const { isDone, shapesUpdated } = (e as CustomEvent).detail;
@@ -531,7 +547,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             fetchAnnotations();
         } catch (error: any) {
             notification.error({
-                description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                 message: 'Tracking error occurred',
                 duration: null,
             });
@@ -539,9 +555,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private interactionListener = async (e: Event): Promise<void> => {
+        const { toolsBlockerState } = this.props;
         const { mode } = this.state;
 
         if (mode === 'interaction') {
+            if (toolsBlockerState.algorithmsLocked) {
+                this.interaction.latestPostponedEvent = e;
+                return;
+            }
+
             await this.onInteraction(e);
         }
 
@@ -571,15 +593,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({
             activeTracker: trackers.filter((tracker: MLModel) => tracker.id === value)[0],
         });
-    };
-
-    private onChangeToolsBlockerState = (event: string): void => {
-        const { isActivated, onSwitchToolsBlockerState } = this.props;
-        if (isActivated && event === 'keydown') {
-            onSwitchToolsBlockerState({ algorithmsLocked: true });
-        } else if (isActivated && event === 'keyup') {
-            onSwitchToolsBlockerState({ algorithmsLocked: false });
-        }
     };
 
     private collectTrackerPortals(): React.ReactPortal[] {
@@ -694,18 +707,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     const {
                         serverlessState, shapePoints, clientID, trackerModel,
                     } = trackedShape;
-                    const [clientState] = objectStates.filter((_state: any): boolean => _state.clientID === clientID);
+                    const clientState = objectStates.find((_state): boolean => _state.clientID === clientID);
+                    const keyframes = clientState?.keyframes;
 
                     if (
-                        !clientState ||
-                        clientState.keyframes.prev !== frame - 1 ||
-                        clientState.keyframes.last >= frame
+                        !clientState || !keyframes ||
+                        keyframes?.prev !== frame - 1 ||
+                        (typeof keyframes?.last === 'number' && keyframes?.last >= frame)
                     ) {
                         return acc;
                     }
 
                     if (clientState && !clientState.outside) {
-                        const { points } = clientState;
+                        const points = clientState.points as number[];
                         withServerRequest = true;
                         const stateIsRelevant =
                             serverlessState !== null &&
@@ -762,12 +776,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             duration: 0,
                             className: 'cvat-tracking-notice',
                         });
-                        // eslint-disable-next-line no-await-in-loop
+
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                             job: jobInstance.id,
-                        });
+                        }) as TrackerResults;
 
                         const { states: serverlessStates } = response;
                         const statefullContainer = trackingData.statefull[trackerID] || {
@@ -784,7 +798,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } catch (error: any) {
                         notification.error({
                             message: 'Tracker initialization error',
-                            description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                             duration: null,
                         });
                     } finally {
@@ -816,7 +830,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
                             job: jobInstance.id,
-                        });
+                        }) as TrackerResults;
 
                         response.shapes = response.shapes.map(trackedRectangleMapper);
                         for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
@@ -838,7 +852,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } catch (error: any) {
                         notification.error({
                             message: 'Tracking error',
-                            description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                             duration: null,
                         });
                     } finally {
@@ -865,7 +879,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frame,
                 objectType: ObjectType.SHAPE,
                 source: core.enums.Source.SEMI_AUTO,
-                label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+                label: labels.find((label) => label.id === activeLabelID as number) as Label,
                 shapeType: ShapeType.POLYGON,
                 points: this.interaction.lastestApproximatedPoints.flat(),
                 occluded: false,
@@ -878,7 +892,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 frame,
                 objectType: ObjectType.SHAPE,
                 source: core.enums.Source.SEMI_AUTO,
-                label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+                label: labels.find((label) => label.id === activeLabelID as number) as Label,
                 shapeType: ShapeType.MASK,
                 points: this.interaction.latestResponse.rle,
                 occluded: false,
@@ -897,7 +911,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             } catch (error: any) {
                 notification.error({
                     message: 'Could not initialize OpenCV',
-                    description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                    description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                     duration: null,
                 });
             } finally {
@@ -910,19 +924,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         mask: number[][],
         left: number,
         top: number,
-    ): Promise<number[]> {
+    ): Promise<[number, number][]> {
         await this.initializeOpenCV();
 
         const src = openCVWrapper.mat.fromData(mask[0].length, mask.length, MatType.CV_8UC1, mask.flat());
         try {
             const polygons = openCVWrapper.contours.findContours(src, true);
-            return polygons[0].map((val: number, idx: number) => {
+            return polygons[0].reduce<[number, number][]>((acc, _, idx, array) => {
                 if (idx % 2) {
-                    return val + top;
+                    acc.push([array[idx - 1] + left, array[idx] + top]);
                 }
 
-                return val + left;
-            });
+                return acc;
+            }, []);
         } finally {
             src.delete();
         }
@@ -937,21 +951,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
 
         return points;
-    }
-
-    private renderMasksConvertingBlock(): JSX.Element {
-        const { convertMasksToPolygons } = this.state;
-        return (
-            <Row className='cvat-interactors-setups-container'>
-                <Switch
-                    checked={convertMasksToPolygons}
-                    onChange={(checked: boolean) => {
-                        this.setState({ convertMasksToPolygons: checked });
-                    }}
-                />
-                <Text>Convert masks to polygons</Text>
-            </Row>
-        );
     }
 
     private renderLabelBlock(): JSX.Element {
@@ -1028,17 +1027,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             className='cvat-tools-track-button'
                             disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
                             onClick={() => {
-                                this.setState({ mode: 'tracking' });
+                                if (activeTracker && activeLabelID) {
+                                    this.setState({ mode: 'tracking' });
 
-                                if (activeTracker) {
                                     canvasInstance.cancel();
                                     canvasInstance.interact({
                                         shapeType: 'rectangle',
                                         enabled: true,
                                     });
 
-                                    onInteractionStart(activeTracker, activeLabelID);
                                     const { onSwitchToolsBlockerState } = this.props;
+                                    onInteractionStart(activeTracker, activeLabelID, {});
                                     onSwitchToolsBlockerState({ buttonVisible: false });
                                 }
                             }}
@@ -1052,9 +1051,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderInteractorBlock(): JSX.Element {
-        const { interactors, canvasInstance, onInteractionStart } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching,
+            interactors, canvasInstance, labels, onInteractionStart,
+        } = this.props;
+        const {
+            activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
         } = this.state;
 
         if (!interactors.length) {
@@ -1069,7 +1070,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             );
         }
 
-        const minNegVertices = activeInteractor ? (activeInteractor.params.canvas.minNegVertices as number) : -1;
+        const minNegVertices = activeInteractor?.params?.canvas?.minNegVertices ?? -1;
+        const renderStartWithBox = activeInteractor?.params?.canvas?.startWithBoxOptional ?? false;
 
         return (
             <>
@@ -1099,9 +1101,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                     <Col span={2} className='cvat-interactors-tips-icon-container'>
-                        <Dropdown
-                            destroyPopupOnHide
-                            overlay={(
+                        <Popover
+                            destroyTooltipOnHide
+                            content={(
                                 <ToolsTooltips
                                     name={activeInteractor?.name}
                                     withNegativePoints={minNegVertices >= 0}
@@ -1110,9 +1112,30 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             )}
                         >
                             <QuestionCircleOutlined />
-                        </Dropdown>
+                        </Popover>
                     </Col>
                 </Row>
+                <div className='cvat-tools-interactor-setups'>
+                    <div>
+                        <Switch
+                            checked={convertMasksToPolygons}
+                            onChange={(checked: boolean) => {
+                                this.setState({ convertMasksToPolygons: checked });
+                            }}
+                        />
+                        <Text>Convert masks to polygons</Text>
+                    </div>
+
+                    {renderStartWithBox && (
+                        <div>
+                            <Switch
+                                checked={startInteractingWithBox}
+                                onChange={(value: boolean) => this.setState({ startInteractingWithBox: value })}
+                            />
+                            <Text>Start with a bounding box</Text>
+                        </div>
+                    )}
+                </div>
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button
@@ -1123,17 +1146,21 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 fetching ||
                                 activeInteractor.version < MIN_SUPPORTED_INTERACTOR_VERSION}
                             onClick={() => {
-                                this.setState({ mode: 'interaction' });
-
-                                if (activeInteractor) {
+                                if (activeInteractor && activeLabelID && labels.length) {
+                                    this.setState({ mode: 'interaction' });
                                     canvasInstance.cancel();
-                                    activeInteractor.onChangeToolsBlockerState = this.onChangeToolsBlockerState;
-                                    canvasInstance.interact({
-                                        shapeType: 'points',
-                                        enabled: true,
-                                        ...activeInteractor.params.canvas,
-                                    });
-                                    onInteractionStart(activeInteractor, activeLabelID);
+                                    const interactorParameters = {
+                                        ...omit(activeInteractor.params.canvas, 'startWithBoxOptional'),
+                                        // replace 'optional' with true or false depending on user specified setting
+                                        ...(activeInteractor.params.canvas.startWithBoxOptional ? {
+                                            startWithBox: startInteractingWithBox,
+                                        } : {
+                                            startWithBox: activeInteractor.params.canvas.startWithBox,
+                                        }),
+                                    };
+
+                                    canvasInstance.interact({ shapeType: 'points', enabled: true, ...interactorParameters });
+                                    onInteractionStart(activeInteractor, activeLabelID, interactorParameters);
                                 }
                             }}
                         >
@@ -1226,27 +1253,30 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                     try {
                         this.setState({ mode: 'detection', fetching: true });
-                        const result = await core.lambda.call(jobInstance.taskId, model, {
-                            ...body, frame, job: jobInstance.id,
-                        });
 
-                        type SerializedShape = {
-                            type: ShapeType;
-                            rotation?: number;
-                            attributes: { name: string; value: string }[];
-                            label: string;
-                            outside?: boolean;
-                            points?: number[];
-                            mask?: number[];
-                            elements: SerializedShape[];
-                        };
+                        // The function call endpoint doesn't support the cleanup and convMaskToPoly parameters.
+                        const { cleanup, convMaskToPoly, ...restOfBody } = body;
+
+                        const result = await core.lambda.call(jobInstance.taskId, model, {
+                            ...restOfBody, frame, job: jobInstance.id,
+                        }) as DetectedShapes;
 
                         const states = result.map(
-                            (data: SerializedShape): ObjectState | null => {
+                            (data): ObjectState | null => {
                                 const jobLabel = jobInstance.labels
                                     .find((jLabel: Label): boolean => jLabel.name === data.label);
 
                                 if (!jobLabel) return null;
+
+                                if (data.type === 'tag') {
+                                    return new core.classes.ObjectState({
+                                        frame,
+                                        label: jobLabel,
+                                        attributes: loadAttributes(data.attributes, jobLabel),
+                                        objectType: ObjectType.TAG,
+                                        source: core.enums.Source.AUTO,
+                                    });
+                                }
 
                                 const objectData = {
                                     label: jobLabel,
@@ -1261,7 +1291,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     zOrder: curZOrder,
                                 };
 
-                                if (data.type === ShapeType.SKELETON && jobLabel.type === ShapeType.SKELETON) {
+                                if (data.type === ShapeType.SKELETON && jobLabel.type === LabelType.SKELETON) {
                                     // find a center of the skeleton
                                     // to set this center as outside points position
                                     const center = data.elements.reduce<[number, number]>((acc, { points }) => {
@@ -1276,7 +1306,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         return {
                                             label: sublabel,
                                             objectType: ObjectType.SHAPE,
-                                            shapeType: sublabel.type,
+                                            shapeType: sublabel.type as any as ShapeType,
                                             attributes: {},
                                             frame,
                                             source: core.enums.Source.AUTO,
@@ -1289,7 +1319,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                 outside: !!element.outside || false,
                                             } : {}),
                                         };
-                                    }).map((elementData) => new core.classes.ObjectState({ ...elementData }));
+                                    });
 
                                     if (elements.every((element) => element.outside)) {
                                         return null;
@@ -1303,23 +1333,26 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     });
                                 }
 
-                                if (data.type === 'mask' && data.points && body.convMaskToPoly) {
+                                if (data.type === 'mask' && data.points && convMaskToPoly) {
                                     return new core.classes.ObjectState({
                                         ...objectData,
-                                        shapeType: 'polygon',
+                                        shapeType: ShapeType.POLYGON,
                                         points: data.points,
                                     });
                                 }
 
                                 if (data.type === 'mask') {
-                                    const [left, top, right, bottom] = (data.mask as number[]).splice(-4);
-                                    const rle = core.utils.mask2Rle(data.mask);
-                                    rle.push(left, top, right, bottom);
-                                    return new core.classes.ObjectState({
-                                        ...objectData,
-                                        shapeType: data.type,
-                                        points: rle,
-                                    });
+                                    if (data.mask) {
+                                        const [left, top, right, bottom] = data.mask.splice(-4);
+                                        const rle = core.utils.mask2Rle(data.mask);
+                                        rle.push(left, top, right, bottom);
+                                        return new core.classes.ObjectState({
+                                            ...objectData,
+                                            shapeType: data.type,
+                                            points: rle,
+                                        });
+                                    }
+                                    return null;
                                 }
 
                                 return new core.classes.ObjectState({
@@ -1331,11 +1364,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         ).filter((state: any) => state);
 
                         createAnnotations(states.filter((state: ObjectState | null) => !!state));
-                        const { onSwitchToolsBlockerState } = this.props;
-                        onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error: any) {
                         notification.error({
-                            description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            description: <CVATMarkdown>{error.message}</CVATMarkdown>,
                             message: 'Detection error occurred',
                             duration: null,
                         });
@@ -1357,20 +1388,33 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Text>
                     </Col>
                 </Row>
-                <Tabs type='card' tabBarGutter={8}>
-                    <Tabs.TabPane key='interactors' tab='Interactors'>
-                        {this.renderMasksConvertingBlock()}
-                        {this.renderLabelBlock()}
-                        {this.renderInteractorBlock()}
-                    </Tabs.TabPane>
-                    <Tabs.TabPane key='detectors' tab='Detectors'>
-                        {this.renderDetectorBlock()}
-                    </Tabs.TabPane>
-                    <Tabs.TabPane key='trackers' tab='Trackers'>
-                        {this.renderLabelBlock()}
-                        {this.renderTrackerBlock()}
-                    </Tabs.TabPane>
-                </Tabs>
+                <Tabs
+                    type='card'
+                    tabBarGutter={8}
+                    items={[{
+                        key: 'interactors',
+                        label: 'Interactors',
+                        children: (
+                            <>
+                                {this.renderLabelBlock()}
+                                {this.renderInteractorBlock()}
+                            </>
+                        ),
+                    }, {
+                        key: 'detectors',
+                        label: 'Detectors',
+                        children: this.renderDetectorBlock(),
+                    }, {
+                        key: 'trackers',
+                        label: 'Trackers',
+                        children: (
+                            <>
+                                {this.renderLabelBlock()}
+                                {this.renderTrackerBlock()}
+                            </>
+                        ),
+                    }]}
+                />
             </div>
         );
     }
@@ -1421,7 +1465,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             <Modal
                 title='Making a server request'
                 zIndex={Number.MAX_SAFE_INTEGER}
-                visible
+                open
                 destroyOnClose
                 closable={false}
                 footer={[]}

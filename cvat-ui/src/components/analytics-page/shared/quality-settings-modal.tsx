@@ -33,6 +33,12 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         try {
             if (settings) {
                 const values = await form.validateFields();
+
+                settings.targetMetric = values.targetMetric;
+                settings.targetMetricThreshold = values.targetMetricThreshold / 100;
+
+                settings.maxValidationsPerJob = values.maxValidationsPerJob;
+
                 settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
                 settings.iouThreshold = values.iouThreshold / 100;
                 settings.compareAttributes = values.compareAttributes;
@@ -80,7 +86,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
             okText='Save'
             cancelText='Cancel'
             title={<Text strong>Annotation Quality Settings</Text>}
-            visible={visible}
+            open={visible}
             onOk={onOk}
             onCancel={onCancel}
             confirmLoading={fetching}

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,6 +28,9 @@ import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import LabelSelector from 'components/label-selector/label-selector';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import ShortcutsSelect from './shortcuts-select';
 
 const cvat = getCore();
@@ -76,6 +79,23 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showDeletedFrames,
     };
 }
+
+const componentShortcuts = {
+    SWITCH_DRAW_MODE_TAG_ANNOTATION: {
+        name: 'Draw mode',
+        description: 'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+    },
+    SWITCH_REDRAW_MODE_TAG_ANNOTATION: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {
@@ -214,15 +234,17 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
-    const subKeyMap = {
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    };
-
-    const handlers = {
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_DRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (selectedLabelID !== null) {
-                onShortcutPress(event, selectedLabelID);
+                onAddTag(selectedLabelID);
+            }
+        },
+        SWITCH_REDRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (selectedLabelID !== null) {
+                onRemoveState(selectedLabelID);
             }
         },
     };
@@ -231,16 +253,14 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         <Layout.Sider {...siderProps}>
             {/* eslint-disable-next-line */}
             <span
-                className={`cvat-objects-sidebar-sider
-                    ant-layout-sider-zero-width-trigger
-                    ant-layout-sider-zero-width-trigger-left`}
+                className='cvat-objects-sidebar-sider'
                 onClick={() => {
                     setSidebarCollapsed(!sidebarCollapsed);
                 }}
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+            <Row justify='center' className='cvat-tag-annotation-sidebar-empty'>
                 <Col>
                     <Text strong>Can&apos;t place tag on this frame.</Text>
                 </Col>
@@ -248,13 +268,11 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         </Layout.Sider>
     ) : (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <Layout.Sider {...siderProps}>
                 {/* eslint-disable-next-line */}
                 <span
-                    className={`cvat-objects-sidebar-sider
-                        ant-layout-sider-zero-width-trigger
-                        ant-layout-sider-zero-width-trigger-left`}
+                    className='cvat-objects-sidebar-sider'
                     onClick={() => {
                         setSidebarCollapsed(!sidebarCollapsed);
                     }}

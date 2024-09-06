@@ -45,6 +45,7 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
       containers:
         - name: cvat-backend
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
@@ -56,6 +57,7 @@ spec:
           args: ["run", "worker.export"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

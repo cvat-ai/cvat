@@ -22,6 +22,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction from './annotations-actions';
+import { Request } from './request';
 
 import * as enums from './enums';
 
@@ -29,7 +30,7 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { mask2Rle, rle2Mask } from './object-utils';
+import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
 import User from './user';
 import pjson from '../package.json';
 import config from './config';
@@ -99,8 +100,8 @@ function build(): CVATCore {
                 );
                 return result;
             },
-            async authorized() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.authorized);
+            async authenticated() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.authenticated);
                 return result;
             },
             async healthCheck(maxRetries = 1, checkPeriod = 3000, requestTimeout = 5000, progressCallback = undefined) {
@@ -119,10 +120,6 @@ function build(): CVATCore {
             },
             async setAuthData(response) {
                 const result = await PluginRegistry.apiWrapper(cvat.server.setAuthData, response);
-                return result;
-            },
-            async removeAuthData() {
-                const result = await PluginRegistry.apiWrapper(cvat.server.removeAuthData);
                 return result;
             },
             async installedApps() {
@@ -286,6 +283,12 @@ function build(): CVATCore {
             set globalObjectsCounter(value: number) {
                 config.globalObjectsCounter = value;
             },
+            get requestsStatusDelay() {
+                return config.requestsStatusDelay;
+            },
+            set requestsStatusDelay(value) {
+                config.requestsStatusDelay = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
@@ -348,6 +351,14 @@ function build(): CVATCore {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
                     return result;
                 },
+                async calculate(body, onUpdate) {
+                    const result = await PluginRegistry.apiWrapper(
+                        cvat.analytics.performance.calculate,
+                        body,
+                        onUpdate,
+                    );
+                    return result;
+                },
             },
             quality: {
                 async reports(filter = {}) {
@@ -364,6 +375,26 @@ function build(): CVATCore {
                         return result;
                     },
                 },
+            },
+        },
+        requests: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.list);
+                return result;
+            },
+            async cancel(rqID: string) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.cancel, rqID);
+                return result;
+            },
+            async listen(
+                rqID: string,
+                options: {
+                    callback: (request: Request) => void,
+                    initialRequest?: Request,
+                },
+            ) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.listen, rqID, options);
+                return result;
             },
         },
         classes: {
@@ -389,6 +420,7 @@ function build(): CVATCore {
         utils: {
             mask2Rle,
             rle2Mask,
+            propagateShapes,
         },
     };
 

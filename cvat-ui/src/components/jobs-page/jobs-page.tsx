@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,16 +10,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import Empty from 'antd/lib/empty';
-import Text from 'antd/lib/typography/Text';
 
 import { Job } from 'cvat-core-wrapper';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, Indexable, JobsQuery } from 'reducers';
 import { getJobsAsync, updateJobAsync } from 'actions/jobs-actions';
+import { anySearch } from 'utils/any-search';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
+import EmptyListComponent from './empty-list';
 
 function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -28,8 +28,8 @@ function JobsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.jobs.query);
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
-    const onJobUpdate = useCallback((job: Job) => {
-        dispatch(updateJobAsync(job));
+    const onJobUpdate = useCallback((job: Job, data: Parameters<Job['save']>[0]) => {
+        dispatch(updateJobAsync(job, data));
     }, []);
 
     const queryParams = new URLSearchParams(history.location.search);
@@ -54,6 +54,8 @@ function JobsPageComponent(): JSX.Element {
         }
     }, [query]);
 
+    const isAnySearch = anySearch<JobsQuery>(query);
+
     const content = count ? (
         <>
             <JobsContentComponent onJobUpdate={onJobUpdate} />
@@ -76,7 +78,9 @@ function JobsPageComponent(): JSX.Element {
                 </Col>
             </Row>
         </>
-    ) : <Empty description={<Text>No results matched your search...</Text>} />;
+    ) : (
+        <EmptyListComponent notFound={isAnySearch} />
+    );
 
     return (
         <div className='cvat-jobs-page'>
@@ -110,9 +114,7 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            { fetching ? (
-                <Spin size='large' className='cvat-spinner' />
-            ) : content }
+            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }

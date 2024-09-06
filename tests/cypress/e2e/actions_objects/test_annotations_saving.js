@@ -33,13 +33,7 @@ context('Test annotations saving works correctly', () => {
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).trigger('mouseover');
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
-
-        cy.document().then((doc) => {
-            const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
-            if (tooltips.length > 0) {
-                cy.get('.ant-tooltip').invoke('hide');
-            }
-        });
+        cy.hideTooltips();
     }
 
     before(() => {
@@ -56,7 +50,7 @@ context('Test annotations saving works correctly', () => {
             expect(interception.response.statusCode).to.equal(201);
             taskID = interception.response.body.id;
         });
-        cy.wait('@getJobsRequest', { requestTimeout: 10000 }).then((interception) => {
+        cy.wait('@getJobsRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobID = interception.response.body.results[0].id;
 

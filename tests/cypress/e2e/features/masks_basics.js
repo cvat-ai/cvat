@@ -158,11 +158,49 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.drawMask(editingActions);
             cy.finishMaskDrawing();
         });
+
+        it('Underlying pixels are removed on enabling "Remove underlying pixels" tool', () => {
+            const mask1 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400]],
+            }];
+            const mask2 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [525, 325]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(mask1);
+            cy.get('.cvat-brush-tools-continue').click();
+
+            cy.drawMask(mask2);
+            cy.get('.cvat-brush-tools-underlying-pixels').click();
+            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat-objects-sidebar-state-item-2').within(() => {
+                cy.get('.cvat-object-item-button-hidden').click();
+            });
+
+            cy.get('.cvat-canvas-container').then(([$canvas]) => {
+                cy.wrap($canvas).trigger('mousemove', { clientX: 450, clientY: 250 });
+                cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
+
+                cy.wrap($canvas).trigger('mousemove', { clientX: 550, clientY: 350 });
+                cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+            });
+
+            cy.startMaskDrawing();
+            cy.get('.cvat-brush-tools-underlying-pixels').click();
+            cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
+            cy.finishMaskDrawing();
+        });
     });
 
     describe('Tests to make sure that empty masks cannot be created', () => {
         beforeEach(() => {
             cy.removeAnnotations();
+            cy.saveJob('PUT');
         });
 
         function checkEraseTools(baseTool = '.cvat-brush-tools-brush', disabled = true) {

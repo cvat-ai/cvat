@@ -27,7 +27,7 @@ interface Props {
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-projects-page',
     siblingClassNames: ['cvat-projects-pagination', 'cvat-projects-page-top-bar'],
-    paddings: 40,
+    paddings: 64,
     minHeight: 200,
     numberOfRows: 3,
 });
@@ -83,12 +83,18 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                 size='small'
                 style={style}
                 className='cvat-projects-project-item-card'
+                hoverable
             >
                 <Meta
                     title={(
-                        <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
+                        <Text
+                            ellipsis={{ tooltip: instance.name }}
+                            onClick={onOpenProject}
+                            className='cvat-projects-project-item-title'
+                            aria-hidden
+                        >
                             {instance.name}
-                        </span>
+                        </Text>
                     )}
                     description={(
                         <div className='cvat-projects-project-item-description'>

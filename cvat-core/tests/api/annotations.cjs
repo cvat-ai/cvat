@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -247,7 +247,7 @@ describe('Feature: put annotations', () => {
 
     test('put object without objectType to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         expect(() => new cvat.classes.ObjectState({
             frame: 1,
             shapeType: cvat.enums.ShapeType.POLYGON,
@@ -260,7 +260,7 @@ describe('Feature: put annotations', () => {
 
     test('put shape with bad attributes to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         const state = new cvat.classes.ObjectState({
             frame: 1,
             objectType: cvat.enums.ObjectType.SHAPE,
@@ -277,7 +277,7 @@ describe('Feature: put annotations', () => {
 
     test('put shape with bad zOrder to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         const state = new cvat.classes.ObjectState({
             frame: 1,
             objectType: cvat.enums.ObjectType.SHAPE,
@@ -307,7 +307,7 @@ describe('Feature: put annotations', () => {
 
     test('put shape without points and with invalid points to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         const state = new cvat.classes.ObjectState({
             frame: 1,
             objectType: cvat.enums.ObjectType.SHAPE,
@@ -328,7 +328,7 @@ describe('Feature: put annotations', () => {
 
     test('put shape without type to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         const state = new cvat.classes.ObjectState({
             frame: 1,
             objectType: cvat.enums.ObjectType.SHAPE,
@@ -343,7 +343,7 @@ describe('Feature: put annotations', () => {
 
     test('put shape without label and with bad label to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         const state = {
             frame: 1,
             objectType: cvat.enums.ObjectType.SHAPE,
@@ -363,7 +363,7 @@ describe('Feature: put annotations', () => {
 
     test('put shape with bad frame to a task', async () => {
         const task = (await cvat.tasks.get({ id: 101 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         expect(() => new cvat.classes.ObjectState({
             frame: '5',
             objectType: cvat.enums.ObjectType.SHAPE,
@@ -378,7 +378,7 @@ describe('Feature: put annotations', () => {
     test('put a skeleton shape to a job', async() => {
         const job = (await cvat.jobs.get({ jobID: 40 }))[0];
         const label = job.labels[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         await job.annotations.clear();
         const skeleton = new cvat.classes.ObjectState({
             frame: 0,
@@ -409,7 +409,7 @@ describe('Feature: put annotations', () => {
     test('put a skeleton track to a task', async() => {
         const task = (await cvat.tasks.get({ id: 40 }))[0];
         const label = task.labels[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         await task.annotations.clear();
         const skeleton = new cvat.classes.ObjectState({
             frame: 0,
@@ -769,7 +769,7 @@ describe('Feature: group annotations', () => {
 
     test('trying to group object state which has not been saved in a collection', async () => {
         const task = (await cvat.tasks.get({ id: 100 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
 
         const state = new cvat.classes.ObjectState({
             frame: 0,
@@ -817,7 +817,7 @@ describe('Feature: clear annotations', () => {
         annotations[0].occluded = true;
         await annotations[0].save();
         expect(task.annotations.hasUnsavedChanges()).toBe(true);
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         annotations = await task.annotations.get(0);
         expect(annotations).not.toHaveLength(0);
         expect(task.annotations.hasUnsavedChanges()).toBe(false);
@@ -830,7 +830,7 @@ describe('Feature: clear annotations', () => {
         annotations[0].occluded = true;
         await annotations[0].save();
         expect(job.annotations.hasUnsavedChanges()).toBe(true);
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         annotations = await job.annotations.get(0);
         expect(annotations).not.toHaveLength(0);
         expect(job.annotations.hasUnsavedChanges()).toBe(false);
@@ -838,15 +838,15 @@ describe('Feature: clear annotations', () => {
 
     test('clear annotations with bad reload parameter', async () => {
         const task = (await cvat.tasks.get({ id: 100 }))[0];
-        await task.annotations.clear(true);
-        expect(task.annotations.clear('reload')).rejects.toThrow(cvat.exceptions.ArgumentError);
+        await task.annotations.clear({ reload: true });
+        expect(task.annotations.clear({ reload: 'reload' })).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: get statistics', () => {
     test('get statistics from a task', async () => {
         const task = (await cvat.tasks.get({ id: 100 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         const statistics = await task.annotations.statistics();
         expect(statistics).toBeInstanceOf(cvat.classes.Statistics);
         expect(statistics.total.total).toBe(30);
@@ -854,7 +854,7 @@ describe('Feature: get statistics', () => {
 
     test('get statistics from a job', async () => {
         const job = (await cvat.jobs.get({ jobID: 101 }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         const statistics = await job.annotations.statistics();
         expect(statistics).toBeInstanceOf(cvat.classes.Statistics);
         expect(statistics.total.total).toBe(1012);
@@ -862,7 +862,7 @@ describe('Feature: get statistics', () => {
 
     test('get statistics from a job with skeletons', async () => {
         const job = (await cvat.jobs.get({ jobID: 40 }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         const statistics = await job.annotations.statistics();
         expect(statistics).toBeInstanceOf(cvat.classes.Statistics);
         expect(statistics.total.total).toBe(30);
@@ -876,7 +876,7 @@ describe('Feature: get statistics', () => {
 
     test('get statistics from a job with skeletons', async () => {
         const job = (await cvat.jobs.get({ jobID: 102 }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         let statistics = await job.annotations.statistics();
         expect(statistics.total.manually).toBe(5);
         expect(statistics.total.interpolated).toBe(443);
@@ -955,30 +955,30 @@ describe('Feature: select object', () => {
 describe('Feature: search frame', () => {
     test('applying different filters', async () => {
         const job = (await cvat.jobs.get({ jobID: 102 }))[0];
-        await job.annotations.clear(true);
-        let frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]}]}]'), 495, 994);
+        await job.annotations.clear({ reload: true });
+        let frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]}]}]') });
         expect(frame).toBe(500);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]},{"==":[{"var":"label"},"bicycle"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]},{"==":[{"var":"label"},"bicycle"]}]}]') });
         expect(frame).toBe(500);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"track"]},{"==":[{"var":"label"},"bicycle"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"track"]},{"==":[{"var":"label"},"bicycle"]}]}]') });
         expect(frame).toBe(null);
 
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]') });
         expect(frame).toBe(510);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]'), 511, 994);
+        frame = await job.annotations.search(511, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"rectangle"]}]}]') });
         expect(frame).toBe(null);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"polygon"]}]}]'), 511, 994);
+        frame = await job.annotations.search(511, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"type"},"shape"]},{"==":[{"var":"shape"},"polygon"]}]}]') });
         expect(frame).toBe(520);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]}]}]') });
         expect(frame).toBe(520);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]},{"==":[{"var":"shape"},"ellipse"]}]}]'), 495, 994);
+        frame = await job.annotations.search(495, 994, { annotationsFilters: JSON.parse('[{"and":[{"==":[{"var":"attr.motorcycle.model"},"some text for test"]},{"==":[{"var":"shape"},"ellipse"]}]}]') });
         expect(frame).toBe(null);
 
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]'), 540, 994);
+        frame = await job.annotations.search(540, 994, { annotationsFilters: JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]') });
         expect(frame).toBe(563);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]'), 588, 994);
+        frame = await job.annotations.search(588, 994, { annotationsFilters: JSON.parse('[{"and":[{"<=":[450,{"var":"width"},550]}]}]') });
         expect(frame).toBe(null);
-        frame = await job.annotations.search(JSON.parse('[{"and":[{">=":[{"var":"width"},500]},{"<=":[{"var":"height"},300]}]}]'), 540, 994);
+        frame = await job.annotations.search(540, 994, { annotationsFilters: JSON.parse('[{"and":[{">=":[{"var":"width"},500]},{"<=":[{"var":"height"},300]}]}]') });
         expect(frame).toBe(575);
     });
 });

@@ -9,7 +9,7 @@ import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog'
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import TaskItem from 'containers/tasks-page/task-item';
 
-import dimensions from '../projects-page/dimensions';
+import dimensions from 'utils/dimensions';
 
 export interface Props {
     currentTasksIndexes: number[];

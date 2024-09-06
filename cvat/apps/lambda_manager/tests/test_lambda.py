@@ -36,9 +36,8 @@ id_function_non_unique_labels = "test-model-has-non-unique-labels"
 id_function_state_building = "test-model-has-state-building"
 id_function_state_error = "test-model-has-state-error"
 
-expected_keys_in_response_all_functions = ["id", "kind", "labels", "description", "framework", "name"]
+expected_keys_in_response_all_functions = ["id", "kind", "labels_v2", "description", "name"]
 expected_keys_in_response_function_interactor = expected_keys_in_response_all_functions + ["min_pos_points", "startswith_box"]
-expected_keys_in_response_function_tracker = expected_keys_in_response_all_functions + ["state"]
 expected_keys_in_response_requests = ["id", "function", "status", "progress", "enqueued", "started", "ended", "exc_info"]
 
 path = os.path.join(os.path.dirname(__file__), 'assets', 'tasks.json')
@@ -246,9 +245,6 @@ class _LambdaTestCaseBase(APITestCase):
         kind = data["kind"]
         if kind == "interactor":
             for key in expected_keys_in_response_function_interactor:
-                self.assertIn(key, data)
-        elif kind == "tracker":
-            for key in expected_keys_in_response_function_tracker:
                 self.assertIn(key, data)
         else:
             for key in expected_keys_in_response_all_functions:
@@ -1529,7 +1525,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
 
 class Issue4996_Cases(_LambdaTestCaseBase):
-    # Check regressions for https://github.com/opencv/cvat/issues/4996#issuecomment-1266123032
+    # Check regressions for https://github.com/cvat-ai/cvat/issues/4996#issuecomment-1266123032
     # We need to check that job assignee can call functions in the assigned jobs
     # This requires to pass the job id in the call request.
 

@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,19 +7,19 @@ import React from 'react';
 
 const NO_BREAK_SPACE = '\u00a0';
 const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
-const CHANGELOG_URL = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
-const LICENSE_URL = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
+const CHANGELOG_URL = 'https://github.com/cvat-ai/cvat/blob/develop/CHANGELOG.md';
+const LICENSE_URL = 'https://github.com/cvat-ai/cvat/blob/develop/LICENSE';
 const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
-const GITHUB_URL = 'https://github.com/opencv/cvat';
-const GITHUB_IMAGE_URL = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat.jpg';
-const GUIDE_URL = 'https://opencv.github.io/cvat/docs';
-const UPGRADE_GUIDE_URL = 'https://opencv.github.io/cvat/docs/administration/advanced/upgrade_guide';
+const GITHUB_URL = 'https://github.com/cvat-ai/cvat';
+const GITHUB_IMAGE_URL = 'https://github.com/cvat-ai/cvat/raw/develop/site/content/en/images/cvat.jpg';
+const GUIDE_URL = 'https://docs.cvat.ai/docs';
+const UPGRADE_GUIDE_URL = 'https://docs.cvat.ai/docs/administration/advanced/upgrade_guide';
 const SHARE_MOUNT_GUIDE_URL =
-    'https://opencv.github.io/cvat/docs/administration/basics/installation/#share-path';
+    'https://docs.cvat.ai/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
-    'https://opencv.github.io/cvat//docs/administration/advanced/installation_automatic_annotation/';
-const FILTERS_GUIDE_URL = 'https://opencv.github.io/cvat/docs/manual/advanced/filter/';
-const DATASET_MANIFEST_GUIDE_URL = 'https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/';
+    'https://docs.cvat.ai//docs/administration/advanced/installation_automatic_annotation/';
+const FILTERS_GUIDE_URL = 'https://docs.cvat.ai/docs/manual/advanced/filter/';
+const DATASET_MANIFEST_GUIDE_URL = 'https://docs.cvat.ai/docs/manual/advanced/dataset_manifest/';
 const CANVAS_BACKGROUND_COLORS = ['#ffffff', '#f1f1f1', '#e5e5e5', '#d8d8d8', '#CCCCCC', '#B3B3B3', '#999999'];
 const NEW_LABEL_COLOR = '#b3b3b3';
 const LATEST_COMMENTS_SHOWN_QUICK_ISSUE = 3;
@@ -31,7 +31,7 @@ const CANVAS_WORKSPACE_COLS = 12;
 const CANVAS_WORKSPACE_MARGIN = 8;
 const CANVAS_WORKSPACE_DEFAULT_CONTEXT_HEIGHT = 4;
 const CANVAS_WORKSPACE_PADDING = CANVAS_WORKSPACE_MARGIN / 2;
-const OUTSIDE_PIC_URL = 'https://opencv.github.io/cvat/images/image019.jpg';
+const OUTSIDE_PIC_URL = 'https://docs.cvat.ai/images/image019.jpg';
 const DEFAULT_AWS_S3_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
     ['us-east-2', 'US East (Ohio)'],
@@ -110,7 +110,7 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
 
 const HEALTH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
-const HEALTH_CHECK_REQUEST_TIMEOUT = 5000; // ms
+const HEALTH_CHECK_REQUEST_TIMEOUT = 15000; // ms
 
 const CONTROLS_LOGS_INTERVAL = 90000; // 1.5 min in ms
 
@@ -131,6 +131,12 @@ const OPENCV_PATH = '/assets/opencv_4.8.0.js';
 
 const LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT = 10;
 const LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT = 20;
+
+const REQUEST_SUCCESS_NOTIFICATION_DURATION = 5; // seconds
+
+const BLACKLISTED_GO_BACK_PATHS = [
+    /\/auth.+/,
+];
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -171,4 +177,6 @@ export default {
     OPENCV_PATH,
     LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT,
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
+    REQUEST_SUCCESS_NOTIFICATION_DURATION,
+    BLACKLISTED_GO_BACK_PATHS,
 };

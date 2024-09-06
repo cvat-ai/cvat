@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import textwrap
 
 from rest_framework import serializers
 
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.quality_control import models
 
 
@@ -33,15 +34,19 @@ class QualityReportSummarySerializer(serializers.Serializer):
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
-    # This set is enough for basic characteristics, such as
-    # DS_unmatched, GT_unmatched, accuracy, precision and recall
     valid_count = serializers.IntegerField(source="annotations.valid_count")
     ds_count = serializers.IntegerField(source="annotations.ds_count")
     gt_count = serializers.IntegerField(source="annotations.gt_count")
+    total_count = serializers.IntegerField(source="annotations.total_count")
+
+    accuracy = serializers.FloatField(source="annotations.accuracy")
+    precision = serializers.FloatField(source="annotations.precision")
+    recall = serializers.FloatField(source="annotations.recall")
 
 
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
 
     class Meta:
@@ -56,6 +61,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "created_date",
             "target_last_updated",
             "gt_last_updated",
+            "assignee",
         )
         read_only_fields = fields
 
@@ -70,6 +76,9 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "task_id",
+            "target_metric",
+            "target_metric_threshold",
+            "max_validations_per_job",
             "iou_threshold",
             "oks_sigma",
             "line_thickness",
@@ -91,6 +100,15 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         extra_kwargs = {k: {"required": False} for k in fields}
 
         for field_name, help_text in {
+            "target_metric": "The primary metric used for quality estimation",
+            "target_metric_threshold": """
+                Defines the minimal quality requirements in terms of the selected target metric.
+            """,
+            "max_validations_per_job": """
+                The maximum number of job validation attempts for the job assignee.
+                The job can be automatically accepted if the job quality is above the required
+                threshold, defined by the target threshold parameter.
+            """,
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
             "low_overlap_threshold": """
                 Used for distinction between strong / weak (low_overlap) matches

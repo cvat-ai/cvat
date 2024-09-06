@@ -1,14 +1,16 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from contextlib import ExitStack
+from datetime import timedelta
 import io
 from itertools import product
 import os
 import random
 import shutil
+import sysconfig
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -23,8 +25,10 @@ import copy
 import json
 
 import av
+import django_rq
 import numpy as np
 from pdf2image import convert_from_bytes
+from pyunpack import Archive
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
@@ -90,7 +94,6 @@ def create_db_task(data):
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_dirname(), ignore_errors=True)
     os.makedirs(db_task.get_dirname())
-    os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
     db_task.save()
 
@@ -549,25 +552,25 @@ class ServerLogsAPITestCase(ApiTestBase):
         create_db_users(cls)
         cls.data = {
             "events": [{
-                "scope": "test:scope1",
-                "timestamp": "2019-01-29T12:34:56.000000Z",
-                "task": 1,
-                "job": 1,
-                "proj": 2,
+                "scope": "debug:info",
+                "timestamp": "2024-05-30T17:05:13.776Z",
+                "task_id": 1,
+                "job_id": 1,
+                "project_id": 2,
                 "organization": 2,
                 "count": 1,
                 "payload": json.dumps({
-                    "client_id": 12321235123,
+                    "client_id": 123456,
                     "message": "just test message",
                     "name": "add point",
                     "is_active": True,
                 }),
             },
             {
-                "timestamp": "2019-02-24T12:34:56.000000Z",
-                "scope": "test:scope2",
+                "timestamp": "2024-05-30T17:05:14.776Z",
+                "scope": "debug:info",
             }],
-            "timestamp": "2019-02-24T12:34:58.000000Z",
+            "timestamp": "2024-05-30T17:05:15.776Z",
         }
 
 
@@ -3007,6 +3010,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
                             "owner",
                             "project_id",
                             "assignee",
+                            "assignee_updated_date",
                             "created_date",
                             "updated_date",
                             "data",
@@ -3030,6 +3034,33 @@ class TaskImportExportAPITestCase(ApiTestBase):
 
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
+
+    def test_can_remove_export_cache_automatically_after_successful_export(self):
+        self._create_tasks()
+        task_id = self.tasks[0]["id"]
+        user = self.admin
+
+        with mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(hours=10)):
+            response = self._run_api_v2_tasks_id_export(task_id, user)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            response = self._run_api_v2_tasks_id_export(task_id, user)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
+        scheduled_jobs = list(scheduler.get_jobs())
+        cleanup_job = next(
+            j for j in scheduled_jobs if j.func_name.endswith('.engine.backup._clear_export_cache')
+        )
+
+        export_path = cleanup_job.kwargs['file_path']
+        self.assertTrue(os.path.isfile(export_path))
+
+        from cvat.apps.engine.backup import _clear_export_cache
+        _clear_export_cache(**cleanup_job.kwargs)
+
+        self.assertFalse(os.path.isfile(export_path))
+
 
 def generate_random_image_file(filename):
     gen = random.SystemRandom()
@@ -3186,6 +3217,18 @@ class TaskDataAPITestCase(ApiTestBase):
                     data = ValidateDimension.get_pcd_properties(file)
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
         cls._share_image_sizes[filename] = image_sizes
+
+        filename = "test_rar.rar"
+        source_path = os.path.join(os.path.dirname(__file__), 'assets', filename)
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        shutil.copyfile(source_path, path)
+        image_sizes = []
+        images = cls._extract_rar_archive(source_path)
+        for [f, image] in images:
+            width, height = image.size
+            image_sizes.append((width, height))
+        cls._share_image_sizes[filename] = image_sizes
+        cls._share_files.append(filename)
 
         filename = "test_velodyne_points.zip"
         path = os.path.join(os.path.dirname(__file__), 'assets', filename)
@@ -3365,6 +3408,17 @@ class TaskDataAPITestCase(ApiTestBase):
             for f in sorted(chunk.namelist())
         ]
 
+    @staticmethod
+    def _extract_rar_archive(archive):
+        with tempfile.TemporaryDirectory(dir=settings.TMP_FILES_ROOT) as archive_dir:
+            patool_path = os.path.join(sysconfig.get_path('scripts'), 'patool')
+            Archive(archive).extractall_patool(archive_dir, patool_path)
+
+            images = [(image, Image.open(os.path.join(archive_dir, image)))
+                for image in os.listdir(archive_dir)
+            ]
+            return images
+
     @classmethod
     def _extract_zip_chunk(cls, chunk_buffer, dimension=DimensionType.DIM_2D):
         return [f[1] for f in cls._extract_zip_archive(chunk_buffer, dimension=dimension)]
@@ -3520,6 +3574,10 @@ class TaskDataAPITestCase(ApiTestBase):
                     if zipfile.is_zipfile(f):
                         for frame_name, frame in self._extract_zip_archive(f, dimension=dimension):
                             source_images[frame_name] = frame
+                    elif isinstance(f, str) and f.endswith('.rar'):
+                        archive_frames = self._extract_rar_archive(f)
+                        for fn, frame in archive_frames:
+                            source_images[fn] = frame
                     elif isinstance(f, str) and f.endswith('.pdf'):
                         with open(f, 'rb') as pdf_file:
                             for i, frame in enumerate(convert_from_bytes(pdf_file.read(), fmt='png')):
@@ -4562,6 +4620,28 @@ class TaskDataAPITestCase(ApiTestBase):
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                     image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
                     send_data_callback=_send_data_and_fail)
+
+    def _test_api_v2_tasks_id_data_create_can_use_server_rar(self, user):
+        task_spec = {
+            "name": 'task rar in the shared folder #32',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data = {
+            "server_files[0]": "test_rar.rar",
+            "image_quality": 75,
+            "copy_data": False,
+            "use_cache": True,
+        }
+        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
     def _test_api_v2_tasks_id_data_create(self, user):
         method_list = {
@@ -6034,6 +6114,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "YOLO 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
+            elif annotation_format == "YOLOv8 Detection 1.0":
+                annotations["shapes"] = rectangle_shapes_wo_attrs
+
+            elif annotation_format == "YOLOv8 Oriented Bounding Boxes 1.0":
+                annotations["shapes"] = rectangle_shapes_wo_attrs
+
+            elif annotation_format == "YOLOv8 Segmentation 1.0":
+                annotations["shapes"] = polygon_shapes_wo_attrs
+
             elif annotation_format == "COCO 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
@@ -6391,7 +6480,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     self.assertEqual(meta["task"]["name"], task["name"])
         elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name == "YOLO 1.1":
+        elif format_name in ["YOLO 1.1", "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0", "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0"]:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))

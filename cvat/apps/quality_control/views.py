@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,17 +22,17 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
-from cvat.apps.iam.permissions import (
-    AnnotationConflictPermission,
-    QualityReportPermission,
-    QualitySettingPermission,
-)
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
     QualitySettings,
+)
+from cvat.apps.quality_control.permissions import (
+    AnnotationConflictPermission,
+    QualityReportPermission,
+    QualitySettingPermission,
 )
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
@@ -45,7 +45,7 @@ from cvat.apps.quality_control.serializers import (
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
-        summary="Method returns a paginated list of annotation conflicts",
+        summary="List annotation conflicts in a quality report",
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -126,13 +126,13 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="quality_retrieve_report",  # the default produces the plural
-        summary="Method returns details of a quality report",
+        summary="Get quality report details",
         responses={
             "200": QualityReportSerializer,
         },
     ),
     list=extend_schema(
-        summary="Method returns a paginated list of quality reports",
+        summary="List quality reports",
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -221,7 +221,7 @@ class QualityReportViewSet(
 
     @extend_schema(
         operation_id="quality_create_report",
-        summary="Creates a quality report asynchronously and allows to check request status",
+        summary="Create a quality report",
         parameters=[
             OpenApiParameter(
                 CREATE_REPORT_RQ_ID_PARAMETER,
@@ -311,7 +311,9 @@ class QualityReportViewSet(
                     raise ValidationError("No report has been computed")
 
                 report = self.get_queryset().get(pk=return_value)
-                report_serializer = QualityReportSerializer(instance=report)
+                report_serializer = QualityReportSerializer(
+                    instance=report, context={"request": request}
+                )
                 return Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,
@@ -320,7 +322,7 @@ class QualityReportViewSet(
 
     @extend_schema(
         operation_id="quality_retrieve_report_data",
-        summary="Retrieve full contents of the report in JSON format",
+        summary="Get quality report contents",
         responses={"200": OpenApiTypes.OBJECT},
     )
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
@@ -333,13 +335,13 @@ class QualityReportViewSet(
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
-        summary="Method returns a paginated list of quality settings instances",
+        summary="List quality settings instances",
         responses={
             "200": QualitySettingsSerializer(many=True),
         },
     ),
     retrieve=extend_schema(
-        summary="Method returns details of the quality settings instance",
+        summary="Get quality settings instance details",
         parameters=[
             OpenApiParameter(
                 "id",
@@ -353,7 +355,7 @@ class QualityReportViewSet(
         },
     ),
     partial_update=extend_schema(
-        summary="Methods does a partial update of chosen fields in the quality settings instance",
+        summary="Update a quality settings instance",
         parameters=[
             OpenApiParameter(
                 "id",

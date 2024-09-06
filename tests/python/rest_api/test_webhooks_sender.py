@@ -208,7 +208,7 @@ class TestWebhookIntersection:
         assert response.status_code == HTTPStatus.CREATED
 
         project_id = response.json()["id"]
-        events_1 = ["create:task", "update:project"]
+        events_1 = ["create:task", "update:issue"]
         events_2 = ["create:task", "create:issue"]
         webhook_id_1 = create_webhook(events_1, "project", project_id=project_id)["id"]
         webhook_id_2 = create_webhook(events_2, "project", project_id=project_id)["id"]

@@ -1,25 +1,28 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
-from rest_framework import status, viewsets
-from rest_framework.response import Response
-from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema)
+from rest_framework import status, viewsets
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
 
-
-from cvat.apps.iam.permissions import EventsPermission
-from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.engine.log import vlogger
+from cvat.apps.events.permissions import EventsPermission
+from cvat.apps.events.serializers import ClientEventsSerializer
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+
 from .export import export
+from .handlers import handle_client_events_push
+
 
 class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
 
-    @extend_schema(summary='Method saves logs from a client on the server',
+    @extend_schema(summary='Log client events',
         methods=['POST'],
         description='Sends logs to the Clickhouse if it is connected',
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
@@ -31,15 +34,19 @@ class EventsViewSet(viewsets.ViewSet):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        for event in serializer.data["events"]:
-            message = JSONRenderer().render(event).decode('UTF-8')
+        handle_client_events_push(request, serializer.validated_data)
+        for event in serializer.validated_data["events"]:
+            message = JSONRenderer().render({
+                **event,
+                'timestamp': str(event["timestamp"].timestamp())
+            }).decode('UTF-8')
             vlogger.info(message)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(summary='Method returns csv log file ',
+    @extend_schema(summary='Get an event log',
         methods=['GET'],
-        description='Receive logs from the server',
+        description='The log is returned in the CSV format.',
         parameters=[
             OpenApiParameter('org_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Filter events by organization ID"),

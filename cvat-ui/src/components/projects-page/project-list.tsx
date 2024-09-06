@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import Pagination from 'antd/lib/pagination';
 
 import { getProjectsAsync } from 'actions/projects-actions';
 import { CombinedState, Project } from 'reducers';
-import dimensions from './dimensions';
+import dimensions from 'utils/dimensions';
 import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {
@@ -30,13 +30,31 @@ export default function ProjectListComponent(): JSX.Element {
         );
     }, [gettingQuery]);
 
+    const groupedProjects = projects.reduce(
+        (acc: Project[][], storage: Project, index: number): Project[][] => {
+            if (index && index % 4) {
+                acc[acc.length - 1].push(storage);
+            } else {
+                acc.push([storage]);
+            }
+            return acc;
+        },
+        [],
+    );
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-project-list-content'>
                 <Col className='cvat-projects-list' {...dimensions}>
-                    {projects.map(
-                        (project: Project): JSX.Element => (
-                            <ProjectItem key={project.id} projectInstance={project} />
+                    {groupedProjects.map(
+                        (projectInstances: Project[]): JSX.Element => (
+                            <Row key={projectInstances[0].id}>
+                                {projectInstances.map((project: Project) => (
+                                    <Col span={6} key={project.id}>
+                                        <ProjectItem key={project.id} projectInstance={project} />
+                                    </Col>
+                                ))}
+                            </Row>
                         ),
                     )}
                 </Col>

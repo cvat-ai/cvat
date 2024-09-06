@@ -1,8 +1,9 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import json
 import os
 import xml.etree.ElementTree as ET
@@ -10,7 +11,8 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from itertools import product
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
@@ -23,7 +25,12 @@ from PIL import Image
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, compare_annotations, create_task, export_dataset
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    compare_annotations,
+    create_task,
+    export_job_dataset,
+)
 
 
 def get_job_staff(job, tasks, projects):
@@ -80,7 +87,7 @@ class TestPostJobs:
         return response
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, task_mode):
+    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -90,6 +97,7 @@ class TestPostJobs:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -116,7 +124,7 @@ class TestPostJobs:
         assert job_frame_ids == gt_job_meta.included_frames
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, task_mode):
+    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, jobs, task_mode):
         user = admin_user
         job_frame_count = 3
         required_task_frame_count = job_frame_count + 1
@@ -127,6 +135,7 @@ class TestPostJobs:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > required_task_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
 
@@ -308,6 +317,33 @@ class TestPostJobs:
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.retrieve(job["id"])
             assert DeepDiff(job, json.loads(response.data), ignore_order=True) == {}
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_with_assignee(self, admin_user, tasks, jobs, users_by_name, assignee):
+        task = next(
+            t
+            for t in tasks
+            if t["size"] > 0
+            if all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+        )
+
+        spec = {
+            "task_id": task["id"],
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "frame_count": 1,
+            "assignee": users_by_name[assignee]["id"] if assignee else None,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            (job, _) = api_client.jobs_api.create(job_write_request=spec)
+
+            if assignee:
+                assert job.assignee.username == assignee
+                assert job.assignee_updated_date
+            else:
+                assert job.assignee is None
+                assert job.assignee_updated_date is None
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -574,9 +610,12 @@ class TestGetJobs:
     "restore_db_per_class"
 )
 class TestGetGtJobData:
-    @pytest.mark.usefixtures("restore_db_per_function")
+    def _delete_gt_job(self, user, gt_job_id):
+        with make_api_client(user) as api_client:
+            api_client.jobs_api.destroy(gt_job_id)
+
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_get_gt_job_meta(self, admin_user, tasks, task_mode):
+    def test_can_get_gt_job_meta(self, admin_user, tasks, jobs, task_mode, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -586,6 +625,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -595,10 +635,12 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -622,8 +664,7 @@ class TestGetGtJobData:
         else:
             assert False
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user):
+    def test_can_get_gt_job_meta_with_complex_frame_setup(self, admin_user, request):
         image_count = 50
         start_frame = 3
         stop_frame = image_count - 4
@@ -649,10 +690,12 @@ class TestGetGtJobData:
 
         task_frame_ids = range(start_frame, stop_frame, frame_step)
         job_frame_ids = list(task_frame_ids[::3])
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -674,7 +717,7 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_chunk(self, admin_user, tasks, task_mode, quality):
+    def test_can_get_gt_job_chunk(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -684,6 +727,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -693,13 +737,15 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         with make_api_client(admin_user) as api_client:
             (chunk_file, response) = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=0, quality=quality, type="chunk"
             )
             assert response.status == HTTPStatus.OK
+
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -724,26 +770,29 @@ class TestGetGtJobData:
                     assert image.size > (1, 1)
                     assert np.any(image_data != 0)
 
-    def _get_or_create_gt_job(self, user, task_id, frames):
+    def _create_gt_job(self, user, task_id, frames):
+        with make_api_client(user) as api_client:
+            job_spec = {
+                "task_id": task_id,
+                "type": "ground_truth",
+                "frame_selection_method": "manual",
+                "frames": frames,
+            }
+
+            (gt_job, _) = api_client.jobs_api.create(job_spec)
+
+        return gt_job
+
+    def _get_gt_job(self, user, task_id):
         with make_api_client(user) as api_client:
             (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
-            if task_jobs.results:
-                gt_job = task_jobs.results[0]
-            else:
-                job_spec = {
-                    "task_id": task_id,
-                    "type": "ground_truth",
-                    "frame_selection_method": "manual",
-                    "frames": frames,
-                }
-
-                (gt_job, _) = api_client.jobs_api.create(job_spec)
+            gt_job = task_jobs.results[0]
 
         return gt_job
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_frame(self, admin_user, tasks, task_mode, quality):
+    def test_can_get_gt_job_frame(self, admin_user, tasks, jobs, task_mode, quality, request):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -753,6 +802,7 @@ class TestGetGtJobData:
             and not t["organization"]
             and t["mode"] == task_mode
             and t["size"] > job_frame_count
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
@@ -762,7 +812,7 @@ class TestGetGtJobData:
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
         ]
-        gt_job = self._get_or_create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -786,6 +836,8 @@ class TestGetGtJobData:
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
+
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -855,7 +907,7 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1102,8 +1154,8 @@ class TestPatchJobAnnotations:
         self._check_response(username, jid, expect_success, data)
 
     @pytest.mark.parametrize("job_type", ("ground_truth", "annotation"))
-    def test_can_update_annotations(self, admin_user, jobs, request_data, job_type):
-        job = next(j for j in jobs if j["type"] == job_type)
+    def test_can_update_annotations(self, admin_user, jobs_with_shapes, request_data, job_type):
+        job = next(j for j in jobs_with_shapes if j["type"] == job_type)
         data = request_data(job["id"])
         self._check_response(admin_user, job["id"], True, data)
 
@@ -1185,13 +1237,43 @@ class TestPatchJob:
                     DeepDiff(
                         expected_data(jid, assignee),
                         json.loads(response.data),
-                        exclude_paths="root['updated_date']",
+                        exclude_paths=["root['updated_date']", "root['assignee_updated_date']"],
                         ignore_order=True,
                     )
                     == {}
                 )
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
+
+    @pytest.mark.parametrize("has_old_assignee", [False, True])
+    @pytest.mark.parametrize("new_assignee", [None, "same", "different"])
+    def test_can_update_assignee_updated_date_on_assignee_updates(
+        self, admin_user, jobs, users, has_old_assignee, new_assignee
+    ):
+        job = next(j for j in jobs if bool(j.get("assignee")) == has_old_assignee)
+
+        old_assignee_id = (job.get("assignee") or {}).get("id")
+
+        new_assignee_id = None
+        if new_assignee == "same":
+            new_assignee_id = old_assignee_id
+        elif new_assignee == "different":
+            new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
+
+        with make_api_client(admin_user) as api_client:
+            (updated_job, _) = api_client.jobs_api.partial_update(
+                job["id"], patched_job_write_request={"assignee": new_assignee_id}
+            )
+
+            if new_assignee_id == old_assignee_id:
+                assert updated_job.assignee_updated_date == job["assignee_updated_date"]
+            else:
+                assert updated_job.assignee_updated_date != job["assignee_updated_date"]
+
+            if new_assignee_id:
+                assert updated_job.assignee.id == new_assignee_id
+            else:
+                assert updated_job.assignee is None
 
 
 def _check_coco_job_annotations(content, values_to_be_checked):
@@ -1244,49 +1326,97 @@ def _check_cvat_for_video_job_annotations(content, values_to_be_checked):
         assert len(list(document.iter("track"))) == values_to_be_checked["tracks_length"]
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestJobDataset:
-    def _export_dataset(self, username, jid, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(api_client.jobs_api.retrieve_dataset_endpoint, id=jid, **kwargs)
 
-    def _export_annotations(self, username, jid, **kwargs):
-        with make_api_client(username) as api_client:
-            return export_dataset(
-                api_client.jobs_api.retrieve_annotations_endpoint, id=jid, **kwargs
-            )
+    @pytest.fixture(autouse=True)
+    def setup(self, tasks):
+        self.tasks = tasks
 
-    def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List):
-        job = jobs_with_shapes[0]
-        response = self._export_dataset(admin_user, job["id"])
-        assert response.data
+    @staticmethod
+    def _test_export_dataset(
+        username: str,
+        jid: int,
+        *,
+        api_version: Union[int, Tuple[int]],
+        local_download: bool = True,
+        **kwargs,
+    ) -> Optional[bytes]:
+        dataset = export_job_dataset(username, api_version, save_images=True, id=jid, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
 
-    def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
-        job_id, username = next(
+        return dataset
+
+    @staticmethod
+    def _test_export_annotations(
+        username: str, jid: int, *, api_version: int, local_download: bool = True, **kwargs
+    ) -> Optional[bytes]:
+        dataset = export_job_dataset(username, api_version, save_images=False, id=jid, **kwargs)
+        if local_download:
+            assert zipfile.is_zipfile(io.BytesIO(dataset))
+        else:
+            assert dataset is None
+
+        return dataset
+
+    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
+    @pytest.mark.parametrize(
+        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
+    )
+    def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
+        self,
+        admin_user: str,
+        jobs_with_shapes: List,
+        filter_tasks,
+        api_version: Tuple[int],
+        local_download: bool,
+    ):
+        filter_ = "target_storage__location"
+        if local_download:
+            filter_ = "exclude_" + filter_
+
+        task_ids = [t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})]
+
+        job = next(j for j in jobs_with_shapes if j["task_id"] in task_ids)
+        self._test_export_dataset(
+            admin_user,
+            job["id"],
+            api_version=api_version,
+            local_download=local_download,
+        )
+
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_non_admin_can_export_dataset(self, users, jobs_with_shapes, api_version: int):
+        job, username = next(
             (
-                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                (job, self.tasks[job["task_id"]]["owner"]["username"])
                 for job in jobs_with_shapes
-                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and tasks[job["task_id"]]["target_storage"] is None
-                and tasks[job["task_id"]]["organization"] is None
+                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and self.tasks[job["task_id"]]["target_storage"] is None
+                and self.tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_dataset(username, job_id)
-        assert response.data
+        self._test_export_dataset(username, job["id"], api_version=api_version)
 
-    def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
-        job_id, username = next(
+    @pytest.mark.parametrize("api_version", (1, 2))
+    def test_non_admin_can_export_annotations(self, users, jobs_with_shapes, api_version: int):
+        job, username = next(
             (
-                (job["id"], tasks[job["task_id"]]["owner"]["username"])
+                (job, self.tasks[job["task_id"]]["owner"]["username"])
                 for job in jobs_with_shapes
-                if "admin" not in users[tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and tasks[job["task_id"]]["target_storage"] is None
-                and tasks[job["task_id"]]["organization"] is None
+                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+                and self.tasks[job["task_id"]]["target_storage"] is None
+                and self.tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_annotations(username, job_id)
-        assert response.data
 
+        self._test_export_annotations(username, job["id"], api_version=api_version)
+
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
@@ -1302,15 +1432,15 @@ class TestJobDataset:
         anno_format,
         anno_file_name,
         check_func,
-        tasks,
         jobs,
         annotations,
+        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
 
         values_to_be_checked = {
-            "task_size": tasks[job_data["task_id"]]["size"],
+            "task_size": self.tasks[job_data["task_id"]]["size"],
             # NOTE: data step is not stored in assets, default = 1
             "job_size": job_data["stop_frame"] - job_data["start_frame"] + 1,
             "start_frame": job_data["start_frame"],
@@ -1320,15 +1450,21 @@ class TestJobDataset:
             "mode": job_data["mode"],
         }
 
-        response = self._export_dataset(username, jid, format=anno_format)
-        assert response.data
-        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+        dataset = self._test_export_dataset(
+            username,
+            jid,
+            api_version=api_version,
+            format=anno_format,
+        )
+
+        with zipfile.ZipFile(BytesIO(dataset)) as zip_file:
             assert (
                 len(zip_file.namelist()) == values_to_be_checked["job_size"] + 1
             )  # images + annotation file
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
 
+    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username", ["admin1"])
     @pytest.mark.parametrize("jid", [25, 26])
     @pytest.mark.parametrize(
@@ -1344,13 +1480,21 @@ class TestJobDataset:
         ],
     )
     def test_export_job_among_several_jobs_in_task(
-        self, username, jid, anno_format, anno_file_name, check_func, tasks, jobs, annotations
+        self,
+        username,
+        jid,
+        anno_format,
+        anno_file_name,
+        check_func,
+        jobs,
+        annotations,
+        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
 
         values_to_be_checked = {
-            "task_size": tasks[job_data["task_id"]]["size"],
+            "task_size": self.tasks[job_data["task_id"]]["size"],
             # NOTE: data step is not stored in assets, default = 1
             "job_size": job_data["stop_frame"] - job_data["start_frame"] + 1,
             "start_frame": job_data["start_frame"],
@@ -1360,9 +1504,14 @@ class TestJobDataset:
             "mode": job_data["mode"],
         }
 
-        response = self._export_dataset(username, jid, format=anno_format)
-        assert response.data
-        with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
+        dataset = self._test_export_dataset(
+            username,
+            jid,
+            api_version=api_version,
+            format=anno_format,
+        )
+
+        with zipfile.ZipFile(BytesIO(dataset)) as zip_file:
             assert (
                 len(zip_file.namelist()) == values_to_be_checked["job_size"] + 1
             )  # images + annotation file

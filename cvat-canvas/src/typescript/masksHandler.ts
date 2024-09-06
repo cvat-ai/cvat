@@ -90,12 +90,12 @@ export class MasksHandlerImpl implements MasksHandler {
                 opacity: 0.75,
                 left: this.latestMousePos.x - this.tool.size / 2,
                 top: this.latestMousePos.y - this.tool.size / 2,
-                stroke: 'white',
                 strokeWidth: 1,
+                stroke: 'white',
             };
             this.brushMarker = this.tool.form === 'circle' ? new fabric.Circle({
                 ...common,
-                radius: this.tool.size / 2,
+                radius: Math.round(this.tool.size / 2),
             }) : new fabric.Rect({
                 ...common,
                 width: this.tool.size,
@@ -138,7 +138,6 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = this.createDrawnObjectsArray();
-        this.onDrawDone(null);
     }
 
     private releaseEdit(): void {
@@ -202,8 +201,8 @@ export class MasksHandlerImpl implements MasksHandler {
             .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
                 acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
                 acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
-                acc.bottom = Math.floor(Math.min(height, Math.max(rect.top + rect.height, acc.bottom)));
-                acc.right = Math.floor(Math.min(width, Math.max(rect.left + rect.width, acc.right)));
+                acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
+                acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
                 return acc;
             }, {
                 left: Number.MAX_SAFE_INTEGER,
@@ -474,7 +473,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 if (tool.form === 'circle') {
                     shape = new fabric.Circle({
                         ...shapeProperties,
-                        radius: tool.size / 2,
+                        radius: Math.round(tool.size / 2),
                     });
                 } else if (tool.form === 'square') {
                     shape = new fabric.Rect({
@@ -573,7 +572,14 @@ export class MasksHandlerImpl implements MasksHandler {
                                 image.globalCompositeOperation = 'xor';
                                 image.opacity = 0.5;
                                 this.canvas.add(image);
-                                this.drawnObjects.push(image);
+                                /*
+                                    when we paste a mask, we do not need additional logic implemented
+                                    in MasksHandlerImpl::createDrawnObjectsArray.push using JS Proxy
+                                    because we will not work with any drawing tools here, and it will cause the issue
+                                    because this.tools may be undefined here
+                                    when it is used inside the push custom implementation
+                                */
+                                this.drawnObjects = [image];
                                 this.canvas.renderAll();
                             } finally {
                                 resolve();
@@ -614,6 +620,8 @@ export class MasksHandlerImpl implements MasksHandler {
                             ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
                         }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
                     }
+                } else {
+                    this.onDrawDone(null);
                 }
             } finally {
                 this.releaseDraw();
@@ -627,6 +635,8 @@ export class MasksHandlerImpl implements MasksHandler {
                     enabled: true,
                     shapeType: 'mask',
                 };
+
+                this.onDrawRepeat({ enabled: true, shapeType: 'mask' });
                 this.onDrawRepeat(newDrawData);
                 return;
             }

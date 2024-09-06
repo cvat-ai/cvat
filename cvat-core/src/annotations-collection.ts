@@ -24,12 +24,6 @@ import {
 import AnnotationHistory from './annotations-history';
 import { Job } from './session';
 
-interface ImportedCollection {
-    tags: Tag[],
-    shapes: Shape[],
-    tracks: Track[],
-}
-
 const validateAttributesList = (
     attributes: { spec_id: number, value: string }[],
 ): { spec_id: number, value: string }[] => {
@@ -116,7 +110,11 @@ export default class Collection {
         };
     }
 
-    import(data: Omit<SerializedCollection, 'version'>): ImportedCollection {
+    public import(data: Omit<SerializedCollection, 'version'>): {
+        tags: Tag[];
+        shapes: Shape[];
+        tracks: Track[];
+    } {
         const result = {
             tags: [],
             shapes: [],
@@ -159,7 +157,7 @@ export default class Collection {
         return result;
     }
 
-    export(): Omit<SerializedCollection, 'version'> {
+    public export(): Omit<SerializedCollection, 'version'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
@@ -181,7 +179,7 @@ export default class Collection {
         return data;
     }
 
-    public get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+    public get(frame: number, allTracks: boolean, filters: object[]): ObjectState[] {
         const { tracks } = this;
         const shapes = this.shapes[frame] || [];
         const tags = this.tags[frame] || [];
@@ -215,7 +213,7 @@ export default class Collection {
         return objectStates;
     }
 
-    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
+    private _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
         const keyframes: Record<number, SerializedTrack['shapes'][0]> = {}; // frame: position
         const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
@@ -398,7 +396,7 @@ export default class Collection {
         return track;
     }
 
-    merge(objectStates: ObjectState[]): void {
+    public merge(objectStates: ObjectState[]): void {
         checkObjectType('shapes to merge', objectStates, null, Array);
         if (!objectStates.length) return;
         const objectsForMerge = objectStates.map((state) => {
@@ -455,7 +453,7 @@ export default class Collection {
         );
     }
 
-    _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
+    private _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
         const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
@@ -523,7 +521,7 @@ export default class Collection {
         return [prev, next];
     }
 
-    split(objectState: ObjectState, frame: number): void {
+    public split(objectState: ObjectState, frame: number): void {
         checkObjectType('object state', objectState, null, ObjectState);
         checkObjectType('frame', frame, 'integer', null);
 
@@ -564,7 +562,7 @@ export default class Collection {
         );
     }
 
-    group(objectStates: ObjectState[], reset: boolean): number {
+    public group(objectStates: ObjectState[], reset: boolean): number {
         checkObjectType('shapes to group', objectStates, null, Array);
 
         const objectsForGroup = objectStates.map((state) => {
@@ -605,7 +603,7 @@ export default class Collection {
         return groupIdx;
     }
 
-    join(objectStates: ObjectState[], points: number[]): void {
+    public join(objectStates: ObjectState[], points: number[]): void {
         checkObjectType('shapes to join', objectStates, null, Array);
         checkObjectType('joined rle mask', points, null, Array);
 
@@ -690,7 +688,7 @@ export default class Collection {
         }
     }
 
-    slice(state: ObjectState, results: number[][]): void {
+    public slice(state: ObjectState, results: number[][]): void {
         if (results.length !== 2) {
             throw new Error('Not supported slicing count');
         }
@@ -774,37 +772,14 @@ export default class Collection {
         );
     }
 
-    clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
-        if (startframe !== undefined && endframe !== undefined) {
-            // If only a range of annotations need to be cleared
-            for (let frame = startframe; frame <= endframe; frame++) {
-                this.shapes[frame] = [];
-                this.tags[frame] = [];
-            }
-            const { tracks } = this;
-            tracks.forEach((track) => {
-                if (track.frame <= endframe) {
-                    if (delTrackKeyframesOnly) {
-                        for (const keyframe of Object.keys(track.shapes)) {
-                            if (+keyframe >= startframe && +keyframe <= endframe) {
-                                delete track.shapes[keyframe];
-                                ((track as unknown as SkeletonTrack).elements || []).forEach((element) => {
-                                    if (keyframe in element.shapes) {
-                                        delete element.shapes[keyframe];
-                                        element.updated = Date.now();
-                                    }
-                                });
-                                track.updated = Date.now();
-                            }
-                        }
-                    } else if (track.frame >= startframe) {
-                        const index = tracks.indexOf(track);
-                        if (index > -1) { tracks.splice(index, 1); }
-                    }
-                }
-            });
-        } else if (startframe === undefined && endframe === undefined) {
-            // If all annotations need to be cleared
+    public clear(options?: {
+        startFrame?: number;
+        stopFrame?: number;
+        delTrackKeyframesOnly?: boolean;
+    }): void {
+        const { startFrame, stopFrame, delTrackKeyframesOnly } = options ?? {};
+
+        if (typeof startFrame === 'undefined' && typeof stopFrame === 'undefined') {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
@@ -812,13 +787,45 @@ export default class Collection {
 
             this.flush = true;
         } else {
-            // If inputs provided were wrong
-            throw Error('Could not remove the annotations, please provide both inputs or' +
-                ' leave the inputs below empty to remove all the annotations from this job');
+            const from = startFrame ?? 0;
+            const to = stopFrame ?? this.stopFrame;
+
+            // If only a range of annotations need to be cleared
+            for (let frame = from; frame <= to; frame++) {
+                this.shapes[frame] = [];
+                this.tags[frame] = [];
+            }
+
+            this.tracks.slice(0).forEach((track) => {
+                if (track.frame <= to) {
+                    if (delTrackKeyframesOnly) {
+                        for (const keyframe of Object.keys(track.shapes)) {
+                            if (+keyframe >= from && +keyframe <= to) {
+                                delete track.shapes[keyframe];
+                                if (track instanceof SkeletonTrack) {
+                                    track.elements.forEach((element) => {
+                                        if (keyframe in element.shapes) {
+                                            delete element.shapes[keyframe];
+                                            element.updated = Date.now();
+                                        }
+                                    });
+                                }
+                                track.updated = Date.now();
+                            }
+                        }
+
+                        if (Object.keys(track.shapes).length === 0) {
+                            this.tracks.splice(this.tracks.indexOf(track), 1);
+                        }
+                    } else if (track.frame >= from) {
+                        this.tracks.splice(this.tracks.indexOf(track), 1);
+                    }
+                }
+            });
         }
     }
 
-    statistics(): Statistics {
+    public statistics(): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -958,7 +965,7 @@ export default class Collection {
         return new Statistics(labels, total);
     }
 
-    put(objectStates: ObjectState[]): number[] {
+    public put(objectStates: ObjectState[]): number[] {
         checkObjectType('shapes for put', objectStates, null, Array);
         const constructed = {
             shapes: [],
@@ -1028,7 +1035,7 @@ export default class Collection {
                         z_order: state.zOrder,
                         source: state.source,
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
-                            attributes: [],
+                            attributes: validateAttributesList(objectAttributesAsList(element)),
                             frame: element.frame,
                             group: 0,
                             label_id: element.label.id,
@@ -1149,7 +1156,7 @@ export default class Collection {
         return importedArray.map((value) => value.clientID);
     }
 
-    select(objectStates: ObjectState[], x: number, y: number): {
+    public select(objectStates: ObjectState[], x: number, y: number): {
         state: ObjectState,
         distance: number | null,
     } {
@@ -1195,7 +1202,13 @@ export default class Collection {
                     throw new ArgumentError(`Unknown shape type "${state.shapeType}"`);
             }
 
-            const distance = distanceMetric(state.points, x, y, state.rotation);
+            let points = [];
+            if (state.shapeType === ShapeType.SKELETON) {
+                points = state.elements.filter((el) => !el.outside && !el.hidden).map((el) => el.points).flat();
+            } else {
+                points = state.points;
+            }
+            const distance = distanceMetric(points, x, y, state.rotation);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
@@ -1208,17 +1221,30 @@ export default class Collection {
         };
     }
 
-    searchEmpty(frameFrom: number, frameTo: number): number | null {
+    private _searchEmpty(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
         const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
                 continue;
             }
+
             if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
                 continue;
             }
+
             const filteredTracks = this.tracks.filter((track) => !track.removed);
             let found = false;
             for (const track of filteredTracks) {
@@ -1241,14 +1267,58 @@ export default class Collection {
         return null;
     }
 
-    search(filters: string[], frameFrom: number, frameTo: number): number | null {
-        const sign = Math.sign(frameTo - frameFrom);
-        const filtersStr = JSON.stringify(filters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+    public search(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+            annotationsFilters?: object[];
+            generalFilters?: {
+                isEmptyFrame?: boolean;
+            };
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
+        let { annotationsFilters } = searchParameters;
 
+        if ('generalFilters' in searchParameters) {
+            // if we are looking for en empty frame, run a dedicated algorithm
+            if (searchParameters.generalFilters.isEmptyFrame) {
+                return this._searchEmpty(frameFrom, frameTo, { allowDeletedFrames });
+            }
+
+            // not empty frames corresponds to default behaviour of the function with empty annotation filters
+            annotationsFilters = [];
+        }
+
+        const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+
+        // if not looking for an emty frame nor frame with annotations, return the next frame
+        // check if deleted frames are allowed additionally
+        if (!annotationsFilters) {
+            let frame = frameFrom;
+            while (predicate(frame)) {
+                if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                    frame = update(frame);
+                    continue;
+                }
+
+                return frame;
+            }
+
+            return null;
+        }
+
+        const filtersStr = JSON.stringify(annotationsFilters);
+        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             // First prepare all data for the frame
             // Consider all shapes, tags, and not outside tracks that have keyframe here
             // In particular consider first and last frame as keyframes for all tracks
@@ -1267,13 +1337,8 @@ export default class Collection {
                 .filter((track) => !track.removed);
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
-            // Nothing to filtering, go to the next iteration
-            if (!statesData.length) {
-                continue;
-            }
-
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, filters);
+            const filtered = this.annotationsFilter.filter(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }

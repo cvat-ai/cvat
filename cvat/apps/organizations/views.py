@@ -14,9 +14,9 @@ from rest_framework.response import Response
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 
-from cvat.apps.iam.permissions import (
-    InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.organizations.permissions import (
+    InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
@@ -31,29 +31,29 @@ from .serializers import (
 @extend_schema(tags=['organizations'])
 @extend_schema_view(
     retrieve=extend_schema(
-        summary='Method returns details of an organization',
+        summary='Get organization details',
         responses={
             '200': OrganizationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of organizations',
+        summary='List organizations',
         responses={
             '200': OrganizationReadSerializer(many=True),
         }),
     partial_update=extend_schema(
-        summary='Methods does a partial update of chosen fields in an organization',
+        summary='Update an organization',
         request=OrganizationWriteSerializer(partial=True),
         responses={
             '200': OrganizationReadSerializer, # check OrganizationWriteSerializer.to_representation
         }),
     create=extend_schema(
-        summary='Method creates an organization',
+        summary='Create an organization',
         request=OrganizationWriteSerializer,
         responses={
             '201': OrganizationReadSerializer, # check OrganizationWriteSerializer.to_representation
         }),
     destroy=extend_schema(
-        summary='Method deletes an organization',
+        summary='Delete an organization',
         responses={
             '204': OpenApiResponse(description='The organization has been deleted'),
         })
@@ -100,23 +100,23 @@ class OrganizationViewSet(viewsets.GenericViewSet,
 @extend_schema(tags=['memberships'])
 @extend_schema_view(
     retrieve=extend_schema(
-        summary='Method returns details of a membership',
+        summary='Get membership details',
         responses={
             '200': MembershipReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of memberships',
+        summary='List memberships',
         responses={
             '200': MembershipReadSerializer(many=True),
         }),
     partial_update=extend_schema(
-        summary='Methods does a partial update of chosen fields in a membership',
+        summary='Update a membership',
         request=MembershipWriteSerializer(partial=True),
         responses={
             '200': MembershipReadSerializer, # check MembershipWriteSerializer.to_representation
         }),
     destroy=extend_schema(
-        summary='Method deletes a membership',
+        summary='Delete a membership',
         responses={
             '204': OpenApiResponse(description='The membership has been deleted'),
         })
@@ -151,37 +151,37 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 @extend_schema(tags=['invitations'])
 @extend_schema_view(
     retrieve=extend_schema(
-        summary='Method returns details of an invitation',
+        summary='Get invitation details',
         responses={
             '200': InvitationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of invitations',
+        summary='List invitations',
         responses={
             '200': InvitationReadSerializer(many=True),
         }),
     partial_update=extend_schema(
-        summary='Methods does a partial update of chosen fields in an invitation',
+        summary='Update an invitation',
         request=InvitationWriteSerializer(partial=True),
         responses={
             '200': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
     create=extend_schema(
-        summary='Method creates an invitation',
+        summary='Create an invitation',
         request=InvitationWriteSerializer,
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
     destroy=extend_schema(
-        summary='Method deletes an invitation',
+        summary='Delete an invitation',
         responses={
             '204': OpenApiResponse(description='The invitation has been deleted'),
         }),
     accept=extend_schema(
         operation_id='invitations_accept',
         request=None,
-        summary='Method registers user and accepts invitation to organization',
+        summary='Accept an invitation',
         responses={
             '200': OpenApiResponse(response=AcceptInvitationReadSerializer, description='The invitation is accepted'),
             '400': OpenApiResponse(description='The invitation is expired or already accepted'),
@@ -189,13 +189,13 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     decline=extend_schema(
         operation_id='invitations_decline',
         request=None,
-        summary='Method declines the invitation to organization',
+        summary='Decline an invitation',
         responses={
             '204': OpenApiResponse(description='The invitation has been declined'),
         }),
     resend=extend_schema(
         operation_id='invitations_resend',
-        summary='Method resends the invitation to organization',
+        summary='Resend an invitation',
         request=None,
         responses={
             '204': OpenApiResponse(description='Invitation has been sent'),

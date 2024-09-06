@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -60,28 +60,33 @@
 
         border: none;
         margin-bottom: 0;
-        padding-top: 25px;
-
-        .ant-tabs-tab {
-            background: $transparent-color;
-            border: none;
-
-            &:nth-child(1) {
-                margin-left: 5px;
-            }
-        }
 
         .ant-tabs-tab.ant-tabs-tab-active {
+            opacity: 1;
             background: $objects-bar-tabs-color;
         }
+
+        .ant-tabs-tab {
+            padding: $grid-unit-size $grid-unit-size * 2 $grid-unit-size $grid-unit-size * 2;
+            background: none;
+            border: none;
+            user-select: none;
+            border-radius: $grid-unit-size $grid-unit-size 0 0;
+        }
     }
+}
+
+.cvat-objects-sidebar-labels-list-header {
+    background: $objects-bar-tabs-color;
+    padding: $grid-unit-size;
+    border-bottom: 1px solid $border-color-1;
 }
 
 .cvat-objects-sidebar-issues-list-header {
     background: $objects-bar-tabs-color;
     padding: $grid-unit-size;
-    height: $grid-unit-size * 4;
     box-sizing: border-box;
+    border-bottom: 1px solid $border-color-1;
 
     > div > div {
         > span[role='img'] {
@@ -103,9 +108,8 @@
 
 .cvat-objects-sidebar-issues-list {
     background-color: $background-color-2;
-    height: calc(100% - 32px);
-    overflow-y: auto;
-    overflow-x: hidden;
+    height: calc(100% - $grid-unit-size * 4);
+    overflow: hidden auto;
 }
 
 .cvat-objects-sidebar-issue-item {
@@ -164,26 +168,32 @@
 
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
-    padding: 5px;
+    padding: $grid-unit-size $grid-unit-size * 2 $grid-unit-size $grid-unit-size * 2;
+    line-height: $grid-unit-size * 3;
+    border-bottom: 1px solid $border-color-1;
 
-    > div:nth-child(1) {
-        margin-top: $grid-unit-size;
+    > div {
+        > div:nth-child(1) {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
 
-        > div {
-            text-align: center;
-            margin: 0 2px;
-
-            > span[role='img'] {
-                @extend .cvat-object-sidebar-icon;
+            .cvat-objects-sidebar-ordering-selector {
+                margin-left: $grid-unit-size;
+                width: $grid-unit-size * 16;
             }
+        }
 
-            &:last-child {
-                text-align: right;
+        > div:nth-child(2) {
+            width: 100%;
+            margin-top: $grid-unit-size;
 
-                > .cvat-objects-sidebar-ordering-selector {
+            span[role='img'] {
+                &:not(:first-child) {
                     margin-left: $grid-unit-size;
-                    width: 60%;
                 }
+
+                @extend .cvat-object-sidebar-icon;
             }
         }
     }
@@ -195,7 +205,7 @@
 
 .cvat-objects-sidebar-states-list {
     background-color: $background-color-2;
-    height: calc(100% - 50px);
+    height: calc(100% - $grid-unit-size * 9);
     overflow-y: auto;
 }
 
@@ -204,27 +214,25 @@
 }
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
-    border-top: 2px solid $object-item-border-color;
-    border-right: 2px solid $object-item-border-color;
-    border-bottom: 2px solid $object-item-border-color;
-    padding: 3px 1px 1px 3px;
-}
-
-.cvat-objects-sidebar-state-item-color,
-.cvat-objects-sidebar-label-item-color {
+    box-shadow: $box-shadow-base;
     border: 1px solid $object-item-border-color;
-    width: 7px;
-    opacity: 1;
-
-    &:hover {
-        opacity: 0.7;
-    }
 }
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
-    padding: 5px 3px 3px;
-    opacity: 1;
+    transition: box-shadow $box-shadow-transition;
+    border: 1px solid $border-color-1;
+    padding: $grid-unit-size * 0.5;
+    margin-left: $grid-unit-size * 0.25;
+    margin-right: $grid-unit-size * 0.25;
+
+    &:not(:first-child) {
+        margin-top: $grid-unit-size * 0.25;
+    }
+
+    &:not(:last-child) {
+        margin-bottom: $grid-unit-size * 0.25;
+    }
 
     > div:nth-child(1) {
         > div:nth-child(1) {
@@ -232,8 +240,6 @@
         }
 
         > div:nth-child(3) > span {
-            @extend .cvat-object-sidebar-icon;
-
             font-size: 25px;
         }
 
@@ -303,7 +309,7 @@
 
 .cvat-object-item-radio-attribute {
     border: 1px double $border-color-hover;
-    border-radius: 7px;
+    border-radius: $border-radius-base;
 
     > legend {
         text-align: center;
@@ -334,16 +340,17 @@
 
 .cvat-objects-sidebar-label-active-item {
     background: $active-label-background-color;
-    border-top: 2px solid $object-item-border-color;
-    border-right: 2px solid $object-item-border-color;
-    border-bottom: 2px solid $object-item-border-color;
-    padding: 3px 1px 1px 3px;
+    box-shadow: $box-shadow-base;
+    border: 1px solid $object-item-border-color;
 }
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
-    border-bottom: 1px solid $border-color-1;
-    padding: 5px 3px 3px;
+    transition: box-shadow $box-shadow-transition;
+    border: 1px solid $border-color-1;
+    padding: $grid-unit-size * 0.5;
+    margin-left: $grid-unit-size * 0.25;
+    margin-right: $grid-unit-size * 0.25;
 
     span {
         @extend .cvat-object-sidebar-icon;
@@ -365,7 +372,7 @@
     background: rgb(25, 184, 14);
     height: 80%;
     width: 90%;
-    border-radius: $grid-unit-size * 0.5;
+    border-radius: $border-radius-base;
 }
 
 .cvat-label-item-setup-shortcut-button {
@@ -417,8 +424,8 @@
     }
 }
 
-.cvat-object-item-menu {
-    li {
+.ant-dropdown-menu.cvat-object-item-menu {
+    > li.ant-dropdown-menu-item {
         padding: 0;
     }
 
@@ -458,7 +465,7 @@
     background: $background-color-2;
     top: 8px;
     left: 50%;
-    border-radius: 6px;
+    border-radius: $border-radius-base;
     border: 1px solid $border-color-1;
     z-index: 100;
     padding: $grid-unit-size * 0.5 $grid-unit-size * 2 $grid-unit-size * 0.5 $grid-unit-size * 0.5;
@@ -472,17 +479,11 @@
 
 .cvat-objects-sidebar-state-item-elements {
     padding: $grid-unit-size * 0.5;
-    border: 1px solid $object-item-border-color;
-    border-bottom: 0;
-
-    &:last-child {
-        border-bottom: 1px solid $object-item-border-color;
-    }
+    border: 1px solid rgba($color: white, $alpha: 0%);
 }
 
 .cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {
-    border: 2px dashed $object-item-border-color;
-    padding: 0;
+    border: 1px dashed $object-item-border-color;
 }
 
 .cvat-objects-sidebar-show-ground-truth-active {

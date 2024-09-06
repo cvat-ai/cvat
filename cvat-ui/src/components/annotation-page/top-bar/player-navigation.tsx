@@ -1,21 +1,27 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {
+    useState, useEffect, useCallback, CSSProperties,
+} from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
 import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
-import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
 import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { Workspace } from 'reducers';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface Props {
     startFrame: number;
@@ -28,7 +34,9 @@ interface Props {
     deleteFrameAvailable: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
-    inputFrameRef: React.RefObject<Input>;
+    inputFrameRef: React.RefObject<HTMLInputElement>;
+    keyMap: KeyMap;
+    workspace: Workspace;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
@@ -36,6 +44,24 @@ interface Props {
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
 }
+
+const componentShortcuts = {
+    DELETE_FRAME: {
+        name: 'Delete frame',
+        description: 'Delete frame',
+        sequences: ['alt+del'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    FOCUS_INPUT_FRAME: {
+        name: 'Focus input frame',
+        description: 'Focus on the element to change the current frame',
+        sequences: ['`'],
+        displayedSequences: ['~'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function PlayerNavigation(props: Props): JSX.Element {
     const {
@@ -49,13 +75,15 @@ function PlayerNavigation(props: Props): JSX.Element {
         focusFrameInputShortcut,
         inputFrameRef,
         ranges,
+        keyMap,
+        workspace,
+        deleteFrameAvailable,
         onSliderChange,
         onInputChange,
         onURLIconClick,
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
-        deleteFrameAvailable,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -85,18 +113,49 @@ function PlayerNavigation(props: Props): JSX.Element {
             });
         }
     }, [playing, frameNumber]);
+
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        DELETE_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onDeleteFrame();
+        },
+        FOCUS_INPUT_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (inputFrameRef.current) {
+                inputFrameRef.current.focus();
+            }
+        },
+    };
+
+    const deleteFrameIconStyle: CSSProperties = workspace === Workspace.SINGLE_SHAPE ? {
+        pointerEvents: 'none',
+        opacity: 0.5,
+    } : {};
+
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
-            <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
+            <DeleteOutlined
+                style={deleteFrameIconStyle}
+                className='cvat-player-delete-frame'
+                onClick={showDeleteFrameDialog}
+            />
         </CVATTooltip>
     ) : (
         <CVATTooltip title='Restore the frame'>
-            <Icon className='cvat-player-restore-frame' onClick={onRestoreFrame} component={RestoreIcon} />
+            <Icon
+                style={deleteFrameIconStyle}
+                className='cvat-player-restore-frame'
+                onClick={onRestoreFrame}
+                component={RestoreIcon}
+            />
         </CVATTooltip>
     );
 
     return (
         <>
+            { workspace !== Workspace.SINGLE_SHAPE && (
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+            )}
             <Col className='cvat-player-controls'>
                 <Row align='bottom'>
                     <Col>
@@ -105,7 +164,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             min={startFrame}
                             max={stopFrame}
                             value={frameNumber || 0}
-                            onChange={onSliderChange}
+                            onChange={workspace !== Workspace.SINGLE_SHAPE ? onSliderChange : undefined}
                         />
                         {!!ranges && (
                             <svg className='cvat-player-slider-progress' viewBox='0 0 1000 16' xmlns='http://www.w3.org/2000/svg'>
@@ -128,7 +187,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                 </Row>
                 <Row justify='center'>
                     <Col className='cvat-player-filename-wrapper'>
-                        <CVATTooltip title={frameFilename}>
+                        <CVATTooltip title={`${frameFilename}`}>
                             <Text type='secondary'>{frameFilename}</Text>
                         </CVATTooltip>
                     </Col>
@@ -148,6 +207,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         ref={inputFrameRef}
                         className='cvat-player-frame-selector'
                         type='number'
+                        disabled={workspace === Workspace.SINGLE_SHAPE}
                         value={frameInputValue}
                         onChange={(value: number | undefined | string | null) => {
                             if (typeof value !== 'undefined' && value !== null) {

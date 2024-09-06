@@ -1,14 +1,15 @@
 # Copyright (C) 2018-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 x-backend-env: &backend-env
-  CLICKHOUSE_HOST: clickhouse
   CVAT_POSTGRES_HOST: cvat_db
   CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
   CVAT_REDIS_INMEM_PORT: 6379
   CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
   CVAT_REDIS_ONDISK_PORT: 6666
+  CVAT_LOG_IMPORT_ERRORS: 'true'
   DJANGO_LOG_SERVER_HOST: vector
   DJANGO_LOG_SERVER_PORT: 80
   no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
@@ -21,6 +22,13 @@ x-backend-deps: &backend-deps
     condition: service_started
   cvat_db:
     condition: service_started
+
+x-clickhouse-env: &clickhouse-env
+  CLICKHOUSE_HOST: clickhouse
+  CLICKHOUSE_PORT: 8123
+  CLICKHOUSE_DB: cvat
+  CLICKHOUSE_USER: user
+  CLICKHOUSE_PASSWORD: user
 
 services:
   cvat_db:
@@ -78,11 +86,10 @@ services:
         condition:
           service_started
     environment:
-      <<: *backend-env
+      <<: [*backend-env, *clickhouse-env]
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
-      IAM_OPA_BUNDLE: '1'
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
@@ -142,7 +149,7 @@ services:
     restart: always
     depends_on: *backend-deps
     environment:
-      <<: *backend-env
+      <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
     command: run worker.export
     volumes:
@@ -206,7 +213,7 @@ services:
     restart: always
     depends_on: *backend-deps
     environment:
-      <<: *backend-env
+      <<: [*backend-env, *clickhouse-env]
       NUMPROCS: 2
     command: run worker.analytics_reports
     volumes:
@@ -274,7 +281,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.45.0-rootless
+    image: openpolicyagent/opa:0.63.0
     restart: always
     networks:
       cvat:
@@ -295,9 +302,7 @@ services:
     image: clickhouse/clickhouse-server:23.11-alpine
     restart: always
     environment:
-      - CLICKHOUSE_DB=cvat
-      - CLICKHOUSE_USER=user
-      - CLICKHOUSE_PASSWORD=user
+      <<: *clickhouse-env
     networks:
       cvat:
         aliases:
@@ -313,10 +318,7 @@ services:
     depends_on:
       - cvat_clickhouse
     environment:
-      - CLICKHOUSE_DB=cvat
-      - CLICKHOUSE_USER=user
-      - CLICKHOUSE_PASSWORD=user
-      - CLICKHOUSE_HOST=clickhouse
+      <<: *clickhouse-env
     networks:
       cvat:
         aliases:
@@ -328,15 +330,16 @@ services:
     image: grafana/grafana-oss:10.1.2
     container_name: cvat_grafana
     environment:
-      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-      - GF_AUTH_BASIC_ENABLED=false
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-      - GF_AUTH_DISABLE_LOGIN_FORM=true
-      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=grafana-clickhouse-datasource
-      - GF_SERVER_ROOT_URL=http://${CVAT_HOST:-localhost}/analytics
-      - GF_INSTALL_PLUGINS=https://github.com/grafana/clickhouse-datasource/releases/download/v2.0.7/grafana-clickhouse-datasource-2.0.7.linux_amd64.zip;grafana-clickhouse-datasource
-      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/all_events.json
+      <<: *clickhouse-env
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_AUTH_BASIC_ENABLED: false
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: true
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-clickhouse-datasource
+      GF_SERVER_ROOT_URL: http://${CVAT_HOST:-localhost}/analytics
+      GF_INSTALL_PLUGINS: https://github.com/grafana/clickhouse-datasource/releases/download/v4.0.8/grafana-clickhouse-datasource-4.0.8.linux_amd64.zip;grafana-clickhouse-datasource
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/all_events.json
     volumes:
       - ./components/analytics/grafana/dashboards/:/var/lib/grafana/dashboards/:ro
     entrypoint:
@@ -344,24 +347,25 @@ services:
       - -euc
       - |
         mkdir -p /etc/grafana/provisioning/datasources
-        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        cat << 'EOF' > /etc/grafana/provisioning/datasources/ds.yaml
         apiVersion: 1
         datasources:
           - name: 'ClickHouse'
             type: 'grafana-clickhouse-datasource'
             isDefault: true
             jsonData:
-              defaultDatabase: cvat
-              port: 9000
-              server: clickhouse
-              username: user
+              defaultDatabase: $${CLICKHOUSE_DB}
+              port: $${CLICKHOUSE_PORT}
+              server: $${CLICKHOUSE_HOST}
+              username: $${CLICKHOUSE_USER}
               tlsSkipVerify: false
+              protocol: http
             secureJsonData:
-              password: user
+              password: $${CLICKHOUSE_PASSWORD}
             editable: true
         EOF
         mkdir -p /etc/grafana/provisioning/dashboards
-        cat <<EOF > /etc/grafana/provisioning/dashboards/dashboard.yaml
+        cat << EOF > /etc/grafana/provisioning/dashboards/dashboard.yaml
         apiVersion: 1
         providers:
           - name: cvat-logs

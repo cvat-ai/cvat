@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "REST API tests: Attach to server",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
@@ -26,7 +26,7 @@
         },
         {
             "name": "REST API tests: Attach to RQ annotation worker",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
@@ -46,7 +46,7 @@
         },
         {
             "name": "REST API tests: Attach to RQ export worker",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
@@ -66,7 +66,7 @@
         },
         {
             "name": "REST API tests: Attach to RQ import worker",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
@@ -86,7 +86,7 @@
         },
         {
             "name": "REST API tests: Attach to RQ quality reports worker",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
@@ -106,7 +106,7 @@
         },
         {
             "name": "REST API tests: Attach to RQ analytics reports worker",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
@@ -145,8 +145,8 @@
             "type": "node",
             "request": "launch",
             "name": "ui.js: test",
-            "cwd": "${workspaceRoot}/tests",
-            "runtimeExecutable": "${workspaceRoot}/tests/node_modules/.bin/cypress",
+            "cwd": "${workspaceFolder}/tests",
+            "runtimeExecutable": "${workspaceFolder}/tests/node_modules/.bin/cypress",
             "args": [
                 "run",
                 "--headless",
@@ -158,16 +158,15 @@
         },
         {
             "name": "server: django",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "env": {
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
-                "IAM_OPA_BUNDLE": "1",
                 "DJANGO_LOG_SERVER_HOST": "localhost",
                 "DJANGO_LOG_SERVER_PORT": "8282"
             },
@@ -196,12 +195,12 @@
         },
         {
             "name": "server: RQ - import",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "import",
@@ -218,12 +217,12 @@
         },
         {
             "name": "server: RQ - export",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "export",
@@ -240,12 +239,12 @@
         },
         {
             "name": "server: RQ - quality reports",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "quality_reports",
@@ -262,12 +261,12 @@
         },
         {
             "name": "server: RQ - analytics reports",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "analytics_reports",
@@ -284,12 +283,12 @@
         },
         {
             "name": "server: RQ - scheduler",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/rqscheduler.py",
+            "program": "${workspaceFolder}/rqscheduler.py",
             "django": true,
             "cwd": "${workspaceFolder}",
             "args": [
@@ -303,12 +302,12 @@
         },
         {
             "name": "server: RQ - annotation",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "annotation",
@@ -322,12 +321,12 @@
         },
         {
             "name": "server: RQ - webhooks",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "webhooks",
@@ -341,12 +340,12 @@
         },
         {
             "name": "server: RQ - cleaning",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "cleaning",
@@ -363,12 +362,12 @@
         },
         {
             "name": "server: migrate",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "migrate"
             ],
@@ -379,12 +378,12 @@
         },
         {
             "name": "server: tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "test",
                 "--settings",
@@ -399,7 +398,7 @@
         },
         {
             "name": "server: REST API tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
@@ -413,7 +412,7 @@
         },
         {
             "name": "sdk: tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
@@ -427,7 +426,7 @@
         },
         {
             "name": "cli: tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
@@ -441,7 +440,7 @@
         },
         {
             "name": "api client: Postprocess generator output",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
@@ -456,7 +455,7 @@
         },
         {
             "name": "docs: Postprocess SDK docs",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
@@ -471,7 +470,7 @@
         },
         {
             "name": "docs: Build docs",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
@@ -482,12 +481,12 @@
         },
         {
             "name": "server: Generate REST API Schema",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "spectacular",
                 "--file",

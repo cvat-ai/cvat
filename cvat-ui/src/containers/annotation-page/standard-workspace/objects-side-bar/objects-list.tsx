@@ -29,6 +29,9 @@ import {
 } from 'reducers';
 import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 interface OwnProps {
     readonly: boolean;
@@ -66,6 +69,107 @@ interface DispatchToProps {
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
 }
+
+const componentShortcuts = {
+    SWITCH_ALL_LOCK: {
+        name: 'Lock/unlock all objects',
+        description: 'Change locked state for all objects in the side bar',
+        sequences: ['t l'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_LOCK: {
+        name: 'Lock/unlock an object',
+        description: 'Change locked state for an active object',
+        sequences: ['l'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_ALL_HIDDEN: {
+        name: 'Hide/show all objects',
+        description: 'Change hidden state for objects in the side bar',
+        sequences: ['t h'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_HIDDEN: {
+        name: 'Hide/show an object',
+        description: 'Change hidden state for an active object',
+        sequences: ['h'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_OCCLUDED: {
+        name: 'Switch occluded',
+        description: 'Change occluded property for an active object',
+        sequences: ['q', '/'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_PINNED: {
+        name: 'Switch pinned property',
+        description: 'Change pinned property for an active object',
+        sequences: ['p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_KEYFRAME: {
+        name: 'Switch keyframe',
+        description: 'Change keyframe property for an active track',
+        sequences: ['k'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_OUTSIDE: {
+        name: 'Switch outside',
+        description: 'Change outside property for an active track',
+        sequences: ['o'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    DELETE_OBJECT_STANDARD_WORKSPACE: {
+        name: 'Delete object',
+        description: 'Delete an active object. Use shift to force delete of locked objects',
+        sequences: ['del', 'shift+del'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    TO_BACKGROUND: {
+        name: 'To background',
+        description: 'Put an active object "farther" from the user (decrease z axis value)',
+        sequences: ['-', '_'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    TO_FOREGROUND: {
+        name: 'To foreground',
+        description: 'Put an active object "closer" to the user (increase z axis value)',
+        sequences: ['+', '='],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    COPY_SHAPE: {
+        name: 'Copy shape',
+        description: 'Copy shape to CVAT internal clipboard',
+        sequences: ['ctrl+c'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    PROPAGATE_OBJECT: {
+        name: 'Propagate object',
+        description: 'Make a copy of the object on the following frames',
+        sequences: ['ctrl+b'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    NEXT_KEY_FRAME: {
+        name: 'Next keyframe',
+        description: 'Go to the next keyframe of an active track',
+        sequences: ['r'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    PREV_KEY_FRAME: {
+        name: 'Previous keyframe',
+        description: 'Go to the previous keyframe of an active track',
+        sequences: ['e'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    CHANGE_OBJECT_COLOR: {
+        name: 'Change color',
+        description: 'Set the next color for an activated shape',
+        sequences: ['enter'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -331,24 +435,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
         } = this.state;
 
-        const subKeyMap = {
-            SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
-            SWITCH_LOCK: keyMap.SWITCH_LOCK,
-            SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
-            SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
-            SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
-            SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
-            SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
-            DELETE_OBJECT: keyMap.DELETE_OBJECT,
-            TO_BACKGROUND: keyMap.TO_BACKGROUND,
-            TO_FOREGROUND: keyMap.TO_FOREGROUND,
-            COPY_SHAPE: keyMap.COPY_SHAPE,
-            PROPAGATE_OBJECT: keyMap.PROPAGATE_OBJECT,
-            NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
-            PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
-            CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
-        };
-
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
                 event.preventDefault();
@@ -372,7 +458,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
-        const handlers = {
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
@@ -405,12 +491,23 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
+            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly) {
+                    state.pinned = !state.pinned;
+                    updateAnnotations([state]);
+                }
+            },
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly && state.objectType === ObjectType.TRACK) {
-                    state.keyframe = !state.keyframe;
-                    updateAnnotations([state]);
+                    const { first, last } = state.keyframes as NonNullable<typeof state.keyframes>;
+                    if (first !== last || !state.keyframe) {
+                        state.keyframe = !state.keyframe;
+                        updateAnnotations([state]);
+                    }
                 }
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
@@ -421,7 +518,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+            DELETE_OBJECT_STANDARD_WORKSPACE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {
@@ -447,7 +544,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
@@ -455,14 +552,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
             },
             COPY_SHAPE: () => {
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly) {
                     copyShape(state);
                 }
@@ -498,7 +595,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <ObjectsListComponent
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}

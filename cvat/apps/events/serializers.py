@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import datetime
 import json
 
 from rest_framework import serializers
+
 
 class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
@@ -27,11 +28,23 @@ class EventSerializer(serializers.Serializer):
     payload = serializers.CharField(required=False, allow_null=True)
 
 class ClientEventsSerializer(serializers.Serializer):
+    ALLOWED_SCOPES = frozenset((
+        'load:cvat', 'load:job', 'save:job','load:workspace',
+        'upload:annotations', # TODO: remove in next releases
+        'lock:object', # TODO: remove in next releases
+        'change:attribute', # TODO: remove in next releases
+        'change:label', # TODO: remove in next releases
+        'send:exception', 'join:objects', 'change:frame',
+        'draw:object', 'paste:object', 'copy:object', 'propagate:object',
+        'drag:object', 'resize:object', 'delete:object',
+        'merge:objects', 'split:objects', 'group:objects', 'slice:object',
+        'zoom:image', 'fit:image', 'rotate:image', 'action:undo', 'action:redo',
+        'debug:info', 'run:annotations_action', 'click:element'
+    ))
+
     events = EventSerializer(many=True, default=[])
+    previous_event = EventSerializer(default=None, allow_null=True, write_only=True)
     timestamp = serializers.DateTimeField()
-    _TIME_THRESHOLD = datetime.timedelta(seconds=100)
-    _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-    _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
 
     def to_internal_value(self, data):
         data = super().to_internal_value(data)
@@ -43,32 +56,22 @@ class ClientEventsSerializer(serializers.Serializer):
         send_time = data["timestamp"]
         receive_time = datetime.datetime.now(datetime.timezone.utc)
         time_correction = receive_time - send_time
-        last_timestamp = datetime.datetime(datetime.MINYEAR, 1, 1, tzinfo=datetime.timezone.utc)
-        zero_t_delta = datetime.timedelta()
+
+        if data["previous_event"]:
+            data["previous_event"]["timestamp"] += time_correction
 
         for event in data["events"]:
-            timestamp = event["timestamp"]
-            working_time = datetime.timedelta()
-            event_duration = datetime.timedelta()
-            t_diff = timestamp - last_timestamp
+            scope = event["scope"]
+            if scope not in ClientEventsSerializer.ALLOWED_SCOPES:
+                raise serializers.ValidationError({ "scope": f"Event scope **{scope}** is not allowed from client" })
 
-            payload = json.loads(event.get("payload", "{}"))
-
-            if t_diff >= zero_t_delta:
-                if event["scope"] in self._COLLAPSED_EVENT_SCOPES:
-                    event_duration += datetime.timedelta(milliseconds=event["duration"])
-                    working_time += event_duration
-
-                if t_diff < self._TIME_THRESHOLD:
-                    working_time += t_diff
-
-            payload.update({
-                "working_time": working_time // self._WORKING_TIME_RESOLUTION,
-                "username": request.user.username,
-            })
+            try:
+                payload = json.loads(event.get("payload", "{}"))
+            except json.JSONDecodeError:
+                raise serializers.ValidationError({ "payload": "JSON payload is not valid in passed event" })
 
             event.update({
-                "timestamp": str((timestamp + time_correction).timestamp()),
+                "timestamp": event["timestamp"] + time_correction,
                 "source": "client",
                 "org_id": org_id,
                 "org_slug": org_slug,
@@ -77,7 +80,5 @@ class ClientEventsSerializer(serializers.Serializer):
                 "user_email": request.user.email,
                 "payload": json.dumps(payload),
             })
-
-            last_timestamp = timestamp + event_duration
 
         return data

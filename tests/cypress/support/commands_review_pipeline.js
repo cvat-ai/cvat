@@ -8,26 +8,28 @@
 Cypress.Commands.add('assignTaskToUser', (user) => {
     cy.get('.cvat-task-details-user-block').within(() => {
         if (user !== '') {
+            cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
             cy.get('.cvat-user-search-field').find('input').type(`${user}{Enter}`);
+            cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
         } else {
             cy.get('.cvat-user-search-field').find('input').clear();
             cy.get('.cvat-user-search-field').find('input').type('{Enter}');
         }
-        cy.get('.cvat-spinner').should('not.exist');
     });
+
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
-    cy.get('.cvat-jobs-list')
-        .contains('a', `Job #${jobID}`).parents('.cvat-job-item')
-        .find('.cvat-job-assignee-selector input').click();
-    cy.get('.cvat-jobs-list')
-        .contains('a', `Job #${jobID}`).parents('.cvat-job-item')
-        .find('.cvat-job-assignee-selector input').clear();
+    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').click();
+    cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').clear();
 
     cy.intercept('PATCH', `/api/jobs/${jobID}`).as('patchJobAssignee');
     if (user) {
-        cy.get('.ant-select-dropdown')
+        cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
+        cy.get(`.cvat-job-item[data-row-id="${jobID}"]`).find('.cvat-job-assignee-selector input').type(user);
+        cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
+        cy.get('.cvat-user-search-dropdown')
             .should('be.visible')
             .not('.ant-select-dropdown-hidden')
             .contains(new RegExp(`^${user}$`, 'g'))

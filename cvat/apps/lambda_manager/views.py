@@ -20,6 +20,7 @@ import django_rq
 import numpy as np
 import requests
 import rq
+from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -33,14 +34,17 @@ from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
+from cvat.apps.engine.models import (
+    Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget,
+)
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session
-from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 
@@ -128,6 +132,12 @@ class LambdaGateway:
         return response
 
 class LambdaFunction:
+    FRAME_PARAMETERS = (
+        ('frame', 'frame'),
+        ('frame0', 'start frame'),
+        ('frame1', 'end frame'),
+    )
+
     def __init__(self, gateway, data):
         # ID of the function (e.g. omz.public.yolo-v3)
         self.id = data['metadata']['name']
@@ -185,19 +195,16 @@ class LambdaFunction:
                 raise ValidationError(
                     "`{}` lambda function has non-unique attributes for label {}".format(self.id, label),
                     code=status.HTTP_404_NOT_FOUND)
-        # state of the function
-        self.state = data['status']['state']
         # description of the function
         self.description = data['spec']['description']
         # http port to access the serverless function
         self.port = data["status"].get("httpPort")
-        # framework which is used for the function (e.g. tensorflow, openvino)
-        self.framework = meta_anno.get('framework')
         # display name for the function
         self.name = meta_anno.get('name', self.id)
         self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
         self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
         self.startswith_box = bool(meta_anno.get('startswith_box', False))
+        self.startswith_box_optional = bool(meta_anno.get('startswith_box_optional', False))
         self.animated_gif = meta_anno.get('animated_gif', '')
         self.version = int(meta_anno.get('version', '1'))
         self.help_message = meta_anno.get('help_message', '')
@@ -207,10 +214,8 @@ class LambdaFunction:
         response = {
             'id': self.id,
             'kind': str(self.kind),
-            'labels': [label['name'] for label in self.labels],
             'labels_v2': self.labels,
             'description': self.description,
-            'framework': self.framework,
             'name': self.name,
             'version': self.version
         }
@@ -220,17 +225,9 @@ class LambdaFunction:
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
                 'startswith_box': self.startswith_box,
+                'startswith_box_optional': self.startswith_box_optional,
                 'help_message': self.help_message,
                 'animated_gif': self.animated_gif
-            })
-
-        if self.kind is LambdaType.TRACKER:
-            response.update({
-                'state': self.state
-            })
-        if self.kind is LambdaType.DETECTOR:
-            response.update({
-                'attributes': self.func_attributes
             })
 
         return response
@@ -268,7 +265,7 @@ class LambdaFunction:
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
-        task_labels = db_task.get_labels().prefetch_related('attributespec_set')
+        task_labels = db_task.get_labels(prefetch=True)
 
         def labels_compatible(model_label: Dict, task_label: Label) -> bool:
             model_type = model_label['type']
@@ -286,9 +283,9 @@ class LambdaFunction:
                     if task_label.name == model_label['name'] and labels_compatible(model_label, task_label):
                         attributes_default_mapping = {}
                         for model_attr in model_label.get('attributes', {}):
-                            for db_attr in model_label.attributespec_set.all():
+                            for db_attr in task_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr] = db_attr.name
+                                    attributes_default_mapping[model_attr['name']] = db_attr.name
 
                         mapping_by_default[model_label['name']] = {
                             'name': task_label.name,
@@ -358,6 +355,11 @@ class LambdaFunction:
                 )
 
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
+                    if 'sublabels' not in mapping_item:
+                        raise ValidationError(
+                            f'Mapping for elements was not specified in skeleton "{model_label_name}" '
+                        )
+
                     validate_labels_mapping(
                         mapping_item['sublabels'],
                         md_label['sublabels'],
@@ -377,11 +379,7 @@ class LambdaFunction:
             data_start_frame = task_data.start_frame
             step = task_data.get_frame_step()
 
-            for key, desc in (
-                ('frame', 'frame'),
-                ('frame0', 'start frame'),
-                ('frame1', 'end frame'),
-            ):
+            for key, desc in self.FRAME_PARAMETERS:
                 if key not in data:
                     continue
 
@@ -398,9 +396,9 @@ class LambdaFunction:
         elif self.kind == LambdaType.INTERACTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
-                "pos_points": mandatory_arg("pos_points")[2:] if self.startswith_box else mandatory_arg("pos_points"),
+                "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
-                "obj_bbox": mandatory_arg("pos_points")[0:2] if self.startswith_box else None
+                "obj_bbox": data.get("obj_bbox", None)
             })
         elif self.kind == LambdaType.REID:
             payload.update({
@@ -533,16 +531,31 @@ class LambdaQueue:
         *,
         job: Optional[int] = None
     ) -> LambdaJob:
-        jobs = self.get_jobs()
+        queue = self._get_queue()
+        rq_id = RQId(RequestAction.AUTOANNOTATE, RequestTarget.TASK, task).render()
+
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
         # protection.
-        if list(filter(lambda job: job.get_task() == task and not job.is_finished, jobs)):
+        rq_job = queue.fetch_job(rq_id)
+
+        have_conflict = rq_job and \
+            rq_job.get_status(refresh=False) not in {rq.job.JobStatus.FAILED, rq.job.JobStatus.FINISHED}
+
+        # There could be some jobs left over from before the current naming convention was adopted.
+        # TODO: remove this check after a few releases.
+        have_legacy_conflict = any(
+            job.get_task() == task and not (job.is_finished or job.is_failed)
+            for job in self.get_jobs()
+        )
+        if have_conflict or have_legacy_conflict:
             raise ValidationError(
                 "Only one running request is allowed for the same task #{}".format(task),
                 code=status.HTTP_409_CONFLICT)
 
-        queue = self._get_queue()
+        if rq_job:
+            rq_job.delete()
+
         # LambdaJob(None) is a workaround for python-rq. It has multiple issues
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
@@ -551,6 +564,7 @@ class LambdaQueue:
 
         with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.create_job(LambdaJob(None),
+                job_id=rq_id,
                 meta={
                     **get_rq_job_meta(
                         request,
@@ -558,6 +572,7 @@ class LambdaQueue:
                             Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
                         ),
                     ),
+                    RQJobMetaField.FUNCTION_ID: lambda_func.id,
                     "lambda": True,
                 },
                 kwargs={
@@ -963,7 +978,7 @@ class LambdaJob:
                     labels[label.name]['attributes'][attr['name']] = attr['id']
             return labels
 
-        labels = convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
+        labels = convert_labels(db_task.get_labels(prefetch=True))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,
@@ -1071,13 +1086,25 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(
+        response = lambda_func.invoke(
             db_task,
             request.data, # TODO: better to add validation via serializer for these data
             db_job=job,
             is_interactive=True,
             request=request
         )
+
+        handle_function_call(func_id, db_task,
+            category="interactive",
+            parameters={
+                param_name: param_value
+                for param_name, _ in LambdaFunction.FRAME_PARAMETERS
+                for param_value in [request.data.get(param_name)]
+                if param_value is not None
+            },
+        )
+
+        return response
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
@@ -1169,6 +1196,8 @@ class RequestViewSet(viewsets.ViewSet):
         lambda_func = gateway.get(function)
         rq_job = queue.enqueue(lambda_func, threshold, task, quality,
             mapping, cleanup, conv_mask_to_poly, max_distance, request, job=job)
+
+        handle_function_call(function, job or task, category="batch")
 
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data

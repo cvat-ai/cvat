@@ -1,17 +1,39 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus } from './enums';
+import { RQStatus, ShapeType } from './enums';
 
 export interface ModelProvider {
     name: string;
     icon: string;
     attributes: Record<string, string>;
+}
+
+export interface InteractorResults {
+    mask: number[][];
+    points?: [number, number][];
+    bounds?: [number, number, number, number]
+}
+
+export interface DetectedShape {
+    type: ShapeType | 'tag';
+    rotation?: number;
+    attributes: { name: string; value: string }[];
+    label: string;
+    outside?: boolean;
+    points?: number[];
+    mask?: number[];
+    elements: DetectedShape[];
+}
+
+export interface TrackerResults {
+    states: any[];
+    shapes: number[][];
 }
 
 class LambdaManager {
@@ -43,7 +65,7 @@ class LambdaManager {
         return { models, count: lambdaFunctions.length };
     }
 
-    async run(taskID: number, model: MLModel, args: any) {
+    async run(taskID: number, model: MLModel, args: any): Promise<string> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -68,7 +90,7 @@ class LambdaManager {
         return result.id;
     }
 
-    async call(taskID, model, args) {
+    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | DetectedShape[]> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -81,7 +103,7 @@ class LambdaManager {
         return result;
     }
 
-    async requests() {
+    async requests(): Promise<any[]> {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
@@ -106,7 +128,7 @@ class LambdaManager {
 
     async listen(
         requestID: string,
-        functionID: string,
+        functionID: string | number,
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
         const model = this.cachedList.find((_model) => _model.id === functionID);

@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -428,6 +428,59 @@ class TestGetQualityReportData(_PermissionTestBase):
         else:
             self._test_get_report_data_403(user["username"], report["id"])
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize("has_assignee", [False, True])
+    def test_can_get_report_data_with_job_assignees(
+        self, admin_user, jobs, users_by_name, has_assignee
+    ):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
+        )
+        task_id = gt_job["task_id"]
+
+        normal_job = next(j for j in jobs if j["type"] == "annotation" and j["task_id"] == task_id)
+        if has_assignee:
+            new_assignee = users_by_name[admin_user]
+        else:
+            new_assignee = None
+
+        if bool(normal_job["assignee"]) != has_assignee:
+            with make_api_client(admin_user) as api_client:
+                api_client.jobs_api.partial_update(
+                    normal_job["id"],
+                    patched_job_write_request={
+                        "assignee": new_assignee["id"] if new_assignee else None
+                    },
+                )
+
+        task_report = self.create_quality_report(admin_user, task_id)
+
+        with make_api_client(admin_user) as api_client:
+            job_report = api_client.quality_api.list_reports(
+                job_id=normal_job["id"], parent_id=task_report["id"]
+            )[0].results[0]
+
+        report_data = json.loads(self._test_get_report_data_200(admin_user, job_report["id"]).data)
+        assert (
+            DeepDiff(
+                (
+                    {
+                        k: v
+                        for k, v in new_assignee.items()
+                        if k in ["id", "username", "first_name", "last_name"]
+                    }
+                    if new_assignee
+                    else None
+                ),
+                report_data["assignee"],
+            )
+            == {}
+        )
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostQualityReports(_PermissionTestBase):
@@ -440,6 +493,32 @@ class TestPostQualityReports(_PermissionTestBase):
             and j["state"] == "completed"
         )
         task_id = gt_job["task_id"]
+
+        report = self.create_quality_report(admin_user, task_id)
+        assert models.QualityReport._from_openapi_data(**report)
+
+    @pytest.mark.parametrize("has_assignee", [False, True])
+    def test_can_create_report_with_job_assignees(
+        self, admin_user, jobs, users_by_name, has_assignee
+    ):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            and j["stage"] == "acceptance"
+            and j["state"] == "completed"
+        )
+        task_id = gt_job["task_id"]
+
+        normal_job = next(j for j in jobs if j["type"] == "annotation")
+        if bool(normal_job["assignee"]) != has_assignee:
+            with make_api_client(admin_user) as api_client:
+                api_client.jobs_api.partial_update(
+                    normal_job["id"],
+                    patched_job_write_request={
+                        "assignee": users_by_name[admin_user]["id"] if has_assignee else None
+                    },
+                )
 
         report = self.create_quality_report(admin_user, task_id)
         assert models.QualityReport._from_openapi_data(**report)
@@ -537,7 +616,7 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
         ("task_id", "job_id", "parent_id", "target", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -685,7 +764,8 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
             return job_id, job_conflicts
         elif field == "task_id":
             # This field is not included in the response
-            task_reports = [r for r in self.report_samples if r["task_id"]]
+            task_id = self._find_valid_field_value(self.report_samples, field_path=["task_id"])
+            task_reports = [r for r in self.report_samples if r["task_id"] == task_id]
             task_report_ids = {r["id"] for r in task_reports}
             task_report_ids |= {
                 r["id"] for r in self.report_samples if r["parent_id"] in task_report_ids
@@ -721,7 +801,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
         ("report_id", "severity", "type", "frame", "job_id", "task_id", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
@@ -735,7 +815,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize("field", ("task_id",))
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1078,6 +1158,7 @@ class TestPatchSettings(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityReportMetrics(_PermissionTestBase):
     demo_task_id = 22  # this task reproduces all the checkable cases
+    demo_task_id_multiple_jobs = 23  # this task reproduces cases for multiple jobs
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
     def test_report_summary(self, task_id, tasks, jobs, quality_reports):
@@ -1097,7 +1178,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
-        old_report = max((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == self.demo_task_id), key=lambda r: r["id"]
+        )
         task_id = old_report["task_id"]
 
         new_report = self.create_quality_report(admin_user, task_id)
@@ -1128,7 +1211,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_modified_task_produces_different_metrics(
         self, admin_user, quality_reports, jobs, labels
     ):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        gt_job = next(
+            j for j in jobs if j["type"] == "ground_truth" and j["task_id"] == self.demo_task_id
+        )
         task_id = gt_job["task_id"]
         old_report = max(
             (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
@@ -1182,7 +1267,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_settings_affect_metrics(
         self, admin_user, quality_reports, quality_settings, task_id, parameter
     ):
-        old_report = max((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
+        )
         task_id = old_report["task_id"]
 
         settings = deepcopy(next(s for s in quality_settings if s["task_id"] == task_id))
@@ -1202,3 +1289,74 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         new_report = self.create_quality_report(admin_user, task_id)
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
+
+    def test_old_report_can_be_loaded(self, admin_user, quality_reports):
+        report = min((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
+        assert report["created_date"] < "2024"
+
+        with make_api_client(admin_user) as api_client:
+            (report_data, _) = api_client.quality_api.retrieve_report_data(report["id"])
+
+        # This report should have been created before the Jaccard index was included.
+        for d in [report_data["comparison_summary"], *report_data["frame_results"].values()]:
+            assert d["annotations"]["confusion_matrix"]["jaccard_index"] is None
+
+    def test_accumulation_annotation_conflicts_multiple_jobs(self, admin_user):
+        report = self.create_quality_report(admin_user, self.demo_task_id_multiple_jobs)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK
+        report_data = json.loads(response.data)
+        task_confusion_matrix = report_data["comparison_summary"]["annotations"][
+            "confusion_matrix"
+        ]["rows"]
+
+        expected_frame_confusion_matrix = {
+            "5": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
+            "7": [[1, 0, 0], [0, 0, 0], [0, 0, 0]],
+            "4": [[0, 0, 1], [0, 0, 0], [1, 0, 0]],
+        }
+        for frame_id in report_data["frame_results"].keys():
+            assert (
+                report_data["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
+                == expected_frame_confusion_matrix[frame_id]
+            )
+
+        assert task_confusion_matrix == [[2, 0, 1], [0, 0, 0], [1, 0, 0]]
+
+    @pytest.mark.parametrize("task_id", [8])
+    def test_can_compute_quality_if_non_skeleton_label_follows_skeleton_label(
+        self, admin_user, labels, task_id
+    ):
+        new_label_name = "non_skeleton"
+        with make_api_client(admin_user) as api_client:
+            task_labels = [label for label in labels if label.get("task_id") == task_id]
+            assert any(label["type"] == "skeleton" for label in task_labels)
+            task_labels += [{"name": new_label_name, "type": "any"}]
+            api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(labels=task_labels),
+            )
+
+            new_label_obj, _ = api_client.labels_api.list(task_id=task_id, name=new_label_name)
+            new_label_id = new_label_obj.results[0].id
+            api_client.tasks_api.update_annotations(
+                task_id,
+                task_annotations_update_request={
+                    "shapes": [
+                        models.LabeledShapeRequest(
+                            type="rectangle",
+                            frame=0,
+                            label_id=new_label_id,
+                            points=[0, 0, 1, 1],
+                        )
+                    ]
+                },
+            )
+
+        self.create_gt_job(admin_user, task_id)
+
+        report = self.create_quality_report(admin_user, task_id)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK

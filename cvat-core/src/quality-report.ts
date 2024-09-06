@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { SerializedQualityReportData } from './server-response-types';
+import User from './user';
 
 export interface QualitySummary {
     frameCount: number;
@@ -36,6 +37,7 @@ export default class QualityReport {
     #target: string;
     #createdDate: string;
     #gtLastUpdated: string;
+    #assignee: User | null;
     #summary: Partial<SerializedQualityReportData['summary']>;
 
     constructor(initialData: SerializedQualityReportData) {
@@ -47,6 +49,12 @@ export default class QualityReport {
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
+
+        if (initialData.assignee) {
+            this.#assignee = new User(initialData.assignee);
+        } else {
+            this.#assignee = null;
+        }
     }
 
     get id(): number {
@@ -77,6 +85,10 @@ export default class QualityReport {
         return this.#createdDate;
     }
 
+    get assignee(): User | null {
+        return this.#assignee;
+    }
+
     get summary(): QualitySummary {
         return {
             frameCount: this.#summary.frame_count,
@@ -85,8 +97,7 @@ export default class QualityReport {
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
             gtCount: this.#summary.gt_count,
-            accuracy: (this.#summary.valid_count /
-                (this.#summary.ds_count + this.#summary.gt_count - this.#summary.valid_count)) * 100,
+            accuracy: (this.#summary.valid_count / this.#summary.total_count) * 100,
             precision: (this.#summary.valid_count / this.#summary.gt_count) * 100,
             recall: (this.#summary.valid_count / this.#summary.ds_count) * 100,
             conflictsByType: {

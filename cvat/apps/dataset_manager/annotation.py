@@ -72,14 +72,26 @@ class AnnotationIR:
             # a <= b
             return 0 <= min(b, stop) - max(a, start)
 
+        elements = track.get('elements', [])
+        if elements:
+            # skeletons usually have only one shape defined on initial frame
+            # anyway, for them we decided if they are inside range based on child elements
+            return any(AnnotationIR._is_track_inside(t, start, stop) for t in elements)
+
         prev_shape = None
         for shape in track['shapes']:
+            if shape['frame'] == start and shape['outside']:
+                # corner case when the only shape on segment is outside frame on start frame
+                prev_shape = shape
+                continue
+
             if prev_shape and not prev_shape['outside'] and \
                     has_overlap(prev_shape['frame'], shape['frame']):
                 return True
+
             prev_shape = shape
 
-        if not prev_shape['outside'] and prev_shape['frame'] <= stop:
+        if prev_shape is not None and not prev_shape['outside'] and prev_shape['frame'] <= stop:
             return True
 
         return False
@@ -88,6 +100,8 @@ class AnnotationIR:
     def _slice_track(cls, track_, start, stop, dimension):
         def filter_track_shapes(shapes):
             shapes = [s for s in shapes if cls._is_shape_inside(s, start, stop)]
+
+            # remove leading outside shapes as they are not necessary
             drop_count = 0
             for s in shapes:
                 if s['outside']:
@@ -107,13 +121,16 @@ class AnnotationIR:
 
         if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(
-                track, start, stop, dimension)
+                track, start, stop + 1, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
 
             if scoped_shapes:
+                last_key = max(shape['frame'] for shape in track['shapes'])
                 if not scoped_shapes[0]['keyframe']:
                     segment_shapes.insert(0, scoped_shapes[0])
-                if scoped_shapes[-1]['keyframe'] and \
+                if last_key >= stop and scoped_shapes[-1]['points'] != segment_shapes[-1]['points']:
+                    segment_shapes.append(scoped_shapes[-1])
+                elif scoped_shapes[-1]['keyframe'] and \
                         scoped_shapes[-1]['outside']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif stop + 1 < len(interpolated_shapes) and \
@@ -535,6 +552,8 @@ class TrackManager(ObjectManager):
             return 0
 
     def _modify_unmatched_object(self, obj, end_frame):
+        if not obj["shapes"]:
+            return
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)

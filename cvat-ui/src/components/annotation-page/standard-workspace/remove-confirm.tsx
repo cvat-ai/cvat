@@ -1,10 +1,10 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { CombinedState, ObjectType } from 'reducers';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
@@ -13,17 +13,18 @@ import config from 'config';
 import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/annotation-actions';
 
 export default function RemoveConfirmComponent(): JSX.Element | null {
+    const dispatch = useDispatch();
     const [visible, setVisible] = useState(false);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState<string | JSX.Element>('');
-    const objectState = useSelector((state: CombinedState) => state.annotation.remove.objectState);
-    const force = useSelector((state: CombinedState) => state.annotation.remove.force);
-    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);
-    const dispatch = useDispatch();
+    const { objectState, force } = useSelector((state: CombinedState) => ({
+        objectState: state.annotation.remove.objectState,
+        force: state.annotation.remove.force,
+    }), shallowEqual);
 
     const onOk = useCallback(() => {
-        dispatch(removeObjectAsync(jobInstance, objectState, true));
-    }, [jobInstance, objectState]);
+        dispatch(removeObjectAsync(objectState, true));
+    }, [objectState]);
 
     const onCancel = useCallback(() => {
         dispatch(removeObjectAction(null, false));
@@ -57,7 +58,7 @@ export default function RemoveConfirmComponent(): JSX.Element | null {
         setDescription(descriptionMessage);
         setVisible(newVisible);
         if (!newVisible && objectState) {
-            dispatch(removeObjectAsync(jobInstance, objectState, true));
+            dispatch(removeObjectAsync(objectState, true));
         }
     }, [objectState, force]);
 
@@ -67,7 +68,7 @@ export default function RemoveConfirmComponent(): JSX.Element | null {
             okText='Yes'
             cancelText='Cancel'
             title={title}
-            visible={visible}
+            open={visible}
             cancelButtonProps={{
                 autoFocus: true,
             }}

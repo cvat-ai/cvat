@@ -252,7 +252,7 @@ class TestLabelsListFilters(CollectionSimpleFilterTestBase):
         ("name", "job_id", "task_id", "project_id", "type", "color"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
     @pytest.mark.parametrize(
         "key1, key2", itertools.combinations(["job_id", "task_id", "project_id"], 2)
@@ -593,12 +593,25 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
         if overrides:
             payload = deepcopy(overrides)
 
-            if overrides.get("attributes"):
-                payload["attributes"] = (original_data.get("attributes") or []) + overrides[
-                    "attributes"
-                ]
-                result["attributes"] = deepcopy(payload["attributes"])
-                ignore_fields.append("attributes.id")
+            if overridden_attributes := deepcopy(overrides.get("attributes", [])):
+                combined_attributes = deepcopy(original_data.get("attributes", []))
+
+                mapping = {attr["id"]: attr for attr in overridden_attributes if "id" in attr}
+
+                # no attributes to update
+                if not mapping:
+                    ignore_fields.append("attributes.id")
+
+                for attr in combined_attributes:
+                    if attr["id"] in mapping:
+                        attr.update(mapping[attr["id"]])
+
+                for attr in overridden_attributes:
+                    if attr not in combined_attributes:
+                        combined_attributes.append(attr)
+
+                payload["attributes"] = deepcopy(combined_attributes)
+                result["attributes"] = deepcopy(combined_attributes)
 
             # Changing skeletons is not supported
             if overrides.get("type") == "skeleton":
@@ -661,6 +674,34 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
 
         self._test_update_ok(
             user, label["id"], patch_data, expected_data=expected_data, ignore_fields=ignore_fields
+        )
+
+    @parametrize("source", _TestLabelsPermissionsBase.source_types)
+    def test_can_patch_attribute_name(self, source: str, admin_user: str):
+        source_key = self._get_source_info(source).label_source_key
+        label = next(
+            (
+                l
+                for l in self.labels
+                if l.get(source_key) and not l["has_parent"] and l.get("attributes")
+            )
+        )
+
+        attributes = deepcopy(label["attributes"])
+
+        for attribute in attributes:
+            attribute["name"] += "_updated"
+
+        expected_data, patch_data, ignore_fields = self._get_patch_data(
+            label, attributes=attributes
+        )
+
+        self._test_update_ok(
+            admin_user,
+            label["id"],
+            patch_data,
+            expected_data=expected_data,
+            ignore_fields=ignore_fields,
         )
 
     @parametrize("source", _TestLabelsPermissionsBase.source_types)
@@ -832,7 +873,7 @@ class TestLabelUpdates:
     def test_project_label_update_triggers_nested_task_and_job_update(
         self, update_kind, admin_user, labels, projects_wlc, tasks, jobs
     ):
-        # Checks for regressions against the issue https://github.com/opencv/cvat/issues/6871
+        # Checks for regressions against the issue https://github.com/cvat-ai/cvat/issues/6871
 
         project = next(p for p in projects_wlc if p["tasks"]["count"] and p["labels"]["count"])
         project_labels = [l for l in labels if l.get("project_id") == project["id"]]
@@ -885,7 +926,7 @@ class TestLabelUpdates:
     def test_task_label_update_triggers_nested_task_and_job_update(
         self, update_kind, admin_user, labels, tasks_wlc, jobs
     ):
-        # Checks for regressions against the issue https://github.com/opencv/cvat/issues/6871
+        # Checks for regressions against the issue https://github.com/cvat-ai/cvat/issues/6871
 
         task = next(t for t in tasks_wlc if t["jobs"]["count"] and t["labels"]["count"])
         task_labels = [l for l in labels if l.get("task_id") == task["id"]]
