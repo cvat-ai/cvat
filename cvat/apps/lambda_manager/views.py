@@ -43,17 +43,18 @@ from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
+slogger = ServerLogManager(__name__)
 
 class LambdaType(Enum):
     DETECTOR = "detector"
     INTERACTOR = "interactor"
     REID = "reid"
     TRACKER = "tracker"
-    UNKNOWN = "unknown"
 
     def __str__(self):
         return self.value
@@ -93,8 +94,11 @@ class LambdaGateway:
 
     def list(self):
         data = self._http(url=self.NUCLIO_ROOT_URL)
-        response = [LambdaFunction(self, item) for item in data.values()]
-        return response
+        for item in data.values():
+            try:
+                yield LambdaFunction(self, item)
+            except InvalidFunctionMetadataError:
+                slogger.glob.error("Failed to parse lambda function metadata", exc_info=True)
 
     def get(self, func_id):
         data = self._http(url=self.NUCLIO_ROOT_URL + '/' + func_id)
@@ -131,6 +135,9 @@ class LambdaGateway:
 
         return response
 
+class InvalidFunctionMetadataError(Exception):
+    pass
+
 class LambdaFunction:
     FRAME_PARAMETERS = (
         ('frame', 'frame'),
@@ -146,8 +153,9 @@ class LambdaFunction:
         kind = meta_anno.get('type')
         try:
             self.kind = LambdaType(kind)
-        except ValueError:
-            self.kind = LambdaType.UNKNOWN
+        except ValueError as e:
+            raise InvalidFunctionMetadataError(
+                f"{self.id} lambda function has unknown type: {kind!r}") from e
         # dictionary of labels for the function (e.g. car, person)
         spec = json.loads(meta_anno.get('spec') or '[]')
 
@@ -160,9 +168,8 @@ class LambdaFunction:
                 } for attr in attrs_spec]
 
                 if len(parsed_attributes) != len({attr['name'] for attr in attrs_spec}):
-                    raise ValidationError(
-                        f"{self.id} lambda function has non-unique attributes",
-                        code=status.HTTP_404_NOT_FOUND)
+                    raise InvalidFunctionMetadataError(
+                        f"{self.id} lambda function has non-unique attributes")
 
                 return parsed_attributes
 
@@ -181,9 +188,8 @@ class LambdaFunction:
                 parsed_labels.append(parsed_label)
 
             if len(parsed_labels) != len({label['name'] for label in spec}):
-                raise ValidationError(
-                    f"{self.id} lambda function has non-unique labels",
-                    code=status.HTTP_404_NOT_FOUND)
+                raise InvalidFunctionMetadataError(
+                    f"{self.id} lambda function has non-unique labels")
 
             return parsed_labels
 
@@ -192,9 +198,8 @@ class LambdaFunction:
         self.func_attributes = {item['name']: item.get('attributes', []) for item in spec}
         for label, attributes in self.func_attributes.items():
             if len([attr['name'] for attr in attributes]) != len(set([attr['name'] for attr in attributes])):
-                raise ValidationError(
-                    "`{}` lambda function has non-unique attributes for label {}".format(self.id, label),
-                    code=status.HTTP_404_NOT_FOUND)
+                raise InvalidFunctionMetadataError(
+                    "`{}` lambda function has non-unique attributes for label {}".format(self.id, label))
         # description of the function
         self.description = data['spec']['description']
         # http port to access the serverless function
