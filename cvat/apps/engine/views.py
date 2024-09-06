@@ -685,8 +685,7 @@ class _DataGetter(metaclass=ABCMeta):
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
     @abstractmethod
-    def _get_frame_provider(self) -> IFrameProvider:
-        ...
+    def _get_frame_provider(self) -> IFrameProvider: ...
 
     def __call__(self):
         frame_provider = self._get_frame_provider()
@@ -694,7 +693,7 @@ class _DataGetter(metaclass=ABCMeta):
         try:
             if self.type == 'chunk':
                 data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(data.data.getvalue(), content_type=data.mime) # TODO: add new headers
+                return HttpResponse(data.data.getvalue(), content_type=data.mime)
             elif self.type == 'frame' or self.type == 'preview':
                 if self.type == 'preview':
                     data = frame_provider.get_preview()
@@ -729,7 +728,7 @@ class _TaskDataGetter(_DataGetter):
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
 
-    def _get_frame_provider(self) -> IFrameProvider:
+    def _get_frame_provider(self) -> TaskFrameProvider:
         return TaskFrameProvider(self._db_task)
 
 
@@ -741,13 +740,47 @@ class _JobDataGetter(_DataGetter):
         data_type: str,
         data_quality: str,
         data_num: Optional[Union[str, int]] = None,
+        data_index: Optional[Union[str, int]] = None,
     ) -> None:
-        super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
+        possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
+        possible_quality_values = ('compressed', 'original')
+
+        if not data_type or data_type not in possible_data_type_values:
+            raise ValidationError('Data type not specified or has wrong value')
+        elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
+            if data_type == 'chunk':
+                if data_num is None and data_index is None:
+                    raise ValidationError('Number or Index is not specified')
+                if data_num is not None and data_index is not None:
+                    raise ValidationError('Number and Index cannot be used together')
+            elif data_num is None and data_type != 'preview':
+                raise ValidationError('Number is not specified')
+            elif data_quality not in possible_quality_values:
+                raise ValidationError('Wrong quality value')
+
+        self.type = data_type
+
+        self.number = int(data_index) if data_index is not None else None
+        self.task_chunk_number = int(data_num) if data_num is not None else None
+
+        self.quality = FrameQuality.COMPRESSED \
+            if data_quality == 'compressed' else FrameQuality.ORIGINAL
+
         self._db_job = db_job
 
-    def _get_frame_provider(self) -> IFrameProvider:
+    def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
 
+    def __call__(self):
+        if self.type == 'chunk' and self.task_chunk_number is not None:
+            # Reproduce the task chunk indexing
+            frame_provider = self._get_frame_provider()
+            data = frame_provider.get_chunk(
+                self.task_chunk_number, quality=self.quality, is_task_chunk=True
+            )
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        else:
+            return super().__call__()
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -1987,8 +2020,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame"),
+            OpenApiParameter('number',
+                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
+                description="A unique number value identifying chunk or frame. "
+                    "The numbers are the same as for the task. "
+                    "Deprecated for chunks in favor of 'index'"),
+            OpenApiParameter('index',
+                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
+                description="A unique number value identifying chunk, starts from 0 for each job"),
             ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
@@ -2000,10 +2039,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)
         data_num = request.query_params.get('number', None)
+        data_index = request.query_params.get('index', None)
         data_quality = request.query_params.get('quality', 'compressed')
 
         data_getter = _JobDataGetter(
-            db_job, data_type=data_type, data_num=data_num, data_quality=data_quality
+            db_job,
+            data_type=data_type, data_quality=data_quality,
+            data_index=data_index, data_num=data_num
         )
         return data_getter()
 

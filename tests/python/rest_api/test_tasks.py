@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 import attrs
 import numpy as np
@@ -2444,12 +2444,16 @@ class TestTaskData:
                     )
 
     @parametrize("task_spec, task_id", _default_task_cases)
-    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int):
+    @parametrize("indexing", ["absolute", "relative"])
+    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
                 get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
                 key=lambda j: j.start_frame,
             )
+
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
             for job in jobs:
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
 
@@ -2466,21 +2470,62 @@ class TestTaskData:
                 else:
                     assert False
 
-                chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
-                for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
-                    expected_chunk_abs_frame_ids = range(
-                        job_meta.start_frame
-                        + chunk_id * job_meta.chunk_size * task_spec.frame_step,
-                        job_meta.start_frame
-                        + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
-                        * task_spec.frame_step,
+                if indexing == "absolute":
+                    chunk_count = math.ceil(task_meta.size / job_meta.chunk_size)
+
+                    def get_task_chunk_abs_frame_ids(chunk_id: int) -> Sequence[int]:
+                        return range(
+                            task_meta.start_frame
+                            + chunk_id * task_meta.chunk_size * task_spec.frame_step,
+                            task_meta.start_frame
+                            + min((chunk_id + 1) * task_meta.chunk_size, task_meta.size)
+                            * task_spec.frame_step,
+                        )
+
+                    def get_job_frame_ids() -> Sequence[int]:
+                        return range(
+                            job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step
+                        )
+
+                    def get_expected_chunk_abs_frame_ids(chunk_id: int):
+                        return sorted(
+                            set(get_task_chunk_abs_frame_ids(chunk_id)) & set(get_job_frame_ids())
+                        )
+
+                    job_chunk_ids = (
+                        task_chunk_id
+                        for task_chunk_id in range(chunk_count)
+                        if get_expected_chunk_abs_frame_ids(task_chunk_id)
                     )
+                else:
+                    chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
+                    job_chunk_ids = range(chunk_count)
+
+                    def get_expected_chunk_abs_frame_ids(chunk_id: int):
+                        return range(
+                            job_meta.start_frame
+                            + chunk_id * job_meta.chunk_size * task_spec.frame_step,
+                            job_meta.start_frame
+                            + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
+                            * task_spec.frame_step,
+                        )
+
+                for quality, chunk_id in product(["original", "compressed"], job_chunk_ids):
+                    expected_chunk_abs_frame_ids = get_expected_chunk_abs_frame_ids(chunk_id)
+
+                    kwargs = {}
+                    if indexing == "absolute":
+                        kwargs["number"] = chunk_id
+                    elif indexing == "relative":
+                        kwargs["index"] = chunk_id
+                    else:
+                        assert False
 
                     (_, response) = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="chunk",
                         quality=quality,
-                        number=chunk_id,
+                        **kwargs,
                         _parse_response=False,
                     )
 

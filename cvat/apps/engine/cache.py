@@ -121,10 +121,19 @@ class MediaCache:
         *,
         quality: FrameQuality,
     ) -> str:
-        return f"{self._make_cache_key_prefix(db_obj)}_{chunk_number}_{quality}"
+        return f"{self._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
 
     def _make_preview_key(self, db_obj: Union[models.Segment, models.CloudStorage]) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_preview"
+
+    def _make_segment_task_chunk_key(
+        self,
+        db_obj: models.Segment,
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+    ) -> str:
+        return f"{self._make_cache_key_prefix(db_obj)}_task_chunk_{chunk_number}_{quality}"
 
     def _make_context_image_preview_key(self, db_data: models.Data, frame_number: int) -> str:
         return f"context_image_{db_data.id}_{frame_number}_preview"
@@ -154,6 +163,19 @@ class MediaCache:
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
             key=self._make_chunk_key(db_task, chunk_number, quality=quality),
+            create_callback=set_callback,
+        )
+
+    def get_or_set_segment_task_chunk(
+        self,
+        db_segment: models.Segment,
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+        set_callback: Callable[[], DataWithMime],
+    ) -> DataWithMime:
+        return self._get_or_set_cache_item(
+            key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
             create_callback=set_callback,
         )
 

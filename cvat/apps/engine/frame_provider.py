@@ -12,11 +12,24 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Callable, Generic, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import av
 import cv2
 import numpy as np
+from datumaro.util import take_by
 from django.conf import settings
 from PIL import Image
 from rest_framework.exceptions import ValidationError
@@ -255,13 +268,12 @@ class TaskFrameProvider(IFrameProvider):
         return_type = DataWithMeta[BytesIO]
         chunk_number = self.validate_chunk_number(chunk_number)
 
-        db_data = self._db_task.data
-
         cache = MediaCache()
         cached_chunk = cache.get_task_chunk(self._db_task, chunk_number, quality=quality)
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
+        db_data = self._db_task.data
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
@@ -273,7 +285,7 @@ class TaskFrameProvider(IFrameProvider):
             )
         )
 
-        matching_segments = sorted(
+        matching_segments: list[models.Segment] = sorted(
             [
                 s
                 for s in self._db_task.segment_set.all()
@@ -285,13 +297,15 @@ class TaskFrameProvider(IFrameProvider):
         assert matching_segments
 
         # Don't put this into set_callback to avoid data duplication in the cache
-        if len(matching_segments) == 1 and task_chunk_frame_set == set(
-            matching_segments[0].frame_set
-        ):
+
+        if len(matching_segments) == 1:
             segment_frame_provider = SegmentFrameProvider(matching_segments[0])
-            return segment_frame_provider.get_chunk(
-                segment_frame_provider.get_chunk_number(task_chunk_start_frame), quality=quality
+            matching_chunk_index = segment_frame_provider.find_matching_chunk(
+                sorted(task_chunk_frame_set)
             )
+            if matching_chunk_index is not None:
+                # The requested frames match one of the job chunks, we can use it directly
+                return segment_frame_provider.get_chunk(matching_chunk_index, quality=quality)
 
         def _set_callback() -> DataWithMime:
             # Create and return a joined / cleaned chunk
@@ -469,6 +483,20 @@ class SegmentFrameProvider(IFrameProvider):
     def get_chunk_number(self, frame_number: int) -> int:
         return int(frame_number) // self._db_segment.task.data.chunk_size
 
+    def find_matching_chunk(self, frames: Sequence[int]) -> Optional[int]:
+        return next(
+            (
+                i
+                for i, chunk_frames in enumerate(
+                    take_by(
+                        sorted(self._db_segment.frame_set), self._db_segment.task.data.chunk_size
+                    )
+                )
+                if frames == set(chunk_frames)
+            ),
+            None,
+        )
+
     def validate_chunk_number(self, chunk_number: int) -> int:
         segment_size = self._db_segment.frame_count
         last_chunk = math.ceil(segment_size / self._db_segment.task.data.chunk_size) - 1
@@ -559,6 +587,77 @@ class SegmentFrameProvider(IFrameProvider):
 class JobFrameProvider(SegmentFrameProvider):
     def __init__(self, db_job: models.Job) -> None:
         super().__init__(db_job.segment)
+
+    def get_chunk(
+        self,
+        chunk_number: int,
+        *,
+        quality: FrameQuality = FrameQuality.ORIGINAL,
+        is_task_chunk: bool = False,
+    ) -> DataWithMeta[BytesIO]:
+        if not is_task_chunk:
+            return super().get_chunk(chunk_number, quality=quality)
+
+        task_frame_provider = TaskFrameProvider(self._db_segment.task)
+        segment_start_chunk = task_frame_provider.get_chunk_number(self._db_segment.start_frame)
+        segment_stop_chunk = task_frame_provider.get_chunk_number(self._db_segment.stop_frame)
+        if not segment_start_chunk <= chunk_number <= segment_stop_chunk:
+            raise ValidationError(
+                f"Invalid chunk number '{chunk_number}'. "
+                "The chunk number should be in the "
+                f"[{segment_start_chunk}, {segment_stop_chunk}] range"
+            )
+
+        # Reproduce the task chunks, limited by this job
+        return_type = DataWithMeta[BytesIO]
+
+        cache = MediaCache()
+        cached_chunk = cache.get_task_chunk(self._db_segment.task, chunk_number, quality=quality)
+        if cached_chunk:
+            return return_type(cached_chunk[0], cached_chunk[1])
+
+        db_data = self._db_segment.task.data
+        step = db_data.get_frame_step()
+        task_chunk_start_frame = chunk_number * db_data.chunk_size
+        task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
+        task_chunk_frame_set = set(
+            range(
+                db_data.start_frame + task_chunk_start_frame * step,
+                min(db_data.start_frame + task_chunk_stop_frame * step, db_data.stop_frame) + step,
+                step,
+            )
+        )
+
+        # Don't put this into set_callback to avoid data duplication in the cache
+        matching_chunk = self.find_matching_chunk(sorted(task_chunk_frame_set))
+        if matching_chunk is not None:
+            return self.get_chunk(matching_chunk, quality=quality)
+
+        def _set_callback() -> DataWithMime:
+            # Create and return a joined / cleaned chunk
+            segment_frame_set = set(self._db_segment.frame_set)
+            task_chunk_frames = {}
+            for task_chunk_frame_id in sorted(task_chunk_frame_set):
+                if task_chunk_frame_id not in segment_frame_set:
+                    continue
+
+                frame, frame_name, _ = self._get_raw_frame(
+                    task_frame_provider.get_rel_frame_number(task_chunk_frame_id), quality=quality
+                )
+                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
+
+            return prepare_chunk(
+                task_chunk_frames.values(),
+                quality=quality,
+                db_task=self._db_segment.task,
+                dump_unchanged=True,
+            )
+
+        buffer, mime_type = cache.get_or_set_segment_task_chunk(
+            self._db_segment, chunk_number, quality=quality, set_callback=_set_callback
+        )
+
+        return return_type(data=buffer, mime=mime_type)
 
 
 @overload
