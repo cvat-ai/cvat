@@ -2,7 +2,7 @@ job "{###JOB_UUID###}" {
   datacenters = ["ifca-ai4eosc"]
   namespace = "ai4eosc"
   type = "service"
-  
+
   meta {
     force_pull_img_cvat_server         = false
     force_pull_img_cvat_ui             = false
@@ -48,25 +48,25 @@ job "{###JOB_UUID###}" {
       operator  = "="
       value     = "true"
     }
-    
+
     # Avoid rescheduling the job on **other** nodes during a network cut
     # Command not working due to https://github.com/hashicorp/nomad/issues/16515
     reschedule {
       attempts  = 0
       unlimited = false
     }
-    
+
     restart {
       attempts = 3
       interval = "5m"
       delay = "30s"
       mode = "delay"
     }
-    
+
     ephemeral_disk {
       size = 1024
     }
-    
+
     network {
       port "ui" {
         to = 80
@@ -120,7 +120,7 @@ job "{###JOB_UUID###}" {
         to = 80
       }
     }
-    
+
     service {
       name = "${BASE}-ui"
       port = "ui"
@@ -131,7 +131,7 @@ job "{###JOB_UUID###}" {
         "traefik.http.routers.${NOMAD_META_job_uuid}-ui.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`)"
       ]
     }
-    
+
     service {
       name = "${BASE}-server"
       port = "server"
@@ -142,7 +142,7 @@ job "{###JOB_UUID###}" {
         "traefik.http.routers.${NOMAD_META_job_uuid}-server.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`) && PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)"
       ]
     }
-    
+
     service {
       name = "${BASE}-grafana"
       port = "grafana"
@@ -159,7 +159,7 @@ job "{###JOB_UUID###}" {
         "traefik.services.${NOMAD_META_job_uuid}-grafana.loadbalancer.passHostHeader=false"
       ]
     }
-    
+
     task "storagetask" {
       lifecycle {
         hook = "prestart"
@@ -177,7 +177,8 @@ job "{###JOB_UUID###}" {
         LOCAL_PATH                  = "/storage"
       }
       config {
-        image   = "ignacioheredia/ai4-docker-storage"
+        force_pull = true
+        image      = "registry.services.ai4os.eu/ai4os/docker-storage:latest"
         privileged = true
         volumes = [
           "/nomad-storage/${NOMAD_META_job_uuid}/data:/storage/data:shared",
@@ -225,7 +226,7 @@ job "{###JOB_UUID###}" {
         memory = 2000
       }
     }
-    
+
     task "storagecleanup" {
       lifecycle {
         hook = "poststop"
@@ -234,12 +235,12 @@ job "{###JOB_UUID###}" {
       config {
         command = "/bin/bash"
         args = [
-          "-c", 
+          "-c",
           "sudo umount /nomad-storage/${NOMAD_META_job_uuid}/data && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/data && sudo umount /nomad-storage/${NOMAD_META_job_uuid}/db && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/db && sudo umount /nomad-storage/${NOMAD_META_job_uuid}/share && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/share"
         ]
       }
     }
-    
+
     task "clickhouse" {
       driver = "docker"
       resources {
@@ -301,7 +302,7 @@ job "{###JOB_UUID###}" {
         destination = "local/docker-entrypoint-initdb.d/init.sh"
       }
     }
-    
+
     task "grafana" {
       driver = "docker"
       env {
@@ -398,7 +399,7 @@ job "{###JOB_UUID###}" {
         destination = "local/etc/grafana/provisioning/datasources/ds.yaml"
       }
     }
-         
+
     task "db" {
       driver = "docker"
       env {
@@ -416,7 +417,7 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "redis" {
       driver = "docker"
       resources {
@@ -441,7 +442,7 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "vector" {
       driver = "docker"
       resources {
@@ -469,7 +470,7 @@ job "{###JOB_UUID###}" {
         destination = "local/etc/vector/"
       }
     }
-    
+
     task "server" {
       driver = "docker"
       resources {
@@ -518,7 +519,7 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "utils" {
       lifecycle {
         hook = "poststart"
@@ -591,7 +592,7 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
- 
+
     task "worker-export" {
       lifecycle {
         hook = "poststart"
@@ -774,7 +775,7 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "ui" {
       lifecycle {
         hook = "poststart"
