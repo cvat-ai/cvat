@@ -1,6 +1,6 @@
 ### Added
 
-- A server setting to disable media chunks on the local filesystem
+- A server setting to enable or disable storage of permanent media chunks on the server filesystem
   (<https://github.com/cvat-ai/cvat/pull/8272>)
 - \[Server API\] `GET /api/jobs/{id}/data/?type=chunk&index=x` parameter combination.
   The new `index` parameter allows to retrieve job chunks using 0-based index in each job,
