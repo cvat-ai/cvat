@@ -719,7 +719,15 @@ class SkeletonMatcher(_ShapeMatcher):
 
 
 @attrs
-class LineMatcher(_ShapeMatcher, LineMatcherQualityReports):
+class LineMatcher(_ShapeMatcher):
+    def _distance_func(self, item_a, item_b):
+        img_h, img_w = self._context.get_item_media_dims(id(item_a))
+        matcher = LineMatcherQualityReports(
+            torso_r=self._distance_comparator.line_torso_radius,
+            scale=np.prod([img_h, img_w]),
+        )
+        return matcher.distance(item_a, item_b)
+
     def match_annotations_two_sources(self, item_a: List[dm.PolyLine], item_b: List[dm.PolyLine]):
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
@@ -791,7 +799,7 @@ class _ShapeMerger(_ShapeMatcher):
         img_h, img_w = self._context.get_item_media_dims(id(a))
         dist = []
         for s in cluster:
-            if isinstance(s, dm.Points):
+            if isinstance(s, dm.Points) or isinstance(s, dm.PolyLine):
                 s = self._distance_comparator.to_polygon(Bbox(*s.get_bbox()))
             elif isinstance(s, dm.Bbox):
                 s = self._distance_comparator.to_polygon(s)
