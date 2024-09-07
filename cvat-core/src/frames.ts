@@ -587,7 +587,7 @@ export async function getFrame(
     isPlaying: boolean,
     step: number,
     dimension: DimensionType,
-    getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
+    getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
 ): Promise<FrameData> {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
