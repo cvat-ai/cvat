@@ -29,7 +29,7 @@ if __name__ == "__main__":
         "consensus/report",
         "consensus/conflict",
         "consensus/setting",
-        "consensus/assignee_reports",
+        "consensus/assignee_report",
     ]:
         response = get_method("admin1", f"{obj}s", page_size="all")
 
