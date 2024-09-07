@@ -43,19 +43,19 @@ const componentShortcuts = {
         name: 'Undo action',
         description: 'Cancel the latest action related with objects',
         sequences: ['ctrl+z'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     REDO: {
         name: 'Redo action',
         description: 'Cancel undo action',
         sequences: ['ctrl+shift+z', 'ctrl+y'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     SWITCH_TOOLS_BLOCKER_STATE: {
         name: 'Switch algorithm blocker',
         description: 'Postpone running the algorithm for interaction tools',
         sequences: ['tab'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.STANDARD_WORKSPACE,
     },
 };
 

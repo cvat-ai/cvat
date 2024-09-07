@@ -9,8 +9,8 @@ import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import { Task } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
+import { clampValue, percent } from 'utils/quality';
 import AnalyticsCard from '../views/analytics-card';
-import { percent, clampValue } from '../utils/text-formatting';
 
 interface Props {
     task: Task;
