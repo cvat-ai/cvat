@@ -3,20 +3,21 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import message from 'antd/lib/message';
 
-import { LabelType } from 'cvat-core-wrapper';
+import { LabelType, ShapeType } from 'cvat-core-wrapper';
 import { CombinedState, ObjectType } from 'reducers';
 import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
-import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
+import { getCVATStore } from 'cvat-store';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
@@ -34,33 +35,29 @@ registerComponentShortcuts(componentShortcuts);
 
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const activatedStateID = useSelector((state: CombinedState) => state.annotation.annotations.activatedStateID);
-    const activeShapeType = useSelector((state: CombinedState) => state.annotation.drawing.activeShapeType);
-    const activeObjectType = useSelector((state: CombinedState) => state.annotation.drawing.activeObjectType);
-    const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
-    const keyMap = useSelector((state: CombinedState) => state.shortcuts.keyMap);
+
+    const { labels, keyMap } = useSelector((state: CombinedState) => ({
+        labels: state.annotation.job.labels,
+        activeShapeType: state.annotation.drawing.activeShapeType,
+        activeObjectType: state.annotation.drawing.activeObjectType,
+        keyMap: state.shortcuts.keyMap,
+    }), shallowEqual);
+
     const labelIDs = labels.map((label: any): number => label.id);
-    const [keyToLabelMapping, setKeyToLabelMapping] = useState<Record<string, number>>(
-        Object.fromEntries(labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID])),
-    );
 
     useResetShortcutsOnUnmount(componentShortcuts);
 
-    useEffect(() => {
-        const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce((acc: KeyMap, key: string) => {
-            acc[key] = {
-                ...componentShortcuts[key],
-                sequences: keyMap[key].sequences,
-            };
-            return acc;
-        }, {});
+    const keyToLabelMapping = Object.fromEntries(
+        labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
+    );
 
-        for (const [id, labelID] of Object.entries(keyToLabelMapping)) {
+    useEffect(() => {
+        const updatedComponentShortcuts = JSON.parse(JSON.stringify(componentShortcuts));
+        for (const [index, labelID] of Object.entries(keyToLabelMapping)) {
             if (labelID) {
                 const labelName = labels.find((label: any) => label.id === labelID)?.name;
-                updatedComponentShortcuts[`SWITCH_LABEL_${id}`] = {
-                    ...updatedComponentShortcuts[`SWITCH_LABEL_${id}`],
+                updatedComponentShortcuts[`SWITCH_LABEL_${index}`] = {
+                    ...updatedComponentShortcuts[`SWITCH_LABEL_${index}`],
                     nonActive: false,
                     name: `Switch label to ${labelName}`,
                     description: `Changes the label to ${labelName} for the activated
@@ -70,63 +67,45 @@ function LabelsListComponent(): JSX.Element {
         }
 
         registerComponentShortcuts(updatedComponentShortcuts);
-    }, [keyToLabelMapping]);
+    }, [labels]);
 
-    const updateLabelShortcutKey = useCallback(
-        (key: string, labelID: number) => {
-            // unassign any keys assigned to the current labels
-            const keyToLabelMappingCopy = { ...keyToLabelMapping };
-            for (const shortKey of Object.keys(keyToLabelMappingCopy)) {
-                if (keyToLabelMappingCopy[shortKey] === labelID) {
-                    delete keyToLabelMappingCopy[shortKey];
-                }
-            }
-
-            if (key === '—') {
-                setKeyToLabelMapping(keyToLabelMappingCopy);
-                return;
-            }
-
-            // check if this key is assigned to another label
-            if (key in keyToLabelMappingCopy) {
-                // try to find a new key for the other label
-                for (let i = 0; i < 10; i++) {
-                    const adjustedI = (i + 1) % 10;
-                    if (!(adjustedI in keyToLabelMappingCopy)) {
-                        keyToLabelMappingCopy[adjustedI] = keyToLabelMappingCopy[key];
-                        break;
-                    }
-                }
-                // delete assigning to the other label
-                delete keyToLabelMappingCopy[key];
-            }
-
-            // assigning to the current label
-            keyToLabelMappingCopy[key] = labelID;
-            setKeyToLabelMapping(keyToLabelMappingCopy);
-        },
-        [keyToLabelMapping],
-    );
-
-    const handleHelper = (event: KeyboardEvent, i: number): void => {
+    const handleHelper = (event: KeyboardEvent, index: number): void => {
         if (event) event.preventDefault();
-        const labelID = keyToLabelMapping[i];
+        const labelID = keyToLabelMapping[index];
         const label = labels.find((_label: any) => _label.id === labelID)!;
-        if (Number.isInteger(labelID) && label && Number.isInteger(activatedStateID)) {
-            const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
-            const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === ObjectType.TAG;
-            const labelIsApplicable = label.type === LabelType.ANY ||
-                activatedState.shapeType === label.type || bothAreTags;
-            if (activatedState && labelIsApplicable) {
-                activatedState.label = label;
-                dispatch(updateAnnotationsAsync([activatedState]));
-            }
-        } else {
-            const bothAreTags = activeObjectType === ObjectType.TAG && label.type === ObjectType.TAG;
-            const labelIsApplicable = label.type === LabelType.ANY ||
-                activeShapeType === label.type || bothAreTags;
-            if (labelIsApplicable) {
-                dispatch(rememberObject({ activeLabelID: labelID }));
+        if (Number.isInteger(labelID) && label) {
+            const relevantAppState = getCVATStore().getState();
+            const { states, activatedStateID } = relevantAppState.annotation.annotations;
+            const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
+
+            if (Number.isInteger(activatedStateID)) {
+                const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
+                const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === LabelType.TAG;
+                const labelIsApplicable = label.type === LabelType.ANY ||
+                    (activatedState.shapeType === label.type && activatedState.shapeType !== ShapeType.SKELETON) ||
+                    bothAreTags;
+                if (activatedState && labelIsApplicable) {
+                    activatedState.label = label;
+                    dispatch(updateAnnotationsAsync([activatedState]));
+                }
+            } else {
+                if (label.type === LabelType.TAG) {
+                    dispatch(rememberObject({ activeLabelID: labelID, activeObjectType: ObjectType.TAG }, false));
+                } else if (label.type === LabelType.MASK) {
+                    dispatch(rememberObject({
+                        activeLabelID: labelID,
+                        activeObjectType: ObjectType.SHAPE,
+                        activeShapeType: ShapeType.MASK,
+                    }, false));
+                } else {
+                    dispatch(rememberObject({
+                        activeLabelID: labelID,
+                        activeObjectType: activeObjectType !== ObjectType.TAG ? activeObjectType : ObjectType.SHAPE,
+                        activeShapeType: label.type === LabelType.ANY && activeShapeType !== ShapeType.SKELETON ?
+                            activeShapeType : label.type as unknown as ShapeType,
+                    }, false));
+                }
+
                 message.destroy();
                 message.success(`Default label has been changed to "${label.name}"`);
             }
@@ -149,12 +128,7 @@ function LabelsListComponent(): JSX.Element {
             </div>
             {labelIDs.map(
                 (labelID: number): JSX.Element => (
-                    <LabelItemContainer
-                        key={labelID}
-                        labelID={labelID}
-                        keyToLabelMapping={keyToLabelMapping}
-                        updateLabelShortcutKey={updateLabelShortcutKey}
-                    />
+                    <LabelItemContainer key={labelID} labelID={labelID} />
                 ),
             )}
         </div>
