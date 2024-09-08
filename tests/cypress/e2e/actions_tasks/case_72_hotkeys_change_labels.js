@@ -7,7 +7,7 @@
 
 context('Hotkeys to change labels feature.', () => {
     const caseId = '72';
-    const labelName = `Case ${caseId}`;
+    const labelName = `Case_${caseId}`;
     const taskName = labelName;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = '2';
@@ -22,7 +22,7 @@ context('Hotkeys to change labels feature.', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    const secondLabel = `Case ${caseId} second`;
+    const secondLabel = `Case_${caseId}_second`;
     const additionalAttrsSecondLabel = [{
         name: attrName,
         values: '0;3;1',
