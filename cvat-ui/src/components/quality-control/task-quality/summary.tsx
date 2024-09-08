@@ -51,7 +51,7 @@ export function SummaryComponent(props: Readonly<Props>): JSX.Element {
     return (
         <AnalyticsCard
             title='Summary'
-            className='cvat-task-mean-annotation-quality'
+            className='cvat-annotations-quality-allocation-table-summary'
             bottomElement={reportInfo}
             size={{ leftElementSize: 24 }}
         />

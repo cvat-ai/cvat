@@ -22,22 +22,6 @@ const defaultState: PluginsState = {
                 },
             },
         },
-        qualityControlPage: {
-            tabs: {
-                management: {
-                    allocationTable: {
-                        columns: {
-                            quality: {
-                                sorter: [],
-                            },
-                            useCount: {
-                                sorter: [],
-                            },
-                        },
-                    },
-                },
-            },
-        },
     },
     components: {
         header: {
@@ -59,21 +43,6 @@ const defaultState: PluginsState = {
                 topBar: {
                     menu: {
                         items: [],
-                    },
-                },
-            },
-        },
-        qualityControlPage: {
-            tabs: {
-                overview: [],
-                management: {
-                    page: [],
-                    allocationTable: {
-                        columns: {
-                            quality: [],
-                            useCount: [],
-                        },
-                        actions: [],
                     },
                 },
             },

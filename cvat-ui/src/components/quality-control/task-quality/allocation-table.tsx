@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
@@ -14,89 +13,41 @@ import Icon, { DeleteOutlined } from '@ant-design/icons';
 
 import { RestoreIcon } from 'icons';
 import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
-import { sorter, QualityColors } from 'utils/quality';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { usePlugins } from 'utils/hooks';
-import { CombinedState } from 'reducers';
+import { sorter } from 'utils/quality';
 
 interface Props {
     task: Task;
     gtJob: Job;
     gtJobMeta: FramesMetaData;
-    getQualityColor: (value?: number) => QualityColors;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
 
 interface RowData {
     frame: number;
-    name: { name: string, index: number },
-    useCount: number,
-    quality: number,
-    active: boolean,
-    actions: { frameID: number, active: boolean },
+    name: string;
+    active: boolean;
 }
 
-export default function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
+function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
     const {
-        task,
-        gtJob,
-        gtJobMeta,
-        getQualityColor,
-        onDeleteFrames,
-        onRestoreFrames,
+        task, gtJob, gtJobMeta,
+        onDeleteFrames, onRestoreFrames,
     } = props;
 
     const history = useHistory();
-    const notAvailableComponent = <Text style={{ color: getQualityColor(0) }}>Unknown</Text>;
-
-    const qualityColumnPlugins = usePlugins(
-        (state: CombinedState) => (
-            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.quality
-        ), props, { frameID: null },
-    );
-    const qualitySorter = useSelector((state: CombinedState) => (
-        state.plugins.callbacks.qualityControlPage.tabs.management.allocationTable.columns.quality.sorter
-    ))[0] ?? sorter('quality');
-
-    const useCountColumnPlugins = usePlugins(
-        (state: CombinedState) => (
-            state.plugins.components.qualityControlPage.tabs.management.allocationTable.columns.useCount
-        ), props, { frameID: null },
-    );
-    const useCountSorter = useSelector((state: CombinedState) => (
-        state.plugins.callbacks.qualityControlPage.tabs.management.allocationTable.columns.useCount.sorter
-    ))[0] ?? sorter('useCount');
-
-    const allocationTableActionsPlugins = usePlugins(
-        (state: CombinedState) => (
-            state.plugins.components.qualityControlPage.tabs.management.allocationTable.actions
-        ), props,
-    );
-
-    const allocationTableActionsItems: [JSX.Element, number][] = [];
-    allocationTableActionsItems.push(
-        ...allocationTableActionsPlugins.map(({ component: Component, weight }, index) => {
-            const component = <Component targetProps={props} key={index} />;
-            return [component, weight] as [JSX.Element, number];
-        }),
-    );
-
-    const [select, setSelect] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
+    const [selection, setSelection] = useState<{ selectedRowKeys: Key[], selectedRows: RowData[] }>({
         selectedRowKeys: [],
         selectedRows: [],
     });
 
-    const rowSelection = {
-        selectedRowKeys: select.selectedRowKeys,
-        onChange: (selectedRowKeys: Key[], selectedRows: RowData[]) => {
-            setSelect({
-                ...select,
-                selectedRowKeys: [...selectedRowKeys],
-                selectedRows: [...selectedRows],
-            });
-        },
-    };
+    const data = gtJobMeta.includedFrames.map((frameID: number) => ({
+        key: frameID,
+        frame: frameID,
+        name: gtJobMeta.frames[frameID]?.name ?? gtJobMeta.frames[0].name,
+        active: !(frameID in gtJobMeta.deletedFrames),
+    }));
 
     const columns = [
         {
@@ -125,15 +76,15 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
             dataIndex: 'name',
             key: 'name',
             width: 300,
-            sorter: sorter('name.name'),
-            render: ({ name, index }: { name: string, index: number }) => (
+            sorter: sorter('name'),
+            render: (name: string, record: RowData) => (
                 <CVATTooltip title={name}>
                     <Button
                         className='cvat-open-frame-button'
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${index}`);
+                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${record.frame}`);
                         }}
                     >
                         {name}
@@ -142,84 +93,31 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
             ),
         },
         {
-            title: 'Use count',
-            dataIndex: 'useCount',
-            key: 'useCount',
-            align: 'center' as const,
-            width: 100,
-            sorter: useCountSorter,
-            render: (frameID: number): JSX.Element => {
-                const useCountColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
-                useCountColumnItems.push(
-                    ...useCountColumnPlugins.map(({ component: Component, weight }, index) => {
-                        const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
-                        return [component, weight] as [JSX.Element, number];
-                    }),
-                );
-                const renderedComponent = useCountColumnItems.sort((a, b) => b[1] - a[1])[0][0];
-
-                return renderedComponent;
-            },
-        },
-        {
-            title: 'Quality',
-            dataIndex: 'quality',
-            key: 'quality',
-            align: 'center' as const,
-            className: 'cvat-job-item-quality',
-            width: 50,
-            sorter: qualitySorter,
-            render: (frameID: number): JSX.Element => {
-                const qualityColumnItems: [JSX.Element, number][] = [[notAvailableComponent, 10]];
-                qualityColumnItems.push(
-                    ...qualityColumnPlugins.map(({ component: Component, weight }, index) => {
-                        const component = <Component targetProps={props} key={index} targetState={{ frameID }} />;
-                        return [component, weight] as [JSX.Element, number];
-                    }),
-                );
-                const renderedComponent = qualityColumnItems.sort((a, b) => b[1] - a[1])[0][0];
-
-                return renderedComponent;
-            },
-        },
-        {
             title: 'Actions',
-            dataIndex: 'actions',
+            dataIndex: 'active',
             key: 'actions',
             align: 'center' as const,
-            className: 'cvat-job-item-quality',
             width: 20,
             filters: [
                 { text: 'Active', value: true },
                 { text: 'Excluded', value: false },
             ],
             sorter: sorter('active'),
-            onFilter: (value: boolean | Key, record: RowData) => record.actions.active === value,
-            render: ({ frameID, active }: { frameID: number, active: boolean }): JSX.Element => (
+            onFilter: (value: boolean | Key, record: RowData) => record.active === value,
+            render: (active: boolean, record: RowData): JSX.Element => (
                 active ? (
                     <DeleteOutlined
-                        onClick={() => { onDeleteFrames([frameID]); }}
+                        onClick={() => { onDeleteFrames([record.frame]); }}
                     />
                 ) : (
                     <Icon
-                        onClick={() => { onRestoreFrames([frameID]); }}
+                        onClick={() => { onRestoreFrames([record.frame]); }}
                         component={RestoreIcon}
                     />
                 )
             ),
         },
     ];
-
-    const data = gtJobMeta.includedFrames.map((frameID: number) => ({
-        key: frameID,
-        frame: frameID,
-        name: { name: gtJobMeta.frames[frameID]?.name ?? gtJobMeta.frames[0].name, index: frameID },
-        useCount: frameID,
-        quality: frameID,
-        active: !(frameID in gtJobMeta.deletedFrames),
-        actions: { frameID, active: !(frameID in gtJobMeta.deletedFrames) },
-    }),
-    );
 
     return (
         <div className='cvat-frame-allocation-list'>
@@ -228,39 +126,27 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
                     <Text className='cvat-text-color cvat-frame-allocation-header'> Frames </Text>
                 </Col>
                 {
-                    allocationTableActionsItems.sort((item1, item2) => item1[1] - item2[1])
-                        .map((item) => item[0])
-                }
-                {
-                    select.selectedRowKeys.length !== 0 ? (
+                    selection.selectedRowKeys.length !== 0 ? (
                         <>
                             <Col>
                                 <DeleteOutlined
                                     onClick={() => {
-                                        const framesToUpdate = select.selectedRows
+                                        const framesToUpdate = selection.selectedRows
                                             .filter((frameData) => frameData.active)
                                             .map((frameData) => frameData.frame);
                                         onDeleteFrames(framesToUpdate);
-                                        setSelect({
-                                            ...select,
-                                            selectedRowKeys: [],
-                                            selectedRows: [],
-                                        });
+                                        setSelection({ selectedRowKeys: [], selectedRows: [] });
                                     }}
                                 />
                             </Col>
                             <Col>
                                 <Icon
                                     onClick={() => {
-                                        const framesToUpdate = select.selectedRows
+                                        const framesToUpdate = selection.selectedRows
                                             .filter((frameData) => !frameData.active)
                                             .map((frameData) => frameData.frame);
                                         onRestoreFrames(framesToUpdate);
-                                        setSelect({
-                                            ...select,
-                                            selectedRowKeys: [],
-                                            selectedRows: [],
-                                        });
+                                        setSelection({ selectedRowKeys: [], selectedRows: [] });
                                     }}
                                     component={RestoreIcon}
                                 />
@@ -279,10 +165,21 @@ export default function AllocationTableComponent(props: Readonly<Props>): JSX.El
                 }}
                 columns={columns}
                 dataSource={data}
-                rowSelection={rowSelection}
+                rowSelection={{
+                    selectedRowKeys: selection.selectedRowKeys,
+                    onChange: (selectedRowKeys: Key[], selectedRows: RowData[]) => {
+                        setSelection({
+                            ...selection,
+                            selectedRowKeys,
+                            selectedRows,
+                        });
+                    },
+                }}
                 size='small'
                 pagination={{ showSizeChanger: true }}
             />
         </div>
     );
 }
+
+export default React.memo(AllocationTableComponent);

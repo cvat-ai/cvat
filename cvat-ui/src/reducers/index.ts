@@ -259,22 +259,6 @@ export interface PluginsState {
                 };
             };
         };
-        qualityControlPage:{
-            tabs: {
-                management: {
-                    allocationTable: {
-                        columns: {
-                            quality: {
-                                sorter: ((row1: any, row2: any) => number)[];
-                            };
-                            useCount: {
-                                sorter: ((row1: any, row2: any) => number)[];
-                            };
-                        }
-                    }
-                },
-            },
-        };
     };
     components: {
         header: {
@@ -299,21 +283,6 @@ export interface PluginsState {
                     };
                 };
             };
-        };
-        qualityControlPage:{
-            tabs: {
-                overview: PluginComponent[];
-                management: {
-                    page: PluginComponent[];
-                    allocationTable: {
-                        columns: {
-                            quality: PluginComponent[];
-                            useCount: PluginComponent[];
-                        },
-                        actions: PluginComponent[];
-                    }
-                },
-            },
         };
         projectActions: {
             items: PluginComponent[];

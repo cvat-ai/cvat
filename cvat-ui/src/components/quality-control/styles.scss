@@ -125,3 +125,18 @@ $excluded-background: #d9d9d973;
     right: 50%;
     margin-top: 20%;
 }
+
+.cvat-annotations-quality-allocation-table-summary {
+    margin-bottom: $grid-unit-size * 2;
+
+    .ant-statistic {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2 $grid-unit-size * 3;
+    }
+}

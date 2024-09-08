@@ -21,7 +21,6 @@ import {
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
-import { qualityColorGenerator, QualityColors } from 'utils/quality';
 import TaskQualityComponent from './task-quality/task-quality-component';
 import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
 import QualitySettingsComponent from './quality-settings';
@@ -45,7 +44,6 @@ interface State {
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
-        getQualityColor: ((value?: number) => QualityColors) | null;
         targetMetric: TargetMetric | null;
     },
 }
@@ -102,7 +100,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             qualitySettings: {
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
-                getQualityColor: qualityColorGenerator(action.payload.qualitySettings.targetMetricThreshold),
                 targetMetric: action.payload.qualitySettings.targetMetric,
             },
         };
@@ -159,7 +156,6 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: null,
             fetching: true,
-            getQualityColor: null,
             targetMetric: null,
         },
     });
@@ -349,11 +345,11 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: qualitySettings,
             fetching: qualitySettingsFetching,
-            getQualityColor, targetMetric,
+            targetMetric,
         },
     } = state;
-    const settingsInitialized = qualitySettings && getQualityColor && targetMetric;
 
+    const settingsInitialized = qualitySettings && targetMetric;
     if (instanceType && instance && settingsInitialized) {
         backNavigation = (
             <Row justify='center'>
@@ -379,11 +375,7 @@ function QualityControlPage(): JSX.Element {
             key: 'overview',
             label: 'Overview',
             children: (
-                <TaskQualityComponent
-                    task={instance}
-                    getQualityColor={getQualityColor}
-                    targetMetric={targetMetric}
-                />
+                <TaskQualityComponent task={instance} targetMetric={targetMetric} />
             ),
         }, 10]);
 
@@ -398,7 +390,6 @@ function QualityControlPage(): JSX.Element {
                         gtJobMeta={gtJobMeta}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
-                        getQualityColor={getQualityColor}
                         fetching={fetching}
                     />
                 ),
