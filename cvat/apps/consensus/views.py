@@ -423,10 +423,7 @@ class AssigneeConsensusReportViewSet(
     iam_organization_field = ["task__organization"]
 
     search_fields = []
-    filter_fields = list(search_fields) + [
-        "id",
-        "consensus_report_id"
-    ]
+    filter_fields = list(search_fields) + ["id", "consensus_report_id"]
     simple_filters = list(set(filter_fields) - {"id"})
     ordering_fields = list(filter_fields)
     ordering = "id"

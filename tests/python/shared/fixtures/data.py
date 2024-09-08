@@ -222,6 +222,7 @@ def quality_settings():
     with open(ASSETS_DIR / "quality_settings.json") as f:
         return Container(json.load(f)["results"])
 
+
 @pytest.fixture(scope="session")
 def consensus_reports():
     with open(ASSETS_DIR / "consensus_reports.json") as f:
@@ -232,6 +233,7 @@ def consensus_reports():
 def consensus_conflicts():
     with open(ASSETS_DIR / "consensus_conflicts.json") as f:
         return Container(json.load(f)["results"])
+
 
 @pytest.fixture(scope="session")
 def consensus_assignee_reports():
