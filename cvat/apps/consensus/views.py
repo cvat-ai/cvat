@@ -173,6 +173,7 @@ class ConsensusReportViewSet(
         "job_id",
         "created_date",
         "target_last_updated",
+        "parent_id",
     ]
     simple_filters = list(set(filter_fields) - {"id", "created_date", "target_last_updated"})
     ordering_fields = list(filter_fields)

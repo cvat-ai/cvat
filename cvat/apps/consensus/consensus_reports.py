@@ -454,6 +454,7 @@ def save_report(
             data=job_report["data"],
             consensus_score=job_report["consensus_score"],
             assignee=job_report["assignee"],
+            parent=db_task_report,
         )
         db_job_reports.append(db_job_report)
 
@@ -527,6 +528,7 @@ def prepare_report_for_downloading(db_report: ConsensusReport, *, host: str) -> 
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
         task_id=task_id,
+        parent_id=db_report.parent.id if db_report.parent is not None else None,
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
         assignee=_serialize_assignee(db_report.assignee),

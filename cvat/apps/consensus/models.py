@@ -100,7 +100,9 @@ class ConsensusReport(models.Model):
     assignee = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="consensus", null=True, blank=True
     )
-
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, related_name="children_reports", null=True, blank=True
+    )
     data = models.JSONField()
 
     conflicts: Sequence[ConsensusConflict]

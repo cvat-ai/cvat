@@ -44,6 +44,7 @@ class ConsensusReportSerializer(serializers.ModelSerializer):
             "id",
             "job_id",
             "task_id",
+            "parent_id",
             "summary",
             "created_date",
             "target_last_updated",
