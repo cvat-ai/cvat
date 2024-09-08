@@ -233,6 +233,17 @@ class ComparisonReport(Serializable):
     def from_json(cls, data: str) -> ComparisonReport:
         return cls.from_dict(parse_json(data))
 
+def _get_error_type(error: dm.errors) -> str:
+    error_string = None
+    if isinstance(error, dm.errors.NoMatchingItemError):
+        error_string = "NoMatchingItemError"
+    elif isinstance(error, dm.errors.NoMatchingAnnError):
+        error_string = "NoMatchingAnnError"
+    elif isinstance(error, dm.errors.AnnotationsTooCloseError):
+        error_string = "AnnotationsTooCloseError"
+    elif isinstance(error, dm.errors.FailedLabelVotingError):
+        error_string = "FailedLabelVotingError"
+    return ConsensusConflictType[error_string].value if error_string else None
 
 def generate_assignee_consensus_report(
     consensus_job_ids: List[int],
@@ -277,10 +288,8 @@ def generate_job_consensus_report(
     conflicts: List[AnnotationConflict] = []
 
     for error in errors:
-        error_type = str(type(error)).split(".")[-1].split("'")[0]
-        try:
-            error_type = ConsensusConflictType[error_type].value
-        except KeyError:
+        error_type = _get_error_type(error)
+        if not error_type:
             continue
         annotation_ids = []
         error_annotations = []
