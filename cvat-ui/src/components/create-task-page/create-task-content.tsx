@@ -478,12 +478,12 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                         const { advanced } = this.state;
                         return this.handleSubmitAdvancedConfiguration({
                             ...advanced,
-                            sourceStorage: new Storage(
+                            sourceStorage: advanced.useProjectSourceStorage ? new Storage(
                                 project.sourceStorage || { location: StorageLocation.LOCAL },
-                            ),
-                            targetStorage: new Storage(
+                            ) : advanced.sourceStorage,
+                            targetStorage: advanced.useProjectTargetStorage ? new Storage(
                                 project.targetStorage || { location: StorageLocation.LOCAL },
-                            ),
+                            ) : advanced.targetStorage,
                         });
                     }).catch((error: Error): void => {
                         throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
