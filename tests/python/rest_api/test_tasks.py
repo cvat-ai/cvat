@@ -2496,12 +2496,16 @@ class TestTaskData:
                     job_chunk_ids = range(chunk_count)
 
                     def get_expected_chunk_abs_frame_ids(chunk_id: int):
-                        return range(
-                            job_meta.start_frame
-                            + chunk_id * job_meta.chunk_size * task_spec.frame_step,
-                            job_meta.start_frame
-                            + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
-                            * task_spec.frame_step,
+                        return sorted(
+                            frame
+                            for frame in range(
+                                job_meta.start_frame
+                                + chunk_id * job_meta.chunk_size * task_spec.frame_step,
+                                job_meta.start_frame
+                                + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
+                                * task_spec.frame_step,
+                            )
+                            if not job_meta.included_frames or frame in job_meta.included_frames
                         )
 
                 for quality, chunk_id in product(["original", "compressed"], job_chunk_ids):

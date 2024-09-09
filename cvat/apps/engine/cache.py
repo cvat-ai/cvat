@@ -14,8 +14,19 @@ import zipfile
 import zlib
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
-from itertools import pairwise
-from typing import Any, Callable, Generator, Iterator, Optional, Sequence, Tuple, Type, Union
+from itertools import groupby, pairwise
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Generator,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 import av
 import cv2
@@ -100,6 +111,9 @@ class MediaCache:
 
         return item
 
+    def _has_key(self, key: str) -> bool:
+        return self._cache.has_key(key)
+
     def _make_cache_key_prefix(
         self, obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage]
     ) -> str:
@@ -164,6 +178,13 @@ class MediaCache:
         return self._get_or_set_cache_item(
             key=self._make_chunk_key(db_task, chunk_number, quality=quality),
             create_callback=set_callback,
+        )
+
+    def get_segment_task_chunk(
+        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+    ) -> Optional[DataWithMime]:
+        return self._get(
+            key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality)
         )
 
     def get_or_set_segment_task_chunk(
@@ -361,7 +382,12 @@ class MediaCache:
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
-        with closing(self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)) as frame_iter:
+        return self.prepare_custom_range_segment_chunk(db_task, chunk_frame_ids, quality=quality)
+
+    def prepare_custom_range_segment_chunk(
+        self, db_task: models.Task, frame_ids: Sequence[int], *, quality: FrameQuality
+    ) -> DataWithMime:
+        with closing(self._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
             return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
 
     def prepare_masked_range_segment_chunk(
@@ -371,15 +397,52 @@ class MediaCache:
         db_data = db_task.data
 
         chunk_size = db_data.chunk_size
-        chunk_frame_ids = list(db_segment.frame_set)[
+        chunk_frame_ids = sorted(db_segment.frame_set)[
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
+
+        return self.prepare_custom_masked_range_segment_chunk(
+            db_task, chunk_frame_ids, chunk_number, quality=quality
+        )
+
+    def prepare_custom_masked_range_segment_chunk(
+        self,
+        db_task: models.Task,
+        frame_ids: Collection[int],
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+        insert_placeholders: bool = False,
+    ) -> DataWithMime:
+        db_data = db_task.data
+
         frame_step = db_data.get_frame_step()
 
-        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=db_task.dimension)
+        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+        writer = ZipCompressedChunkWriter(image_quality, dimension=db_task.dimension)
 
         dummy_frame = io.BytesIO()
         PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
+
+        # Optimize frame access if all the required frames are already cached
+        # Otherwise we might need to download files.
+        # This is not needed for video tasks, as it will reduce performance
+        from cvat.apps.engine.frame_provider import FrameOutputType, TaskFrameProvider
+
+        task_frame_provider = TaskFrameProvider(db_task)
+
+        use_cached_data = False
+        if db_task.mode != "interpolation":
+            required_frame_set = set(frame_ids)
+            all_chunks_available = all(
+                self._has_key(self._make_chunk_key(db_segment, chunk_number, quality=quality))
+                for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all()
+                for chunk_number, _ in groupby(
+                    required_frame_set.intersection(db_segment.frame_set),
+                    key=lambda frame: frame // db_data.chunk_size,
+                )
+            )
+            use_cached_data = all_chunks_available
 
         if hasattr(db_data, "video"):
             frame_size = (db_data.video.width, db_data.video.height)
@@ -387,25 +450,48 @@ class MediaCache:
             frame_size = None
 
         def get_frames():
-            with closing(
-                self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)
-            ) as read_frame_iter:
-                for frame_idx in range(db_data.chunk_size):
-                    frame_idx = (
-                        db_data.start_frame
-                        + chunk_number * db_data.chunk_size
-                        + frame_idx * frame_step
+            with ExitStack() as es:
+                es.callback(task_frame_provider.unload)
+
+                if insert_placeholders:
+                    frame_range = (
+                        (
+                            db_data.start_frame
+                            + chunk_number * db_data.chunk_size
+                            + chunk_frame_idx * frame_step
+                        )
+                        for chunk_frame_idx in range(db_data.chunk_size)
                     )
-                    if db_data.stop_frame < frame_idx:
+                else:
+                    frame_range = frame_ids
+
+                if not use_cached_data:
+                    frames_gen = self._read_raw_frames(db_task, frame_ids)
+                    frames_iter = iter(es.enter_context(closing(frames_gen)))
+
+                for abs_frame_idx in frame_range:
+                    if db_data.stop_frame < abs_frame_idx:
                         break
 
-                    if frame_idx in chunk_frame_ids:
-                        frame = next(read_frame_iter)[0]
+                    if abs_frame_idx in frame_ids:
+                        if use_cached_data:
+                            frame_data = task_frame_provider.get_frame(
+                                task_frame_provider.get_rel_frame_number(abs_frame_idx),
+                                quality=quality,
+                                out_type=FrameOutputType.BUFFER,
+                            )
+                            frame = frame_data.data
+                        else:
+                            frame, _, _ = next(frames_iter)
 
                         if hasattr(db_data, "video"):
                             # Decoded video frames can have different size, restore the original one
 
-                            frame = frame.to_image()
+                            if isinstance(frame, av.VideoFrame):
+                                frame = frame.to_image()
+                            else:
+                                frame = PIL.Image.open(frame)
+
                             if frame.size != frame_size:
                                 frame = frame.resize(frame_size)
                     else:

@@ -598,6 +598,10 @@ class JobFrameProvider(SegmentFrameProvider):
         if not is_task_chunk:
             return super().get_chunk(chunk_number, quality=quality)
 
+        # Backward compatibility for the "number" parameter
+        # Reproduce the task chunks, limited by this job
+        return_type = DataWithMeta[BytesIO]
+
         task_frame_provider = TaskFrameProvider(self._db_segment.task)
         segment_start_chunk = task_frame_provider.get_chunk_number(self._db_segment.start_frame)
         segment_stop_chunk = task_frame_provider.get_chunk_number(self._db_segment.stop_frame)
@@ -608,11 +612,8 @@ class JobFrameProvider(SegmentFrameProvider):
                 f"[{segment_start_chunk}, {segment_stop_chunk}] range"
             )
 
-        # Reproduce the task chunks, limited by this job
-        return_type = DataWithMeta[BytesIO]
-
         cache = MediaCache()
-        cached_chunk = cache.get_task_chunk(self._db_segment.task, chunk_number, quality=quality)
+        cached_chunk = cache.get_segment_task_chunk(self._db_segment, chunk_number, quality=quality)
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
@@ -635,23 +636,26 @@ class JobFrameProvider(SegmentFrameProvider):
 
         def _set_callback() -> DataWithMime:
             # Create and return a joined / cleaned chunk
-            segment_frame_set = set(self._db_segment.frame_set)
-            task_chunk_frames = {}
-            for task_chunk_frame_id in sorted(task_chunk_frame_set):
-                if task_chunk_frame_id not in segment_frame_set:
-                    continue
-
-                frame, frame_name, _ = self._get_raw_frame(
-                    task_frame_provider.get_rel_frame_number(task_chunk_frame_id), quality=quality
-                )
-                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
-
-            return prepare_chunk(
-                task_chunk_frames.values(),
-                quality=quality,
-                db_task=self._db_segment.task,
-                dump_unchanged=True,
+            segment_chunk_frame_ids = sorted(
+                task_chunk_frame_set.intersection(self._db_segment.frame_set)
             )
+
+            if self._db_segment.type == models.SegmentType.RANGE:
+                return cache.prepare_custom_range_segment_chunk(
+                    db_task=self._db_segment.task,
+                    frame_ids=segment_chunk_frame_ids,
+                    quality=quality,
+                )
+            elif self._db_segment.type == models.SegmentType.SPECIFIC_FRAMES:
+                return cache.prepare_custom_masked_range_segment_chunk(
+                    db_task=self._db_segment.task,
+                    frame_ids=segment_chunk_frame_ids,
+                    chunk_number=chunk_number,
+                    quality=quality,
+                    insert_placeholders=True,
+                )
+            else:
+                assert False
 
         buffer, mime_type = cache.get_or_set_segment_task_chunk(
             self._db_segment, chunk_number, quality=quality, set_callback=_set_callback
