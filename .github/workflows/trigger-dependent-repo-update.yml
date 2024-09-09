@@ -1,4 +1,4 @@
-name: Trigger Dependent Repo Update Workflow
+name: Trigger dependent repo update workflow
 
 on:
   workflow_dispatch:
@@ -17,10 +17,13 @@ jobs:
           private-key: ${{ secrets.CVAT_BOT_PRIVATE_KEY }}
           repositories: ${{ secrets.CVAT_DEPENDENT_REPO }}
 
-      - name: Trigger repository dispatch
-        uses: peter-evans/repository-dispatch@v3
-        with:
-            token: ${{ steps.gen-token.outputs.token }}
-            repository: cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }}
-            event-type: dependency_updated
-            client-payload: '{"triggered_by": "${{ github.repository }}", "commit_sha": "${{ github.sha }}", "branch": "${{ github.ref }}"}'
+      - name: Trigger private repository workflow
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+        run: |
+          gh workflow run \
+            update-dependency.yml \
+            --repo=cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }} \
+            -f triggeredBy=${{ github.repository }} \
+            -f commitSha=${{ github.sha }} \
+            -f branch=${{ github.ref }}
