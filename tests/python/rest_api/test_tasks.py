@@ -454,7 +454,7 @@ class TestPostTasks:
             else:
                 with pytest.raises(ApiException) as exc:
                     _ = api_client.tasks_api.create(task_write_request=task_spec)
-                assert exc.status == HTTPStatus.BAD_REQUEST
+                    assert exc.status == HTTPStatus.BAD_REQUEST
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
