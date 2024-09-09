@@ -497,7 +497,6 @@ class MediaCache:
                     else:
                         # Populate skipped frames with placeholder data,
                         # this is required for video chunk decoding implementation in UI
-                        # TODO: try to fix decoding in UI
                         frame = io.BytesIO(dummy_frame.getvalue())
 
                     yield (frame, None, None)
