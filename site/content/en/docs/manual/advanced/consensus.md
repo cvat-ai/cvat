@@ -13,7 +13,7 @@ For example creating bounding boxes around the face of a Basset Hound dog. One p
 
 | | |
 |---|---|
-|![basket_hound_ear_covered](/images/basket_hound_ear_covered.jpeg)|![basket_hound_ear_not_covered](/images/basket_hound_ear_not_covered.jpeg)|
+|![basset_hound_ear_covered](/images/basset_hound_ear_covered.jpeg)|![basset_hound_ear_not_covered](/images/basset_hound_ear_not_covered.jpeg)|
 
 
 See:
