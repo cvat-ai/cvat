@@ -11,9 +11,9 @@ Multiple annotators reviewing and agreeing on annotations can help identify and 
 
 For example creating bounding boxes around the face of a Basset Hound dog. One person might consider the ears also as the part of dogs face and one might not, this is due to fact that different people would have different understanding of things around them. In such cases, consensus based approach helps in reducing this bias by considering the interpretation through consensus.
 
-| | |
-|---|---|
-|![basset_hound_ear_covered](/images/basset_hound_ear_covered.jpeg)|![basset_hound_ear_not_covered](/images/basset_hound_ear_not_covered.jpeg)|
+|                                                                    |                                                                            |
+|--------------------------------------------------------------------|----------------------------------------------------------------------------|
+| ![basset_hound_ear_covered](/images/basset_hound_ear_covered.jpeg) | ![basset_hound_ear_not_covered](/images/basset_hound_ear_not_covered.jpeg) |
 
 
 See:
@@ -22,7 +22,7 @@ See:
 - [Terminology:](#terminology)
 - [Working](#working)
 - [Finding Overlap between two annotations:](#finding-overlap-between-two-annotations)
-- [Step by Step Guide](#step-by-step-guide)
+- [Step-by-Step Guide](#step-by-step-guide)
 
 ## Use Cases
 
@@ -39,7 +39,7 @@ The basic use case is annotating the entire dataset with multiple annotators to 
 2. `agreement_score_threshold`: After consensus has produced a merged annotation, it is assigned a score based on it's overlap with other annotations in the cluster, (add label score thing also). Merged annotations with this score lesser than `agreement_score_threshold` are discarded.
 3. `Quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label of a merged annotation, the count of specific label shouldn't be less than this. Clusters having less than this number of annotations are discarded.
 4. `oks_sigma`: This is the same as `oks_sigma` param in Quality Settings. Like `min_iou_threshold`, but for points. The percent of the bbox area, used as the radius of the circle around the GT point, where the checked point is expected to be. Read more: [https://cocodataset.org/#keypoints-eval](https://cocodataset.org/#keypoints-eval)
-5. `line_thickness`: This is the same as `line_thickness` param in Quality Settings. Thickness of polylines, relatively to the (image area) ^ 0.5. The distance to the boundary around the GT line, inside of which the checked line points should be.
+5. `line_thickness`: This is the same as `line_thickness` param in Quality Settings. Thickness of polylines, relatively to the (image area) ^ 0.5. The distance to the boundary around the GT line, inside which the checked line points should be.
 
 
 ## Working
@@ -76,7 +76,7 @@ The basic use case is annotating the entire dataset with multiple annotators to 
    3. Here, while calculating Object Keypoint Similarity (OKS) between the points, the scale parameter is also passed, accounting for the spread of the skeleton. This scale is obtained from the bounding box formed around the skeleton.
 
 
-## Step by Step Guide
+## Step-by-Step Guide
 1. Create a new task ![new task](/images/new_task_page.jpeg)
 2. Set a non zero value to `Consensus Jobs Per Regular Job` parameter under the `Advanced configuration`
    1. ![advanced config page](/images/adv_conf_page.jpeg)
@@ -84,11 +84,11 @@ The basic use case is annotating the entire dataset with multiple annotators to 
 3. Open this task, and assign workers to the consensus jobs
    1. ![consensus task](/images/consensus_task.jpeg)
    2. ![assigned workers](/images/assigned_workers.jpeg)
-4. This are the annotations made by `worker 1`
+4. This is the annotations made by `worker 1`
    1. ![frame 1](/images/worker_1_1.jpeg)
    2. ![frame 2](/images/worker_1_2.jpeg)
    3. ![frame 3](/images/worker_1_3.jpeg)
-5. This are the annotations made by `worker 2`
+5. This is the annotations made by `worker 2`
    1. ![frame 1](/images/worker_2_1.jpeg) In this frame the annotations are significantly off by our expectations.
    2. ![frame 2](/images/worker_2_2.jpeg) In this frame worker 2 hasn't annotated one of the dogs.
    3. ![frame 3](/images/worker_2_3.jpeg)
@@ -98,17 +98,17 @@ The basic use case is annotating the entire dataset with multiple annotators to 
    3. ![loading consensus merge](/images/loading_consensus_merge.jpeg) The button will be disabled until the previous merge action isn't completed.
 7. Below are the merged results
    1. ![frame 1](/images/merged_1.jpeg)
-   2. ![frame 2](/images/merged_2.jpeg) Through consensus it got the annotation from worker 1's annotation
+   2. ![frame 2](/images/merged_2.jpeg) Through consensus, it got the annotation from worker 1's annotation
    3. ![frame 3](/images/merged_3.jpeg)
 8. On clicking on `View Consensus Analytics` ![view consensus analytics](/images/view_consensus_analytics.jpeg)
-   1. ![consensus analytics](/images/consensus_analytics_1.jpeg) Here the score corresponding to the job (merged job) represents, the mean overlap (IoU) among the annotations in it's consensus jobs and the merged job.
-   2. ![consensus analytics conflicts](/images/consensus_analytics_1_conf.jpeg) There was an annotation made by worker 1 but not by worker 2, that annotation didn't had any matching annotations so it raised `No matching annotation` conflict. Similarly, there were two annotations in the first frame which didn't matched as they didn't satisfied the `Min Overlap Threshold` condition. Thus, 3 `No matching annotation` conflicts are raised.
+   1. ![consensus analytics](/images/consensus_analytics_1.jpeg) Here the score corresponding to the job (merged job) represents, the mean overlap (IoU) among the annotations in its consensus jobs and the merged job.
+   2. ![consensus analytics conflicts](/images/consensus_analytics_1_conf.jpeg) There was an annotation made by worker 1 but not by worker 2, that annotation didn't have any matching annotations, so it raised `No matching annotation` conflict. Similarly, there were two annotations in the first frame which didn't match as they did not satisfy the `Min Overlap Threshold` condition. Thus, 3 `No matching annotation` conflicts are raised.
    3. ![consensus settings](/images/consensus_settings_1.jpeg)
 9. Now we will change the `Min Overlap Threshold` from `50%` to `20%` and again merge the consensus jobs. ![consensus settings](/images/consensus_settings_2.jpeg)
 10. We can see after this, in the first frame we have a single annotation instead of two annotations which weren't matched previously. ![updated frame 1](/images/consensus_label.jpeg)
-11. Thus now in the consensus analytics page the number of conflict is reduced to one.
+11. Thus, now in the consensus analytics page the number of conflict is reduced to one.
     1. ![updated consensus analytics](/images/consensus_analytics_2.jpeg)
-    1. ![updated consensus analytics conflicts](/images/consensus_analytics_2_conf.jpeg)
+    2. ![updated consensus analytics conflicts](/images/consensus_analytics_2_conf.jpeg)
 12. On clicking on `Assignees` assignee level analytics can also be viewed. ![consensus analytics assignee](/images/consensus_analytics_2_assignee.jpeg)
 
 - Annotations made manually have a tag of `MANUAL` in them, whereas annotations obtained through consensus have `CONSENSUS` tag in them.
