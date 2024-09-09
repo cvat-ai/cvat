@@ -13,7 +13,7 @@ For example creating bounding boxes around the face of a Basset Hound dog. One p
 
 | | |
 |---|---|
-|![basket_hound_ear_covered](/images/basket_hound_ear_covered.png)|![basket_hound_ear_not_covered](/images/basket_hound_ear_not_covered.png)|
+|![basket_hound_ear_covered](/images/basket_hound_ear_covered.jpeg)|![basket_hound_ear_not_covered](/images/basket_hound_ear_not_covered.jpeg)|
 
 
 See:
@@ -26,7 +26,7 @@ See:
 
 1. Instead of annotating the entire dataset with multiple annotators, you can use a smaller set of highly skilled annotators and rely on their consensus to create high-quality ground truth annotations. This reduces the overall cost compared to annotating every instance with multiple annotators.
 2. In cases of points and poly-line / poly-shape annotations, annotators can add more annotations without a fixed structure, which can introduce significant variation. Similarly, for skeleton annotations, while there is a structure, annotators can move the points around. Due to the presence of numerous points, this can lead to significant variations in annotations for the same data. Using a consensus-based approach for such data types can help reduce these variations, which may arise from minor errors in placing the points.
-   1. For example, in the figure, an annotator might place a point representing the foot anywhere across the pink region, leading to significant variation in the annotations. ![pink_shoes](/images/pink_shoes.png)
+   1. For example, in the figure, an annotator might place a point representing the foot anywhere across the pink region, leading to significant variation in the annotations. ![pink_shoes](/images/pink_shoes.jpeg)
 
 
 ## Terminology:
@@ -38,41 +38,41 @@ See:
 
 
 ## Step by Step Guide
-1. Create a new task ![new task](/images/new_task_page.png)
+1. Create a new task ![new task](/images/new_task_page.jpeg)
 2. Set a non zero value to `Consensus Jobs Per Regular Job` parameter under the `Advanced configuration`
-   1. ![advanced config page](/images/adv_conf_page.png)
-   2. ![task_page_consensus](/images/task_page_consensus.png)
+   1. ![advanced config page](/images/adv_conf_page.jpeg)
+   2. ![task_page_consensus](/images/task_page_consensus.jpeg)
 3. Open this task, and assign workers to the consensus jobs
-   1. ![consensus task](/images/consensus_task.png)
-   2. ![assigned workers](/images/assigned_workers.png)
+   1. ![consensus task](/images/consensus_task.jpeg)
+   2. ![assigned workers](/images/assigned_workers.jpeg)
 4. This are the annotations made by `worker 1`
-   1. ![frame 1](/images/worker_1_1.png)
-   2. ![frame 2](/images/worker_1_2.png)
-   3. ![frame 3](/images/worker_1_3.png)
+   1. ![frame 1](/images/worker_1_1.jpeg)
+   2. ![frame 2](/images/worker_1_2.jpeg)
+   3. ![frame 3](/images/worker_1_3.jpeg)
 5. This are the annotations made by `worker 2`
-   1. ![frame 1](/images/worker_2_1.png) In this frame the annotations are significantly off by our expectations.
-   2. ![frame 2](/images/worker_2_2.png) In this frame worker 2 hasn't annotated one of the dogs.
-   3. ![frame 3](/images/worker_2_3.png)
+   1. ![frame 1](/images/worker_2_1.jpeg) In this frame the annotations are significantly off by our expectations.
+   2. ![frame 2](/images/worker_2_2.jpeg) In this frame worker 2 hasn't annotated one of the dogs.
+   3. ![frame 3](/images/worker_2_3.jpeg)
 6. Click on `Merge Consensus Jobs`, this will merge all the consensus jobs into their regular job.
-   1. ![consensus merge button](/images/consensus_merge_button.png)
-   2. ![consensus merge confirmation](/images/consensus_merge_confirmation.png)
-   3. ![loading consensus merge](/images/loading_consensus_merge.png) The button will be disabled until the previous merge action isn't completed.
+   1. ![consensus merge button](/images/consensus_merge_button.jpeg)
+   2. ![consensus merge confirmation](/images/consensus_merge_confirmation.jpeg)
+   3. ![loading consensus merge](/images/loading_consensus_merge.jpeg) The button will be disabled until the previous merge action isn't completed.
 7. Below are the merged results
-   1. ![frame 1](/images/merged_1.png)
-   2. ![frame 2](/images/merged_2.png) Through consensus it got the annotation from worker 1's annotation
-   3. ![frame 3](/images/merged_3.png)
-8. On clicking on `View Consensus Analytics` ![view consensus analytics](/images/view_consensus_analytics.png)
-   1. ![consensus analytics](/images/consensus_analytics_1.png) Here the score corresponding to the job (merged job) represents, the mean overlap (IoU) among the annotations in it's consensus jobs and the merged job.
-   2. ![consensus analytics conflicts](/images/consensus_analytics_1_conf.png) There was an annotation made by worker 1 but not by worker 2, that annotation didn't had any matching annotations so it raised `No matching annotation` conflict. Similarly, there were two annotations in the first frame which didn't matched as they didn't satisfied the `Min Overlap Threshold` condition. Thus, 3 `No matching annotation` conflicts are raised.
-   3. ![consensus settings](/images/consensus_settings_1.png)
-9. Now we will change the `Min Overlap Threshold` from `50%` to `20%` and again merge the consensus jobs. ![consensus settings](/images/consensus_settings_2.png)
-10. We can see after this, in the first frame we have a single annotation instead of two annotations which weren't matched previously. ![updated frame 1](/images/consensus_label.png)
+   1. ![frame 1](/images/merged_1.jpeg)
+   2. ![frame 2](/images/merged_2.jpeg) Through consensus it got the annotation from worker 1's annotation
+   3. ![frame 3](/images/merged_3.jpeg)
+8. On clicking on `View Consensus Analytics` ![view consensus analytics](/images/view_consensus_analytics.jpeg)
+   1. ![consensus analytics](/images/consensus_analytics_1.jpeg) Here the score corresponding to the job (merged job) represents, the mean overlap (IoU) among the annotations in it's consensus jobs and the merged job.
+   2. ![consensus analytics conflicts](/images/consensus_analytics_1_conf.jpeg) There was an annotation made by worker 1 but not by worker 2, that annotation didn't had any matching annotations so it raised `No matching annotation` conflict. Similarly, there were two annotations in the first frame which didn't matched as they didn't satisfied the `Min Overlap Threshold` condition. Thus, 3 `No matching annotation` conflicts are raised.
+   3. ![consensus settings](/images/consensus_settings_1.jpeg)
+9. Now we will change the `Min Overlap Threshold` from `50%` to `20%` and again merge the consensus jobs. ![consensus settings](/images/consensus_settings_2.jpeg)
+10. We can see after this, in the first frame we have a single annotation instead of two annotations which weren't matched previously. ![updated frame 1](/images/consensus_label.jpeg)
 11. Thus now in the consensus analytics page the number of conflict is reduced to one.
-    1. ![updated consensus analytics](/images/consensus_analytics_2.png)
-    1. ![updated consensus analytics conflicts](/images/consensus_analytics_2_conf.png)
-12. On clicking on `Assignees` assignee level analytics can also be viewed. ![consensus analytics assignee](/images/consensus_analytics_2_assignee.png)
+    1. ![updated consensus analytics](/images/consensus_analytics_2.jpeg)
+    1. ![updated consensus analytics conflicts](/images/consensus_analytics_2_conf.jpeg)
+12. On clicking on `Assignees` assignee level analytics can also be viewed. ![consensus analytics assignee](/images/consensus_analytics_2_assignee.jpeg)
 
 - Annotations made manually have a tag of `MANUAL` in them, whereas annotations obtained through consensus have `CONSENSUS` tag in them.
-  - ![manual label](/images/manual_label.png)
-  - ![consensus label](/images/consensus_label.png)
-- Similar merge option is available under each Regular Job, to perform merging of consensus job at job level instead of task level ![job wise consensus merge button](/images/job_wise_consensus.png)
+  - ![manual label](/images/manual_label.jpeg)
+  - ![consensus label](/images/consensus_label.jpeg)
+- Similar merge option is available under each Regular Job, to perform merging of consensus job at job level instead of task level ![job wise consensus merge button](/images/job_wise_consensus.jpeg)
