@@ -20,6 +20,8 @@ See:
 
 - [Use Cases](#use-cases)
 - [Terminology:](#terminology)
+- [Working](#working)
+- [Finding Overlap between two annotations:](#finding-overlap-between-two-annotations)
 - [Step by Step Guide](#step-by-step-guide)
 
 ## Use Cases
@@ -37,6 +39,40 @@ The basic use case is annotating the entire dataset with multiple annotators to 
 3. `Quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label of merged annotation, the count of specific label shouldn't be less than this.
 4. `oks_sigma`: This is the same as `oks_sigma` param in Quality Settings. Like `min_iou_threshold`, but for points. The percent of the bbox area, used as the radius of the circle around the GT point, where the checked point is expected to be. Read more: [https://cocodataset.org/#keypoints-eval](https://cocodataset.org/#keypoints-eval)
 5. `line_thickness`: This is the same as `line_thickness` param in Quality Settings. Thickness of polylines, relatively to the (image area) ^ 0.5. The distance to the boundary around the GT line, inside of which the checked line points should be.
+
+
+## Working
+1. Get matching annotations for every annotation:
+   1. For annotations in consensus jobs, find matching annotations in other consensus jobs derived from the same regular job. Two annotations match if their overlap is less than min_iou_threshold
+   2. If there is more than one annotation in a consensus job matching an annotation, we only pick the closest annotation
+2. Group matching annotations into clusters:
+   1. Start from an annotation and include the annotation in the next consensus job, which matches this annotation
+   2. Now, while adding annotations from the remaining consensus jobs, we go through the matching annotations of the first annotation
+   3. Here, we add the annotations that match all the annotations in the cluster, and no two annotations in a cluster belong to the same consensus job
+   4. After this, we repeat this for the annotation added second, and so on, until we go through all the matching annotations of the annotations in cluster
+   5. In this, we keep track of the annotations we have added to a cluster. To avoid going through the matching annotation multiple times, We are doing so as we can come across an annotation multiple times since an annotation can be a matching annotation to multiple annotations from other consensus jobs
+3. Merging cluster into single annotation:
+   1. A cluster having annotations less than quorum is discarded
+   2. Create a bounding box corresponding to every annotation
+   3. Calculate the mean bounding box for these bounding boxes
+   4. Go through the bounding box representation of the annotations in the cluster, and choose the annotation which is closest to the mean bounding box as the merged annotation
+   5. Steps 3 and 4 are done differently for skeleton-type annotation, where the merged annotation is the one which has the least mean distance with other annotations in cluster
+   6. The consensus score of this merged annotation is the mean of the overlap between the merged annotation and the rest of the annotations in cluster
+   7. The merged annotation with a consensus score less than the agreement score threshold is discarded.
+
+
+## Finding Overlap between two annotations:
+1. Bounding Box, Polygon and Mask type:
+   1. A polygon representation of the annotation is obtained, and then the Intersection over Union (IoU) is calculated between them.
+   2. The annotator can draw a rotated bounding box. Thus, it’s converted into a polygon-type annotation
+2. Points type: Object Keypoint Similarity (OKS)
+3. PolyLine type:
+   1. We first derive another polyline having the same number of points but placed such that a polyline close to the original polyline is obtained
+   2. Gaussian (similar to OKS) is calculated between these approximated lines with the same number of points
+4. Skeleton type:
+   1. Convert the skeleton annotation into points
+   2. Find the distance between these two sets of points. A set of points represents a skeleton.
+   3. Here, while calculating Object Keypoint Similarity (OKS) between the points, the scale parameter is also passed, accounting for the spread of the skeleton. This scale is obtained from the bounding box formed around the skeleton.
 
 
 ## Step by Step Guide
