@@ -730,10 +730,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 })
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type == models.JobType.ANNOTATION or job_type == models.JobType.CONSENSUS:
-                continue
-            else:
-                assert False
 
     def _import_annotations(self):
         db_jobs = self._get_db_jobs()

@@ -27,6 +27,8 @@ export enum JobsActionTypes {
     DELETE_JOB = 'DELETE_JOB',
     DELETE_JOB_SUCCESS = 'DELETE_JOB_SUCCESS',
     DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
+    COLLAPSE_REGULAR_JOB = 'COLLAPSE_REGULAR_JOB',
+    UNCOLLAPSE_REGULAR_JOB = 'UNCOLLAPSE_REGULAR_JOB',
 }
 
 interface JobsList extends Array<any> {
@@ -68,6 +70,12 @@ const jobsActions = {
     ),
     deleteJobFailed: (jobID: number, error: any) => (
         createAction(JobsActionTypes.DELETE_JOB_FAILED, { jobID, error })
+    ),
+    collapseRegularJob: (jobID: number) => (
+        createAction(JobsActionTypes.COLLAPSE_REGULAR_JOB, { jobID })
+    ),
+    uncollapseRegularJob: (jobID: number) => (
+        createAction(JobsActionTypes.UNCOLLAPSE_REGULAR_JOB, { jobID })
     ),
 };
 
@@ -133,4 +141,12 @@ export const deleteJobAsync = (job: Job): ThunkAction => async (dispatch) => {
     }
 
     dispatch(jobsActions.deleteJobSuccess(job.id));
+};
+
+export const collapseRegularJob = (jobID: number, uncollapse: boolean): ThunkAction => async (dispatch) => {
+    if (uncollapse) {
+        dispatch(jobsActions.collapseRegularJob(jobID));
+    } else {
+        dispatch(jobsActions.uncollapseRegularJob(jobID));
+    }
 };

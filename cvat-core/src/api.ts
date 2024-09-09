@@ -397,6 +397,26 @@ function build(): CVATCore {
                 return result;
             },
         },
+        consensus: {
+            async assigneeReports(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.consensus.assigneeReports, filter);
+                return result;
+            },
+            async reports(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.consensus.reports, filter);
+                return result;
+            },
+            async conflicts(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.consensus.conflicts, filter);
+                return result;
+            },
+            settings: {
+                async get(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.consensus.settings.get, filter);
+                    return result;
+                },
+            },
+        },
         classes: {
             User,
             Project: implementProject(Project),
@@ -442,6 +462,7 @@ function build(): CVATCore {
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.webhooks = Object.freeze(cvat.webhooks);
     cvat.analytics = Object.freeze(cvat.analytics);
+    cvat.consensus = Object.freeze(cvat.consensus);
     cvat.classes = Object.freeze(cvat.classes);
     cvat.utils = Object.freeze(cvat.utils);
 

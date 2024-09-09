@@ -23,6 +23,7 @@ for paths in \
     "tests/python/" \
     "cvat/apps/quality_control" \
     "cvat/apps/analytics_report" \
+    "cvat/apps/consensus" \
     "cvat/apps/engine/lazy_list.py" \
     "cvat/apps/engine/background.py" \
     ; do
