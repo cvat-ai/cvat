@@ -71,7 +71,7 @@ context('Hotkeys to change labels feature.', () => {
             cy.get('.cvat-objects-sidebar-tabs').within(() => {
                 cy.contains('[role="tab"]', 'Labels').click();
             });
-            cy.get('.cvat-objects-sidebar-label-item').then(($objectsSidebarLabelItem) => {
+            cy.get('.cvat-objects-sidebar-label-item .cvat-text').then(($objectsSidebarLabelItem) => {
                 firstLabelCurrentVal = $objectsSidebarLabelItem[0].innerText.slice(0, -2);
                 secondLabelCurrentVal = $objectsSidebarLabelItem[1].innerText.slice(0, -2);
             });
