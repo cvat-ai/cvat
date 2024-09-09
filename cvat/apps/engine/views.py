@@ -760,8 +760,8 @@ class _JobDataGetter(_DataGetter):
 
         self.type = data_type
 
-        self.number = int(data_index) if data_index is not None else None
-        self.task_chunk_number = int(data_num) if data_num is not None else None
+        self.index = int(data_index) if data_index is not None else None
+        self.number = int(data_num) if data_num is not None else None
 
         self.quality = FrameQuality.COMPRESSED \
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
@@ -772,12 +772,19 @@ class _JobDataGetter(_DataGetter):
         return JobFrameProvider(self._db_job)
 
     def __call__(self):
-        if self.type == 'chunk' and self.task_chunk_number is not None:
+        if self.type == 'chunk':
             # Reproduce the task chunk indexing
             frame_provider = self._get_frame_provider()
-            data = frame_provider.get_chunk(
-                self.task_chunk_number, quality=self.quality, is_task_chunk=True
-            )
+
+            if self.index is not None:
+                data = frame_provider.get_chunk(
+                    self.index, quality=self.quality, is_task_chunk=False
+                )
+            else:
+                data = frame_provider.get_chunk(
+                    self.number, quality=self.quality, is_task_chunk=True
+                )
+
             return HttpResponse(data.data.getvalue(), content_type=data.mime)
         else:
             return super().__call__()
