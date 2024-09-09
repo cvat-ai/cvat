@@ -1,0 +1,83 @@
+{
+  "count": 4,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": null,
+      "consensus_score": 60,
+      "created_date": "2024-09-08T23:46:28.213000Z",
+      "id": 1,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 15,
+        "conflicts_by_type": {
+          "failed_label_voting": 5,
+          "no_matching_annotation": 10
+        },
+        "frame_count": 3
+      },
+      "target": "task",
+      "target_last_updated": "2024-09-08T23:46:28.207000Z",
+      "task_id": 26
+    },
+    {
+      "assignee": null,
+      "consensus_score": 60,
+      "created_date": "2024-09-08T23:46:28.216000Z",
+      "id": 2,
+      "job_id": 35,
+      "parent_id": 1,
+      "summary": {
+        "conflict_count": 22,
+        "conflicts_by_type": {
+          "failed_label_voting": 5,
+          "no_matching_annotation": 10
+        },
+        "frame_count": 3
+      },
+      "target": "job",
+      "target_last_updated": "2024-09-08T23:45:48.950000Z",
+      "task_id": 26
+    },
+    {
+      "assignee": null,
+      "consensus_score": 60,
+      "created_date": "2024-09-08T23:48:01.100000Z",
+      "id": 3,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 15,
+        "conflicts_by_type": {
+          "failed_label_voting": 5,
+          "no_matching_annotation": 10
+        },
+        "frame_count": 3
+      },
+      "target": "task",
+      "target_last_updated": "2024-09-08T23:48:01.094000Z",
+      "task_id": 27
+    },
+    {
+      "assignee": null,
+      "consensus_score": 60,
+      "created_date": "2024-09-08T23:48:01.102000Z",
+      "id": 4,
+      "job_id": 39,
+      "parent_id": 3,
+      "summary": {
+        "conflict_count": 22,
+        "conflicts_by_type": {
+          "failed_label_voting": 5,
+          "no_matching_annotation": 10
+        },
+        "frame_count": 3
+      },
+      "target": "job",
+      "target_last_updated": "2024-09-08T23:46:42.400000Z",
+      "task_id": 27
+    }
+  ]
+}

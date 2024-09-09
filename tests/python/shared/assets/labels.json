@@ -1,5 +1,5 @@
 {
-  "count": 42,
+  "count": 47,
   "next": null,
   "previous": null,
   "results": [
@@ -831,13 +831,184 @@
     },
     {
       "attributes": [],
-      "color": "#c06060",
+      "color": "#c080e0",
       "has_parent": false,
       "id": 75,
+      "name": "human",
+      "parent_id": null,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 76,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 77,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 78,
+          "name": "3",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 79,
+          "name": "4",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#478144",
+          "has_parent": true,
+          "id": 80,
+          "name": "5",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#57236b",
+          "has_parent": true,
+          "id": 81,
+          "name": "6",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#1cdda5",
+          "has_parent": true,
+          "id": 82,
+          "name": "7",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"67.52644348144531\" y1=\"56.77797317504883\" x2=\"41.31608963012695\" y2=\"48.2637825012207\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"25.456323623657227\" y1=\"56.611026763916016\" x2=\"41.31608963012695\" y2=\"48.2637825012207\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"5\"></line>\n<line x1=\"40.314422607421875\" y1=\"26.727886199951172\" x2=\"20.781864166259766\" y2=\"29.232059478759766\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"3\"></line>\n<line x1=\"40.314422607421875\" y1=\"26.727886199951172\" x2=\"61.51642608642578\" y2=\"29.732894897460938\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"4\"></line>\n<line x1=\"41.31608963012695\" y1=\"48.2637825012207\" x2=\"40.314422607421875\" y2=\"26.727886199951172\" data-type=\"edge\" data-node-from=\"5\" data-node-to=\"2\"></line>\n<line x1=\"39.47969436645508\" y1=\"13.372292518615723\" x2=\"40.314422607421875\" y2=\"26.727886199951172\" data-type=\"edge\" data-node-from=\"1\" data-node-to=\"2\"></line>\n<circle r=\"0.75\" cx=\"39.47969436645508\" cy=\"13.372292518615723\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"76\"></circle>\n<circle r=\"0.75\" cx=\"40.314422607421875\" cy=\"26.727886199951172\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"77\"></circle>\n<circle r=\"0.75\" cx=\"20.781864166259766\" cy=\"29.232059478759766\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"78\"></circle>\n<circle r=\"0.75\" cx=\"61.51642608642578\" cy=\"29.732894897460938\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"41.31608963012695\" cy=\"48.2637825012207\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"25.456323623657227\" cy=\"56.611026763916016\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"67.52644348144531\" cy=\"56.77797317504883\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"82\"></circle>",
+      "task_id": 26,
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 83,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 26,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#c06060",
+      "has_parent": false,
+      "id": 84,
       "name": "person",
       "parent_id": null,
       "sublabels": [],
       "task_id": 26,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#c080e0",
+      "has_parent": false,
+      "id": 85,
+      "name": "human",
+      "parent_id": null,
+      "sublabels": [
+        {
+          "attributes": [],
+          "color": "#d12345",
+          "has_parent": true,
+          "id": 86,
+          "name": "1",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#350dea",
+          "has_parent": true,
+          "id": 87,
+          "name": "2",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#479ffe",
+          "has_parent": true,
+          "id": 88,
+          "name": "3",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#4a649f",
+          "has_parent": true,
+          "id": 89,
+          "name": "4",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#478144",
+          "has_parent": true,
+          "id": 90,
+          "name": "5",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#57236b",
+          "has_parent": true,
+          "id": 91,
+          "name": "6",
+          "type": "points"
+        },
+        {
+          "attributes": [],
+          "color": "#1cdda5",
+          "has_parent": true,
+          "id": 92,
+          "name": "7",
+          "type": "points"
+        }
+      ],
+      "svg": "<line x1=\"67.52644348144531\" y1=\"56.77797317504883\" x2=\"41.31608963012695\" y2=\"48.2637825012207\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"25.456323623657227\" y1=\"56.611026763916016\" x2=\"41.31608963012695\" y2=\"48.2637825012207\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"5\"></line>\n<line x1=\"40.314422607421875\" y1=\"26.727886199951172\" x2=\"20.781864166259766\" y2=\"29.232059478759766\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"3\"></line>\n<line x1=\"40.314422607421875\" y1=\"26.727886199951172\" x2=\"61.51642608642578\" y2=\"29.732894897460938\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"4\"></line>\n<line x1=\"41.31608963012695\" y1=\"48.2637825012207\" x2=\"40.314422607421875\" y2=\"26.727886199951172\" data-type=\"edge\" data-node-from=\"5\" data-node-to=\"2\"></line>\n<line x1=\"39.47969436645508\" y1=\"13.372292518615723\" x2=\"40.314422607421875\" y2=\"26.727886199951172\" data-type=\"edge\" data-node-from=\"1\" data-node-to=\"2\"></line>\n<circle r=\"0.75\" cx=\"39.47969436645508\" cy=\"13.372292518615723\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"86\"></circle>\n<circle r=\"0.75\" cx=\"40.314422607421875\" cy=\"26.727886199951172\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"87\"></circle>\n<circle r=\"0.75\" cx=\"20.781864166259766\" cy=\"29.232059478759766\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"88\"></circle>\n<circle r=\"0.75\" cx=\"61.51642608642578\" cy=\"29.732894897460938\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"89\"></circle>\n<circle r=\"0.75\" cx=\"41.31608963012695\" cy=\"48.2637825012207\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"90\"></circle>\n<circle r=\"0.75\" cx=\"25.456323623657227\" cy=\"56.611026763916016\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"91\"></circle>\n<circle r=\"0.75\" cx=\"67.52644348144531\" cy=\"56.77797317504883\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"92\"></circle>",
+      "task_id": 27,
+      "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 93,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 27,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#c06060",
+      "has_parent": false,
+      "id": 94,
+      "name": "person",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 27,
       "type": "any"
     }
   ]

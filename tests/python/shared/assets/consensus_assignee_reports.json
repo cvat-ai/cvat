@@ -1,0 +1,46 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "conflict_count": 5,
+      "consensus_report_id": 1,
+      "consensus_score": 43,
+      "task_id": 26
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 8,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/8",
+        "username": "worker3"
+      },
+      "conflict_count": 5,
+      "consensus_report_id": 3,
+      "consensus_score": 83,
+      "task_id": 27
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
+      "conflict_count": 0,
+      "consensus_report_id": 3,
+      "consensus_score": 90,
+      "task_id": 27
+    }
+  ]
+}

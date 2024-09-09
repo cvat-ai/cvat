@@ -1,5 +1,5 @@
 {
-  "count": 21,
+  "count": 22,
   "next": null,
   "previous": null,
   "results": [
@@ -8,7 +8,51 @@
       "assignee_updated_date": null,
       "bug_tracker": "",
       "consensus_jobs_per_regular_job": 3,
-      "created_date": "2024-07-27T09:03:47.546000Z",
+      "created_date": "2024-09-08T23:46:42.198000Z",
+      "data": 26,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 27,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 3,
+        "count": 4,
+        "url": "http://localhost:8080/api/jobs?task_id=27",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=27"
+      },
+      "mode": "annotation",
+      "name": "task with consensus jobs",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": null,
+      "segment_size": 3,
+      "size": 3,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2024-09-08T23:48:01.094000Z",
+      "url": "http://localhost:8080/api/tasks/27"
+    },
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_jobs_per_regular_job": 3,
+      "created_date": "2024-09-08T23:45:48.742000Z",
       "data": 25,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -18,7 +62,7 @@
       "id": 26,
       "image_quality": 70,
       "jobs": {
-        "completed": 0,
+        "completed": 3,
         "count": 4,
         "url": "http://localhost:8080/api/jobs?task_id=26",
         "validation": 0
@@ -40,19 +84,11 @@
       "project_id": null,
       "segment_size": 3,
       "size": 3,
-      "source_storage": {
-        "cloud_storage_id": null,
-        "id": 41,
-        "location": "local"
-      },
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
-      "target_storage": {
-        "cloud_storage_id": null,
-        "id": 42,
-        "location": "local"
-      },
-      "updated_date": "2024-07-27T09:03:48.198000Z",
+      "target_storage": null,
+      "updated_date": "2024-09-08T23:46:28.207000Z",
       "url": "http://localhost:8080/api/tasks/26"
     },
     {

@@ -1,0 +1,205 @@
+{
+  "count": 22,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 1,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 2
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 2,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 5
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 3,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 6
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 4,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 7
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 5,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 8
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 6,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 9
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 7,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 11
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 8,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 12
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 9,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 13
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 10,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 14
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 11,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 15
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 12,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 17
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 13,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 18
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 14,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 19
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 15,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 20
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 16,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 21
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 17,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 22
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 18,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 23
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 19,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 24
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 20,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 0,
+      "sigma": 0.1,
+      "task_id": 25
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 21,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 2,
+      "sigma": 0.1,
+      "task_id": 26
+    },
+    {
+      "agreement_score_threshold": 0.0,
+      "id": 22,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 2,
+      "sigma": 0.1,
+      "task_id": 27
+    }
+  ]
+}
