@@ -21,11 +21,13 @@ import { getCVATStore } from 'cvat-store';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-for (const i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
-    componentShortcuts[`SWITCH_LABEL_${i}`] = {
+const makeKey = (index: number) => `SWITCH_LABEL_${index}`;
+
+for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
+    componentShortcuts[makeKey(index)] = {
         name: 'Switch label',
         description: 'Change label of a selected object or default label of the next created object if no one object is activated',
-        sequences: [`ctrl+${i}`],
+        sequences: [`ctrl+${index}`],
         nonActive: true,
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     };
@@ -54,12 +56,13 @@ function LabelsListComponent(): JSX.Element {
         for (const [index, labelID] of Object.entries(keyToLabelMapping)) {
             if (labelID) {
                 const labelName = labels.find((label: any) => label.id === labelID)?.name;
-                updatedComponentShortcuts[`SWITCH_LABEL_${index}`] = {
-                    ...updatedComponentShortcuts[`SWITCH_LABEL_${index}`],
+                const key = makeKey(+index);
+                updatedComponentShortcuts[key] = {
+                    ...updatedComponentShortcuts[key],
                     nonActive: false,
                     name: `Switch label to ${labelName}`,
                     description: `Changes the label to ${labelName} for the activated
-                object or for the next drawn object if no objects are activated`,
+                        object or for the next drawn object if no objects are activated`,
                 };
             }
         }
@@ -112,9 +115,9 @@ function LabelsListComponent(): JSX.Element {
 
     const handlers: Record<keyof typeof componentShortcuts, (event: KeyboardEvent, shortcut: string) => void> = {};
 
-    for (const i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
-        handlers[`SWITCH_LABEL_${i}`] = (event: KeyboardEvent) => {
-            handleHelper(event, i);
+    for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
+        handlers[makeKey(index)] = (event: KeyboardEvent) => {
+            handleHelper(event, index);
         };
     }
 
