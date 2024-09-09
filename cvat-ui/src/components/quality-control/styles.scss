@@ -6,15 +6,10 @@
 
 .cvat-quality-control-inner {
     background: $background-color-1;
-    min-height: $grid-unit-size * 95;
     padding: $grid-unit-size * 4;
     padding-bottom: $grid-unit-size;
     padding-top: 0;
     border-radius: $border-radius-base;
-
-    .ant-tabs {
-        height: 100%;
-    }
 }
 
 .cvat-quality-settings-title {
@@ -25,7 +20,7 @@
 .cvat-quality-settings-form {
     display: block;
     position: relative;
-    height: $grid-unit-size * 90;
+    height: calc(100vh - $grid-unit-size * 32);
     overflow-y: auto;
 
     &::-webkit-scrollbar {
@@ -139,4 +134,9 @@ $excluded-background: #d9d9d973;
     .ant-card-body {
         padding: $grid-unit-size * 2 $grid-unit-size * 3;
     }
+}
+
+.cvat-frame-allocation-table .ant-table-container {
+    max-height: calc(100vh - $grid-unit-size * 60);
+    overflow: auto;
 }
