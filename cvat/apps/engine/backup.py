@@ -293,7 +293,7 @@ class _TaskBackupBase(_BackupBase):
         if self._db_task:
             db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
             db_segments.sort(key=lambda i: i.job_set.first().id)
-            db_jobs = (s.job_set.first() for s in db_segments)
+            db_jobs = (job for s in db_segments for job in s.job_set.all())
             return db_jobs
         return ()
 
@@ -398,27 +398,31 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return task
 
         def serialize_segment(db_segment):
-            db_job = db_segment.job_set.first()
-            job_serializer = SimpleJobSerializer(db_job)
-            for field in ('url', 'assignee'):
-                job_serializer.fields.pop(field)
-            job_data = self._prepare_job_meta(job_serializer.data)
+            segments = []
+            db_jobs = db_segment.job_set.all()
+            for db_job in db_jobs:
+                job_serializer = SimpleJobSerializer(db_job)
+                for field in ('url', 'assignee'):
+                    job_serializer.fields.pop(field)
+                job_data = self._prepare_job_meta(job_serializer.data)
 
-            segment_serializer = SegmentSerializer(db_segment)
-            segment_serializer.fields.pop('jobs')
-            segment = segment_serializer.data
-            segment_type = segment.pop("type")
-            segment.update(job_data)
+                segment_serializer = SegmentSerializer(db_segment)
+                segment_serializer.fields.pop('jobs')
+                segment = segment_serializer.data
+                segment_type = segment.pop("type")
+                segment.update(job_data)
 
-            if self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE:
-                segment.update(serialize_custom_file_mapping(db_segment))
+                if self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE:
+                    segment.update(serialize_custom_file_mapping(db_segment))
 
-            return segment
+                segments.append(segment)
+
+            return segments
 
         def serialize_jobs():
             db_segments = list(self._db_task.segment_set.all())
             db_segments.sort(key=lambda i: i.job_set.first().id)
-            return (serialize_segment(s) for s in db_segments)
+            return (serialized_job for s in db_segments for serialized_job in serialize_segment(s))
 
         def serialize_custom_file_mapping(db_segment: models.Segment):
             if self._db_task.mode == 'annotation':
@@ -726,10 +730,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 })
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type == models.JobType.ANNOTATION:
-                continue
-            else:
-                assert False
 
     def _import_annotations(self):
         db_jobs = self._get_db_jobs()

@@ -10,6 +10,8 @@ import { DimensionType, CVATCore } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
+import { useSelector } from 'react-redux';
+import { LoadingOutlined } from '@ant-design/icons';
 
 type AnnotationFormats = Awaited<ReturnType<CVATCore['server']['formats']>>;
 
@@ -22,6 +24,7 @@ interface Props {
     dumpers: AnnotationFormats['dumpers'];
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
+    consensusJobsPerRegularJob: number;
     onClickMenu: (params: MenuInfo) => void;
 }
 
@@ -34,6 +37,8 @@ export enum Actions {
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     BACKUP_TASK = 'backup_task',
     VIEW_ANALYTICS = 'view_analytics',
+    VIEW_CONSENSUS_ANALYTICS = 'view_consensus_analytics',
+    MERGE_CONSENSUS_JOBS = 'merge_consensus_jobs',
 }
 
 function ActionsMenuComponent(props: Props): JSX.Element {
@@ -42,10 +47,14 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         projectID,
         bugTracker,
         inferenceIsActive,
+        consensusJobsPerRegularJob,
         onClickMenu,
     } = props;
 
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
+
+    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.mergingConsensus);
+    const isTaskInMergingConsensus = mergingConsensus[`task_${taskID}`];
 
     const onClickMenuWrapper = useCallback(
         (params: MenuInfo) => {
@@ -66,6 +75,20 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                         danger: true,
                     },
                     okText: 'Delete',
+                });
+            } else if (params.key === Actions.MERGE_CONSENSUS_JOBS) {
+                Modal.confirm({
+                    title: 'The consensus jobs will be merged',
+                    content: 'Existing annotations in regular jobs will be updated. Continue?',
+                    className: 'cvat-modal-confirm-delete-task',
+                    onOk: () => {
+                        onClickMenu(params);
+                    },
+                    okButtonProps: {
+                        type: 'primary',
+                        danger: true,
+                    },
+                    okText: 'Merge',
                 });
             } else {
                 onClickMenu(params);
@@ -110,6 +133,25 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             View analytics
         </Menu.Item>
     ), 50]);
+
+    if (consensusJobsPerRegularJob) {
+        menuItems.push([(
+            <Menu.Item
+                key={Actions.VIEW_CONSENSUS_ANALYTICS}
+            >
+                View Consensus Analytics
+            </Menu.Item>
+        ), 55]);
+        menuItems.push([(
+            <Menu.Item
+                key={Actions.MERGE_CONSENSUS_JOBS}
+                disabled={isTaskInMergingConsensus}
+                icon={isTaskInMergingConsensus && <LoadingOutlined />}
+            >
+                Merge Consensus Jobs
+            </Menu.Item>
+        ), 60]);
+    }
 
     if (projectID === null) {
         menuItems.push([(

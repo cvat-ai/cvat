@@ -434,6 +434,28 @@ class TestPostTasks:
                 assert task.assignee is None
                 assert task.assignee_updated_date is None
 
+    @pytest.mark.parametrize(
+        "consensus_jobs_per_regular_job, success", [(0, True), (1, False), (2, True), (11, False)]
+    )
+    def test_can_create_with_consensus_jobs_per_regular_job(
+        self, admin_user, consensus_jobs_per_regular_job, success
+    ):
+        task_spec = {
+            "name": "test task creation with assignee",
+            "labels": [{"name": "car"}],
+            "consensus_jobs_per_regular_job": consensus_jobs_per_regular_job,
+        }
+
+        with make_api_client(admin_user) as api_client:
+            if success:
+                (task, response) = api_client.tasks_api.create(task_write_request=task_spec)
+                assert response.status == HTTPStatus.CREATED
+                assert task.consensus_jobs_per_regular_job == consensus_jobs_per_regular_job
+            else:
+                with pytest.raises(ApiException) as exc:
+                    _ = api_client.tasks_api.create(task_write_request=task_spec)
+                assert exc.status == HTTPStatus.BAD_REQUEST
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
@@ -2359,6 +2381,7 @@ class TestTaskBackups:
         task = self.client.tasks.retrieve(task_json["id"])
         jobs = task.get_jobs()
         for j in jobs:
+            # print(j)
             j.update({"stage": "validation"})
 
         self._test_can_restore_backup_task(task_json["id"])

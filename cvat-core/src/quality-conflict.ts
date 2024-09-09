@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedAnnotationConflictData, SerializedQualityConflictData } from './server-response-types';
+import { SerializedAnnotationQualityConflictData, SerializedQualityConflictData } from './server-response-types';
 import { ObjectType } from './enums';
 
 export enum QualityConflictType {
@@ -25,7 +25,7 @@ export class AnnotationConflict {
     #severity: ConflictSeverity;
     #description: string;
 
-    constructor(initialData: SerializedAnnotationConflictData) {
+    constructor(initialData: SerializedAnnotationQualityConflictData) {
         this.#jobID = initialData.job_id;
         this.#serverID = initialData.obj_id;
         this.#type = initialData.type;
@@ -80,7 +80,7 @@ export default class QualityConflict {
         this.#type = initialData.type as QualityConflictType;
         this.#severity = initialData.severity as ConflictSeverity;
         this.#annotationConflicts = initialData.annotation_ids
-            .map((rawData: SerializedAnnotationConflictData) => new AnnotationConflict({
+            .map((rawData: SerializedAnnotationQualityConflictData) => new AnnotationConflict({
                 ...rawData,
                 conflict_type: initialData.type,
                 severity: initialData.severity,

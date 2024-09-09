@@ -26,6 +26,7 @@ import { ServerAPIActionTypes } from 'actions/server-actions';
 import { RequestsActionsTypes, getInstanceType } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ConsensusActionTypes } from 'actions/consensus-actions';
 
 import config from 'config';
 import { NotificationsState } from '.';
@@ -67,6 +68,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             importing: null,
             moving: null,
+            mergingConsensus: null,
         },
         jobs: {
             updating: null,
@@ -190,6 +192,7 @@ const defaultState: NotificationsState = {
             loadingDone: null,
             importingDone: null,
             movingDone: null,
+            mergingConsensusDone: null,
         },
         models: {
             inferenceDone: null,
@@ -724,6 +727,74 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message: `Could not merge the [task ${taskID}](/tasks/${taskID})`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-merge-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
+            const { taskID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: {
+                            message: `Consensus Jobs in the [task ${taskID}](/tasks/${taskID}) \
+                                have been merged`,
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED: {
+            const { jobID, taskID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message: `Could not merge the [job ${jobID}](/tasks/${taskID}/jobs/${jobID})`,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-merge-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS: {
+            const { jobID, taskID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: {
+                            message: `Consensus Jobs in the [job ${jobID}](/tasks/${taskID}/jobs/${jobID}) \
+                                have been merged`,
                         },
                     },
                 },

@@ -72,14 +72,6 @@
         margin-top: $grid-unit-size;
     }
 
-    .cvat-job-assignee-selector {
-        max-width: $grid-unit-size * 16;
-
-        @media screen and (width <= 1620px) {
-            max-width: $grid-unit-size * 12;
-        }
-    }
-
     .cvat-consensus-job-collapse {
         margin-top: 12px;
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import { exportActions } from 'actions/export-actions';
@@ -12,14 +12,18 @@ import { Job, JobType } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
+import { LoadingOutlined } from '@ant-design/icons';
+import { mergeTaskSpecificConsensusJobsAsync } from 'actions/consensus-actions';
+import { CombinedState } from 'reducers';
 
 interface Props {
     job: Job;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
+    consensusJobsPresent: boolean;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
-    const { job } = props;
+    const { job, consensusJobsPresent } = props;
     const history = useHistory();
     const dispatch = useDispatch();
 
@@ -39,6 +43,9 @@ function JobActionsMenu(props: Props): JSX.Element {
         });
     }, [job]);
 
+    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.mergingConsensus);
+    const isTaskInMergingConsensus = mergingConsensus[`job_${job.id}`];
+
     return (
         <Menu
             className='cvat-job-item-menu'
@@ -57,21 +64,34 @@ function JobActionsMenu(props: Props): JSX.Element {
                     dispatch(exportActions.openExportDatasetModal(job));
                 } else if (action.key === 'view_analytics') {
                     history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
+                } else if (action.key === 'merge_specific_consensus_jobs') {
+                    dispatch(mergeTaskSpecificConsensusJobsAsync(job));
                 }
             }}
         >
-            <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
-            <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
-            <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
+            <Menu.Item key='task' disabled={job.taskId === null}>
+                Go to the task
+            </Menu.Item>
+            <Menu.Item key='project' disabled={job.projectId === null}>
+                Go to the project
+            </Menu.Item>
+            <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>
+                Go to the bug tracker
+            </Menu.Item>
             <Menu.Item key='import_job'>Import annotations</Menu.Item>
             <Menu.Item key='export_job'>Export annotations</Menu.Item>
             <Menu.Item key='view_analytics'>View analytics</Menu.Item>
+            {consensusJobsPresent && job.parent_job_id === null && (
+                <Menu.Item
+                    key='merge_specific_consensus_jobs'
+                    disabled={isTaskInMergingConsensus}
+                    icon={isTaskInMergingConsensus && <LoadingOutlined />}
+                >
+                    Merge Consensus Jobs
+                </Menu.Item>
+            )}
             <Menu.Divider />
-            <Menu.Item
-                key='delete'
-                disabled={job.type !== JobType.GROUND_TRUTH}
-                onClick={() => onDelete()}
-            >
+            <Menu.Item key='delete' disabled={job.type !== JobType.GROUND_TRUTH} onClick={() => onDelete()}>
                 Delete
             </Menu.Item>
         </Menu>
