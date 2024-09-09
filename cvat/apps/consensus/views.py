@@ -69,6 +69,7 @@ class ConsensusConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = (
         ConsensusConflict.objects.select_related(
             "report",
+            "report__parent",
             "report__job",
             "report__job__segment",
             "report__job__segment__task",
@@ -113,7 +114,9 @@ class ConsensusConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 self.check_object_permissions(self.request, report)
 
                 if report.target == ConsensusReportTarget.TASK:
-                    queryset = queryset.filter(Q(report=report)).distinct()
+                    queryset = queryset.filter(
+                        Q(report=report) | Q(report__parent=report)
+                    ).distinct()
                 elif report.target == ConsensusReportTarget.JOB:
                     queryset = queryset.filter(report=report)
                 else:
