@@ -20,6 +20,7 @@ import userAgreementsReducer from './useragreements-reducer';
 import reviewReducer from './review-reducer';
 import exportReducer from './export-reducer';
 import importReducer from './import-reducer';
+import consensusReducer from './consensus-reducer';
 import cloudStoragesReducer from './cloud-storages-reducer';
 import organizationsReducer from './organizations-reducer';
 import webhooksReducer from './webhooks-reducer';
@@ -46,6 +47,7 @@ export default function createRootReducer(): Reducer {
         review: reviewReducer,
         export: exportReducer,
         import: importReducer,
+        consensus: consensusReducer,
         cloudStorages: cloudStoragesReducer,
         organizations: organizationsReducer,
         webhooks: webhooksReducer,

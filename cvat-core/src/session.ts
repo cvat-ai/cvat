@@ -468,7 +468,7 @@ export class Job extends Session {
         frame_count?: number;
         project_id: number | null;
         guide_id: number | null;
-        task_id: number | null;
+        task_id: number;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -617,7 +617,7 @@ export class Job extends Session {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number | null {
+    public get taskId(): number {
         return this.#data.task_id;
     }
 
@@ -696,6 +696,11 @@ export class Job extends Session {
 
     async delete(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.delete);
+        return result;
+    }
+
+    async mergeConsensusJobs(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.mergeConsensusJobs);
         return result;
     }
 }
@@ -1144,6 +1149,11 @@ export class Task extends Session {
 
     async delete(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
+        return result;
+    }
+
+    async mergeConsensusJobs(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.mergeConsensusJobs);
         return result;
     }
 

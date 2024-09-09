@@ -140,13 +140,15 @@ class _CollectionSummarySerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
         fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
-        fields['count'].source = self._collection_key + '.count'
+        if not fields['count'].source:
+            fields['count'].source = self._collection_key + '.count'
         return fields
 
     def get_attribute(self, instance):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
+    count = serializers.IntegerField(source='total_jobs_count', allow_null=True)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
@@ -1126,8 +1128,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date'
-            'consensus_jobs_per_regular_job',
+            'assignee_updated_date', 'consensus_jobs_per_regular_job',
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -1340,8 +1341,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         consensus_jobs_per_regular_job = attrs.get('consensus_jobs_per_regular_job', self.instance.consensus_jobs_per_regular_job if self.instance else None)
 
-        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0):
-            raise serializers.ValidationError("Consensus jobs per regular job should be greater than or equal to 0 and not 1")
+        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0 or consensus_jobs_per_regular_job > 10):
+            raise serializers.ValidationError("Consensus jobs per regular job shouldn't be negative, less than 10 except 1")
 
         return attrs
 
