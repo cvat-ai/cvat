@@ -35,9 +35,9 @@ The basic use case is annotating the entire dataset with multiple annotators to 
 
 
 ## Terminology:
-1. `min_iou_threshold`: This is the same as `iou_threshold` param in Quality Settings. It's used for distinction between matched / unmatched annotations. A annotation is considered in the consensus only with the annotations it has an overlap greater than or equal to this
-2. `agreement_score_threshold`: After consensus the merged annotation, is assigned a score based on it's overlap with other annotations in the cluster, (add label score thing also). Merged annotation with this score lesser than `agreement_score_threshold` are discarded.
-3. `Quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label of merged annotation, the count of specific label shouldn't be less than this.
+1. `min_iou_threshold`: This is the same as `iou_threshold` param in Quality Settings. It's used for distinction between matched / unmatched annotations. An annotation is considered in the consensus only with the annotations it has an overlap greater than or equal to this
+2. `agreement_score_threshold`: After consensus has produced a merged annotation, it is assigned a score based on it's overlap with other annotations in the cluster, (add label score thing also). Merged annotations with this score lesser than `agreement_score_threshold` are discarded.
+3. `Quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label of a merged annotation, the count of specific label shouldn't be less than this. Clusters having less than this number of annotations are discarded.
 4. `oks_sigma`: This is the same as `oks_sigma` param in Quality Settings. Like `min_iou_threshold`, but for points. The percent of the bbox area, used as the radius of the circle around the GT point, where the checked point is expected to be. Read more: [https://cocodataset.org/#keypoints-eval](https://cocodataset.org/#keypoints-eval)
 5. `line_thickness`: This is the same as `line_thickness` param in Quality Settings. Thickness of polylines, relatively to the (image area) ^ 0.5. The distance to the boundary around the GT line, inside of which the checked line points should be.
 
