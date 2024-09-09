@@ -38,8 +38,6 @@ function LabelsListComponent(): JSX.Element {
 
     const { labels, keyMap } = useSelector((state: CombinedState) => ({
         labels: state.annotation.job.labels,
-        activeShapeType: state.annotation.drawing.activeShapeType,
-        activeObjectType: state.annotation.drawing.activeObjectType,
         keyMap: state.shortcuts.keyMap,
     }), shallowEqual);
 
