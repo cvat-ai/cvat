@@ -1304,7 +1304,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'job_id', 'created_date', 'target_last_updated'].
+           Available filter_fields: ['id', 'job_id', 'created_date', 'target_last_updated', 'parent_id'].
         schema:
           type: string
       - name: job_id
@@ -1334,11 +1334,16 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: parent_id
+        in: query
+        description: A simple equality filter for the parent_id field
+        schema:
+          type: integer
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''created_date'', ''target_last_updated'']'
+          [''id'', ''job_id'', ''created_date'', ''target_last_updated'', ''parent_id'']'
         schema:
           type: string
       - in: query
@@ -7913,6 +7918,10 @@ components:
           nullable: true
           readOnly: true
         task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        parent_id:
           type: integer
           nullable: true
           readOnly: true
