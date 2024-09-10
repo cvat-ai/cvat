@@ -30,7 +30,7 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         Scopes = __class__.Scopes
         return [{
             'list': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         return {

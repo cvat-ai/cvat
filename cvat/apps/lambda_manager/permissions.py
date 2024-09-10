@@ -49,7 +49,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
             ('lambda_request', 'list'): Scopes.LIST_OFFLINE,
             ('lambda_request', 'retrieve'): Scopes.CALL_OFFLINE,
             ('lambda_request', 'destroy'): Scopes.CALL_OFFLINE,
-        }.get((view.basename, view.action), None)]
+        }[(view.basename, view.action)]]
 
     def get_resource(self):
         return None
