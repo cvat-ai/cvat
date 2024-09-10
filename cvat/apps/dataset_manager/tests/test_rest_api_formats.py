@@ -199,6 +199,13 @@ class _DbTestBase(ApiTestBase):
             )
         return values
 
+    def _get_tasks(self, project_id):
+        with ForceLogin(self.admin, self.client):
+            values = get_paginated_collection(lambda page:
+                self.client.get("/api/tasks?project_id={}&page={}".format(project_id, page))
+            )
+        return values
+
     def _get_request(self, path, user):
         with ForceLogin(user, self.client):
             response = self.client.get(path)
@@ -2196,3 +2203,70 @@ class ProjectDumpUpload(_DbTestBase):
                                 f.write(content.getvalue())
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+
+    def test_api_v2_dump_upload_annotations_with_objects_type_is_track(self):
+        test_name = self._testMethodName
+        upload_format_name = dump_format_name = "COCO Keypoints 1.0"
+        user = self.admin
+        edata = {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
+                         'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True, 'annotation_loaded': True}
+
+        with TestDir() as test_dir:
+            # Dump annotations with objects type is track
+            # create task with annotations
+            project_dict = copy.deepcopy(projects['main'])
+            task_dict = copy.deepcopy(tasks[dump_format_name])
+            project_dict["labels"] = task_dict["labels"]
+            del task_dict["labels"]
+            for label in project_dict["labels"]:
+                label["attributes"] = [{
+                    "name": "is_crowd",
+                    "mutable": False,
+                    "input_type": "checkbox",
+                    "default_value": "false",
+                    "values": ["false", "true"]
+                }]
+            project = self._create_project(project_dict)
+            pid = project['id']
+            video = self._generate_task_videos(1)
+            task_dict['project_id'] = pid
+            task = self._create_task(task_dict, video)
+            task_id = task["id"]
+            self._create_annotations(task, "skeleton track", "default")
+            # dump annotations
+            url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
+
+            self._clear_rq_jobs()  # clean up from previous tests and iterations
+
+            file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+            data = {"format": dump_format_name,}
+            response = self._get_request_with_data(url, data, user)
+            self.assertEqual(response.status_code, edata['accept code'])
+            response = self._get_request_with_data(url, data, user)
+            self.assertEqual(response.status_code, edata['create code'])
+            data = {
+                "format": dump_format_name,
+                "action": "download",
+            }
+            response = self._get_request_with_data(url, data, user)
+            self.assertEqual(response.status_code, edata['code'])
+            if response.status_code == status.HTTP_200_OK:
+                content = BytesIO(b"".join(response.streaming_content))
+                with open(file_zip_name, "wb") as f:
+                    f.write(content.getvalue())
+            self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+
+            data_from_task_before_upload = self._get_data_from_task(task_id, True)
+
+            # Upload annotations with objects type is track
+            project = self._create_project(project_dict)
+            url = self._generate_url_upload_project_dataset(project["id"], upload_format_name)
+
+            with open(file_zip_name, 'rb') as binary_file:
+                response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                self.assertEqual(response.status_code, edata['accept code'])
+
+            # equals annotations
+            new_task = next(self._get_tasks(project["id"]))
+            data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
+            compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
