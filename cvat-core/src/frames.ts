@@ -40,8 +40,11 @@ const frameDataCache: Record<string, {
 // frame meta data storage by job id
 const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
 
-function rangeArray(start: number, end: number): number[] {
-    return Array.from({ length: end - start }, (v, k) => k + start);
+function rangeArray(start: number, end: number, step: number = 1): number[] {
+    return Array.from(
+        { length: +(start < end) * Math.ceil((end - start) / step) },
+        (v, k) => k * step + start,
+    );
 }
 
 export class FramesMetaData {
@@ -149,33 +152,46 @@ export class FramesMetaData {
         this.#updateTrigger.reset();
     }
 
-    getFrameIndex(frameNumber: number): number {
-        if (frameNumber < this.startFrame || frameNumber > this.stopFrame) {
-            throw new ArgumentError(`Frame number ${frameNumber} doesn't belong to the job`);
+    getFrameIndex(dataFrameNumber: number): number {
+        // TODO: migrate to local frame numbers to simplify code
+
+        if (dataFrameNumber < this.startFrame || dataFrameNumber > this.stopFrame) {
+            throw new ArgumentError(`Frame number ${dataFrameNumber} doesn't belong to the job`);
         }
 
         let frameIndex = null;
         if (this.includedFrames) {
-            frameIndex = this.includedFrames.indexOf(frameNumber); // TODO: use binary search
+            frameIndex = this.includedFrames.indexOf(dataFrameNumber); // TODO: use binary search
             if (frameIndex === -1) {
-                throw new ArgumentError(`Frame number ${frameNumber} doesn't belong to the job`);
+                throw new ArgumentError(`Frame number ${dataFrameNumber} doesn't belong to the job`);
             }
         } else {
-            frameIndex = frameNumber - this.startFrame;
+            frameIndex = Math.floor((dataFrameNumber - this.startFrame) / this.getFrameStep());
         }
         return frameIndex;
     }
 
-    getFrameChunkIndex(frame_number: number): number {
-        return Math.floor(this.getFrameIndex(frame_number) / this.chunkSize);
+    getFrameChunkIndex(dataFrameNumber: number): number {
+        return Math.floor(this.getFrameIndex(dataFrameNumber) / this.chunkSize);
     }
 
-    getFrameSequence(): number[] {
+    getFrameStep(): number {
+        if (this.frameFilter) {
+            const frameStepParts = this.frameFilter.split('=', 2);
+            if (frameStepParts.length !== 2) {
+                throw new Error(`Invalid frame filter '${this.frameFilter}'`);
+            }
+            return parseInt(frameStepParts[1], 10);
+        }
+        return 1;
+    }
+
+    getDataFrameNumbers(): number[] {
         if (this.includedFrames) {
             return this.includedFrames;
         }
 
-        return rangeArray(this.startFrame, this.stopFrame + 1);
+        return rangeArray(this.startFrame, this.stopFrame + 1, this.getFrameStep());
     }
 }
 
@@ -241,10 +257,12 @@ export class FrameData {
 class PrefetchAnalyzer {
     #requestedFrames: number[];
     #meta: FramesMetaData;
+    #getDataFrameNumber: (frameNumber: number) => number;
 
-    constructor(meta: FramesMetaData) {
+    constructor(meta: FramesMetaData, dataFrameNumberGetter: (frameNumber: number) => number) {
         this.#requestedFrames = [];
         this.#meta = meta;
+        this.#getDataFrameNumber = dataFrameNumberGetter;
     }
 
     shouldPrefetchNext(current: number, isPlaying: boolean, isChunkCached: (chunk) => boolean): boolean {
@@ -252,13 +270,16 @@ class PrefetchAnalyzer {
             return true;
         }
 
-        const currentChunk = this.#meta.getFrameChunkIndex(current);
+        const currentDataFrameNumber = this.#getDataFrameNumber(current);
+        const currentChunk = this.#meta.getFrameChunkIndex(currentDataFrameNumber);
         const { length } = this.#requestedFrames;
         const isIncreasingOrder = this.#requestedFrames
             .every((val, index) => index === 0 || val > this.#requestedFrames[index - 1]);
         if (
             length && (isIncreasingOrder && current > this.#requestedFrames[length - 1]) &&
-            (this.#meta.getFrameIndex(current) % this.#meta.chunkSize) >= Math.ceil(this.#meta.chunkSize / 2) &&
+            (
+                this.#meta.getFrameIndex(currentDataFrameNumber) % this.#meta.chunkSize
+            ) >= Math.ceil(this.#meta.chunkSize / 2) &&
             !isChunkCached(currentChunk + 1)
         ) {
             // is increasing order including the current frame
@@ -287,6 +308,18 @@ class PrefetchAnalyzer {
     }
 }
 
+function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
+    return meta.startFrame - localStartFrame * meta.getFrameStep();
+}
+
+function getDataFrameNumber(frameNumber: number, dataStartFrame: number, step: number): number {
+    return frameNumber * step + dataStartFrame;
+}
+
+function getFrameNumber(dataFrameNumber: number, dataStartFrame: number, step: number): number {
+    return (dataFrameNumber - dataStartFrame) / step;
+}
+
 Object.defineProperty(FrameData.prototype.data, 'implementation', {
     value(this: FrameData, onServerRequest) {
         return new Promise<{
@@ -300,14 +333,18 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             } = frameDataCache[this.jobID];
 
             const requestId = +_.uniqueId();
-            const chunkNumber = meta.getFrameChunkIndex(this.number);
+            const dataStartFrame = getDataStartFrame(meta, startFrame);
+            const requestedDataFrameNumber = getDataFrameNumber(
+                this.number, dataStartFrame, meta.getFrameStep(),
+            );
+            const chunkNumber = meta.getFrameChunkIndex(requestedDataFrameNumber);
+            const segmentFrameNumbers = meta.getDataFrameNumbers().map(
+                (dataFrameNumber: number) => getFrameNumber(dataFrameNumber, dataStartFrame, meta.getFrameStep()),
+            );
             const frame = provider.frame(this.number);
 
-            function findTheNextNotDecodedChunk(
-                searchFrom: number, isIndex: boolean = false,
-            ): number {
-                const currentFrameIndex = isIndex ? searchFrom : meta.getFrameIndex(searchFrom);
-                let nextFrameIndex = currentFrameIndex + forwardStep;
+            function findTheNextNotDecodedChunk(searchFrom: number): number {
+                let nextFrameIndex = searchFrom + forwardStep;
                 let nextChunkNumber = Math.floor(nextFrameIndex / chunkSize);
                 while (nextChunkNumber === chunkNumber) {
                     nextFrameIndex += forwardStep;
@@ -315,7 +352,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 }
 
                 if (provider.isChunkCached(nextChunkNumber)) {
-                    return findTheNextNotDecodedChunk(nextFrameIndex, true);
+                    return findTheNextNotDecodedChunk(nextFrameIndex);
                 }
 
                 return nextChunkNumber;
@@ -329,7 +366,9 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                         (chunk) => provider.isChunkCached(chunk),
                     ) && decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest
                 ) {
-                    const nextChunkNumber = findTheNextNotDecodedChunk(this.number);
+                    const nextChunkNumber = findTheNextNotDecodedChunk(
+                        meta.getFrameIndex(requestedDataFrameNumber),
+                    );
                     const predecodeChunksMax = Math.floor(decodedBlocksCacheSize / 2);
                     if (startFrame + nextChunkNumber * chunkSize <= stopFrame &&
                         nextChunkNumber <= chunkNumber + predecodeChunksMax
@@ -353,7 +392,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                 provider.cleanup(1);
                                 provider.requestDecodeBlock(
                                     chunk,
-                                    meta.getFrameSequence().slice(
+                                    segmentFrameNumbers.slice(
                                         nextChunkNumber * chunkSize,
                                         (nextChunkNumber + 1) * chunkSize,
                                     ),
@@ -417,7 +456,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             provider
                                 .requestDecodeBlock(
                                     chunk,
-                                    meta.getFrameSequence().slice(
+                                    segmentFrameNumbers.slice(
                                         chunkNumber * chunkSize,
                                         (chunkNumber + 1) * chunkSize,
                                     ),
@@ -641,6 +680,13 @@ export async function getFrame(
         const decodedBlocksCacheSize = Math.min(
             Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
         );
+
+        // TODO: migrate to local frame numbers
+        const dataStartFrame = getDataStartFrame(meta, startFrame);
+        const dataFrameNumberGetter = (frameNumber: number): number => (
+            getDataFrameNumber(frameNumber, dataStartFrame, meta.getFrameStep())
+        );
+
         frameDataCache[jobID] = {
             meta,
             chunkSize,
@@ -652,10 +698,12 @@ export async function getFrame(
             provider: new FrameDecoder(
                 blockType,
                 decodedBlocksCacheSize,
-                meta.getFrameChunkIndex.bind(meta),
+                (frameNumber: number): number => (
+                    meta.getFrameChunkIndex(dataFrameNumberGetter(frameNumber))
+                ),
                 dimension,
             ),
-            prefetchAnalyzer: new PrefetchAnalyzer(meta),
+            prefetchAnalyzer: new PrefetchAnalyzer(meta, dataFrameNumberGetter),
             decodedBlocksCacheSize,
             activeChunkRequest: null,
             activeContextRequest: null,
@@ -729,8 +777,11 @@ export async function findFrame(
     let lastUndeletedFrame = null;
     const check = (frame): boolean => {
         if (meta.includedFrames) {
-            return (meta.includedFrames.includes(frame)) &&
-            (!filters.notDeleted || !(frame in meta.deletedFrames));
+            // meta.includedFrames contains input frame numbers now
+            const dataStartFrame = meta.startFrame; // this is only true when includedFrames is set
+            return (meta.includedFrames.includes(
+                getDataFrameNumber(frame, dataStartFrame, meta.getFrameStep()))
+            ) && (!filters.notDeleted || !(frame in meta.deletedFrames));
         }
         if (filters.notDeleted) {
             return !(frame in meta.deletedFrames);
