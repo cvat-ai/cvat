@@ -25,7 +25,6 @@ from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
-from datumaro import AnnotationType, Points
 from datumaro.components.dataset import Dataset
 from datumaro.components.operations import ExactComparator
 from datumaro.util.test_utils import TestDir
@@ -100,8 +99,8 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 
 def compare_datasets(expected: Dataset, actual: Dataset):
-    # we need this function to allow for a bit of variation in a rotation attribute and in skeleton elements order
-    comparator = ExactComparator(ignored_fields=["elements"], ignored_attrs=["rotation"])
+    # we need this function to allow for a bit of variation in the rotation attribute
+    comparator = ExactComparator(ignored_attrs=["rotation"])
     _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
         expected, actual
     )
@@ -116,10 +115,6 @@ def compare_datasets(expected: Dataset, actual: Dataset):
                 abs(ann_a.attributes.get("rotation", 0) - ann_b.attributes.get("rotation", 0))
                 < 0.01
             )
-            if ann_a.type == AnnotationType.skeleton:
-                elements_a = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_a.elements), key=lambda s: s.label)
-                elements_b = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_b.elements), key=lambda s: s.label)
-                assert elements_a == elements_b
 
 
 class _DbTestBase(ApiTestBase):
@@ -236,109 +231,65 @@ class _DbTestBase(ApiTestBase):
             response = self.client.delete(path)
         return response
 
-    def _create_annotations(self, task, name_ann, key_get_values):
+    @staticmethod
+    def _make_attribute_value(key_get_values, attribute):
+        assert key_get_values in ["default", "random"]
+        if key_get_values == "random":
+            if attribute["input_type"] == "number":
+                start = int(attribute["values"][0])
+                stop = int(attribute["values"][1]) + 1
+                step = int(attribute["values"][2])
+                return str(random.randrange(start, stop, step))  # nosec B311 NOSONAR
+            return random.choice(attribute["values"])  # nosec B311 NOSONAR
+        assert key_get_values == "default"
+        return attribute["default_value"]
+
+    @staticmethod
+    def _make_annotations_for_task(task, name_ann, key_get_values):
+        def fill_one_attribute_in_element(is_item_tracks, element, attribute):
+            spec_id = attribute["id"]
+            value = _DbTestBase._make_attribute_value(key_get_values, attribute)
+
+            if is_item_tracks and attribute["mutable"]:
+                for index_shape, _ in enumerate(element["shapes"]):
+                    element["shapes"][index_shape]["attributes"].append({
+                        "spec_id": spec_id,
+                        "value": value,
+                    })
+            else:
+                element["attributes"].append({
+                    "spec_id": spec_id,
+                    "value": value,
+                })
+
+        def fill_all_attributes_in_element(is_item_tracks, element, label):
+            element["label_id"] = label["id"]
+
+            for attribute in label["attributes"]:
+                fill_one_attribute_in_element(is_item_tracks, element, attribute)
+
+            sub_elements = element.get("elements", [])
+            sub_labels = label.get("sublabels", [])
+            for sub_element, sub_label in zip(sub_elements, sub_labels):
+                fill_all_attributes_in_element(is_item_tracks, sub_element, sub_label)
+
         tmp_annotations = copy.deepcopy(annotations[name_ann])
 
-        # change attributes in all annotations
-        for item in tmp_annotations:
-            if item in ["tags", "shapes", "tracks"]:
-                for index_elem, _ in enumerate(tmp_annotations[item]):
-                    tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
+        for item in ["tags", "shapes", "tracks"]:
+            for _element in tmp_annotations.get(item, []):
+                fill_all_attributes_in_element(item == "tracks", _element, task["labels"][0])
 
-                    for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
-                        spec_id = task["labels"][0]["attributes"][index_attribute]["id"]
+        return tmp_annotations
 
-                        if key_get_values == "random":
-                            if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
-                            else:
-                                value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
-                        elif key_get_values == "default":
-                            value = attribute["default_value"]
-
-                        if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
-                    elements = tmp_annotations[item][index_elem].get("elements", [])
-                    labels = task["labels"][0].get("sublabels", [])
-                    for element, label in zip(elements, labels):
-                        element["label_id"] = label["id"]
-
-                        for index_attribute, attribute in enumerate(label["attributes"]):
-                            spec_id = label["attributes"][index_attribute]["id"]
-
-                            if key_get_values == "random":
-                                if attribute["input_type"] == "number":
-                                    start = int(attribute["values"][0])
-                                    stop = int(attribute["values"][1]) + 1
-                                    step = int(attribute["values"][2])
-                                    value = str(random.randrange(start, stop, step))
-                                else:
-                                    value = random.choice(label["attributes"][index_attribute]["values"])
-                            elif key_get_values == "default":
-                                value = attribute["default_value"]
-
-                            if item == "tracks" and attribute["mutable"]:
-                                for index_shape, _ in enumerate(element["shapes"]):
-                                    element["shapes"][index_shape]["attributes"].append({
-                                        "spec_id": spec_id,
-                                        "value": value,
-                                    })
-                            else:
-                                element["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
+    def _create_annotations(self, task, name_ann, key_get_values):
+        tmp_annotations = self._make_annotations_for_task(task, name_ann, key_get_values)
         response = self._put_api_v2_task_id_annotations(task["id"], tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def _create_annotations_in_job(self, task, job_id,  name_ann, key_get_values):
-        tmp_annotations = copy.deepcopy(annotations[name_ann])
-
-        # change attributes in all annotations
-        for item in tmp_annotations:
-            if item in ["tags", "shapes", "tracks"]:
-                for index_elem, _ in enumerate(tmp_annotations[item]):
-                    tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
-
-                    for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
-                        spec_id = task["labels"][0]["attributes"][index_attribute]["id"]
-
-                        if key_get_values == "random":
-                            if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
-                            else:
-                                value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
-                        elif key_get_values == "default":
-                            value = attribute["default_value"]
-
-                        if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
+        tmp_annotations = self._make_annotations_for_task(task, name_ann, key_get_values)
         response = self._put_api_v2_job_id_annotations(job_id, tmp_annotations)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.json())
 
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
@@ -1289,6 +1240,49 @@ class TaskDumpUploadTest(_DbTestBase):
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v2_check_skeleton_tracks_with_missing_shapes(self):
+        test_name = self._testMethodName
+        format_name = "COCO Keypoints 1.0"
+
+        # create task with annotations
+        for whole_task in (False, True):
+            for name_ann in [
+                "many jobs skeleton tracks with missing shapes",
+                "many jobs skeleton tracks with missing shapes - skeleton is outside",
+                "many jobs skeleton tracks with missing shapes - some points present",
+            ]:
+                with self.subTest():
+                    images = self._generate_task_images(25)
+                    task = self._create_task(tasks['many jobs skeleton'], images)
+                    task_id = task["id"]
+
+                    if whole_task:
+                        self._create_annotations(task, name_ann, "default")
+                    else:
+                        job_id = next(
+                            job["id"]
+                            for job in self._get_jobs(task_id)
+                            if job["start_frame"] == annotations[name_ann]["tracks"][0]["frame"]
+                        )
+                        self._create_annotations_in_job(task, job_id, name_ann, "default")
+
+                    # dump annotations
+                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    data = {"format": format_name}
+                    with TestDir() as test_dir:
+                        file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                        self._download_file(url, data, self.admin, file_zip_name)
+                        self._check_downloaded_file(file_zip_name)
+
+                        # remove annotations
+                        self._remove_annotations(url, self.admin)
+
+                        # upload annotations
+                        url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+                        with open(file_zip_name, 'rb') as binary_file:
+                            self._upload_file(url, binary_file, self.admin)
+
 
 class ExportBehaviorTest(_DbTestBase):
     @define

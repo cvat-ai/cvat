@@ -175,8 +175,11 @@ def annotations():
         return json.load(f)
 
 
+CloudStorageAssets = Container
+
+
 @pytest.fixture(scope="session")
-def cloud_storages():
+def cloud_storages() -> CloudStorageAssets:
     with open(ASSETS_DIR / "cloudstorages.json") as f:
         return Container(json.load(f)["results"])
 
