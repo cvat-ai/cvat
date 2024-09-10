@@ -58,6 +58,10 @@ class WebhookPermission(OpenPolicyAgentPermission):
             ('update', 'PUT'): Scopes.UPDATE,
             ('list', 'GET'): Scopes.LIST,
             ('retrieve', 'GET'): Scopes.VIEW,
+            ('ping', 'POST'): Scopes.UPDATE,
+            ('deliveries', 'GET'): Scopes.VIEW,
+            ('retrieve_delivery', 'GET'): Scopes.VIEW,
+            ('redelivery', 'POST'): Scopes.UPDATE,
         }.get((view.action, request.method))
 
         scopes = []
