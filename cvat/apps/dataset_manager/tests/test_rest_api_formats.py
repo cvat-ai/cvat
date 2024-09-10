@@ -1687,7 +1687,7 @@ class ExportBehaviorTest(_DbTestBase):
                 response = self._get_request_with_data(download_url, download_params, self.admin)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-                self._save_file_from_response(response, "export.zip")
+                self._save_file_from_response(response, osp.join(temp_dir, "export.zip"))
 
                 mock_osp_exists.assert_called()
 
