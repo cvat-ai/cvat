@@ -352,6 +352,13 @@ class _DbTestBase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
+    @staticmethod
+    def _save_file_from_response(response, file_zip_name):
+        if response.status_code == status.HTTP_200_OK:
+            content = BytesIO(b"".join(response.streaming_content))
+            with open(file_zip_name, "wb") as f:
+                f.write(content.getvalue())
+
 
 class TaskDumpUploadTest(_DbTestBase):
     def test_api_v2_dump_and_upload_annotations_with_objects_type_is_shape(self):
@@ -422,10 +429,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
             # Upload annotations with objects type is shape
@@ -533,10 +537,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
             # Upload annotations with objects type is track
             for upload_format in upload_formats:
@@ -623,10 +624,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
     def test_api_v2_dump_and_upload_annotations_with_objects_are_different_images(self):
@@ -866,10 +864,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata["code"])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -1692,9 +1687,7 @@ class ExportBehaviorTest(_DbTestBase):
                 response = self._get_request_with_data(download_url, download_params, self.admin)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-                content = BytesIO(b"".join(response.streaming_content))
-                with open(osp.join(temp_dir, "export.zip"), "wb") as f:
-                    f.write(content.getvalue())
+                self._save_file_from_response(response, "export.zip")
 
                 mock_osp_exists.assert_called()
 
@@ -2053,6 +2046,22 @@ class ExportBehaviorTest(_DbTestBase):
 
 
 class ProjectDumpUpload(_DbTestBase):
+    def _get_download_project_dataset_response(self, url, user, dump_format_name, edata):
+        data = {
+            "format": dump_format_name,
+        }
+        response = self._get_request_with_data(url, data, user)
+        self.assertEqual(response.status_code, edata["accept code"])
+
+        response = self._get_request_with_data(url, data, user)
+        self.assertEqual(response.status_code, edata["create code"])
+
+        data = {
+            "format": dump_format_name,
+            "action": "download",
+        }
+        return self._get_request_with_data(url, data, user)
+
     def test_api_v2_export_import_dataset(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
@@ -2102,28 +2111,9 @@ class ProjectDumpUpload(_DbTestBase):
 
                     user_name = edata['name']
                     file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                    data = {
-                        "format": dump_format_name,
-                    }
-
-                    response = self._get_request_with_data(url, data, user)
-                    self.assertEqual(response.status_code, edata["accept code"])
-
-                    response = self._get_request_with_data(url, data, user)
-                    self.assertEqual(response.status_code, edata["create code"])
-
-                    data = {
-                        "format": dump_format_name,
-                        "action": "download",
-                    }
-                    response = self._get_request_with_data(url, data, user)
+                    response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
                     self.assertEqual(response.status_code, edata["code"])
-
-                    if response.status_code == status.HTTP_200_OK:
-                        content = BytesIO(b"".join(response.streaming_content))
-                        with open(file_zip_name, "wb") as f:
-                            f.write(content.getvalue())
-
+                    self._save_file_from_response(response, file_zip_name)
                     self.assertEqual(response.status_code, edata['code'])
                     self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -2184,23 +2174,9 @@ class ProjectDumpUpload(_DbTestBase):
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["accept code"])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["create code"])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
+                        response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
                         self.assertEqual(response.status_code, edata["code"])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -2239,22 +2215,10 @@ class ProjectDumpUpload(_DbTestBase):
             self._clear_rq_jobs()  # clean up from previous tests and iterations
 
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
-            data = {"format": dump_format_name,}
-            response = self._get_request_with_data(url, data, user)
-            self.assertEqual(response.status_code, edata['accept code'])
-            response = self._get_request_with_data(url, data, user)
-            self.assertEqual(response.status_code, edata['create code'])
-            data = {
-                "format": dump_format_name,
-                "action": "download",
-            }
-            response = self._get_request_with_data(url, data, user)
+            response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
             self.assertEqual(response.status_code, edata['code'])
-            if response.status_code == status.HTTP_200_OK:
-                content = BytesIO(b"".join(response.streaming_content))
-                with open(file_zip_name, "wb") as f:
-                    f.write(content.getvalue())
-            self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+            self._save_file_from_response(response, file_zip_name)
+            self.assertEqual(osp.exists(file_zip_name), True)
 
             data_from_task_before_upload = self._get_data_from_task(task_id, True)
 
@@ -2264,9 +2228,9 @@ class ProjectDumpUpload(_DbTestBase):
 
             with open(file_zip_name, 'rb') as binary_file:
                 response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
-                self.assertEqual(response.status_code, edata['accept code'])
+                self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             # equals annotations
-            new_task = next(self._get_tasks(project["id"]))
+            new_task = self._get_tasks(project["id"])[0]
             data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
             compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
