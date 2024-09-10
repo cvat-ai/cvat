@@ -20,10 +20,10 @@ jobs:
       - name: Trigger private repository workflow
         env:
           GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+          GH_REPO: cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }}
         run: |
           gh workflow run \
             update-dependency.yml \
-            --repo=cvat-ai/${{ secrets.CVAT_DEPENDENT_REPO }} \
             -f triggeredBy=${{ github.repository }} \
             -f commitSha=${{ github.sha }} \
             -f branch=${{ github.ref }}
