@@ -11,7 +11,6 @@ import os
 import textwrap
 from copy import deepcopy
 from datetime import timedelta
-from enum import Enum
 from functools import wraps
 from typing import Any, Dict, Optional
 
@@ -39,6 +38,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.lambda_manager.models import FunctionKind
 from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
@@ -49,15 +49,6 @@ from cvat.utils.http import make_requests_session
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 slogger = ServerLogManager(__name__)
-
-class LambdaType(Enum):
-    DETECTOR = "detector"
-    INTERACTOR = "interactor"
-    REID = "reid"
-    TRACKER = "tracker"
-
-    def __str__(self):
-        return self.value
 
 class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
@@ -152,7 +143,7 @@ class LambdaFunction:
         meta_anno = data['metadata']['annotations']
         kind = meta_anno.get('type')
         try:
-            self.kind = LambdaType(kind)
+            self.kind = FunctionKind(kind)
         except ValueError as e:
             raise InvalidFunctionMetadataError(
                 f"{self.id} lambda function has unknown type: {kind!r}") from e
@@ -225,7 +216,7 @@ class LambdaFunction:
             'version': self.version
         }
 
-        if self.kind is LambdaType.INTERACTOR:
+        if self.kind is FunctionKind.INTERACTOR:
             response.update({
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
@@ -394,18 +385,18 @@ class LambdaFunction:
                         code=status.HTTP_400_BAD_REQUEST)
 
 
-        if self.kind == LambdaType.DETECTOR:
+        if self.kind == FunctionKind.DETECTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality)
             })
-        elif self.kind == LambdaType.INTERACTOR:
+        elif self.kind == FunctionKind.INTERACTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
                 "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
                 "obj_bbox": data.get("obj_bbox", None)
             })
-        elif self.kind == LambdaType.REID:
+        elif self.kind == FunctionKind.REID:
             payload.update({
                 "image0": self._get_image(db_task, mandatory_arg("frame0"), quality),
                 "image1": self._get_image(db_task, mandatory_arg("frame1"), quality),
@@ -417,7 +408,7 @@ class LambdaFunction:
                 payload.update({
                     "max_distance": max_distance
                 })
-        elif self.kind == LambdaType.TRACKER:
+        elif self.kind == FunctionKind.TRACKER:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
                 "shapes": data.get("shapes", []),
@@ -466,7 +457,7 @@ class LambdaFunction:
                     })
             return attributes
 
-        if self.kind == LambdaType.DETECTOR:
+        if self.kind == FunctionKind.DETECTOR:
             for item in response:
                 item_label = item['label']
                 if item_label not in mapping:
@@ -985,11 +976,11 @@ class LambdaJob:
 
         labels = convert_labels(db_task.get_labels(prefetch=True))
 
-        if function.kind == LambdaType.DETECTOR:
+        if function.kind == FunctionKind.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,
                 kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"),
                 db_job=db_job)
-        elif function.kind == LambdaType.REID:
+        elif function.kind == FunctionKind.REID:
             cls._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"), db_job=db_job)
 
