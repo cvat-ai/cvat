@@ -12,15 +12,15 @@ interface Props {
     targetMetric: TargetMetric;
 }
 
-function TaskQualityComponent(props: Readonly<Props>): JSX.Element {
+function QualityOverviewTab(props: Readonly<Props>): JSX.Element {
     const { task, targetMetric } = props;
     const Component = CustomizableComponents.QUALITY_CONTROL_OVERVIEW;
 
     return (
-        <div className='cvat-task-quality-page'>
+        <div className='cvat-quality-control-overview-tab'>
             <Component task={task} targetMetric={targetMetric} />
         </div>
     );
 }
 
-export default React.memo(TaskQualityComponent);
+export default React.memo(QualityOverviewTab);

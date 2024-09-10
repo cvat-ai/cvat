@@ -21,9 +21,9 @@ import {
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
-import TaskQualityComponent from './task-quality/task-quality-component';
-import TaskQualityManagementComponent from './task-quality/task-quality-magement-component';
-import QualitySettingsComponent from './quality-settings';
+import QualityOverviewTab from './task-quality/quality-overview-tab';
+import QualityManagementTab from './task-quality/quality-magement-tab';
+import QualitySettingsTab from './quality-settings-tab';
 
 const core = getCore();
 
@@ -375,7 +375,7 @@ function QualityControlPage(): JSX.Element {
             key: 'overview',
             label: 'Overview',
             children: (
-                <TaskQualityComponent task={instance} targetMetric={targetMetric} />
+                <QualityOverviewTab task={instance} targetMetric={targetMetric} />
             ),
         }, 10]);
 
@@ -384,7 +384,7 @@ function QualityControlPage(): JSX.Element {
                 key: 'management',
                 label: 'Management',
                 children: (
-                    <TaskQualityManagementComponent
+                    <QualityManagementTab
                         task={instance}
                         gtJob={gtJobInstance}
                         gtJobMeta={gtJobMeta}
@@ -399,7 +399,7 @@ function QualityControlPage(): JSX.Element {
                 key: 'settings',
                 label: 'Settings',
                 children: (
-                    <QualitySettingsComponent
+                    <QualitySettingsTab
                         fetching={qualitySettingsFetching}
                         qualitySettings={qualitySettings}
                         setQualitySettings={onSaveQualitySettings}

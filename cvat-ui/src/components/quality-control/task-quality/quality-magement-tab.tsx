@@ -2,11 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { FramesMetaData, Job, Task } from 'cvat-core-wrapper';
 import React from 'react';
 import { Row, Col } from 'antd/es/grid';
 import Spin from 'antd/lib/spin';
+
 import CustomizableComponents from 'components/customizable-components';
+import { FramesMetaData, Job, Task } from 'cvat-core-wrapper';
 import { SummaryComponent } from './summary';
 
 interface Props {
@@ -18,7 +19,7 @@ interface Props {
     onRestoreFrames: (frames: number[]) => void;
 }
 
-function TaskQualityManagementComponent(props: Readonly<Props>): JSX.Element {
+function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     const {
         task, gtJob, gtJobMeta,
         onDeleteFrames, onRestoreFrames, fetching,
@@ -26,14 +27,12 @@ function TaskQualityManagementComponent(props: Readonly<Props>): JSX.Element {
 
     const activeCount = gtJobMeta.includedFrames
         .filter((frameID: number) => !(frameID in gtJobMeta.deletedFrames)).length;
-
     const excludedCount = Object.keys(gtJobMeta.deletedFrames)
         .filter((frameID: string) => gtJobMeta.includedFrames.includes(+frameID)).length;
-
     const AllocationTableComponent = CustomizableComponents.QUALITY_CONTROL_ALLOCATION_TABLE;
 
     return (
-        <div className='cvat-task-quality-page'>
+        <div className='cvat-quality-control-management-tab'>
             {
                 fetching && (
                     <div className='cvat-spinner-container'>
@@ -65,4 +64,4 @@ function TaskQualityManagementComponent(props: Readonly<Props>): JSX.Element {
     );
 }
 
-export default React.memo(TaskQualityManagementComponent);
+export default React.memo(QualityManagementTab);

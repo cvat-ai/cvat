@@ -138,5 +138,5 @@ $excluded-background: #d9d9d973;
 
 .cvat-frame-allocation-table .ant-table-container {
     max-height: calc(100vh - $grid-unit-size * 60);
-    overflow: auto;
+    overflow-y: auto;
 }

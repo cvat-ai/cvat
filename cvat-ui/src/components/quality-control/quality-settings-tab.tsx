@@ -15,7 +15,7 @@ interface Props {
     setQualitySettings: (settings: QualitySettings) => void;
 }
 
-export default function QualitySettingsComponent(props: Readonly<Props>): JSX.Element | null {
+function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const {
         fetching,
         qualitySettings: settings,
@@ -30,19 +30,25 @@ export default function QualitySettingsComponent(props: Readonly<Props>): JSX.El
 
     if (fetching) {
         return (
-            <div className='cvat-quality-control-loading'>
-                <CVATLoadingSpinner />
+            <div className='cvat-quality-control-settings-tab'>
+                <div className='cvat-quality-control-loading'>
+                    <CVATLoadingSpinner />
+                </div>
             </div>
         );
     }
 
-    return settings ? (
-        <QualitySettingsForm
-            form={form}
-            settings={settings}
-            onSave={onSave}
-        />
-    ) : (
-        <Text>No quality settings</Text>
+    return (
+        <div className='cvat-quality-control-settings-tab'>
+            { settings ? (
+                <QualitySettingsForm
+                    form={form}
+                    settings={settings}
+                    onSave={onSave}
+                />
+            ) : <Text>No quality settings found</Text> }
+        </div>
     );
 }
+
+export default React.memo(QualitySettingsTab);
