@@ -19,7 +19,7 @@ import { SaveIcon } from 'icons';
 const componentShortcuts = {
     SAVE_JOB: {
         name: 'Save the job',
-        description: 'Send all changes of annotations to the server',
+        description: 'Submit unsaved changes of annotations to the server',
         sequences: ['ctrl+s'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },

@@ -48,8 +48,8 @@ export const pluginActions = {
     ) => createAction(PluginsActionTypes.ADD_UI_CALLBACK, { path, callback }),
     removeUICallback: (
         path: string,
-        component: CallableFunction,
-    ) => createAction(PluginsActionTypes.REMOVE_UI_CALLBACK, { path, component }),
+        callback: CallableFunction,
+    ) => createAction(PluginsActionTypes.REMOVE_UI_CALLBACK, { path, callback }),
     overrideUIComponent: (
         path: string,
         component: CallableFunction,
