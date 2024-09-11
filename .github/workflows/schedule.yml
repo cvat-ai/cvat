@@ -170,6 +170,12 @@ jobs:
           pytest tests/python/
           pytest tests/python/ --stop-services
 
+          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
+          pytest tests/python/ --stop-services
+
+          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
+          pytest tests/python/ --stop-services
+
       - name: Unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
@@ -308,21 +314,21 @@ jobs:
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: cypress_screenshots
+          name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
       - name: Uploading cypress videos as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress_videos_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/videos
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: cvat_container_logs
+          name: cvat_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat.log

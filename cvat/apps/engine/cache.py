@@ -14,14 +14,24 @@ import zipfile
 import zlib
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
-from itertools import pairwise
-from typing import Any, Callable, Generator, Iterator, Optional, Sequence, Tuple, Type, Union
+from itertools import groupby, pairwise
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Generator,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 import av
 import cv2
 import PIL.Image
 import PIL.ImageOps
-from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
 
@@ -58,7 +68,7 @@ class MediaCache:
     def __init__(self) -> None:
         self._cache = caches["media"]
 
-    def get_checksum(self, value: bytes) -> int:
+    def _get_checksum(self, value: bytes) -> int:
         return zlib.crc32(value)
 
     def _get_or_set_cache_item(
@@ -70,28 +80,21 @@ class MediaCache:
             slogger.glob.info(f"Ending to prepare chunk: key {key}")
 
             if item_data[0]:
-                item = (item_data[0], item_data[1], self.get_checksum(item_data[0].getbuffer()))
+                item = (item_data[0], item_data[1], self._get_checksum(item_data[0].getbuffer()))
                 self._cache.set(key, item)
             else:
                 item = (item_data[0], item_data[1], None)
 
             return item
 
-        slogger.glob.info(f"Starting to get chunk from cache: key {key}")
-        try:
-            item = self._cache.get(key)
-        except pickle.UnpicklingError:
-            slogger.glob.error(f"Unable to get item from cache: key {key}", exc_info=True)
-            item = None
-        slogger.glob.info(f"Ending to get chunk from cache: key {key}, is_cached {bool(item)}")
-
+        item = self._get(key)
         if not item:
             item = create_item()
         else:
             # compare checksum
             item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
             item_checksum = item[2] if len(item) == 3 else None
-            if item_checksum != self.get_checksum(item_data):
+            if item_checksum != self._get_checksum(item_data):
                 slogger.glob.info(f"Recreating cache item {key} due to checksum mismatch")
                 item = create_item()
 
@@ -115,24 +118,52 @@ class MediaCache:
 
         return item
 
-    def _make_task_chunk_key(
-        self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
-    ) -> str:
-        return f"task_{db_task.id}_{chunk_number}_{quality}"
+    def _has_key(self, key: str) -> bool:
+        return self._cache.has_key(key)
 
-    def _make_segment_chunk_key(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+    def _make_cache_key_prefix(
+        self, obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage]
     ) -> str:
-        return f"segment_{db_segment.id}_{chunk_number}_{quality}"
+        if isinstance(obj, models.Task):
+            return f"task_{obj.id}"
+        elif isinstance(obj, models.Segment):
+            return f"segment_{obj.id}"
+        elif isinstance(obj, models.Job):
+            return f"job_{obj.id}"
+        elif isinstance(obj, models.CloudStorage):
+            return f"cloudstorage_{obj.id}"
+        else:
+            assert False, f"Unexpected object type {type(obj)}"
 
-    def _make_cloud_storage_preview_key(self, db_cloud_storage: models.CloudStorage) -> str:
-        return f"cloudstorage_preview_{db_cloud_storage.id}"
+    def _make_chunk_key(
+        self,
+        db_obj: Union[models.Task, models.Segment, models.Job],
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+    ) -> str:
+        return f"{self._make_cache_key_prefix(db_obj)}_chunk_{chunk_number}_{quality}"
+
+    def _make_preview_key(self, db_obj: Union[models.Segment, models.CloudStorage]) -> str:
+        return f"{self._make_cache_key_prefix(db_obj)}_preview"
+
+    def _make_segment_task_chunk_key(
+        self,
+        db_obj: models.Segment,
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+    ) -> str:
+        return f"{self._make_cache_key_prefix(db_obj)}_task_chunk_{chunk_number}_{quality}"
+
+    def _make_context_image_preview_key(self, db_data: models.Data, frame_number: int) -> str:
+        return f"context_image_{db_data.id}_{frame_number}_preview"
 
     def get_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=self._make_segment_chunk_key(db_segment, chunk_number, quality=quality),
+            key=self._make_chunk_key(db_segment, chunk_number, quality=quality),
             create_callback=lambda: self.prepare_segment_chunk(
                 db_segment, chunk_number, quality=quality
             ),
@@ -141,7 +172,7 @@ class MediaCache:
     def get_task_chunk(
         self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
     ) -> Optional[DataWithMime]:
-        return self._get(key=self._make_task_chunk_key(db_task, chunk_number, quality=quality))
+        return self._get(key=self._make_chunk_key(db_task, chunk_number, quality=quality))
 
     def get_or_set_task_chunk(
         self,
@@ -152,7 +183,27 @@ class MediaCache:
         set_callback: Callable[[], DataWithMime],
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=self._make_task_chunk_key(db_task, chunk_number, quality=quality),
+            key=self._make_chunk_key(db_task, chunk_number, quality=quality),
+            create_callback=set_callback,
+        )
+
+    def get_segment_task_chunk(
+        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+    ) -> Optional[DataWithMime]:
+        return self._get(
+            key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality)
+        )
+
+    def get_or_set_segment_task_chunk(
+        self,
+        db_segment: models.Segment,
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+        set_callback: Callable[[], DataWithMime],
+    ) -> DataWithMime:
+        return self._get_or_set_cache_item(
+            key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
             create_callback=set_callback,
         )
 
@@ -160,7 +211,7 @@ class MediaCache:
         self, db_job: models.Job, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=f"job_{db_job.id}_{chunk_number}_{quality}",
+            key=self._make_chunk_key(db_job, chunk_number, quality=quality),
             create_callback=lambda: self.prepare_masked_range_segment_chunk(
                 db_job.segment, chunk_number, quality=quality
             ),
@@ -168,7 +219,7 @@ class MediaCache:
 
     def get_or_set_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
         return self._get_or_set_cache_item(
-            f"segment_preview_{db_segment.id}",
+            self._make_preview_key(db_segment),
             create_callback=lambda: self._prepare_segment_preview(db_segment),
         )
 
@@ -180,17 +231,17 @@ class MediaCache:
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
-        return self._get(self._make_cloud_storage_preview_key(db_storage))
+        return self._get(self._make_preview_key(db_storage))
 
     def get_or_set_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
         return self._get_or_set_cache_item(
-            self._make_cloud_storage_preview_key(db_storage),
+            self._make_preview_key(db_storage),
             create_callback=lambda: self._prepare_cloud_preview(db_storage),
         )
 
     def get_frame_context_images(self, db_data: models.Data, frame_number: int) -> DataWithMime:
         return self._get_or_set_cache_item(
-            key=f"context_image_{db_data.id}_{frame_number}",
+            key=self._make_context_image_preview_key(db_data, frame_number),
             create_callback=lambda: self.prepare_context_images(db_data, frame_number),
         )
 
@@ -199,11 +250,9 @@ class MediaCache:
         db_task: models.Task,
         frame_ids: Sequence[int],
         *,
-        raw_data_dir: str,
         manifest_path: str,
     ):
         db_data = db_task.data
-        dimension = db_task.dimension
 
         if os.path.isfile(manifest_path) and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
             reader = ImageReaderWithManifest(manifest_path)
@@ -264,6 +313,7 @@ class MediaCache:
                 .all()
             )
 
+            raw_data_dir = db_data.get_raw_data_dirname()
             media = []
             for frame_id, frame_path in db_images:
                 if frame_id == next_requested_frame_id:
@@ -277,7 +327,7 @@ class MediaCache:
 
             assert next_requested_frame_id is None
 
-            if dimension == models.DimensionType.DIM_2D:
+            if db_task.dimension == models.DimensionType.DIM_2D:
                 media = preload_images(media)
 
             yield from media
@@ -292,16 +342,10 @@ class MediaCache:
 
         db_data = db_task.data
 
-        raw_data_dir = {
-            models.StorageChoice.LOCAL: db_data.get_upload_dirname(),
-            models.StorageChoice.SHARE: settings.SHARE_ROOT,
-            models.StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname(),
-        }[db_data.storage]
-
         manifest_path = db_data.get_manifest_path()
 
         if hasattr(db_data, "video"):
-            source_path = os.path.join(raw_data_dir, db_data.video.path)
+            source_path = os.path.join(db_data.get_raw_data_dirname(), db_data.video.path)
 
             reader = VideoReaderWithManifest(
                 manifest_path=manifest_path,
@@ -327,9 +371,7 @@ class MediaCache:
                 for frame_tuple in reader.iterate_frames(frame_filter=frame_ids):
                     yield frame_tuple
         else:
-            yield from self._read_raw_images(
-                db_task, frame_ids, raw_data_dir=raw_data_dir, manifest_path=manifest_path
-            )
+            yield from self._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
 
     def prepare_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
@@ -354,7 +396,12 @@ class MediaCache:
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
 
-        with closing(self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)) as frame_iter:
+        return self.prepare_custom_range_segment_chunk(db_task, chunk_frame_ids, quality=quality)
+
+    def prepare_custom_range_segment_chunk(
+        self, db_task: models.Task, frame_ids: Sequence[int], *, quality: FrameQuality
+    ) -> DataWithMime:
+        with closing(self._read_raw_frames(db_task, frame_ids=frame_ids)) as frame_iter:
             return prepare_chunk(frame_iter, quality=quality, db_task=db_task)
 
     def prepare_masked_range_segment_chunk(
@@ -364,15 +411,52 @@ class MediaCache:
         db_data = db_task.data
 
         chunk_size = db_data.chunk_size
-        chunk_frame_ids = list(db_segment.frame_set)[
+        chunk_frame_ids = sorted(db_segment.frame_set)[
             chunk_size * chunk_number : chunk_size * (chunk_number + 1)
         ]
+
+        return self.prepare_custom_masked_range_segment_chunk(
+            db_task, chunk_frame_ids, chunk_number, quality=quality
+        )
+
+    def prepare_custom_masked_range_segment_chunk(
+        self,
+        db_task: models.Task,
+        frame_ids: Collection[int],
+        chunk_number: int,
+        *,
+        quality: FrameQuality,
+        insert_placeholders: bool = False,
+    ) -> DataWithMime:
+        db_data = db_task.data
+
         frame_step = db_data.get_frame_step()
 
-        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=db_task.dimension)
+        image_quality = 100 if quality == FrameQuality.ORIGINAL else db_data.image_quality
+        writer = ZipCompressedChunkWriter(image_quality, dimension=db_task.dimension)
 
         dummy_frame = io.BytesIO()
         PIL.Image.new("RGB", (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
+
+        # Optimize frame access if all the required frames are already cached
+        # Otherwise we might need to download files.
+        # This is not needed for video tasks, as it will reduce performance
+        from cvat.apps.engine.frame_provider import FrameOutputType, TaskFrameProvider
+
+        task_frame_provider = TaskFrameProvider(db_task)
+
+        use_cached_data = False
+        if db_task.mode != "interpolation":
+            required_frame_set = set(frame_ids)
+            all_chunks_available = all(
+                self._has_key(self._make_chunk_key(db_segment, chunk_number, quality=quality))
+                for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all()
+                for chunk_number, _ in groupby(
+                    required_frame_set.intersection(db_segment.frame_set),
+                    key=lambda frame: frame // db_data.chunk_size,
+                )
+            )
+            use_cached_data = all_chunks_available
 
         if hasattr(db_data, "video"):
             frame_size = (db_data.video.width, db_data.video.height)
@@ -380,31 +464,53 @@ class MediaCache:
             frame_size = None
 
         def get_frames():
-            with closing(
-                self._read_raw_frames(db_task, frame_ids=chunk_frame_ids)
-            ) as read_frame_iter:
-                for frame_idx in range(db_data.chunk_size):
-                    frame_idx = (
-                        db_data.start_frame
-                        + chunk_number * db_data.chunk_size
-                        + frame_idx * frame_step
+            with ExitStack() as es:
+                es.callback(task_frame_provider.unload)
+
+                if insert_placeholders:
+                    frame_range = (
+                        (
+                            db_data.start_frame
+                            + chunk_number * db_data.chunk_size
+                            + chunk_frame_idx * frame_step
+                        )
+                        for chunk_frame_idx in range(db_data.chunk_size)
                     )
-                    if db_data.stop_frame < frame_idx:
+                else:
+                    frame_range = frame_ids
+
+                if not use_cached_data:
+                    frames_gen = self._read_raw_frames(db_task, frame_ids)
+                    frames_iter = iter(es.enter_context(closing(frames_gen)))
+
+                for abs_frame_idx in frame_range:
+                    if db_data.stop_frame < abs_frame_idx:
                         break
 
-                    if frame_idx in chunk_frame_ids:
-                        frame = next(read_frame_iter)[0]
+                    if abs_frame_idx in frame_ids:
+                        if use_cached_data:
+                            frame_data = task_frame_provider.get_frame(
+                                task_frame_provider.get_rel_frame_number(abs_frame_idx),
+                                quality=quality,
+                                out_type=FrameOutputType.BUFFER,
+                            )
+                            frame = frame_data.data
+                        else:
+                            frame, _, _ = next(frames_iter)
 
                         if hasattr(db_data, "video"):
                             # Decoded video frames can have different size, restore the original one
 
-                            frame = frame.to_image()
+                            if isinstance(frame, av.VideoFrame):
+                                frame = frame.to_image()
+                            else:
+                                frame = PIL.Image.open(frame)
+
                             if frame.size != frame_size:
                                 frame = frame.resize(frame_size)
                     else:
                         # Populate skipped frames with placeholder data,
                         # this is required for video chunk decoding implementation in UI
-                        # TODO: try to fix decoding in UI
                         frame = io.BytesIO(dummy_frame.getvalue())
 
                     yield (frame, None, None)
@@ -429,14 +535,13 @@ class MediaCache:
                 os.path.join(os.path.dirname(__file__), "assets/3d_preview.jpeg")
             )
         else:
-            from cvat.apps.engine.frame_provider import (
+            from cvat.apps.engine.frame_provider import (  # avoid circular import
                 FrameOutputType,
-                SegmentFrameProvider,
-                TaskFrameProvider,
+                make_frame_provider,
             )
 
-            task_frame_provider = TaskFrameProvider(db_segment.task)
-            segment_frame_provider = SegmentFrameProvider(db_segment)
+            task_frame_provider = make_frame_provider(db_segment.task)
+            segment_frame_provider = make_frame_provider(db_segment)
             preview = segment_frame_provider.get_frame(
                 task_frame_provider.get_rel_frame_number(min(db_segment.frame_set)),
                 quality=FrameQuality.COMPRESSED,

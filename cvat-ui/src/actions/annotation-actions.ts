@@ -905,7 +905,8 @@ export function getJobAsync({
 
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
-                initialFrame as number : (await job.frames.search(
+                initialFrame as number :
+                (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.17.0
+  version: 2.18.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2323,10 +2323,17 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: index
+        schema:
+          type: integer
+        description: A unique number value identifying chunk, starts from 0 for each
+          job
+      - in: query
         name: number
         schema:
           type: integer
-        description: A unique number value identifying chunk or frame
+        description: A unique number value identifying chunk or frame. The numbers
+          are the same as for the task. Deprecated for chunks in favor of 'index'
       - in: query
         name: quality
         schema:
@@ -4529,6 +4536,7 @@ paths:
         schema:
           type: string
           enum:
+          - autoannotate
           - create
           - import
           - export
@@ -10026,6 +10034,9 @@ components:
           type: integer
           nullable: true
         format:
+          type: string
+          nullable: true
+        function_id:
           type: string
           nullable: true
       required:

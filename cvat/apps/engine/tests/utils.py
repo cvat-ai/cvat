@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APITestCase
 import av
 import django_rq
 import numpy as np
@@ -112,7 +112,7 @@ class ApiTestBase(APITestCase):
         self._clear_temp_data()
 
         super().setUp()
-        self.client = APIClient()
+        self.client = self.client_class()
 
 
 def generate_image_file(filename, size=(100, 100)):

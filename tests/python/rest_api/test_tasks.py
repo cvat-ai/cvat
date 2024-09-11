@@ -22,7 +22,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Sequence, Tuple, Union
 
 import attrs
 import numpy as np
@@ -874,6 +874,7 @@ class TestGetTaskDataset:
         [
             ("Datumaro 1.0", "", "images/{subset}"),
             ("YOLO 1.1", "train", "obj_{subset}_data"),
+            ("YOLOv8 Detection 1.0", "train", "images/{subset}"),
         ],
     )
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -910,7 +911,7 @@ class TestGetTaskDataset:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
@@ -1459,18 +1460,16 @@ class TestPostTaskData:
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
-        s3_client = s3.make_client()
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
             video = generate_video_file(video_frame_count)
             s3_client.create_file(
                 data=video,
-                bucket=cloud_storage["resource"],
                 filename=f"test/video/{video.name}",
             )
             request.addfinalizer(
                 partial(
                     s3_client.remove_file,
-                    bucket=cloud_storage["resource"],
                     filename=f"test/video/{video.name}",
                 )
             )
@@ -1484,13 +1483,11 @@ class TestPostTaskData:
                     image.seek(0)
                     s3_client.create_file(
                         data=image,
-                        bucket=cloud_storage["resource"],
                         filename=f"test/sub_{i}/{image.name}",
                     )
                     request.addfinalizer(
                         partial(
                             s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
                             filename=f"test/sub_{i}/{image.name}",
                         )
                     )
@@ -1510,13 +1507,11 @@ class TestPostTaskData:
                 with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
                     s3_client.create_file(
                         data=m_file.read(),
-                        bucket=cloud_storage["resource"],
                         filename="test/manifest.jsonl",
                     )
                     request.addfinalizer(
                         partial(
                             s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
                             filename="test/manifest.jsonl",
                         )
                     )
@@ -2107,7 +2102,7 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -2443,12 +2438,16 @@ class TestTaskData:
                     )
 
     @parametrize("task_spec, task_id", _default_task_cases)
-    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int):
+    @parametrize("indexing", ["absolute", "relative"])
+    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
                 get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
                 key=lambda j: j.start_frame,
             )
+
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
             for job in jobs:
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
 
@@ -2465,21 +2464,66 @@ class TestTaskData:
                 else:
                     assert False
 
-                chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
-                for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
-                    expected_chunk_abs_frame_ids = range(
-                        job_meta.start_frame
-                        + chunk_id * job_meta.chunk_size * task_spec.frame_step,
-                        job_meta.start_frame
-                        + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
-                        * task_spec.frame_step,
+                if indexing == "absolute":
+                    chunk_count = math.ceil(task_meta.size / job_meta.chunk_size)
+
+                    def get_task_chunk_abs_frame_ids(chunk_id: int) -> Sequence[int]:
+                        return range(
+                            task_meta.start_frame
+                            + chunk_id * task_meta.chunk_size * task_spec.frame_step,
+                            task_meta.start_frame
+                            + min((chunk_id + 1) * task_meta.chunk_size, task_meta.size)
+                            * task_spec.frame_step,
+                        )
+
+                    def get_job_frame_ids() -> Sequence[int]:
+                        return range(
+                            job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step
+                        )
+
+                    def get_expected_chunk_abs_frame_ids(chunk_id: int):
+                        return sorted(
+                            set(get_task_chunk_abs_frame_ids(chunk_id)) & set(get_job_frame_ids())
+                        )
+
+                    job_chunk_ids = (
+                        task_chunk_id
+                        for task_chunk_id in range(chunk_count)
+                        if get_expected_chunk_abs_frame_ids(task_chunk_id)
                     )
+                else:
+                    chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
+                    job_chunk_ids = range(chunk_count)
+
+                    def get_expected_chunk_abs_frame_ids(chunk_id: int):
+                        return sorted(
+                            frame
+                            for frame in range(
+                                job_meta.start_frame
+                                + chunk_id * job_meta.chunk_size * task_spec.frame_step,
+                                job_meta.start_frame
+                                + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
+                                * task_spec.frame_step,
+                            )
+                            if not job_meta.included_frames or frame in job_meta.included_frames
+                        )
+
+                for quality, chunk_id in product(["original", "compressed"], job_chunk_ids):
+                    expected_chunk_abs_frame_ids = get_expected_chunk_abs_frame_ids(chunk_id)
+
+                    kwargs = {}
+                    if indexing == "absolute":
+                        kwargs["number"] = chunk_id
+                    elif indexing == "relative":
+                        kwargs["index"] = chunk_id
+                    else:
+                        assert False
 
                     (_, response) = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="chunk",
                         quality=quality,
-                        number=chunk_id,
+                        **kwargs,
                         _parse_response=False,
                     )
 
@@ -2712,7 +2756,7 @@ class TestPatchTaskLabel:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
@@ -2743,15 +2787,12 @@ class TestWorkWithTask:
         task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
         # save image from the "public" bucket and remove it temporary
-
-        s3_client = s3.make_client()
         bucket_name = cloud_storages[cloud_storage_id]["resource"]
+        s3_client = s3.make_client(bucket=bucket_name)
 
-        image = s3_client.download_fileobj(bucket_name, image_name)
-        s3_client.remove_file(bucket_name, image_name)
-        request.addfinalizer(
-            partial(s3_client.create_file, bucket=bucket_name, filename=image_name, data=image)
-        )
+        image = s3_client.download_fileobj(image_name)
+        s3_client.remove_file(image_name)
+        request.addfinalizer(partial(s3_client.create_file, filename=image_name, data=image))
 
         with make_api_client(self._USERNAME) as api_client:
             try:
@@ -2772,7 +2813,13 @@ class TestTaskBackups:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
+    def setup(
+        self,
+        restore_db_per_function,
+        restore_cvat_data_per_function,
+        tmp_path: Path,
+        admin_user: str,
+    ):
         self.tmp_dir = tmp_path
 
         self.client = self._make_client()
@@ -3487,6 +3534,10 @@ class TestImportTaskAnnotations:
             "Open Images V6 1.0",
             "Datumaro 1.0",
             "Datumaro 3D 1.0",
+            "YOLOv8 Oriented Bounding Boxes 1.0",
+            "YOLOv8 Detection 1.0",
+            "YOLOv8 Pose 1.0",
+            "YOLOv8 Segmentation 1.0",
         ],
     )
     def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):

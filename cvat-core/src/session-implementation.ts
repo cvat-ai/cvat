@@ -189,7 +189,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 isPlaying,
                 step,
                 this.dimension,
-                (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
+                (chunkIndex, quality) => this.frames.chunk(chunkIndex, quality),
             );
         },
     });
@@ -273,10 +273,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.chunk, 'implementation', {
         value: function chunkImplementation(
             this: JobClass,
-            chunkNumber: Parameters<typeof JobClass.prototype.frames.chunk>[0],
+            chunkIndex: Parameters<typeof JobClass.prototype.frames.chunk>[0],
             quality: Parameters<typeof JobClass.prototype.frames.chunk>[1],
         ): ReturnType<typeof JobClass.prototype.frames.chunk> {
-            return serverProxy.frames.getData(this.id, chunkNumber, quality);
+            return serverProxy.frames.getData(this.id, chunkIndex, quality);
         },
     });
 
@@ -824,7 +824,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 isPlaying,
                 step,
                 this.dimension,
-                (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
+                (chunkIndex, quality) => job.frames.chunk(chunkIndex, quality),
             );
             return result;
         },
