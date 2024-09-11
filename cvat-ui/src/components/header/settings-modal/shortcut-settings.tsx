@@ -12,13 +12,14 @@ import {
     Alert,
 } from 'antd/lib';
 import Search from 'antd/lib/input/Search';
+import Empty from 'antd/lib/empty';
+import Modal from 'antd/lib/modal';
 import React, {
     useState, useMemo,
     useCallback,
 } from 'react';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
-import { Empty, Modal } from 'antd';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
