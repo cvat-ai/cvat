@@ -14,7 +14,7 @@ interface Props {
 
 function QualityOverviewTab(props: Readonly<Props>): JSX.Element {
     const { task, targetMetric } = props;
-    const Component = CustomizableComponents.QUALITY_CONTROL_OVERVIEW;
+    const [Component] = CustomizableComponents.QUALITY_CONTROL_OVERVIEW.slice(-1);
 
     return (
         <div className='cvat-quality-control-overview-tab'>

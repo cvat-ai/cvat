@@ -58,12 +58,13 @@ const storage = {
             </>
         );
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    QUALITY_CONTROL_OVERVIEW: (_: any) => (
-        <PaidFeaturePlaceholder featureDescription={config.PAID_PLACEHOLDER_CONFIG.features.qualityControl} />
-    ),
 
-    QUALITY_CONTROL_ALLOCATION_TABLE: AllocationTable,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    QUALITY_CONTROL_OVERVIEW: [(_: any) => (
+        <PaidFeaturePlaceholder featureDescription={config.PAID_PLACEHOLDER_CONFIG.features.qualityControl} />
+    )],
+
+    QUALITY_CONTROL_ALLOCATION_TABLE: [AllocationTable],
 };
 
 export default storage;

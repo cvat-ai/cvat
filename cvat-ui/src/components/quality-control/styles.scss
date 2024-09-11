@@ -121,6 +121,10 @@ $excluded-background: #d9d9d973;
     margin-top: 20%;
 }
 
+.cvat-quality-control-overview-tab {
+    min-height: 50vh;
+}
+
 .cvat-annotations-quality-allocation-table-summary {
     margin-bottom: $grid-unit-size * 2;
 

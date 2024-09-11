@@ -29,7 +29,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
         .filter((frameID: number) => !(frameID in gtJobMeta.deletedFrames)).length;
     const excludedCount = Object.keys(gtJobMeta.deletedFrames)
         .filter((frameID: string) => gtJobMeta.includedFrames.includes(+frameID)).length;
-    const AllocationTableComponent = CustomizableComponents.QUALITY_CONTROL_ALLOCATION_TABLE;
+    const [AllocationTableComponent] = CustomizableComponents.QUALITY_CONTROL_ALLOCATION_TABLE.slice(-1);
 
     return (
         <div className='cvat-quality-control-management-tab'>
