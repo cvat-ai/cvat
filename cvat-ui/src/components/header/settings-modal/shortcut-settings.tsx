@@ -12,13 +12,14 @@ import {
     Alert,
 } from 'antd/lib';
 import Search from 'antd/lib/input/Search';
+import Empty from 'antd/lib/empty';
+import Modal from 'antd/lib/modal';
 import React, {
     useState, useMemo,
     useCallback,
 } from 'react';
 import { ShortcutScope } from 'utils/enums';
 import { KeyMap } from 'utils/mousetrap-react';
-import { Empty, Modal } from 'antd';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
@@ -44,6 +45,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
         Modal.confirm({
             title: 'Are you sure you want to restore defaults?',
             okText: 'Yes',
+            className: 'cvat-shortcuts-settings-restore-modal',
             cancelText: 'No',
             onOk: () => {
                 const currentSettings = localStorage.getItem('clientSettings');
@@ -92,7 +94,9 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                     <List
                         dataSource={viewFilteredItems}
                         renderItem={([id, item]) => (
-                            <List.Item>
+                            <List.Item
+                                className='cvat-shortcuts-settings-collapse-item'
+                            >
                                 <List.Item.Meta
                                     className={`${item.nonActive ? 'cvat-shortcuts-settings-item-non-active' : ''}`}
                                     title={<p className='cvat-shortcuts-settings-item-title'>{item.name}</p>}
@@ -137,7 +141,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                             onChange={onSearchChange}
                             className='cvat-shortcuts-settings-search'
                         />
-                        <Button size='large' onClick={onRestoreDefaults}>Restore Defaults</Button>
+                        <Button size='large' onClick={onRestoreDefaults} className='cvat-shortcuts-settings-restore'>Restore Defaults</Button>
                     </Flex>
                 </Col>
             </Row>

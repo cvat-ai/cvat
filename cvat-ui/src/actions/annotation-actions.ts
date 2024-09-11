@@ -1058,10 +1058,10 @@ export function rememberObject(createParams: {
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
     activeCuboidDrawingMethod?: CuboidDrawingMethod;
-}): AnyAction {
+}, updateCurrentControl = true): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_OBJECT,
-        payload: createParams,
+        payload: { ...createParams, updateCurrentControl },
     };
 }
 

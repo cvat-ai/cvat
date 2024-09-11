@@ -134,7 +134,7 @@ function TaskPageComponent(): JSX.Element {
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
                     <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
-                    <JobListComponent task={taskInstance} onUpdateJob={onJobUpdate} />
+                    <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>
             <ModelRunnerModal />
