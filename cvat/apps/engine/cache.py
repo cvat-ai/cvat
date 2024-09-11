@@ -448,15 +448,15 @@ class MediaCache:
         use_cached_data = False
         if db_task.mode != "interpolation":
             required_frame_set = set(frame_ids)
-            all_chunks_available = all(
+            available_chunks = [
                 self._has_key(self._make_chunk_key(db_segment, chunk_number, quality=quality))
                 for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all()
                 for chunk_number, _ in groupby(
-                    required_frame_set.intersection(db_segment.frame_set),
+                    sorted(required_frame_set.intersection(db_segment.frame_set)),
                     key=lambda frame: frame // db_data.chunk_size,
                 )
-            )
-            use_cached_data = all_chunks_available
+            ]
+            use_cached_data = bool(available_chunks) and all(available_chunks)
 
         if hasattr(db_data, "video"):
             frame_size = (db_data.video.width, db_data.video.height)
