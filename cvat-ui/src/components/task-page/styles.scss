@@ -120,15 +120,6 @@
     font-weight: bold;
 }
 
-/* Pagination in center */
-.cvat-task-jobs-table > div > div {
-    text-align: center;
-
-    > .ant-table-pagination.ant-pagination {
-        float: none;
-    }
-}
-
 .cvat-job-item-stage {
     .ant-select {
         margin-right: $grid-unit-size;

@@ -22,6 +22,7 @@ import { mergeTaskConsensusJobsAsync } from 'actions/consensus-actions';
 interface OwnProps {
     taskInstance: any;
     onViewAnalytics: () => void;
+    onViewQualityControl: () => void;
     onViewConsensusAnalytics: () => void;
 }
 
@@ -92,6 +93,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openRunModelWindow,
         openMoveTaskToProjectWindow,
         onViewAnalytics,
+        onViewQualityControl,
         onViewConsensusAnalytics,
         mergeConsensusJobs,
     } = props;
@@ -113,6 +115,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             showImportModal(taskInstance);
         } else if (action === Actions.VIEW_ANALYTICS) {
             onViewAnalytics();
+        } else if (action === Actions.QUALITY_CONTROL) {
+            onViewQualityControl();
         } else if (action === Actions.VIEW_CONSENSUS_ANALYTICS) {
             onViewConsensusAnalytics();
         } else if (action === Actions.MERGE_CONSENSUS_JOBS) {
