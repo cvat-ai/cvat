@@ -26,6 +26,7 @@ const defaultState: PluginsState = {
     overridableComponents: {
         annotationPage: {
             header: {
+                // not used
                 saveAnnotationButton: [],
             },
         },
