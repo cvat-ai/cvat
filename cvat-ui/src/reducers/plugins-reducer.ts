@@ -23,6 +23,17 @@ const defaultState: PluginsState = {
             },
         },
     },
+    overridableComponents: {
+        annotationPage: {
+            header: {
+                saveAnnotationButton: [],
+            },
+        },
+        qualityControlPage: {
+            overviewTab: [],
+            allocationTable: [],
+        },
+    },
     components: {
         header: {
             userMenu: {
@@ -48,24 +59,22 @@ const defaultState: PluginsState = {
             },
         },
         projectActions: {
+            // not used
             items: [],
         },
         taskActions: {
+            // not used
             items: [],
         },
         taskItem: {
+            // not used
             ribbon: [],
         },
         projectItem: {
+            // not used
             ribbon: [],
         },
-        annotationPage: {
-            header: {
-                player: [],
-            },
-        },
         router: [],
-        loggedInModals: [],
         settings: {
             player: [],
         },
@@ -77,7 +86,11 @@ const defaultState: PluginsState = {
     },
 };
 
-function findContainerFromPath(path: string, state: PluginsState, prefix: 'components' | 'callbacks'): unknown[] {
+function findContainerFromPath(
+    path: string,
+    state: PluginsState,
+    prefix: 'components' | 'callbacks' | 'overridableComponents',
+): unknown[] {
     const pathSegments = path.split('.');
     let updatedStateSegment: any = state[prefix];
     for (const pathSegment of pathSegments) {
@@ -145,6 +158,18 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                     },
                 },
             });
+
+            return updatedState;
+        }
+        case PluginsActionTypes.OVERRIDE_UI_COMPONENT: {
+            const { path, component } = action.payload;
+            const updatedState = {
+                ...state,
+                overridableComponents: { ...state.overridableComponents },
+            };
+
+            const container = findContainerFromPath(path, updatedState, 'overridableComponents') as CallableFunction[];
+            container.push(component);
 
             return updatedState;
         }

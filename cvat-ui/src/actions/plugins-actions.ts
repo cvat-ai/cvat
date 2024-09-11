@@ -19,6 +19,7 @@ export enum PluginsActionTypes {
     REMOVE_UI_COMPONENT = 'REMOVE_UI_COMPONENT',
     ADD_UI_CALLBACK = 'ADD_UI_CALLBACK',
     REMOVE_UI_CALLBACK = 'REMOVE_UI_CALLBACK',
+    OVERRIDE_UI_COMPONENT = 'OVERRIDE_UI_COMPONENT',
 }
 
 export const pluginActions = {
@@ -47,8 +48,12 @@ export const pluginActions = {
     ) => createAction(PluginsActionTypes.ADD_UI_CALLBACK, { path, callback }),
     removeUICallback: (
         path: string,
-        callback: CallableFunction,
-    ) => createAction(PluginsActionTypes.REMOVE_UI_CALLBACK, { path, callback }),
+        component: CallableFunction,
+    ) => createAction(PluginsActionTypes.REMOVE_UI_CALLBACK, { path, component }),
+    overrideUIComponent: (
+        path: string,
+        component: CallableFunction,
+    ) => createAction(PluginsActionTypes.OVERRIDE_UI_COMPONENT, { path, component }),
 };
 
 export type PluginActions = ActionUnion<typeof pluginActions>;

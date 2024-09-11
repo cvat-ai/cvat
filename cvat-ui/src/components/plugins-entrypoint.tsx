@@ -6,7 +6,6 @@ import React, { useEffect } from 'react';
 import { Dispatch, AnyAction } from 'redux';
 import { useDispatch } from 'react-redux';
 
-import CustomizableComponents from 'components/customizable-components';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
@@ -21,6 +20,7 @@ export type PluginActionCreators = {
     changeFrameAsync: typeof changeFrameAsync,
     addUIComponent: typeof pluginActions['addUIComponent'],
     removeUIComponent: typeof pluginActions['removeUIComponent'],
+    overrideUIComponent: typeof pluginActions['overrideUIComponent'],
     addUICallback: typeof pluginActions['addUICallback'],
     removeUICallback: typeof pluginActions['removeUICallback'],
     updateCurrentJobAsync: typeof updateCurrentJobAsync,
@@ -31,7 +31,6 @@ export interface ComponentBuilderArgs {
     dispatch: Dispatch<AnyAction>;
     REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT;
     REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT;
-    customizableComponents: typeof CustomizableComponents;
     actionCreators: PluginActionCreators;
     core: CVATCore;
     store: ReturnType<typeof getCVATStore>;
@@ -41,7 +40,6 @@ export type ComponentBuilder = ({
     dispatch,
     REGISTER_ACTION,
     REMOVE_ACTION,
-    customizableComponents,
     actionCreators,
     core,
     store,
@@ -67,7 +65,6 @@ function PluginEntrypoint(): null {
                         dispatch,
                         REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
-                        customizableComponents: CustomizableComponents,
                         actionCreators: {
                             changeFrameAsync,
                             updateCurrentJobAsync,
@@ -77,6 +74,7 @@ function PluginEntrypoint(): null {
                             removeUICallback: pluginActions.removeUICallback,
                             addUIComponent: pluginActions.addUIComponent,
                             removeUIComponent: pluginActions.removeUIComponent,
+                            overrideUIComponent: pluginActions.overrideUIComponent,
                         },
                         core,
                         store: getCVATStore(),
