@@ -207,6 +207,22 @@ services:
     networks:
       - cvat
 
+  cvat_worker_immediate_quality_reports:
+    container_name: cvat_worker_immediate_quality_reports
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on: *backend-deps
+    environment:
+      <<: *backend-env
+      NUMPROCS: 1
+    command: run worker.immediate_quality_reports
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_worker_analytics_reports:
     container_name: cvat_worker_analytics_reports
     image: cvat/server:${CVAT_VERSION:-dev}

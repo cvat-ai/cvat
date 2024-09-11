@@ -272,6 +272,7 @@ class CVAT_QUEUES(Enum):
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
     QUALITY_REPORTS = 'quality_reports'
+    IMMEDIATE_QUALITY_REPORTS = 'immediate_quality_reports'
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
 
@@ -310,6 +311,10 @@ RQ_QUEUES = {
     CVAT_QUEUES.QUALITY_REPORTS.value: {
         **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
+    },
+    CVAT_QUEUES.IMMEDIATE_QUALITY_REPORTS.value: {
+        **shared_queue_settings,
+        'DEFAULT_TIMEOUT': '10m'
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
         **shared_queue_settings,
