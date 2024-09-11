@@ -1449,13 +1449,24 @@ def _create_thread(
 
     # TODO: refactor
     if validation_params:
-        db_gt_segment = models.Segment(
-            task=db_task,
-            start_frame=0,
-            stop_frame=db_data.size - 1,
-            frames=validation_frames,
-            type=models.SegmentType.SPECIFIC_FRAMES,
-        )
+        if validation_params['mode'] == models.ValidationMode.GT:
+            db_gt_segment = models.Segment(
+                task=db_task,
+                start_frame=0,
+                stop_frame=db_data.size - 1,
+                frames=validation_frames,
+                type=models.SegmentType.SPECIFIC_FRAMES,
+            )
+        elif validation_params['mode'] == models.ValidationMode.GT_POOL:
+            db_gt_segment = models.Segment(
+                task=db_task,
+                start_frame=min(validation_frames),
+                stop_frame=max(validation_frames),
+                type=models.SegmentType.RANGE,
+            )
+        else:
+            assert False
+
         db_gt_segment.save()
 
         db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
