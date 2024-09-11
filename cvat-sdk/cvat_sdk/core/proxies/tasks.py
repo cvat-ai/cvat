@@ -257,23 +257,30 @@ class Task(
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
         include_images: bool = True,
+        all_images: bool = True,
     ) -> None:
         """
         Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
         """
 
         filename = Path(filename)
+        method: str
 
         if include_images:
-            endpoint = self.api.retrieve_dataset_endpoint
+            endpoint = self.api.create_dataset_export_endpoint
+            method = "POST"
+            query_params = {"format": format_name, "save_images": include_images, "all_images": all_images}
         else:
             endpoint = self.api.retrieve_annotations_endpoint
+            method = "GET"
+            query_params = {"format": format_name}
 
         Downloader(self._client).prepare_and_download_file_from_endpoint(
             endpoint=endpoint,
             filename=filename,
+            methodType = method,
             url_params={"id": self.id},
-            query_params={"format": format_name},
+            query_params = query_params,
             pbar=pbar,
             status_check_period=status_check_period,
         )

@@ -7,7 +7,7 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import pytest
 from cvat_sdk import Client, models
@@ -60,6 +60,36 @@ class TestTaskUsecases:
             },
             resources=[fxt_image_file],
             data_params={"image_quality": 80},
+        )
+
+        return task
+
+    @pytest.fixture
+    def fxt_task_with_multiple_images(self, fxt_image_files: List[Path]) -> Task:
+        assert len(fxt_image_files) >= 2, "Need at least 2 images to create the task and annotate one."
+
+        task = self.client.tasks.create_from_data(
+            spec={
+                "name": "test_task_with_multiple_images_and_annotation",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+            resources=fxt_image_files,
+            data_params={"image_quality": 80},
+        )
+
+        labels = task.get_labels()
+
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=labels[0].id,
+                        type="rectangle",
+                        points=[1, 1, 2, 2],
+                    ),
+                ],
+            )
         )
 
         return task
@@ -292,6 +322,37 @@ class TestTaskUsecases:
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert path.is_file()
         assert self.stdout.getvalue() == ""
+
+    @pytest.mark.parametrize("include_images, all_images, expected_image_count",
+        [
+            (True, True, 5),
+            (True, False, 1),
+            (False, False, 0),
+        ]
+    )
+    def test_can_download_dataset_multiple_images(self, fxt_task_with_multiple_images: Task, include_images: bool, all_images: bool, expected_image_count: int):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_id = fxt_task_with_multiple_images.id
+        path = self.tmp_path / f"task_{task_id}-cvat.zip"
+        task = self.client.tasks.retrieve(task_id)
+
+        task.export_dataset(
+            format_name="CVAT for images 1.1",
+            filename=path,
+            pbar=pbar,
+            include_images=include_images,
+            all_images=all_images,
+        )
+
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert path.is_file()
+        assert self.stdout.getvalue() == ""
+
+        with zipfile.ZipFile(path, 'r') as zip_file:
+            image_files = [f for f in zip_file.namelist() if f.endswith(('.jpg', '.png', '.jpeg'))]
+            assert len(image_files) == expected_image_count
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()

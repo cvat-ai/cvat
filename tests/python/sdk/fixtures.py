@@ -10,7 +10,7 @@ from cvat_sdk import Client
 from PIL import Image
 
 from shared.utils.config import BASE_URL, USER_PASS
-from shared.utils.helpers import generate_image_file
+from shared.utils.helpers import generate_image_file, generate_image_files
 
 from .util import generate_coco_json
 
@@ -36,6 +36,21 @@ def fxt_image_file(tmp_path: Path):
         f.write(generate_image_file(filename=str(img_path), size=(5, 10)).getvalue())
 
     return img_path
+
+@pytest.fixture
+def fxt_image_files(tmp_path: Path):
+    image_files = generate_image_files(5)
+    image_file_paths = []
+
+    for img in image_files:
+        img_path = tmp_path / img.name
+        with img_path.open("wb") as f:
+            f.write(img.getvalue())
+        image_file_paths.append(img_path)
+
+    return image_file_paths
+
+
 
 
 @pytest.fixture
