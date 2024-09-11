@@ -29,7 +29,7 @@ jobs:
 
       - name: Verify that author of comment is collaborator
         if: steps.check-author.outputs.allow == ''
-        uses: actions/github-script@v3
+        uses: actions/github-script@v7
         with:
           script: |
             core.setFailed('User that send comment with /check command is not collaborator')
