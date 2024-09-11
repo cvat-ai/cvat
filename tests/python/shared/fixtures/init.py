@@ -568,6 +568,15 @@ def restore_cvat_data_per_function(request):
         kube_restore_data_volumes()
 
 
+@pytest.fixture(scope="class")
+def restore_cvat_data_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_data_volumes()
+    else:
+        kube_restore_data_volumes()
+
+
 @pytest.fixture(scope="function")
 def restore_clickhouse_db_per_function(request):
     # Note that autouse fixtures are executed first within their scope, so be aware of the order

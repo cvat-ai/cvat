@@ -16,7 +16,7 @@ from copy import deepcopy
 from enum import Enum
 from functools import partial
 from http import HTTPStatus
-from itertools import chain, product
+from itertools import chain, groupby, product
 from math import ceil
 from operator import itemgetter
 from pathlib import Path
@@ -36,7 +36,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
-from pytest_cases import fixture_ref, parametrize
+from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
@@ -2102,7 +2102,7 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
-@pytest.mark.usefixtures("restore_cvat_data_per_function")
+@pytest.mark.usefixtures("restore_cvat_data_per_class")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -2111,6 +2111,9 @@ class TestTaskData:
         request: pytest.FixtureRequest,
         *,
         frame_count: int = 10,
+        start_frame: Optional[int] = None,
+        stop_frame: Optional[int] = None,
+        step: Optional[int] = None,
         segment_size: Optional[int] = None,
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         task_params = {
@@ -2125,7 +2128,17 @@ class TestTaskData:
         data_params = {
             "image_quality": 70,
             "client_files": image_files,
+            "sorting_method": "natural",
         }
+
+        if start_frame is not None:
+            data_params["start_frame"] = start_frame
+
+        if stop_frame is not None:
+            data_params["stop_frame"] = stop_frame
+
+        if step is not None:
+            data_params["frame_filter"] = f"step={step}"
 
         def get_frame(i: int) -> bytes:
             return images_data[i]
@@ -2135,7 +2148,7 @@ class TestTaskData:
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_frame=get_frame,
-            size=len(images_data),
+            size=len(range(start_frame or 0, (stop_frame or len(images_data) - 1) + 1, step or 1)),
         ), task_id
 
     @pytest.fixture(scope="class")
@@ -2149,6 +2162,83 @@ class TestTaskData:
         self, request: pytest.FixtureRequest
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
+
+    @fixture(scope="class")
+    @parametrize("step", [2, 5])
+    @parametrize("stop_frame", [15, 26])
+    @parametrize("start_frame", [3, 7])
+    def fxt_uploaded_images_task_with_segments_start_stop_step(
+        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_fxt_base(
+            request=request,
+            frame_count=30,
+            segment_size=4,
+            start_frame=start_frame,
+            stop_frame=stop_frame,
+            step=step,
+        )
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task_with_segments_and_honeypots(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        validation_params = models.DataRequestValidationParams._from_openapi_data(
+            mode="gt_pool",
+            frame_selection_method="random_uniform",
+            random_seed=42,
+            frame_count=5,
+            frames_per_job_count=2,
+        )
+
+        base_segment_size = 4
+        total_frame_count = 15
+        regular_frame_count = 15 - validation_params.frame_count
+        final_segment_size = base_segment_size + validation_params.frames_per_job_count
+        final_task_size = (
+            regular_frame_count
+            + validation_params.frames_per_job_count
+            * math.ceil(regular_frame_count / base_segment_size)
+            + validation_params.frame_count
+        )
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": base_segment_size,
+        }
+
+        image_files = generate_image_files(total_frame_count)
+        images_data = [f.getvalue() for f in image_files]
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "sorting_method": "random",
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_map = [
+                next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
+                for frame_info in task_meta.frames
+            ]
+
+        def get_frame(i: int) -> bytes:
+            return images_data[frame_map[i]]
+
+        task_spec = _ImagesTaskSpec(
+            models.TaskWriteRequest._from_openapi_data(**task_params),
+            models.DataRequest._from_openapi_data(**data_params),
+            get_frame=get_frame,
+            size=final_task_size,
+        )
+
+        task_spec._params.segment_size = final_segment_size
+
+        yield task_spec, task_id
 
     def _uploaded_video_task_fxt_base(
         self,
@@ -2195,11 +2285,23 @@ class TestTaskData:
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
 
-    def _compute_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
+    def _compute_annotation_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
         segment_params = []
-        segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size
+        frame_step = task_spec.frame_step
+        segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size * frame_step
         start_frame = getattr(task_spec, "start_frame", 0)
-        end_frame = (getattr(task_spec, "stop_frame", None) or (task_spec.size - 1)) + 1
+        end_frame = (
+            getattr(task_spec, "stop_frame", None) or ((task_spec.size - 1) * frame_step)
+        ) + frame_step
+        end_frame = end_frame - ((end_frame - frame_step - start_frame) % frame_step)
+
+        validation_params = getattr(task_spec, "validation_params", None)
+        if validation_params and validation_params.mode.value == "gt_pool":
+            end_frame = min(
+                end_frame, (task_spec.size - validation_params.frame_count) * frame_step
+            )
+            segment_size = min(segment_size, end_frame - 1)
+
         overlap = min(
             (
                 getattr(task_spec, "overlap", None) or 0
@@ -2211,11 +2313,11 @@ class TestTaskData:
         segment_start = start_frame
         while segment_start < end_frame:
             if start_frame < segment_start:
-                segment_start -= overlap * task_spec.frame_step
+                segment_start -= overlap * frame_step
 
-            segment_end = segment_start + task_spec.frame_step * segment_size
+            segment_end = segment_start + frame_step * segment_size
 
-            segment_params.append((segment_start, min(segment_end, end_frame) - 1))
+            segment_params.append((segment_start, min(segment_end, end_frame) - frame_step))
             segment_start = segment_end
 
         return segment_params
@@ -2235,14 +2337,19 @@ class TestTaskData:
         else:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
-    _default_task_cases = [
-        fixture_ref("fxt_uploaded_images_task"),
-        fixture_ref("fxt_uploaded_images_task_with_segments"),
-        fixture_ref("fxt_uploaded_video_task"),
-        fixture_ref("fxt_uploaded_video_task_with_segments"),
+    _tasks_with_honeypots_cases = [
+        fixture_ref("fxt_uploaded_images_task_with_segments_and_honeypots"),
     ]
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    _all_task_cases = [
+        fixture_ref("fxt_uploaded_images_task"),
+        fixture_ref("fxt_uploaded_images_task_with_segments"),
+        fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
+        fixture_ref("fxt_uploaded_video_task"),
+        fixture_ref("fxt_uploaded_video_task_with_segments"),
+    ] + _tasks_with_honeypots_cases
+
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -2265,7 +2372,7 @@ class TestTaskData:
             else:
                 assert len(task_meta.frames) == task_meta.size
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -2275,8 +2382,8 @@ class TestTaskData:
                 range(task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step),
             ):
                 rel_frame_id = (
-                    abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
-                )
+                    abs_frame_id - getattr(task_spec, "start_frame", 0)
+                ) // task_spec.frame_step
                 (_, response) = api_client.tasks_api.retrieve_data(
                     task_id,
                     type="frame",
@@ -2305,7 +2412,7 @@ class TestTaskData:
                     ),
                 )
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
@@ -2324,13 +2431,18 @@ class TestTaskData:
             else:
                 assert False
 
-            chunk_count = math.ceil(task_meta.size / task_meta.chunk_size)
-            for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
-                expected_chunk_frame_ids = range(
-                    chunk_id * task_meta.chunk_size,
-                    min((chunk_id + 1) * task_meta.chunk_size, task_meta.size),
+            task_frames = range(
+                task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step
+            )
+            task_chunk_frames = [
+                (chunk_number, list(chunk_frames))
+                for chunk_number, chunk_frames in groupby(
+                    task_frames, key=lambda frame: frame // task_meta.chunk_size
                 )
-
+            ]
+            for quality, (chunk_id, expected_chunk_frame_ids) in product(
+                ["original", "compressed"], task_chunk_frames
+            ):
                 (_, response) = api_client.tasks_api.retrieve_data(
                     task_id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
                 )
@@ -2360,29 +2472,32 @@ class TestTaskData:
                         ),
                     )
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_job_meta(self, task_spec: _TaskSpec, task_id: int):
-        segment_params = self._compute_segment_params(task_spec)
+        segment_params = self._compute_annotation_segment_params(task_spec)
+
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
-                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                ),
                 key=lambda j: j.start_frame,
             )
             assert len(jobs) == len(segment_params)
 
-            for (segment_start, segment_end), job in zip(segment_params, jobs):
+            for (segment_start, segment_stop), job in zip(segment_params, jobs):
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
 
-                assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_end)
+                assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_stop)
                 assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
 
-                segment_size = segment_end - segment_start + 1
+                segment_size = math.ceil((segment_stop - segment_start + 1) / task_spec.frame_step)
                 assert job_meta.size == segment_size
 
-                task_frame_set = set(
+                job_frame_set = set(
                     range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
                 )
-                assert len(task_frame_set) == job_meta.size
+                assert len(job_frame_set) == job_meta.size
 
                 if getattr(task_spec, "chunk_size", None):
                     assert job_meta.chunk_size == task_spec.chunk_size
@@ -2392,7 +2507,40 @@ class TestTaskData:
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _tasks_with_honeypots_cases)
+    def test_can_get_honeypot_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            gt_jobs = get_paginated_collection(
+                api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+            )
+            assert len(gt_jobs) == 1
+
+            gt_job = gt_jobs[0]
+            segment_start = task_spec.size - task_spec.validation_params.frame_count
+            segment_stop = task_spec.size - 1
+
+            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+            assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_stop)
+            assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+            segment_size = math.ceil((segment_stop - segment_start + 1) / task_spec.frame_step)
+            assert job_meta.size == segment_size
+
+            task_frame_set = set(
+                range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
+            )
+            assert len(task_frame_set) == job_meta.size
+
+            if getattr(task_spec, "chunk_size", None):
+                assert job_meta.chunk_size == task_spec.chunk_size
+
+            if task_spec.source_data_type == _SourceDataType.video:
+                assert len(job_meta.frames) == 1
+            else:
+                assert len(job_meta.frames) == job_meta.size
+
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2404,11 +2552,13 @@ class TestTaskData:
 
                 for quality, (frame_pos, abs_frame_id) in product(
                     ["original", "compressed"],
-                    enumerate(range(job_meta.start_frame, job_meta.stop_frame)),
+                    enumerate(
+                        range(job_meta.start_frame, job_meta.stop_frame, task_spec.frame_step)
+                    ),
                 ):
                     rel_frame_id = (
-                        abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
-                    )
+                        abs_frame_id - getattr(task_spec, "start_frame", 0)
+                    ) // task_spec.frame_step
                     (_, response) = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="frame",
@@ -2437,7 +2587,7 @@ class TestTaskData:
                         ),
                     )
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
         with make_api_client(self._USERNAME) as api_client:
@@ -2474,6 +2624,7 @@ class TestTaskData:
                             task_meta.start_frame
                             + min((chunk_id + 1) * task_meta.chunk_size, task_meta.size)
                             * task_spec.frame_step,
+                            task_spec.frame_step,
                         )
 
                     def get_job_frame_ids() -> Sequence[int]:
@@ -2504,6 +2655,7 @@ class TestTaskData:
                                 job_meta.start_frame
                                 + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
                                 * task_spec.frame_step,
+                                task_spec.frame_step,
                             )
                             if not job_meta.included_frames or frame in job_meta.included_frames
                         )

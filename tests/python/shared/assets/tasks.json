@@ -52,7 +52,8 @@
         "location": "local"
       },
       "updated_date": "2024-07-15T15:34:53.692000Z",
-      "url": "http://localhost:8080/api/tasks/25"
+      "url": "http://localhost:8080/api/tasks/25",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -103,7 +104,8 @@
         "location": "local"
       },
       "updated_date": "2024-07-15T15:33:10.641000Z",
-      "url": "http://localhost:8080/api/tasks/24"
+      "url": "http://localhost:8080/api/tasks/24",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -146,7 +148,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2024-03-21T20:50:05.947000Z",
-      "url": "http://localhost:8080/api/tasks/23"
+      "url": "http://localhost:8080/api/tasks/23",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -189,7 +192,8 @@
       "subset": "Train",
       "target_storage": null,
       "updated_date": "2023-11-24T15:23:30.045000Z",
-      "url": "http://localhost:8080/api/tasks/22"
+      "url": "http://localhost:8080/api/tasks/22",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -240,7 +244,8 @@
         "location": "local"
       },
       "updated_date": "2023-03-27T19:08:40.032000Z",
-      "url": "http://localhost:8080/api/tasks/21"
+      "url": "http://localhost:8080/api/tasks/21",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -291,7 +296,8 @@
         "location": "local"
       },
       "updated_date": "2023-03-10T11:57:48.835000Z",
-      "url": "http://localhost:8080/api/tasks/20"
+      "url": "http://localhost:8080/api/tasks/20",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -342,7 +348,8 @@
         "location": "local"
       },
       "updated_date": "2023-03-10T11:56:54.904000Z",
-      "url": "http://localhost:8080/api/tasks/19"
+      "url": "http://localhost:8080/api/tasks/19",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -393,7 +400,8 @@
         "location": "local"
       },
       "updated_date": "2023-03-01T15:36:37.897000Z",
-      "url": "http://localhost:8080/api/tasks/18"
+      "url": "http://localhost:8080/api/tasks/18",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -442,7 +450,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2023-02-10T14:08:05.873000Z",
-      "url": "http://localhost:8080/api/tasks/17"
+      "url": "http://localhost:8080/api/tasks/17",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -493,7 +502,8 @@
         "location": "local"
       },
       "updated_date": "2022-12-01T12:53:35.028000Z",
-      "url": "http://localhost:8080/api/tasks/15"
+      "url": "http://localhost:8080/api/tasks/15",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -544,7 +554,8 @@
         "location": "local"
       },
       "updated_date": "2022-09-23T11:57:02.300000Z",
-      "url": "http://localhost:8080/api/tasks/14"
+      "url": "http://localhost:8080/api/tasks/14",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -593,7 +604,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2023-02-10T11:50:18.414000Z",
-      "url": "http://localhost:8080/api/tasks/13"
+      "url": "http://localhost:8080/api/tasks/13",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -630,7 +642,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-03-14T13:24:05.861000Z",
-      "url": "http://localhost:8080/api/tasks/12"
+      "url": "http://localhost:8080/api/tasks/12",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -687,7 +700,8 @@
         "location": "cloud_storage"
       },
       "updated_date": "2022-06-30T08:56:45.594000Z",
-      "url": "http://localhost:8080/api/tasks/11"
+      "url": "http://localhost:8080/api/tasks/11",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -736,7 +750,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-11-03T13:57:26.007000Z",
-      "url": "http://localhost:8080/api/tasks/9"
+      "url": "http://localhost:8080/api/tasks/9",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -785,7 +800,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2023-05-02T09:28:57.638000Z",
-      "url": "http://localhost:8080/api/tasks/8"
+      "url": "http://localhost:8080/api/tasks/8",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -834,7 +850,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-02-21T10:41:38.540000Z",
-      "url": "http://localhost:8080/api/tasks/7"
+      "url": "http://localhost:8080/api/tasks/7",
+      "validation_mode": null
     },
     {
       "assignee": null,
@@ -877,7 +894,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-02-16T06:26:54.836000Z",
-      "url": "http://localhost:8080/api/tasks/6"
+      "url": "http://localhost:8080/api/tasks/6",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -926,7 +944,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-02-21T10:40:21.257000Z",
-      "url": "http://localhost:8080/api/tasks/5"
+      "url": "http://localhost:8080/api/tasks/5",
+      "validation_mode": null
     },
     {
       "assignee": {
@@ -975,7 +994,8 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2021-12-22T07:14:15.234000Z",
-      "url": "http://localhost:8080/api/tasks/2"
+      "url": "http://localhost:8080/api/tasks/2",
+      "validation_mode": null
     }
   ]
 }

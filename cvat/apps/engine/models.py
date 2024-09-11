@@ -823,21 +823,6 @@ class Job(TimestampedModel):
     class Meta:
         default_permissions = ()
 
-    @transaction.atomic
-    def save(self, *args, **kwargs) -> None:
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
-    def clean(self) -> None:
-        if not (self.type == JobType.GROUND_TRUTH) ^ (self.segment.type == SegmentType.RANGE):
-            raise ValidationError(
-                f"job type == {JobType.GROUND_TRUTH} and "
-                f"segment type == {SegmentType.SPECIFIC_FRAMES} "
-                "can only be used together"
-            )
-
-        return super().clean()
-
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
