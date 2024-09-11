@@ -217,7 +217,7 @@ class AnnotationManager:
 
     def to_tracks(self):
         tracks = self.data.tracks
-        shapes = ShapeManager(self.data.shapes)
+        shapes = ShapeManager(self.data.shapes, dimension=self.dimension)
 
         return tracks + shapes.to_tracks()
 

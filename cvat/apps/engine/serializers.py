@@ -14,7 +14,7 @@ import rq.defaults as rq_defaults
 
 from tempfile import NamedTemporaryFile
 import textwrap
-from typing import Any, Dict, Iterable, Optional, OrderedDict, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
 from datetime import timedelta
