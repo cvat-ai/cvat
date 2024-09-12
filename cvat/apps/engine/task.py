@@ -1322,7 +1322,7 @@ def _create_thread(
         validation_params = {
             "mode": models.ValidationMode.GT_POOL,
             "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [new_db_images[frame_id].path for frame_id in validation_frames],
+            "frames": [images[frame_id].path for frame_id in validation_frames],
             "frames_per_job_count": frames_per_job_count,
 
             # reset other fields
@@ -1409,6 +1409,8 @@ def _create_thread(
                         list(segment.frame_set), size=frame_count, shuffle=False, replace=False
                     ).tolist())
             case models.JobFrameSelectionMethod.MANUAL:
+                # TODO: support video tasks and other sequences with unknown file names
+
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
                 for frame in db_data.validation_layout.frames.all():
@@ -1428,13 +1430,15 @@ def _create_thread(
                     f'Unknown frame selection method {validation_params["frame_selection_method"]}'
                 )
 
+        validation_frames = sorted(validation_frames)
+
         # Save the created validation layout
         # TODO: try to find a way to avoid using the same model for storing the user request
         # and internal data
         validation_params = {
             "mode": models.ValidationMode.GT,
             "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [new_db_images[frame_id].path for frame_id in validation_frames],
+            "frames": [images[frame_id].path for frame_id in validation_frames],
 
             # reset other fields
             "random_seed": None,

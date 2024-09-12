@@ -1155,6 +1155,11 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
                 )
             )
 
+        if attrs.get('frames'):
+            unique_frames = set(attrs['frames'])
+            if len(unique_frames) != len(attrs['frames']):
+                raise serializers.ValidationError("Frames must not repeat")
+
         return super().validate(attrs)
 
     @transaction.atomic

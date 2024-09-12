@@ -11,6 +11,7 @@ import os
 import os.path as osp
 import zipfile
 from abc import ABCMeta, abstractmethod
+from collections import Counter
 from contextlib import closing
 from copy import deepcopy
 from enum import Enum
@@ -2035,6 +2036,250 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.OK
             assert task.size == expected_task_size
 
+    @parametrize(
+        "frame_selection_method, method_params, per_job_count_param",
+        map(
+            lambda e: (*e[0], e[1]),
+            product(
+                [
+                    *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+                    ("manual", {}),
+                ],
+                ["frames_per_job_count", "frames_per_job_share"],
+            ),
+        ),
+    )
+    def test_can_create_task_with_honeypots(
+        self,
+        request: pytest.FixtureRequest,
+        frame_selection_method: str,
+        method_params: set[str],
+        per_job_count_param: str,
+    ):
+        base_segment_size = 4
+        total_frame_count = 15
+        validation_frames_count = 5
+        validation_per_job_count = 2
+        regular_frame_count = total_frame_count - validation_frames_count
+        resulting_task_size = (
+            regular_frame_count
+            + validation_per_job_count * math.ceil(regular_frame_count / base_segment_size)
+            + validation_frames_count
+        )
+
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params = {"mode": "gt_pool", "frame_selection_method": frame_selection_method}
+
+        if per_job_count_param == "frames_per_job_count":
+            validation_params[per_job_count_param] = validation_per_job_count
+        elif per_job_count_param == "frames_per_job_share":
+            validation_params[per_job_count_param] = validation_per_job_count / base_segment_size
+        else:
+            assert False
+
+        if frame_selection_method == "random_uniform":
+            validation_params["random_seed"] = 42
+
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    validation_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    validation_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "manual":
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            validation_params["frames"] = rng.choice(
+                [f.name for f in image_files], validation_frames_count, replace=False
+            ).tolist()
+        else:
+            assert False
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": base_segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "sorting_method": "random",
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        assert task.segment_size == 0  # means "custom segments"
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        # validation frames (pool frames) must be appended in the end of the task, in the GT job
+        validation_frames = set(f.name for f in task_meta.frames[-validation_frames_count:])
+        if frame_selection_method == "manual":
+            assert sorted(validation_frames) == sorted(validation_params["frames"])
+            assert sorted(f.name for f in gt_job_metas[0].frames) == sorted(
+                validation_params["frames"]
+            )
+
+        annotation_job_frame_counts = Counter(
+            f.name for f in task_meta.frames[:-validation_frames_count]
+        )
+
+        regular_frame_counts = {
+            k: v for k, v in annotation_job_frame_counts.items() if k not in validation_frames
+        }
+        # regular frames must not repeat
+        assert regular_frame_counts == {
+            f.name: 1 for f in image_files if f.name not in validation_frames
+        }
+
+        # only validation frames can repeat
+        assert set(fn for fn, count in annotation_job_frame_counts.items() if count != 1).issubset(
+            validation_frames
+        )
+
+        # each job must have the specified number of validation frames
+        for job_meta in annotation_job_metas:
+            assert (
+                len(set(f.name for f in job_meta.frames if f.name in validation_frames))
+                == validation_per_job_count
+            )
+
+    @parametrize(
+        "frame_selection_method, method_params",
+        [
+            *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+            *tuple(
+                product(["random_per_job"], [{"frames_per_job_count"}, {"frames_per_job_share"}])
+            ),
+            ("manual", {}),
+        ],
+    )
+    def test_can_create_task_with_gt_job(
+        self,
+        request: pytest.FixtureRequest,
+        frame_selection_method: str,
+        method_params: set[str],
+    ):
+        segment_size = 4
+        total_frame_count = 15
+        validation_frames_count = 5
+        resulting_task_size = total_frame_count
+
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params = {"mode": "gt", "frame_selection_method": frame_selection_method}
+
+        if "random" in frame_selection_method:
+            validation_params["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    validation_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    validation_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "random_per_job":
+            validation_per_job_count = 2
+
+            for method_param in method_params:
+                if method_param == "frames_per_job_count":
+                    validation_params[method_param] = validation_per_job_count
+                elif method_param == "frames_per_job_share":
+                    validation_params[method_param] = validation_per_job_count / segment_size
+                else:
+                    assert False
+        elif frame_selection_method == "manual":
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            validation_params["frames"] = rng.choice(
+                [f.name for f in image_files], validation_frames_count, replace=False
+            ).tolist()
+        else:
+            assert False
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        assert task.segment_size == segment_size
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        validation_frames = set(f.name for f in gt_job_metas[0].frames)
+        if frame_selection_method == "manual":
+            assert sorted(
+                gt_job_metas[0].frames[rel_frame_id].name
+                for rel_frame_id, abs_frame_id in enumerate(
+                    range(
+                        gt_job_metas[0].start_frame,
+                        gt_job_metas[0].stop_frame + 1,
+                        int((gt_job_metas[0].frame_filter or "step=1").split("=")[1]),
+                    )
+                )
+                if abs_frame_id in gt_job_metas[0].included_frames
+            ) == sorted(validation_params["frames"])
+
+        # frames must not repeat
+        assert sorted(f.name for f in image_files) == sorted(f.name for f in task_meta.frames)
+
+        if frame_selection_method == "random_per_job":
+            # each job must have the specified number of validation frames
+            for job_meta in annotation_job_metas:
+                assert (
+                    len(set(f.name for f in job_meta.frames if f.name in validation_frames))
+                    == validation_per_job_count
+                )
+
 
 class _SourceDataType(str, Enum):
     images = "images"
@@ -2110,12 +2355,14 @@ class TestTaskData:
         self,
         request: pytest.FixtureRequest,
         *,
-        frame_count: int = 10,
+        frame_count: Optional[int] = 10,
+        image_files: Optional[Sequence[io.BytesIO]] = None,
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
         step: Optional[int] = None,
         segment_size: Optional[int] = None,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        **data_kwargs,
+    ) -> Generator[Tuple[_ImagesTaskSpec, int], None, None]:
         task_params = {
             "name": request.node.name,
             "labels": [{"name": "a"}],
@@ -2123,13 +2370,21 @@ class TestTaskData:
         if segment_size:
             task_params["segment_size"] = segment_size
 
-        image_files = generate_image_files(frame_count)
+        assert bool(image_files) ^ bool(
+            frame_count
+        ), "Expected only one of 'image_files' and 'frame_count'"
+        if not image_files:
+            image_files = generate_image_files(frame_count)
+        elif not frame_count:
+            frame_count = len(image_files)
+
         images_data = [f.getvalue() for f in image_files]
         data_params = {
             "image_quality": 70,
             "client_files": image_files,
             "sorting_method": "natural",
         }
+        data_params.update(data_kwargs)
 
         if start_frame is not None:
             data_params["start_frame"] = start_frame
@@ -2202,43 +2457,34 @@ class TestTaskData:
             + validation_params.frame_count
         )
 
-        task_params = {
-            "name": request.node.name,
-            "labels": [{"name": "a"}],
-            "segment_size": base_segment_size,
-        }
-
         image_files = generate_image_files(total_frame_count)
-        images_data = [f.getvalue() for f in image_files]
-        data_params = {
-            "image_quality": 70,
-            "client_files": image_files,
-            "sorting_method": "random",
-            "validation_params": validation_params,
-        }
 
-        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+        with closing(
+            self._uploaded_images_task_fxt_base(
+                request=request,
+                frame_count=None,
+                image_files=image_files,
+                segment_size=base_segment_size,
+                sorting_method="random",
+                validation_params=validation_params,
+            )
+        ) as task_gen:
+            for task_spec, task_id in task_gen:
+                # Get the actual frame order after the task is created
+                with make_api_client(self._USERNAME) as api_client:
+                    (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+                    frame_map = [
+                        next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
+                        for frame_info in task_meta.frames
+                    ]
 
-        with make_api_client(self._USERNAME) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_map = [
-                next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
-                for frame_info in task_meta.frames
-            ]
+                _get_frame = task_spec._get_frame
+                task_spec._get_frame = lambda i: _get_frame(frame_map[i])
 
-        def get_frame(i: int) -> bytes:
-            return images_data[frame_map[i]]
+                task_spec.size = final_task_size
+                task_spec._params.segment_size = final_segment_size
 
-        task_spec = _ImagesTaskSpec(
-            models.TaskWriteRequest._from_openapi_data(**task_params),
-            models.DataRequest._from_openapi_data(**data_params),
-            get_frame=get_frame,
-            size=final_task_size,
-        )
-
-        task_spec._params.segment_size = final_segment_size
-
-        yield task_spec, task_id
+                yield task_spec, task_id
 
     def _uploaded_video_task_fxt_base(
         self,
@@ -2246,7 +2492,7 @@ class TestTaskData:
         *,
         frame_count: int = 10,
         segment_size: Optional[int] = None,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_VideoTaskSpec, int], None, None]:
         task_params = {
             "name": request.node.name,
             "labels": [{"name": "a"}],
