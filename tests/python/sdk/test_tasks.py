@@ -372,7 +372,6 @@ class TestTaskUsecases(TestDatasetExport):
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
 
-
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)

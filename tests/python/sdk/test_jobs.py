@@ -191,8 +191,6 @@ class TestJobUsecases(TestDatasetExport):
             else:
                 assert len(image_files) == task.size, "Exported images count does not match the task size when only_annotated is False."
 
-
-
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_jobs()[0].get_preview()
         (width, height) = Image.open(frame_encoded).size
