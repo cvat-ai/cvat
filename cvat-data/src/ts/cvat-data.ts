@@ -156,8 +156,8 @@ export class FrameDecoder {
     }
 
     private validateFrameNumbers(frameNumbers: number[]): void {
-        if (!frameNumbers || !frameNumbers.length) {
-            throw new Error('frameNumbers must not be empty');
+        if (!Array.isArray(frameNumbers) || !frameNumbers.length) {
+            throw new Error('chunkFrameNumbers must not be empty');
         }
 
         // ensure is ordered
@@ -166,7 +166,7 @@ export class FrameDecoder {
             const current = frameNumbers[i];
             if (current <= prev) {
                 throw new Error(
-                    'frameNumbers must be sorted in ascending order, ' +
+                    'chunkFrameNumbers must be sorted in the ascending order, ' +
                     `got a (${prev}, ${current}) pair instead`,
                 );
             }
