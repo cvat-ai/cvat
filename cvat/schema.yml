@@ -10823,33 +10823,35 @@ components:
           writeOnly: true
           nullable: true
           description: |
-            The list of frame ids. Applicable only to the "manual" frame selection method
+            The list of file names to be included in the validation set.
+            Applicable only to the "manual" frame selection method.
+            Can only be used for images.
         frame_count:
           type: integer
           minimum: 1
           description: |
-            The number of frames included in the GT job.
+            The number of frames to be included in the validation set.
             Applicable only to the "random_uniform" frame selection method
         frame_share:
           type: number
           format: double
           nullable: true
           description: |
-            The share of frames included in the GT job.
+            The share of frames to be included in the validation set.
             Applicable only to the "random_uniform" frame selection method
         frames_per_job_count:
           type: integer
           minimum: 1
           nullable: true
           description: |
-            The number of frames included in the GT job from each annotation job.
+            The number of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         frames_per_job_share:
           type: number
           format: double
           nullable: true
           description: |
-            The share of frames included in the GT job from each annotation job.
+            The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
       - frame_selection_method

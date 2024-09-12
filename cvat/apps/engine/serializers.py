@@ -1051,14 +1051,16 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
         help_text=textwrap.dedent("""\
-            The list of frame ids. Applicable only to the "{}" frame selection method
+            The list of file names to be included in the validation set.
+            Applicable only to the "{}" frame selection method.
+            Can only be used for images.
         """.format(models.JobFrameSelectionMethod.MANUAL))
     )
     frame_count = serializers.IntegerField(
         min_value=1,
         required=False,
         help_text=textwrap.dedent("""\
-            The number of frames included in the GT job.
+            The number of frames to be included in the validation set.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
     )
@@ -1067,7 +1069,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
         allow_null=True,
         validators=[field_validation.validate_percent],
         help_text=textwrap.dedent("""\
-            The share of frames included in the GT job.
+            The share of frames to be included in the validation set.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
     )
@@ -1076,7 +1078,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
         help_text=textwrap.dedent("""\
-            The number of frames included in the GT job from each annotation job.
+            The number of frames to be included in the validation set from each annotation job.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
     )
@@ -1085,7 +1087,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
         allow_null=True,
         validators=[field_validation.validate_percent],
         help_text=textwrap.dedent("""\
-            The share of frames included in the GT job from each annotation job.
+            The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
     )
@@ -1155,9 +1157,9 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
                 )
             )
 
-        if attrs.get('frames'):
-            unique_frames = set(attrs['frames'])
-            if len(unique_frames) != len(attrs['frames']):
+        if frames := attrs.get('frames'):
+            unique_frames = set(frames)
+            if len(unique_frames) != len(frames):
                 raise serializers.ValidationError("Frames must not repeat")
 
         return super().validate(attrs)
