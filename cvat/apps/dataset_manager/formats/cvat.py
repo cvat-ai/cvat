@@ -1386,7 +1386,7 @@ def dump_media_files(
         frame_provider.Quality.ORIGINAL,
         frame_provider.Type.BUFFER)
     
-    if not only_annotated:
+    if only_annotated:
         annotated_frame_ids = {frame.idx for frame in instance_data.group_by_frame(include_empty=False) if frame.labels}
     else:
         annotated_frame_ids = set(instance_data.rel_range)        

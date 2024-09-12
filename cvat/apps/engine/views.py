@@ -313,9 +313,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_export_callback(self, save_images: bool, only_annotated: bool) -> Callable:
         if save_images and not only_annotated:
-            return dm.views.export_project_as_dataset_full
-        elif save_images:
             return dm.views.export_project_as_dataset
+        elif save_images:
+            return dm.views.export_project_as_dataset_only_annotated
         else:
             return dm.views.export_project_annotations
 
@@ -1324,9 +1324,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_export_callback(self, save_images: bool, only_annotated: bool) -> Callable:
         if save_images and not only_annotated:
-            return dm.views.export_task_as_dataset_full
-        elif save_images:
             return dm.views.export_task_as_dataset
+        elif save_images:
+            return dm.views.export_task_as_dataset_only_annotated
         else:
             return dm.views.export_task_annotations
 
@@ -2027,9 +2027,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     def get_export_callback(self, save_images: bool, only_annotated: bool) -> Callable:
         if save_images and not only_annotated:
-            return dm.views.export_job_as_dataset_full
-        elif save_images:
             return dm.views.export_job_as_dataset
+        elif save_images:
+            return dm.views.export_job_as_dataset_only_annotated
         else:
             return dm.views.export_job_annotations
 

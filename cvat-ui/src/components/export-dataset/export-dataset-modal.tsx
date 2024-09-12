@@ -25,7 +25,6 @@ import {
     Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
 
-
 type FormValues = {
     selectedFormat: string | undefined;
     saveImages: boolean;

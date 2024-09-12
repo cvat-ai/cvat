@@ -1641,7 +1641,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                     attributes=attributes, subset=frame_data.subset,
                 )
 
-            if only_annotated or len(dm_anno) > 0:
+            if not only_annotated or len(dm_anno) > 0:
                 dm_items.append(dm_item)
 
         self._items = dm_items
@@ -1733,7 +1733,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                     attributes=attributes, subset=frame_data.subset
                 )
                 
-            if only_annotated or len(dm_anno) > 0:
+            if not only_annotated or len(dm_anno) > 0:
                 dm_items.append(dm_item)
                 
         self._items = dm_items

@@ -187,28 +187,28 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
 def export_job_annotations(job_id, dst_format=None, server_url=None):
     return export(dst_format,job_id=job_id, server_url=server_url, save_images=False, only_annotated=False)
 
-def export_job_as_dataset(job_id, dst_format=None, server_url=None):
+def export_job_as_dataset_only_annotated(job_id, dst_format=None, server_url=None):
     return export(dst_format, job_id=job_id, server_url=server_url, save_images=True, only_annotated=True)
 
-def export_job_as_dataset_full(job_id, dst_format=None, server_url=None):
+def export_job_as_dataset(job_id, dst_format=None, server_url=None):
     return export(dst_format, job_id=job_id, server_url=server_url, save_images=True, only_annotated=False)
 
 def export_task_annotations(task_id, dst_format=None, server_url=None):
     return export(dst_format,task_id=task_id, server_url=server_url, save_images=False, only_annotated=False)
 
-def export_task_as_dataset(task_id, dst_format=None, server_url=None):
+def export_task_as_dataset_only_annotated(task_id, dst_format=None, server_url=None):
     return export(dst_format, task_id=task_id, server_url=server_url, save_images=True, only_annotated=True)
 
-def export_task_as_dataset_full(task_id, dst_format=None, server_url=None):
+def export_task_as_dataset(task_id, dst_format=None, server_url=None):
     return export(dst_format, task_id=task_id, server_url=server_url, save_images=True, only_annotated=False)
 
 def export_project_annotations(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=False, only_annotated=False)
 
-def export_project_as_dataset(project_id, dst_format=None, server_url=None):
+def export_project_as_dataset_only_annotated(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=True, only_annotated=True)
 
-def export_project_as_dataset_full(project_id, dst_format=None, server_url=None):
+def export_project_as_dataset(project_id, dst_format=None, server_url=None):
     return export(dst_format, project_id=project_id, server_url=server_url, save_images=True, only_annotated=False)
 
 

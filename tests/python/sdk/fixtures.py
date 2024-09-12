@@ -39,21 +39,6 @@ def fxt_image_file(tmp_path: Path):
 
     return img_path
 
-@pytest.fixture
-def fxt_image_files(tmp_path: Path):
-    image_files = generate_image_files(5)
-    image_file_paths = []
-
-    for img in image_files:
-        img_path = tmp_path / img.name
-        with img_path.open("wb") as f:
-            f.write(img.getvalue())
-        image_file_paths.append(img_path)
-
-    return image_file_paths
-
-
-
 
 @pytest.fixture
 def fxt_coco_file(tmp_path: Path, fxt_image_file: Path):

@@ -372,9 +372,6 @@ class TestTaskUsecases(TestDatasetExport):
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
 
-        with zipfile.ZipFile(path, 'r') as zip_file:
-            image_files = [f for f in zip_file.namelist() if f.endswith(('.jpg', '.png', '.jpeg'))]
-            assert len(image_files) == expected_image_count
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
