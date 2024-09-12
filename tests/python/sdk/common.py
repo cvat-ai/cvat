@@ -59,12 +59,14 @@ class TestDatasetExport:
         format_name: str,
         file_path: Path,
         include_images: bool,
+        only_annotated : bool = False,
         location: Optional[Location],
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
         kwargs = {
             "include_images": include_images,
+            "only_annotated": only_annotated,
             "location": location,
         }
 

@@ -498,10 +498,10 @@ def handle_dataset_export(
     format_name: str,
     cloud_storage_id: Optional[int],
     save_images: bool,
-    all_images: bool,
+    only_annotated: bool,
 ) -> None:
     handle_dataset_io(instance, "export",
-        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images, all_images=all_images)
+        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images, only_annotated=only_annotated)
 
 def handle_dataset_import(
     instance: Union[Project, Task, Job],

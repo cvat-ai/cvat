@@ -160,7 +160,7 @@ def get_export_cache_dir(db_instance: Project | Task | Job) -> str:
 def make_export_filename(
     dst_dir: str,
     save_images: bool,
-    all_images: bool,
+    only_annotated: bool,
     instance_timestamp: float,
     format_name: str,
 ) -> str:
@@ -168,7 +168,7 @@ def make_export_filename(
     file_ext = EXPORT_FORMATS[format_name].EXT
 
     dataset_type = 'dataset' if save_images else 'annotations'
-    if not all_images:
+    if only_annotated:
         dataset_type += "-annotated_only"
         
     filename = '%s-instance%f-%s.%s' % (

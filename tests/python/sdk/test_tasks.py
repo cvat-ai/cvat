@@ -316,6 +316,46 @@ class TestTaskUsecases(TestDatasetExport):
             cloud_storages=cloud_storages,
         )
 
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("only_annotated", (True, False))
+    @parametrize(
+        "task, location",
+        [
+            (fixture_ref("fxt_new_task"), None),
+        ],
+    )
+    def test_can_export_dataset_with_only_annotated_images(
+        self,
+        format_name: str,
+        only_annotated: bool,
+        task: Task,
+        location: Optional[Location],
+        request: pytest.FixtureRequest,
+        cloud_storages: CloudStorageAssets,
+
+    ):
+        file_path = self.tmp_path / f"task_{task.id}-{format_name.lower()}-only_annotated_{only_annotated}.zip"
+
+        self._test_can_export_dataset(
+            task,
+            format_name=format_name,
+            file_path=file_path,
+            include_images=True,
+            only_annotated=only_annotated,
+            location=location,
+            request=request,
+            cloud_storages=cloud_storages,
+        )
+
+        with zipfile.ZipFile(file_path, 'r') as zip_file:
+            image_files = [file for file in zip_file.namelist() if file.endswith('.png')]
+
+            if only_annotated:
+                annotated_image_count = len(task.get_annotations().shapes)
+                assert len(image_files) == annotated_image_count, "Exported images count does not match annotated images count when only_annotated is True."
+            else:
+                assert len(image_files) == task.size, "Exported images count does not match the task size when only_annotated is False."
+
     def test_can_download_dataset_twice_in_a_row(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)

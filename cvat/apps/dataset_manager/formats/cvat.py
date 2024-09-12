@@ -1374,7 +1374,7 @@ def dump_media_files(
     instance_data: CommonData,
     img_dir: str,
     project_data: ProjectData = None,
-    all_images: bool = False
+    only_annotated: bool = False
 ):
     ext = ''
     if instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation':
@@ -1386,7 +1386,7 @@ def dump_media_files(
         frame_provider.Quality.ORIGINAL,
         frame_provider.Type.BUFFER)
     
-    if not all_images:
+    if not only_annotated:
         annotated_frame_ids = {frame.idx for frame in instance_data.group_by_frame(include_empty=False) if frame.labels}
     else:
         annotated_frame_ids = set(instance_data.rel_range)        
@@ -1402,17 +1402,17 @@ def dump_media_files(
         with open(img_path, 'wb') as f:
             f.write(frame_data.getvalue())
 
-def _export_task_or_job(dst_file, temp_dir, instance_data, anno_callback, save_images=False, all_images=True):
+def _export_task_or_job(dst_file, temp_dir, instance_data, anno_callback, save_images=False, only_annotated=False):
     with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
         dump_task_or_job_anno(f, instance_data, anno_callback)
 
     if save_images:
-        dump_media_files(instance_data, osp.join(temp_dir, 'images'), all_images=all_images)
+        dump_media_files(instance_data, osp.join(temp_dir, 'images'), only_annotated=only_annotated)
 
     make_zip_archive(temp_dir, dst_file)
 
 def _export_project(dst_file: str, temp_dir: str, project_data: ProjectData,
-    anno_callback: Callable, save_images: bool=False, all_images: bool=False
+    anno_callback: Callable, save_images: bool=False, only_annotated: bool=False
 ):
     with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
         dump_project_anno(f, project_data, anno_callback)
@@ -1422,27 +1422,27 @@ def _export_project(dst_file: str, temp_dir: str, project_data: ProjectData,
             subset = get_defaulted_subset(task_data.db_instance.subset, project_data.subsets)
             subset_dir = osp.join(temp_dir, 'images', subset)
             os.makedirs(subset_dir, exist_ok=True)
-            dump_media_files(task_data, subset_dir, project_data, all_images=all_images)
+            dump_media_files(task_data, subset_dir, project_data, only_annotated=only_annotated)
 
     make_zip_archive(temp_dir, dst_file)
 
 @exporter(name='CVAT for video', ext='ZIP', version='1.1')
-def _export_video(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+def _export_video(dst_file, temp_dir, instance_data, save_images=False, only_annotated=False):
     if isinstance(instance_data, ProjectData):
         _export_project(dst_file, temp_dir, instance_data,
-            anno_callback=dump_as_cvat_interpolation, save_images=save_images, all_images=all_images)
+            anno_callback=dump_as_cvat_interpolation, save_images=save_images, only_annotated=only_annotated)
     else:
         _export_task_or_job(dst_file, temp_dir, instance_data,
-            anno_callback=dump_as_cvat_interpolation, save_images=save_images, all_images=all_images)
+            anno_callback=dump_as_cvat_interpolation, save_images=save_images, only_annotated=only_annotated)
 
 @exporter(name='CVAT for images', ext='ZIP', version='1.1')
-def _export_images(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+def _export_images(dst_file, temp_dir, instance_data, save_images=False, only_annotated=False):
     if isinstance(instance_data, ProjectData):
         _export_project(dst_file, temp_dir, instance_data,
-            anno_callback=dump_as_cvat_annotation, save_images=save_images, all_images=all_images)
+            anno_callback=dump_as_cvat_annotation, save_images=save_images, only_annotated=only_annotated)
     else:
         _export_task_or_job(dst_file, temp_dir, instance_data,
-            anno_callback=dump_as_cvat_annotation, save_images=save_images, all_images=all_images)
+            anno_callback=dump_as_cvat_annotation, save_images=save_images, only_annotated=only_annotated)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):

@@ -26,7 +26,7 @@ from .formats.registry import make_exporter, make_importer
 dlogger = DatasetLogManager()
 
 def export_project(project_id, dst_file, format_name,
-        server_url=None, save_images=False, all_images=True):
+        server_url=None, save_images=False, only_annotated=False):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -38,7 +38,7 @@ def export_project(project_id, dst_file, format_name,
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        project.export(f, exporter, host=server_url, save_images=save_images, all_images=all_images)
+        project.export(f, exporter, host=server_url, save_images=save_images, only_annotated=only_annotated)
 
 class ProjectAnnotationAndData:
     def __init__(self, pk: int):

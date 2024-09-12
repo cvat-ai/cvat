@@ -29,7 +29,7 @@ import {
 type FormValues = {
     selectedFormat: string | undefined;
     saveImages: boolean;
-    allImages: boolean;
+    onlyAnnotated: boolean;
     customName: string | undefined;
     targetStorage: StorageData;
     useProjectTargetStorage: boolean;
@@ -38,7 +38,7 @@ type FormValues = {
 const initialValues: FormValues = {
     selectedFormat: undefined,
     saveImages: false,
-    allImages: true,
+    onlyAnnotated: false,
     customName: undefined,
     targetStorage: {
         location: StorageLocation.LOCAL,
@@ -114,7 +114,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                     instance as ProjectOrTaskOrJob,
                     values.selectedFormat as string,
                     values.saveImages,
-                    values.allImages,
+                    values.onlyAnnotated,
                     useDefaultTargetStorage,
                     useDefaultTargetStorage ? new Storage({
                         location: defaultStorageLocation,
@@ -199,12 +199,12 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
                 {saveImages && (
                     <Form.Item
-                        name='allImages'
+                        name='onlyAnnotated'
                         label={<Text strong>Image saving option</Text>}
                     >
                         <Radio.Group className='cvat-modal-export-image-saving-options'>
-                            <Radio value>All images</Radio>
-                            <Radio value={false}>Images with annotations only</Radio>
+                            <Radio value={false}>All images</Radio>
+                            <Radio value={true}>Images with annotations only</Radio>
                         </Radio.Group>
                     </Form.Item>
                 )}

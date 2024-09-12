@@ -34,7 +34,7 @@ export default class Project {
         exportDataset: (
             format: string,
             saveImages: boolean,
-            allImages: boolean,
+            onlyAnnotated: boolean,
             useDefaultSettings: boolean,
             targetStorage: Storage,
             name?: string,
@@ -266,7 +266,7 @@ Object.defineProperties(
                 async exportDataset(
                     format: Parameters<typeof Project.prototype.annotations.exportDataset>[0],
                     saveImages: Parameters<typeof Project.prototype.annotations.exportDataset>[1],
-                    allImages: Parameters<typeof Project.prototype.annotations.exportDataset>[2],
+                    onlyAnnotated: Parameters<typeof Project.prototype.annotations.exportDataset>[2],
                     useDefaultSettings: Parameters<typeof Project.prototype.annotations.exportDataset>[3],
                     targetStorage: Parameters<typeof Project.prototype.annotations.exportDataset>[4],
                     customName: Parameters<typeof Project.prototype.annotations.exportDataset>[5],
@@ -276,7 +276,7 @@ Object.defineProperties(
                         Project.prototype.annotations.exportDataset,
                         format,
                         saveImages,
-                        allImages,
+                        onlyAnnotated,
                         useDefaultSettings,
                         targetStorage,
                         customName,

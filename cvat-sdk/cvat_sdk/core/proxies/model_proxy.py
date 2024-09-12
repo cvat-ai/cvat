@@ -230,6 +230,8 @@ class _ExportMixin(Generic[_EntityT]):
         status_check_period: Optional[int] = None,
         location: Optional[Location] = None,
         cloud_storage_id: Optional[int] = None,
+        save_images: Optional[bool] = None,
+        only_annotated: Optional[bool] = None,
         **query_params,
     ) -> None:
         query_params = {
@@ -253,6 +255,10 @@ class _ExportMixin(Generic[_EntityT]):
 
         if not local_downloading:
             query_params["filename"] = str(filename)
+
+        if save_images and only_annotated:
+            query_params["save_images"] = save_images
+            query_params["only_annotated"] = only_annotated
 
         downloader = Downloader(self._client)
         export_request = downloader.prepare_file(
@@ -300,6 +306,8 @@ class ExportDatasetMixin(_ExportMixin):
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
         include_images: bool = True,
+        only_annotated: bool = False,
+
         location: Optional[Location] = None,
         cloud_storage_id: Optional[int] = None,
     ) -> None:
@@ -332,6 +340,7 @@ class ExportDatasetMixin(_ExportMixin):
             cloud_storage_id=cloud_storage_id,
             format=format_name,
             save_images=include_images,
+            only_annotated=only_annotated,
         )
 
         self._client.logger.info(

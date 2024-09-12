@@ -97,7 +97,7 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     setattr(current_rq_job, 'retry', _patched_retry)
     return current_rq_job
 
-def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False, all_images=True):
+def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False, only_annotated=False):
     try:
         if task_id is not None:
             logger = slogger.task[task_id]
@@ -129,7 +129,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             instance_update_time = max(tasks_update + [instance_update_time])
 
         output_path = make_export_filename(
-            cache_dir, save_images, all_images, instance_update_time.timestamp(), dst_format
+            cache_dir, save_images, only_annotated, instance_update_time.timestamp(), dst_format
         )
 
         os.makedirs(cache_dir, exist_ok=True)
@@ -144,7 +144,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                     temp_file = osp.join(temp_dir, 'result')
                     export_fn(db_instance.id, temp_file, dst_format,
-                        server_url=server_url, save_images=save_images, all_images=all_images)
+                        server_url=server_url, save_images=save_images, only_annotated=only_annotated)
                     os.replace(temp_file, output_path)
 
                 scheduler: Scheduler = django_rq.get_scheduler(
@@ -185,31 +185,31 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         raise
 
 def export_job_annotations(job_id, dst_format=None, server_url=None):
-    return export(dst_format,job_id=job_id, server_url=server_url, save_images=False, all_images=False)
+    return export(dst_format,job_id=job_id, server_url=server_url, save_images=False, only_annotated=False)
 
 def export_job_as_dataset(job_id, dst_format=None, server_url=None):
-    return export(dst_format, job_id=job_id, server_url=server_url, save_images=True, all_images=False)
+    return export(dst_format, job_id=job_id, server_url=server_url, save_images=True, only_annotated=True)
 
 def export_job_as_dataset_full(job_id, dst_format=None, server_url=None):
-    return export(dst_format, job_id=job_id, server_url=server_url, save_images=True, all_images=True)
+    return export(dst_format, job_id=job_id, server_url=server_url, save_images=True, only_annotated=False)
 
 def export_task_annotations(task_id, dst_format=None, server_url=None):
-    return export(dst_format,task_id=task_id, server_url=server_url, save_images=False, all_images=False)
+    return export(dst_format,task_id=task_id, server_url=server_url, save_images=False, only_annotated=False)
 
 def export_task_as_dataset(task_id, dst_format=None, server_url=None):
-    return export(dst_format, task_id=task_id, server_url=server_url, save_images=True, all_images=False)
+    return export(dst_format, task_id=task_id, server_url=server_url, save_images=True, only_annotated=True)
 
 def export_task_as_dataset_full(task_id, dst_format=None, server_url=None):
-    return export(dst_format, task_id=task_id, server_url=server_url, save_images=True, all_images=True)
+    return export(dst_format, task_id=task_id, server_url=server_url, save_images=True, only_annotated=False)
 
 def export_project_annotations(project_id, dst_format=None, server_url=None):
-    return export(dst_format, project_id=project_id, server_url=server_url, save_images=False, all_images=False)
+    return export(dst_format, project_id=project_id, server_url=server_url, save_images=False, only_annotated=False)
 
 def export_project_as_dataset(project_id, dst_format=None, server_url=None):
-    return export(dst_format, project_id=project_id, server_url=server_url, save_images=True, all_images=False)
+    return export(dst_format, project_id=project_id, server_url=server_url, save_images=True, only_annotated=True)
 
 def export_project_as_dataset_full(project_id, dst_format=None, server_url=None):
-    return export(dst_format, project_id=project_id, server_url=server_url, save_images=True, all_images=True)
+    return export(dst_format, project_id=project_id, server_url=server_url, save_images=True, only_annotated=False)
 
 
 

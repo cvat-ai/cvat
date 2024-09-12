@@ -15,10 +15,10 @@ from .registry import dm_env, exporter, importer
 
 
 @exporter(name='VGGFace2', ext='ZIP', version='1.0')
-def _export(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
+def _export(dst_file, temp_dir, instance_data, save_images=False, only_annotated=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, 'vgg_face2', save_images=save_images, all_images=all_images)
+        dataset.export(temp_dir, 'vgg_face2', save_images=save_images, only_annotated=only_annotated)
 
     make_zip_archive(temp_dir, dst_file)
 

@@ -915,7 +915,7 @@ def delete_job_data(pk):
     annotation = JobAnnotation(pk)
     annotation.delete()
 
-def export_job(job_id, dst_file, format_name, server_url=None, save_images=False, all_images=True):
+def export_job(job_id, dst_file, format_name, server_url=None, save_images=False, only_annotated=False):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -927,7 +927,7 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        job.export(f, exporter, host=server_url, save_images=save_images, all_images=all_images)
+        job.export(f, exporter, host=server_url, save_images=save_images, only_annotated=only_annotated)
 
 @silk_profile(name="GET task data")
 @transaction.atomic
@@ -964,7 +964,7 @@ def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
 
-def export_task(task_id, dst_file, format_name, server_url=None, save_images=False, all_images=True):
+def export_task(task_id, dst_file, format_name, server_url=None, save_images=False, only_annotated=False):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -976,7 +976,7 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        task.export(f, exporter, host=server_url, save_images=save_images, all_images=all_images)
+        task.export(f, exporter, host=server_url, save_images=save_images, only_annotated=only_annotated)
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):

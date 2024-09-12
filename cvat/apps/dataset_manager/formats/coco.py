@@ -16,8 +16,8 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from .registry import dm_env, exporter, importer
 
 @exporter(name='COCO', ext='ZIP', version='1.0')
-def _export(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
-    with GetCVATDataExtractor(instance_data, include_images=save_images, all_images=all_images) as extractor:
+def _export(dst_file, temp_dir, instance_data, save_images=False, only_annotated=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images, only_annotated=only_annotated) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.export(temp_dir, 'coco_instances', save_images=save_images,
             merge_images=False)
@@ -40,8 +40,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         import_dm_annotations(dataset, instance_data)
 
 @exporter(name='COCO Keypoints', ext='ZIP', version='1.0')
-def _export(dst_file, temp_dir, instance_data, save_images=False, all_images=True):
-    with GetCVATDataExtractor(instance_data, include_images=save_images, all_images=all_images) as extractor:
+def _export(dst_file, temp_dir, instance_data, save_images=False, only_annotated=False):
+    with GetCVATDataExtractor(instance_data, include_images=save_images, only_annotated=only_annotated) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.export(temp_dir, 'coco_person_keypoints', save_images=save_images,
             merge_images=False)

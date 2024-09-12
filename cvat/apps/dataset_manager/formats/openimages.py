@@ -38,8 +38,8 @@ def find_item_ids(path):
                     yield row.split(',')[0]
 
 @exporter(name='Open Images V6', ext='ZIP', version='1.0')
-def _export(dst_file, temp_dir, task_data, save_images=False, all_images=True):
-    with GetCVATDataExtractor(task_data, include_images=save_images, all_images=all_images) as extractor:
+def _export(dst_file, temp_dir, task_data, save_images=False, only_annotated=False):
+    with GetCVATDataExtractor(task_data, include_images=save_images, only_annotated=only_annotated) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.transform(RotatedBoxesToPolygons)
         dataset.transform('polygons_to_masks')

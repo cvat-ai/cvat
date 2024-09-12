@@ -6,6 +6,7 @@ import io
 from logging import Logger
 from pathlib import Path
 from typing import Optional, Tuple
+import zipfile
 
 import pytest
 from cvat_sdk import Client
@@ -148,6 +149,49 @@ class TestJobUsecases(TestDatasetExport):
             request=request,
             cloud_storages=cloud_storages,
         )
+    
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("only_annotated", (True, False))
+    @parametrize(
+        "task, location",
+        [
+            (fixture_ref("fxt_new_task"), None),
+        ],
+    )
+    def test_can_export_dataset_with_only_annotated_images(
+        self,
+        format_name: str,
+        only_annotated: bool,
+        task: Task,
+        location: Optional[Location],
+        request: pytest.FixtureRequest,
+        cloud_storages: CloudStorageAssets,
+
+    ):
+        job_id = task.get_jobs()[0].id
+        job = self.client.jobs.retrieve(job_id)
+        file_path = self.tmp_path / f"job_{job.id}-{format_name.lower()}-only_annotated_{only_annotated}.zip"
+        self._test_can_export_dataset(
+            job,
+            format_name=format_name,
+            file_path=file_path,
+            include_images=True,
+            only_annotated=only_annotated,
+            location=location,
+            request=request,
+            cloud_storages=cloud_storages,
+        )
+
+        with zipfile.ZipFile(file_path, 'r') as zip_file:
+            image_files = [file for file in zip_file.namelist() if file.endswith('.png')]
+
+            if only_annotated:
+                annotated_image_count = len(task.get_annotations().shapes)
+                assert len(image_files) == annotated_image_count, "Exported images count does not match annotated images count when only_annotated is True."
+            else:
+                assert len(image_files) == task.size, "Exported images count does not match the task size when only_annotated is False."
+
+
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_jobs()[0].get_preview()

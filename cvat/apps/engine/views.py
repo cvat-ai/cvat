@@ -311,8 +311,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-    def get_export_callback(self, save_images: bool, all_images: bool) -> Callable:
-        if save_images and all_images:
+    def get_export_callback(self, save_images: bool, only_annotated: bool) -> Callable:
+        if save_images and not only_annotated:
             return dm.views.export_project_as_dataset_full
         elif save_images:
             return dm.views.export_project_as_dataset
@@ -1322,8 +1322,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    def get_export_callback(self, save_images: bool, all_images: bool) -> Callable:
-        if save_images and all_images:
+    def get_export_callback(self, save_images: bool, only_annotated: bool) -> Callable:
+        if save_images and not only_annotated:
             return dm.views.export_task_as_dataset_full
         elif save_images:
             return dm.views.export_task_as_dataset
@@ -2025,8 +2025,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         return self.export_dataset_v1(request=request, save_images=True)
 
-    def get_export_callback(self, save_images: bool, all_images: bool) -> Callable:
-        if save_images and all_images:
+    def get_export_callback(self, save_images: bool, only_annotated: bool) -> Callable:
+        if save_images and not only_annotated:
             return dm.views.export_job_as_dataset_full
         elif save_images:
             return dm.views.export_job_as_dataset

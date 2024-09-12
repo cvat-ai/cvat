@@ -1574,7 +1574,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         instance_data: CommonData,
         *,
         include_images: bool = False,
-        all_images: bool = True,
+        only_annotated: bool = False,
         format_type: str = None,
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
@@ -1641,7 +1641,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                     attributes=attributes, subset=frame_data.subset,
                 )
 
-            if all_images or len(dm_anno) > 0:
+            if only_annotated or len(dm_anno) > 0:
                 dm_items.append(dm_item)
 
         self._items = dm_items
@@ -1664,7 +1664,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         project_data: ProjectData,
         *,
         include_images: bool = False,
-        all_images: bool = True,
+        only_annotated: bool = False,
         format_type: str = None,
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
@@ -1733,7 +1733,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                     attributes=attributes, subset=frame_data.subset
                 )
                 
-            if all_images or len(dm_anno) > 0:
+            if only_annotated or len(dm_anno) > 0:
                 dm_items.append(dm_item)
                 
         self._items = dm_items
@@ -1751,14 +1751,14 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
 def GetCVATDataExtractor(
     instance_data: Union[ProjectData, CommonData],
     include_images: bool = False,
-    all_images: bool = True,
+    only_annotated: bool = False,
     format_type: str = None,
     dimension: DimensionType = DimensionType.DIM_2D,
     **kwargs
 ):
     kwargs.update({
         'include_images': include_images,
-        'all_images': all_images,
+        'only_annotated': only_annotated,
         'format_type': format_type,
         'dimension': dimension,
     })

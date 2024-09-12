@@ -2547,7 +2547,7 @@ paths:
           default: false
         description: Include images or not
       - in: query
-        name: all_images
+        name: only_annotated
         schema:
           type: boolean
           default: false
@@ -3972,7 +3972,7 @@ paths:
           default: false
         description: Include images or not
       - in: query
-        name: all_images
+        name: only_annotated
         schema:
           type: boolean
           default: false
@@ -5922,7 +5922,7 @@ paths:
           default: false
         description: Include images or not
       - in: query
-        name: all_images
+        name: only_annotated
         schema:
           type: boolean
           default: false
