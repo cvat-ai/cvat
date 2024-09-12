@@ -10,18 +10,26 @@ import { Col, Row } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
+import Button from 'antd/lib/button';
+import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { QualitySettings } from 'cvat-core-wrapper';
+import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
 
-interface FormProps {
+interface Props {
     form: FormInstance;
     settings: QualitySettings;
+    onSave: () => void;
 }
 
-export default function QualitySettingsForm(props: FormProps): JSX.Element | null {
-    const { form, settings } = props;
+export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element | null {
+    const { form, settings, onSave } = props;
 
     const initialValues = {
+        targetMetric: settings.targetMetric,
+        targetMetricThreshold: settings.targetMetricThreshold * 100,
+
+        maxValidationsPerJob: settings.maxValidationsPerJob,
+
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
         compareAttributes: settings.compareAttributes,
@@ -40,94 +48,159 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
         panopticComparison: settings.panopticComparison,
     };
 
-    const generalTooltip = (
-        <div className='cvat-analytics-settings-tooltip-inner'>
+    const targetMetricDescription = `${settings.descriptions.targetMetric
+        .replaceAll(/\* [a-z` -]+[A-Z]+/g, '')
+        .replaceAll(/\n/g, '')}.`;
+
+    const makeTooltipFragment = (metric: string, description: string): JSX.Element => (
+        <div>
+            <Text strong>{`${metric}:`}</Text>
             <Text>
-                Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.
-            </Text>
-            <Text>
-                Low overlap threshold is used for distinction between strong / weak (low overlap) matches.
+                {description}
             </Text>
         </div>
     );
 
-    const keypointTooltip = (
+    const makeTooltip = (jsx: JSX.Element): JSX.Element => (
         <div className='cvat-analytics-settings-tooltip-inner'>
-            <Text>
-                Object Keypoint Similarity (OKS) is like IoU, but for skeleton points.
-            </Text>
-            <Text>
-                The Sigma value is the percent of the skeleton bbox area ^ 0.5.
-                Used as the radius of the circle around a GT point,
-                where the checked point is expected to be.
-            </Text>
-            <Text>
-                The value is also used to match single point annotations, in which case
-                the bbox is the whole image. For point groups the bbox is taken
-                for the whole group.
-            </Text>
-            <Text>
-                If there is a rectangle annotation in the points group or skeleton,
-                it is used as the group bbox (supposing the whole group describes a single object).
-            </Text>
+            {jsx}
         </div>
     );
 
-    const linesTooltip = (
-        <div className='cvat-analytics-settings-tooltip-inner'>
-            <Text>
-                Line thickness - thickness of polylines, relatively to the (image area) ^ 0.5.
-                The distance to the boundary around the GT line,
-                inside of which the checked line points should be.
-            </Text>
-            <Text>
-                Check orientation - Indicates that polylines have direction.
-            </Text>
-            <Text>
-                Min similarity gain - The minimal gain in the GT IoU between the given and reversed line directions
-                to consider the line inverted. Only useful with the Check orientation parameter.
-            </Text>
-        </div>
+    const generalTooltip = makeTooltip(
+        <>
+            {makeTooltipFragment('Target metric', targetMetricDescription)}
+            {makeTooltipFragment('Target metric threshold', settings.descriptions.targetMetricThreshold)}
+        </>,
     );
 
-    const groupTooltip = (
-        <div className='cvat-analytics-settings-tooltip-inner'>
-            <Text>
-                Compare groups - Enables or disables annotation group checks.
-            </Text>
-            <Text>
-                Min group match threshold - Minimal IoU for groups to be considered matching,
-                used when the Compare groups is enabled.
-            </Text>
-        </div>
+    const jobValidationTooltip = makeTooltip(
+        makeTooltipFragment('Max validations per job', settings.descriptions.maxValidationsPerJob),
     );
 
-    const segmentationTooltip = (
-        <div className='cvat-analytics-settings-tooltip-inner'>
-            <Text>
-                Check object visibility - Check for partially-covered annotations.
-            </Text>
-            <Text>
-                Min visibility threshold - Minimal visible area percent of the spatial annotations (polygons, masks)
-                for reporting covered annotations, useful with the Check object visibility option.
-            </Text>
-            <Text>
-                Match only visible parts - Use only the visible part of the masks and polygons in comparisons.
-            </Text>
-        </div>
+    const shapeComparisonTooltip = makeTooltip(
+        <>
+            {makeTooltipFragment('Min overlap threshold (IoU)', settings.descriptions.iouThreshold)}
+            {makeTooltipFragment('Low overlap threshold', settings.descriptions.lowOverlapThreshold)}
+        </>,
+    );
+
+    const keypointTooltip = makeTooltip(
+        makeTooltipFragment('Object Keypoint Similarity (OKS)', settings.descriptions.oksSigma),
+    );
+
+    const linesTooltip = makeTooltip(
+        <>
+            {makeTooltipFragment('Line thickness', settings.descriptions.lineThickness)}
+            {makeTooltipFragment('Check orientation', settings.descriptions.compareLineOrientation)}
+            {makeTooltipFragment('Min similarity gain', settings.descriptions.lineOrientationThreshold)}
+        </>,
+    );
+
+    const groupTooltip = makeTooltip(
+        <>
+            {makeTooltipFragment('Compare groups', settings.descriptions.compareGroups)}
+            {makeTooltipFragment('Min group match threshold', settings.descriptions.groupMatchThreshold)}
+        </>,
+    );
+
+    const segmentationTooltip = makeTooltip(
+        <>
+            {makeTooltipFragment('Check object visibility', settings.descriptions.checkCoveredAnnotations)}
+            {makeTooltipFragment('Min visibility threshold', settings.descriptions.objectVisibilityThreshold)}
+            {makeTooltipFragment('Match only visible parts', settings.descriptions.panopticComparison)}
+        </>,
     );
 
     return (
         <Form
             form={form}
             layout='vertical'
+            className='cvat-quality-settings-form'
             initialValues={initialValues}
         >
+            <Row justify='end' className='cvat-quality-settings-save-btn'>
+                <Col>
+                    <Button onClick={onSave} type='primary'>
+                        Save
+                    </Button>
+                </Col>
+            </Row>
             <Row className='cvat-quality-settings-title'>
                 <Text strong>
                     General
                 </Text>
                 <CVATTooltip title={generalTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='targetMetric'
+                        label='Target metric'
+                        rules={[{ required: true }]}
+                    >
+                        <Select
+                            style={{ width: '70%' }}
+                            virtual={false}
+                        >
+                            <Select.Option value={TargetMetric.ACCURACY}>
+                                Accuracy
+                            </Select.Option>
+                            <Select.Option value={TargetMetric.PRECISION}>
+                                Precision
+                            </Select.Option>
+                            <Select.Option value={TargetMetric.RECALL}>
+                                Recall
+                            </Select.Option>
+                        </Select>
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        name='targetMetricThreshold'
+                        label='Target metric threshold'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Job validation
+                </Text>
+                <CVATTooltip title={jobValidationTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='maxValidationsPerJob'
+                        label='Max validations per job'
+                        rules={[{ required: true }]}
+                    >
+                        <InputNumber
+                            min={0}
+                            max={100}
+                            precision={0}
+                        />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Shape comparison
+                </Text>
+                <CVATTooltip title={shapeComparisonTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                     <QuestionCircleOutlined
                         style={{ opacity: 0.5 }}
                     />
@@ -150,19 +223,6 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
-                    </Form.Item>
-                </Col>
-            </Row>
-            <Row>
-                <Col span={12}>
-                    <Form.Item
-                        name='compareAttributes'
-                        valuePropName='checked'
-                        rules={[{ required: true }]}
-                    >
-                        <Checkbox>
-                            <Text className='cvat-text-color'>Compare attributes</Text>
-                        </Checkbox>
                     </Form.Item>
                 </Col>
             </Row>

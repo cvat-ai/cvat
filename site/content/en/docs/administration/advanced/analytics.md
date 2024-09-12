@@ -129,6 +129,8 @@ Server events:
 
 - `export:dataset`, `import:dataset`
 
+- `call:function`
+
 Client events:
 
 - `load:cvat`

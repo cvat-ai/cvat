@@ -416,6 +416,263 @@
     ],
     "tracks": []
   },
+  "many jobs skeleton tracks with missing shapes": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
+  "many jobs skeleton tracks with missing shapes - some points present": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": false,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 10,
+                "attributes": []
+              },
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": true,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 12,
+                "attributes": []
+              }
+            ],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
+  "many jobs skeleton tracks with missing shapes - skeleton is outside": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": true,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
+  "skeleton track": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": false,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 10,
+                "attributes": []
+              },
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": true,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 12,
+                "attributes": []
+              }
+            ],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": false,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 10,
+                "attributes": []
+              },
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": true,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 12,
+                "attributes": []
+              }
+            ],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
   "ICDAR Localization 1.0": {
     "version": 0,
     "tags": [],

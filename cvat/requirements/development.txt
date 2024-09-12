@@ -6,9 +6,6 @@
 #    pip-compile-multi
 #
 -r base.txt
---no-binary lxml
---no-binary xmlsec
-
 astroid==2.11.7
     # via pylint
 autopep8==2.3.1
@@ -65,5 +62,5 @@ tornado==6.4.1
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==72.2.0
+setuptools==74.0.0
     # via astroid

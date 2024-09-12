@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,9 @@ import Button from 'antd/lib/button';
 import { SaveIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import PaidFeaturePlaceholder from 'components/customizable-components/paid-feature-placeholder/paid-feature-placeholder';
+import AllocationTable from 'components/quality-control/task-quality/allocation-table';
+import config from 'config';
 import { CombinedState } from 'reducers';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -19,7 +22,7 @@ const componentShortcuts = {
         name: 'Save the job',
         description: 'Send all changes of annotations to the server',
         sequences: ['ctrl+s'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
@@ -55,6 +58,13 @@ const storage = {
             </>
         );
     },
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    QUALITY_CONTROL_OVERVIEW: [(_: any) => (
+        <PaidFeaturePlaceholder featureDescription={config.PAID_PLACEHOLDER_CONFIG.features.qualityControl} />
+    )],
+
+    QUALITY_CONTROL_ALLOCATION_TABLE: [AllocationTable],
 };
 
 export default storage;

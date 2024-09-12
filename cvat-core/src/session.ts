@@ -22,7 +22,7 @@ import {
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
 import { Request } from './request';
 import logger from './logger';
@@ -225,10 +225,11 @@ function buildDuplicatedAPI(prototype) {
                     );
                 },
                 async save() {
-                    await PluginRegistry.apiWrapper.call(
+                    const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.save,
                     );
+                    return result;
                 },
                 async cachedChunks() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
@@ -380,7 +381,7 @@ export class Session {
         get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
         delete: (frame: number) => Promise<void>;
         restore: (frame: number) => Promise<void>;
-        save: () => Promise<void>;
+        save: () => Promise<FramesMetaData[]>;
         cachedChunks: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
@@ -666,7 +667,7 @@ export class Job extends Session {
         return this.#data.target_storage;
     }
 
-    async save(fields: any): Promise<Job> {
+    async save(fields: Record<string, any> = {}): Promise<Job> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, fields);
         return result;
     }
@@ -730,8 +731,13 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageID: number;
+    public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
+
+    public readonly validationMethod: string;
+    public readonly validationFramesPercent: number;
+    public readonly validationFramesPerJob: number;
+    public readonly frameSelectionMethod: string;
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
@@ -777,8 +783,6 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
-
-            quality_settings: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -1121,8 +1125,11 @@ export class Task extends Session {
         return result;
     }
 
-    async save(options?: { requestStatusCallback?: (request: Request) => void }): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
+    async save(
+        fields: Record<string, any> = {},
+        options?: { requestStatusCallback?: (request: Request) => void },
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;
     }
 
