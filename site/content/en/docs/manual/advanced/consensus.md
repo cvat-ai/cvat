@@ -63,7 +63,8 @@ need to annotate everything several times. There are several ways how the situat
    between matched / unmatched annotations. An annotation is considered in the consensus only with the annotations it
    has an overlap greater than or equal to this
 2. `agreement_score_threshold`: After consensus has produced a merged annotation, it is assigned a score based on it's
-   overlap with other annotations in the cluster, (add label score thing also). Merged annotations with this score lesser than `agreement_score_threshold` are discarded.
+   overlap with other annotations in the cluster, (add label score thing also). Merged annotations with this score
+   lesser than `agreement_score_threshold` are discarded.
 3. `Quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label
    of a merged annotation, the count of specific label shouldn't be less than this. Clusters having less than this
    number of annotations are discarded.
