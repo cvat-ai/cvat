@@ -72,7 +72,7 @@ export function decodeContextImages(
 decodeContextImages.mutex = new Mutex();
 
 interface BlockToDecode {
-    frameNumbers: number[];
+    chunkFrameNumbers: number[];
     chunkNumber: number;
     block: ArrayBuffer;
     onDecodeAll(): void;
@@ -173,25 +173,19 @@ export class FrameDecoder {
         }
     }
 
-    private arraysEqual(a: number[], b: number[]): boolean {
-        return (
-            a.length === b.length &&
-            a.every((element, index) => element === b[index])
-        );
-    }
-
     requestDecodeBlock(
         block: ArrayBuffer,
-        frameNumbers: number[],
+        chunkNumber: number,
+        chunkFrameNumbers: number[],
         onDecode: (frame: number, bitmap: ImageBitmap | Blob) => void,
         onDecodeAll: () => void,
         onReject: (e: Error) => void,
     ): void {
-        this.validateFrameNumbers(frameNumbers);
+        this.validateFrameNumbers(chunkFrameNumbers);
 
         if (this.requestedChunkToDecode !== null) {
             // a chunk was already requested to be decoded, but decoding didn't start yet
-            if (this.arraysEqual(frameNumbers, this.requestedChunkToDecode.frameNumbers)) {
+            if (chunkNumber === this.requestedChunkToDecode.chunkNumber) {
                 // it was the same chunk
                 this.requestedChunkToDecode.onReject(new RequestOutdatedError());
 
@@ -202,12 +196,12 @@ export class FrameDecoder {
                 this.requestedChunkToDecode.onReject(new RequestOutdatedError());
             }
         } else if (this.chunkIsBeingDecoded === null ||
-            !this.arraysEqual(frameNumbers, this.requestedChunkToDecode.frameNumbers)
+            chunkNumber !== this.chunkIsBeingDecoded.chunkNumber
         ) {
             // everything was decoded or decoding other chunk is in process
             this.requestedChunkToDecode = {
-                frameNumbers,
-                chunkNumber: this.getChunkNumber(frameNumbers[0]),
+                chunkFrameNumbers,
+                chunkNumber,
                 block,
                 onDecode,
                 onDecodeAll,
@@ -281,8 +275,8 @@ export class FrameDecoder {
             releaseMutex();
         };
         try {
-            const { frameNumbers, chunkNumber, block } = this.requestedChunkToDecode;
-            if (!this.arraysEqual(frameNumbers, blockToDecode.frameNumbers)) {
+            const { chunkFrameNumbers, chunkNumber, block } = this.requestedChunkToDecode;
+            if (chunkNumber !== blockToDecode.chunkNumber) {
                 // request is not relevant, another block was already requested
                 // it happens when A is being decoded, B comes and wait for mutex, C comes and wait for mutex
                 // B is not necessary anymore, because C already was requested
@@ -290,7 +284,9 @@ export class FrameDecoder {
                 throw new RequestOutdatedError();
             }
 
-            const getFrameNumber = (chunkFrameIndex: number): number => frameNumbers[chunkFrameIndex];
+            const getFrameNumber = (chunkFrameIndex: number): number => (
+                chunkFrameNumbers[chunkFrameIndex]
+            );
 
             this.orderedStack = [chunkNumber, ...this.orderedStack];
             this.cleanup();
@@ -328,7 +324,7 @@ export class FrameDecoder {
                         decodedFrames[frameNumber] = bitmap;
                         this.chunkIsBeingDecoded.onDecode(frameNumber, decodedFrames[frameNumber]);
 
-                        if (keptIndex === frameNumbers.length - 1) {
+                        if (keptIndex === chunkFrameNumbers.length - 1) {
                             this.decodedChunks[chunkNumber] = decodedFrames;
                             this.chunkIsBeingDecoded.onDecodeAll();
                             this.chunkIsBeingDecoded = null;
@@ -387,7 +383,7 @@ export class FrameDecoder {
                     decodedFrames[frameNumber] = event.data.data as ImageBitmap | Blob;
                     this.chunkIsBeingDecoded.onDecode(frameNumber, decodedFrames[frameNumber]);
 
-                    if (decodedCount === frameNumbers.length - 1) {
+                    if (decodedCount === chunkFrameNumbers.length - 1) {
                         this.decodedChunks[chunkNumber] = decodedFrames;
                         this.chunkIsBeingDecoded.onDecodeAll();
                         this.chunkIsBeingDecoded = null;
@@ -406,7 +402,7 @@ export class FrameDecoder {
                 this.zipWorker.postMessage({
                     block,
                     start: 0,
-                    end: frameNumbers.length - 1,
+                    end: chunkFrameNumbers.length - 1,
                     dimension: this.dimension,
                     dimension2D: DimensionType.DIMENSION_2D,
                 });

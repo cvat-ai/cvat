@@ -392,6 +392,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                 provider.cleanup(1);
                                 provider.requestDecodeBlock(
                                     chunk,
+                                    nextChunkNumber,
                                     segmentFrameNumbers.slice(
                                         nextChunkNumber * chunkSize,
                                         (nextChunkNumber + 1) * chunkSize,
@@ -456,6 +457,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             provider
                                 .requestDecodeBlock(
                                     chunk,
+                                    chunkNumber,
                                     segmentFrameNumbers.slice(
                                         chunkNumber * chunkSize,
                                         (chunkNumber + 1) * chunkSize,
