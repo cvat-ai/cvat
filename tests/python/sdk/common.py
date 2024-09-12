@@ -101,3 +101,35 @@ class TestDatasetExport:
                 ),
                 **kwargs,
             )
+
+    def _test_can_export_dataset_with_only_annotated_images(
+        self,
+        task: Task,
+        format_name: str,
+        only_annotated: bool,
+        location: Optional[Location],
+        request: pytest.FixtureRequest,
+        job: Optional[Job] = None,
+    ):
+        entity = job if job is not None else task
+        file_path = self.tmp_path / f"{'job' if isinstance(entity, Job) else 'task'}_{entity.id}-{format_name.lower()}-only_annotated_{only_annotated}.zip"
+
+        self._test_can_export_dataset(
+            entity,
+            format_name=format_name,
+            file_path=file_path,
+            include_images=True,
+            all_images=not only_annotated,
+            location=location,
+            request=request,
+            cloud_storages=None,
+        )
+
+        with zipfile.ZipFile(file_path, 'r') as zip_file:
+            image_files = [file for file in zip_file.namelist() if file.endswith('.png')]
+
+            if only_annotated:
+                annotated_image_count = len(task.get_annotations().shapes)
+                assert len(image_files) == annotated_image_count, "Exported images count does not match annotated images count when only_annotated is True."
+            else:
+                assert len(image_files) == task.size, "Exported images count does not match the task size when only_annotated is False."
