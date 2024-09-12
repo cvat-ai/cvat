@@ -202,7 +202,7 @@ class _DbTestBase(ApiTestBase):
     def _get_tasks(self, project_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(lambda page:
-                self.client.get("/api/tasks?project_id={}&page={}".format(project_id, page))
+                self.client.get("/api/tasks", data={"project_id": project_id, "page": page})
             )
         return values
 
@@ -353,11 +353,11 @@ class _DbTestBase(ApiTestBase):
         return response
 
     @staticmethod
-    def _save_file_from_response(response, file_zip_name):
+    def _save_file_from_response(response, file_name):
         if response.status_code == status.HTTP_200_OK:
-            content = BytesIO(b"".join(response.streaming_content))
-            with open(file_zip_name, "wb") as f:
-                f.write(content.getvalue())
+            content = b"".join(response.streaming_content)
+            with open(file_name, "wb") as f:
+                f.write(content)
 
 
 class TaskDumpUploadTest(_DbTestBase):
