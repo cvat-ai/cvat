@@ -18,6 +18,7 @@ import {
     deleteFrame,
     restoreFrame,
     getCachedChunks,
+    getJobFrameNumbers,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -241,6 +242,14 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.cachedChunks> {
             return Promise.resolve(getCachedChunks(this.id));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.frames.frameNumbers, 'implementation', {
+        value: function includedFramesImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.frames.frameNumbers> {
+            return Promise.resolve(getJobFrameNumbers(this.id));
         },
     });
 

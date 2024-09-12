@@ -822,6 +822,18 @@ export function getCachedChunks(jobID): number[] {
     return frameDataCache[jobID].provider.cachedChunks(true);
 }
 
+export function getJobFrameNumbers(jobID): number[] {
+    if (!(jobID in frameDataCache)) {
+        return [];
+    }
+
+    const { meta, startFrame } = frameDataCache[jobID];
+    const dataStartFrame = getDataStartFrame(meta, startFrame);
+    return meta.getDataFrameNumbers().map((dataFrameNumber: number): number => (
+        getFrameNumber(dataFrameNumber, dataStartFrame, meta.frameStep)
+    ));
+}
+
 export function clear(jobID: number): void {
     if (jobID in frameDataCache) {
         frameDataCache[jobID].provider.close();
