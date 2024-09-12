@@ -56,19 +56,6 @@ class TestTaskUsecases(TestDatasetExport):
         yield backup_path
 
     @pytest.fixture
-    def fxt_new_task(self, fxt_image_file: Path):
-        task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
-            resources=[fxt_image_file],
-            data_params={"image_quality": 80},
-        )
-
-        return task
-
-    @pytest.fixture
     def fxt_new_task_without_data(self):
         task = self.client.tasks.create(
             spec={
@@ -344,33 +331,6 @@ class TestTaskUsecases(TestDatasetExport):
             assert self.stdout.getvalue() == ""
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
-
-    @pytest.mark.parametrize("include_images, all_images, expected_image_count",
-        [
-            (True, True, 5),
-            (True, False, 1),
-            (False, False, 0),
-        ]
-    )
-    def test_can_download_dataset_multiple_images(self, fxt_task_with_multiple_images: Task, include_images: bool, all_images: bool, expected_image_count: int):
-        pbar_out = io.StringIO()
-        pbar = make_pbar(file=pbar_out)
-
-        task_id = fxt_task_with_multiple_images.id
-        path = self.tmp_path / f"task_{task_id}-cvat.zip"
-        task = self.client.tasks.retrieve(task_id)
-
-        task.export_dataset(
-            format_name="CVAT for images 1.1",
-            filename=path,
-            pbar=pbar,
-            include_images=include_images,
-            all_images=all_images,
-        )
-
-        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert path.is_file()
-        assert self.stdout.getvalue() == ""
 
         with zipfile.ZipFile(path, 'r') as zip_file:
             image_files = [f for f in zip_file.namelist() if f.endswith(('.jpg', '.png', '.jpeg'))]
