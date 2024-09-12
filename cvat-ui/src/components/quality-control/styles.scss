@@ -1,0 +1,146 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-quality-control-inner {
+    background: $background-color-1;
+    padding: $grid-unit-size * 4;
+    padding-bottom: $grid-unit-size;
+    padding-top: 0;
+    border-radius: $border-radius-base;
+}
+
+.cvat-quality-settings-title {
+    margin-bottom: $grid-unit-size * 2;
+    align-items: center;
+}
+
+.cvat-quality-settings-form {
+    display: block;
+    position: relative;
+    height: calc(100vh - $grid-unit-size * 32);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        background-color: #fff;
+        width: $grid-unit-size * 2;
+    }
+
+    &::-webkit-scrollbar-track {
+        background-color: #fff;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #babac0;
+        border-radius: $border-radius-base * 2;
+        border: 6px solid #fff;
+    }
+
+    .cvat-quality-settings-save-btn {
+        position: sticky;
+        z-index: 1;
+        top: 0;
+        height: 0;
+    }
+
+    .ant-divider-horizontal {
+        margin: $grid-unit-size 0;
+    }
+}
+
+
+$excluded-background: #d9d9d973;
+
+.cvat-allocation-frame-row-excluded:not(.ant-table-row-selected) {
+    background-color: $excluded-background;
+
+
+   .ant-table-cell-row-hover {
+        background-color: $excluded-background !important;
+    }
+}
+
+.cvat-frame-allocation-list {
+    width: 100%;
+    height: auto;
+    margin-top: $grid-unit-size * 2;
+    overflow: hidden;
+
+    td.ant-table-column-sort {
+        background: none;
+    }
+
+    .react-resizable-handle {
+        position: absolute;
+        right: -28px;
+        bottom: 0;
+        z-index: 1;
+        width: 10px;
+        height: 100%;
+        cursor: ew-resize;
+        display: grid;
+        place-content: center;
+      }
+}
+
+.cvat-frame-allocation-actions {
+    span[role='img'] {
+        padding: 0 $grid-unit-size;
+    }
+
+    span[role='img']:hover {
+        cursor: pointer;
+    }
+}
+
+
+.cvat-frame-allocation-header {
+    margin-bottom: 0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.cvat-allocation-summary {
+    span {
+        font-size: 13px !important;
+    }
+}
+
+.cvat-open-frame-button {
+    span {
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+}
+
+.cvat-quality-control-loading {
+    position: absolute;
+    right: 50%;
+    margin-top: 20%;
+}
+
+.cvat-quality-control-overview-tab {
+    min-height: 50vh;
+}
+
+.cvat-annotations-quality-allocation-table-summary {
+    margin-bottom: $grid-unit-size * 2;
+
+    .ant-statistic {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2 $grid-unit-size * 3;
+    }
+}
+
+.cvat-frame-allocation-table .ant-table-container {
+    max-height: calc(100vh - $grid-unit-size * 60);
+    overflow-y: auto;
+}

@@ -39,19 +39,19 @@ jobs:
         run: ./dev/check_changelog_fragments.py
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Create artifact directories
         run: |
@@ -60,7 +60,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
@@ -76,7 +76,7 @@ jobs:
           yarn run coverage
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
@@ -136,7 +136,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -450,6 +450,6 @@ jobs:
           name: coverage_results
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

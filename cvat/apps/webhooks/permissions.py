@@ -62,7 +62,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
             ('deliveries', 'GET'): Scopes.VIEW,
             ('retrieve_delivery', 'GET'): Scopes.VIEW,
             ('redelivery', 'POST'): Scopes.UPDATE,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.CREATE:
@@ -70,7 +70,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
             if webhook_type in [m.value for m in WebhookTypeChoice]:
                 scope = Scopes(str(scope) + f'@{webhook_type}')
             scopes.append(scope)
-        elif scope in [Scopes.UPDATE, Scopes.DELETE, Scopes.LIST, Scopes.VIEW]:
+        else:
             scopes.append(scope)
 
         return scopes

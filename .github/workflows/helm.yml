@@ -42,7 +42,7 @@ jobs:
         echo -n "verifying images:"
         docker images
 
-    - uses: azure/setup-helm@v3
+    - uses: azure/setup-helm@v4
       with:
         version: 'v3.9.4'
 

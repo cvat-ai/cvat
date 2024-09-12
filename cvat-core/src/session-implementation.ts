@@ -64,7 +64,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: JobClass,
-            fields: any,
+            fields: Parameters<typeof JobClass.prototype.save>[0],
         ): ReturnType<typeof JobClass.prototype.save> {
             if (this.id) {
                 const jobData = {
@@ -232,7 +232,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function saveFramesImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.save> {
-            return patchMeta(this.id);
+            return patchMeta(this.id).then((meta) => [meta]);
         },
     });
 
@@ -618,15 +618,19 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     Object.defineProperty(Task.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: TaskClass,
-            options: Parameters<typeof TaskClass.prototype.save>[0],
+            fields: Parameters<typeof TaskClass.prototype.save>[0],
+            options: Parameters<typeof TaskClass.prototype.save>[1],
         ): ReturnType<typeof TaskClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 // If the task has been already created, we update it
-                const taskData = this._updateTrigger.getUpdated(this, {
-                    bugTracker: 'bug_tracker',
-                    projectId: 'project_id',
-                    assignee: 'assignee_id',
-                });
+                const taskData = {
+                    ...fields,
+                    ...this._updateTrigger.getUpdated(this, {
+                        bugTracker: 'bug_tracker',
+                        projectId: 'project_id',
+                        assignee: 'assignee_id',
+                    }),
+                };
 
                 if (taskData.assignee_id) {
                     taskData.assignee_id = taskData.assignee_id.id;
@@ -667,6 +671,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const taskSpec: any = {
+                ...fields,
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };
@@ -899,8 +904,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function saveFramesImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
-            return Promise.all(this.jobs.map((job) => patchMeta(job.id)))
-                .then(() => Promise.resolve());
+            return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
         },
     });
 
