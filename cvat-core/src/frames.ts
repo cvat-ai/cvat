@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
+import _, { range, sortedIndexOf } from 'lodash';
 import {
     FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
 } from 'cvat-data';
@@ -40,13 +40,6 @@ const frameDataCache: Record<string, {
 // frame meta data storage by job id
 const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
 
-function rangeArray(start: number, end: number, step: number = 1): number[] {
-    return Array.from(
-        { length: +(start < end) * Math.ceil((end - start) / step) },
-        (v, k) => k * step + start,
-    );
-}
-
 export class FramesMetaData {
     public chunkSize: number;
     public deletedFrames: Record<number, boolean>;
@@ -62,6 +55,7 @@ export class FramesMetaData {
     public size: number;
     public startFrame: number;
     public stopFrame: number;
+    public frameStep: number;
 
     #updateTrigger: FieldUpdateTrigger;
 
@@ -110,6 +104,17 @@ export class FramesMetaData {
             }
         }
 
+        const frameStep: number = (() => {
+            if (data.frame_filter) {
+                const frameStepParts = data.frame_filter.split('=', 2);
+                if (frameStepParts.length !== 2) {
+                    throw new ArgumentError(`Invalid frame filter '${data.frame_filter}'`);
+                }
+                return +frameStepParts[1];
+            }
+            return 1;
+        })();
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -140,6 +145,9 @@ export class FramesMetaData {
                 stopFrame: {
                     get: () => data.stop_frame,
                 },
+                frameStep: {
+                    get: () => frameStep,
+                },
             }),
         );
     }
@@ -153,7 +161,10 @@ export class FramesMetaData {
     }
 
     getFrameIndex(dataFrameNumber: number): number {
-        // TODO: migrate to local frame numbers to simplify code
+        // Here we use absolute (task source data) frame numbers.
+        // TODO: migrate from data frame numbers to local frame numbers to simplify code.
+        // Requires server changes in api/jobs/{id}/data/meta/
+        // for included_frames, start_frame, stop_frame fields
 
         if (dataFrameNumber < this.startFrame || dataFrameNumber > this.stopFrame) {
             throw new ArgumentError(`Frame number ${dataFrameNumber} doesn't belong to the job`);
@@ -161,12 +172,12 @@ export class FramesMetaData {
 
         let frameIndex = null;
         if (this.includedFrames) {
-            frameIndex = this.includedFrames.indexOf(dataFrameNumber); // TODO: use binary search
+            frameIndex = sortedIndexOf(this.includedFrames, dataFrameNumber);
             if (frameIndex === -1) {
                 throw new ArgumentError(`Frame number ${dataFrameNumber} doesn't belong to the job`);
             }
         } else {
-            frameIndex = Math.floor((dataFrameNumber - this.startFrame) / this.getFrameStep());
+            frameIndex = Math.floor((dataFrameNumber - this.startFrame) / this.frameStep);
         }
         return frameIndex;
     }
@@ -175,23 +186,12 @@ export class FramesMetaData {
         return Math.floor(this.getFrameIndex(dataFrameNumber) / this.chunkSize);
     }
 
-    getFrameStep(): number {
-        if (this.frameFilter) {
-            const frameStepParts = this.frameFilter.split('=', 2);
-            if (frameStepParts.length !== 2) {
-                throw new Error(`Invalid frame filter '${this.frameFilter}'`);
-            }
-            return parseInt(frameStepParts[1], 10);
-        }
-        return 1;
-    }
-
     getDataFrameNumbers(): number[] {
         if (this.includedFrames) {
             return this.includedFrames;
         }
 
-        return rangeArray(this.startFrame, this.stopFrame + 1, this.getFrameStep());
+        return range(this.startFrame, this.stopFrame + 1, this.frameStep);
     }
 }
 
@@ -309,7 +309,7 @@ class PrefetchAnalyzer {
 }
 
 function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
-    return meta.startFrame - localStartFrame * meta.getFrameStep();
+    return meta.startFrame - localStartFrame * meta.frameStep;
 }
 
 function getDataFrameNumber(frameNumber: number, dataStartFrame: number, step: number): number {
@@ -335,11 +335,13 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             const requestId = +_.uniqueId();
             const dataStartFrame = getDataStartFrame(meta, startFrame);
             const requestedDataFrameNumber = getDataFrameNumber(
-                this.number, dataStartFrame, meta.getFrameStep(),
+                this.number, dataStartFrame, meta.frameStep,
             );
             const chunkNumber = meta.getFrameChunkIndex(requestedDataFrameNumber);
             const segmentFrameNumbers = meta.getDataFrameNumbers().map(
-                (dataFrameNumber: number) => getFrameNumber(dataFrameNumber, dataStartFrame, meta.getFrameStep()),
+                (dataFrameNumber: number) => getFrameNumber(
+                    dataFrameNumber, dataStartFrame, meta.frameStep,
+                ),
             );
             const frame = provider.frame(this.number);
 
@@ -686,7 +688,7 @@ export async function getFrame(
         // TODO: migrate to local frame numbers
         const dataStartFrame = getDataStartFrame(meta, startFrame);
         const dataFrameNumberGetter = (frameNumber: number): number => (
-            getDataFrameNumber(frameNumber, dataStartFrame, meta.getFrameStep())
+            getDataFrameNumber(frameNumber, dataStartFrame, meta.frameStep)
         );
 
         frameDataCache[jobID] = {
@@ -782,7 +784,7 @@ export async function findFrame(
             // meta.includedFrames contains input frame numbers now
             const dataStartFrame = meta.startFrame; // this is only true when includedFrames is set
             return (meta.includedFrames.includes(
-                getDataFrameNumber(frame, dataStartFrame, meta.getFrameStep()))
+                getDataFrameNumber(frame, dataStartFrame, meta.frameStep))
             ) && (!filters.notDeleted || !(frame in meta.deletedFrames));
         }
         if (filters.notDeleted) {
