@@ -1409,7 +1409,14 @@ def _create_thread(
                         list(segment.frame_set), size=frame_count, shuffle=False, replace=False
                     ).tolist())
             case models.JobFrameSelectionMethod.MANUAL:
-                # TODO: support video tasks and other sequences with unknown file names
+                if not images:
+                    raise ValidationError(
+                        "{} validation frame selection method at task creation "
+                        "is only available for image-based tasks. "
+                        "Please create the GT job after the task is created.".format(
+                            models.JobFrameSelectionMethod.MANUAL
+                        )
+                    )
 
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
