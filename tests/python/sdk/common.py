@@ -119,7 +119,7 @@ class TestDatasetExport:
             format_name=format_name,
             file_path=file_path,
             include_images=True,
-            all_images=not only_annotated,
+            only_annotated=only_annotated,
             location=location,
             request=request,
             cloud_storages=None,
