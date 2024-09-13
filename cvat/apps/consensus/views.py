@@ -262,7 +262,6 @@ class ConsensusReportViewSet(
         self.check_permissions(request)
         input_serializer = ConsensusReportCreateSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
-        task_id = input_serializer.validated_data["task_id"]
 
         queue_name = settings.CVAT_QUEUES.CONSENSUS.value
         queue = django_rq.get_queue(queue_name)
@@ -270,14 +269,13 @@ class ConsensusReportViewSet(
 
         if rq_id is None:
             try:
+                task_id = input_serializer.validated_data["task_id"]
                 task = Task.objects.get(pk=task_id)
             except Task.DoesNotExist as ex:
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
-                rq_id = scehdule_consensus_merging(task, request)
-                serializer = RqIdSerializer({"rq_id": rq_id})
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                return scehdule_consensus_merging(task, request)
             except Exception as ex:
                 raise ValidationError(str(ex))
 
