@@ -1750,21 +1750,25 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
+    @transaction.atomic
     def perform_destroy(self, instance):
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        if (
-            validation_layout := getattr(instance.segment.task.data, 'validation_layout', None) and
-            validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        validation_layout: Optional[models.ValidationLayout] = getattr(
+            instance.segment.task.data, 'validation_layout', None
+        )
+        if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):
             raise ValidationError(
                 'GT jobs cannot be removed when task validation mode is "{}"'.format(
                     models.ValidationMode.GT_POOL
                 )
             )
 
-        return super().perform_destroy(instance)
+        super().perform_destroy(instance)
+
+        if validation_layout:
+            validation_layout.delete()
 
     # UploadMixin method
     def get_upload_dir(self):
