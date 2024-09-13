@@ -1141,9 +1141,9 @@ def _create_thread(
     ):
         # Validation frames must be in the end of the images list. Collect their ids
         frame_idx_map: dict[str, int] = {}
-        for i, frame_name in enumerate(validation_params['frames']):
+        for i, frame_filename in enumerate(validation_params['frames']):
             image = images[-len(validation_params['frames']) + i]
-            assert frame_name == image.path
+            assert frame_filename == image.path
             frame_idx_map[image.path] = image.frame
 
         # Store information about the real frame placement in validation frames in jobs
@@ -1212,10 +1212,10 @@ def _create_thread(
             case models.JobFrameSelectionMethod.MANUAL:
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
-                for frame in db_data.validation_layout.frames.all():
-                    frame_id = known_frame_names.get(frame.path)
+                for frame_filename in db_data.validation_layout.frames.all():
+                    frame_id = known_frame_names.get(frame_filename.path)
                     if frame_id is None:
-                        unknown_requested_frames.append(frame.path)
+                        unknown_requested_frames.append(frame_filename.path)
                         continue
 
                     pool_frames.append(frame_id)
@@ -1360,16 +1360,15 @@ def _create_thread(
         seed = validation_params.get("random_seed")
         rng = random.Generator(random.MT19937(seed=seed))
 
-        validation_frames: list[int] = []
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                all_frames = range(len(images))
+                all_frames = range(db_data.size)
 
                 if frame_count := validation_params.get("frame_count"):
-                    if len(images) < frame_count:
+                    if db_data.size < frame_count:
                         raise ValidationError(
                             f"The number of validation frames requested ({frame_count}) "
-                            f"is greater that the number of task frames ({len(images)})"
+                            f"is greater that the number of task frames ({db_data.size})"
                         )
                 elif frame_share := validation_params.get("frame_share"):
                     frame_count = max(1, int(frame_share * len(all_frames)))
@@ -1391,9 +1390,23 @@ def _create_thread(
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
+                validation_frames: list[int] = []
+                overlap = db_task.overlap
                 for segment in db_task.segment_set.all():
+                    segment_frames = set(segment.frame_set)
+                    selected_frames = segment_frames.intersection(validation_frames)
+                    selected_count = len(selected_frames)
+
+                    missing_count = min(len(segment_frames), frame_count) - selected_count
+                    if missing_count <= 0:
+                        continue
+
+                    selectable_segment_frames = set(
+                        sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                    ).difference(selected_frames)
+
                     validation_frames.extend(rng.choice(
-                        list(segment.frame_set), size=frame_count, shuffle=False, replace=False
+                        tuple(selectable_segment_frames), size=missing_count, replace=False
                     ).tolist())
             case models.JobFrameSelectionMethod.MANUAL:
                 if not images:
@@ -1405,12 +1418,13 @@ def _create_thread(
                         )
                     )
 
+                validation_frames: list[int] = []
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
-                for frame in db_data.validation_layout.frames.all():
-                    frame_id = known_frame_names.get(frame.path)
+                for frame_filename in validation_params['frames']:
+                    frame_id = known_frame_names.get(frame_filename)
                     if frame_id is None:
-                        unknown_requested_frames.append(frame.path)
+                        unknown_requested_frames.append(frame_filename)
                         continue
 
                     validation_frames.append(frame_id)

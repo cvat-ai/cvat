@@ -776,7 +776,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         task_size = task.data.size
         valid_frame_ids = task.data.get_valid_frame_indices()
 
-        # TODO: refactor, test
+        # TODO: refactor
         frame_selection_method = validated_data.pop("frame_selection_method")
         if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             if frame_count := validated_data.pop("frame_count", None):
@@ -829,10 +829,23 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
-            frames = []
+            frames: list[int] = []
+            overlap = task.overlap
             for segment in task.segment_set.all():
+                segment_frames = set(segment.frame_set)
+                selected_frames = segment_frames.intersection(frames)
+                selected_count = len(selected_frames)
+
+                missing_count = min(len(segment_frames), frame_count) - selected_count
+                if missing_count <= 0:
+                    continue
+
+                selectable_segment_frames = set(
+                    sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                ).difference(selected_frames)
+
                 frames.extend(rng.choice(
-                    list(segment.frame_set), size=frame_count, shuffle=False, replace=False
+                    tuple(selectable_segment_frames), size=missing_count, replace=False
                 ).tolist())
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             frames = validated_data.pop("frames")

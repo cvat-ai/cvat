@@ -2174,8 +2174,9 @@ class TestPostTaskData:
             ),
             ("manual", {}),
         ],
+        idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
     )
-    def test_can_create_task_with_gt_job(
+    def test_can_create_task_with_gt_job_from_images(
         self,
         request: pytest.FixtureRequest,
         frame_selection_method: str,
@@ -2183,7 +2184,6 @@ class TestPostTaskData:
     ):
         segment_size = 4
         total_frame_count = 15
-        validation_frames_count = 5
         resulting_task_size = total_frame_count
 
         image_files = generate_image_files(total_frame_count)
@@ -2194,6 +2194,8 @@ class TestPostTaskData:
             validation_params["random_seed"] = 42
 
         if frame_selection_method == "random_uniform":
+            validation_frames_count = 5
+
             for method_param in method_params:
                 if method_param == "frame_count":
                     validation_params[method_param] = validation_frames_count
@@ -2203,6 +2205,9 @@ class TestPostTaskData:
                     assert False
         elif frame_selection_method == "random_per_job":
             validation_per_job_count = 2
+            validation_frames_count = validation_per_job_count * math.ceil(
+                total_frame_count / segment_size
+            )
 
             for method_param in method_params:
                 if method_param == "frames_per_job_count":
@@ -2212,6 +2217,8 @@ class TestPostTaskData:
                 else:
                     assert False
         elif frame_selection_method == "manual":
+            validation_frames_count = 5
+
             rng = np.random.Generator(np.random.MT19937(seed=42))
             validation_params["frames"] = rng.choice(
                 [f.name for f in image_files], validation_frames_count, replace=False
@@ -2255,19 +2262,21 @@ class TestPostTaskData:
         assert task.size == resulting_task_size
         assert task_meta.size == resulting_task_size
 
-        validation_frames = set(f.name for f in gt_job_metas[0].frames)
-        if frame_selection_method == "manual":
-            assert sorted(
-                gt_job_metas[0].frames[rel_frame_id].name
-                for rel_frame_id, abs_frame_id in enumerate(
-                    range(
-                        gt_job_metas[0].start_frame,
-                        gt_job_metas[0].stop_frame + 1,
-                        int((gt_job_metas[0].frame_filter or "step=1").split("=")[1]),
-                    )
+        validation_frames = [
+            gt_job_metas[0].frames[rel_frame_id].name
+            for rel_frame_id, abs_frame_id in enumerate(
+                range(
+                    gt_job_metas[0].start_frame,
+                    gt_job_metas[0].stop_frame + 1,
+                    int((gt_job_metas[0].frame_filter or "step=1").split("=")[1]),
                 )
-                if abs_frame_id in gt_job_metas[0].included_frames
-            ) == sorted(validation_params["frames"])
+            )
+            if abs_frame_id in gt_job_metas[0].included_frames
+        ]
+        if frame_selection_method == "manual":
+            assert sorted(validation_params["frames"]) == sorted(validation_frames)
+
+        assert len(validation_frames) == validation_frames_count
 
         # frames must not repeat
         assert sorted(f.name for f in image_files) == sorted(f.name for f in task_meta.frames)
@@ -2276,9 +2285,118 @@ class TestPostTaskData:
             # each job must have the specified number of validation frames
             for job_meta in annotation_job_metas:
                 assert (
-                    len(set(f.name for f in job_meta.frames if f.name in validation_frames))
+                    len([f.name for f in job_meta.frames if f.name in validation_frames])
                     == validation_per_job_count
                 )
+
+    @parametrize(
+        "frame_selection_method, method_params",
+        [
+            *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+            *tuple(
+                product(["random_per_job"], [{"frames_per_job_count"}, {"frames_per_job_share"}])
+            ),
+        ],
+        idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
+    )
+    def test_can_create_task_with_gt_job_from_video(
+        self,
+        request: pytest.FixtureRequest,
+        frame_selection_method: str,
+        method_params: set[str],
+    ):
+        segment_size = 4
+        total_frame_count = 15
+        resulting_task_size = total_frame_count
+
+        video_file = generate_video_file(total_frame_count)
+
+        validation_params = {"mode": "gt", "frame_selection_method": frame_selection_method}
+
+        if "random" in frame_selection_method:
+            validation_params["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            validation_frames_count = 5
+
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    validation_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    validation_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "random_per_job":
+            validation_per_job_count = 2
+
+            for method_param in method_params:
+                if method_param == "frames_per_job_count":
+                    validation_params[method_param] = validation_per_job_count
+                elif method_param == "frames_per_job_share":
+                    validation_params[method_param] = validation_per_job_count / segment_size
+                else:
+                    assert False
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": [video_file],
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        assert task.segment_size == segment_size
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        frame_step = int((gt_job_metas[0].frame_filter or "step=1").split("=")[1])
+        validation_frames = [
+            abs_frame_id
+            for abs_frame_id in range(
+                gt_job_metas[0].start_frame,
+                gt_job_metas[0].stop_frame + 1,
+                frame_step,
+            )
+            if abs_frame_id in gt_job_metas[0].included_frames
+        ]
+
+        if frame_selection_method == "random_per_job":
+            # each job must have the specified number of validation frames
+            for job_meta in annotation_job_metas:
+                assert (
+                    len(
+                        set(
+                            range(job_meta.start_frame, job_meta.stop_frame + 1, frame_step)
+                        ).intersection(validation_frames)
+                    )
+                    == validation_per_job_count
+                )
+        else:
+            assert len(validation_frames) == validation_frames_count
 
 
 class _SourceDataType(str, Enum):
