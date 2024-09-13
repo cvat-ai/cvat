@@ -3363,7 +3363,17 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    def test_can_export_backup_for_honeypot_task(self, tasks):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         task = self.client.tasks.retrieve(task_id)
 
         filename = self.tmp_dir / f"task_{task.id}_backup.zip"
@@ -3386,8 +3396,12 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_json = next(t for t in tasks if t["mode"] == mode)
-        self._test_can_restore_backup_task(task_json["id"])
+        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    def test_can_import_backup_with_honeypot_task(self, tasks):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
@@ -3401,28 +3415,32 @@ class TestTaskBackups:
         for j in jobs:
             j.update({"stage": "validation"})
 
-        self._test_can_restore_backup_task(task_json["id"])
+        self._test_can_restore_task_from_backup(task_json["id"])
 
-    def _test_can_restore_backup_task(self, task_id: int):
-        task = self.client.tasks.retrieve(task_id)
+    def _test_can_restore_task_from_backup(self, task_id: int):
+        old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-        task.download_backup(filename)
+        filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
+        old_task.download_backup(filename)
 
-        restored_task = self.client.tasks.create_from_backup(filename)
+        new_task = self.client.tasks.create_from_backup(filename)
 
-        old_jobs = task.get_jobs()
-        new_jobs = restored_task.get_jobs()
+        old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
+        new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
+        assert DeepDiff(old_meta, new_meta, ignore_order=True) == {}
+
+        old_jobs = sorted(old_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
+        new_jobs = sorted(new_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
         assert len(old_jobs) == len(new_jobs)
 
         for old_job, new_job in zip(old_jobs, new_jobs):
-            assert old_job.status == new_job.status
-            assert old_job.start_frame == new_job.start_frame
-            assert old_job.stop_frame == new_job.stop_frame
+            old_job_meta = json.loads(old_job.api.retrieve_data_meta(old_job.id)[1].data)
+            new_job_meta = json.loads(new_job.api.retrieve_data_meta(new_job.id)[1].data)
+            assert DeepDiff(old_job_meta, new_job_meta, ignore_order=True) == {}
 
-        (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
+        (_, response) = self.client.api_client.tasks_api.retrieve(new_task.id)
         restored_task_json = json.loads(response.data)
 
         assert restored_task_json["assignee"] is None
@@ -3461,6 +3479,7 @@ class TestTaskBackups:
                     r"root\['target_storage'\]",  # should be dropped
                     r"root\['jobs'\]\['completed'\]",  # job statuses should be renewed
                     r"root\['jobs'\]\['validation'\]",  # job statuses should be renewed
+                    r"root\['status'\]",  # task status should be renewed
                     # depends on the actual job configuration,
                     # unlike to what is obtained from the regular task creation,
                     # where the requested number is recorded
