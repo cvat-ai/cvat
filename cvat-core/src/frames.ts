@@ -366,7 +366,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                     nextChunkIndex = Math.floor(nextFrameIndex / chunkSize);
                 }
 
-                if (chunkCount <= nextChunkIndex) {
+                if (nextChunkIndex < 0 || chunkCount <= nextChunkIndex) {
                     return null;
                 }
 
