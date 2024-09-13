@@ -7954,8 +7954,6 @@ components:
         task_id:
           type: integer
           writeOnly: true
-      required:
-      - task_id
     ConsensusReportSummary:
       type: object
       properties:
