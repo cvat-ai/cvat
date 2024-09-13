@@ -259,11 +259,11 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
-                async chunk(chunkNumber, quality) {
+                async chunk(chunkIndex, quality) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.chunk,
-                        chunkNumber,
+                        chunkIndex,
                         quality,
                     );
                     return result;

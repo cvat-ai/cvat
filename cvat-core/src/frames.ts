@@ -34,7 +34,7 @@ const frameDataCache: Record<string, {
         timestamp: number;
         size: number;
     }>;
-    getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
+    getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
 }> = {};
 
 // frame meta data storage by job id
