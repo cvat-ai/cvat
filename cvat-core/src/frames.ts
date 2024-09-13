@@ -56,6 +56,7 @@ export class FramesMetaData {
     public startFrame: number;
     public stopFrame: number;
     public frameStep: number;
+    public chunkCount: number;
 
     #updateTrigger: FieldUpdateTrigger;
 
@@ -147,6 +148,17 @@ export class FramesMetaData {
                 },
                 frameStep: {
                     get: () => frameStep,
+                },
+            }),
+        );
+
+        const chunkCount: number = Math.ceil(this.getDataFrameNumbers().length / this.chunkSize);
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                chunkCount: {
+                    get: () => chunkCount,
                 },
             }),
         );
@@ -328,7 +340,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             imageData: ImageBitmap | Blob;
         } | Blob>((resolve, reject) => {
             const {
-                meta, provider, prefetchAnalyzer, chunkSize, startFrame, stopFrame,
+                meta, provider, prefetchAnalyzer, chunkSize, startFrame,
                 decodeForward, forwardStep, decodedBlocksCacheSize,
             } = frameDataCache[this.jobID];
 
@@ -337,7 +349,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             const requestedDataFrameNumber = getDataFrameNumber(
                 this.number, dataStartFrame, meta.frameStep,
             );
-            const chunkNumber = meta.getFrameChunkIndex(requestedDataFrameNumber);
+            const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
             const segmentFrameNumbers = meta.getDataFrameNumbers().map(
                 (dataFrameNumber: number) => getFrameNumber(
                     dataFrameNumber, dataStartFrame, meta.frameStep,
@@ -345,19 +357,24 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             );
             const frame = provider.frame(this.number);
 
-            function findTheNextNotDecodedChunk(searchFrom: number): number {
-                let nextFrameIndex = searchFrom + forwardStep;
-                let nextChunkNumber = Math.floor(nextFrameIndex / chunkSize);
-                while (nextChunkNumber === chunkNumber) {
+            function findTheNextNotDecodedChunk(currentFrameIndex: number): number | null {
+                const { chunkCount } = meta;
+                let nextFrameIndex = currentFrameIndex + forwardStep;
+                let nextChunkIndex = Math.floor(nextFrameIndex / chunkSize);
+                while (nextChunkIndex === chunkIndex) {
                     nextFrameIndex += forwardStep;
-                    nextChunkNumber = Math.floor(nextFrameIndex / chunkSize);
+                    nextChunkIndex = Math.floor(nextFrameIndex / chunkSize);
                 }
 
-                if (provider.isChunkCached(nextChunkNumber)) {
+                if (chunkCount <= nextChunkIndex) {
+                    return null;
+                }
+
+                if (provider.isChunkCached(nextChunkIndex)) {
                     return findTheNextNotDecodedChunk(nextFrameIndex);
                 }
 
-                return nextChunkNumber;
+                return nextChunkIndex;
             }
 
             if (frame) {
@@ -368,12 +385,12 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                         (chunk) => provider.isChunkCached(chunk),
                     ) && decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest
                 ) {
-                    const nextChunkNumber = findTheNextNotDecodedChunk(
+                    const nextChunkIndex = findTheNextNotDecodedChunk(
                         meta.getFrameIndex(requestedDataFrameNumber),
                     );
                     const predecodeChunksMax = Math.floor(decodedBlocksCacheSize / 2);
-                    if (startFrame + nextChunkNumber * chunkSize <= stopFrame &&
-                        nextChunkNumber <= chunkNumber + predecodeChunksMax
+                    if (nextChunkIndex !== null &&
+                        nextChunkIndex <= chunkIndex + predecodeChunksMax
                     ) {
                         frameDataCache[this.jobID].activeChunkRequest = new Promise((resolveForward) => {
                             const releasePromise = (): void => {
@@ -382,7 +399,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             };
 
                             frameDataCache[this.jobID].getChunk(
-                                nextChunkNumber, ChunkQuality.COMPRESSED,
+                                nextChunkIndex, ChunkQuality.COMPRESSED,
                             ).then((chunk: ArrayBuffer) => {
                                 if (!(this.jobID in frameDataCache)) {
                                     // check if frameDataCache still exist
@@ -394,10 +411,10 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                 provider.cleanup(1);
                                 provider.requestDecodeBlock(
                                     chunk,
-                                    nextChunkNumber,
+                                    nextChunkIndex,
                                     segmentFrameNumbers.slice(
-                                        nextChunkNumber * chunkSize,
-                                        (nextChunkNumber + 1) * chunkSize,
+                                        nextChunkIndex * chunkSize,
+                                        (nextChunkIndex + 1) * chunkSize,
                                     ),
                                     () => {},
                                     releasePromise,
@@ -445,7 +462,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 ) => {
                     let wasResolved = false;
                     frameDataCache[this.jobID].getChunk(
-                        chunkNumber, ChunkQuality.COMPRESSED,
+                        chunkIndex, ChunkQuality.COMPRESSED,
                     ).then((chunk: ArrayBuffer) => {
                         try {
                             if (!(this.jobID in frameDataCache)) {
@@ -459,10 +476,10 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             provider
                                 .requestDecodeBlock(
                                     chunk,
-                                    chunkNumber,
+                                    chunkIndex,
                                     segmentFrameNumbers.slice(
-                                        chunkNumber * chunkSize,
-                                        (chunkNumber + 1) * chunkSize,
+                                        chunkIndex * chunkSize,
+                                        (chunkIndex + 1) * chunkSize,
                                     ),
                                     (_frame: number, bitmap: ImageBitmap | Blob) => {
                                         if (decodeForward) {
