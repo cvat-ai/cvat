@@ -1,4 +1,4 @@
-package conflicts
+package consensus_conflicts
 
 import rego.v1
 
