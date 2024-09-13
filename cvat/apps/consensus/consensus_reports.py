@@ -234,7 +234,7 @@ class ComparisonReport(Serializable):
         return cls.from_dict(parse_json(data))
 
 
-def _get_error_type(error: dm.errors) -> str:
+def _get_error_type(error: dm.errors) -> Optional[str]:
     error_string = None
     if isinstance(error, dm.errors.NoMatchingItemError):
         error_string = "NoMatchingItemError"
