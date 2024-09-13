@@ -11,12 +11,7 @@ import { Job } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import JobCard from './job-card';
 
-interface Props {
-    onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
-}
-
-function JobsContentComponent(props: Props): JSX.Element {
-    const { onJobUpdate } = props;
+function JobsContentComponent(): JSX.Element {
     const jobs = useSelector((state: CombinedState) => state.jobs.current);
 
     const groupedJobs = jobs.reduce(
@@ -39,7 +34,7 @@ function JobsContentComponent(props: Props): JSX.Element {
                         <Row key={jobInstances[0].id}>
                             {jobInstances.map((job: Job) => (
                                 <Col span={6} key={job.id}>
-                                    <JobCard onJobUpdate={onJobUpdate} job={job} key={job.id} />
+                                    <JobCard job={job} key={job.id} />
                                 </Col>
                             ))}
                         </Row>

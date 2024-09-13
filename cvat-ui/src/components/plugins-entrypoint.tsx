@@ -6,10 +6,12 @@ import React, { useEffect } from 'react';
 import { Dispatch, AnyAction } from 'redux';
 import { useDispatch } from 'react-redux';
 
+import CustomizableComponents from 'components/customizable-components';
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, CVATCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
 import { modelsActions } from 'actions/models-actions';
 import { changeFrameAsync, updateCurrentJobAsync } from 'actions/annotation-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
@@ -22,29 +24,28 @@ export type PluginActionCreators = {
     addUICallback: typeof pluginActions['addUICallback'],
     removeUICallback: typeof pluginActions['removeUICallback'],
     updateCurrentJobAsync: typeof updateCurrentJobAsync,
+    updateJobAsync: typeof updateJobAsync,
 };
+
+export interface ComponentBuilderArgs {
+    dispatch: Dispatch<AnyAction>;
+    REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT;
+    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT;
+    customizableComponents: typeof CustomizableComponents;
+    actionCreators: PluginActionCreators;
+    core: CVATCore;
+    store: ReturnType<typeof getCVATStore>;
+}
 
 export type ComponentBuilder = ({
     dispatch,
     REGISTER_ACTION,
     REMOVE_ACTION,
+    customizableComponents,
     actionCreators,
     core,
     store,
-}: {
-    dispatch: Dispatch<AnyAction>,
-    /**
-     * @deprecated Please, use actionCreators.addUIComponent instead
-    */
-    REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
-    /**
-     * @deprecated Please, use actionCreators.removeUIComponent instead
-    */
-    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
-    actionCreators: PluginActionCreators,
-    core: CVATCore,
-    store: ReturnType<typeof getCVATStore>
-}) => {
+}: ComponentBuilderArgs) => {
     name: string;
     destructor: CallableFunction;
     globalStateDidUpdate?: CallableFunction;
@@ -66,9 +67,11 @@ function PluginEntrypoint(): null {
                         dispatch,
                         REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
+                        customizableComponents: CustomizableComponents,
                         actionCreators: {
                             changeFrameAsync,
                             updateCurrentJobAsync,
+                            updateJobAsync,
                             getModelsSuccess: modelsActions.getModelsSuccess,
                             addUICallback: pluginActions.addUICallback,
                             removeUICallback: pluginActions.removeUICallback,

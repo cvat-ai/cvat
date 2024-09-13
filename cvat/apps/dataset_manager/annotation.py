@@ -91,7 +91,7 @@ class AnnotationIR:
 
             prev_shape = shape
 
-        if not prev_shape['outside'] and prev_shape['frame'] <= stop:
+        if prev_shape is not None and not prev_shape['outside'] and prev_shape['frame'] <= stop:
             return True
 
         return False
@@ -552,6 +552,8 @@ class TrackManager(ObjectManager):
             return 0
 
     def _modify_unmatched_object(self, obj, end_frame):
+        if not obj["shapes"]:
+            return
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)

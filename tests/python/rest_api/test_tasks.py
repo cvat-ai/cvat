@@ -1474,18 +1474,16 @@ class TestPostTaskData:
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
-        s3_client = s3.make_client()
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
             video = generate_video_file(video_frame_count)
             s3_client.create_file(
                 data=video,
-                bucket=cloud_storage["resource"],
                 filename=f"test/video/{video.name}",
             )
             request.addfinalizer(
                 partial(
                     s3_client.remove_file,
-                    bucket=cloud_storage["resource"],
                     filename=f"test/video/{video.name}",
                 )
             )
@@ -1499,13 +1497,11 @@ class TestPostTaskData:
                     image.seek(0)
                     s3_client.create_file(
                         data=image,
-                        bucket=cloud_storage["resource"],
                         filename=f"test/sub_{i}/{image.name}",
                     )
                     request.addfinalizer(
                         partial(
                             s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
                             filename=f"test/sub_{i}/{image.name}",
                         )
                     )
@@ -1525,13 +1521,11 @@ class TestPostTaskData:
                 with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
                     s3_client.create_file(
                         data=m_file.read(),
-                        bucket=cloud_storage["resource"],
                         filename="test/manifest.jsonl",
                     )
                     request.addfinalizer(
                         partial(
                             s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
                             filename="test/manifest.jsonl",
                         )
                     )
@@ -2288,15 +2282,12 @@ class TestWorkWithTask:
         task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
         # save image from the "public" bucket and remove it temporary
-
-        s3_client = s3.make_client()
         bucket_name = cloud_storages[cloud_storage_id]["resource"]
+        s3_client = s3.make_client(bucket=bucket_name)
 
-        image = s3_client.download_fileobj(bucket_name, image_name)
-        s3_client.remove_file(bucket_name, image_name)
-        request.addfinalizer(
-            partial(s3_client.create_file, bucket=bucket_name, filename=image_name, data=image)
-        )
+        image = s3_client.download_fileobj(image_name)
+        s3_client.remove_file(image_name)
+        request.addfinalizer(partial(s3_client.create_file, filename=image_name, data=image))
 
         with make_api_client(self._USERNAME) as api_client:
             try:

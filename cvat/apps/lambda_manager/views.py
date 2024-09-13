@@ -11,7 +11,6 @@ import os
 import textwrap
 from copy import deepcopy
 from datetime import timedelta
-from enum import Enum
 from functools import wraps
 from typing import Any, Dict, Optional
 
@@ -20,6 +19,7 @@ import django_rq
 import numpy as np
 import requests
 import rq
+from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -38,24 +38,17 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.lambda_manager.models import FunctionKind
 from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
-
-class LambdaType(Enum):
-    DETECTOR = "detector"
-    INTERACTOR = "interactor"
-    REID = "reid"
-    TRACKER = "tracker"
-    UNKNOWN = "unknown"
-
-    def __str__(self):
-        return self.value
+slogger = ServerLogManager(__name__)
 
 class LambdaGateway:
     NUCLIO_ROOT_URL = '/api/functions'
@@ -92,8 +85,11 @@ class LambdaGateway:
 
     def list(self):
         data = self._http(url=self.NUCLIO_ROOT_URL)
-        response = [LambdaFunction(self, item) for item in data.values()]
-        return response
+        for item in data.values():
+            try:
+                yield LambdaFunction(self, item)
+            except InvalidFunctionMetadataError:
+                slogger.glob.error("Failed to parse lambda function metadata", exc_info=True)
 
     def get(self, func_id):
         data = self._http(url=self.NUCLIO_ROOT_URL + '/' + func_id)
@@ -130,7 +126,16 @@ class LambdaGateway:
 
         return response
 
+class InvalidFunctionMetadataError(Exception):
+    pass
+
 class LambdaFunction:
+    FRAME_PARAMETERS = (
+        ('frame', 'frame'),
+        ('frame0', 'start frame'),
+        ('frame1', 'end frame'),
+    )
+
     def __init__(self, gateway, data):
         # ID of the function (e.g. omz.public.yolo-v3)
         self.id = data['metadata']['name']
@@ -138,9 +143,10 @@ class LambdaFunction:
         meta_anno = data['metadata']['annotations']
         kind = meta_anno.get('type')
         try:
-            self.kind = LambdaType(kind)
-        except ValueError:
-            self.kind = LambdaType.UNKNOWN
+            self.kind = FunctionKind(kind)
+        except ValueError as e:
+            raise InvalidFunctionMetadataError(
+                f"{self.id} lambda function has unknown type: {kind!r}") from e
         # dictionary of labels for the function (e.g. car, person)
         spec = json.loads(meta_anno.get('spec') or '[]')
 
@@ -153,9 +159,8 @@ class LambdaFunction:
                 } for attr in attrs_spec]
 
                 if len(parsed_attributes) != len({attr['name'] for attr in attrs_spec}):
-                    raise ValidationError(
-                        f"{self.id} lambda function has non-unique attributes",
-                        code=status.HTTP_404_NOT_FOUND)
+                    raise InvalidFunctionMetadataError(
+                        f"{self.id} lambda function has non-unique attributes")
 
                 return parsed_attributes
 
@@ -174,9 +179,8 @@ class LambdaFunction:
                 parsed_labels.append(parsed_label)
 
             if len(parsed_labels) != len({label['name'] for label in spec}):
-                raise ValidationError(
-                    f"{self.id} lambda function has non-unique labels",
-                    code=status.HTTP_404_NOT_FOUND)
+                raise InvalidFunctionMetadataError(
+                    f"{self.id} lambda function has non-unique labels")
 
             return parsed_labels
 
@@ -185,9 +189,8 @@ class LambdaFunction:
         self.func_attributes = {item['name']: item.get('attributes', []) for item in spec}
         for label, attributes in self.func_attributes.items():
             if len([attr['name'] for attr in attributes]) != len(set([attr['name'] for attr in attributes])):
-                raise ValidationError(
-                    "`{}` lambda function has non-unique attributes for label {}".format(self.id, label),
-                    code=status.HTTP_404_NOT_FOUND)
+                raise InvalidFunctionMetadataError(
+                    "`{}` lambda function has non-unique attributes for label {}".format(self.id, label))
         # description of the function
         self.description = data['spec']['description']
         # http port to access the serverless function
@@ -213,7 +216,7 @@ class LambdaFunction:
             'version': self.version
         }
 
-        if self.kind is LambdaType.INTERACTOR:
+        if self.kind is FunctionKind.INTERACTOR:
             response.update({
                 'min_pos_points': self.min_pos_points,
                 'min_neg_points': self.min_neg_points,
@@ -372,11 +375,7 @@ class LambdaFunction:
             data_start_frame = task_data.start_frame
             step = task_data.get_frame_step()
 
-            for key, desc in (
-                ('frame', 'frame'),
-                ('frame0', 'start frame'),
-                ('frame1', 'end frame'),
-            ):
+            for key, desc in self.FRAME_PARAMETERS:
                 if key not in data:
                     continue
 
@@ -386,18 +385,18 @@ class LambdaFunction:
                         code=status.HTTP_400_BAD_REQUEST)
 
 
-        if self.kind == LambdaType.DETECTOR:
+        if self.kind == FunctionKind.DETECTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality)
             })
-        elif self.kind == LambdaType.INTERACTOR:
+        elif self.kind == FunctionKind.INTERACTOR:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
                 "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
                 "obj_bbox": data.get("obj_bbox", None)
             })
-        elif self.kind == LambdaType.REID:
+        elif self.kind == FunctionKind.REID:
             payload.update({
                 "image0": self._get_image(db_task, mandatory_arg("frame0"), quality),
                 "image1": self._get_image(db_task, mandatory_arg("frame1"), quality),
@@ -409,7 +408,7 @@ class LambdaFunction:
                 payload.update({
                     "max_distance": max_distance
                 })
-        elif self.kind == LambdaType.TRACKER:
+        elif self.kind == FunctionKind.TRACKER:
             payload.update({
                 "image": self._get_image(db_task, mandatory_arg("frame"), quality),
                 "shapes": data.get("shapes", []),
@@ -458,7 +457,7 @@ class LambdaFunction:
                     })
             return attributes
 
-        if self.kind == LambdaType.DETECTOR:
+        if self.kind == FunctionKind.DETECTOR:
             for item in response:
                 item_label = item['label']
                 if item_label not in mapping:
@@ -977,11 +976,11 @@ class LambdaJob:
 
         labels = convert_labels(db_task.get_labels(prefetch=True))
 
-        if function.kind == LambdaType.DETECTOR:
+        if function.kind == FunctionKind.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,
                 kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"),
                 db_job=db_job)
-        elif function.kind == LambdaType.REID:
+        elif function.kind == FunctionKind.REID:
             cls._call_reid(function, db_task, quality,
                 kwargs.get("threshold"), kwargs.get("max_distance"), db_job=db_job)
 
@@ -1083,13 +1082,25 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(
+        response = lambda_func.invoke(
             db_task,
             request.data, # TODO: better to add validation via serializer for these data
             db_job=job,
             is_interactive=True,
             request=request
         )
+
+        handle_function_call(func_id, db_task,
+            category="interactive",
+            parameters={
+                param_name: param_value
+                for param_name, _ in LambdaFunction.FRAME_PARAMETERS
+                for param_value in [request.data.get(param_name)]
+                if param_value is not None
+            },
+        )
+
+        return response
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
@@ -1181,6 +1192,8 @@ class RequestViewSet(viewsets.ViewSet):
         lambda_func = gateway.get(function)
         rq_job = queue.enqueue(lambda_func, threshold, task, quality,
             mapping, cleanup, conv_mask_to_poly, max_distance, request, job=job)
+
+        handle_function_call(function, job or task, category="batch")
 
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data

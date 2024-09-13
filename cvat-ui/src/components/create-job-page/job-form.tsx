@@ -22,6 +22,7 @@ import { createJobAsync } from 'actions/jobs-actions';
 
 export enum FrameSelectionMethod {
     RANDOM = 'random_uniform',
+    RANDOM_PER_JOB = 'random_per_job',
 }
 
 interface JobDataMutual {
@@ -143,6 +144,9 @@ function JobForm(props: Props): JSX.Element {
                             >
                                 <Select.Option value={FrameSelectionMethod.RANDOM}>
                                     Random
+                                </Select.Option>
+                                <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>
+                                    Random per job
                                 </Select.Option>
                             </Select>
                         </Form.Item>
