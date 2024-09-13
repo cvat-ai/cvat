@@ -1227,6 +1227,14 @@ def _create_thread(
             case _:
                 assert False
 
+        # Even though the sorting is random overall,
+        # it's convenient to be able to reasonably navigate in the GT job
+        pool_frames = sort(
+            pool_frames,
+            sorting_method=models.SortingMethod.NATURAL,
+            func=lambda frame: images[frame].path,
+        )
+
         # 2. distribute pool frames
         if frames_per_job_count := validation_params.get("frames_per_job_count"):
             if len(pool_frames) < frames_per_job_count and validation_params.get("frame_count"):
