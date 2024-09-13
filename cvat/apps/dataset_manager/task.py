@@ -891,7 +891,9 @@ class TaskAnnotation:
             zip(itertools.repeat('tag'), gt_annotations.tags),
             zip(itertools.repeat('shape'), gt_annotations.shapes),
         ):
-            for placeholder_frame_id in task_validation_frame_groups[gt_annotation["frame"]]:
+            for placeholder_frame_id in task_validation_frame_groups.get(
+                gt_annotation["frame"], [] # some GT frames may be unused
+            ):
                 gt_annotation = faster_deepcopy(gt_annotation)
                 gt_annotation["frame"] = placeholder_frame_id
 

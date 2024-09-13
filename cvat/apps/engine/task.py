@@ -1212,10 +1212,10 @@ def _create_thread(
             case models.JobFrameSelectionMethod.MANUAL:
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
-                for frame_filename in db_data.validation_layout.frames.all():
-                    frame_id = known_frame_names.get(frame_filename.path)
+                for frame_filename in validation_params["frames"]:
+                    frame_id = known_frame_names.get(frame_filename)
                     if frame_id is None:
-                        unknown_requested_frames.append(frame_filename.path)
+                        unknown_requested_frames.append(frame_filename)
                         continue
 
                     pool_frames.append(frame_id)
