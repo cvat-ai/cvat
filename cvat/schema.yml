@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.18.0
+  version: 2.18.0.dev20240912142705
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -7462,7 +7462,7 @@ components:
             pass the list of file names in the required order.
         validation_params:
           allOf:
-          - $ref: '#/components/schemas/ValidationLayoutParamsRequest'
+          - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
       required:
       - image_quality
@@ -10798,7 +10798,15 @@ components:
           maxLength: 150
       required:
       - username
-    ValidationLayoutParamsRequest:
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
+    ValidationParamsRequest:
       type: object
       properties:
         mode:
@@ -10856,14 +10864,6 @@ components:
       required:
       - frame_selection_method
       - mode
-    ValidationMode:
-      enum:
-      - gt
-      - gt_pool
-      type: string
-      description: |-
-        * `gt` - GT
-        * `gt_pool` - GT_POOL
     WebhookContentType:
       enum:
       - application/json

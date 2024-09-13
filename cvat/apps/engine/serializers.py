@@ -26,7 +26,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.engine.utils import parse_exception_message
+from cvat.apps.engine.utils import format_list, parse_exception_message
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
@@ -731,6 +731,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             field_validation.require_field(attrs, "frames")
 
+            frames = attrs['frames']
+            if not frames:
+                raise serializers.ValidationError("The list of frames cannot be empty")
+
         if (
             frame_selection_method != models.JobFrameSelectionMethod.MANUAL and
             attrs.get('frames')
@@ -769,20 +773,20 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 'cannot have more than 1 GT job'
             )
 
-        size = task.data.size
+        task_size = task.data.size
         valid_frame_ids = task.data.get_valid_frame_indices()
 
         # TODO: refactor, test
         frame_selection_method = validated_data.pop("frame_selection_method")
         if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             if frame_count := validated_data.pop("frame_count", None):
-                if size < frame_count:
+                if task_size < frame_count:
                     raise serializers.ValidationError(
                         f"The number of frames requested ({frame_count}) "
-                        f"must be not be greater than the number of the task frames ({size})"
+                        f"must be not be greater than the number of the task frames ({task_size})"
                     )
             elif frame_share := validated_data.pop("frame_share", None):
-                frame_count = max(1, int(frame_share * size))
+                frame_count = max(1, int(frame_share * task_size))
             else:
                 raise serializers.ValidationError(
                     "The number of validation frames is not specified"
@@ -795,7 +799,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
-            if seed is not None and frame_count < size:
+            if seed is not None and frame_count < task_size:
                 # Reproduce the old (a little bit incorrect) behavior that existed before
                 # https://github.com/cvat-ai/cvat/pull/7126
                 # to make the old seed-based sequences reproducible
@@ -806,13 +810,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             ).tolist()
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
             if frame_count := validated_data.pop("frames_per_job_count", None):
-                if size < frame_count:
+                if task_size < frame_count:
                     raise serializers.ValidationError(
                         f"The number of frames requested ({frame_count}) "
                         f"must be not be greater than the segment size ({task.segment_size})"
                     )
             elif frame_share := validated_data.pop("frames_per_job_share", None):
-                frame_count = max(1, int(frame_share * size))
+                frame_count = max(1, int(frame_share * task_size))
             else:
                 raise serializers.ValidationError(
                     "The number of validation frames is not specified"
@@ -833,48 +837,25 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             frames = validated_data.pop("frames")
 
-            if not frames:
-                raise serializers.ValidationError("The list of frames cannot be empty")
-
             unique_frames = set(frames)
             if len(unique_frames) != len(frames):
                 raise serializers.ValidationError(f"Frames must not repeat")
 
-            invalid_ids = unique_frames.difference(valid_frame_ids)
+            invalid_ids = unique_frames.difference(range(task_size))
             if invalid_ids:
                 raise serializers.ValidationError(
-                    "The following frames are not included "
-                    f"in the task: {','.join(map(str, invalid_ids))}"
+                    "The following frames do not exist in the task: {}".format(
+                        format_list(invalid_ids)
+                    )
                 )
         else:
             raise serializers.ValidationError(
                 f"Unexpected frame selection method '{frame_selection_method}'"
             )
 
-        # Update validation layout in the task
-        frame_paths = list(
-            models.Image.objects
-            .order_by('frame')
-            .values_list('path', flat=True)
-            .iterator(chunk_size=10000)
+        task.data.update_validation_layout(
+            models.ValidationLayout(mode=models.ValidationMode.GT, frames=frames)
         )
-        validation_layout_params = {
-            "mode": models.ValidationMode.GT,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [frame_paths[frame_id] for frame_id in frames],
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_count": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer(
-            instance=getattr(task.data, 'validation_layout', None), data=validation_layout_params
-        )
-        assert validation_layout_serializer.is_valid(raise_exception=False)
-        validation_layout_serializer.save(task_data=task.data)
 
         # Save the new job
         segment = models.Segment.objects.create(
@@ -1039,7 +1020,7 @@ class JobFileMapping(serializers.ListField):
         kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
         super().__init__(*args, **kwargs)
 
-class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
+class ValidationParamsSerializer(serializers.ModelSerializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(), required=True
@@ -1108,7 +1089,7 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
             'mode', 'frame_selection_method', 'random_seed', 'frames',
             'frame_count', 'frame_share', 'frames_per_job_count', 'frames_per_job_share',
         )
-        model = models.ValidationLayout
+        model = models.ValidationParams
 
     def validate(self, attrs):
         attrs = field_validation.drop_null_keys(attrs)
@@ -1165,14 +1146,14 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     @transaction.atomic
-    def create(self, validated_data: dict[str, Any]) -> models.ValidationLayout:
+    def create(self, validated_data: dict[str, Any]) -> models.ValidationParams:
         frames = validated_data.pop('frames', None)
 
         instance = super().create(validated_data)
 
         if frames:
             models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_layout=instance, path=frame)
+                models.ValidationFrame(validation_params=instance, path=frame)
                 for frame in frames
             )
 
@@ -1180,17 +1161,17 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(
-        self, instance: models.ValidationLayout, validated_data: dict[str, Any]
-    ) -> models.ValidationLayout:
+        self, instance: models.ValidationParams, validated_data: dict[str, Any]
+    ) -> models.ValidationParams:
         frames = validated_data.pop('frames', None)
 
         instance = super().update(instance, validated_data)
 
         if frames:
-            models.ValidationFrame.objects.filter(validation_layout=instance).delete()
+            models.ValidationFrame.objects.filter(validation_params=instance).delete()
 
             models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_layout=instance, path=frame)
+                models.ValidationFrame(validation_params=instance, path=frame)
                 for frame in frames
             )
 
@@ -1282,7 +1263,7 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
-    validation_params = ValidationLayoutParamsSerializer(allow_null=True, required=False)
+    validation_params = ValidationParamsSerializer(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
@@ -1351,7 +1332,7 @@ class DataSerializer(serializers.ModelSerializer):
 
         validation_params = attrs.pop('validation_params', None)
         if validation_params:
-            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
             attrs['validation_params'] = validation_params_serializer.validated_data
 
@@ -1370,9 +1351,9 @@ class DataSerializer(serializers.ModelSerializer):
         db_data.save()
 
         if validation_params:
-            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
-            db_data.validation_layout = validation_params_serializer.save(task_data=db_data)
+            db_data.validation_params = validation_params_serializer.save(task_data=db_data)
 
         return db_data
 
@@ -1388,11 +1369,11 @@ class DataSerializer(serializers.ModelSerializer):
         instance.save()
 
         if validation_params:
-            validation_params_serializer = ValidationLayoutParamsSerializer(
-                instance=getattr(instance, "validation_layout", None), data=validation_params
+            validation_params_serializer = ValidationParamsSerializer(
+                instance=getattr(instance, "validation_params", None), data=validation_params
             )
             validation_params_serializer.is_valid(raise_exception=True)
-            instance.validation_layout = validation_params_serializer.save(task_data=instance)
+            instance.validation_params = validation_params_serializer.save(task_data=instance)
 
         return instance
 

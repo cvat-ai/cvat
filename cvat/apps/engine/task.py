@@ -37,7 +37,7 @@ from cvat.apps.engine.media_extractors import (
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.serializers import ValidationLayoutParamsSerializer
+from cvat.apps.engine.serializers import ValidationParamsSerializer
 from cvat.apps.engine.utils import (
     av_scan_paths, format_list,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 )
@@ -1158,23 +1158,24 @@ def _create_thread(
         assert job_file_mapping[-1] == validation_params['frames']
         job_file_mapping.pop(-1)
 
-        validation_frames = list(frame_idx_map.values())
+        # Update manifest
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest.link(
+            sources=[extractor.get_path(image.frame) for image in images],
+            meta={
+                k: {'related_images': related_images[k] }
+                for k in related_images
+            },
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
 
-        # Save the created validation layout
-        validation_params = {
-            "mode": models.ValidationMode.GT_POOL,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [images[frame_id].path for frame_id in validation_frames],
-            "frames_per_job_count": validation_params['frames_per_job_count'],
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+        db_data.update_validation_layout(models.ValidationLayout(
+            mode=models.ValidationMode.GT_POOL,
+            frames=list(frame_idx_map.values()),
+            frames_per_job_count=validation_params["frames_per_job_count"],
+        ))
     elif validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
         if db_task.mode != 'annotation':
             raise ValidationError(
@@ -1314,25 +1315,11 @@ def _create_thread(
         )
         manifest.create()
 
-        validation_frames = pool_frames
-
-        # Save the created validation layout
-        # TODO: try to find a way to avoid using the same model for storing the user request
-        # and internal data
-        validation_params = {
-            "mode": models.ValidationMode.GT_POOL,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [images[frame_id].path for frame_id in validation_frames],
-            "frames_per_job_count": frames_per_job_count,
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+        db_data.update_validation_layout(models.ValidationLayout(
+            mode=models.ValidationMode.GT_POOL,
+            frames=pool_frames,
+            frames_per_job_count=frames_per_job_count,
+        ))
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
@@ -1437,41 +1424,26 @@ def _create_thread(
                     f'Unknown frame selection method {validation_params["frame_selection_method"]}'
                 )
 
-        validation_frames = sorted(validation_frames)
-
-        # Save the created validation layout
-        # TODO: try to find a way to avoid using the same model for storing the user request
-        # and internal data
-        validation_params = {
-            "mode": models.ValidationMode.GT,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [images[frame_id].path for frame_id in validation_frames],
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_count": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+        db_data.update_validation_layout(models.ValidationLayout(
+            mode=models.ValidationMode.GT,
+            frames=sorted(validation_frames),
+        ))
 
     # TODO: refactor
-    if validation_params:
-        if validation_params['mode'] == models.ValidationMode.GT:
+    if hasattr(db_data, 'validation_layout'):
+        if db_data.validation_layout.mode == models.ValidationMode.GT:
             db_gt_segment = models.Segment(
                 task=db_task,
                 start_frame=0,
                 stop_frame=db_data.size - 1,
-                frames=validation_frames,
+                frames=db_data.validation_layout.frames,
                 type=models.SegmentType.SPECIFIC_FRAMES,
             )
-        elif validation_params['mode'] == models.ValidationMode.GT_POOL:
+        elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
             db_gt_segment = models.Segment(
                 task=db_task,
-                start_frame=min(validation_frames),
-                stop_frame=max(validation_frames),
+                start_frame=min(db_data.validation_layout.frames),
+                stop_frame=max(db_data.validation_layout.frames),
                 type=models.SegmentType.RANGE,
             )
         else:

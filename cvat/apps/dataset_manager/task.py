@@ -868,7 +868,7 @@ class TaskAnnotation:
             db_job for db_job in self.db_jobs if db_job.type == models.JobType.GROUND_TRUTH
         )
 
-        # Copy GT pool annotations into normal jobs
+        # Copy GT pool annotations into other jobs
         gt_pool_frames = gt_job.segment.frame_set
         task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
         task_validation_frame_ids: set[int] = set()

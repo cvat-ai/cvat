@@ -35,7 +35,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, J
     LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer,
-    ValidationLayoutParamsSerializer)
+    ValidationParamsSerializer)
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
     get_rq_job_meta, import_resource_with_clean_up_after,
@@ -482,17 +482,26 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 (validation_layout := getattr(self._db_data, 'validation_layout', None)) and
                 validation_layout.mode == models.ValidationMode.GT_POOL
             ):
-                validation_layout_serializer = ValidationLayoutParamsSerializer(
-                    instance=validation_layout
+                validation_params_serializer = ValidationParamsSerializer({
+                    "mode": validation_layout.mode,
+                    "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                    "frames_per_job_count": validation_layout.frames_per_job_count,
+                })
+                validation_params = validation_params_serializer.data
+                media_filenames = dict(
+                    self._db_data.images
+                    .order_by('frame')
+                    .filter(
+                        frame__gte=min(validation_layout.frames),
+                        frame__lte=max(validation_layout.frames),
+                    )
+                    .values_list('frame', 'path')
+                    .all()
                 )
-                validation_layout_params = validation_layout_serializer.data
-                validation_layout_params['frames'] = list(
-                    validation_layout.frames
-                    .order_by('path')
-                    .values_list('path', flat=True)
-                    .iterator(chunk_size=10000)
-                )
-                data['validation_layout'] = validation_layout_params
+                validation_params['frames'] = [
+                    media_filenames[frame] for frame in validation_layout.frames
+                ]
+                data['validation_layout'] = validation_params
 
             return self._prepare_data_meta(data)
 
@@ -760,7 +769,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         validation_params = data.pop('validation_layout', None)
         if validation_params:
             validation_params['frame_selection_method'] = models.JobFrameSelectionMethod.MANUAL
-            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
             validation_params = validation_params_serializer.data
 
