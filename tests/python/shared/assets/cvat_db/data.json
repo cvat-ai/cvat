@@ -1189,6 +1189,16 @@
   }
 },
 {
+  "model": "engine.validationlayout",
+  "pk": 1,
+  "fields": {
+    "task_data": 25,
+    "mode": "gt_pool",
+    "frames": "23,24,25,26,27,28",
+    "frames_per_job_count": 3
+  }
+},
+{
   "model": "engine.data",
   "pk": 2,
   "fields": {
@@ -1546,6 +1556,25 @@
     "storage": "local",
     "cloud_storage": null,
     "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 25,
+  "fields": {
+    "chunk_size": 3,
+    "size": 29,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 28,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "random",
     "deleted_frames": "[]"
   }
 },
@@ -3364,6 +3393,383 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 491,
+  "fields": {
+    "data": 25,
+    "path": "image_1.png",
+    "frame": 0,
+    "width": 55,
+    "height": 36,
+    "is_placeholder": true,
+    "real_frame_id": 23
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 492,
+  "fields": {
+    "data": 25,
+    "path": "image_14.png",
+    "frame": 1,
+    "width": 43,
+    "height": 64,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 493,
+  "fields": {
+    "data": 25,
+    "path": "image_11.png",
+    "frame": 2,
+    "width": 91,
+    "height": 97,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 494,
+  "fields": {
+    "data": 25,
+    "path": "image_7.png",
+    "frame": 3,
+    "width": 76,
+    "height": 71,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 495,
+  "fields": {
+    "data": 25,
+    "path": "image_4.png",
+    "frame": 4,
+    "width": 60,
+    "height": 100,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 496,
+  "fields": {
+    "data": 25,
+    "path": "image_2.png",
+    "frame": 5,
+    "width": 55,
+    "height": 72,
+    "is_placeholder": true,
+    "real_frame_id": 24
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 497,
+  "fields": {
+    "data": 25,
+    "path": "image_15.png",
+    "frame": 6,
+    "width": 60,
+    "height": 59,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 498,
+  "fields": {
+    "data": 25,
+    "path": "image_6.png",
+    "frame": 7,
+    "width": 70,
+    "height": 53,
+    "is_placeholder": true,
+    "real_frame_id": 26
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 499,
+  "fields": {
+    "data": 25,
+    "path": "image_1.png",
+    "frame": 8,
+    "width": 55,
+    "height": 36,
+    "is_placeholder": true,
+    "real_frame_id": 23
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 500,
+  "fields": {
+    "data": 25,
+    "path": "image_6.png",
+    "frame": 9,
+    "width": 70,
+    "height": 53,
+    "is_placeholder": true,
+    "real_frame_id": 26
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 501,
+  "fields": {
+    "data": 25,
+    "path": "image_10.png",
+    "frame": 10,
+    "width": 66,
+    "height": 96,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 502,
+  "fields": {
+    "data": 25,
+    "path": "image_18.png",
+    "frame": 11,
+    "width": 54,
+    "height": 89,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 503,
+  "fields": {
+    "data": 25,
+    "path": "image_0.png",
+    "frame": 12,
+    "width": 45,
+    "height": 92,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 504,
+  "fields": {
+    "data": 25,
+    "path": "image_3.png",
+    "frame": 13,
+    "width": 76,
+    "height": 52,
+    "is_placeholder": true,
+    "real_frame_id": 25
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 505,
+  "fields": {
+    "data": 25,
+    "path": "image_17.png",
+    "frame": 14,
+    "width": 65,
+    "height": 57,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 506,
+  "fields": {
+    "data": 25,
+    "path": "image_8.png",
+    "frame": 15,
+    "width": 31,
+    "height": 41,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 507,
+  "fields": {
+    "data": 25,
+    "path": "image_2.png",
+    "frame": 16,
+    "width": 55,
+    "height": 72,
+    "is_placeholder": true,
+    "real_frame_id": 24
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 508,
+  "fields": {
+    "data": 25,
+    "path": "image_16.png",
+    "frame": 17,
+    "width": 96,
+    "height": 58,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 509,
+  "fields": {
+    "data": 25,
+    "path": "image_13.png",
+    "frame": 18,
+    "width": 54,
+    "height": 63,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 510,
+  "fields": {
+    "data": 25,
+    "path": "image_5.png",
+    "frame": 19,
+    "width": 91,
+    "height": 100,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 511,
+  "fields": {
+    "data": 25,
+    "path": "image_12.png",
+    "frame": 20,
+    "width": 60,
+    "height": 32,
+    "is_placeholder": true,
+    "real_frame_id": 28
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 512,
+  "fields": {
+    "data": 25,
+    "path": "image_19.png",
+    "frame": 21,
+    "width": 97,
+    "height": 88,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 513,
+  "fields": {
+    "data": 25,
+    "path": "image_3.png",
+    "frame": 22,
+    "width": 76,
+    "height": 52,
+    "is_placeholder": true,
+    "real_frame_id": 25
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 514,
+  "fields": {
+    "data": 25,
+    "path": "image_1.png",
+    "frame": 23,
+    "width": 55,
+    "height": 36,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 515,
+  "fields": {
+    "data": 25,
+    "path": "image_2.png",
+    "frame": 24,
+    "width": 55,
+    "height": 72,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 516,
+  "fields": {
+    "data": 25,
+    "path": "image_3.png",
+    "frame": 25,
+    "width": 76,
+    "height": 52,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 517,
+  "fields": {
+    "data": 25,
+    "path": "image_6.png",
+    "frame": 26,
+    "width": 70,
+    "height": 53,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 518,
+  "fields": {
+    "data": 25,
+    "path": "image_9.png",
+    "frame": 27,
+    "width": 74,
+    "height": 92,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 519,
+  "fields": {
+    "data": 25,
+    "path": "image_12.png",
+    "frame": 28,
+    "width": 60,
+    "height": 32,
+    "is_placeholder": false,
+    "real_frame_id": 0
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -4156,6 +4562,32 @@
     "organization": null,
     "source_storage": 39,
     "target_storage": 40
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 26,
+  "fields": {
+    "created_date": "2024-09-13T19:29:38.200Z",
+    "updated_date": "2024-09-13T19:42:20.126Z",
+    "project": null,
+    "name": "task with honeypots",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 0,
+    "status": "annotation",
+    "data": 25,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -5063,6 +5495,166 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 461,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_0.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 462,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 463,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_2.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 464,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_3.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 465,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_4.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 466,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_5.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 467,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_6.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 468,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_7.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 469,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_8.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 470,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_9.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 471,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_10.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 472,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_11.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 473,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_12.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 474,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_13.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 475,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_14.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 476,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_15.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 477,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_16.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 478,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_17.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 479,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_18.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 480,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/image_19.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -5364,6 +5956,50 @@
     "task": 25,
     "start_frame": 0,
     "stop_frame": 0,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 35,
+  "fields": {
+    "task": 26,
+    "start_frame": 0,
+    "stop_frame": 7,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 36,
+  "fields": {
+    "task": 26,
+    "start_frame": 8,
+    "stop_frame": 15,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 37,
+  "fields": {
+    "task": 26,
+    "start_frame": 16,
+    "stop_frame": 22,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 38,
+  "fields": {
+    "task": 26,
+    "start_frame": 23,
+    "stop_frame": 28,
     "type": "range",
     "frames": "[]"
   }
@@ -5781,6 +6417,66 @@
     "stage": "annotation",
     "state": "new",
     "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 35,
+  "fields": {
+    "created_date": "2024-09-13T19:29:38.492Z",
+    "updated_date": "2024-09-13T19:38:30.764Z",
+    "segment": 35,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 36,
+  "fields": {
+    "created_date": "2024-09-13T19:29:38.504Z",
+    "updated_date": "2024-09-13T19:40:06.300Z",
+    "segment": 36,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 37,
+  "fields": {
+    "created_date": "2024-09-13T19:29:38.508Z",
+    "updated_date": "2024-09-13T19:42:20.217Z",
+    "segment": 37,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 38,
+  "fields": {
+    "created_date": "2024-09-13T19:29:38.549Z",
+    "updated_date": "2024-09-13T19:37:08.402Z",
+    "segment": 38,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "ground_truth"
   }
 },
 {
@@ -6588,6 +7284,18 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 75,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "label",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -6797,6 +7505,18 @@
     "input_type": "radio",
     "default_value": "1",
     "values": "1\n2"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 15,
+  "fields": {
+    "label": 75,
+    "name": "id",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "",
+    "values": ""
   }
 },
 {
@@ -9476,6 +10196,402 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 169,
+  "fields": {
+    "job": 38,
+    "label": 75,
+    "frame": 23,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 170,
+  "fields": {
+    "job": 38,
+    "label": 75,
+    "frame": 24,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 171,
+  "fields": {
+    "job": 38,
+    "label": 75,
+    "frame": 24,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 172,
+  "fields": {
+    "job": 38,
+    "label": 75,
+    "frame": 25,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 175,
+  "fields": {
+    "job": 38,
+    "label": 75,
+    "frame": 27,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 176,
+  "fields": {
+    "job": 38,
+    "label": 75,
+    "frame": 27,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 177,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.650000000003274,13.100000000002183,31.850000000004002,18.900000000001455",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 178,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.650000000003274,10.500000000001819,28.650000000003274,15.200000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 179,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.850000000002183,19.50000000000182,27.05000000000291,24.900000000001455",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 180,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.25000000000182,16.50000000000182,40.95000000000255,23.900000000001455",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 181,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 8,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "14.650000000003274,10.000000000001819,25.750000000003638,17.30000000000109",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 182,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 8,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "30.350000000002183,18.700000000002547,43.05000000000291,26.400000000003274",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 183,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 9,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "9.200000000002547,34.35000000000218,21.900000000003274,38.55000000000291",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 184,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 9,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "40.900390625,29.0498046875,48.80000000000291,30.350000000002183,45.10000000000218,39.25000000000182,45.70000000000255,24.450000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 185,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 12,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "16.791015625,32.8505859375,27.858705213058784,37.01258996859542,21.633141273523506,39.77950727505595",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 186,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 16,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "29.0498046875,14.2998046875,30.350000000002183,22.00000000000182,20.650000000003274,21.600000000002183,20.650000000003274,11.30000000000291",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 187,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 17,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "51.2001953125,10.900390625,56.60000000000218,15.700000000002547,48.400000000003274,20.400000000003274",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 188,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 20,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "37.2998046875,7.7001953125,42.400000000003274,11.900000000003274,35.80000000000291,17.200000000002547,28.400000000003274,8.80000000000291,37.400000000003274,12.100000000002183",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 189,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 20,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.600000000002183,14.900000000003274,27.200000000002547,21.600000000004002",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 190,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 21,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "43.15465253950242,24.59525439814206,55.395253809205315,35.071444674014856",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 191,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 22,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "38.50000000000182,9.600000000002183,51.80000000000109,17.100000000002183",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 192,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 22,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "52.10000000000218,17.30000000000291,59.400000000001455,21.500000000003638",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -10616,6 +11732,204 @@
     "spec": 14,
     "value": "1",
     "shape": 130
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 128,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame1 n1",
+    "shape": 169
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 129,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame2 n2",
+    "shape": 170
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 130,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame3 n3",
+    "shape": 171
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 131,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame3 n1",
+    "shape": 172
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 132,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame5 n1",
+    "shape": 175
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 133,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame5 n2",
+    "shape": 176
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 134,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame1 n1",
+    "shape": 177
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 135,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame2 n1",
+    "shape": 178
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 136,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame2 n2",
+    "shape": 179
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 137,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame6 n1",
+    "shape": 180
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 138,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame1 n1",
+    "shape": 181
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 139,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame1 n2",
+    "shape": 182
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 140,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame2 n1",
+    "shape": 183
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 141,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame2 n2",
+    "shape": 184
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 142,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame5 n1",
+    "shape": 185
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 143,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame1 n1",
+    "shape": 186
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 144,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame2 n1",
+    "shape": 187
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 145,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame5 n1",
+    "shape": 188
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 146,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame5 n2",
+    "shape": 189
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 147,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame6 n1",
+    "shape": 190
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 148,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame7 n1",
+    "shape": 191
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 149,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame7 n2",
+    "shape": 192
   }
 },
 {
@@ -16926,6 +18240,28 @@
   "pk": 20,
   "fields": {
     "task": 25,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 21,
+  "fields": {
+    "task": 26,
     "iou_threshold": 0.4,
     "oks_sigma": 0.09,
     "line_thickness": 0.01,

@@ -1,8 +1,52 @@
 {
-  "count": 20,
+  "count": 21,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "created_date": "2024-09-13T19:29:38.200000Z",
+      "data": 25,
+      "data_chunk_size": 3,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 26,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 4,
+        "url": "http://localhost:8080/api/jobs?task_id=26",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=26"
+      },
+      "mode": "annotation",
+      "name": "task with honeypots",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": null,
+      "segment_size": 0,
+      "size": 29,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2024-09-13T19:42:20.126000Z",
+      "url": "http://localhost:8080/api/tasks/26",
+      "validation_mode": "gt_pool"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,
