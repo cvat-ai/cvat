@@ -1226,7 +1226,7 @@ class ProjectData(InstanceLabelData):
                 for i, element in enumerate(track.get("elements", []))]
         )
 
-    def group_by_frame(self, include_empty=False):
+    def group_by_frame(self, include_empty: bool = False):
         frames: Dict[Tuple[str, int], ProjectData.Frame] = {}
         def get_frame(task_id: int, idx: int) -> ProjectData.Frame:
             frame_info = self._frame_info[(task_id, idx)]
