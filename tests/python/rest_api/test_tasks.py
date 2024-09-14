@@ -28,7 +28,7 @@ from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Seq
 import attrs
 import numpy as np
 import pytest
-from cvat_sdk import Client, Config, exceptions
+from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -42,11 +42,10 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
-    BASE_URL,
-    USER_PASS,
     delete_method,
     get_method,
     make_api_client,
+    make_sdk_client,
     patch_method,
     post_method,
     put_method,
@@ -3325,9 +3324,6 @@ class TestWorkWithTask:
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskBackups:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(
         self,
@@ -3338,11 +3334,10 @@ class TestTaskBackups:
     ):
         self.tmp_dir = tmp_path
 
-        self.client = self._make_client()
         self.user = admin_user
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
     @pytest.mark.parametrize(
@@ -3440,6 +3435,10 @@ class TestTaskBackups:
             new_job_meta = json.loads(new_job.api.retrieve_data_meta(new_job.id)[1].data)
             assert DeepDiff(old_job_meta, new_job_meta, ignore_order=True) == {}
 
+            old_job_annotations = json.loads(old_job.api.retrieve_annotations(old_job.id)[1].data)
+            new_job_annotations = json.loads(new_job.api.retrieve_annotations(new_job.id)[1].data)
+            assert compare_annotations(old_job_annotations, new_job_annotations) == {}
+
         (_, response) = self.client.api_client.tasks_api.retrieve(new_task.id)
         restored_task_json = json.loads(response.data)
 
@@ -3489,6 +3488,10 @@ class TestTaskBackups:
             == {}
         )
 
+        old_task_annotations = json.loads(old_task.api.retrieve_annotations(old_task.id)[1].data)
+        new_task_annotations = json.loads(new_task.api.retrieve_annotations(new_task.id)[1].data)
+        assert compare_annotations(old_task_annotations, new_task_annotations) == {}
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWorkWithGtJobs:
@@ -3499,17 +3502,7 @@ class TestWorkWithGtJobs:
         task = tasks[gt_job["task_id"]]
         task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 
-        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
-        assert (
-            gt_job_source_annotations["tags"]
-            or gt_job_source_annotations["shapes"]
-            or gt_job_source_annotations["tracks"]
-        )
-
-        with Client(BASE_URL) as client:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
-
+        with make_sdk_client(admin_user) as client:
             for j in task_jobs:
                 if j["type"] != "ground_truth":
                     client.jobs.retrieve(j["id"]).remove_annotations()
@@ -3656,18 +3649,14 @@ class TestGetTaskPreview:
 
 
 class TestUnequalJobs:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
 
-        self.client = self._make_client()
         self.user = admin_user
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     @pytest.fixture
     def fxt_task_with_unequal_jobs(self):
@@ -3692,7 +3681,7 @@ class TestUnequalJobs:
             "job_file_mapping": expected_segments,
         }
 
-        return self.client.tasks.create_from_data(
+        yield self.client.tasks.create_from_data(
             spec=task_spec,
             resource_type=ResourceType.LOCAL,
             resources=[self.tmp_dir / fn for fn in filenames],
@@ -3788,18 +3777,7 @@ class TestPatchTask:
 
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK
-        assert (
-            DeepDiff(
-                annotations,
-                response.json(),
-                ignore_order=True,
-                exclude_regex_paths=[
-                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
-                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
-                ],
-            )
-            == {}
-        )
+        assert compare_annotations(annotations, response.json()) == {}
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -3898,19 +3876,15 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
 
 
 class TestImportTaskAnnotations:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
-        self.client = self._make_client()
         self.user = admin_user
         self.export_format = "CVAT for images 1.1"
         self.import_format = "CVAT 1.1"
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     def _check_annotations(self, task_id):
         with make_api_client(self.user) as api_client:
@@ -4097,11 +4071,8 @@ class TestImportTaskAnnotations:
             assert b"Dataset must contain a file:" in capture.value.body
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportWithComplexFilenames:
-    @staticmethod
-    def _make_client() -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(
         autouse=True,
         scope="class",
@@ -4114,12 +4085,11 @@ class TestImportWithComplexFilenames:
         cls, restore_db_per_class, tmp_path_factory: pytest.TempPathFactory, admin_user: str
     ):
         cls.tmp_dir = tmp_path_factory.mktemp(cls.__class__.__name__)
-        cls.client = cls._make_client()
         cls.user = admin_user
         cls.format_name = "PASCAL VOC 1.1"
 
-        with cls.client:
-            cls.client.login((cls.user, USER_PASS))
+        with make_sdk_client(cls.user) as client:
+            cls.client = client
 
         cls._init_tasks()
 
@@ -4289,19 +4259,7 @@ class TestImportWithComplexFilenames:
         return original_annotations, imported_annotations
 
     def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
-        assert (
-            DeepDiff(
-                original_annotations,
-                imported_annotations,
-                ignore_order=True,
-                exclude_regex_paths=[
-                    r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                ],
-            )
-            == {}
-        )
+        assert compare_annotations(original_annotations, imported_annotations) == {}
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_true(self, format_name):
