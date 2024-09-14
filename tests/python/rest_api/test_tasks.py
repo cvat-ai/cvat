@@ -556,6 +556,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
+        tasks = [t for t in tasks if t["validation_mode"] != "gt_pool"]
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
@@ -569,6 +570,57 @@ class TestPatchTaskAnnotations:
             )
 
         self._test_check_response(is_allow, response, data)
+
+    def test_cannot_update_validation_frames_in_honeypot_task(
+        self,
+        admin_user,
+        tasks,
+        request_data,
+    ):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool" and t["size"] > 0)[
+            "id"
+        ]
+
+        data = request_data(task_id)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=task_id,
+                action="update",
+                patched_labeled_data_request=deepcopy(data),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert b"can only be edited via task import or the GT job" in response.data
+
+    def test_can_update_honeypot_frames_in_honeypot_task(
+        self,
+        admin_user,
+        tasks,
+        jobs,
+        request_data,
+    ):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool" and t["size"] > 0)[
+            "id"
+        ]
+        gt_job = next(j for j in jobs if j["task_id"] == task_id and j["type"] == "ground_truth")
+
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        data = request_data(task_id)
+        data["tags"] = [a for a in data["tags"] if a["frame"] not in validation_frames]
+        data["shapes"] = [a for a in data["shapes"] if a["frame"] not in validation_frames]
+        data["tracks"] = []  # tracks cannot be used in honeypot tasks
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=task_id,
+                action="update",
+                patched_labeled_data_request=deepcopy(data),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        self._test_check_response(True, response, data)
 
     def test_remove_first_keyframe(self):
         endpoint = "tasks/8/annotations"
@@ -3412,6 +3464,19 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_json["id"])
 
+    def test_can_import_backup_with_gt_job(self, tasks, jobs, job_has_annotations):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt"
+            if tasks[j["task_id"]]["size"]
+        )
+        task = tasks[gt_job["task_id"]]
+
+        self._test_can_restore_task_from_backup(task["id"])
+
     def _test_can_restore_task_from_backup(self, task_id: int):
         old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
@@ -3495,10 +3560,17 @@ class TestTaskBackups:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWorkWithGtJobs:
-    def test_normal_and_gt_job_annotations_are_not_merged(
-        self, tmp_path, admin_user, tasks, jobs, annotations
+    def test_gt_job_annotations_are_not_present_on_task_annotation_export_with_normal_gt_job(
+        self, tmp_path, admin_user, tasks, jobs, job_has_annotations
     ):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt"
+            if tasks[j["task_id"]]["size"]
+        )
         task = tasks[gt_job["task_id"]]
         task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 
@@ -3532,56 +3604,59 @@ class TestWorkWithGtJobs:
             assert not annotation_source.shapes
             assert not annotation_source.tracks
 
-    def test_can_backup_task_with_gt_jobs(self, tmp_path, admin_user, tasks, jobs, annotations):
+    def test_gt_job_annotations_are_present_on_task_annotation_export_in_honeypot_task(
+        self, tmp_path, admin_user, tasks, jobs, job_has_annotations
+    ):
         gt_job = next(
             j
             for j in jobs
-            if j["type"] == "ground_truth" and tasks[j["task_id"]]["jobs"]["count"] == 2
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt_pool"
+            if tasks[j["task_id"]]["size"]
         )
         task = tasks[gt_job["task_id"]]
-        annotation_job = next(
-            j for j in jobs if j["task_id"] == task["id"] and j["type"] == "annotation"
-        )
+        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
 
-        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
-        assert (
-            gt_job_source_annotations["tags"]
-            or gt_job_source_annotations["shapes"]
-            or gt_job_source_annotations["tracks"]
-        )
+        with make_sdk_client(admin_user) as client:
+            for j in task_jobs:
+                if j["type"] != "ground_truth":
+                    client.jobs.retrieve(j["id"]).remove_annotations()
 
-        annotation_job_source_annotations = annotations["job"][str(annotation_job["id"])]
+            task_obj = client.tasks.retrieve(task["id"])
+            task_raw_annotations = json.loads(task_obj.api.retrieve_annotations(task["id"])[1].data)
 
-        with Client(BASE_URL) as client:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
+            # It's quite hard to parse the dataset files, just import the data back instead
+            dataset_format = "CVAT for images 1.1"
 
-            backup_file: Path = tmp_path / "dataset.zip"
-            client.tasks.retrieve(task["id"]).download_backup(backup_file)
-
-            new_task = client.tasks.create_from_backup(backup_file)
-            updated_job_annotations = {
-                j.type: json.loads(j.api.retrieve_annotations(j.id)[1].data)
-                for j in new_task.get_jobs()
-            }
-
-        for job_type, source_annotations in {
-            gt_job["type"]: gt_job_source_annotations,
-            annotation_job["type"]: annotation_job_source_annotations,
-        }.items():
-            assert (
-                DeepDiff(
-                    source_annotations,
-                    updated_job_annotations[job_type],
-                    ignore_order=True,
-                    exclude_regex_paths=[
-                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                    ],
-                )
-                == {}
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+            task_obj.import_annotations("CVAT 1.1", dataset_file)
+            task_dataset_file_annotations = json.loads(
+                task_obj.api.retrieve_annotations(task["id"])[1].data
             )
+
+            annotations_file = tmp_path / "annotations.zip"
+            task_obj.export_dataset(dataset_format, annotations_file, include_images=False)
+            task_obj.import_annotations("CVAT 1.1", annotations_file)
+            task_annotations_file_annotations = json.loads(
+                task_obj.api.retrieve_annotations(task["id"])[1].data
+            )
+
+        # there will be other annotations after uploading into a honeypot task,
+        # we need to compare only the validation frames in this test
+        for anns in [
+            task_raw_annotations,
+            task_dataset_file_annotations,
+            task_annotations_file_annotations,
+        ]:
+            anns["tags"] = [t for t in anns["tags"] if t["frame"] in validation_frames]
+            anns["shapes"] = [t for t in anns["shapes"] if t["frame"] in validation_frames]
+
+        assert task_raw_annotations["tags"] or task_raw_annotations["shapes"]
+        assert compare_annotations(task_raw_annotations, task_dataset_file_annotations) == {}
+        assert compare_annotations(task_raw_annotations, task_annotations_file_annotations) == {}
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
