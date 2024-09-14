@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+import itertools
 import os
 import os.path as osp
 import re
@@ -1117,6 +1118,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 for optional_field in ['job_file_mapping', 'server_files_exclude', 'validation_params']:
                     if optional_field in serializer.validated_data:
                         data[optional_field] = serializer.validated_data[optional_field]
+
+                if validation_params := getattr(db_data, 'validation_params', None):
+                    data['validation_params']['frames'] = set(itertools.chain(
+                        data['validation_params'].get('frames', []),
+                        validation_params.frames.values_list('path', flat=True).all()
+                    ))
 
                 if (
                     data['sorting_method'] == models.SortingMethod.PREDEFINED
