@@ -797,8 +797,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if job_file_mapping and (
             not validation_params or validation_params['mode'] != models.ValidationMode.GT_POOL
         ):
-            # It's currently prohibited not allowed to have repeated file names in jobs.
-            # DataSerializer checks it, but we don't need it for tasks with a GT pool
+            # It's currently prohibited to have repeated file names in jobs.
+            # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data['job_file_mapping'] = job_file_mapping
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
@@ -825,7 +825,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         data = data_serializer.data
         data['client_files'] = uploaded_files
 
-        if job_file_mapping and (
+        if job_file_mapping or (
             validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL
         ):
             data['job_file_mapping'] = job_file_mapping
