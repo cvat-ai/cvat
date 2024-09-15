@@ -27,6 +27,7 @@ class EventScopes:
         "annotations": ["create", "update", "delete"],
         "label": ["create", "update", "delete"],
         "dataset": ["export", "import"],
+        "function": ["call"],
     }
 
     @classmethod

@@ -6,11 +6,11 @@ import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
-import { exportActions } from 'actions/export-actions';
 
-import { Job, JobType } from 'cvat-core-wrapper';
+import { exportActions } from 'actions/export-actions';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
+import { Job, JobType } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { mergeTaskSpecificConsensusJobsAsync } from 'actions/consensus-actions';
@@ -18,14 +18,14 @@ import { CombinedState } from 'reducers';
 
 interface Props {
     job: Job;
-    onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
     consensusJobsPresent: boolean;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
     const { job, consensusJobsPresent } = props;
-    const history = useHistory();
+
     const dispatch = useDispatch();
+    const history = useHistory();
 
     const onDelete = useCallback(() => {
         Modal.confirm({

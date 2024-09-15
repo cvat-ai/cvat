@@ -42,7 +42,7 @@ jobs:
         echo -n "verifying images:"
         docker images
 
-    - uses: azure/setup-helm@v3
+    - uses: azure/setup-helm@v4
       with:
         version: 'v3.9.4'
 
@@ -103,7 +103,7 @@ jobs:
 
     - name: Uploading "cvat" container logs as an artifact
       if: failure()
-      uses: actions/upload-artifact@v3.1.1
+      uses: actions/upload-artifact@v4
       with:
         name: rest_api_container_logs
         path: "${{ github.workspace }}/rest_api_testing"

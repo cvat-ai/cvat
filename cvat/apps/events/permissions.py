@@ -50,7 +50,7 @@ class EventsPermission(OpenPolicyAgentPermission):
         return [{
             ('create', 'POST'): Scopes.SEND_EVENTS,
             ('list', 'GET'): Scopes.DUMP_EVENTS,
-        }.get((view.action, request.method))]
+        }[(view.action, request.method)]]
 
     def get_resource(self):
         return None

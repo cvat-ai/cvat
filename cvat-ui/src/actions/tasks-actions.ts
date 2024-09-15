@@ -11,6 +11,7 @@ import {
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMethod } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -254,6 +255,24 @@ ThunkAction {
         if (data.cloudStorageId) {
             description.cloud_storage_id = data.cloudStorageId;
         }
+
+        let extras = {};
+
+        if (data.quality.validationMethod === ValidationMethod.GT) {
+            extras = {
+                validation_method: ValidationMethod.GT,
+                validation_frames_percent: data.quality.validationFramesPercent,
+                frame_selection_method: data.quality.frameSelectionMethod,
+            };
+        }
+
+        if (data.quality.validationMethod === ValidationMethod.HONEYPOTS) {
+            extras = {
+                validation_method: ValidationMethod.HONEYPOTS,
+                validation_frames_percent: data.quality.validationFramesPercent,
+                validation_frames_per_job: data.quality.validationFramesPerJob,
+            };
+        }
         if (data.advanced.consensusJobsPerRegularJob) {
             description.consensus_jobs_per_regular_job = +data.advanced.consensusJobsPerRegularJob;
         }
@@ -262,9 +281,8 @@ ThunkAction {
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
-            const savedTask = await taskInstance.save({
+            const savedTask = await taskInstance.save(extras, {
                 requestStatusCallback(request) {
                     let { message } = request;
                     let helperMessage = '';
