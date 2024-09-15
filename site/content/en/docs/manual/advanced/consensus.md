@@ -25,9 +25,9 @@ For example creating bounding boxes around the face of a Basset Hound dog.
 See:
 
 - [Use Cases](#use-cases)
-- [Terminology:](#terminology)
-- [Working](#working)
-- [Finding Overlap between two annotations:](#finding-overlap-between-two-annotations)
+- [Terminology](#terminology)
+- [Algorithm Description](#algorithm-description)
+- [Finding Overlap between two annotations](#finding-overlap-between-two-annotations)
 - [Step-by-Step Guide](#step-by-step-guide)
 
 ## Use Cases
@@ -36,7 +36,7 @@ The basic use case is annotating the entire dataset with multiple annotators to 
 dataset. In some cases it may work, but typically, however, this way of annotating is prohibitively expensive, as you
 need to annotate everything several times. There are several ways how the situation can be improved.
 
-1. Creating High Quality Ground Truth (GT) Annotation:
+1. Creating High quality Ground Truth (GT) Annotation:
    1. You can use several highly skilled annotators and rely on their consensus to create high-quality GT annotations.
    2. Typically, the GT subset contains a small portion of the whole dataset (e.g. 2-5%), so it's relatively easy to
       annotate it several times.
@@ -58,25 +58,25 @@ need to annotate everything several times. There are several ways how the situat
 ![pink_shoes](/images/pink_shoes.jpeg)
 
 
-## Terminology:
+## Terminology
 1. `min_iou_threshold`: This is the same as `iou_threshold` param in Quality Settings. It's used for distinction
    between matched / unmatched annotations. An annotation is considered in the consensus only with the annotations it
    has an overlap greater than or equal to this
 2. `agreement_score_threshold`: After consensus has produced a merged annotation, it is assigned a score based on it's
    overlap with other annotations in the cluster, (add label score thing also). Merged annotations with this score
    lesser than `agreement_score_threshold` are discarded.
-3. `Quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label
+3. `quorum`: The minimum number of annotations in a consensus for the merging to occur. While deciding the final label
    of a merged annotation, the count of specific label shouldn't be less than this. Clusters having less than this
    number of annotations are discarded.
 4. `oks_sigma`: This is the same as `oks_sigma` param in Quality Settings. Like `min_iou_threshold`, but for points.
    The percent of the bbox area, used as the radius of the circle around the GT point, where the checked point is
-   expected to be. Read more: [https://cocodataset.org/#keypoints-eval](https://cocodataset.org/#keypoints-eval)
+   expected to be.  [Read more.](https://cocodataset.org/#keypoints-eval)
 5. `line_thickness`: This is the same as `line_thickness` param in Quality Settings. Thickness of polylines, relatively
    to the (image area) ^ 0.5. The distance to the boundary around the GT line, inside which the checked line points
    should be.
 
 
-## Working
+## Algorithm Description
 1. Get matching annotations for every annotation:
    1. For annotations in consensus jobs, find matching annotations in other consensus jobs derived from the same regular
       job. Two annotations match if their overlap is less than min_iou_threshold
@@ -105,7 +105,7 @@ need to annotate everything several times. There are several ways how the situat
    7. The merged annotation with a consensus score less than the agreement score threshold is discarded.
 
 
-## Finding Overlap between two annotations:
+## Finding Overlap between two annotations
 1. Bounding Box, Polygon and Mask type:
    1. A polygon representation of the annotation is obtained, and then the Intersection over Union (IoU) is calculated
       between them.
