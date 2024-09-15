@@ -321,7 +321,7 @@ class ConsensusReportViewSet(
     def data(self, request, pk):
         report = self.get_object()  # check permissions
         json_report = prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode())
+        return HttpResponse(json_report.encode(), content_type="application/json")
 
 
 @extend_schema(tags=["consensus"])
@@ -463,4 +463,4 @@ class AssigneeConsensusReportViewSet(
     def data(self, request, pk):
         report = self.get_object()  # check permissions
         json_report = prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode())
+        return HttpResponse(json_report.encode(), content_type="application/json")
