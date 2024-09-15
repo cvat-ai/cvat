@@ -2605,7 +2605,7 @@ export default Object.freeze({
     }),
 
     consensus: Object.freeze({
-        assignee_reports: getAssigneeConsensusReports,
+        assigneeReports: getAssigneeConsensusReports,
         reports: getConsensusReports,
         conflicts: getConsensusConflicts,
         settings: Object.freeze({
