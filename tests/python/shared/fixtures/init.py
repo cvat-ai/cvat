@@ -31,7 +31,6 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
-    "tests/docker-compose.configurable_static_cache.yml",
 ]
 
 
