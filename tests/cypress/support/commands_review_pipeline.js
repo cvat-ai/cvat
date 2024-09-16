@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,23 +40,6 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
 
     cy.wait('@patchJobAssignee').its('response.statusCode').should('equal', 200);
     cy.get('.cvat-spinner').should('not.exist');
-});
-
-Cypress.Commands.add('checkJobStatus', (jobIdx, status, assignee, reviewer) => {
-    cy.getJobIDFromIdx(jobIdx).then((jobID) => {
-        cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${jobID}`)
-            .parents('.cvat-task-jobs-table-row')
-            .within(() => {
-                cy.get('.cvat-job-item-status').should('have.text', status);
-                cy.get('.cvat-job-assignee-selector').within(() => {
-                    cy.get('input[type="search"]').should('have.value', assignee);
-                });
-                cy.get('.cvat-job-reviewer-selector').within(() => {
-                    cy.get('input[type="search"]').should('have.value', reviewer);
-                });
-            });
-    });
 });
 
 Cypress.Commands.add('collectIssueLabel', () => {

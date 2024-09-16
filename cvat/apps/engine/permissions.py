@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union, cast
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 
-from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.rq_job_handler import is_rq_job_owner
@@ -65,7 +65,7 @@ class ServerPermission(OpenPolicyAgentPermission):
             ('about', 'GET'): Scopes.VIEW,
             ('plugins', 'GET'): Scopes.VIEW,
             ('share', 'GET'): Scopes.LIST_CONTENT,
-        }.get((view.action, request.method))]
+        }[(view.action, request.method)]]
 
     def get_resource(self):
         return None
@@ -100,7 +100,7 @@ class UserPermission(OpenPolicyAgentPermission):
             'retrieve': Scopes.VIEW,
             'partial_update': Scopes.UPDATE,
             'destroy': Scopes.DELETE,
-        }.get(view.action)]
+        }[view.action]]
 
     @classmethod
     def create_scope_view(cls, iam_context, user_id):
@@ -178,7 +178,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'preview': Scopes.VIEW,
             'status': Scopes.VIEW,
             'actions': Scopes.VIEW,
-        }.get(view.action)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -281,7 +281,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.UPDATE:
@@ -305,12 +305,17 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
-    def create_scope_view(cls, iam_context, project_id):
-        try:
-            obj = Project.objects.get(id=project_id)
-        except Project.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, request, project: Union[int, Project], iam_context=None):
+        if isinstance(project, int):
+            try:
+                project = Project.objects.get(id=project)
+            except Project.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, project)
+
+        return cls(**iam_context, obj=project, scope=__class__.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request, org_id):
@@ -422,7 +427,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
             if project_id:
-                perm = ProjectPermission.create_scope_view(iam_context, project_id)
+                perm = ProjectPermission.create_scope_view(request, int(project_id), iam_context)
                 permissions.append(perm)
 
             for field_source, field in [
@@ -493,7 +498,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
             ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.CREATE:
@@ -537,13 +542,8 @@ class TaskPermission(OpenPolicyAgentPermission):
 
             scopes.append(scope)
 
-        elif scope is not None:
-            scopes.append(scope)
-
         else:
-            # TODO: think if we can protect from missing endpoints
-            # assert False, "Unknown scope"
-            pass
+            scopes.append(scope)
 
         return scopes
 
@@ -684,12 +684,17 @@ class JobPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, obj=obj, scope='view:data')
 
     @classmethod
-    def create_scope_view(cls, iam_context, job_id):
-        try:
-            obj = Job.objects.get(id=job_id)
-        except Job.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, request, job: Union[int, Job], iam_context=None):
+        if isinstance(job, int):
+            try:
+                job = Job.objects.get(id=job)
+            except Job.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, job)
+
+        return cls(**iam_context, obj=job, scope=__class__.Scopes.VIEW)
 
     def __init__(self, **kwargs):
         self.task_id = kwargs.pop('task_id', None)
@@ -719,7 +724,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.UPDATE:
@@ -839,7 +844,7 @@ class CommentPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -931,7 +936,7 @@ class IssuePermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
             'comments': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -1055,7 +1060,7 @@ class LabelPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -1117,7 +1122,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = {}
@@ -1195,7 +1200,7 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             'create': Scopes.CREATE,
             'destroy': Scopes.DELETE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
 
 class RequestPermission(OpenPolicyAgentPermission):
@@ -1209,42 +1214,6 @@ class RequestPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'request':
             for scope in cls.get_scopes(request, view, obj):
-                if scope == cls.Scopes.CANCEL:
-                    parsed_rq_id = obj.parsed_rq_id
-
-                    permission_class, resource_scope = {
-                        ('import', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_DATASET),
-                        ('import', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.IMPORT_BACKUP),
-                        ('import', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.IMPORT_ANNOTATIONS),
-                        ('import', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.IMPORT_BACKUP),
-                        ('import', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.IMPORT_ANNOTATIONS),
-                        ('create', 'task', None): (TaskPermission, TaskPermission.Scopes.VIEW),
-                        ('export', 'project', 'annotations'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_ANNOTATIONS),
-                        ('export', 'project', 'dataset'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_DATASET),
-                        ('export', 'project', 'backup'): (ProjectPermission, ProjectPermission.Scopes.EXPORT_BACKUP),
-                        ('export', 'task', 'annotations'): (TaskPermission, TaskPermission.Scopes.EXPORT_ANNOTATIONS),
-                        ('export', 'task', 'dataset'): (TaskPermission, TaskPermission.Scopes.EXPORT_DATASET),
-                        ('export', 'task', 'backup'): (TaskPermission, TaskPermission.Scopes.EXPORT_BACKUP),
-                        ('export', 'job', 'annotations'): (JobPermission, JobPermission.Scopes.EXPORT_ANNOTATIONS),
-                        ('export', 'job', 'dataset'): (JobPermission, JobPermission.Scopes.EXPORT_DATASET),
-                    }[(parsed_rq_id.action, parsed_rq_id.target, parsed_rq_id.subresource)]
-
-
-                    resource = None
-                    if (resource_id := parsed_rq_id.identifier) and isinstance(resource_id, int):
-                        resource_model = {
-                            'project': Project,
-                            'task': Task,
-                            'job': Job,
-                        }[parsed_rq_id.target]
-
-                        try:
-                            resource = resource_model.objects.get(id=resource_id)
-                        except resource_model.DoesNotExist as ex:
-                            raise NotFound(f'The {parsed_rq_id.target!r} with specified id#{resource_id} does not exist') from ex
-
-                    permissions.append(permission_class.create_base_perm(request, view, scope=resource_scope, iam_context=iam_context, obj=resource))
-
                 if scope != cls.Scopes.LIST:
                     user_id = request.user.id
                     if not is_rq_job_owner(obj, user_id):
@@ -1263,7 +1232,7 @@ class RequestPermission(OpenPolicyAgentPermission):
             ('list', 'GET'): Scopes.LIST,
             ('retrieve', 'GET'): Scopes.VIEW,
             ('cancel', 'POST'): Scopes.CANCEL,
-        }.get((view.action, request.method))]
+        }[(view.action, request.method)]]
 
 
     def get_resource(self):

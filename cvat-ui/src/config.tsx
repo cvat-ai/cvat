@@ -134,6 +134,20 @@ const LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT = 20;
 
 const REQUEST_SUCCESS_NOTIFICATION_DURATION = 5; // seconds
 
+const BLACKLISTED_GO_BACK_PATHS = [
+    /\/auth.+/,
+];
+
+const PAID_PLACEHOLDER_CONFIG = {
+    url: 'https://www.cvat.ai/pricing/cloud',
+    features: {
+        qualityControl:
+        'The Quality Control feature enables effortless evaluation of annotation quality by creating' +
+        ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
+        ' to this benchmark, calculating annotation precision to ensure high-quality results.',
+    },
+};
+
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
@@ -174,4 +188,6 @@ export default {
     LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT,
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
     REQUEST_SUCCESS_NOTIFICATION_DURATION,
+    BLACKLISTED_GO_BACK_PATHS,
+    PAID_PLACEHOLDER_CONFIG,
 };

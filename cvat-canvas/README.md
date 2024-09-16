@@ -72,9 +72,9 @@ Standard JS events are used.
     - canvas.reshape
     - canvas.fit
     - canvas.regionselected => {points: number[]}
-    - canvas.dragshape => {id: number}
+    - canvas.dragshape => {duration: number, state: ObjectState}
     - canvas.roiselected => {points: number[]}
-    - canvas.resizeshape => {id: number}
+    - canvas.resizeshape => {duration: number, state: ObjectState}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
     - canvas.message => { messages: { type: 'text' | 'list'; content: string | string[]; className?: string; icon?: 'info' | 'loading' }[] | null, topic: string }
     - canvas.error => { exception: Error, domain?: string }

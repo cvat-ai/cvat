@@ -91,7 +91,7 @@ class AnnotationIR:
 
             prev_shape = shape
 
-        if not prev_shape['outside'] and prev_shape['frame'] <= stop:
+        if prev_shape is not None and not prev_shape['outside'] and prev_shape['frame'] <= stop:
             return True
 
         return False
@@ -476,8 +476,11 @@ class TrackManager(ObjectManager):
 
             if track.get("elements"):
                 track_elements = TrackManager(track["elements"], self._dimension)
+                element_included_frames = set(track_shapes.keys())
+                if included_frames is not None:
+                    element_included_frames = element_included_frames.intersection(included_frames)
                 element_shapes = track_elements.to_shapes(end_frame,
-                    included_frames=set(track_shapes.keys()).intersection(included_frames or []),
+                    included_frames=element_included_frames,
                     include_outside=True, # elements are controlled by the parent shape
                     use_server_track_ids=use_server_track_ids
                 )
@@ -552,6 +555,8 @@ class TrackManager(ObjectManager):
             return 0
 
     def _modify_unmatched_object(self, obj, end_frame):
+        if not obj["shapes"]:
+            return
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)

@@ -85,7 +85,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 "create": Scopes.CREATE,
                 "retrieve": Scopes.VIEW,
                 "data": Scopes.VIEW,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
@@ -158,7 +158,7 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
         return [
             {
                 "list": Scopes.LIST,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
@@ -225,7 +225,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                 "list": Scopes.LIST,
                 "retrieve": Scopes.VIEW,
                 "partial_update": Scopes.UPDATE,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):

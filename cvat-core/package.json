@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "15.1.1",
+  "version": "15.2.0",
   "type": "module",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
@@ -28,7 +28,7 @@
     "jest-junit": "^6.4.0"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.7.4",
     "axios-retry": "^4.0.0",
     "cvat-data": "link:./../cvat-data",
     "detect-browser": "^5.2.1",

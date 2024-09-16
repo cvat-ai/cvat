@@ -7,15 +7,15 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-
 import { Label, DimensionType } from 'cvat-core-wrapper';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import GlobalHotKeys, { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { shift } from 'utils/math';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import { useResetShortcutsOnUnmount } from 'utils/hooks';
 
 interface ShortcutLabelMap {
     [index: number]: any;
@@ -26,78 +26,18 @@ type Props = {
     labels: Label[];
 };
 
-const componentShortcuts = {
-    SETUP_1_TAG: {
+const componentShortcuts: Record<string, KeyMapItem> = {};
+
+for (const idx of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
+    componentShortcuts[`SETUP_${idx}_TAG`] = {
         name: 'Create a new tag',
         description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['1', 'shift+1'],
-        scope: ShortcutScope.ALL,
+        sequences: [`${idx}`, `shift+${idx}`],
+        nonActive: true,
+        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_2_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['2', 'shift+2'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_3_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['3', 'shift+3'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_4_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['4', 'shift+4'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_5_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['5', 'shift+5'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_6_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['6', 'shift+6'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_7_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['7', 'shift+7'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_8_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['8', 'shift+8'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_9_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['9', 'shift+9'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-    SETUP_0_TAG: {
-        name: 'Create a new tag',
-        description: 'Create a new tag with corresponding class. The class may be setup in tag annotation sidebar',
-        sequences: ['0', 'shift+0'],
-        scope: ShortcutScope.ALL,
-        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
-    },
-};
+    };
+}
 
 registerComponentShortcuts(componentShortcuts);
 
@@ -131,29 +71,31 @@ function ShortcutsSelect(props: Props): JSX.Element {
         setShortcutLabelMap(newShortcutLabelMap);
     }, []);
 
-    useEffect(() => {
-        const updatedComponentShortcuts = {
-            ...componentShortcuts,
-        };
+    useResetShortcutsOnUnmount(componentShortcuts);
 
-        Object.keys(shortcutLabelMap)
-            .map((id) => Number.parseInt(id, 10))
-            .filter((id) => shortcutLabelMap[id])
-            .reduce((acc: any, id) => {
-                const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
+    useEffect(() => {
+        const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce((acc: KeyMap, key: string) => {
+            acc[key] = {
+                ...componentShortcuts[key],
+                sequences: keyMap[key].sequences,
+            };
+            return acc;
+        }, {});
+
+        for (const [id, labelID] of Object.entries(shortcutLabelMap)) {
+            if (labelID) {
+                const [label] = labels.filter((_label) => _label.id === labelID);
                 const key = `SETUP_${id}_TAG`;
-                acc[key] = {
-                    ...acc[key],
+                updatedComponentShortcuts[key] = {
+                    ...updatedComponentShortcuts[key],
+                    nonActive: false,
                     name: `Create a new tag "${label.name}"`,
                     description: `Create a new tag having class "${label.name}"`,
                 };
-                return acc;
-            }, updatedComponentShortcuts);
+            }
+        }
 
         registerComponentShortcuts(updatedComponentShortcuts);
-        return () => {
-            registerComponentShortcuts(componentShortcuts);
-        };
     }, [shortcutLabelMap]);
 
     Object.keys(shortcutLabelMap)
@@ -162,7 +104,6 @@ function ShortcutsSelect(props: Props): JSX.Element {
         .forEach((id: number): void => {
             const [label] = labels.filter((_label) => _label.id === shortcutLabelMap[id]);
             const key = `SETUP_${id}_TAG`;
-
             handlers[key] = (event: KeyboardEvent | undefined) => {
                 if (event) {
                     event.preventDefault();
