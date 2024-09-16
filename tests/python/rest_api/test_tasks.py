@@ -9,6 +9,7 @@ import json
 import math
 import os
 import os.path as osp
+import re
 import zipfile
 from abc import ABCMeta, abstractmethod
 from collections import Counter
@@ -64,6 +65,7 @@ from .utils import (
     create_task,
     export_task_backup,
     export_task_dataset,
+    parse_frame_step,
     wait_until_task_is_created,
 )
 
@@ -2424,7 +2426,7 @@ class TestPostTaskData:
         assert task.size == resulting_task_size
         assert task_meta.size == resulting_task_size
 
-        frame_step = int((gt_job_metas[0].frame_filter or "step=1").split("=")[1])
+        frame_step = parse_frame_step(gt_job_metas[0].frame_filter)
         validation_frames = [
             abs_frame_id
             for abs_frame_id in range(
@@ -3560,7 +3562,7 @@ class TestTaskBackups:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWorkWithGtJobs:
-    def test_gt_job_annotations_are_not_present_on_task_annotation_export_with_normal_gt_job(
+    def test_gt_job_annotations_are_not_present_in_task_annotation_export_with_normal_gt_job(
         self, tmp_path, admin_user, tasks, jobs, job_has_annotations
     ):
         gt_job = next(
@@ -3604,9 +3606,10 @@ class TestWorkWithGtJobs:
             assert not annotation_source.shapes
             assert not annotation_source.tracks
 
-    def test_gt_job_annotations_are_present_on_task_annotation_export_in_honeypot_task(
-        self, tmp_path, admin_user, tasks, jobs, job_has_annotations
-    ):
+    @fixture
+    def fxt_task_with_honeypots(
+        self, tasks, jobs, job_has_annotations
+    ) -> Generator[Dict[str, Any], None, None]:
         gt_job = next(
             j
             for j in jobs
@@ -3615,9 +3618,13 @@ class TestWorkWithGtJobs:
             if tasks[j["task_id"]]["validation_mode"] == "gt_pool"
             if tasks[j["task_id"]]["size"]
         )
-        task = tasks[gt_job["task_id"]]
+        yield tasks[gt_job["task_id"]], gt_job
+
+    @parametrize("task, gt_job", [fixture_ref(fxt_task_with_honeypots)])
+    def test_gt_job_annotations_are_present_in_task_annotation_export_in_task_with_honeypots(
+        self, tmp_path, admin_user, jobs, task, gt_job
+    ):
         task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
-        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
 
         with make_sdk_client(admin_user) as client:
             for j in task_jobs:
@@ -3646,6 +3653,7 @@ class TestWorkWithGtJobs:
 
         # there will be other annotations after uploading into a honeypot task,
         # we need to compare only the validation frames in this test
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
         for anns in [
             task_raw_annotations,
             task_dataset_file_annotations,
@@ -3655,8 +3663,56 @@ class TestWorkWithGtJobs:
             anns["shapes"] = [t for t in anns["shapes"] if t["frame"] in validation_frames]
 
         assert task_raw_annotations["tags"] or task_raw_annotations["shapes"]
+        assert not task_raw_annotations["tracks"]  # tracks are prohibited in such tasks
         assert compare_annotations(task_raw_annotations, task_dataset_file_annotations) == {}
         assert compare_annotations(task_raw_annotations, task_annotations_file_annotations) == {}
+
+    @parametrize("task, gt_job", [fixture_ref(fxt_task_with_honeypots)])
+    @pytest.mark.parametrize("dataset_format", ["CVAT for images 1.1", "Datumaro 1.0"])
+    def test_placeholder_frames_are_not_present_in_task_annotation_export_in_task_with_honeypots(
+        self, tmp_path, admin_user, jobs, task, gt_job, dataset_format
+    ):
+        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+        with make_sdk_client(admin_user) as client:
+            for j in task_jobs:
+                if j["type"] != "ground_truth":
+                    client.jobs.retrieve(j["id"]).remove_annotations()
+
+            task_obj = client.tasks.retrieve(task["id"])
+
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+
+            task_meta = task_obj.get_meta()
+
+        task_frame_names = [frame.name for frame in task_meta.frames]
+        validation_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        validation_frame_names = [task_frame_names[i] for i in validation_frame_ids]
+
+        frame_step = parse_frame_step(task_meta.frame_filter)
+        expected_frames = [
+            (task_meta.start_frame + frame * frame_step, name)
+            for frame, name in enumerate(task_frame_names)
+            if frame in validation_frame_ids or name not in validation_frame_names
+        ]
+
+        with zipfile.ZipFile(dataset_file, "r") as archive:
+            if dataset_format == "CVAT for images 1.1":
+                annotations = archive.read("annotations.xml").decode()
+                matches = re.findall(r'<image id="(\d+)" name="([^"]+)"', annotations, re.MULTILINE)
+                assert sorted((int(match[0]), match[1]) for match in matches) == sorted(
+                    expected_frames
+                )
+            elif dataset_format == "Datumaro 1.0":
+                with archive.open("annotations/default.json", "r") as annotation_file:
+                    annotations = json.load(annotation_file)
+
+                assert sorted(
+                    (int(item["attr"]["frame"]), item["id"]) for item in annotations["items"]
+                ) == sorted((frame, os.path.splitext(name)[0]) for frame, name in expected_frames)
+            else:
+                assert False
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
