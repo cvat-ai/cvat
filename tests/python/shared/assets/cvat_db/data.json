@@ -1199,6 +1199,26 @@
   }
 },
 {
+  "model": "engine.validationlayout",
+  "pk": 5,
+  "fields": {
+    "task_data": 21,
+    "mode": "gt",
+    "frames": "0,1,2",
+    "frames_per_job_count": null
+  }
+},
+{
+  "model": "engine.validationlayout",
+  "pk": 6,
+  "fields": {
+    "task_data": 22,
+    "mode": "gt",
+    "frames": "4,5,7",
+    "frames_per_job_count": null
+  }
+},
+{
   "model": "engine.data",
   "pk": 2,
   "fields": {

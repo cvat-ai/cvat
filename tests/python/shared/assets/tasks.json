@@ -193,7 +193,7 @@
       "target_storage": null,
       "updated_date": "2024-03-21T20:50:05.947000Z",
       "url": "http://localhost:8080/api/tasks/23",
-      "validation_mode": null
+      "validation_mode": "gt"
     },
     {
       "assignee": null,
@@ -237,7 +237,7 @@
       "target_storage": null,
       "updated_date": "2023-11-24T15:23:30.045000Z",
       "url": "http://localhost:8080/api/tasks/22",
-      "validation_mode": null
+      "validation_mode": "gt"
     },
     {
       "assignee": null,

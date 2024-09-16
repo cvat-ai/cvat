@@ -8160,162 +8160,6 @@
           "attributes": [
             {
               "spec_id": 15,
-              "value": "gt frame1 n1"
-            }
-          ],
-          "elements": [],
-          "frame": 23,
-          "group": 0,
-          "id": 169,
-          "label_id": 75,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            17.650000000003274,
-            11.30000000000291,
-            30.55000000000291,
-            21.700000000002547
-          ],
-          "rotation": 0.0,
-          "source": "Ground truth",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 15,
-              "value": "gt frame2 n2"
-            }
-          ],
-          "elements": [],
-          "frame": 24,
-          "group": 0,
-          "id": 170,
-          "label_id": 75,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            18.850000000002183,
-            12.000000000001819,
-            25.850000000002183,
-            19.50000000000182
-          ],
-          "rotation": 0.0,
-          "source": "Ground truth",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 15,
-              "value": "gt frame3 n3"
-            }
-          ],
-          "elements": [],
-          "frame": 24,
-          "group": 0,
-          "id": 171,
-          "label_id": 75,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            26.150000000003274,
-            25.00000000000182,
-            34.150000000003274,
-            34.50000000000182
-          ],
-          "rotation": 0.0,
-          "source": "Ground truth",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 15,
-              "value": "gt frame3 n1"
-            }
-          ],
-          "elements": [],
-          "frame": 25,
-          "group": 0,
-          "id": 172,
-          "label_id": 75,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            24.600000000002183,
-            11.500000000001819,
-            37.10000000000218,
-            18.700000000002547
-          ],
-          "rotation": 0.0,
-          "source": "Ground truth",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 15,
-              "value": "gt frame5 n1"
-            }
-          ],
-          "elements": [],
-          "frame": 27,
-          "group": 0,
-          "id": 175,
-          "label_id": 75,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            17.863216443472993,
-            36.43614886308387,
-            41.266725327279346,
-            42.765472201610464
-          ],
-          "rotation": 0.0,
-          "source": "Ground truth",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 15,
-              "value": "gt frame5 n2"
-            }
-          ],
-          "elements": [],
-          "frame": 27,
-          "group": 0,
-          "id": 176,
-          "label_id": 75,
-          "occluded": false,
-          "outside": false,
-          "points": [
-            34.349609375,
-            52.806640625,
-            27.086274131672326,
-            63.1830161588623,
-            40.229131337355284,
-            67.44868033965395,
-            48.87574792004307,
-            59.03264019917333,
-            45.53238950807099,
-            53.3835173651496
-          ],
-          "rotation": 0.0,
-          "source": "Ground truth",
-          "type": "polygon",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 15,
               "value": "j1 frame1 n1"
             }
           ],
@@ -8728,6 +8572,162 @@
           "rotation": 0.0,
           "source": "manual",
           "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 15,
+              "value": "gt frame1 n1"
+            }
+          ],
+          "elements": [],
+          "frame": 23,
+          "group": 0,
+          "id": 169,
+          "label_id": 75,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            17.650000000003274,
+            11.30000000000291,
+            30.55000000000291,
+            21.700000000002547
+          ],
+          "rotation": 0.0,
+          "source": "Ground truth",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 15,
+              "value": "gt frame2 n2"
+            }
+          ],
+          "elements": [],
+          "frame": 24,
+          "group": 0,
+          "id": 170,
+          "label_id": 75,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            18.850000000002183,
+            12.000000000001819,
+            25.850000000002183,
+            19.50000000000182
+          ],
+          "rotation": 0.0,
+          "source": "Ground truth",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 15,
+              "value": "gt frame3 n3"
+            }
+          ],
+          "elements": [],
+          "frame": 24,
+          "group": 0,
+          "id": 171,
+          "label_id": 75,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            26.150000000003274,
+            25.00000000000182,
+            34.150000000003274,
+            34.50000000000182
+          ],
+          "rotation": 0.0,
+          "source": "Ground truth",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 15,
+              "value": "gt frame3 n1"
+            }
+          ],
+          "elements": [],
+          "frame": 25,
+          "group": 0,
+          "id": 172,
+          "label_id": 75,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            24.600000000002183,
+            11.500000000001819,
+            37.10000000000218,
+            18.700000000002547
+          ],
+          "rotation": 0.0,
+          "source": "Ground truth",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 15,
+              "value": "gt frame5 n1"
+            }
+          ],
+          "elements": [],
+          "frame": 27,
+          "group": 0,
+          "id": 175,
+          "label_id": 75,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            17.863216443472993,
+            36.43614886308387,
+            41.266725327279346,
+            42.765472201610464
+          ],
+          "rotation": 0.0,
+          "source": "Ground truth",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 15,
+              "value": "gt frame5 n2"
+            }
+          ],
+          "elements": [],
+          "frame": 27,
+          "group": 0,
+          "id": 176,
+          "label_id": 75,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            34.349609375,
+            52.806640625,
+            27.086274131672326,
+            63.1830161588623,
+            40.229131337355284,
+            67.44868033965395,
+            48.87574792004307,
+            59.03264019917333,
+            45.53238950807099,
+            53.3835173651496
+          ],
+          "rotation": 0.0,
+          "source": "Ground truth",
+          "type": "polygon",
           "z_order": 0
         }
       ],
