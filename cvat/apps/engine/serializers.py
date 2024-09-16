@@ -26,6 +26,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
+from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.utils import format_list, parse_exception_message
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
@@ -858,9 +859,12 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if invalid_ids:
                 raise serializers.ValidationError(
                     "The following frames do not exist in the task: {}".format(
-                        format_list(invalid_ids)
+                        format_list(tuple(map(str, invalid_ids)))
                     )
                 )
+
+            task_frame_provider = TaskFrameProvider(task)
+            frames = list(map(task_frame_provider.get_abs_frame_number, frames))
         else:
             raise serializers.ValidationError(
                 f"Unexpected frame selection method '{frame_selection_method}'"

@@ -37,9 +37,9 @@ from cvat.apps.engine.media_extractors import (
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.serializers import ValidationParamsSerializer
 from cvat.apps.engine.utils import (
-    av_scan_paths, format_list,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
+    av_scan_paths, format_list,get_rq_job_meta,
+    define_dependent_job, get_rq_lock_by_user, preload_images
 )
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
