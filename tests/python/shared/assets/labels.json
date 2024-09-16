@@ -1,5 +1,5 @@
 {
-  "count": 42,
+  "count": 41,
   "next": null,
   "previous": null,
   "results": [
@@ -827,17 +827,6 @@
       "parent_id": null,
       "sublabels": [],
       "task_id": 23,
-      "type": "any"
-    },
-    {
-      "attributes": [],
-      "color": "#c06060",
-      "has_parent": false,
-      "id": 75,
-      "name": "person",
-      "parent_id": null,
-      "sublabels": [],
-      "task_id": 26,
       "type": "any"
     }
   ]
