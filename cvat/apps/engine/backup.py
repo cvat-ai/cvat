@@ -613,6 +613,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         super().__init__(logger=slogger.glob)
         self._file = file
         self._subdir = subdir
+        "Task subdirectory with the separator included, e.g. task_0/"
+
         self._user_id = user_id
         self._org_id = org_id
         self._manifest, self._annotations, self._annotation_guide, self._assets = self._read_meta()
@@ -706,34 +708,32 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         input_data_dirname = self.DATA_DIRNAME
         output_data_path = self._db_task.data.get_upload_dirname()
         uploaded_files = []
-        for fn in input_archive.namelist():
-            if fn.endswith(os.path.sep) or (
-                self._subdir and not fn.startswith(self._subdir + os.path.sep)
-            ):
+        for file_path in input_archive.namelist():
+            if file_path.endswith('/') or self._subdir and not file_path.startswith(self._subdir):
                 continue
 
-            fn = os.path.relpath(fn, self._subdir)
-            if excluded_filenames and fn in excluded_filenames:
+            file_name = os.path.relpath(file_path, self._subdir)
+            if excluded_filenames and file_name in excluded_filenames:
                 continue
 
-            if fn.startswith(input_data_dirname + os.path.sep):
+            if file_name.startswith(input_data_dirname + '/'):
                 target_file = os.path.join(
-                    output_data_path, os.path.relpath(fn, input_data_dirname)
+                    output_data_path, os.path.relpath(file_name, input_data_dirname)
                 )
 
                 self._prepare_dirs(target_file)
                 with open(target_file, "wb") as out:
-                    out.write(input_archive.read(fn))
+                    out.write(input_archive.read(file_path))
 
-                uploaded_files.append(os.path.relpath(fn, input_data_dirname))
-            elif fn.startswith(input_task_dirname + os.path.sep):
+                uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
+            elif file_name.startswith(input_task_dirname + '/'):
                 target_file = os.path.join(
-                    output_task_path, os.path.relpath(fn, input_task_dirname)
+                    output_task_path, os.path.relpath(file_name, input_task_dirname)
                 )
 
                 self._prepare_dirs(target_file)
                 with open(target_file, "wb") as out:
-                    out.write(input_archive.read(fn))
+                    out.write(input_archive.read(file_path))
 
         return uploaded_files
 
