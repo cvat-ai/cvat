@@ -362,23 +362,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
-            if hasattr(self._db_data, 'video'):
-                media_files = (os.path.join(data_dir, self._db_data.video.path), )
-            else:
-                media_files = (
-                    os.path.join(data_dir, im.path)
-                    for im in self._db_data.images.exclude(is_placeholder=True).all()
-                )
-
-            data_manifest_path = self._db_data.get_manifest_path()
-            if os.path.isfile(data_manifest_path):
-                media_files = itertools.chain(media_files, [self._db_data.get_manifest_path()])
-
-            self._write_files(
+            self._write_directory(
                 source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
                 target_dir=target_data_dir,
-                files=media_files,
+                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
             )
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
