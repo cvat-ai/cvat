@@ -162,7 +162,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
 
             return updatedState;
         }
-        case PluginsActionTypes.OVERRIDE_UI_COMPONENT: {
+        case PluginsActionTypes.UPDATE_UI_COMPONENT: {
             const { path, component } = action.payload;
             const updatedState = {
                 ...state,
@@ -171,6 +171,21 @@ export default function (state: PluginsState = defaultState, action: PluginActio
 
             const container = findContainerFromPath(path, updatedState, 'overridableComponents') as CallableFunction[];
             container.push(component);
+
+            return updatedState;
+        }
+        case PluginsActionTypes.REVOKE_UI_COMPONENT: {
+            const { path, component } = action.payload;
+            const updatedState = {
+                ...state,
+                overridableComponents: { ...state.overridableComponents },
+            };
+
+            const container = findContainerFromPath(path, updatedState, 'overridableComponents') as CallableFunction[];
+            const index = container.findIndex((el) => el === component);
+            if (index !== -1) {
+                container.splice(index, 1);
+            }
 
             return updatedState;
         }
