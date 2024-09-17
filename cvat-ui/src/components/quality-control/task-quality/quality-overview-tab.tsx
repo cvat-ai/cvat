@@ -3,24 +3,35 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 
+import config from 'config';
 import { TargetMetric, Task } from 'cvat-core-wrapper';
-import CustomizableComponents from 'components/customizable-components';
+import { CombinedState } from 'reducers';
+import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
 
 interface Props {
     task: Task;
     targetMetric: TargetMetric;
 }
 
-function QualityOverviewTab(props: Readonly<Props>): JSX.Element {
-    const { task, targetMetric } = props;
-    const [Component] = CustomizableComponents.QUALITY_CONTROL_OVERVIEW.slice(-1);
-
+function QualityOverviewTab(): JSX.Element {
     return (
-        <div className='cvat-quality-control-overview-tab'>
-            <Component task={task} targetMetric={targetMetric} />
-        </div>
+        <PaidFeaturePlaceholder featureDescription={config.PAID_PLACEHOLDER_CONFIG.features.qualityControl} />
     );
 }
 
-export default React.memo(QualityOverviewTab);
+function QualityOverviewTabWrap(props: Readonly<Props>): JSX.Element {
+    const overrides = useSelector(
+        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.overviewTab,
+    );
+
+    if (overrides.length) {
+        const [Component] = overrides.slice(-1);
+        return <Component {...props} />;
+    }
+
+    return <QualityOverviewTab />;
+}
+
+export default React.memo(QualityOverviewTabWrap);
