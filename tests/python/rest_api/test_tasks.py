@@ -24,7 +24,19 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import attrs
 import numpy as np
@@ -2106,7 +2118,7 @@ class TestPostTaskData:
         self,
         request: pytest.FixtureRequest,
         frame_selection_method: str,
-        method_params: set[str],
+        method_params: Set[str],
         per_job_count_param: str,
     ):
         base_segment_size = 4

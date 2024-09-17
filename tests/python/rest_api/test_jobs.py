@@ -13,7 +13,7 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pytest
@@ -107,7 +107,7 @@ class TestPostJobs:
         tasks,
         task_mode: str,
         frame_selection_method: str,
-        method_params: set[str],
+        method_params: Set[str],
     ):
         required_task_size = 15
 
