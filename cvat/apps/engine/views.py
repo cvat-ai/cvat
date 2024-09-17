@@ -2726,10 +2726,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 result = cache.get_cloud_preview(db_storage)
                 if not result:
                     return HttpResponseNotFound('Cloud storage preview not found')
-                return HttpResponse(result[0], result[1])
+                return HttpResponse(result[0].getvalue(), result[1])
 
             preview, mime = cache.get_or_set_cloud_preview(db_storage)
-            return HttpResponse(preview, mime)
+            return HttpResponse(preview.getvalue(), mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
