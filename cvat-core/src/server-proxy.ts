@@ -1481,7 +1481,11 @@ async function getMeta(session: 'job' | 'task', id: number): Promise<SerializedF
         throw generateError(errorData);
     }
 
-    return response.data;
+    return {
+        ...response.data,
+        // TODO: remove `chunks_updated_date` when supported on server side
+        chunks_updated_date: new Date().toISOString(),
+    };
 }
 
 async function saveMeta(
@@ -1498,7 +1502,11 @@ async function saveMeta(
         throw generateError(errorData);
     }
 
-    return response.data;
+    return {
+        ...response.data,
+        // TODO: remove `chunks_updated_date` when supported on server side
+        chunks_updated_date: new Date().toISOString(),
+    };
 }
 
 async function getAnnotations(
