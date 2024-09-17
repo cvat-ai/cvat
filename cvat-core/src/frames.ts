@@ -536,77 +536,73 @@ export function getContextImage(jobID: number, frame: number): Promise<Record<st
             ));
         }
 
-        refreshJobCacheIfOutdated(jobID).then(() => {
-            const frameData = frameDataCache[jobID];
-            const requestId = frame;
-            const { startFrame } = frameData;
-            const { related_files: relatedFiles } = frameData.meta.frames[frame - startFrame];
+        const frameData = frameDataCache[jobID];
+        const requestId = frame;
+        const { startFrame } = frameData;
+        const { related_files: relatedFiles } = frameData.meta.frames[frame - startFrame];
 
-            if (relatedFiles === 0) {
-                resolve({});
-            } else if (frame in frameData.contextCache) {
-                resolve(frameData.contextCache[frame].data);
+        if (relatedFiles === 0) {
+            resolve({});
+        } else if (frame in frameData.contextCache) {
+            resolve(frameData.contextCache[frame].data);
+        } else {
+            frameData.latestContextImagesRequest = requestId;
+            const executor = (): void => {
+                if (frameData.latestContextImagesRequest !== requestId) {
+                    reject(frame);
+                } else if (frame in frameData.contextCache) {
+                    resolve(frameData.contextCache[frame].data);
+                } else {
+                    frameData.activeContextRequest = serverProxy.frames.getImageContext(jobID, frame)
+                        .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
+                    frameData.activeContextRequest.then((images) => {
+                        const size = Object.values(images)
+                            .reduce((acc, image) => acc + image.width * image.height * 4, 0);
+                        const totalSize = Object.values(frameData.contextCache)
+                            .reduce((acc, item) => acc + item.size, 0);
+                        if (totalSize > 512 * 1024 * 1024) {
+                            const [leastTimestampFrame] = Object.entries(frameData.contextCache)
+                                .sort(([, item1], [, item2]) => item1.timestamp - item2.timestamp)[0];
+                            delete frameData.contextCache[leastTimestampFrame];
+                        }
+
+                        frameData.contextCache[frame] = {
+                            data: images,
+                            timestamp: Date.now(),
+                            size,
+                        };
+
+                        if (frameData.latestContextImagesRequest !== requestId) {
+                            reject(frame);
+                        } else {
+                            resolve(images);
+                        }
+                    }).finally(() => {
+                        frameData.activeContextRequest = null;
+                    });
+                }
+            };
+
+            if (!frameData.activeContextRequest) {
+                executor();
             } else {
-                frameData.latestContextImagesRequest = requestId;
-                const executor = (): void => {
-                    if (frameData.latestContextImagesRequest !== requestId) {
-                        reject(frame);
-                    } else if (frame in frameData.contextCache) {
-                        resolve(frameData.contextCache[frame].data);
+                const checkAndExecute = (): void => {
+                    if (frameData.activeContextRequest) {
+                        // if we just execute in finally
+                        // it might raise multiple server requests for context images
+                        // if the promise was pending before and several requests came for the same frame
+                        // all these requests will stuck on "finally"
+                        // and when the promise fullfilled, it will run all the microtasks
+                        // since they all have the same request id, all they will perform in executor()
+                        frameData.activeContextRequest.finally(() => setTimeout(checkAndExecute));
                     } else {
-                        frameData.activeContextRequest = serverProxy.frames.getImageContext(jobID, frame)
-                            .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
-                        frameData.activeContextRequest.then((images) => {
-                            const size = Object.values(images)
-                                .reduce((acc, image) => acc + image.width * image.height * 4, 0);
-                            const totalSize = Object.values(frameData.contextCache)
-                                .reduce((acc, item) => acc + item.size, 0);
-                            if (totalSize > 512 * 1024 * 1024) {
-                                const [leastTimestampFrame] = Object.entries(frameData.contextCache)
-                                    .sort(([, item1], [, item2]) => item1.timestamp - item2.timestamp)[0];
-                                delete frameData.contextCache[leastTimestampFrame];
-                            }
-
-                            frameData.contextCache[frame] = {
-                                data: images,
-                                timestamp: Date.now(),
-                                size,
-                            };
-
-                            if (frameData.latestContextImagesRequest !== requestId) {
-                                reject(frame);
-                            } else {
-                                resolve(images);
-                            }
-                        }).finally(() => {
-                            frameData.activeContextRequest = null;
-                        });
+                        executor();
                     }
                 };
 
-                if (!frameData.activeContextRequest) {
-                    executor();
-                } else {
-                    const checkAndExecute = (): void => {
-                        if (frameData.activeContextRequest) {
-                            // if we just execute in finally
-                            // it might raise multiple server requests for context images
-                            // if the promise was pending before and several requests came for the same frame
-                            // all these requests will stuck on "finally"
-                            // and when the promise fullfilled, it will run all the microtasks
-                            // since they all have the same request id, all they will perform in executor()
-                            frameData.activeContextRequest.finally(() => setTimeout(checkAndExecute));
-                        } else {
-                            executor();
-                        }
-                    };
-
-                    setTimeout(checkAndExecute);
-                }
+                setTimeout(checkAndExecute);
             }
-        }).catch((error: unknown) => {
-            reject(error);
-        });
+        }
     });
 }
 
@@ -678,6 +674,20 @@ export async function getFrame(
         };
     }
 
+    // basically the following functions may be affected if job cache is outdated
+    // - getFrame
+    // - getContextImage
+    // - getCachedChunks
+    // And from this idea we should call refreshJobCacheIfOutdated from each one
+    // Hovewer, following from the order, these methods are usually called
+    // it may lead to even more confusing behaviour
+    //
+    // Usually user first receives frame, then user receives ranges and finally user receives context images
+    // In this case (extremely rare, but nevertheless possible) user may get context images related to another frame
+    // - if cache gets outdated after getFrame() call
+    // - and before getContextImage() call
+    // - and both calls refer to the same fram that is refreshed honeypot frame
+    // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
     await refreshJobCacheIfOutdated(jobID);
 
     const frameMeta = getFrameMeta(jobID, frame);
