@@ -8180,28 +8180,24 @@ components:
         frame_share:
           type: number
           format: double
-          nullable: true
           description: |
             The share of frames included in the GT job.
             Applicable only to the "random_uniform" frame selection method
         frames_per_job_count:
           type: integer
           minimum: 1
-          nullable: true
           description: |
             The number of frames included in the GT job from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         frames_per_job_share:
           type: number
           format: double
-          nullable: true
           description: |
             The share of frames included in the GT job from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         random_seed:
           type: integer
           minimum: 0
-          nullable: true
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
@@ -8212,7 +8208,6 @@ components:
           items:
             type: integer
             minimum: 0
-          nullable: true
           description: |
             The list of frame ids. Applicable only to the "manual" frame selection method
       required:
@@ -10816,7 +10811,6 @@ components:
         random_seed:
           type: integer
           minimum: 0
-          nullable: true
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
@@ -10829,7 +10823,6 @@ components:
             minLength: 1
             maxLength: 1024
           writeOnly: true
-          nullable: true
           description: |
             The list of file names to be included in the validation set.
             Applicable only to the "manual" frame selection method.
@@ -10843,21 +10836,18 @@ components:
         frame_share:
           type: number
           format: double
-          nullable: true
           description: |
             The share of frames to be included in the validation set.
             Applicable only to the "random_uniform" frame selection method
         frames_per_job_count:
           type: integer
           minimum: 1
-          nullable: true
           description: |
             The number of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         frames_per_job_share:
           type: number
           format: double
-          nullable: true
           description: |
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
