@@ -686,7 +686,7 @@ export async function getFrame(
     // In this case (extremely rare, but nevertheless possible) user may get context images related to another frame
     // - if cache gets outdated after getFrame() call
     // - and before getContextImage() call
-    // - and both calls refer to the same fram that is refreshed honeypot frame
+    // - and both calls refer to the same fram that is refreshed honeypot frame and this frame has context images
     // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
     await refreshJobCacheIfOutdated(jobID);
 
