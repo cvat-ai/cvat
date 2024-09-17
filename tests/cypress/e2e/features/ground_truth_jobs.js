@@ -226,8 +226,8 @@ context('Ground truth jobs', () => {
             }).then(() => {
                 cy.visit(`/tasks/${taskID}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
+                openManagementTab();
             });
-            openManagementTab();
         });
 
         after(() => {
@@ -312,7 +312,7 @@ context('Ground truth jobs', () => {
 
     describe('Regression tests', () => {
         const imagesCount = 20;
-        const imageFileName = 'ground_truth_3';
+        const imageFileName = 'ground_truth_2';
         const width = 100;
         const height = 100;
         const posX = 10;
