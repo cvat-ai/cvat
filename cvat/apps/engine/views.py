@@ -703,7 +703,7 @@ class _DataGetter(metaclass=ABCMeta):
                 return HttpResponse(data.data.getvalue(), content_type=data.mime)
 
             elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images(self.number)
+                data = frame_provider.get_frame_context_images_chunk(self.number)
                 if not data:
                     return HttpResponseNotFound()
 

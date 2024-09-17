@@ -26,6 +26,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    overload,
 )
 
 import av
@@ -73,21 +74,20 @@ class MediaCache:
 
     def _get_or_set_cache_item(
         self, key: str, create_callback: Callable[[], DataWithMime]
-    ) -> DataWithMime:
+    ) -> _CacheItem:
         def create_item() -> _CacheItem:
             slogger.glob.info(f"Starting to prepare chunk: key {key}")
             item_data = create_callback()
             slogger.glob.info(f"Ending to prepare chunk: key {key}")
 
-            if item_data[0]:
-                item = (item_data[0], item_data[1], self._get_checksum(item_data[0].getbuffer()))
+            item_data_bytes = item_data[0].getvalue()
+            item = (item_data[0], item_data[1], self._get_checksum(item_data_bytes))
+            if item_data_bytes:
                 self._cache.set(key, item)
-            else:
-                item = (item_data[0], item_data[1], None)
 
             return item
 
-        item = self._get(key)
+        item = self._get_cache_item(key)
         if not item:
             item = create_item()
         else:
@@ -98,9 +98,9 @@ class MediaCache:
                 slogger.glob.info(f"Recreating cache item {key} due to checksum mismatch")
                 item = create_item()
 
-        return item[0], item[1]
+        return item
 
-    def _get(self, key: str) -> Optional[DataWithMime]:
+    def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
         slogger.glob.info(f"Starting to get chunk from cache: key {key}")
         try:
             item = self._cache.get(key)
@@ -152,20 +152,36 @@ class MediaCache:
     def _make_context_image_preview_key(self, db_data: models.Data, frame_number: int) -> str:
         return f"context_image_{db_data.id}_{frame_number}_preview"
 
-    def get_segment_chunk(
+    @overload
+    def _to_data_with_mime(self, cache_item: _CacheItem) -> DataWithMime: ...
+
+    @overload
+    def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]: ...
+
+    def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]:
+        if not cache_item:
+            return None
+
+        return cache_item[:2]
+
+    def get_or_set_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            key=self._make_chunk_key(db_segment, chunk_number, quality=quality),
-            create_callback=lambda: self.prepare_segment_chunk(
-                db_segment, chunk_number, quality=quality
-            ),
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                key=self._make_chunk_key(db_segment, chunk_number, quality=quality),
+                create_callback=lambda: self.prepare_segment_chunk(
+                    db_segment, chunk_number, quality=quality
+                ),
+            )
         )
 
     def get_task_chunk(
         self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
     ) -> Optional[DataWithMime]:
-        return self._get(key=self._make_chunk_key(db_task, chunk_number, quality=quality))
+        return self._to_data_with_mime(
+            self._get_cache_item(key=self._make_chunk_key(db_task, chunk_number, quality=quality))
+        )
 
     def get_or_set_task_chunk(
         self,
@@ -175,16 +191,20 @@ class MediaCache:
         quality: FrameQuality,
         set_callback: Callable[[], DataWithMime],
     ) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            key=self._make_chunk_key(db_task, chunk_number, quality=quality),
-            create_callback=set_callback,
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                key=self._make_chunk_key(db_task, chunk_number, quality=quality),
+                create_callback=set_callback,
+            )
         )
 
     def get_segment_task_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> Optional[DataWithMime]:
-        return self._get(
-            key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality)
+        return self._to_data_with_mime(
+            self._get_cache_item(
+                key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality)
+            )
         )
 
     def get_or_set_segment_task_chunk(
@@ -195,40 +215,52 @@ class MediaCache:
         quality: FrameQuality,
         set_callback: Callable[[], DataWithMime],
     ) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
-            create_callback=set_callback,
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
+                create_callback=set_callback,
+            )
         )
 
-    def get_selective_job_chunk(
+    def get_or_set_selective_job_chunk(
         self, db_job: models.Job, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            key=self._make_chunk_key(db_job, chunk_number, quality=quality),
-            create_callback=lambda: self.prepare_masked_range_segment_chunk(
-                db_job.segment, chunk_number, quality=quality
-            ),
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                key=self._make_chunk_key(db_job, chunk_number, quality=quality),
+                create_callback=lambda: self.prepare_masked_range_segment_chunk(
+                    db_job.segment, chunk_number, quality=quality
+                ),
+            )
         )
 
     def get_or_set_segment_preview(self, db_segment: models.Segment) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            self._make_preview_key(db_segment),
-            create_callback=lambda: self._prepare_segment_preview(db_segment),
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                self._make_preview_key(db_segment),
+                create_callback=lambda: self._prepare_segment_preview(db_segment),
+            )
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
-        return self._get(self._make_preview_key(db_storage))
+        return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))
 
     def get_or_set_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            self._make_preview_key(db_storage),
-            create_callback=lambda: self._prepare_cloud_preview(db_storage),
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                self._make_preview_key(db_storage),
+                create_callback=lambda: self._prepare_cloud_preview(db_storage),
+            )
         )
 
-    def get_frame_context_images(self, db_data: models.Data, frame_number: int) -> DataWithMime:
-        return self._get_or_set_cache_item(
-            key=self._make_context_image_preview_key(db_data, frame_number),
-            create_callback=lambda: self.prepare_context_images(db_data, frame_number),
+    def get_or_set_frame_context_images_chunk(
+        self, db_data: models.Data, frame_number: int
+    ) -> DataWithMime:
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
+                key=self._make_context_image_preview_key(db_data, frame_number),
+                create_callback=lambda: self.prepare_context_images_chunk(db_data, frame_number),
+            )
         )
 
     def _read_raw_images(
@@ -536,59 +568,56 @@ class MediaCache:
 
         return prepare_preview_image(preview)
 
-    def _prepare_cloud_preview(self, db_storage):
+    def _prepare_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
         storage = db_storage_to_storage_instance(db_storage)
         if not db_storage.manifests.count():
             raise ValidationError("Cannot get the cloud storage preview. There is no manifest file")
+
         preview_path = None
-        for manifest_model in db_storage.manifests.all():
-            manifest_prefix = os.path.dirname(manifest_model.filename)
+        for db_manifest in db_storage.manifests.all():
+            manifest_prefix = os.path.dirname(db_manifest.filename)
+
             full_manifest_path = os.path.join(
-                db_storage.get_storage_dirname(), manifest_model.filename
+                db_storage.get_storage_dirname(), db_manifest.filename
             )
             if not os.path.exists(full_manifest_path) or datetime.fromtimestamp(
                 os.path.getmtime(full_manifest_path), tz=timezone.utc
-            ) < storage.get_file_last_modified(manifest_model.filename):
-                storage.download_file(manifest_model.filename, full_manifest_path)
+            ) < storage.get_file_last_modified(db_manifest.filename):
+                storage.download_file(db_manifest.filename, full_manifest_path)
+
             manifest = ImageManifestManager(
-                os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
+                os.path.join(db_storage.get_storage_dirname(), db_manifest.filename),
                 db_storage.get_storage_dirname(),
             )
             # need to update index
             manifest.set_index()
             if not len(manifest):
                 continue
+
             preview_info = manifest[0]
             preview_filename = "".join([preview_info["name"], preview_info["extension"]])
             preview_path = os.path.join(manifest_prefix, preview_filename)
             break
+
         if not preview_path:
             msg = "Cloud storage {} does not contain any images".format(db_storage.pk)
             slogger.cloud_storage[db_storage.pk].info(msg)
             raise NotFound(msg)
 
         buff = storage.download_fileobj(preview_path)
-        mime_type = mimetypes.guess_type(preview_path)[0]
+        image = PIL.Image.open(buff)
+        return prepare_preview_image(image)
 
-        return buff, mime_type
-
-    def prepare_context_images(
-        self, db_data: models.Data, frame_number: int
-    ) -> Optional[DataWithMime]:
+    def prepare_context_images_chunk(self, db_data: models.Data, frame_number: int) -> DataWithMime:
         zip_buffer = io.BytesIO()
-        try:
-            image = models.Image.objects.get(data_id=db_data.id, frame=frame_number)
-        except models.Image.DoesNotExist:
-            return None
 
-        if not image.related_files.count():
-            return None, None
+        related_images = db_data.related_files.filter(primary_image__frame=frame_number).all()
+        if not related_images:
+            return zip_buffer, ""
 
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            common_path = os.path.commonpath(
-                list(map(lambda x: str(x.path), image.related_files.all()))
-            )
-            for i in image.related_files.all():
+            common_path = os.path.commonpath(list(map(lambda x: str(x.path), related_images)))
+            for i in related_images:
                 path = os.path.realpath(str(i.path))
                 name = os.path.relpath(str(i.path), common_path)
                 image = cv2.imread(path)
