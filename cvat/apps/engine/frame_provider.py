@@ -260,7 +260,7 @@ class TaskFrameProvider(IFrameProvider):
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
     def get_preview(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(self._db_task.data.start_frame).get_preview()
+        return self._get_segment_frame_provider(0).get_preview()
 
     def get_chunk(
         self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
