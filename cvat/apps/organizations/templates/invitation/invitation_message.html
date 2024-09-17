@@ -122,14 +122,9 @@
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
           <tr>
             <td align="center" valign="bottom">
-              <a href="https://www.cvat.ai/" target="_blank" style="display: inline-block;">
-                <img
-                  src="https://github.com/cvat-ai/cvat/blob/develop/site/content/en/images/cvat_poster_with_name.png?raw=true"
-                  alt="Logo"
-                  border="0"
-                  width="100%"
-                  style="display: block; width: 100%;"
-                >
+              <a href="https://www.cvat.ai/" target="_blank">
+                <img src="https://raw.githubusercontent.com/cvat-ai/cvat/v2.18.0/cvat-ui/src/assets/cvat-logo.svg" alt="Logo"
+                  style="width: 25%; margin: 10px;">
               </a>
             </td>
           </tr>
@@ -155,7 +150,7 @@
           <tr>
             <td align="left" bgcolor="#ffffff" style="padding: 36px 24px 0; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; border-top: 3px solid #d4dadf;">
               <h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">
-                You've been invited to organization
+                You've been invited to an organization
               </h1>
             </td>
           </tr>
@@ -184,10 +179,10 @@
             <td align="left" bgcolor="#ffffff" style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;">
               {% blocktrans %}
               <p>
-                You're receiving this email because you've been invited to join <strong>{{ organization_name }}</strong> organization in CVAT by <strong>{{ invitation_owner }}</strong> at {{ site_name }}.
+                You're receiving this email because you've been invited by <strong>{{ invitation_owner }}</strong> to join the <strong>{{ organization_name }}</strong> organization in CVAT at {{ site_name }}.
               </p>
               <p style="margin: 0;">
-                To join organization and start annotating, simply tap the button below and complete registration.
+                To join the organization and start annotating, simply tap the button below and complete the registration.
               </p>
               {% endblocktrans %}
             </td>

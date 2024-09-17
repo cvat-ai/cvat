@@ -11,6 +11,7 @@ import {
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMethod } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -213,8 +214,8 @@ ThunkAction {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {
@@ -254,13 +255,30 @@ ThunkAction {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
+        let extras = {};
+
+        if (data.quality.validationMethod === ValidationMethod.GT) {
+            extras = {
+                validation_method: ValidationMethod.GT,
+                validation_frames_percent: data.quality.validationFramesPercent,
+                frame_selection_method: data.quality.frameSelectionMethod,
+            };
+        }
+
+        if (data.quality.validationMethod === ValidationMethod.HONEYPOTS) {
+            extras = {
+                validation_method: ValidationMethod.HONEYPOTS,
+                validation_frames_percent: data.quality.validationFramesPercent,
+                validation_frames_per_job: data.quality.validationFramesPerJob,
+            };
+        }
+
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
-            const savedTask = await taskInstance.save({
+            const savedTask = await taskInstance.save(extras, {
                 requestStatusCallback(request) {
                     let { message } = request;
                     let helperMessage = '';

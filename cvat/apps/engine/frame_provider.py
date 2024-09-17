@@ -200,7 +200,7 @@ class IFrameProvider(metaclass=ABCMeta):
     ) -> DataWithMeta[AnyFrame]: ...
 
     @abstractmethod
-    def get_frame_context_images(
+    def get_frame_context_images_chunk(
         self,
         frame_number: int,
     ) -> Optional[DataWithMeta[BytesIO]]: ...
@@ -260,7 +260,7 @@ class TaskFrameProvider(IFrameProvider):
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
     def get_preview(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(self._db_task.data.start_frame).get_preview()
+        return self._get_segment_frame_provider(0).get_preview()
 
     def get_chunk(
         self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
@@ -352,11 +352,13 @@ class TaskFrameProvider(IFrameProvider):
             frame_number, quality=quality, out_type=out_type
         )
 
-    def get_frame_context_images(
+    def get_frame_context_images_chunk(
         self,
         frame_number: int,
     ) -> Optional[DataWithMeta[BytesIO]]:
-        return self._get_segment_frame_provider(frame_number).get_frame_context_images(frame_number)
+        return self._get_segment_frame_provider(frame_number).get_frame_context_images_chunk(
+            frame_number
+        )
 
     def iterate_frames(
         self,
@@ -436,7 +438,7 @@ class SegmentFrameProvider(IFrameProvider):
             self._loaders[FrameQuality.COMPRESSED] = _BufferChunkLoader(
                 reader_class=reader_class[db_data.compressed_chunk_type][0],
                 reader_params=reader_class[db_data.compressed_chunk_type][1],
-                get_chunk_callback=lambda chunk_idx: cache.get_segment_chunk(
+                get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
                     db_segment, chunk_idx, quality=FrameQuality.COMPRESSED
                 ),
             )
@@ -444,7 +446,7 @@ class SegmentFrameProvider(IFrameProvider):
             self._loaders[FrameQuality.ORIGINAL] = _BufferChunkLoader(
                 reader_class=reader_class[db_data.original_chunk_type][0],
                 reader_params=reader_class[db_data.original_chunk_type][1],
-                get_chunk_callback=lambda chunk_idx: cache.get_segment_chunk(
+                get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
                     db_segment, chunk_idx, quality=FrameQuality.ORIGINAL
                 ),
             )
@@ -553,19 +555,21 @@ class SegmentFrameProvider(IFrameProvider):
 
         return return_type(frame, mime=mimetypes.guess_type(frame_name)[0])
 
-    def get_frame_context_images(
+    def get_frame_context_images_chunk(
         self,
         frame_number: int,
     ) -> Optional[DataWithMeta[BytesIO]]:
-        # TODO: refactor, optimize
+        self.validate_frame_number(frame_number)
+
+        db_data = self._db_segment.task.data
+
         cache = MediaCache()
-
-        if self._db_segment.task.data.storage_method == models.StorageMethodChoice.CACHE:
-            data, mime = cache.get_frame_context_images(self._db_segment.task.data, frame_number)
+        if db_data.storage_method == models.StorageMethodChoice.CACHE:
+            data, mime = cache.get_or_set_frame_context_images_chunk(db_data, frame_number)
         else:
-            data, mime = cache.prepare_context_images(self._db_segment.task.data, frame_number)
+            data, mime = cache.prepare_context_images_chunk(db_data, frame_number)
 
-        if not data:
+        if not data.getvalue():
             return None
 
         return DataWithMeta[BytesIO](data, mime=mime)
