@@ -54,7 +54,6 @@ from cvat.apps.engine.media_extractors import (
     ZipChunkWriter,
     ZipCompressedChunkWriter,
 )
-from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.utils import md5_hash, preload_images
 from utils.dataset_manifest import ImageManifestManager
 
