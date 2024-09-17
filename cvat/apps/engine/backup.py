@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import itertools
 import mimetypes
 import os
 import re

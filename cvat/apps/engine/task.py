@@ -11,7 +11,6 @@ import re
 import rq
 import shutil
 from copy import deepcopy
-from rest_framework.serializers import ValidationError
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
