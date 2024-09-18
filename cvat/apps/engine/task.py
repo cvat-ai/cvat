@@ -1338,7 +1338,7 @@ def _create_thread(
                 primary_image=image,
                 path=os.path.join(upload_dir, related_file_path),
             )
-            for image in images
+            for image in images.all()
             for related_file_path in related_images.get(image.path, [])
         ]
         models.RelatedFile.objects.bulk_create(db_related_files)
@@ -1482,9 +1482,9 @@ def _create_thread(
         settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
-        _create_static_chunks(db_task, media_extractor=extractor)
+        _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
-def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader):
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
     @attrs.define
     class _ChunkProgressUpdater:
         _call_counter: int = attrs.field(default=0, init=False)
@@ -1568,7 +1568,9 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
     )
     original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
 
-    db_segments = db_task.segment_set.all()
+    db_segments = db_task.segment_set.order_by('start_frame').all()
+
+    frame_map = {} # frame number -> extractor frame number
 
     if isinstance(media_extractor, MEDIA_TYPES['video']['extractor']):
         def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
@@ -1587,6 +1589,16 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             object_size_callback=_get_frame_size
         )
     else:
+        extractor_frame_ids = {
+            media_extractor.get_path(abs_frame_number): abs_frame_number
+            for abs_frame_number in media_extractor.frame_range
+        }
+
+        frame_map = {
+            frame.frame: extractor_frame_ids[os.path.join(upload_dir, frame.path)]
+            for frame in db_data.images.all()
+        }
+
         media_iterator = RandomAccessIterator(media_extractor)
 
     with closing(media_iterator):
@@ -1603,13 +1615,16 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             for segment_idx, db_segment in enumerate(db_segments):
                 frame_counter = itertools.count()
                 for chunk_idx, chunk_frame_ids in (
-                    (chunk_idx, list(chunk_frame_ids))
+                    (chunk_idx, tuple(chunk_frame_ids))
                     for chunk_idx, chunk_frame_ids in itertools.groupby(
                         (
                             # Convert absolute to relative ids (extractor output positions)
                             # Extractor will skip frames outside requested
                             (abs_frame_id - db_data.start_frame) // frame_step
-                            for abs_frame_id in db_segment.frame_set
+                            for abs_frame_id in (
+                                frame_map.get(frame, frame)
+                                for frame in db_segment.frame_set
+                            )
                         ),
                         lambda _: next(frame_counter) // db_data.chunk_size
                     )
