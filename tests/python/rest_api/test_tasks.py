@@ -2547,7 +2547,7 @@ class TestTaskData:
         **data_kwargs,
     ) -> Generator[Tuple[_ImagesTaskSpec, int], None, None]:
         task_params = {
-            "name": request.node.name,
+            "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
         }
         if segment_size:
@@ -2677,7 +2677,7 @@ class TestTaskData:
         segment_size: Optional[int] = None,
     ) -> Generator[Tuple[_VideoTaskSpec, int], None, None]:
         task_params = {
-            "name": request.node.name,
+            "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
         }
         if segment_size:
