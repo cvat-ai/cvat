@@ -2245,7 +2245,7 @@ class TestPostTaskData:
         self,
         request: pytest.FixtureRequest,
         frame_selection_method: str,
-        method_params: set[str],
+        method_params: Set[str],
     ):
         segment_size = 4
         total_frame_count = 15
@@ -2368,7 +2368,7 @@ class TestPostTaskData:
         self,
         request: pytest.FixtureRequest,
         frame_selection_method: str,
-        method_params: set[str],
+        method_params: Set[str],
     ):
         segment_size = 4
         total_frame_count = 15
