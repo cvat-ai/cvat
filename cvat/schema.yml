@@ -8203,6 +8203,10 @@ components:
             The same value will produce the same frame sets.
             Applicable only to random frame selection methods.
             By default, a random value is used.
+        seed:
+          type: integer
+          minimum: 0
+          description: Deprecated. Use random_seed instead.
         frames:
           type: array
           items:

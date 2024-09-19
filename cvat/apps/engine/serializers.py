@@ -697,12 +697,15 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             By default, a random value is used.
         """)
     )
+    seed = serializers.IntegerField(
+        min_value=0, required=False, help_text="Deprecated. Use random_seed instead."
+    )
 
     class Meta:
         model = models.Job
         random_selection_params = (
             'frame_count', 'frame_share', 'frames_per_job_count', 'frames_per_job_share',
-            'random_seed',
+            'random_seed', 'seed'
         )
         manual_selection_params = ('frames',)
         write_once_fields = ('type', 'task_id', 'frame_selection_method',) \
@@ -717,6 +720,11 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         frame_selection_method = attrs.get('frame_selection_method')
         if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
+
+            # 'seed' is a backward compatibility alias
+            if attrs.get('seed') is not None or attrs.get('random_seed') is not None:
+                field_validation.require_one_of_fields(attrs, ['seed', 'random_seed'])
+
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
             field_validation.require_one_of_fields(
                 attrs, ['frames_per_job_count', 'frames_per_job_share']
@@ -789,16 +797,18 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 )
 
             seed = validated_data.pop("random_seed", None)
+            deprecated_seed = validated_data.pop("seed", None)
 
             # The RNG backend must not change to yield reproducible results,
             # so here we specify it explicitly
             from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
-            if seed is not None and frame_count < task_size:
+            if deprecated_seed is not None and frame_count < task_size:
                 # Reproduce the old (a little bit incorrect) behavior that existed before
                 # https://github.com/cvat-ai/cvat/pull/7126
                 # to make the old seed-based sequences reproducible
+                rng = random.Generator(random.MT19937(seed=deprecated_seed))
                 valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
 
             frames = rng.choice(
