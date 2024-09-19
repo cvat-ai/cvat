@@ -20,14 +20,14 @@ export default function SummaryComponent(props: Readonly<Props>): JSX.Element {
         <Row>
             <Col span={10} className='cvat-allocation-summary'>
                 <Row>
-                    <Col span={12}>
+                    <Col span={12} className='cvat-allocation-summary-excluded'>
                         <Text>
                             Excluded count:
                             {' '}
                             <Text strong>{excludedCount}</Text>
                         </Text>
                     </Col>
-                    <Col span={12}>
+                    <Col span={12} className='cvat-allocation-summary-total'>
                         <Text>
                             Total count:
                             {' '}
@@ -36,7 +36,7 @@ export default function SummaryComponent(props: Readonly<Props>): JSX.Element {
                     </Col>
                 </Row>
                 <Row>
-                    <Col span={12}>
+                    <Col span={12} className='cvat-allocation-summary-active'>
                         <Text>
                             Active count:
                             {' '}
