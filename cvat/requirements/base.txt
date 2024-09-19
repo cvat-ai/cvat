@@ -56,7 +56,7 @@ cryptography==43.0.0
     #   pyjwt
 cycler==0.12.1
     # via matplotlib
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@393cb666529067060ff57e30cb6e448669274f35
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@e1f3c7eb62ebf76ce881b1a7143de5fb3e7d9577
     # via -r cvat/requirements/base.in
 defusedxml==0.7.1
     # via
