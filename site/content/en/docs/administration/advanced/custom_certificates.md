@@ -35,7 +35,7 @@ mv /path/to/key.pem ./certs/key.pem
 
 ### Change Traefik Configuration
 
-Create `tls.yml` file in the `./traefik/rules` directory with the following content:
+Create `tls.yml` in the root of the project directory with the following content:
 
 ```yaml
 tls:
