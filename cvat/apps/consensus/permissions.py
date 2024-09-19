@@ -8,7 +8,7 @@ from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.permissions import JobPermission, TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
 from .models import AssigneeConsensusReport, ConsensusConflict, ConsensusReport, ConsensusSettings
@@ -58,9 +58,10 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
                 elif scope == Scopes.CREATE:
-                    task_id = request.data.get("task_id")
-                    if task_id is not None:
+                    if task_id := request.data.get("task_id"):
                         permissions.append(TaskPermission.create_scope_view(request, task_id))
+                    elif job_id := request.data.get("job_id"):
+                        permissions.append(JobPermission.create_scope_view(request, job_id))
 
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
                 else:
@@ -84,7 +85,7 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
                 "create": Scopes.CREATE,
                 "retrieve": Scopes.VIEW,
                 "data": Scopes.VIEW,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
@@ -155,7 +156,7 @@ class ConsensusConflictPermission(OpenPolicyAgentPermission):
         return [
             {
                 "list": Scopes.LIST,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
@@ -325,7 +326,7 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
                 "list": Scopes.LIST,
                 "retrieve": Scopes.VIEW,
                 "data": Scopes.VIEW,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):

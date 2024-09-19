@@ -43,7 +43,7 @@ from cvat.apps.consensus.serializers import (
     ConsensusSettingsSerializer,
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 
@@ -269,13 +269,19 @@ class ConsensusReportViewSet(
 
         if rq_id is None:
             try:
-                task_id = input_serializer.validated_data["task_id"]
-                task = Task.objects.get(pk=task_id)
+                task_id = input_serializer.validated_data.get("task_id", 0)
+                job_id = input_serializer.validated_data.get("job_id", 0)
+                if task_id:
+                    instance = Task.objects.get(pk=task_id)
+                elif job_id:
+                    instance = Job.objects.get(pk=job_id)
+                else:
+                    raise ValidationError("Task or Job id is required")
             except Task.DoesNotExist as ex:
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
-                return scehdule_consensus_merging(task, request)
+                return scehdule_consensus_merging(instance, request)
             except Exception as ex:
                 raise ValidationError(str(ex))
 
