@@ -230,7 +230,7 @@ class TestPostJobs:
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
             "frame_count": 3,
-            "random_seed": 42,
+            "seed": 42,
         }
 
         response = self._test_create_job_ok(user, job_spec)
