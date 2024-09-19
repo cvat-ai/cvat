@@ -72,7 +72,7 @@ Edit the `docker-compose.https.yml` file and change the traefik servise configur
 Start CVAT with the following command:
 
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
 
