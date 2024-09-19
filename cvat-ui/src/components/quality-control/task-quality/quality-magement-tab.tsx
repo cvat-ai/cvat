@@ -6,9 +6,9 @@ import React from 'react';
 import { Row, Col } from 'antd/es/grid';
 import Spin from 'antd/lib/spin';
 
-import CustomizableComponents from 'components/customizable-components';
 import { FramesMetaData, Job, Task } from 'cvat-core-wrapper';
-import { SummaryComponent } from './summary';
+import AllocationTable from './allocation-table';
+import SummaryComponent from './summary';
 
 interface Props {
     task: Task;
@@ -21,15 +21,14 @@ interface Props {
 
 function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     const {
-        task, gtJob, gtJobMeta,
-        onDeleteFrames, onRestoreFrames, fetching,
+        task, gtJob, gtJobMeta, fetching,
+        onDeleteFrames, onRestoreFrames,
     } = props;
 
     const activeCount = gtJobMeta.includedFrames
         .filter((frameID: number) => !(frameID in gtJobMeta.deletedFrames)).length;
     const excludedCount = Object.keys(gtJobMeta.deletedFrames)
         .filter((frameID: string) => gtJobMeta.includedFrames.includes(+frameID)).length;
-    const [AllocationTableComponent] = CustomizableComponents.QUALITY_CONTROL_ALLOCATION_TABLE.slice(-1);
 
     return (
         <div className='cvat-quality-control-management-tab'>
@@ -51,7 +50,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
             </Row>
             <Row>
                 <Col span={24}>
-                    <AllocationTableComponent
+                    <AllocationTable
                         task={task}
                         gtJob={gtJob}
                         gtJobMeta={gtJobMeta}
