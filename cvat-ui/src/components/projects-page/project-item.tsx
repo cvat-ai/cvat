@@ -15,7 +15,8 @@ import Button from 'antd/lib/button';
 import Badge from 'antd/lib/badge';
 import { MoreOutlined } from '@ant-design/icons';
 
-import { CombinedState, Project } from 'reducers';
+import { CombinedState } from 'reducers';
+import { Project } from 'cvat-core-wrapper';
 import { useCardHeightHOC, usePlugins } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import ProjectActionsMenuComponent from './actions-menu';

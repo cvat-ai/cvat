@@ -21,11 +21,13 @@ import FileManagerComponent, { Files } from 'components/file-manager/file-manage
 import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
+import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
+import QualityConfigurationForm, { QualityConfiguration, ValidationMethod } from './quality-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -35,6 +37,7 @@ export interface CreateTaskData {
     basic: BaseConfiguration;
     subset: string;
     advanced: AdvancedConfiguration;
+    quality: QualityConfiguration;
     labels: any[];
     files: Files;
     activeFileManagerTab: TabName;
@@ -82,6 +85,12 @@ const defaultState: State = {
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
+    },
+    quality: {
+        validationMethod: ValidationMethod.NONE,
+        validationFramesPercent: 5,
+        validationFramesPerJob: 1,
+        frameSelectionMethod: FrameSelectionMethod.RANDOM,
     },
     labels: [],
     files: {
@@ -152,6 +161,7 @@ function filterFiles(remoteFiles: RemoteFile[], many: boolean): RemoteFile[] {
 class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps, State> {
     private basicConfigurationComponent: RefObject<BasicConfigurationForm>;
     private advancedConfigurationComponent: RefObject<AdvancedConfigurationForm>;
+    private qualityConfigurationComponent: RefObject<QualityConfigurationForm>;
     private fileManagerComponent: any;
 
     public constructor(props: Props & RouteComponentProps) {
@@ -159,6 +169,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.state = { ...defaultState };
         this.basicConfigurationComponent = React.createRef<BasicConfigurationForm>();
         this.advancedConfigurationComponent = React.createRef<AdvancedConfigurationForm>();
+        this.qualityConfigurationComponent = React.createRef<QualityConfigurationForm>();
     }
 
     public componentDidMount(): void {
@@ -246,6 +257,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
+    private handleSubmitQualityConfiguration = (values: QualityConfiguration): Promise<void> => (
+        new Promise((resolve) => {
+            this.setState({
+                quality: { ...values },
+            }, resolve);
+        })
+    );
+
     private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): Promise<void> => (
         new Promise((resolve) => {
             this.setState({
@@ -280,6 +299,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             advanced: {
                 ...state.advanced,
                 useProjectTargetStorage: value,
+            },
+        }));
+    };
+
+    private handleValidationMethodChange = (value: ValidationMethod): void => {
+        this.qualityConfigurationComponent.current?.resetFields();
+        this.setState(() => ({
+            quality: {
+                ...defaultState.quality,
+                validationMethod: value,
             },
         }));
     };
@@ -431,31 +460,38 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
+                const promises = [];
+
                 if (this.advancedConfigurationComponent.current) {
-                    return this.advancedConfigurationComponent.current.submit();
+                    promises.push(this.advancedConfigurationComponent.current.submit());
                 }
+
+                if (this.qualityConfigurationComponent.current) {
+                    promises.push(this.qualityConfigurationComponent.current.submit());
+                }
+
+                return Promise.all(promises);
+            }).then(() => {
                 if (projectId) {
-                    return core.projects.get({ id: projectId })
-                        .then((response: any) => {
-                            const [project] = response;
-                            const { advanced } = this.state;
-                            return this.handleSubmitAdvancedConfiguration({
-                                ...advanced,
-                                sourceStorage: new Storage(
-                                    project.sourceStorage || { location: StorageLocation.LOCAL },
-                                ),
-                                targetStorage: new Storage(
-                                    project.targetStorage || { location: StorageLocation.LOCAL },
-                                ),
-                            });
-                        })
-                        .catch((error: Error): void => {
-                            throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
+                    return core.projects.get({ id: projectId }).then((response) => {
+                        const [project] = response;
+                        const { advanced } = this.state;
+                        return this.handleSubmitAdvancedConfiguration({
+                            ...advanced,
+                            sourceStorage: advanced.useProjectSourceStorage ? new Storage(
+                                project.sourceStorage || { location: StorageLocation.LOCAL },
+                            ) : advanced.sourceStorage,
+                            targetStorage: advanced.useProjectTargetStorage ? new Storage(
+                                project.targetStorage || { location: StorageLocation.LOCAL },
+                            ) : advanced.targetStorage,
                         });
+                    }).catch((error: Error): void => {
+                        throw new Error(`Couldn't fetch the project ${projectId} ${error.toString()}`);
+                    });
                 }
+
                 return Promise.resolve();
-            })
-            .then(resolve)
+            }).then(resolve)
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',
@@ -564,6 +600,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             projectId,
             subset,
             advanced,
+            quality,
             labels,
             files: allFiles,
             activeFileManagerTab,
@@ -580,6 +617,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 },
                 subset,
                 advanced,
+                quality,
                 labels,
                 files: {
                     ...defaultState.files,
@@ -877,6 +915,31 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         );
     }
 
+    private renderQualityBlock(): JSX.Element {
+        const { quality: { validationMethod } } = this.state;
+
+        return (
+            <Col span={24}>
+                <Collapse
+                    className='cvat-quality-configuration-wrapper'
+                    items={[{
+                        key: '1',
+                        label: <Text className='cvat-title'>Quality</Text>,
+                        children: (
+                            <QualityConfigurationForm
+                                ref={this.qualityConfigurationComponent}
+                                initialValues={defaultState.quality}
+                                onSubmit={this.handleSubmitQualityConfiguration}
+                                validationMethod={validationMethod}
+                                onChangeValidationMethod={this.handleValidationMethodChange}
+                            />
+                        ),
+                    }]}
+                />
+            </Col>
+        );
+    }
+
     private renderFooterSingleTask(): JSX.Element {
         const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
 
@@ -967,6 +1030,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
+                {/* {this.renderQualityBlock()} disabled while https://github.com/cvat-ai/cvat/pull/8348 not merged */}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }

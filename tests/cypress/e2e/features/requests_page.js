@@ -293,7 +293,7 @@ context('Requests page', () => {
             });
         });
 
-        it('Import backup creates a request. Project  can not be opened.', () => {
+        it('Import backup creates a request. Project can not be opened.', () => {
             cy.restoreProject(
                 `${backupArchiveName}.zip`,
             );
@@ -303,6 +303,10 @@ context('Requests page', () => {
                 cy.get('.cvat-request-item-progress-success').should('exist');
                 cy.get('.cvat-requests-name').should('not.exist');
             }, { checkResourceLink: false });
+
+            cy.goToProjectsList();
+            cy.openProject(projectName);
+            cy.deleteProjectViaActions(projectName);
         });
     });
 

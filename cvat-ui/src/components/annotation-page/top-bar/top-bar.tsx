@@ -7,10 +7,9 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
-    ActiveControl, CombinedState, NavigationType, ToolsBlockerState, Workspace,
+    ActiveControl, NavigationType, ToolsBlockerState, Workspace,
 } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
-import { usePlugins } from 'utils/hooks';
 import { KeyMap } from 'utils/mousetrap-react';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
@@ -53,7 +52,6 @@ interface Props {
     showStatistics(): void;
     showFilters(): void;
     onSwitchPlay(): void;
-    onSaveAnnotation(): void;
     onPrevFrame(): void;
     onNextFrame(): void;
     onForward(): void;
@@ -111,7 +109,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         showFilters,
         changeWorkspace,
         onSwitchPlay,
-        onSaveAnnotation,
         onPrevFrame,
         onNextFrame,
         onForward,
@@ -132,16 +129,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         switchNavigationBlocked,
     } = props;
 
-    const playerPlugins = usePlugins(
-        (state: CombinedState) => state.plugins.components.annotationPage.header.player, props,
-    );
     const playerItems: [JSX.Element, number][] = [];
-    playerItems.push(
-        ...playerPlugins.map(({ component: Component, weight }, index) => {
-            const component = <Component targetProps={props} key={index} />;
-            return [component, weight] as [JSX.Element, number];
-        }),
-    );
 
     playerItems.push([(
         <PlayerButtons
@@ -204,7 +192,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 drawShortcut={drawShortcut}
                 switchToolsBlockerShortcut={switchToolsBlockerShortcut}
                 toolsBlockerState={toolsBlockerState}
-                onSaveAnnotation={onSaveAnnotation}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
                 onFinishDraw={onFinishDraw}
