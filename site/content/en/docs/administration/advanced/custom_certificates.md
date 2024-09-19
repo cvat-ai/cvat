@@ -49,6 +49,7 @@ tls:
 Edit the `docker-compose.https.yml` file and change the traefik servise configuration as follows:
 
 ```yaml
+  traefik:
     environment:
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :80
       TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
