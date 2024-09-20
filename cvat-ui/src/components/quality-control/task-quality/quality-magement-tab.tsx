@@ -25,10 +25,9 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
         onDeleteFrames, onRestoreFrames, fetching,
     } = props;
 
-    const activeCount = gtJobMeta.includedFrames
-        .filter((frameID: number) => !(frameID in gtJobMeta.deletedFrames)).length;
-    const excludedCount = Object.keys(gtJobMeta.deletedFrames)
-        .filter((frameID: string) => gtJobMeta.includedFrames.includes(+frameID)).length;
+    const totalCount = gtJobMeta.getDataFrameNumbers().length;
+    const excludedCount = Object.keys(gtJobMeta.deletedFrames).length;
+    const activeCount = totalCount - excludedCount;
     const [AllocationTableComponent] = CustomizableComponents.QUALITY_CONTROL_ALLOCATION_TABLE.slice(-1);
 
     return (
@@ -45,7 +44,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                     <SummaryComponent
                         excludedCount={excludedCount}
                         activeCount={activeCount}
-                        totalCount={gtJobMeta.includedFrames.length}
+                        totalCount={totalCount}
                     />
                 </Col>
             </Row>
