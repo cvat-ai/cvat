@@ -2313,8 +2313,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     )
 
             elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                # TODO: take the current validation frames distribution into account,
-                # simply using random here can break distribution uniformness
                 requested_frame_ids = random.sample(
                     task_active_honeypots, k=segment_honeypots_count
                 )
