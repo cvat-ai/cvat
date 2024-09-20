@@ -102,6 +102,11 @@ def _export_yolov8_pose(*args, **kwargs):
     _export_common(*args, format_name='yolov8_pose', **kwargs)
 
 
+@exporter(name='YOLOv8 Classification', ext='ZIP', version='1.0')
+def _export_yolov8_pose(*args, **kwargs):
+    _export_common(*args, format_name='yolov8_classification', **kwargs)
+
+
 @importer(name='YOLOv8 Detection', ext="ZIP", version="1.0")
 def _import_yolov8_detection(*args, **kwargs):
     _import_common(*args, format_name="yolov8_detection", **kwargs)
@@ -134,3 +139,8 @@ def _import_yolov8_pose(src_file, temp_dir, instance_data, **kwargs):
         import_kwargs=dict(skeleton_sub_labels=true_skeleton_point_labels),
         **kwargs
     )
+
+
+@importer(name='YOLOv8 Classification', ext="ZIP", version="1.0")
+def _import_yolov8_segmentation(*args, **kwargs):
+    _import_common(*args, format_name="yolov8_classification", **kwargs)
