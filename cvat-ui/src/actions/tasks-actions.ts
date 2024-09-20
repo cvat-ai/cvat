@@ -11,6 +11,7 @@ import {
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -256,7 +257,7 @@ ThunkAction {
 
         let extras = {};
 
-        if (data.quality.validationMode) {
+        if (data.quality.validationMode !== ValidationMode.NONE) {
             extras = {
                 validation_params: {
                     mode: data.quality.validationMode,

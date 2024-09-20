@@ -29,7 +29,7 @@ interface Props {
 
 export enum ValidationMode {
     NONE = 'none',
-    GT = 'gt_job',
+    GT = 'gt',
     HONEYPOTS = 'gt_pool',
 }
 
