@@ -822,7 +822,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                         f"must be not be greater than the segment size ({task.segment_size})"
                     )
             elif frame_share := validated_data.pop("frames_per_job_share", None):
-                frame_count = max(1, int(frame_share * task.segment_size))
+                frame_count = min(max(1, int(frame_share * task.segment_size)), task_size)
             else:
                 raise serializers.ValidationError(
                     "The number of validation frames is not specified"

@@ -1393,7 +1393,7 @@ def _create_thread(
                             f"than task segment size ({db_task.segment_size})"
                         )
                 elif frame_share := validation_params.get("frames_per_job_share"):
-                    frame_count = max(1, int(frame_share * db_task.segment_size))
+                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
