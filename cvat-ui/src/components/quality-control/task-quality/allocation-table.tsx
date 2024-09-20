@@ -42,12 +42,29 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
         selectedRows: [],
     });
 
-    const data = gtJobMeta.includedFrames.map((frameID: number) => ({
-        key: frameID,
-        frame: frameID,
-        name: gtJobMeta.frames[frameID]?.name ?? gtJobMeta.frames[0].name,
-        active: !(frameID in gtJobMeta.deletedFrames),
-    }));
+    const data = (() => {
+        // A workaround for meta frames using source data numbers
+        // TODO: remove once meta is migrated to relative frame numbers
+        function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
+            return meta.startFrame - localStartFrame * meta.frameStep;
+        }
+
+        function getFrameNumber(dataFrameNumber: number, dataStartFrame: number, step: number): number {
+            return (dataFrameNumber - dataStartFrame) / step;
+        }
+
+        const dataStartFrame = getDataStartFrame(gtJobMeta, gtJob.startFrame);
+        const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameID: number) => (
+            getFrameNumber(dataFrameID, dataStartFrame, gtJobMeta.frameStep)
+        ));
+
+        return jobFrameNumbers.map((frameID: number, index: number) => ({
+            key: frameID,
+            frame: frameID,
+            name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
+            active: !(frameID in gtJobMeta.deletedFrames),
+        }));
+    })();
 
     const columns = [
         {
