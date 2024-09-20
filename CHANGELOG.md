@@ -16,6 +16,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.19.0'></a>
+## \[2.19.0\] - 2024-09-20
+
+### Added
+
+- Quality management tab on `quality control` allows to enabling/disabling GT frames
+  (<https://github.com/cvat-ai/cvat/pull/8329>)
+
+### Changed
+
+- Moved quality control from `analytics` page to `quality control` page
+  (<https://github.com/cvat-ai/cvat/pull/8329>)
+
+### Removed
+
+- Quality report no longer available in CVAT community version
+  (<https://github.com/cvat-ai/cvat/pull/8329>)
+
+### Fixed
+
+- Fixing a problem when project export does not export skeleton tracks
+  (<https://github.com/cvat-ai/cvat/pull/8423>)
+
+### Security
+
+- Fixed an XSS vulnerability in request-related endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-hp6c-f34j-qjj7>)
+
+- Fixed an XSS vulnerability in the quality report data endpoint
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-2c85-39cc-2px9>)
+
 <a id='changelog-2.18.0'></a>
 ## \[2.18.0\] - 2024-09-10
 
