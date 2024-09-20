@@ -723,6 +723,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
+                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(
