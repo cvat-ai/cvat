@@ -815,11 +815,11 @@ class TaskAnnotation:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
-        if action != PatchAction.DELETE and (
+        if (
             hasattr(self.db_task.data, 'validation_layout') and
             self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
         ):
-            self._preprocess_input_annotations_for_gt_pool_task(data)
+            self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
 
         splitted_data = {}
         jobs = {}
@@ -853,7 +853,7 @@ class TaskAnnotation:
         self._patch_data(data, PatchAction.CREATE)
 
     def _preprocess_input_annotations_for_gt_pool_task(
-        self, data: Union[AnnotationIR, dict]
+        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
     ) -> AnnotationIR:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
@@ -868,7 +868,7 @@ class TaskAnnotation:
             db_job for db_job in self.db_jobs if db_job.type == models.JobType.GROUND_TRUTH
         )
 
-        # Copy GT pool annotations into normal jobs
+        # Copy GT pool annotations into other jobs, with replacement of any existing annotations
         gt_pool_frames = gt_job.segment.frame_set
         task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
         task_validation_frame_ids: set[int] = set()
@@ -884,6 +884,20 @@ class TaskAnnotation:
         assert sorted(gt_pool_frames) == list(range(min(gt_pool_frames), max(gt_pool_frames) + 1))
         gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
 
+        if action and not (
+            gt_annotations.tags or gt_annotations.shapes or gt_annotations.tracks
+        ):
+            return
+
+        if not (
+            action is None or # put
+            action == PatchAction.CREATE
+        ):
+            # allow validation frame editing only with full task updates
+            raise ValidationError(
+                "Annotations on validation frames can only be edited via task import or the GT job"
+            )
+
         task_annotation_manager = AnnotationManager(data, dimension=self.db_task.dimension)
         task_annotation_manager.clear_frames(task_validation_frame_ids)
 
@@ -891,14 +905,21 @@ class TaskAnnotation:
             zip(itertools.repeat('tag'), gt_annotations.tags),
             zip(itertools.repeat('shape'), gt_annotations.shapes),
         ):
-            for placeholder_frame_id in task_validation_frame_groups[gt_annotation["frame"]]:
-                gt_annotation = faster_deepcopy(gt_annotation)
-                gt_annotation["frame"] = placeholder_frame_id
+            for placeholder_frame_id in task_validation_frame_groups.get(
+                gt_annotation["frame"], [] # some GT frames may be unused
+            ):
+                copied_annotation = faster_deepcopy(gt_annotation)
+                copied_annotation["frame"] = placeholder_frame_id
+
+                for ann in itertools.chain(
+                    [copied_annotation], copied_annotation.get('elements', [])
+                ):
+                    ann.pop("id", None)
 
                 if ann_type == 'tag':
-                    data.add_tag(gt_annotation)
+                    data.add_tag(copied_annotation)
                 elif ann_type == 'shape':
-                    data.add_shape(gt_annotation)
+                    data.add_shape(copied_annotation)
                 else:
                     assert False
 

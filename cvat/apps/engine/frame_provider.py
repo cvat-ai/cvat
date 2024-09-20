@@ -12,11 +12,24 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import Any, Callable, Generic, Iterator, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import av
 import cv2
 import numpy as np
+from datumaro.util import take_by
 from django.conf import settings
 from PIL import Image
 from rest_framework.exceptions import ValidationError
@@ -187,7 +200,7 @@ class IFrameProvider(metaclass=ABCMeta):
     ) -> DataWithMeta[AnyFrame]: ...
 
     @abstractmethod
-    def get_frame_context_images(
+    def get_frame_context_images_chunk(
         self,
         frame_number: int,
     ) -> Optional[DataWithMeta[BytesIO]]: ...
@@ -247,7 +260,7 @@ class TaskFrameProvider(IFrameProvider):
         return super()._get_rel_frame_number(self._db_task.data, abs_frame_number)
 
     def get_preview(self) -> DataWithMeta[BytesIO]:
-        return self._get_segment_frame_provider(self._db_task.data.start_frame).get_preview()
+        return self._get_segment_frame_provider(0).get_preview()
 
     def get_chunk(
         self, chunk_number: int, *, quality: FrameQuality = FrameQuality.ORIGINAL
@@ -255,13 +268,12 @@ class TaskFrameProvider(IFrameProvider):
         return_type = DataWithMeta[BytesIO]
         chunk_number = self.validate_chunk_number(chunk_number)
 
-        db_data = self._db_task.data
-
         cache = MediaCache()
         cached_chunk = cache.get_task_chunk(self._db_task, chunk_number, quality=quality)
         if cached_chunk:
             return return_type(cached_chunk[0], cached_chunk[1])
 
+        db_data = self._db_task.data
         step = db_data.get_frame_step()
         task_chunk_start_frame = chunk_number * db_data.chunk_size
         task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
@@ -273,7 +285,7 @@ class TaskFrameProvider(IFrameProvider):
             )
         )
 
-        matching_segments = sorted(
+        matching_segments: list[models.Segment] = sorted(
             [
                 s
                 for s in self._db_task.segment_set.all()
@@ -287,13 +299,15 @@ class TaskFrameProvider(IFrameProvider):
         assert matching_segments
 
         # Don't put this into set_callback to avoid data duplication in the cache
-        if len(matching_segments) == 1 and task_chunk_frame_set == set(
-            matching_segments[0].frame_set
-        ):
+
+        if len(matching_segments) == 1:
             segment_frame_provider = SegmentFrameProvider(matching_segments[0])
-            return segment_frame_provider.get_chunk(
-                segment_frame_provider.get_chunk_number(task_chunk_start_frame), quality=quality
+            matching_chunk_index = segment_frame_provider.find_matching_chunk(
+                sorted(task_chunk_frame_set)
             )
+            if matching_chunk_index is not None:
+                # The requested frames match one of the job chunks, we can use it directly
+                return segment_frame_provider.get_chunk(matching_chunk_index, quality=quality)
 
         def _set_callback() -> DataWithMime:
             # Create and return a joined / cleaned chunk
@@ -338,11 +352,13 @@ class TaskFrameProvider(IFrameProvider):
             frame_number, quality=quality, out_type=out_type
         )
 
-    def get_frame_context_images(
+    def get_frame_context_images_chunk(
         self,
         frame_number: int,
     ) -> Optional[DataWithMeta[BytesIO]]:
-        return self._get_segment_frame_provider(frame_number).get_frame_context_images(frame_number)
+        return self._get_segment_frame_provider(frame_number).get_frame_context_images_chunk(
+            frame_number
+        )
 
     def iterate_frames(
         self,
@@ -422,7 +438,7 @@ class SegmentFrameProvider(IFrameProvider):
             self._loaders[FrameQuality.COMPRESSED] = _BufferChunkLoader(
                 reader_class=reader_class[db_data.compressed_chunk_type][0],
                 reader_params=reader_class[db_data.compressed_chunk_type][1],
-                get_chunk_callback=lambda chunk_idx: cache.get_segment_chunk(
+                get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
                     db_segment, chunk_idx, quality=FrameQuality.COMPRESSED
                 ),
             )
@@ -430,7 +446,7 @@ class SegmentFrameProvider(IFrameProvider):
             self._loaders[FrameQuality.ORIGINAL] = _BufferChunkLoader(
                 reader_class=reader_class[db_data.original_chunk_type][0],
                 reader_params=reader_class[db_data.original_chunk_type][1],
-                get_chunk_callback=lambda chunk_idx: cache.get_segment_chunk(
+                get_chunk_callback=lambda chunk_idx: cache.get_or_set_segment_chunk(
                     db_segment, chunk_idx, quality=FrameQuality.ORIGINAL
                 ),
             )
@@ -472,6 +488,20 @@ class SegmentFrameProvider(IFrameProvider):
 
     def get_chunk_number(self, frame_number: int) -> int:
         return int(frame_number) // self._db_segment.task.data.chunk_size
+
+    def find_matching_chunk(self, frames: Sequence[int]) -> Optional[int]:
+        return next(
+            (
+                i
+                for i, chunk_frames in enumerate(
+                    take_by(
+                        sorted(self._db_segment.frame_set), self._db_segment.task.data.chunk_size
+                    )
+                )
+                if frames == set(chunk_frames)
+            ),
+            None,
+        )
 
     def validate_chunk_number(self, chunk_number: int) -> int:
         segment_size = self._db_segment.frame_count
@@ -525,19 +555,21 @@ class SegmentFrameProvider(IFrameProvider):
 
         return return_type(frame, mime=mimetypes.guess_type(frame_name)[0])
 
-    def get_frame_context_images(
+    def get_frame_context_images_chunk(
         self,
         frame_number: int,
     ) -> Optional[DataWithMeta[BytesIO]]:
-        # TODO: refactor, optimize
+        self.validate_frame_number(frame_number)
+
+        db_data = self._db_segment.task.data
+
         cache = MediaCache()
-
-        if self._db_segment.task.data.storage_method == models.StorageMethodChoice.CACHE:
-            data, mime = cache.get_frame_context_images(self._db_segment.task.data, frame_number)
+        if db_data.storage_method == models.StorageMethodChoice.CACHE:
+            data, mime = cache.get_or_set_frame_context_images_chunk(db_data, frame_number)
         else:
-            data, mime = cache.prepare_context_images(self._db_segment.task.data, frame_number)
+            data, mime = cache.prepare_context_images_chunk(db_data, frame_number)
 
-        if not data:
+        if not data.getvalue():
             return None
 
         return DataWithMeta[BytesIO](data, mime=mime)
@@ -564,10 +596,101 @@ class JobFrameProvider(SegmentFrameProvider):
     def __init__(self, db_job: models.Job) -> None:
         super().__init__(db_job.segment)
 
+    def get_chunk(
+        self,
+        chunk_number: int,
+        *,
+        quality: FrameQuality = FrameQuality.ORIGINAL,
+        is_task_chunk: bool = False,
+    ) -> DataWithMeta[BytesIO]:
+        if not is_task_chunk:
+            return super().get_chunk(chunk_number, quality=quality)
 
-def make_frame_provider(data_source: Union[models.Job, models.Task, Any]) -> IFrameProvider:
+        # Backward compatibility for the "number" parameter
+        # Reproduce the task chunks, limited by this job
+        return_type = DataWithMeta[BytesIO]
+
+        task_frame_provider = TaskFrameProvider(self._db_segment.task)
+        segment_start_chunk = task_frame_provider.get_chunk_number(self._db_segment.start_frame)
+        segment_stop_chunk = task_frame_provider.get_chunk_number(self._db_segment.stop_frame)
+        if not segment_start_chunk <= chunk_number <= segment_stop_chunk:
+            raise ValidationError(
+                f"Invalid chunk number '{chunk_number}'. "
+                "The chunk number should be in the "
+                f"[{segment_start_chunk}, {segment_stop_chunk}] range"
+            )
+
+        cache = MediaCache()
+        cached_chunk = cache.get_segment_task_chunk(self._db_segment, chunk_number, quality=quality)
+        if cached_chunk:
+            return return_type(cached_chunk[0], cached_chunk[1])
+
+        db_data = self._db_segment.task.data
+        step = db_data.get_frame_step()
+        task_chunk_start_frame = chunk_number * db_data.chunk_size
+        task_chunk_stop_frame = (chunk_number + 1) * db_data.chunk_size - 1
+        task_chunk_frame_set = set(
+            range(
+                db_data.start_frame + task_chunk_start_frame * step,
+                min(db_data.start_frame + task_chunk_stop_frame * step, db_data.stop_frame) + step,
+                step,
+            )
+        )
+
+        # Don't put this into set_callback to avoid data duplication in the cache
+        matching_chunk = self.find_matching_chunk(sorted(task_chunk_frame_set))
+        if matching_chunk is not None:
+            return self.get_chunk(matching_chunk, quality=quality)
+
+        def _set_callback() -> DataWithMime:
+            # Create and return a joined / cleaned chunk
+            segment_chunk_frame_ids = sorted(
+                task_chunk_frame_set.intersection(self._db_segment.frame_set)
+            )
+
+            if self._db_segment.type == models.SegmentType.RANGE:
+                return cache.prepare_custom_range_segment_chunk(
+                    db_task=self._db_segment.task,
+                    frame_ids=segment_chunk_frame_ids,
+                    quality=quality,
+                )
+            elif self._db_segment.type == models.SegmentType.SPECIFIC_FRAMES:
+                return cache.prepare_custom_masked_range_segment_chunk(
+                    db_task=self._db_segment.task,
+                    frame_ids=segment_chunk_frame_ids,
+                    chunk_number=chunk_number,
+                    quality=quality,
+                    insert_placeholders=True,
+                )
+            else:
+                assert False
+
+        buffer, mime_type = cache.get_or_set_segment_task_chunk(
+            self._db_segment, chunk_number, quality=quality, set_callback=_set_callback
+        )
+
+        return return_type(data=buffer, mime=mime_type)
+
+
+@overload
+def make_frame_provider(data_source: models.Job) -> JobFrameProvider: ...
+
+
+@overload
+def make_frame_provider(data_source: models.Segment) -> SegmentFrameProvider: ...
+
+
+@overload
+def make_frame_provider(data_source: models.Task) -> TaskFrameProvider: ...
+
+
+def make_frame_provider(
+    data_source: Union[models.Job, models.Segment, models.Task, Any]
+) -> IFrameProvider:
     if isinstance(data_source, models.Task):
         frame_provider = TaskFrameProvider(data_source)
+    elif isinstance(data_source, models.Segment):
+        frame_provider = SegmentFrameProvider(data_source)
     elif isinstance(data_source, models.Job):
         frame_provider = JobFrameProvider(data_source)
     else:

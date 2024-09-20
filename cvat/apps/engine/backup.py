@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import itertools
 import mimetypes
 import os
 import re
@@ -35,7 +34,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, J
     LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer,
-    ValidationLayoutParamsSerializer)
+    ValidationParamsSerializer)
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
     get_rq_job_meta, import_resource_with_clean_up_after,
@@ -362,23 +361,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
-            if hasattr(self._db_data, 'video'):
-                media_files = (os.path.join(data_dir, self._db_data.video.path), )
-            else:
-                media_files = (
-                    os.path.join(data_dir, im.path)
-                    for im in self._db_data.images.exclude(is_placeholder=True).all()
-                )
-
-            data_manifest_path = self._db_data.get_manifest_path()
-            if os.path.isfile(data_manifest_path):
-                media_files = itertools.chain(media_files, [self._db_data.get_manifest_path()])
-
-            self._write_files(
+            self._write_directory(
                 source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
                 target_dir=target_data_dir,
-                files=media_files,
+                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
             )
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
@@ -482,17 +469,26 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 (validation_layout := getattr(self._db_data, 'validation_layout', None)) and
                 validation_layout.mode == models.ValidationMode.GT_POOL
             ):
-                validation_layout_serializer = ValidationLayoutParamsSerializer(
-                    instance=validation_layout
+                validation_params_serializer = ValidationParamsSerializer({
+                    "mode": validation_layout.mode,
+                    "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                    "frames_per_job_count": validation_layout.frames_per_job_count,
+                })
+                validation_params = validation_params_serializer.data
+                media_filenames = dict(
+                    self._db_data.images
+                    .order_by('frame')
+                    .filter(
+                        frame__gte=min(validation_layout.frames),
+                        frame__lte=max(validation_layout.frames),
+                    )
+                    .values_list('frame', 'path')
+                    .all()
                 )
-                validation_layout_params = validation_layout_serializer.data
-                validation_layout_params['frames'] = list(
-                    validation_layout.frames
-                    .order_by('path')
-                    .values_list('path', flat=True)
-                    .iterator(chunk_size=10000)
-                )
-                data['validation_layout'] = validation_layout_params
+                validation_params['frames'] = [
+                    media_filenames[frame] for frame in validation_layout.frames
+                ]
+                data['validation_layout'] = validation_params
 
             return self._prepare_data_meta(data)
 
@@ -604,6 +600,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         super().__init__(logger=slogger.glob)
         self._file = file
         self._subdir = subdir
+        "Task subdirectory with the separator included, e.g. task_0/"
+
         self._user_id = user_id
         self._org_id = org_id
         self._manifest, self._annotations, self._annotation_guide, self._assets = self._read_meta()
@@ -697,34 +695,32 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         input_data_dirname = self.DATA_DIRNAME
         output_data_path = self._db_task.data.get_upload_dirname()
         uploaded_files = []
-        for fn in input_archive.namelist():
-            if fn.endswith(os.path.sep) or (
-                self._subdir and not fn.startswith(self._subdir + os.path.sep)
-            ):
+        for file_path in input_archive.namelist():
+            if file_path.endswith('/') or self._subdir and not file_path.startswith(self._subdir):
                 continue
 
-            fn = os.path.relpath(fn, self._subdir)
-            if excluded_filenames and fn in excluded_filenames:
+            file_name = os.path.relpath(file_path, self._subdir)
+            if excluded_filenames and file_name in excluded_filenames:
                 continue
 
-            if fn.startswith(input_data_dirname + os.path.sep):
+            if file_name.startswith(input_data_dirname + '/'):
                 target_file = os.path.join(
-                    output_data_path, os.path.relpath(fn, input_data_dirname)
+                    output_data_path, os.path.relpath(file_name, input_data_dirname)
                 )
 
                 self._prepare_dirs(target_file)
                 with open(target_file, "wb") as out:
-                    out.write(input_archive.read(fn))
+                    out.write(input_archive.read(file_path))
 
-                uploaded_files.append(os.path.relpath(fn, input_data_dirname))
-            elif fn.startswith(input_task_dirname + os.path.sep):
+                uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
+            elif file_name.startswith(input_task_dirname + '/'):
                 target_file = os.path.join(
-                    output_task_path, os.path.relpath(fn, input_task_dirname)
+                    output_task_path, os.path.relpath(file_name, input_task_dirname)
                 )
 
                 self._prepare_dirs(target_file)
                 with open(target_file, "wb") as out:
-                    out.write(input_archive.read(fn))
+                    out.write(input_archive.read(file_path))
 
         return uploaded_files
 
@@ -760,7 +756,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         validation_params = data.pop('validation_layout', None)
         if validation_params:
             validation_params['frame_selection_method'] = models.JobFrameSelectionMethod.MANUAL
-            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
             validation_params = validation_params_serializer.data
 
@@ -788,8 +784,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if job_file_mapping and (
             not validation_params or validation_params['mode'] != models.ValidationMode.GT_POOL
         ):
-            # It's currently prohibited not allowed to have repeated file names in jobs.
-            # DataSerializer checks it, but we don't need it for tasks with a GT pool
+            # It's currently prohibited to have repeated file names in jobs.
+            # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data['job_file_mapping'] = job_file_mapping
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
@@ -816,7 +812,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         data = data_serializer.data
         data['client_files'] = uploaded_files
 
-        if job_file_mapping and (
+        if job_file_mapping or (
             validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL
         ):
             data['job_file_mapping'] = job_file_mapping

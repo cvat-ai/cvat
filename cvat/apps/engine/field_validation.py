@@ -2,15 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 from rest_framework import serializers
-
-
-def drop_null_keys(d: dict[str, Any], *, keys: Optional[Sequence[str]] = None) -> dict[str, Any]:
-    if keys is None:
-        keys = d.keys()
-    return {k: v for k, v in d.items() if k in keys and v is not None}
 
 
 def require_one_of_fields(data: dict[str, Any], keys: Sequence[str]) -> None:
@@ -39,7 +33,7 @@ def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any])
 
 
 def validate_percent(value: float) -> float:
-    if not (0 <= value <= 1):
+    if not 0 <= value <= 1:
         raise serializers.ValidationError("Value must be in the range [0; 1]")
 
     return value

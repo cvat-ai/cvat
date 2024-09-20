@@ -231,12 +231,9 @@ class ValidationMode(str, Enum):
     def __str__(self):
         return self.value
 
-class ValidationLayout(models.Model):
-    # TODO: find a way to avoid using the same mode for storing request parameters
-    # before data uploading and after
-
+class ValidationParams(models.Model):
     task_data = models.OneToOneField(
-        'Data', on_delete=models.CASCADE, related_name="validation_layout"
+        'Data', on_delete=models.CASCADE, related_name="validation_params"
     )
 
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())
@@ -253,10 +250,19 @@ class ValidationLayout(models.Model):
     frames_per_job_share = models.FloatField(null=True)
 
 class ValidationFrame(models.Model):
-    validation_layout = models.ForeignKey(
-        ValidationLayout, on_delete=models.CASCADE, related_name="frames"
+    validation_params = models.ForeignKey(
+        ValidationParams, on_delete=models.CASCADE, related_name="frames"
     )
     path = models.CharField(max_length=1024, default='')
+
+class ValidationLayout(models.Model):
+    task_data = models.OneToOneField(
+        'Data', on_delete=models.CASCADE, related_name="validation_layout"
+    )
+
+    mode = models.CharField(max_length=32, choices=ValidationMode.choices())
+    frames = IntArrayField(store_sorted=True, unique_values=True)
+    frames_per_job_count = models.IntegerField(null=True)
 
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
@@ -276,7 +282,14 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    validation_layout: ValidationLayout # TODO: maybe allow None to avoid hasattr everywhere
+
+    validation_params: ValidationParams
+    """
+    Represents user-requested validation params before task is created.
+    After the task creation, 'validation_layout' is used instead.
+    """
+
+    validation_layout: ValidationLayout
 
     class Meta:
         default_permissions = ()
@@ -342,6 +355,19 @@ class Data(models.Model):
         os.makedirs(self.get_compressed_cache_dirname())
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
+
+    @transaction.atomic
+    def update_validation_layout(
+        self, validation_layout: Optional[ValidationLayout]
+    ) -> Optional[ValidationLayout]:
+        if validation_layout:
+            validation_layout.task_data = self
+            validation_layout.save()
+
+        ValidationParams.objects.filter(task_data_id=self.id).delete()
+        ValidationFrame.objects.filter(validation_params__task_data_id=self.id).delete()
+
+        return validation_layout
 
 
 class Video(models.Model):
@@ -823,21 +849,6 @@ class Job(TimestampedModel):
     class Meta:
         default_permissions = ()
 
-    @transaction.atomic
-    def save(self, *args, **kwargs) -> None:
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
-    def clean(self) -> None:
-        if not (self.type == JobType.GROUND_TRUTH) ^ (self.segment.type == SegmentType.RANGE):
-            raise ValidationError(
-                f"job type == {JobType.GROUND_TRUTH} and "
-                f"segment type == {SegmentType.SPECIFIC_FRAMES} "
-                "can only be used together"
-            )
-
-        return super().clean()
-
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
@@ -1252,6 +1263,7 @@ class RequestStatus(TextChoices):
     FINISHED = "finished"
 
 class RequestAction(TextChoices):
+    AUTOANNOTATE = "autoannotate"
     CREATE = "create"
     IMPORT = "import"
     EXPORT = "export"

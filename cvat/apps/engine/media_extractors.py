@@ -914,7 +914,10 @@ class ZipChunkWriter(IChunkWriter):
                     else:
                         output = path
                 else:
-                    output, ext = self._write_pcd_file(path)[0:2]
+                    if isinstance(image, io.BytesIO):
+                        output, ext = self._write_pcd_file(image)[0:2]
+                    else:
+                        output, ext = self._write_pcd_file(path)[0:2]
 
                 arcname = '{:06d}.{}'.format(idx, ext)
                 if isinstance(output, io.BytesIO):
@@ -945,7 +948,11 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                             w, h = img.size
                     extension = self.IMAGE_EXT
                 else:
-                    image_buf, extension, w, h = self._write_pcd_file(path)
+                    if isinstance(image, io.BytesIO):
+                        image_buf, extension, w, h = self._write_pcd_file(image)
+                    else:
+                        image_buf, extension, w, h = self._write_pcd_file(path)
+
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())

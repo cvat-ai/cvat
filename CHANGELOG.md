@@ -16,6 +16,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.18.0'></a>
+## \[2.18.0\] - 2024-09-10
+
+### Added
+
+- New quality settings `Target metric`, `Target metric threshold`, `Max validations per job`
+  (<https://github.com/cvat-ai/cvat/pull/8347>)
+
+- Ability to specify location when exporting datasets and backups using SDK
+  (<https://github.com/cvat-ai/cvat/pull/8255>)
+
+- Shortcuts in user interface now may be customized depends on a user requirements
+  (<https://github.com/cvat-ai/cvat/pull/8186>)
+
+- Added analytics events for function calls
+  (<https://github.com/cvat-ai/cvat/pull/8395>)
+
+### Changed
+
+- `Mean annotaion quality` card on quality page now displays a value depending on `Target metric` setting
+  (<https://github.com/cvat-ai/cvat/pull/8347>)
+
+- When cancelling a request, a user is no longer required to have
+  permissions to perform the original action
+  (<https://github.com/cvat-ai/cvat/pull/8369>)
+
+- Lambda function endpoints now return 500 instead of 404
+  if a function's metadata is invalid
+  (<https://github.com/cvat-ai/cvat/pull/8406>)
+
+- An unknown lambda function type is now treated as invalid metadata
+  and the function is no longer included in the list endpoint output
+  (<https://github.com/cvat-ai/cvat/pull/8406>)
+
+### Removed
+
+- Legacy component to setup shortcuts to switch a label
+  (<https://github.com/cvat-ai/cvat/pull/8416>)
+
+### Fixed
+
+- An issue that occurred when exporting the same dataset or backup twice in a row using SDK
+  (<https://github.com/cvat-ai/cvat/pull/8255>)
+- An issue that occurred when exporting a dataset or backup using SDK
+  when the default project or task location refers to cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/8255>)
+
+- Export crashed on skeleton track with missing shapes
+  (<https://github.com/cvat-ai/cvat/pull/8377>)
+
+- One lambda function with invalid metadata will no longer
+  break function listing
+  (<https://github.com/cvat-ai/cvat/pull/8406>)
+
+### Security
+
+- Fixed a missing authorization vulnerability in webhook delivery endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-p3c9-m7jr-jxxj>)
+
+<a id='changelog-2.17.0'></a>
+## \[2.17.0\] - 2024-08-27
+
+### Added
+
+- Added support for YOLOv8 formats
+  (<https://github.com/cvat-ai/cvat/pull/8240>)
+
+- Last assignee update date in quality reports, new options in quality settings
+  (<https://github.com/cvat-ai/cvat/pull/8321>)
+
+### Changed
+
+- User sessions now expire after two weeks of inactivity
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+- A user changing their password will now invalidate all of their sessions
+  except for the current one
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+### Deprecated
+
+- Client events `upload:annotations`, `lock:object`, `change:attribute`, `change:label`
+ (<https://github.com/cvat-ai/cvat/pull/8304>)
+
+### Removed
+
+- Client event `restore:job` (<https://github.com/cvat-ai/cvat/pull/8304>)
+
+- Removed the `/auth/login-with-token` page
+  (<https://github.com/cvat-ai/cvat/pull/8336>)
+
+### Fixed
+
+- Go back button behavior on analytics page
+  (<https://github.com/cvat-ai/cvat/pull/8277>)
+
+- Logging out of one session will no longer log the user out of all their
+  other sessions
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+- Prevent export process from restarting when downloading a result file,
+  that resulted in downloading a file with new request ID
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+- Race condition occurred while handling parallel export requests
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+- Requests filtering using format and target filters
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+
+- Sometimes it is not possible to switch workspace because active control broken after
+trying to create a tag with a shortcut (<https://github.com/cvat-ai/cvat/pull/8334>)
+
 <a id='changelog-2.16.3'></a>
 ## \[2.16.3\] - 2024-08-13
 

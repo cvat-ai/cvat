@@ -14,7 +14,7 @@ import rq.defaults as rq_defaults
 
 from tempfile import NamedTemporaryFile
 import textwrap
-from typing import Any, Dict, Iterable, Optional, OrderedDict, Sequence, Union
+from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
 from datetime import timedelta
@@ -26,7 +26,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.engine.utils import parse_exception_message
+from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.utils import format_list, parse_exception_message
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
@@ -650,8 +651,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0),
         required=False,
-        allow_null=True,
-        default=None,
         help_text=textwrap.dedent("""\
             The list of frame ids. Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.MANUAL))
@@ -666,7 +665,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
     frame_share = serializers.FloatField(
         required=False,
-        allow_null=True,
         validators=[field_validation.validate_percent],
         help_text=textwrap.dedent("""\
             The share of frames included in the GT job.
@@ -676,7 +674,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     frames_per_job_count = serializers.IntegerField(
         min_value=1,
         required=False,
-        allow_null=True,
         help_text=textwrap.dedent("""\
             The number of frames included in the GT job from each annotation job.
             Applicable only to the "{}" frame selection method
@@ -684,7 +681,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
     frames_per_job_share = serializers.FloatField(
         required=False,
-        allow_null=True,
         validators=[field_validation.validate_percent],
         help_text=textwrap.dedent("""\
             The share of frames included in the GT job from each annotation job.
@@ -694,7 +690,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     random_seed = serializers.IntegerField(
         min_value=0,
         required=False,
-        allow_null=True,
         help_text=textwrap.dedent("""\
             The seed value for the random number generator.
             The same value will produce the same frame sets.
@@ -702,12 +697,15 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             By default, a random value is used.
         """)
     )
+    seed = serializers.IntegerField(
+        min_value=0, required=False, help_text="Deprecated. Use random_seed instead."
+    )
 
     class Meta:
         model = models.Job
         random_selection_params = (
             'frame_count', 'frame_share', 'frames_per_job_count', 'frames_per_job_share',
-            'random_seed',
+            'random_seed', 'seed'
         )
         manual_selection_params = ('frames',)
         write_once_fields = ('type', 'task_id', 'frame_selection_method',) \
@@ -719,17 +717,24 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return serializer.data
 
     def validate(self, attrs):
-        attrs = field_validation.drop_null_keys(attrs)
-
         frame_selection_method = attrs.get('frame_selection_method')
         if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             field_validation.require_one_of_fields(attrs, ['frame_count', 'frame_share'])
+
+            # 'seed' is a backward compatibility alias
+            if attrs.get('seed') is not None or attrs.get('random_seed') is not None:
+                field_validation.require_one_of_fields(attrs, ['seed', 'random_seed'])
+
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
             field_validation.require_one_of_fields(
                 attrs, ['frames_per_job_count', 'frames_per_job_share']
             )
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             field_validation.require_field(attrs, "frames")
+
+            frames = attrs['frames']
+            if not frames:
+                raise serializers.ValidationError("The list of frames cannot be empty")
 
         if (
             frame_selection_method != models.JobFrameSelectionMethod.MANUAL and
@@ -761,44 +766,49 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             )
 
         if (
-            hasattr(task.data, 'validation_layout') and
-            task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+            (validation_layout := getattr(task.data, 'validation_layout', None)) and
+            (
+                validation_layout.mode == models.ValidationMode.GT_POOL or
+                validation_layout.mode == models.ValidationMode.GT
+            )
         ):
             raise serializers.ValidationError(
-                f'Task with validation mode "{models.ValidationMode.GT_POOL}" '
+                f'Task with validation mode "{validation_layout.mode}" '
                 'cannot have more than 1 GT job'
             )
 
-        size = task.data.size
+        task_size = task.data.size
         valid_frame_ids = task.data.get_valid_frame_indices()
 
-        # TODO: refactor, test
+        # TODO: refactor
         frame_selection_method = validated_data.pop("frame_selection_method")
         if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             if frame_count := validated_data.pop("frame_count", None):
-                if size < frame_count:
+                if task_size < frame_count:
                     raise serializers.ValidationError(
                         f"The number of frames requested ({frame_count}) "
-                        f"must be not be greater than the number of the task frames ({size})"
+                        f"must be not be greater than the number of the task frames ({task_size})"
                     )
             elif frame_share := validated_data.pop("frame_share", None):
-                frame_count = max(1, int(frame_share * size))
+                frame_count = max(1, int(frame_share * task_size))
             else:
                 raise serializers.ValidationError(
                     "The number of validation frames is not specified"
                 )
 
             seed = validated_data.pop("random_seed", None)
+            deprecated_seed = validated_data.pop("seed", None)
 
             # The RNG backend must not change to yield reproducible results,
             # so here we specify it explicitly
             from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
-            if seed is not None and frame_count < size:
+            if deprecated_seed is not None and frame_count < task_size:
                 # Reproduce the old (a little bit incorrect) behavior that existed before
                 # https://github.com/cvat-ai/cvat/pull/7126
                 # to make the old seed-based sequences reproducible
+                rng = random.Generator(random.MT19937(seed=deprecated_seed))
                 valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
 
             frames = rng.choice(
@@ -806,13 +816,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             ).tolist()
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_PER_JOB:
             if frame_count := validated_data.pop("frames_per_job_count", None):
-                if size < frame_count:
+                if task_size < frame_count:
                     raise serializers.ValidationError(
                         f"The number of frames requested ({frame_count}) "
                         f"must be not be greater than the segment size ({task.segment_size})"
                     )
             elif frame_share := validated_data.pop("frames_per_job_share", None):
-                frame_count = max(1, int(frame_share * size))
+                frame_count = max(1, int(frame_share * task.segment_size))
             else:
                 raise serializers.ValidationError(
                     "The number of validation frames is not specified"
@@ -825,56 +835,45 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
-            frames = []
+            frames: list[int] = []
+            overlap = task.overlap
             for segment in task.segment_set.all():
+                segment_frames = set(segment.frame_set)
+                selected_frames = segment_frames.intersection(frames)
+                selected_count = len(selected_frames)
+
+                missing_count = min(len(segment_frames), frame_count) - selected_count
+                if missing_count <= 0:
+                    continue
+
+                selectable_segment_frames = set(
+                    sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                ).difference(selected_frames)
+
                 frames.extend(rng.choice(
-                    list(segment.frame_set), size=frame_count, shuffle=False, replace=False
+                    tuple(selectable_segment_frames), size=missing_count, replace=False
                 ).tolist())
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             frames = validated_data.pop("frames")
-
-            if not frames:
-                raise serializers.ValidationError("The list of frames cannot be empty")
 
             unique_frames = set(frames)
             if len(unique_frames) != len(frames):
                 raise serializers.ValidationError(f"Frames must not repeat")
 
-            invalid_ids = unique_frames.difference(valid_frame_ids)
+            invalid_ids = unique_frames.difference(range(task_size))
             if invalid_ids:
                 raise serializers.ValidationError(
-                    "The following frames are not included "
-                    f"in the task: {','.join(map(str, invalid_ids))}"
+                    "The following frames do not exist in the task: {}".format(
+                        format_list(tuple(map(str, invalid_ids)))
+                    )
                 )
+
+            task_frame_provider = TaskFrameProvider(task)
+            frames = list(map(task_frame_provider.get_abs_frame_number, frames))
         else:
             raise serializers.ValidationError(
                 f"Unexpected frame selection method '{frame_selection_method}'"
             )
-
-        # Update validation layout in the task
-        frame_paths = list(
-            models.Image.objects
-            .order_by('frame')
-            .values_list('path', flat=True)
-            .iterator(chunk_size=10000)
-        )
-        validation_layout_params = {
-            "mode": models.ValidationMode.GT,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [frame_paths[frame_id] for frame_id in frames],
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_count": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer(
-            instance=getattr(task.data, 'validation_layout', None), data=validation_layout_params
-        )
-        assert validation_layout_serializer.is_valid(raise_exception=False)
-        validation_layout_serializer.save(task_data=task.data)
 
         # Save the new job
         segment = models.Segment.objects.create(
@@ -898,6 +897,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             job.save(update_fields=["assignee_updated_date"])
 
         job.make_dirs()
+
+        task.data.update_validation_layout(
+            models.ValidationLayout(mode=models.ValidationMode.GT, frames=frames)
+        )
 
         return job
 
@@ -1064,7 +1067,7 @@ class JobFileMapping(serializers.ListField):
         kwargs.setdefault('help_text', textwrap.dedent(__class__.__doc__))
         super().__init__(*args, **kwargs)
 
-class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
+class ValidationParamsSerializer(serializers.ModelSerializer):
     mode = serializers.ChoiceField(choices=models.ValidationMode.choices(), required=True)
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(), required=True
@@ -1072,52 +1075,48 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
     frames = serializers.ListField(
         write_only=True,
         child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
-        default=None,
         required=False,
-        allow_null=True,
         help_text=textwrap.dedent("""\
-            The list of frame ids. Applicable only to the "{}" frame selection method
+            The list of file names to be included in the validation set.
+            Applicable only to the "{}" frame selection method.
+            Can only be used for images.
         """.format(models.JobFrameSelectionMethod.MANUAL))
     )
     frame_count = serializers.IntegerField(
         min_value=1,
         required=False,
         help_text=textwrap.dedent("""\
-            The number of frames included in the GT job.
+            The number of frames to be included in the validation set.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
     )
     frame_share = serializers.FloatField(
         required=False,
-        allow_null=True,
         validators=[field_validation.validate_percent],
         help_text=textwrap.dedent("""\
-            The share of frames included in the GT job.
+            The share of frames to be included in the validation set.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_UNIFORM))
     )
     frames_per_job_count = serializers.IntegerField(
         min_value=1,
         required=False,
-        allow_null=True,
         help_text=textwrap.dedent("""\
-            The number of frames included in the GT job from each annotation job.
+            The number of frames to be included in the validation set from each annotation job.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
     )
     frames_per_job_share = serializers.FloatField(
         required=False,
-        allow_null=True,
         validators=[field_validation.validate_percent],
         help_text=textwrap.dedent("""\
-            The share of frames included in the GT job from each annotation job.
+            The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.RANDOM_PER_JOB))
     )
     random_seed = serializers.IntegerField(
         min_value=0,
         required=False,
-        allow_null=True,
         help_text=textwrap.dedent("""\
             The seed value for the random number generator.
             The same value will produce the same frame sets.
@@ -1131,11 +1130,9 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
             'mode', 'frame_selection_method', 'random_seed', 'frames',
             'frame_count', 'frame_share', 'frames_per_job_count', 'frames_per_job_share',
         )
-        model = models.ValidationLayout
+        model = models.ValidationParams
 
     def validate(self, attrs):
-        attrs = field_validation.drop_null_keys(attrs)
-
         if attrs["mode"] == models.ValidationMode.GT:
             field_validation.require_one_of_values(
                 attrs,
@@ -1180,17 +1177,22 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
                 )
             )
 
+        if frames := attrs.get('frames'):
+            unique_frames = set(frames)
+            if len(unique_frames) != len(frames):
+                raise serializers.ValidationError("Frames must not repeat")
+
         return super().validate(attrs)
 
     @transaction.atomic
-    def create(self, validated_data: dict[str, Any]) -> models.ValidationLayout:
+    def create(self, validated_data: dict[str, Any]) -> models.ValidationParams:
         frames = validated_data.pop('frames', None)
 
         instance = super().create(validated_data)
 
         if frames:
             models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_layout=instance, path=frame)
+                models.ValidationFrame(validation_params=instance, path=frame)
                 for frame in frames
             )
 
@@ -1198,17 +1200,17 @@ class ValidationLayoutParamsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(
-        self, instance: models.ValidationLayout, validated_data: dict[str, Any]
-    ) -> models.ValidationLayout:
+        self, instance: models.ValidationParams, validated_data: dict[str, Any]
+    ) -> models.ValidationParams:
         frames = validated_data.pop('frames', None)
 
         instance = super().update(instance, validated_data)
 
         if frames:
-            models.ValidationFrame.objects.filter(validation_layout=instance).delete()
+            models.ValidationFrame.objects.filter(validation_params=instance).delete()
 
             models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_layout=instance, path=frame)
+                models.ValidationFrame(validation_params=instance, path=frame)
                 for frame in frames
             )
 
@@ -1300,7 +1302,7 @@ class DataSerializer(serializers.ModelSerializer):
             pass the list of file names in the required order.
         """.format(models.SortingMethod.PREDEFINED))
     )
-    validation_params = ValidationLayoutParamsSerializer(allow_null=True, required=False)
+    validation_params = ValidationParamsSerializer(allow_null=True, required=False)
 
     class Meta:
         model = models.Data
@@ -1369,7 +1371,7 @@ class DataSerializer(serializers.ModelSerializer):
 
         validation_params = attrs.pop('validation_params', None)
         if validation_params:
-            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
             attrs['validation_params'] = validation_params_serializer.validated_data
 
@@ -1388,9 +1390,9 @@ class DataSerializer(serializers.ModelSerializer):
         db_data.save()
 
         if validation_params:
-            validation_params_serializer = ValidationLayoutParamsSerializer(data=validation_params)
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
             validation_params_serializer.is_valid(raise_exception=True)
-            db_data.validation_layout = validation_params_serializer.save(task_data=db_data)
+            db_data.validation_params = validation_params_serializer.save(task_data=db_data)
 
         return db_data
 
@@ -1406,11 +1408,11 @@ class DataSerializer(serializers.ModelSerializer):
         instance.save()
 
         if validation_params:
-            validation_params_serializer = ValidationLayoutParamsSerializer(
-                instance=getattr(instance, "validation_layout", None), data=validation_params
+            validation_params_serializer = ValidationParamsSerializer(
+                instance=getattr(instance, "validation_params", None), data=validation_params
             )
             validation_params_serializer.is_valid(raise_exception=True)
-            instance.validation_layout = validation_params_serializer.save(task_data=instance)
+            instance.validation_params = validation_params_serializer.save(task_data=instance)
 
         return instance
 
@@ -2554,6 +2556,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(required=False, allow_null=True)
     job_id = serializers.IntegerField(required=False, allow_null=True)
     format = serializers.CharField(required=False, allow_null=True)
+    function_id = serializers.CharField(required=False, allow_null=True)
 
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
@@ -2570,6 +2573,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
             "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
             "format": parsed_rq_id.format,
+            "function_id": rq_job.meta.get(RQJobMetaField.FUNCTION_ID),
         }
 
 class RequestSerializer(serializers.Serializer):

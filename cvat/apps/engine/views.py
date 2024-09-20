@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+import itertools
 import os
 import os.path as osp
 import re
@@ -688,8 +689,7 @@ class _DataGetter(metaclass=ABCMeta):
             if data_quality == 'compressed' else FrameQuality.ORIGINAL
 
     @abstractmethod
-    def _get_frame_provider(self) -> IFrameProvider:
-        ...
+    def _get_frame_provider(self) -> IFrameProvider: ...
 
     def __call__(self):
         frame_provider = self._get_frame_provider()
@@ -697,7 +697,7 @@ class _DataGetter(metaclass=ABCMeta):
         try:
             if self.type == 'chunk':
                 data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(data.data.getvalue(), content_type=data.mime) # TODO: add new headers
+                return HttpResponse(data.data.getvalue(), content_type=data.mime)
             elif self.type == 'frame' or self.type == 'preview':
                 if self.type == 'preview':
                     data = frame_provider.get_preview()
@@ -707,7 +707,7 @@ class _DataGetter(metaclass=ABCMeta):
                 return HttpResponse(data.data.getvalue(), content_type=data.mime)
 
             elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images(self.number)
+                data = frame_provider.get_frame_context_images_chunk(self.number)
                 if not data:
                     return HttpResponseNotFound()
 
@@ -732,7 +732,7 @@ class _TaskDataGetter(_DataGetter):
         super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
         self._db_task = db_task
 
-    def _get_frame_provider(self) -> IFrameProvider:
+    def _get_frame_provider(self) -> TaskFrameProvider:
         return TaskFrameProvider(self._db_task)
 
 
@@ -744,13 +744,54 @@ class _JobDataGetter(_DataGetter):
         data_type: str,
         data_quality: str,
         data_num: Optional[Union[str, int]] = None,
+        data_index: Optional[Union[str, int]] = None,
     ) -> None:
-        super().__init__(data_type=data_type, data_num=data_num, data_quality=data_quality)
+        possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
+        possible_quality_values = ('compressed', 'original')
+
+        if not data_type or data_type not in possible_data_type_values:
+            raise ValidationError('Data type not specified or has wrong value')
+        elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
+            if data_type == 'chunk':
+                if data_num is None and data_index is None:
+                    raise ValidationError('Number or Index is not specified')
+                if data_num is not None and data_index is not None:
+                    raise ValidationError('Number and Index cannot be used together')
+            elif data_num is None and data_type != 'preview':
+                raise ValidationError('Number is not specified')
+            elif data_quality not in possible_quality_values:
+                raise ValidationError('Wrong quality value')
+
+        self.type = data_type
+
+        self.index = int(data_index) if data_index is not None else None
+        self.number = int(data_num) if data_num is not None else None
+
+        self.quality = FrameQuality.COMPRESSED \
+            if data_quality == 'compressed' else FrameQuality.ORIGINAL
+
         self._db_job = db_job
 
-    def _get_frame_provider(self) -> IFrameProvider:
+    def _get_frame_provider(self) -> JobFrameProvider:
         return JobFrameProvider(self._db_job)
 
+    def __call__(self):
+        if self.type == 'chunk':
+            # Reproduce the task chunk indexing
+            frame_provider = self._get_frame_provider()
+
+            if self.index is not None:
+                data = frame_provider.get_chunk(
+                    self.index, quality=self.quality, is_task_chunk=False
+                )
+            else:
+                data = frame_provider.get_chunk(
+                    self.number, quality=self.quality, is_task_chunk=True
+                )
+
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        else:
+            return super().__call__()
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -1081,6 +1122,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 for optional_field in ['job_file_mapping', 'server_files_exclude', 'validation_params']:
                     if optional_field in serializer.validated_data:
                         data[optional_field] = serializer.validated_data[optional_field]
+
+                if validation_params := getattr(db_data, 'validation_params', None):
+                    data['validation_params']['frames'] = set(itertools.chain(
+                        data['validation_params'].get('frames', []),
+                        validation_params.frames.values_list('path', flat=True).all()
+                    ))
 
                 if (
                     data['sorting_method'] == models.SortingMethod.PREDEFINED
@@ -1714,21 +1761,25 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
+    @transaction.atomic
     def perform_destroy(self, instance):
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        if (
-            validation_layout := getattr(instance.segment.task.data, 'validation_layout', None) and
-            validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        validation_layout: Optional[models.ValidationLayout] = getattr(
+            instance.segment.task.data, 'validation_layout', None
+        )
+        if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):
             raise ValidationError(
                 'GT jobs cannot be removed when task validation mode is "{}"'.format(
                     models.ValidationMode.GT_POOL
                 )
             )
 
-        return super().perform_destroy(instance)
+        super().perform_destroy(instance)
+
+        if validation_layout:
+            validation_layout.delete()
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -2000,8 +2051,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame"),
+            OpenApiParameter('number',
+                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
+                description="A unique number value identifying chunk or frame. "
+                    "The numbers are the same as for the task. "
+                    "Deprecated for chunks in favor of 'index'"),
+            OpenApiParameter('index',
+                location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
+                description="A unique number value identifying chunk, starts from 0 for each job"),
             ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
@@ -2013,10 +2070,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)
         data_num = request.query_params.get('number', None)
+        data_index = request.query_params.get('index', None)
         data_quality = request.query_params.get('quality', 'compressed')
 
         data_getter = _JobDataGetter(
-            db_job, data_type=data_type, data_num=data_num, data_quality=data_quality
+            db_job,
+            data_type=data_type, data_quality=data_quality,
+            data_index=data_index, data_num=data_num
         )
         return data_getter()
 
@@ -2924,10 +2984,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 result = cache.get_cloud_preview(db_storage)
                 if not result:
                     return HttpResponseNotFound('Cloud storage preview not found')
-                return HttpResponse(result[0], result[1])
+                return HttpResponse(result[0].getvalue(), result[1])
 
             preview, mime = cache.get_or_set_cloud_preview(db_storage)
-            return HttpResponse(preview, mime)
+            return HttpResponse(preview.getvalue(), mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)

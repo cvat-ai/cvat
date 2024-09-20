@@ -55,13 +55,13 @@ jobs:
           password: ${{ secrets.DOCKERHUB_CI_TOKEN }}
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
@@ -83,10 +83,10 @@ jobs:
             type=raw,value=nightly
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
@@ -96,7 +96,7 @@ jobs:
           labels: ${{ steps.meta-server.outputs.labels }}
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
@@ -111,18 +111,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
       - name: Getting CVAT UI cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Building CVAT UI image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.ui
@@ -168,6 +168,12 @@ jobs:
           pip3 install -e ./cvat-cli
 
           pytest tests/python/
+          pytest tests/python/ --stop-services
+
+          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
+          pytest tests/python/ --stop-services
+
+          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
           pytest tests/python/ --stop-services
 
       - name: Unit tests
@@ -308,21 +314,21 @@ jobs:
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: cypress_screenshots
+          name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
       - name: Uploading cypress videos as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress_videos_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/videos
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: cvat_container_logs
+          name: cvat_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat.log

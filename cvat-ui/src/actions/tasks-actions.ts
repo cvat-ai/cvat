@@ -213,8 +213,8 @@ ThunkAction {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {
@@ -254,13 +254,25 @@ ThunkAction {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
+        let extras = {};
+
+        if (data.quality.validationMode) {
+            extras = {
+                validation_params: {
+                    mode: data.quality.validationMode,
+                    frame_selection_method: data.quality.frameSelectionMethod,
+                    frame_percent: data.quality.validationFramesPercent,
+                    frames_per_job_percent: data.quality.validationFramesPerJobPercent,
+                },
+            };
+        }
+
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
-            const savedTask = await taskInstance.save({
+            const savedTask = await taskInstance.save(extras, {
                 requestStatusCallback(request) {
                     let { message } = request;
                     let helperMessage = '';

@@ -175,8 +175,11 @@ def annotations():
         return json.load(f)
 
 
+CloudStorageAssets = Container
+
+
 @pytest.fixture(scope="session")
-def cloud_storages():
+def cloud_storages() -> CloudStorageAssets:
     with open(ASSETS_DIR / "cloudstorages.json") as f:
         return Container(json.load(f)["results"])
 
@@ -513,3 +516,14 @@ def regular_lonely_user(users):
         if user["username"] == "lonely_user":
             return user["username"]
     raise Exception("Can't find the lonely user in the test DB")
+
+
+@pytest.fixture(scope="session")
+def job_has_annotations(annotations) -> bool:
+    def check_has_annotations(job_id: int) -> bool:
+        job_annotations = annotations["job"][str(job_id)]
+        return bool(
+            job_annotations["tags"] or job_annotations["shapes"] or job_annotations["tracks"]
+        )
+
+    return check_has_annotations

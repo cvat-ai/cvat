@@ -9,25 +9,39 @@ import json
 import math
 import os
 import os.path as osp
+import re
 import zipfile
 from abc import ABCMeta, abstractmethod
+from collections import Counter
 from contextlib import closing
 from copy import deepcopy
 from enum import Enum
 from functools import partial
 from http import HTTPStatus
-from itertools import chain, product
+from itertools import chain, groupby, product
 from math import ceil
 from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import Any, Callable, ClassVar, Dict, Generator, List, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import attrs
 import numpy as np
 import pytest
-from cvat_sdk import Client, Config, exceptions
+from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -36,16 +50,15 @@ from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
-from pytest_cases import fixture_ref, parametrize
+from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
-    BASE_URL,
-    USER_PASS,
     delete_method,
     get_method,
     make_api_client,
+    make_sdk_client,
     patch_method,
     post_method,
     put_method,
@@ -64,6 +77,7 @@ from .utils import (
     create_task,
     export_task_backup,
     export_task_dataset,
+    parse_frame_step,
     wait_until_task_is_created,
 )
 
@@ -556,6 +570,7 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
+        tasks = [t for t in tasks if t["validation_mode"] != "gt_pool"]
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
@@ -569,6 +584,57 @@ class TestPatchTaskAnnotations:
             )
 
         self._test_check_response(is_allow, response, data)
+
+    def test_cannot_update_validation_frames_in_honeypot_task(
+        self,
+        admin_user,
+        tasks,
+        request_data,
+    ):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool" and t["size"] > 0)[
+            "id"
+        ]
+
+        data = request_data(task_id)
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=task_id,
+                action="update",
+                patched_labeled_data_request=deepcopy(data),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert b"can only be edited via task import or the GT job" in response.data
+
+    def test_can_update_honeypot_frames_in_honeypot_task(
+        self,
+        admin_user,
+        tasks,
+        jobs,
+        request_data,
+    ):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool" and t["size"] > 0)[
+            "id"
+        ]
+        gt_job = next(j for j in jobs if j["task_id"] == task_id and j["type"] == "ground_truth")
+
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        data = request_data(task_id)
+        data["tags"] = [a for a in data["tags"] if a["frame"] not in validation_frames]
+        data["shapes"] = [a for a in data["shapes"] if a["frame"] not in validation_frames]
+        data["tracks"] = []  # tracks cannot be used in honeypot tasks
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update_annotations(
+                id=task_id,
+                action="update",
+                patched_labeled_data_request=deepcopy(data),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        self._test_check_response(True, response, data)
 
     def test_remove_first_keyframe(self):
         endpoint = "tasks/8/annotations"
@@ -874,6 +940,7 @@ class TestGetTaskDataset:
         [
             ("Datumaro 1.0", "", "images/{subset}"),
             ("YOLO 1.1", "train", "obj_{subset}_data"),
+            ("YOLOv8 Detection 1.0", "train", "images/{subset}"),
         ],
     )
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -910,7 +977,7 @@ class TestGetTaskDataset:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
@@ -1459,18 +1526,16 @@ class TestPostTaskData:
         org: Optional[str] = None,
         filenames: Optional[List[str]] = None,
     ) -> Tuple[int, Any]:
-        s3_client = s3.make_client()
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
             video = generate_video_file(video_frame_count)
             s3_client.create_file(
                 data=video,
-                bucket=cloud_storage["resource"],
                 filename=f"test/video/{video.name}",
             )
             request.addfinalizer(
                 partial(
                     s3_client.remove_file,
-                    bucket=cloud_storage["resource"],
                     filename=f"test/video/{video.name}",
                 )
             )
@@ -1484,13 +1549,11 @@ class TestPostTaskData:
                     image.seek(0)
                     s3_client.create_file(
                         data=image,
-                        bucket=cloud_storage["resource"],
                         filename=f"test/sub_{i}/{image.name}",
                     )
                     request.addfinalizer(
                         partial(
                             s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
                             filename=f"test/sub_{i}/{image.name}",
                         )
                     )
@@ -1510,13 +1573,11 @@ class TestPostTaskData:
                 with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
                     s3_client.create_file(
                         data=m_file.read(),
-                        bucket=cloud_storage["resource"],
                         filename="test/manifest.jsonl",
                     )
                     request.addfinalizer(
                         partial(
                             s3_client.remove_file,
-                            bucket=cloud_storage["resource"],
                             filename="test/manifest.jsonl",
                         )
                     )
@@ -2040,6 +2101,368 @@ class TestPostTaskData:
             assert response.status == HTTPStatus.OK
             assert task.size == expected_task_size
 
+    @parametrize(
+        "frame_selection_method, method_params, per_job_count_param",
+        map(
+            lambda e: (*e[0], e[1]),
+            product(
+                [
+                    *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+                    ("manual", {}),
+                ],
+                ["frames_per_job_count", "frames_per_job_share"],
+            ),
+        ),
+    )
+    def test_can_create_task_with_honeypots(
+        self,
+        request: pytest.FixtureRequest,
+        frame_selection_method: str,
+        method_params: Set[str],
+        per_job_count_param: str,
+    ):
+        base_segment_size = 4
+        total_frame_count = 15
+        validation_frames_count = 5
+        validation_per_job_count = 2
+        regular_frame_count = total_frame_count - validation_frames_count
+        resulting_task_size = (
+            regular_frame_count
+            + validation_per_job_count * math.ceil(regular_frame_count / base_segment_size)
+            + validation_frames_count
+        )
+
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params = {"mode": "gt_pool", "frame_selection_method": frame_selection_method}
+
+        if per_job_count_param == "frames_per_job_count":
+            validation_params[per_job_count_param] = validation_per_job_count
+        elif per_job_count_param == "frames_per_job_share":
+            validation_params[per_job_count_param] = validation_per_job_count / base_segment_size
+        else:
+            assert False
+
+        if frame_selection_method == "random_uniform":
+            validation_params["random_seed"] = 42
+
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    validation_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    validation_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "manual":
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            validation_params["frames"] = rng.choice(
+                [f.name for f in image_files], validation_frames_count, replace=False
+            ).tolist()
+        else:
+            assert False
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": base_segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "sorting_method": "random",
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        assert task.segment_size == 0  # means "custom segments"
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        # validation frames (pool frames) must be appended in the end of the task, in the GT job
+        validation_frames = set(f.name for f in task_meta.frames[-validation_frames_count:])
+        if frame_selection_method == "manual":
+            assert sorted(validation_frames) == sorted(validation_params["frames"])
+            assert sorted(f.name for f in gt_job_metas[0].frames) == sorted(
+                validation_params["frames"]
+            )
+
+        annotation_job_frame_counts = Counter(
+            f.name for f in task_meta.frames[:-validation_frames_count]
+        )
+
+        regular_frame_counts = {
+            k: v for k, v in annotation_job_frame_counts.items() if k not in validation_frames
+        }
+        # regular frames must not repeat
+        assert regular_frame_counts == {
+            f.name: 1 for f in image_files if f.name not in validation_frames
+        }
+
+        # only validation frames can repeat
+        assert set(fn for fn, count in annotation_job_frame_counts.items() if count != 1).issubset(
+            validation_frames
+        )
+
+        # each job must have the specified number of validation frames
+        for job_meta in annotation_job_metas:
+            assert (
+                len(set(f.name for f in job_meta.frames if f.name in validation_frames))
+                == validation_per_job_count
+            )
+
+    @parametrize(
+        "frame_selection_method, method_params",
+        [
+            *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+            *tuple(
+                product(["random_per_job"], [{"frames_per_job_count"}, {"frames_per_job_share"}])
+            ),
+            ("manual", {}),
+        ],
+        idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
+    )
+    def test_can_create_task_with_gt_job_from_images(
+        self,
+        request: pytest.FixtureRequest,
+        frame_selection_method: str,
+        method_params: Set[str],
+    ):
+        segment_size = 4
+        total_frame_count = 15
+        resulting_task_size = total_frame_count
+
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params = {"mode": "gt", "frame_selection_method": frame_selection_method}
+
+        if "random" in frame_selection_method:
+            validation_params["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            validation_frames_count = 5
+
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    validation_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    validation_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "random_per_job":
+            validation_per_job_count = 2
+            validation_frames_count = validation_per_job_count * math.ceil(
+                total_frame_count / segment_size
+            )
+
+            for method_param in method_params:
+                if method_param == "frames_per_job_count":
+                    validation_params[method_param] = validation_per_job_count
+                elif method_param == "frames_per_job_share":
+                    validation_params[method_param] = validation_per_job_count / segment_size
+                else:
+                    assert False
+        elif frame_selection_method == "manual":
+            validation_frames_count = 5
+
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            validation_params["frames"] = rng.choice(
+                [f.name for f in image_files], validation_frames_count, replace=False
+            ).tolist()
+        else:
+            assert False
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        assert task.segment_size == segment_size
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        validation_frames = [
+            gt_job_metas[0].frames[rel_frame_id].name
+            for rel_frame_id, abs_frame_id in enumerate(
+                range(
+                    gt_job_metas[0].start_frame,
+                    gt_job_metas[0].stop_frame + 1,
+                    int((gt_job_metas[0].frame_filter or "step=1").split("=")[1]),
+                )
+            )
+            if abs_frame_id in gt_job_metas[0].included_frames
+        ]
+        if frame_selection_method == "manual":
+            assert sorted(validation_params["frames"]) == sorted(validation_frames)
+
+        assert len(validation_frames) == validation_frames_count
+
+        # frames must not repeat
+        assert sorted(f.name for f in image_files) == sorted(f.name for f in task_meta.frames)
+
+        if frame_selection_method == "random_per_job":
+            # each job must have the specified number of validation frames
+            for job_meta in annotation_job_metas:
+                assert (
+                    len([f.name for f in job_meta.frames if f.name in validation_frames])
+                    == validation_per_job_count
+                )
+
+    @parametrize(
+        "frame_selection_method, method_params",
+        [
+            *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+            *tuple(
+                product(["random_per_job"], [{"frames_per_job_count"}, {"frames_per_job_share"}])
+            ),
+        ],
+        idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
+    )
+    def test_can_create_task_with_gt_job_from_video(
+        self,
+        request: pytest.FixtureRequest,
+        frame_selection_method: str,
+        method_params: Set[str],
+    ):
+        segment_size = 4
+        total_frame_count = 15
+        resulting_task_size = total_frame_count
+
+        video_file = generate_video_file(total_frame_count)
+
+        validation_params = {"mode": "gt", "frame_selection_method": frame_selection_method}
+
+        if "random" in frame_selection_method:
+            validation_params["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            validation_frames_count = 5
+
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    validation_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    validation_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "random_per_job":
+            validation_per_job_count = 2
+
+            for method_param in method_params:
+                if method_param == "frames_per_job_count":
+                    validation_params[method_param] = validation_per_job_count
+                elif method_param == "frames_per_job_share":
+                    validation_params[method_param] = validation_per_job_count / segment_size
+                else:
+                    assert False
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "a"}],
+            "segment_size": segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": [video_file],
+            "validation_params": validation_params,
+        }
+
+        task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, _) = api_client.tasks_api.retrieve(task_id)
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        assert task.segment_size == segment_size
+        assert task.size == resulting_task_size
+        assert task_meta.size == resulting_task_size
+
+        frame_step = parse_frame_step(gt_job_metas[0].frame_filter)
+        validation_frames = [
+            abs_frame_id
+            for abs_frame_id in range(
+                gt_job_metas[0].start_frame,
+                gt_job_metas[0].stop_frame + 1,
+                frame_step,
+            )
+            if abs_frame_id in gt_job_metas[0].included_frames
+        ]
+
+        if frame_selection_method == "random_per_job":
+            # each job must have the specified number of validation frames
+            for job_meta in annotation_job_metas:
+                assert (
+                    len(
+                        set(
+                            range(job_meta.start_frame, job_meta.stop_frame + 1, frame_step)
+                        ).intersection(validation_frames)
+                    )
+                    == validation_per_job_count
+                )
+        else:
+            assert len(validation_frames) == validation_frames_count
+
 
 class _SourceDataType(str, Enum):
     images = "images"
@@ -2107,7 +2530,7 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_class")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -2115,22 +2538,45 @@ class TestTaskData:
         self,
         request: pytest.FixtureRequest,
         *,
-        frame_count: int = 10,
+        frame_count: Optional[int] = 10,
+        image_files: Optional[Sequence[io.BytesIO]] = None,
+        start_frame: Optional[int] = None,
+        stop_frame: Optional[int] = None,
+        step: Optional[int] = None,
         segment_size: Optional[int] = None,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        **data_kwargs,
+    ) -> Generator[Tuple[_ImagesTaskSpec, int], None, None]:
         task_params = {
-            "name": request.node.name,
+            "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
         }
         if segment_size:
             task_params["segment_size"] = segment_size
 
-        image_files = generate_image_files(frame_count)
+        assert bool(image_files) ^ bool(
+            frame_count
+        ), "Expected only one of 'image_files' and 'frame_count'"
+        if not image_files:
+            image_files = generate_image_files(frame_count)
+        elif not frame_count:
+            frame_count = len(image_files)
+
         images_data = [f.getvalue() for f in image_files]
         data_params = {
             "image_quality": 70,
             "client_files": image_files,
+            "sorting_method": "natural",
         }
+        data_params.update(data_kwargs)
+
+        if start_frame is not None:
+            data_params["start_frame"] = start_frame
+
+        if stop_frame is not None:
+            data_params["stop_frame"] = stop_frame
+
+        if step is not None:
+            data_params["frame_filter"] = f"step={step}"
 
         def get_frame(i: int) -> bytes:
             return images_data[i]
@@ -2140,7 +2586,7 @@ class TestTaskData:
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_frame=get_frame,
-            size=len(images_data),
+            size=len(range(start_frame or 0, (stop_frame or len(images_data) - 1) + 1, step or 1)),
         ), task_id
 
     @pytest.fixture(scope="class")
@@ -2155,15 +2601,83 @@ class TestTaskData:
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
 
+    @fixture(scope="class")
+    @parametrize("step", [2, 5])
+    @parametrize("stop_frame", [15, 26])
+    @parametrize("start_frame", [3, 7])
+    def fxt_uploaded_images_task_with_segments_start_stop_step(
+        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_fxt_base(
+            request=request,
+            frame_count=30,
+            segment_size=4,
+            start_frame=start_frame,
+            stop_frame=stop_frame,
+            step=step,
+        )
+
+    @pytest.fixture(scope="class")
+    def fxt_uploaded_images_task_with_segments_and_honeypots(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        validation_params = models.DataRequestValidationParams._from_openapi_data(
+            mode="gt_pool",
+            frame_selection_method="random_uniform",
+            random_seed=42,
+            frame_count=5,
+            frames_per_job_count=2,
+        )
+
+        base_segment_size = 4
+        total_frame_count = 15
+        regular_frame_count = 15 - validation_params.frame_count
+        final_segment_size = base_segment_size + validation_params.frames_per_job_count
+        final_task_size = (
+            regular_frame_count
+            + validation_params.frames_per_job_count
+            * math.ceil(regular_frame_count / base_segment_size)
+            + validation_params.frame_count
+        )
+
+        image_files = generate_image_files(total_frame_count)
+
+        with closing(
+            self._uploaded_images_task_fxt_base(
+                request=request,
+                frame_count=None,
+                image_files=image_files,
+                segment_size=base_segment_size,
+                sorting_method="random",
+                validation_params=validation_params,
+            )
+        ) as task_gen:
+            for task_spec, task_id in task_gen:
+                # Get the actual frame order after the task is created
+                with make_api_client(self._USERNAME) as api_client:
+                    (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+                    frame_map = [
+                        next(i for i, f in enumerate(image_files) if f.name == frame_info.name)
+                        for frame_info in task_meta.frames
+                    ]
+
+                _get_frame = task_spec._get_frame
+                task_spec._get_frame = lambda i: _get_frame(frame_map[i])
+
+                task_spec.size = final_task_size
+                task_spec._params.segment_size = final_segment_size
+
+                yield task_spec, task_id
+
     def _uploaded_video_task_fxt_base(
         self,
         request: pytest.FixtureRequest,
         *,
         frame_count: int = 10,
         segment_size: Optional[int] = None,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[Tuple[_VideoTaskSpec, int], None, None]:
         task_params = {
-            "name": request.node.name,
+            "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
         }
         if segment_size:
@@ -2200,11 +2714,23 @@ class TestTaskData:
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
 
-    def _compute_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
+    def _compute_annotation_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
         segment_params = []
-        segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size
+        frame_step = task_spec.frame_step
+        segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size * frame_step
         start_frame = getattr(task_spec, "start_frame", 0)
-        end_frame = (getattr(task_spec, "stop_frame", None) or (task_spec.size - 1)) + 1
+        end_frame = (
+            getattr(task_spec, "stop_frame", None) or ((task_spec.size - 1) * frame_step)
+        ) + frame_step
+        end_frame = end_frame - ((end_frame - frame_step - start_frame) % frame_step)
+
+        validation_params = getattr(task_spec, "validation_params", None)
+        if validation_params and validation_params.mode.value == "gt_pool":
+            end_frame = min(
+                end_frame, (task_spec.size - validation_params.frame_count) * frame_step
+            )
+            segment_size = min(segment_size, end_frame - 1)
+
         overlap = min(
             (
                 getattr(task_spec, "overlap", None) or 0
@@ -2216,11 +2742,11 @@ class TestTaskData:
         segment_start = start_frame
         while segment_start < end_frame:
             if start_frame < segment_start:
-                segment_start -= overlap * task_spec.frame_step
+                segment_start -= overlap * frame_step
 
-            segment_end = segment_start + task_spec.frame_step * segment_size
+            segment_end = segment_start + frame_step * segment_size
 
-            segment_params.append((segment_start, min(segment_end, end_frame) - 1))
+            segment_params.append((segment_start, min(segment_end, end_frame) - frame_step))
             segment_start = segment_end
 
         return segment_params
@@ -2240,14 +2766,19 @@ class TestTaskData:
         else:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
-    _default_task_cases = [
-        fixture_ref("fxt_uploaded_images_task"),
-        fixture_ref("fxt_uploaded_images_task_with_segments"),
-        fixture_ref("fxt_uploaded_video_task"),
-        fixture_ref("fxt_uploaded_video_task_with_segments"),
+    _tasks_with_honeypots_cases = [
+        fixture_ref("fxt_uploaded_images_task_with_segments_and_honeypots"),
     ]
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    _all_task_cases = [
+        fixture_ref("fxt_uploaded_images_task"),
+        fixture_ref("fxt_uploaded_images_task_with_segments"),
+        fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
+        fixture_ref("fxt_uploaded_video_task"),
+        fixture_ref("fxt_uploaded_video_task_with_segments"),
+    ] + _tasks_with_honeypots_cases
+
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -2270,7 +2801,7 @@ class TestTaskData:
             else:
                 assert len(task_meta.frames) == task_meta.size
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -2280,8 +2811,8 @@ class TestTaskData:
                 range(task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step),
             ):
                 rel_frame_id = (
-                    abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
-                )
+                    abs_frame_id - getattr(task_spec, "start_frame", 0)
+                ) // task_spec.frame_step
                 (_, response) = api_client.tasks_api.retrieve_data(
                     task_id,
                     type="frame",
@@ -2310,7 +2841,7 @@ class TestTaskData:
                     ),
                 )
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
@@ -2329,13 +2860,18 @@ class TestTaskData:
             else:
                 assert False
 
-            chunk_count = math.ceil(task_meta.size / task_meta.chunk_size)
-            for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
-                expected_chunk_frame_ids = range(
-                    chunk_id * task_meta.chunk_size,
-                    min((chunk_id + 1) * task_meta.chunk_size, task_meta.size),
+            task_frames = range(
+                task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step
+            )
+            task_chunk_frames = [
+                (chunk_number, list(chunk_frames))
+                for chunk_number, chunk_frames in groupby(
+                    task_frames, key=lambda frame: frame // task_meta.chunk_size
                 )
-
+            ]
+            for quality, (chunk_id, expected_chunk_frame_ids) in product(
+                ["original", "compressed"], task_chunk_frames
+            ):
                 (_, response) = api_client.tasks_api.retrieve_data(
                     task_id, type="chunk", quality=quality, number=chunk_id, _parse_response=False
                 )
@@ -2365,29 +2901,32 @@ class TestTaskData:
                         ),
                     )
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_job_meta(self, task_spec: _TaskSpec, task_id: int):
-        segment_params = self._compute_segment_params(task_spec)
+        segment_params = self._compute_annotation_segment_params(task_spec)
+
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
-                get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
+                get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                ),
                 key=lambda j: j.start_frame,
             )
             assert len(jobs) == len(segment_params)
 
-            for (segment_start, segment_end), job in zip(segment_params, jobs):
+            for (segment_start, segment_stop), job in zip(segment_params, jobs):
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
 
-                assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_end)
+                assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_stop)
                 assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
 
-                segment_size = segment_end - segment_start + 1
+                segment_size = math.ceil((segment_stop - segment_start + 1) / task_spec.frame_step)
                 assert job_meta.size == segment_size
 
-                task_frame_set = set(
+                job_frame_set = set(
                     range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
                 )
-                assert len(task_frame_set) == job_meta.size
+                assert len(job_frame_set) == job_meta.size
 
                 if getattr(task_spec, "chunk_size", None):
                     assert job_meta.chunk_size == task_spec.chunk_size
@@ -2397,7 +2936,40 @@ class TestTaskData:
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", _default_task_cases)
+    @parametrize("task_spec, task_id", _tasks_with_honeypots_cases)
+    def test_can_get_honeypot_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            gt_jobs = get_paginated_collection(
+                api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+            )
+            assert len(gt_jobs) == 1
+
+            gt_job = gt_jobs[0]
+            segment_start = task_spec.size - task_spec.validation_params.frame_count
+            segment_stop = task_spec.size - 1
+
+            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+            assert (job_meta.start_frame, job_meta.stop_frame) == (segment_start, segment_stop)
+            assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+            segment_size = math.ceil((segment_stop - segment_start + 1) / task_spec.frame_step)
+            assert job_meta.size == segment_size
+
+            task_frame_set = set(
+                range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
+            )
+            assert len(task_frame_set) == job_meta.size
+
+            if getattr(task_spec, "chunk_size", None):
+                assert job_meta.chunk_size == task_spec.chunk_size
+
+            if task_spec.source_data_type == _SourceDataType.video:
+                assert len(job_meta.frames) == 1
+            else:
+                assert len(job_meta.frames) == job_meta.size
+
+    @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -2409,11 +2981,13 @@ class TestTaskData:
 
                 for quality, (frame_pos, abs_frame_id) in product(
                     ["original", "compressed"],
-                    enumerate(range(job_meta.start_frame, job_meta.stop_frame)),
+                    enumerate(
+                        range(job_meta.start_frame, job_meta.stop_frame, task_spec.frame_step)
+                    ),
                 ):
                     rel_frame_id = (
-                        abs_frame_id - getattr(task_spec, "start_frame", 0) // task_spec.frame_step
-                    )
+                        abs_frame_id - getattr(task_spec, "start_frame", 0)
+                    ) // task_spec.frame_step
                     (_, response) = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="frame",
@@ -2442,13 +3016,17 @@ class TestTaskData:
                         ),
                     )
 
-    @parametrize("task_spec, task_id", _default_task_cases)
-    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int):
+    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("indexing", ["absolute", "relative"])
+    def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
                 get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
                 key=lambda j: j.start_frame,
             )
+
+            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
             for job in jobs:
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
 
@@ -2465,21 +3043,68 @@ class TestTaskData:
                 else:
                     assert False
 
-                chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
-                for quality, chunk_id in product(["original", "compressed"], range(chunk_count)):
-                    expected_chunk_abs_frame_ids = range(
-                        job_meta.start_frame
-                        + chunk_id * job_meta.chunk_size * task_spec.frame_step,
-                        job_meta.start_frame
-                        + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
-                        * task_spec.frame_step,
+                if indexing == "absolute":
+                    chunk_count = math.ceil(task_meta.size / job_meta.chunk_size)
+
+                    def get_task_chunk_abs_frame_ids(chunk_id: int) -> Sequence[int]:
+                        return range(
+                            task_meta.start_frame
+                            + chunk_id * task_meta.chunk_size * task_spec.frame_step,
+                            task_meta.start_frame
+                            + min((chunk_id + 1) * task_meta.chunk_size, task_meta.size)
+                            * task_spec.frame_step,
+                            task_spec.frame_step,
+                        )
+
+                    def get_job_frame_ids() -> Sequence[int]:
+                        return range(
+                            job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step
+                        )
+
+                    def get_expected_chunk_abs_frame_ids(chunk_id: int):
+                        return sorted(
+                            set(get_task_chunk_abs_frame_ids(chunk_id)) & set(get_job_frame_ids())
+                        )
+
+                    job_chunk_ids = (
+                        task_chunk_id
+                        for task_chunk_id in range(chunk_count)
+                        if get_expected_chunk_abs_frame_ids(task_chunk_id)
                     )
+                else:
+                    chunk_count = math.ceil(job_meta.size / job_meta.chunk_size)
+                    job_chunk_ids = range(chunk_count)
+
+                    def get_expected_chunk_abs_frame_ids(chunk_id: int):
+                        return sorted(
+                            frame
+                            for frame in range(
+                                job_meta.start_frame
+                                + chunk_id * job_meta.chunk_size * task_spec.frame_step,
+                                job_meta.start_frame
+                                + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
+                                * task_spec.frame_step,
+                                task_spec.frame_step,
+                            )
+                            if not job_meta.included_frames or frame in job_meta.included_frames
+                        )
+
+                for quality, chunk_id in product(["original", "compressed"], job_chunk_ids):
+                    expected_chunk_abs_frame_ids = get_expected_chunk_abs_frame_ids(chunk_id)
+
+                    kwargs = {}
+                    if indexing == "absolute":
+                        kwargs["number"] = chunk_id
+                    elif indexing == "relative":
+                        kwargs["index"] = chunk_id
+                    else:
+                        assert False
 
                     (_, response) = api_client.jobs_api.retrieve_data(
                         job.id,
                         type="chunk",
                         quality=quality,
-                        number=chunk_id,
+                        **kwargs,
                         _parse_response=False,
                     )
 
@@ -2712,7 +3337,7 @@ class TestPatchTaskLabel:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
@@ -2743,15 +3368,12 @@ class TestWorkWithTask:
         task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
         # save image from the "public" bucket and remove it temporary
-
-        s3_client = s3.make_client()
         bucket_name = cloud_storages[cloud_storage_id]["resource"]
+        s3_client = s3.make_client(bucket=bucket_name)
 
-        image = s3_client.download_fileobj(bucket_name, image_name)
-        s3_client.remove_file(bucket_name, image_name)
-        request.addfinalizer(
-            partial(s3_client.create_file, bucket=bucket_name, filename=image_name, data=image)
-        )
+        image = s3_client.download_fileobj(image_name)
+        s3_client.remove_file(image_name)
+        request.addfinalizer(partial(s3_client.create_file, filename=image_name, data=image))
 
         with make_api_client(self._USERNAME) as api_client:
             try:
@@ -2768,18 +3390,20 @@ class TestWorkWithTask:
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskBackups:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
+    def setup(
+        self,
+        restore_db_per_function,
+        restore_cvat_data_per_function,
+        tmp_path: Path,
+        admin_user: str,
+    ):
         self.tmp_dir = tmp_path
 
-        self.client = self._make_client()
         self.user = admin_user
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
     @pytest.mark.parametrize(
@@ -2800,7 +3424,17 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    def test_can_export_backup_for_honeypot_task(self, tasks):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
         task = self.client.tasks.retrieve(task_id)
 
         filename = self.tmp_dir / f"task_{task.id}_backup.zip"
@@ -2823,8 +3457,12 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_json = next(t for t in tasks if t["mode"] == mode)
-        self._test_can_restore_backup_task(task_json["id"])
+        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    def test_can_import_backup_with_honeypot_task(self, tasks):
+        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
@@ -2838,28 +3476,49 @@ class TestTaskBackups:
         for j in jobs:
             j.update({"stage": "validation"})
 
-        self._test_can_restore_backup_task(task_json["id"])
+        self._test_can_restore_task_from_backup(task_json["id"])
 
-    def _test_can_restore_backup_task(self, task_id: int):
-        task = self.client.tasks.retrieve(task_id)
+    def test_can_import_backup_with_gt_job(self, tasks, jobs, job_has_annotations):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt"
+            if tasks[j["task_id"]]["size"]
+        )
+        task = tasks[gt_job["task_id"]]
+
+        self._test_can_restore_task_from_backup(task["id"])
+
+    def _test_can_restore_task_from_backup(self, task_id: int):
+        old_task = self.client.tasks.retrieve(task_id)
         (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
         task_json = json.loads(response.data)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-        task.download_backup(filename)
+        filename = self.tmp_dir / f"task_{old_task.id}_backup.zip"
+        old_task.download_backup(filename)
 
-        restored_task = self.client.tasks.create_from_backup(filename)
+        new_task = self.client.tasks.create_from_backup(filename)
 
-        old_jobs = task.get_jobs()
-        new_jobs = restored_task.get_jobs()
+        old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
+        new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
+        assert DeepDiff(old_meta, new_meta, ignore_order=True) == {}
+
+        old_jobs = sorted(old_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
+        new_jobs = sorted(new_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
         assert len(old_jobs) == len(new_jobs)
 
         for old_job, new_job in zip(old_jobs, new_jobs):
-            assert old_job.status == new_job.status
-            assert old_job.start_frame == new_job.start_frame
-            assert old_job.stop_frame == new_job.stop_frame
+            old_job_meta = json.loads(old_job.api.retrieve_data_meta(old_job.id)[1].data)
+            new_job_meta = json.loads(new_job.api.retrieve_data_meta(new_job.id)[1].data)
+            assert DeepDiff(old_job_meta, new_job_meta, ignore_order=True) == {}
 
-        (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
+            old_job_annotations = json.loads(old_job.api.retrieve_annotations(old_job.id)[1].data)
+            new_job_annotations = json.loads(new_job.api.retrieve_annotations(new_job.id)[1].data)
+            assert compare_annotations(old_job_annotations, new_job_annotations) == {}
+
+        (_, response) = self.client.api_client.tasks_api.retrieve(new_task.id)
         restored_task_json = json.loads(response.data)
 
         assert restored_task_json["assignee"] is None
@@ -2898,6 +3557,7 @@ class TestTaskBackups:
                     r"root\['target_storage'\]",  # should be dropped
                     r"root\['jobs'\]\['completed'\]",  # job statuses should be renewed
                     r"root\['jobs'\]\['validation'\]",  # job statuses should be renewed
+                    r"root\['status'\]",  # task status should be renewed
                     # depends on the actual job configuration,
                     # unlike to what is obtained from the regular task creation,
                     # where the requested number is recorded
@@ -2907,27 +3567,28 @@ class TestTaskBackups:
             == {}
         )
 
+        old_task_annotations = json.loads(old_task.api.retrieve_annotations(old_task.id)[1].data)
+        new_task_annotations = json.loads(new_task.api.retrieve_annotations(new_task.id)[1].data)
+        assert compare_annotations(old_task_annotations, new_task_annotations) == {}
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWorkWithGtJobs:
-    def test_normal_and_gt_job_annotations_are_not_merged(
-        self, tmp_path, admin_user, tasks, jobs, annotations
+    def test_gt_job_annotations_are_not_present_in_task_annotation_export_with_normal_gt_job(
+        self, tmp_path, admin_user, tasks, jobs, job_has_annotations
     ):
-        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt"
+            if tasks[j["task_id"]]["size"]
+        )
         task = tasks[gt_job["task_id"]]
         task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 
-        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
-        assert (
-            gt_job_source_annotations["tags"]
-            or gt_job_source_annotations["shapes"]
-            or gt_job_source_annotations["tracks"]
-        )
-
-        with Client(BASE_URL) as client:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
-
+        with make_sdk_client(admin_user) as client:
             for j in task_jobs:
                 if j["type"] != "ground_truth":
                     client.jobs.retrieve(j["id"]).remove_annotations()
@@ -2957,56 +3618,113 @@ class TestWorkWithGtJobs:
             assert not annotation_source.shapes
             assert not annotation_source.tracks
 
-    def test_can_backup_task_with_gt_jobs(self, tmp_path, admin_user, tasks, jobs, annotations):
+    @fixture
+    def fxt_task_with_honeypots(
+        self, tasks, jobs, job_has_annotations
+    ) -> Generator[Dict[str, Any], None, None]:
         gt_job = next(
             j
             for j in jobs
-            if j["type"] == "ground_truth" and tasks[j["task_id"]]["jobs"]["count"] == 2
+            if j["type"] == "ground_truth"
+            if job_has_annotations(j["id"])
+            if tasks[j["task_id"]]["validation_mode"] == "gt_pool"
+            if tasks[j["task_id"]]["size"]
         )
-        task = tasks[gt_job["task_id"]]
-        annotation_job = next(
-            j for j in jobs if j["task_id"] == task["id"] and j["type"] == "annotation"
-        )
+        yield tasks[gt_job["task_id"]], gt_job
 
-        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
-        assert (
-            gt_job_source_annotations["tags"]
-            or gt_job_source_annotations["shapes"]
-            or gt_job_source_annotations["tracks"]
-        )
+    @parametrize("task, gt_job", [fixture_ref(fxt_task_with_honeypots)])
+    def test_gt_job_annotations_are_present_in_task_annotation_export_in_task_with_honeypots(
+        self, tmp_path, admin_user, jobs, task, gt_job
+    ):
+        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 
-        annotation_job_source_annotations = annotations["job"][str(annotation_job["id"])]
+        with make_sdk_client(admin_user) as client:
+            for j in task_jobs:
+                if j["type"] != "ground_truth":
+                    client.jobs.retrieve(j["id"]).remove_annotations()
 
-        with Client(BASE_URL) as client:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
+            task_obj = client.tasks.retrieve(task["id"])
+            task_raw_annotations = json.loads(task_obj.api.retrieve_annotations(task["id"])[1].data)
 
-            backup_file: Path = tmp_path / "dataset.zip"
-            client.tasks.retrieve(task["id"]).download_backup(backup_file)
+            # It's quite hard to parse the dataset files, just import the data back instead
+            dataset_format = "CVAT for images 1.1"
 
-            new_task = client.tasks.create_from_backup(backup_file)
-            updated_job_annotations = {
-                j.type: json.loads(j.api.retrieve_annotations(j.id)[1].data)
-                for j in new_task.get_jobs()
-            }
-
-        for job_type, source_annotations in {
-            gt_job["type"]: gt_job_source_annotations,
-            annotation_job["type"]: annotation_job_source_annotations,
-        }.items():
-            assert (
-                DeepDiff(
-                    source_annotations,
-                    updated_job_annotations[job_type],
-                    ignore_order=True,
-                    exclude_regex_paths=[
-                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                    ],
-                )
-                == {}
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+            task_obj.import_annotations("CVAT 1.1", dataset_file)
+            task_dataset_file_annotations = json.loads(
+                task_obj.api.retrieve_annotations(task["id"])[1].data
             )
+
+            annotations_file = tmp_path / "annotations.zip"
+            task_obj.export_dataset(dataset_format, annotations_file, include_images=False)
+            task_obj.import_annotations("CVAT 1.1", annotations_file)
+            task_annotations_file_annotations = json.loads(
+                task_obj.api.retrieve_annotations(task["id"])[1].data
+            )
+
+        # there will be other annotations after uploading into a honeypot task,
+        # we need to compare only the validation frames in this test
+        validation_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        for anns in [
+            task_raw_annotations,
+            task_dataset_file_annotations,
+            task_annotations_file_annotations,
+        ]:
+            anns["tags"] = [t for t in anns["tags"] if t["frame"] in validation_frames]
+            anns["shapes"] = [t for t in anns["shapes"] if t["frame"] in validation_frames]
+
+        assert task_raw_annotations["tags"] or task_raw_annotations["shapes"]
+        assert not task_raw_annotations["tracks"]  # tracks are prohibited in such tasks
+        assert compare_annotations(task_raw_annotations, task_dataset_file_annotations) == {}
+        assert compare_annotations(task_raw_annotations, task_annotations_file_annotations) == {}
+
+    @parametrize("task, gt_job", [fixture_ref(fxt_task_with_honeypots)])
+    @pytest.mark.parametrize("dataset_format", ["CVAT for images 1.1", "Datumaro 1.0"])
+    def test_placeholder_frames_are_not_present_in_task_annotation_export_in_task_with_honeypots(
+        self, tmp_path, admin_user, jobs, task, gt_job, dataset_format
+    ):
+        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+        with make_sdk_client(admin_user) as client:
+            for j in task_jobs:
+                if j["type"] != "ground_truth":
+                    client.jobs.retrieve(j["id"]).remove_annotations()
+
+            task_obj = client.tasks.retrieve(task["id"])
+
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+
+            task_meta = task_obj.get_meta()
+
+        task_frame_names = [frame.name for frame in task_meta.frames]
+        validation_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        validation_frame_names = [task_frame_names[i] for i in validation_frame_ids]
+
+        frame_step = parse_frame_step(task_meta.frame_filter)
+        expected_frames = [
+            (task_meta.start_frame + frame * frame_step, name)
+            for frame, name in enumerate(task_frame_names)
+            if frame in validation_frame_ids or name not in validation_frame_names
+        ]
+
+        with zipfile.ZipFile(dataset_file, "r") as archive:
+            if dataset_format == "CVAT for images 1.1":
+                annotations = archive.read("annotations.xml").decode()
+                matches = re.findall(r'<image id="(\d+)" name="([^"]+)"', annotations, re.MULTILINE)
+                assert sorted((int(match[0]), match[1]) for match in matches) == sorted(
+                    expected_frames
+                )
+            elif dataset_format == "Datumaro 1.0":
+                with archive.open("annotations/default.json", "r") as annotation_file:
+                    annotations = json.load(annotation_file)
+
+                assert sorted(
+                    (int(item["attr"]["frame"]), item["id"]) for item in annotations["items"]
+                ) == sorted((frame, os.path.splitext(name)[0]) for frame, name in expected_frames)
+            else:
+                assert False
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -3074,18 +3792,14 @@ class TestGetTaskPreview:
 
 
 class TestUnequalJobs:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
 
-        self.client = self._make_client()
         self.user = admin_user
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     @pytest.fixture
     def fxt_task_with_unequal_jobs(self):
@@ -3110,7 +3824,7 @@ class TestUnequalJobs:
             "job_file_mapping": expected_segments,
         }
 
-        return self.client.tasks.create_from_data(
+        yield self.client.tasks.create_from_data(
             spec=task_spec,
             resource_type=ResourceType.LOCAL,
             resources=[self.tmp_dir / fn for fn in filenames],
@@ -3206,18 +3920,7 @@ class TestPatchTask:
 
         response = get_method(user, f"tasks/{task_id}/annotations")
         assert response.status_code == HTTPStatus.OK
-        assert (
-            DeepDiff(
-                annotations,
-                response.json(),
-                ignore_order=True,
-                exclude_regex_paths=[
-                    r"root\['\w+'\]\[\d+\]\['label_id'\]",
-                    r"root\['\w+'\]\[\d+\]\['attributes'\]\[\d+\]\['spec_id'\]",
-                ],
-            )
-            == {}
-        )
+        assert compare_annotations(annotations, response.json()) == {}
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
@@ -3316,19 +4019,15 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
 
 
 class TestImportTaskAnnotations:
-    def _make_client(self) -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
-        self.client = self._make_client()
         self.user = admin_user
         self.export_format = "CVAT for images 1.1"
         self.import_format = "CVAT 1.1"
 
-        with self.client:
-            self.client.login((self.user, USER_PASS))
+        with make_sdk_client(self.user) as client:
+            self.client = client
 
     def _check_annotations(self, task_id):
         with make_api_client(self.user) as api_client:
@@ -3487,6 +4186,10 @@ class TestImportTaskAnnotations:
             "Open Images V6 1.0",
             "Datumaro 1.0",
             "Datumaro 3D 1.0",
+            "YOLOv8 Oriented Bounding Boxes 1.0",
+            "YOLOv8 Detection 1.0",
+            "YOLOv8 Pose 1.0",
+            "YOLOv8 Segmentation 1.0",
         ],
     )
     def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):
@@ -3511,11 +4214,8 @@ class TestImportTaskAnnotations:
             assert b"Dataset must contain a file:" in capture.value.body
 
 
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportWithComplexFilenames:
-    @staticmethod
-    def _make_client() -> Client:
-        return Client(BASE_URL, config=Config(status_check_period=0.01))
-
     @pytest.fixture(
         autouse=True,
         scope="class",
@@ -3528,12 +4228,11 @@ class TestImportWithComplexFilenames:
         cls, restore_db_per_class, tmp_path_factory: pytest.TempPathFactory, admin_user: str
     ):
         cls.tmp_dir = tmp_path_factory.mktemp(cls.__class__.__name__)
-        cls.client = cls._make_client()
         cls.user = admin_user
         cls.format_name = "PASCAL VOC 1.1"
 
-        with cls.client:
-            cls.client.login((cls.user, USER_PASS))
+        with make_sdk_client(cls.user) as client:
+            cls.client = client
 
         cls._init_tasks()
 
@@ -3703,19 +4402,7 @@ class TestImportWithComplexFilenames:
         return original_annotations, imported_annotations
 
     def compare_original_and_import_annotations(self, original_annotations, imported_annotations):
-        assert (
-            DeepDiff(
-                original_annotations,
-                imported_annotations,
-                ignore_order=True,
-                exclude_regex_paths=[
-                    r"root(\['\w+'\]\[\d+\])+\['id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
-                    r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
-                ],
-            )
-            == {}
-        )
+        assert compare_annotations(original_annotations, imported_annotations) == {}
 
     @pytest.mark.parametrize("format_name", ["Datumaro 1.0", "COCO 1.0", "PASCAL VOC 1.1"])
     def test_export_and_import_tracked_format_with_outside_true(self, format_name):

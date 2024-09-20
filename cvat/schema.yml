@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.17.0
+  version: 2.19.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2323,10 +2323,17 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: index
+        schema:
+          type: integer
+        description: A unique number value identifying chunk, starts from 0 for each
+          job
+      - in: query
         name: number
         schema:
           type: integer
-        description: A unique number value identifying chunk or frame
+        description: A unique number value identifying chunk or frame. The numbers
+          are the same as for the task. Deprecated for chunks in favor of 'index'
       - in: query
         name: quality
         schema:
@@ -4585,6 +4592,7 @@ paths:
         schema:
           type: string
           enum:
+          - autoannotate
           - create
           - import
           - export
@@ -7510,7 +7518,7 @@ components:
             pass the list of file names in the required order.
         validation_params:
           allOf:
-          - $ref: '#/components/schemas/ValidationLayoutParamsRequest'
+          - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
       required:
       - image_quality
@@ -8237,39 +8245,38 @@ components:
         frame_share:
           type: number
           format: double
-          nullable: true
           description: |
             The share of frames included in the GT job.
             Applicable only to the "random_uniform" frame selection method
         frames_per_job_count:
           type: integer
           minimum: 1
-          nullable: true
           description: |
             The number of frames included in the GT job from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         frames_per_job_share:
           type: number
           format: double
-          nullable: true
           description: |
             The share of frames included in the GT job from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         random_seed:
           type: integer
           minimum: 0
-          nullable: true
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
             Applicable only to random frame selection methods.
             By default, a random value is used.
+        seed:
+          type: integer
+          minimum: 0
+          description: Deprecated. Use random_seed instead.
         frames:
           type: array
           items:
             type: integer
             minimum: 0
-          nullable: true
           description: |
             The list of frame ids. Applicable only to the "manual" frame selection method
       required:
@@ -10105,6 +10112,9 @@ components:
         format:
           type: string
           nullable: true
+        function_id:
+          type: string
+          nullable: true
       required:
       - target
       - type
@@ -10864,7 +10874,15 @@ components:
           maxLength: 150
       required:
       - username
-    ValidationLayoutParamsRequest:
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
+    ValidationParamsRequest:
       type: object
       properties:
         mode:
@@ -10874,7 +10892,6 @@ components:
         random_seed:
           type: integer
           minimum: 0
-          nullable: true
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
@@ -10887,47 +10904,37 @@ components:
             minLength: 1
             maxLength: 1024
           writeOnly: true
-          nullable: true
           description: |
-            The list of frame ids. Applicable only to the "manual" frame selection method
+            The list of file names to be included in the validation set.
+            Applicable only to the "manual" frame selection method.
+            Can only be used for images.
         frame_count:
           type: integer
           minimum: 1
           description: |
-            The number of frames included in the GT job.
+            The number of frames to be included in the validation set.
             Applicable only to the "random_uniform" frame selection method
         frame_share:
           type: number
           format: double
-          nullable: true
           description: |
-            The share of frames included in the GT job.
+            The share of frames to be included in the validation set.
             Applicable only to the "random_uniform" frame selection method
         frames_per_job_count:
           type: integer
           minimum: 1
-          nullable: true
           description: |
-            The number of frames included in the GT job from each annotation job.
+            The number of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
         frames_per_job_share:
           type: number
           format: double
-          nullable: true
           description: |
-            The share of frames included in the GT job from each annotation job.
+            The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
       - frame_selection_method
       - mode
-    ValidationMode:
-      enum:
-      - gt
-      - gt_pool
-      type: string
-      description: |-
-        * `gt` - GT
-        * `gt_pool` - GT_POOL
     WebhookContentType:
       enum:
       - application/json

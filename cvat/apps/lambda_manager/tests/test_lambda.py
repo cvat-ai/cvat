@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from itertools import groupby
 from typing import Dict, Optional
 from unittest import mock, skip
@@ -51,6 +51,8 @@ with open(path) as f:
 class _LambdaTestCaseBase(ApiTestBase):
     def setUp(self):
         super().setUp()
+
+        self.client = self.client_class(raise_request_exception=False)
 
         http_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self._get_data_from_lambda_manager_http)
         self.addCleanup(http_patcher.stop)
@@ -274,16 +276,21 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"])
-    def test_api_v2_lambda_functions_list_wrong(self, mock_http):
+    @mock.patch(
+        'cvat.apps.lambda_manager.views.LambdaGateway._http',
+        return_value={**functions["negative"], id_function_detector: functions["positive"][id_function_detector]}
+    )
+    def test_api_v2_lambda_functions_list_negative(self, mock_http):
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        # the positive function must remain visible
+        visible_ids = {f["id"] for f in response.data}
+        self.assertEqual(visible_ids, {id_function_detector})
 
     def test_api_v2_lambda_functions_read(self):
         ids_functions = [id_function_detector, id_function_interactor,\
-                         id_function_tracker, id_function_reid_with_response_data, \
-                         id_function_non_type, id_function_wrong_type, id_function_unknown_type]
+                         id_function_tracker, id_function_reid_with_response_data]
 
         for id_func in ids_functions:
             path = f'{LAMBDA_FUNCTIONS_PATH}/{id_func}'
@@ -312,10 +319,17 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"][id_function_non_unique_labels])
-    def test_api_v2_lambda_functions_read_non_unique_labels(self, mock_http):
-        response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_function_non_unique_labels}', self.admin)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_api_v2_lambda_functions_read_negative(self):
+        for id_func in [
+            id_function_non_type, id_function_wrong_type, id_function_unknown_type,
+            id_function_non_unique_labels,
+        ]:
+            with mock.patch(
+                'cvat.apps.lambda_manager.views.LambdaGateway._http',
+                return_value=functions["negative"][id_func]
+            ):
+                response = self._get_request(f'{LAMBDA_FUNCTIONS_PATH}/{id_func}', self.admin)
+                self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     @skip("Fail: add mock")
@@ -425,8 +439,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
 
     def test_api_v2_lambda_requests_create(self):
         ids_functions = [id_function_detector, id_function_interactor, id_function_tracker, \
-                         id_function_reid_with_response_data, id_function_detector, id_function_reid_with_no_response_data, \
-                         id_function_non_type, id_function_wrong_type, id_function_unknown_type]
+                         id_function_reid_with_response_data, id_function_detector, id_function_reid_with_no_response_data]
 
         for id_func in ids_functions:
             data_main_task = {
@@ -471,19 +484,26 @@ class LambdaTestCases(_LambdaTestCaseBase):
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"]["test-model-has-non-unique-labels"])
-    def test_api_v2_lambda_requests_create_non_unique_labels(self, mock_http):
-        data = {
-            "function": id_function_non_unique_labels,
-            "task": self.main_task["id"],
-            "cleanup": True,
-            "mapping": {
-                "car": { "name": "car" },
-            },
-        }
+    def test_api_v2_lambda_requests_create_negative(self):
+        for id_func in [
+            id_function_non_type, id_function_wrong_type, id_function_unknown_type,
+            id_function_non_unique_labels,
+        ]:
+            data = {
+                "function": id_func,
+                "task": self.main_task["id"],
+                "cleanup": True,
+                "mapping": {
+                    "car": { "name": "car" },
+                },
+            }
 
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            with mock.patch(
+                'cvat.apps.lambda_manager.views.LambdaGateway._http',
+                return_value=functions["negative"][id_func],
+            ):
+                response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+                self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def test_api_v2_lambda_requests_create_empty_data(self):
@@ -787,7 +807,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-    def test_api_v2_lambda_functions_create_non_type(self):
+    def test_api_v2_lambda_functions_create_negative(self):
         data = {
             "task": self.main_task["id"],
             "frame": 0,
@@ -797,51 +817,16 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_non_type}", self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    def test_api_v2_lambda_functions_create_wrong_type(self):
-        data = {
-            "task": self.main_task["id"],
-            "frame": 0,
-            "cleanup": True,
-            "mapping": {
-                "car": { "name": "car" },
-            },
-        }
-
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_wrong_type}", self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    def test_api_v2_lambda_functions_create_unknown_type(self):
-        data = {
-            "task": self.main_task["id"],
-            "frame": 0,
-            "cleanup": True,
-            "mapping": {
-                "car": { "name": "car" },
-            },
-        }
-
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_unknown_type}", self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-    @mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', return_value = functions["negative"]["test-model-has-non-unique-labels"])
-    def test_api_v2_lambda_functions_create_non_unique_labels(self, mock_http):
-        data = {
-            "task": self.main_task["id"],
-            "frame": 0,
-            "cleanup": True,
-            "mapping": {
-                "car": { "name": "car" },
-            },
-        }
-
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_non_unique_labels}", self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        for id_func in [
+            id_function_non_type, id_function_wrong_type, id_function_unknown_type,
+            id_function_non_unique_labels,
+        ]:
+            with mock.patch(
+                'cvat.apps.lambda_manager.views.LambdaGateway._http',
+                return_value=functions["negative"][id_func]
+            ):
+                response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data)
+                self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
     def test_api_v2_lambda_functions_create_quality(self):
@@ -1315,9 +1300,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
-            "frames": [
-                self.start_frame + frame * self.frame_step for frame in requested_frame_range
-            ],
+            "frames": list(requested_frame_range),
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = response.json()
@@ -1334,13 +1317,8 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(len(annotations["tracks"]), 0)
 
         self.assertEqual(
-            {
-                frame: 1 for frame in requested_frame_range
-            },
-            {
-                frame: len(list(group))
-                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
-            }
+            { frame: 1 for frame in requested_frame_range },
+            Counter(a["frame"] for a in annotations["shapes"])
         )
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
@@ -1354,9 +1332,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
-            "frames": [
-                self.start_frame + frame * self.frame_step for frame in requested_frame_range
-            ],
+            "frames": list(requested_frame_range),
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = response.json()
@@ -1426,10 +1402,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
-            "frames": [
-                self.start_frame + frame * self.frame_step
-                for frame in self.task_rel_frame_range[::3]
-            ],
+            "frames": list(self.task_rel_frame_range[::3]),
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = response.json()
@@ -1446,13 +1419,8 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         requested_frame_range = self.task_rel_frame_range
         self.assertEqual(
-            {
-                frame: 1 for frame in requested_frame_range
-            },
-            {
-                frame: len(list(group))
-                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
-            }
+            { frame: 1 for frame in requested_frame_range },
+            Counter(a["frame"] for a in annotations["shapes"])
         )
 
         response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)

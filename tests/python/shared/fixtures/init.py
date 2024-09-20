@@ -559,7 +559,16 @@ def restore_db_per_class(request):
 
 
 @pytest.fixture(scope="function")
-def restore_cvat_data(request):
+def restore_cvat_data_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_data_volumes()
+    else:
+        kube_restore_data_volumes()
+
+
+@pytest.fixture(scope="class")
+def restore_cvat_data_per_class(request):
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_data_volumes()

@@ -11,8 +11,6 @@ import re
 import rq
 import shutil
 from copy import deepcopy
-from rest_framework.serializers import ValidationError
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Union, Iterable
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,9 +36,9 @@ from cvat.apps.engine.media_extractors import (
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.serializers import ValidationLayoutParamsSerializer
 from cvat.apps.engine.utils import (
-    av_scan_paths, format_list,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
+    av_scan_paths, format_list,get_rq_job_meta,
+    define_dependent_job, get_rq_lock_by_user, preload_images
 )
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
@@ -973,11 +971,9 @@ def _create_thread(
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
     db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
-    compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == models.DataChoice.VIDEO else ZipCompressedChunkWriter
-
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
-        if issubclass(compressed_chunk_writer_class, ZipCompressedChunkWriter):
+        if db_data.compressed_chunk_type == models.DataChoice.IMAGESET:
             first_image_idx = db_data.start_frame
             if not is_data_in_cloud:
                 w, h = extractor.get_image_size(first_image_idx)
@@ -1144,9 +1140,9 @@ def _create_thread(
     ):
         # Validation frames must be in the end of the images list. Collect their ids
         frame_idx_map: dict[str, int] = {}
-        for i, frame_name in enumerate(validation_params['frames']):
+        for i, frame_filename in enumerate(validation_params['frames']):
             image = images[-len(validation_params['frames']) + i]
-            assert frame_name == image.path
+            assert frame_filename == image.path
             frame_idx_map[image.path] = image.frame
 
         # Store information about the real frame placement in validation frames in jobs
@@ -1161,23 +1157,24 @@ def _create_thread(
         assert job_file_mapping[-1] == validation_params['frames']
         job_file_mapping.pop(-1)
 
-        validation_frames = list(frame_idx_map.values())
+        # Update manifest
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest.link(
+            sources=[extractor.get_path(image.frame) for image in images],
+            meta={
+                k: {'related_images': related_images[k] }
+                for k in related_images
+            },
+            data_dir=upload_dir,
+            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
+        )
+        manifest.create()
 
-        # Save the created validation layout
-        validation_params = {
-            "mode": models.ValidationMode.GT_POOL,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [images[frame_id].path for frame_id in validation_frames],
-            "frames_per_job_count": validation_params['frames_per_job_count'],
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+        db_data.update_validation_layout(models.ValidationLayout(
+            mode=models.ValidationMode.GT_POOL,
+            frames=list(frame_idx_map.values()),
+            frames_per_job_count=validation_params["frames_per_job_count"],
+        ))
     elif validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL:
         if db_task.mode != 'annotation':
             raise ValidationError(
@@ -1214,10 +1211,10 @@ def _create_thread(
             case models.JobFrameSelectionMethod.MANUAL:
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
-                for frame in db_data.validation_layout.frames.all():
-                    frame_id = known_frame_names.get(frame.path)
+                for frame_filename in validation_params["frames"]:
+                    frame_id = known_frame_names.get(frame_filename)
                     if frame_id is None:
-                        unknown_requested_frames.append(frame.path)
+                        unknown_requested_frames.append(frame_filename)
                         continue
 
                     pool_frames.append(frame_id)
@@ -1228,6 +1225,14 @@ def _create_thread(
                     )
             case _:
                 assert False
+
+        # Even though the sorting is random overall,
+        # it's convenient to be able to reasonably navigate in the GT job
+        pool_frames = sort(
+            pool_frames,
+            sorting_method=models.SortingMethod.NATURAL,
+            func=lambda frame: images[frame].path,
+        )
 
         # 2. distribute pool frames
         if frames_per_job_count := validation_params.get("frames_per_job_count"):
@@ -1317,25 +1322,11 @@ def _create_thread(
         )
         manifest.create()
 
-        validation_frames = pool_frames
-
-        # Save the created validation layout
-        # TODO: try to find a way to avoid using the same model for storing the user request
-        # and internal data
-        validation_params = {
-            "mode": models.ValidationMode.GT_POOL,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [new_db_images[frame_id].path for frame_id in validation_frames],
-            "frames_per_job_count": frames_per_job_count,
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+        db_data.update_validation_layout(models.ValidationLayout(
+            mode=models.ValidationMode.GT_POOL,
+            frames=pool_frames,
+            frames_per_job_count=frames_per_job_count,
+        ))
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(images)
@@ -1347,7 +1338,7 @@ def _create_thread(
                 primary_image=image,
                 path=os.path.join(upload_dir, related_file_path),
             )
-            for image in images
+            for image in images.all()
             for related_file_path in related_images.get(image.path, [])
         ]
         models.RelatedFile.objects.bulk_create(db_related_files)
@@ -1376,16 +1367,15 @@ def _create_thread(
         seed = validation_params.get("random_seed")
         rng = random.Generator(random.MT19937(seed=seed))
 
-        validation_frames: list[int] = []
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-                all_frames = range(len(images))
+                all_frames = range(db_data.size)
 
                 if frame_count := validation_params.get("frame_count"):
-                    if len(images) < frame_count:
+                    if db_data.size < frame_count:
                         raise ValidationError(
                             f"The number of validation frames requested ({frame_count}) "
-                            f"is greater that the number of task frames ({len(images)})"
+                            f"is greater that the number of task frames ({db_data.size})"
                         )
                 elif frame_share := validation_params.get("frame_share"):
                     frame_count = max(1, int(frame_share * len(all_frames)))
@@ -1407,17 +1397,41 @@ def _create_thread(
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 
+                validation_frames: list[int] = []
+                overlap = db_task.overlap
                 for segment in db_task.segment_set.all():
+                    segment_frames = set(segment.frame_set)
+                    selected_frames = segment_frames.intersection(validation_frames)
+                    selected_count = len(selected_frames)
+
+                    missing_count = min(len(segment_frames), frame_count) - selected_count
+                    if missing_count <= 0:
+                        continue
+
+                    selectable_segment_frames = set(
+                        sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                    ).difference(selected_frames)
+
                     validation_frames.extend(rng.choice(
-                        list(segment.frame_set), size=frame_count, shuffle=False, replace=False
+                        tuple(selectable_segment_frames), size=missing_count, replace=False
                     ).tolist())
             case models.JobFrameSelectionMethod.MANUAL:
+                if not images:
+                    raise ValidationError(
+                        "{} validation frame selection method at task creation "
+                        "is only available for image-based tasks. "
+                        "Please create the GT job after the task is created.".format(
+                            models.JobFrameSelectionMethod.MANUAL
+                        )
+                    )
+
+                validation_frames: list[int] = []
                 known_frame_names = {frame.path: frame.frame for frame in images}
                 unknown_requested_frames = []
-                for frame in db_data.validation_layout.frames.all():
-                    frame_id = known_frame_names.get(frame.path)
+                for frame_filename in validation_params['frames']:
+                    frame_id = known_frame_names.get(frame_filename)
                     if frame_id is None:
-                        unknown_requested_frames.append(frame.path)
+                        unknown_requested_frames.append(frame_filename)
                         continue
 
                     validation_frames.append(frame_id)
@@ -1431,33 +1445,31 @@ def _create_thread(
                     f'Unknown frame selection method {validation_params["frame_selection_method"]}'
                 )
 
-        # Save the created validation layout
-        # TODO: try to find a way to avoid using the same model for storing the user request
-        # and internal data
-        validation_params = {
-            "mode": models.ValidationMode.GT,
-            "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
-            "frames": [new_db_images[frame_id].path for frame_id in validation_frames],
-
-            # reset other fields
-            "random_seed": None,
-            "frame_count": None,
-            "frame_share": None,
-            "frames_per_job_count": None,
-            "frames_per_job_share": None,
-        }
-        validation_layout_serializer = ValidationLayoutParamsSerializer()
-        validation_layout_serializer.update(db_data.validation_layout, validation_params)
+        db_data.update_validation_layout(models.ValidationLayout(
+            mode=models.ValidationMode.GT,
+            frames=sorted(validation_frames),
+        ))
 
     # TODO: refactor
-    if validation_params:
-        db_gt_segment = models.Segment(
-            task=db_task,
-            start_frame=0,
-            stop_frame=db_data.size - 1,
-            frames=validation_frames,
-            type=models.SegmentType.SPECIFIC_FRAMES,
-        )
+    if hasattr(db_data, 'validation_layout'):
+        if db_data.validation_layout.mode == models.ValidationMode.GT:
+            db_gt_segment = models.Segment(
+                task=db_task,
+                start_frame=0,
+                stop_frame=db_data.size - 1,
+                frames=db_data.validation_layout.frames,
+                type=models.SegmentType.SPECIFIC_FRAMES,
+            )
+        elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
+            db_gt_segment = models.Segment(
+                task=db_task,
+                start_frame=min(db_data.validation_layout.frames),
+                stop_frame=max(db_data.validation_layout.frames),
+                type=models.SegmentType.RANGE,
+            )
+        else:
+            assert False
+
         db_gt_segment.save()
 
         db_gt_job = models.Job(segment=db_gt_segment, type=models.JobType.GROUND_TRUTH)
@@ -1470,9 +1482,9 @@ def _create_thread(
         settings.MEDIA_CACHE_ALLOW_STATIC_CACHE and
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
-        _create_static_chunks(db_task, media_extractor=extractor)
+        _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
 
-def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader):
+def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
     @attrs.define
     class _ChunkProgressUpdater:
         _call_counter: int = attrs.field(default=0, init=False)
@@ -1556,7 +1568,9 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
     )
     original_chunk_writer = original_chunk_writer_class(original_quality, **chunk_writer_kwargs)
 
-    db_segments = db_task.segment_set.all()
+    db_segments = db_task.segment_set.order_by('start_frame').all()
+
+    frame_map = {} # frame number -> extractor frame number
 
     if isinstance(media_extractor, MEDIA_TYPES['video']['extractor']):
         def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
@@ -1575,6 +1589,16 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             object_size_callback=_get_frame_size
         )
     else:
+        extractor_frame_ids = {
+            media_extractor.get_path(abs_frame_number): abs_frame_number
+            for abs_frame_number in media_extractor.frame_range
+        }
+
+        frame_map = {
+            frame.frame: extractor_frame_ids[os.path.join(upload_dir, frame.path)]
+            for frame in db_data.images.all()
+        }
+
         media_iterator = RandomAccessIterator(media_extractor)
 
     with closing(media_iterator):
@@ -1591,13 +1615,16 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             for segment_idx, db_segment in enumerate(db_segments):
                 frame_counter = itertools.count()
                 for chunk_idx, chunk_frame_ids in (
-                    (chunk_idx, list(chunk_frame_ids))
+                    (chunk_idx, tuple(chunk_frame_ids))
                     for chunk_idx, chunk_frame_ids in itertools.groupby(
                         (
                             # Convert absolute to relative ids (extractor output positions)
                             # Extractor will skip frames outside requested
                             (abs_frame_id - db_data.start_frame) // frame_step
-                            for abs_frame_id in db_segment.frame_set
+                            for abs_frame_id in (
+                                frame_map.get(frame, frame)
+                                for frame in db_segment.frame_set
+                            )
                         ),
                         lambda _: next(frame_counter) // db_data.chunk_size
                     )
