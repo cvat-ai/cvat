@@ -262,8 +262,12 @@ ThunkAction {
                 validation_params: {
                     mode: data.quality.validationMode,
                     frame_selection_method: data.quality.frameSelectionMethod,
-                    frame_percent: data.quality.validationFramesPercent,
-                    frames_per_job_percent: data.quality.validationFramesPerJobPercent,
+                    frame_share: data.quality.validationFramesPercent ? (
+                        data.quality.validationFramesPercent / 100
+                    ) : data.quality.validationFramesPercent,
+                    frames_per_job_share: data.quality.validationFramesPerJobPercent ? (
+                        data.quality.validationFramesPerJobPercent / 100
+                    ) : data.quality.validationFramesPerJobPercent,
                 },
             };
         }
