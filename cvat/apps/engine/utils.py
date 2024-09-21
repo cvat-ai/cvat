@@ -390,11 +390,17 @@ def build_annotations_file_name(
     timestamp: str,
     format_name: str,
     is_annotation_file: bool = True,
+    only_annotated: bool = False,
     extension: str = "{}",
 ) -> str:
-    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
+    # "<project|task|job>_<name|id>_<annotations|dataset|dataset-annotated_only>_<timestamp>_<format>.zip"
+
+    dataset_type = 'annotations' if is_annotation_file else ('dataset')
+    if(only_annotated):
+        dataset_type += "-annotated_only"
+
     return "{}_{}_{}_{}_{}{}".format(
-        class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
+        class_name, identifier, dataset_type,
         timestamp, format_name, extension,
     ).lower()
 

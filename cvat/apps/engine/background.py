@@ -159,6 +159,7 @@ class DatasetExportManager(_ResourceExportManager):
         format: str
         filename: str
         save_images: bool
+        only_annotated: bool
         location_config: Dict[str, Any]
 
         @property
@@ -171,6 +172,7 @@ class DatasetExportManager(_ResourceExportManager):
         request: Request,
         export_callback: Callable,
         save_images: Optional[bool] = None,
+        only_annotated: Optional[bool] = None,
         *,
         version: int = 2,
     ) -> None:
@@ -185,6 +187,11 @@ class DatasetExportManager(_ResourceExportManager):
             save_images
             if save_images is not None
             else to_bool(request.query_params.get("save_images", False))
+        )
+        only_annotated = (
+            only_annotated
+            if only_annotated is not None
+            else to_bool(request.query_params.get("only_annotated", False))
         )
 
         try:
@@ -207,6 +214,7 @@ class DatasetExportManager(_ResourceExportManager):
             format=format_name,
             filename=filename,
             save_images=save_images,
+            only_annotated=only_annotated,
             location_config=location_config,
         )
 
@@ -237,6 +245,7 @@ class DatasetExportManager(_ResourceExportManager):
                     timestamp=instance_timestamp,
                     format_name=self.export_args.format,
                     is_annotation_file=not self.export_args.save_images,
+                    only_annotated = self.export_args.only_annotated,                    
                     extension=osp.splitext(file_path)[1],
                 )
 
@@ -398,6 +407,7 @@ class DatasetExportManager(_ResourceExportManager):
             format_name=self.export_args.format,
             cloud_storage_id=self.export_args.location_config.get("storage_id"),
             save_images=self.export_args.save_images,
+            only_annotated=self.export_args.only_annotated,
         )
 
         serializer = RqIdSerializer(data={"rq_id": rq_id})
@@ -451,6 +461,7 @@ class DatasetExportManager(_ResourceExportManager):
                 timestamp=instance_timestamp,
                 format_name=self.export_args.format,
                 is_annotation_file=not self.export_args.save_images,
+                only_annotated = self.export_args.only_annotated,                    
             )
             func = export_resource_to_cloud_storage
             func_args = (

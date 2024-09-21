@@ -6,6 +6,7 @@ import io
 from logging import Logger
 from pathlib import Path
 from typing import Optional, Tuple
+import zipfile
 
 import pytest
 from cvat_sdk import Client
@@ -147,6 +148,34 @@ class TestJobUsecases(TestDatasetExport):
             location=location,
             request=request,
             cloud_storages=cloud_storages,
+        )
+    
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("only_annotated", (True, False))
+    @parametrize(
+        "task, location",
+        [
+            (fixture_ref("fxt_new_task"), None),
+        ],
+    )
+    def test_can_export_dataset_with_only_annotated_images_for_job(
+        self,
+        format_name: str,
+        only_annotated: bool,
+        task: Task,
+        location: Optional[Location],
+        request: pytest.FixtureRequest,
+    ):
+        job_id = task.get_jobs()[0].id
+        job = self.client.jobs.retrieve(job_id)
+
+        self._test_can_export_dataset_with_only_annotated_images(
+            task= task,
+            format_name=format_name,
+            only_annotated=only_annotated,
+            location=location,
+            request=request,
+            job=job,
         )
 
     def test_can_download_preview(self, fxt_new_task: Task):

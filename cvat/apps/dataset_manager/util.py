@@ -160,14 +160,19 @@ def get_export_cache_dir(db_instance: Project | Task | Job) -> str:
 def make_export_filename(
     dst_dir: str,
     save_images: bool,
+    only_annotated: bool,
     instance_timestamp: float,
     format_name: str,
 ) -> str:
     from .formats.registry import EXPORT_FORMATS
     file_ext = EXPORT_FORMATS[format_name].EXT
 
+    dataset_type = 'dataset' if save_images else 'annotations'
+    if only_annotated:
+        dataset_type += "-annotated_only"
+        
     filename = '%s-instance%f-%s.%s' % (
-        'dataset' if save_images else 'annotations',
+        dataset_type,
         # store the instance timestamp in the file name to reliably get this information
         # ctime / mtime do not return file creation time on linux
         # mtime is used for file usage checks

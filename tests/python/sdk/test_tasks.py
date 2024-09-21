@@ -316,6 +316,30 @@ class TestTaskUsecases(TestDatasetExport):
             cloud_storages=cloud_storages,
         )
 
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
+    @pytest.mark.parametrize("only_annotated", (True, False))
+    @parametrize(
+        "task, location",
+        [
+            (fixture_ref("fxt_new_task"), None),
+        ],
+    )
+    def test_can_export_dataset_with_only_annotated_images_for_task(
+        self,
+        format_name: str,
+        only_annotated: bool,
+        task: Task,
+        location: Optional[Location],
+        request: pytest.FixtureRequest,
+    ):
+        self._test_can_export_dataset_with_only_annotated_images(
+            task=task,
+            format_name=format_name,
+            only_annotated=only_annotated,
+            location=location,
+            request=request,
+        )
+
     def test_can_download_dataset_twice_in_a_row(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
