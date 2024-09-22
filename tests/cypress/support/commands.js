@@ -171,11 +171,11 @@ Cypress.Commands.add(
         attrName = 'Some attr name',
         textDefaultValue = 'Some default value for type Text',
         image = 'image.png',
-        multiAttrParams,
-        advancedConfigurationParams,
+        multiAttrParams = null,
+        advancedConfigurationParams = null,
         forProject = false,
         attachToProject = false,
-        projectName,
+        projectName = '',
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
     ) => {
@@ -363,6 +363,19 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
 Cypress.Commands.add('headlessLogout', () => {
     cy.clearAllCookies();
     cy.clearAllLocalStorage();
+});
+
+Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
+    cy.window().then(async ($win) => {
+        const data = {
+            ...jobSpec,
+        };
+
+        const job = new $win.cvat.classes.Job(data);
+
+        const result = await job.save(data);
+        return cy.wrap({ jobID: result.id });
+    });
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
