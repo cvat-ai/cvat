@@ -1143,27 +1143,27 @@ class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
     serializer_class = None
 
-    @return_response()
-    def list(self, request):
-        queryset = Task.objects.select_related(
-            "assignee",
-            "owner",
-            "organization",
-        ).prefetch_related(
-            "project__owner",
-            "project__assignee",
-            "project__organization",
-        )
+    # @return_response()
+    # def list(self, request):
+    #     queryset = Task.objects.select_related(
+    #         "assignee",
+    #         "owner",
+    #         "organization",
+    #     ).prefetch_related(
+    #         "project__owner",
+    #         "project__assignee",
+    #         "project__organization",
+    #     )
 
-        perm = LambdaPermission.create_scope_list(request)
-        queryset = perm.filter(queryset)
-        task_ids = set(queryset.values_list("id", flat=True))
+    #     perm = LambdaPermission.create_scope_list(request)
+    #     queryset = perm.filter(queryset)
+    #     task_ids = set(queryset.values_list("id", flat=True))
 
-        queue = LambdaQueue()
-        rq_jobs = [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
+    #     queue = LambdaQueue()
+    #     rq_jobs = [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
 
-        response_serializer = FunctionCallSerializer(rq_jobs, many=True)
-        return response_serializer.data
+    #     response_serializer = FunctionCallSerializer(rq_jobs, many=True)
+    #     return response_serializer.data
 
     @return_response()
     def create(self, request):
@@ -1198,18 +1198,20 @@ class RequestViewSet(viewsets.ViewSet):
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data
 
-    @return_response()
-    def retrieve(self, request, pk):
-        self.check_object_permissions(request, pk)
-        queue = LambdaQueue()
-        rq_job = queue.fetch_job(pk)
+    # TODO: check that permissions in the requests viewset are equivalent
 
-        response_serializer = FunctionCallSerializer(rq_job.to_dict())
-        return response_serializer.data
+    # @return_response()
+    # def retrieve(self, request, pk):
+    #     self.check_object_permissions(request, pk)
+    #     queue = LambdaQueue()
+    #     rq_job = queue.fetch_job(pk)
 
-    @return_response(status.HTTP_204_NO_CONTENT)
-    def destroy(self, request, pk):
-        self.check_object_permissions(request, pk)
-        queue = LambdaQueue()
-        rq_job = queue.fetch_job(pk)
-        rq_job.delete()
+    #     response_serializer = FunctionCallSerializer(rq_job.to_dict())
+    #     return response_serializer.data
+
+    # @return_response(status.HTTP_204_NO_CONTENT)
+    # def destroy(self, request, pk):
+    #     self.check_object_permissions(request, pk)
+    #     queue = LambdaQueue()
+    #     rq_job = queue.fetch_job(pk)
+    #     rq_job.delete()

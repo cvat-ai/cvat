@@ -2870,26 +2870,6 @@ paths:
         '200':
           description: Returns function invocation results
   /api/lambda/requests:
-    get:
-      operationId: lambda_list_requests
-      summary: Method returns a list of requests
-      tags:
-      - lambda
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FunctionCall'
-          description: ''
     post:
       operationId: lambda_create_requests
       summary: Method calls the function
@@ -2930,53 +2910,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/FunctionCall'
           description: ''
-  /api/lambda/requests/{id}:
-    get:
-      operationId: lambda_retrieve_requests
-      summary: Method returns the status of the request
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        description: Request id
-        required: true
-      tags:
-      - lambda
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/FunctionCall'
-          description: ''
-    delete:
-      operationId: lambda_delete_requests
-      summary: Method cancels the request
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        description: Request id
-        required: true
-      tags:
-      - lambda
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/memberships:
     get:
       operationId: memberships_list

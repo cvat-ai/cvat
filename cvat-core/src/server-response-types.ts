@@ -511,6 +511,7 @@ export interface SerializedRequest {
         job_id: number | null;
         task_id: number | null;
         project_id: number | null;
+        function_id: string | null;
     };
     progress?: number;
     message: string;
@@ -521,4 +522,8 @@ export interface SerializedRequest {
     finished_date?: string;
     expiry_date?: string;
     owner?: any;
+}
+
+export interface RequestsFilter extends APICommonFilterParams {
+    action?: string;
 }

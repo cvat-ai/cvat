@@ -7,6 +7,7 @@ import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
 import { RQStatus, ShapeType } from './enums';
+import { Request } from './request';
 
 export interface ModelProvider {
     name: string;
@@ -103,10 +104,11 @@ class LambdaManager {
         return result;
     }
 
-    async requests(): Promise<any[]> {
-        const lambdaRequests = await serverProxy.lambda.requests();
+    async requests(): Promise<Request[]> {
+        const lambdaRequests = await serverProxy.requests.list({ action: 'autoannotate' });
         return lambdaRequests
-            .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
+            .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status))
+            .map((serializedRequest) => new Request(serializedRequest));
     }
 
     async cancel(requestID, functionID): Promise<void> {
@@ -123,7 +125,7 @@ class LambdaManager {
             delete this.listening[requestID];
         }
 
-        await serverProxy.lambda.cancel(requestID);
+        await serverProxy.requests.cancel(requestID);
     }
 
     async listen(
@@ -142,7 +144,7 @@ class LambdaManager {
             return;
         }
         const timeoutCallback = (): void => {
-            serverProxy.lambda.status(requestID).then((response) => {
+            serverProxy.requests.status(requestID).then((response) => {
                 const { status } = response;
                 if (requestID in this.listening) {
                     // check it was not cancelled
@@ -158,7 +160,7 @@ class LambdaManager {
                                 .forEach((update) => update(status, response.progress || 100));
                         } else {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 0, response.exc_info || ''));
+                                .forEach((update) => update(status, response.progress || 0, response.message));
                         }
                     }
                 }

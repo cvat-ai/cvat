@@ -180,10 +180,10 @@ export function getInferenceStatusAsync(): ThunkAction {
             const requests = await core.lambda.requests();
             const newListenedIDs: Record<string, boolean> = {};
             requests
-                .map((request: any): object => ({
-                    taskID: +request.function.task,
+                .map((request): InferenceMeta => ({
+                    taskID: +request.operation.taskID!,
                     requestID: request.id,
-                    functionID: request.function.id,
+                    functionID: request.operation.functionID!,
                 }))
                 .forEach((inferenceMeta: InferenceMeta): void => {
                     if (!(inferenceMeta.requestID in requestedInferenceIDs)) {

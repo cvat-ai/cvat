@@ -19,7 +19,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest,
+    SerializedRequest, RequestsFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -1647,38 +1647,6 @@ async function callLambdaFunction(funId, body) {
     }
 }
 
-async function getLambdaRequests() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/lambda/requests`);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getLambdaRequestStatus(requestID) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/lambda/requests/${requestID}`);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function cancelLambdaRequest(requestId) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/lambda/requests/${requestId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function installedApps() {
     const { backendAPI } = config;
     try {
@@ -2205,12 +2173,16 @@ async function getAnalyticsReports(
     }
 }
 
-async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> {
+async function getRequestsList(
+    filter: RequestsFilter = {},
+): Promise<SerializedRequest[]> {
     const { backendAPI } = config;
-    const params = enableOrganization();
 
     try {
-        const response = await fetchAll(`${backendAPI}/requests`, params);
+        const response = await fetchAll(`${backendAPI}/requests`, {
+            ...filter,
+            ...enableOrganization(),
+        });
 
         return response.results;
     } catch (errorData) {
@@ -2404,11 +2376,8 @@ export default Object.freeze({
 
     lambda: Object.freeze({
         list: getLambdaFunctions,
-        status: getLambdaRequestStatus,
-        requests: getLambdaRequests,
         run: runLambdaRequest,
         call: callLambdaFunction,
-        cancel: cancelLambdaRequest,
     }),
 
     issues: Object.freeze({
