@@ -10,18 +10,7 @@ from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 from uuid import uuid4
 
 import datumaro as dm
@@ -57,7 +46,6 @@ from cvat.apps.engine.models import (
     StatusChoice,
     Task,
     User,
-    ValidationLayout,
     ValidationMode,
 )
 from cvat.apps.profiler import silk_profile
@@ -2274,14 +2262,12 @@ class QualityReportUpdateManager:
             for job in job_queryset:
                 job.segment.task = gt_job.segment.task
 
-            validation_layout = task.data.validation_layout
-            task_frame_provider = TaskFrameProvider(task)
-            gt_job_data_provider = JobDataProvider(
-                gt_job.id, queryset=job_queryset, included_frames=active_validation_frames
-            )
+            gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
             active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
 
+            validation_layout = task.data.validation_layout
             if validation_layout.mode == ValidationMode.GT_POOL:
+                task_frame_provider = TaskFrameProvider(task)
                 active_validation_frames = set(
                     task_frame_provider.get_rel_frame_number(frame)
                     for frame, real_frame in (
