@@ -71,7 +71,7 @@ context('Customizable Shortcuts', () => {
         const searchShortcuts = [
             {
                 title: 'Save the job',
-                description: 'Send all changes of annotations to the server',
+                description: 'Submit unsaved changes of annotations to the server',
             },
             {
                 title: 'Switch automatic bordering',

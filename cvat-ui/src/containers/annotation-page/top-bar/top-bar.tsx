@@ -461,11 +461,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
     };
 
-    private onSaveAnnotation = (): void => {
-        const { onSaveAnnotation } = this.props;
-        onSaveAnnotation();
-    };
-
     private onChangePlayerSliderValue = async (value: number): Promise<void> => {
         const {
             playing, onSwitchPlay, jobInstance, showDeletedFrames,
@@ -629,10 +624,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     private autoSave(): void {
-        const { autoSave, saving } = this.props;
+        const { autoSave, saving, onSaveAnnotation } = this.props;
 
         if (autoSave && !saving) {
-            this.onSaveAnnotation();
+            onSaveAnnotation();
         }
     }
 
@@ -672,7 +667,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 showStatistics={this.showStatistics}
                 showFilters={this.showFilters}
                 onSwitchPlay={this.onSwitchPlay}
-                onSaveAnnotation={this.onSaveAnnotation}
                 onPrevFrame={this.onPrevFrame}
                 onNextFrame={this.onNextFrame}
                 onForward={this.onForward}
