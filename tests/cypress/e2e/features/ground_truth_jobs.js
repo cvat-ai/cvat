@@ -89,6 +89,7 @@ context('Ground truth jobs', () => {
     }
 
     function openManagementTab() {
+        cy.get('.cvat-task-page-actions-button').should('exist').and('be.visible');
         cy.clickInTaskMenu('Quality control', true);
         cy.get('.cvat-task-control-tabs')
             .within(() => {
