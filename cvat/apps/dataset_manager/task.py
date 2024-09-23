@@ -872,14 +872,14 @@ class TaskAnnotation:
         gt_pool_frames = gt_job.segment.frame_set
         task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
         task_validation_frame_ids: set[int] = set()
-        for frame_id, real_frame_id in (
+        for frame, real_frame in (
             self.db_task.data.images
-            .filter(is_placeholder=True, real_frame_id__in=gt_pool_frames)
-            .values_list('frame', 'real_frame_id')
+            .filter(is_placeholder=True, real_frame__in=gt_pool_frames)
+            .values_list('frame', 'real_frame')
             .iterator(chunk_size=1000)
         ):
-            task_validation_frame_ids.add(frame_id)
-            task_validation_frame_groups.setdefault(real_frame_id, []).append(frame_id)
+            task_validation_frame_ids.add(frame)
+            task_validation_frame_groups.setdefault(real_frame, []).append(frame)
 
         assert sorted(gt_pool_frames) == list(range(min(gt_pool_frames), max(gt_pool_frames) + 1))
         gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
