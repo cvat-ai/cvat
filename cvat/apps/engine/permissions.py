@@ -210,6 +210,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
         UPDATE_ASSIGNEE = 'update:assignee'
         UPDATE_DESC = 'update:desc'
         UPDATE_ORG = 'update:organization'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         VIEW = 'view'
         IMPORT_DATASET = 'import:dataset'
         EXPORT_ANNOTATIONS = 'export:annotations'
@@ -299,6 +300,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
                     break
             if 'organization' in request.data:
                 scopes.append(Scopes.UPDATE_ORG)
+
+            if {'source_storage', 'target_storage'} & request.data.keys():
+                scopes.append(Scopes.UPDATE_ASSOCIATED_STORAGE)
         else:
             scopes.append(scope)
 
@@ -376,6 +380,7 @@ class TaskPermission(OpenPolicyAgentPermission):
         UPDATE_ASSIGNEE = 'update:assignee'
         UPDATE_PROJECT = 'update:project'
         UPDATE_OWNER = 'update:owner'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         DELETE = 'delete'
         VIEW_ANNOTATIONS = 'view:annotations'
         UPDATE_ANNOTATIONS = 'update:annotations'
@@ -529,6 +534,9 @@ class TaskPermission(OpenPolicyAgentPermission):
 
             if request.data.get('organization'):
                 scopes.append(Scopes.UPDATE_ORGANIZATION)
+
+            if {'source_storage', 'target_storage'} & request.data.keys():
+                scopes.append(Scopes.UPDATE_ASSOCIATED_STORAGE)
 
         elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:

@@ -262,7 +262,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": null,
+      "last_login": "2024-09-23T21:39:52.628000Z",
       "last_name": "Fourth",
       "url": "http://localhost:8080/api/users/5",
       "username": "user4"
@@ -278,7 +278,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": null,
+      "last_login": "2024-09-23T21:38:20.570000Z",
       "last_name": "Third",
       "url": "http://localhost:8080/api/users/4",
       "username": "user3"
@@ -294,7 +294,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2022-09-28T12:19:33.698000Z",
+      "last_login": "2024-09-23T21:37:14.107000Z",
       "last_name": "Second",
       "url": "http://localhost:8080/api/users/3",
       "username": "user2"
@@ -326,7 +326,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2024-04-03T09:51:04.664000Z",
+      "last_login": "2024-09-23T10:46:55.413000Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/1",
       "username": "admin1"

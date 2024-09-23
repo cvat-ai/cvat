@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-04-03T09:51:04.664Z",
+    "last_login": "2024-09-23T10:46:55.413Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -80,7 +80,7 @@
   "pk": 3,
   "fields": {
     "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
-    "last_login": "2022-09-28T12:19:33.698Z",
+    "last_login": "2024-09-23T21:37:14.107Z",
     "is_superuser": false,
     "username": "user2",
     "first_name": "User",
@@ -102,7 +102,7 @@
   "pk": 4,
   "fields": {
     "password": "md5$Ijexsnap6Uj1P8RcKUf5Q5$7fb70bf35ebab0f2c2e96509a5ce44bc",
-    "last_login": null,
+    "last_login": "2024-09-23T21:38:20.570Z",
     "is_superuser": false,
     "username": "user3",
     "first_name": "User",
@@ -124,7 +124,7 @@
   "pk": 5,
   "fields": {
     "password": "md5$NIHgzYn7rUqnnAdqA9NRuM$2086d4ab6134a938f7111b689a53e568",
-    "last_login": null,
+    "last_login": "2024-09-23T21:39:52.628Z",
     "is_superuser": false,
     "username": "user4",
     "first_name": "User",
@@ -710,6 +710,14 @@
   }
 },
 {
+  "model": "sessions.session",
+  "pk": "yd84wvjxzet8gusv2macno3vmhqt2y7k",
+  "fields": {
+    "session_data": ".eJxVjMEOwiAQRP-FsyFlm2XRo3e_gSwLSNXQpLSnxn9Xkh50jvPezK48b2vxW0uLn6K6KKNOv11geabaQXxwvc9a5rouU9Bd0Qdt-jbH9Loe7t9B4Va-a7ExoIBAANeDIwESATlwQnmwgBkDsjUoZ2fFgmGSmCUMJo8O1PsDw_U3Jg:1sse7a:xa7yfiJwfhjV2cXSK2Pr2NcPnMw4VzVcgVENo96qr0E",
+    "expire_date": "2024-10-07T08:08:38.273Z"
+  }
+},
+{
   "model": "authtoken.token",
   "pk": "0df6f76f61b1fcacb0536c357e10032048f1a4f5",
   "fields": {
@@ -737,6 +745,16 @@
       "business2"
     ],
     "created": "2022-03-17T07:22:55.921Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "563f50e2dcc5107740e7a4beee5a0217650806f1",
+  "fields": {
+    "user": [
+      "user4"
+    ],
+    "created": "2024-09-23T21:39:52.626Z"
   }
 },
 {
@@ -1533,6 +1551,63 @@
 {
   "model": "engine.data",
   "pk": 24,
+  "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 25,
+  "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 26,
+  "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 27,
   "fields": {
     "chunk_size": 72,
     "size": 1,
@@ -3088,6 +3163,39 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 491,
+  "fields": {
+    "data": 25,
+    "path": "1.png",
+    "frame": 0,
+    "width": 569,
+    "height": 483
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 492,
+  "fields": {
+    "data": 26,
+    "path": "1.png",
+    "frame": 0,
+    "width": 569,
+    "height": 483
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 493,
+  "fields": {
+    "data": 27,
+    "path": "1.png",
+    "frame": 0,
+    "width": 569,
+    "height": 483
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3254,7 +3362,7 @@
   "pk": 10,
   "fields": {
     "created_date": "2023-02-10T11:42:43.192Z",
-    "updated_date": "2023-02-10T11:42:57.733Z",
+    "updated_date": "2024-09-23T21:42:22.688Z",
     "name": "project 6",
     "owner": [
       "user3"
@@ -3344,6 +3452,48 @@
     "organization": null,
     "source_storage": 35,
     "target_storage": 36
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 15,
+  "fields": {
+    "created_date": "2024-09-22T20:40:15.423Z",
+    "updated_date": "2024-09-22T20:40:23.462Z",
+    "name": "project assigned to user4",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "user4"
+    ],
+    "assignee_updated_date": "2024-09-22T20:40:23.452Z",
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 41,
+    "target_storage": 42
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 16,
+  "fields": {
+    "created_date": "2024-09-23T08:09:42.827Z",
+    "updated_date": "2024-09-23T08:09:45.474Z",
+    "name": "project assigned to org owner",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "business1"
+    ],
+    "assignee_updated_date": "2024-09-23T08:09:45.461Z",
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 43,
+    "target_storage": 44
   }
 },
 {
@@ -3880,6 +4030,88 @@
     "organization": null,
     "source_storage": 39,
     "target_storage": 40
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 26,
+  "fields": {
+    "created_date": "2024-09-23T10:51:32.778Z",
+    "updated_date": "2024-09-23T10:51:45.533Z",
+    "project": null,
+    "name": "task assigned to owner",
+    "mode": "annotation",
+    "owner": [
+      "user3"
+    ],
+    "assignee": [
+      "business1"
+    ],
+    "assignee_updated_date": "2024-09-23T10:51:45.525Z",
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 25,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 45,
+    "target_storage": 46
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 27,
+  "fields": {
+    "created_date": "2024-09-23T10:52:04.357Z",
+    "updated_date": "2024-09-23T10:52:48.778Z",
+    "project": null,
+    "name": "task assigned to maintainer",
+    "mode": "annotation",
+    "owner": [
+      "user3"
+    ],
+    "assignee": [
+      "user4"
+    ],
+    "assignee_updated_date": "2024-09-23T10:52:48.769Z",
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 26,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 47,
+    "target_storage": 48
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 28,
+  "fields": {
+    "created_date": "2024-09-23T21:42:22.676Z",
+    "updated_date": "2024-09-23T21:42:23.082Z",
+    "project": 10,
+    "name": "task 1",
+    "mode": "annotation",
+    "owner": [
+      "user4"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 27,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 49,
+    "target_storage": 50
   }
 },
 {
@@ -4787,6 +5019,30 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 461,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 462,
+  "fields": {
+    "data": 26,
+    "file": "/home/django/data/data/26/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 463,
+  "fields": {
+    "data": 27,
+    "file": "/home/django/data/data/27/raw/1.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -5086,6 +5342,39 @@
   "pk": 34,
   "fields": {
     "task": 25,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 35,
+  "fields": {
+    "task": 26,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 36,
+  "fields": {
+    "task": 27,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 37,
+  "fields": {
+    "task": 28,
     "start_frame": 0,
     "stop_frame": 0,
     "type": "range",
@@ -5499,6 +5788,51 @@
     "created_date": "2024-07-15T15:34:53.594Z",
     "updated_date": "2024-07-15T15:34:53.594Z",
     "segment": 34,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 35,
+  "fields": {
+    "created_date": "2024-09-23T10:51:32.932Z",
+    "updated_date": "2024-09-23T10:51:32.932Z",
+    "segment": 35,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 36,
+  "fields": {
+    "created_date": "2024-09-23T10:52:04.507Z",
+    "updated_date": "2024-09-23T10:52:04.507Z",
+    "segment": 36,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 37,
+  "fields": {
+    "created_date": "2024-09-23T21:42:23.045Z",
+    "updated_date": "2024-09-23T21:42:23.045Z",
+    "segment": 37,
     "assignee": null,
     "assignee_updated_date": null,
     "status": "annotation",
@@ -6307,6 +6641,30 @@
     "project": null,
     "name": "dog",
     "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 75,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 76,
+  "fields": {
+    "task": 27,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
     "type": "any",
     "parent": null
   }
@@ -11592,6 +11950,86 @@
   }
 },
 {
+  "model": "engine.storage",
+  "pk": 41,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 42,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 43,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 44,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 45,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 46,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 47,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 48,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 49,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 50,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -16650,6 +17088,72 @@
   "pk": 20,
   "fields": {
     "task": 25,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 21,
+  "fields": {
+    "task": 26,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 22,
+  "fields": {
+    "task": 27,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 23,
+  "fields": {
+    "task": 28,
     "iou_threshold": 0.4,
     "oks_sigma": 0.09,
     "line_thickness": 0.01,

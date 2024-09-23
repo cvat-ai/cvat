@@ -1398,3 +1398,109 @@ class TestPatchProject:
                 assert updated_project.assignee.id == new_assignee_id
             else:
                 assert updated_project.assignee is None
+
+    @staticmethod
+    def _test_patch_linked_storage(
+        user: str, project_id: int, *, expected_status: HTTPStatus = HTTPStatus.OK
+    ) -> None:
+        with make_api_client(user) as api_client:
+            for associated_storage in ("source_storage", "target_storage"):
+                patch_data = {
+                    associated_storage: {
+                        "location": "local",
+                    }
+                }
+                (_, response) = api_client.projects_api.partial_update(
+                    project_id,
+                    patched_project_write_request=patch_data,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == expected_status, response.status
+
+    @pytest.mark.parametrize(
+        "is_project_assignee", [True, False]
+    )  # being a project assignee must not change anything
+    @pytest.mark.parametrize(
+        "role, is_allow",
+        [
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
+        ],
+    )
+    def test_org_update_project_associated_storage(
+        self,
+        is_project_assignee: bool,
+        role: str,
+        is_allow: bool,
+        projects,
+        find_users,
+    ):
+        username, project_id = next(
+            (
+                (user["username"], project["id"])
+                for user in find_users(role=role, exclude_privilege="admin")
+                for project in projects
+                if project["organization"] == user["org"]
+                and project["owner"]["id"] != user["id"]
+                and (
+                    (is_project_assignee and (project["assignee"] or {}).get("id") == user["id"])
+                    or (
+                        not is_project_assignee
+                        and (project["assignee"] or {}).get("id") != user["id"]
+                    )
+                )
+            )
+        )
+
+        self._test_patch_linked_storage(
+            username,
+            project_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
+
+    @pytest.mark.parametrize(
+        "is_owner, is_assignee, is_allow",
+        [
+            (True, False, True),
+            (False, True, False),
+            (False, False, False),
+        ],
+    )
+    def test_sandbox_update_project_associated_storage(
+        self,
+        is_owner: bool,
+        is_assignee: str,
+        is_allow: bool,
+        find_users,
+        filter_projects,
+    ):
+        username, project_id = next(
+            (
+                (user["username"], project["id"])
+                for user in find_users(exclude_privilege="admin")
+                for project in filter_projects(organization=None)
+                if (
+                    (is_owner and project["owner"]["id"] == user["id"])
+                    or (
+                        is_assignee
+                        and project["owner"]["id"] != user["id"]
+                        and (project["assignee"] or {}).get("id") == user["id"]
+                    )
+                    or (
+                        not is_owner
+                        and not is_assignee
+                        and project["owner"]["id"] != user["id"]
+                        and (project["assignee"] or {}).get("id") != user["id"]
+                    )
+                )
+            )
+        )
+
+        self._test_patch_linked_storage(
+            username,
+            project_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
