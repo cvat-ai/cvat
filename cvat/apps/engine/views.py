@@ -2098,25 +2098,74 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             ))
         ).get(pk=pk)
 
-        db_data = db_job.segment.task.data
+        db_task = db_job.segment.task
+        db_data = db_task.data
         start_frame = db_job.segment.start_frame
         stop_frame = db_job.segment.stop_frame
         frame_step = db_data.get_frame_step()
         data_start_frame = db_data.start_frame + start_frame * frame_step
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
-        frame_set = db_job.segment.frame_set
+        segment_frame_set = db_job.segment.frame_set
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.validated_data['deleted_frames'] = list(filter(
-                    lambda frame: frame >= start_frame and frame <= stop_frame,
-                    serializer.validated_data['deleted_frames']
-                )) + list(filter(
-                    lambda frame: frame < start_frame or frame > stop_frame,
-                    db_data.deleted_frames,
-                ))
-                db_data = serializer.save()
+            serializer.is_valid(raise_exception=True)
+
+            deleted_frames = serializer.validated_data.get('deleted_frames')
+            if deleted_frames is not None:
+                updated_deleted_frames = [
+                    f
+                    for f in deleted_frames
+                    if f in segment_frame_set
+                ]
+                updated_validation_frames = None
+                updated_task_frames = None
+
+                if db_job.type == models.JobType.GROUND_TRUTH:
+                    updated_validation_frames = updated_deleted_frames + [
+                        f
+                        for f in db_data.validation_layout.disabled_frames
+                        if f not in segment_frame_set
+                    ]
+
+                    if db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
+                        # GT pool owns its frames, so we exclude them from the task
+                        # Them and the related honeypots in jobs
+                        task_frame_provider = TaskFrameProvider(db_task)
+                        updated_validation_abs_frame_set = set(
+                            map(task_frame_provider.get_abs_frame_number, updated_validation_frames)
+                        )
+                        excluded_placeholder_frames = [
+                            task_frame_provider.get_rel_frame_number(frame)
+                            for frame, real_frame in (
+                                models.Image.objects
+                                .filter(data=db_data, is_placeholder=True)
+                                .values_list('frame', 'real_frame')
+                                .iterator(chunk_size=10000)
+                            )
+                            if real_frame in updated_validation_abs_frame_set
+                        ]
+                        updated_task_frames = updated_deleted_frames + excluded_placeholder_frames
+                    elif db_data.validation_layout.mode == models.ValidationMode.GT:
+                        # Regular GT jobs only refer to the task frames, without data ownership
+                        pass
+                    else:
+                        assert False
+                else:
+                    updated_task_frames = updated_deleted_frames + [
+                        f
+                        for f in db_data.deleted_frames
+                        if f not in segment_frame_set
+                    ]
+
+                if updated_validation_frames is not None:
+                    db_data.validation_layout.disabled_frames = updated_validation_frames
+                    db_data.validation_layout.save(update_fields=['disabled_frames'])
+
+                if updated_task_frames is not None:
+                    db_data.deleted_frames = updated_task_frames
+                    db_data.save(update_fields=['deleted_frames'])
+
                 db_job.segment.task.touch()
                 if db_job.segment.task.project:
                     db_job.segment.task.project.touch()
@@ -2127,7 +2176,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             media = [
                 # Insert placeholders if frames are skipped
                 # We could skip them here too, but UI can't decode chunks then
-                f if f.frame in frame_set else SimpleNamespace(
+                f if f.frame in segment_frame_set else SimpleNamespace(
                     path=f'placeholder.jpg', width=f.width, height=f.height
                 )
                 for f in db_data.images.filter(
@@ -2136,15 +2185,19 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 ).all()
             ]
 
+        deleted_frames = set(db_data.deleted_frames)
+        if db_job.type == models.JobType.GROUND_TRUTH:
+            deleted_frames.update(db_data.validation_layout.disabled_frames)
+
         # Filter data with segment size
-        # Should data.size also be cropped by segment size?
-        db_data.deleted_frames = filter(
+        db_data.deleted_frames = sorted(filter(
             lambda frame: frame >= start_frame and frame <= stop_frame,
-            db_data.deleted_frames,
-        )
+            deleted_frames,
+        ))
+
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
-        db_data.size = len(frame_set)
+        db_data.size = len(segment_frame_set)
         db_data.included_frames = db_job.segment.frames or None
 
         frame_meta = [{

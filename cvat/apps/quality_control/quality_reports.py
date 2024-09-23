@@ -10,7 +10,18 @@ from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 from uuid import uuid4
 
 import datumaro as dm
@@ -35,8 +46,10 @@ from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
 from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.engine import serializers as engine_serializers
+from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.models import (
     DimensionType,
+    Image,
     Job,
     JobType,
     ShapeType,
@@ -44,6 +57,8 @@ from cvat.apps.engine.models import (
     StatusChoice,
     Task,
     User,
+    ValidationLayout,
+    ValidationMode,
 )
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
@@ -1681,10 +1696,15 @@ class DatasetComparator:
 
         self.comparator = _Comparator(self._gt_dataset.categories(), settings=settings)
 
-        self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
+    def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
+        if dataset is self._ds_dataset:
+            source_data_provider = self._ds_data_provider
+        elif dataset is self._gt_dataset:
+            source_data_provider = self._gt_data_provider
+        else:
+            assert False
 
-    def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
-        return self._gt_data_provider.dm_item_id_to_frame_id(item)
+        return source_data_provider.dm_item_id_to_frame_id(item)
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset):
         if dataset is self._ds_dataset:
@@ -1707,10 +1727,10 @@ class DatasetComparator:
 
             self._process_frame(ds_item, gt_item)
 
-    def _process_frame(self, ds_item, gt_item):
-        frame_id = self._dm_item_to_frame_id(ds_item)
-        if self.included_frames is not None and frame_id not in self.included_frames:
-            return
+    def _process_frame(
+        self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
+    ) -> List[AnnotationConflict]:
+        frame_id = self._dm_item_to_frame_id(ds_item, self._ds_dataset)
 
         frame_results = self.comparator.match_annotations(gt_item, ds_item)
         self._frame_results.setdefault(frame_id, {})
@@ -2218,10 +2238,16 @@ class QualityReportUpdateManager:
 
     def _compute_reports(self, task_id: int) -> int:
         with transaction.atomic():
-            # The task could have been deleted during scheduling
             try:
+                # Preload all the data for the computations.
+                # It must be done atomically and before all the computations,
+                # because the task and jobs can be changed after the beginning,
+                # which will lead to inconsistent results
+                # TODO: check performance of select_for_update(),
+                # maybe make several fetching attempts if received data is outdated
                 task = Task.objects.select_related("data").get(id=task_id)
             except Task.DoesNotExist:
+                # The task could have been deleted during scheduling
                 return
 
             # Try to use a shared queryset to minimize DB requests
@@ -2248,17 +2274,30 @@ class QualityReportUpdateManager:
             for job in job_queryset:
                 job.segment.task = gt_job.segment.task
 
-            # Preload all the data for the computations
-            # It must be done in a single transaction and before all the remaining computations
-            # because the task and jobs can be changed after the beginning,
-            # which will lead to inconsistent results
-            gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
-            gt_job_frames = gt_job_data_provider.job_data.get_included_frames()
+            validation_layout = task.data.validation_layout
+            task_frame_provider = TaskFrameProvider(task)
+            gt_job_data_provider = JobDataProvider(
+                gt_job.id, queryset=job_queryset, included_frames=active_validation_frames
+            )
+            active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
+
+            if validation_layout.mode == ValidationMode.GT_POOL:
+                active_validation_frames = set(
+                    task_frame_provider.get_rel_frame_number(frame)
+                    for frame, real_frame in (
+                        Image.objects.filter(data=task.data, is_placeholder=True)
+                        .values_list("frame", "real_frame")
+                        .iterator(chunk_size=10000)
+                    )
+                    if real_frame in active_validation_frames
+                )
 
             jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
             job_data_providers = {
                 job.id: JobDataProvider(
-                    job.id, queryset=job_queryset, included_frames=gt_job_frames
+                    job.id,
+                    queryset=job_queryset,
+                    included_frames=set(job.segment.frame_set) & active_validation_frames,
                 )
                 for job in jobs
             }
