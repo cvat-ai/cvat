@@ -539,12 +539,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private onDeleteFrame = (): void => {
-        const {
-            deleteFrame, frameNumber, jobInstance,
-        } = this.props;
-        if (jobInstance.type !== JobType.GROUND_TRUTH) {
-            deleteFrame(frameNumber);
-        }
+        const { deleteFrame, frameNumber } = this.props;
+        deleteFrame(frameNumber);
     };
 
     private onRestoreFrame = (): void => {
@@ -726,7 +722,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 toolsBlockerState={toolsBlockerState}
                 jobInstance={jobInstance}
                 activeControl={activeControl}
-                deleteFrameAvailable={jobInstance.type !== JobType.GROUND_TRUTH}
             />
         );
     }

@@ -15,6 +15,7 @@ import { RestoreIcon } from 'icons';
 import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { sorter } from 'utils/quality';
+import { range } from 'lodash';
 
 interface Props {
     task: Task;
@@ -58,12 +59,32 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
             getFrameNumber(dataFrameID, dataStartFrame, gtJobMeta.frameStep)
         ));
 
-        return jobFrameNumbers.map((frameID: number, index: number) => ({
-            key: frameID,
-            frame: frameID,
-            name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
-            active: !(frameID in gtJobMeta.deletedFrames),
-        }));
+        const jobDataSegmentFrameNumbers = range(
+            gtJobMeta.startFrame, gtJobMeta.stopFrame + 1, gtJobMeta.frameStep,
+        );
+
+        let includedIndex = 0;
+        const result: any[] = [];
+        for (let index = 0; index < jobDataSegmentFrameNumbers.length; ++index) {
+            const dataFrameID = jobDataSegmentFrameNumbers[index];
+
+            if (gtJobMeta.includedFrames && !gtJobMeta.includedFrames.includes(dataFrameID)) {
+                continue;
+            }
+
+            const frameID = jobFrameNumbers[includedIndex];
+
+            result.push({
+                key: frameID,
+                frame: frameID,
+                name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
+                active: !(frameID in gtJobMeta.deletedFrames),
+            });
+
+            ++includedIndex;
+        }
+
+        return result;
     })();
 
     const columns = [
