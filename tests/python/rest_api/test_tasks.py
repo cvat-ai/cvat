@@ -2924,7 +2924,7 @@ class TestPatchTask:
                             [is_task_owner, is_task_assignee, is_project_owner, is_project_assignee]
                         )
                         and task["owner"]["id"] != user["id"]
-                        and (task["assignee"] or {}).get("id") == user["id"]
+                        and (task["assignee"] or {}).get("id") != user["id"]
                         and (
                             not task["project_id"]
                             or projects[task["project_id"]]["owner"]["id"] != user["id"]
