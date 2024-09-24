@@ -56,6 +56,13 @@ job "{###JOB_UUID###}" {
       unlimited = false
     }
 
+    restart {
+      attempts = 3
+      interval = "5m"
+      delay = "30s"
+      mode = "delay"
+    }
+
     ephemeral_disk {
       size = 4096
     }
