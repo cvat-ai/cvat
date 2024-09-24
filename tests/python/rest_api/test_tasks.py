@@ -3790,7 +3790,7 @@ class TestWorkWithHoneypotTasks:
             ] + [[]]:
                 updated_gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
                     gt_job["id"],
-                    patched_job_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
                         deleted_frames=deleted_gt_frames
                     ),
                 )
