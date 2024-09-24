@@ -545,11 +545,11 @@ class TestPatchTaskAnnotations:
         is_allow,
         find_task_staff_user,
         find_users,
-        tasks_by_org,
         request_data,
+        tasks_with_shapes,
     ):
         users = find_users(role=role, org=org)
-        tasks = tasks_by_org[org]
+        tasks = (t for t in tasks_with_shapes if t["organization"] == org)
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
