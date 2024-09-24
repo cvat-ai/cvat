@@ -73,8 +73,8 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, FileInfoSerializer,
+    JobDataMetaWriteSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
@@ -2082,107 +2082,64 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Update metainformation for media files in a job',
-        request=DataMetaWriteSerializer,
+        request=JobDataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
-        }, tags=['tasks'], versions=['2.0'])
+        }, versions=['2.0'])
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        db_job = models.Job.objects.prefetch_related(
+
+        db_job = models.Job.objects.select_related(
             'segment',
             'segment__task',
-            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
+        ).prefetch_related(
+            Prefetch(
+                'segment__task__data',
+                queryset=models.Data.objects.select_related(
+                    'video',
+                    'validation_layout',
+                ).prefetch_related(
+                    Prefetch(
+                        'images',
+                        queryset=(
+                            models.Image.objects
+                            .prefetch_related('related_files')
+                            .order_by('frame')
+                        )
+                    )
+                )
+            )
         ).get(pk=pk)
 
-        db_task = db_job.segment.task
+        if request.method == 'PATCH':
+            serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            db_job = serializer.save()
+
+        db_segment = db_job.segment
+        db_task = db_segment.task
         db_data = db_task.data
-        start_frame = db_job.segment.start_frame
-        stop_frame = db_job.segment.stop_frame
+        start_frame = db_segment.start_frame
+        stop_frame = db_segment.stop_frame
         frame_step = db_data.get_frame_step()
         data_start_frame = db_data.start_frame + start_frame * frame_step
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
-        segment_frame_set = db_job.segment.frame_set
-
-        if request.method == 'PATCH':
-            serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
-            serializer.is_valid(raise_exception=True)
-
-            deleted_frames = serializer.validated_data.get('deleted_frames')
-            if deleted_frames is not None:
-                updated_deleted_frames = [
-                    f
-                    for f in deleted_frames
-                    if f in segment_frame_set
-                ]
-                updated_validation_frames = None
-                updated_task_frames = None
-
-                if db_job.type == models.JobType.GROUND_TRUTH:
-                    updated_validation_frames = updated_deleted_frames + [
-                        f
-                        for f in db_data.validation_layout.disabled_frames
-                        if f not in segment_frame_set
-                    ]
-
-                    if db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
-                        # GT pool owns its frames, so we exclude them from the task
-                        # Them and the related honeypots in jobs
-                        task_frame_provider = TaskFrameProvider(db_task)
-                        updated_validation_abs_frame_set = set(
-                            map(task_frame_provider.get_abs_frame_number, updated_validation_frames)
-                        )
-                        excluded_placeholder_frames = [
-                            task_frame_provider.get_rel_frame_number(frame)
-                            for frame, real_frame in (
-                                models.Image.objects
-                                .filter(data=db_data, is_placeholder=True)
-                                .values_list('frame', 'real_frame')
-                                .iterator(chunk_size=10000)
-                            )
-                            if real_frame in updated_validation_abs_frame_set
-                        ]
-                        updated_task_frames = updated_deleted_frames + excluded_placeholder_frames
-                    elif db_data.validation_layout.mode == models.ValidationMode.GT:
-                        # Regular GT jobs only refer to the task frames, without data ownership
-                        pass
-                    else:
-                        assert False
-                else:
-                    updated_task_frames = updated_deleted_frames + [
-                        f
-                        for f in db_data.deleted_frames
-                        if f not in segment_frame_set
-                    ]
-
-                if updated_validation_frames is not None:
-                    db_data.validation_layout.disabled_frames = updated_validation_frames
-                    db_data.validation_layout.save(update_fields=['disabled_frames'])
-
-                if updated_task_frames is not None:
-                    db_data.deleted_frames = updated_task_frames
-                    db_data.save(update_fields=['deleted_frames'])
-
-                db_job.segment.task.touch()
-                if db_job.segment.task.project:
-                    db_job.segment.task.project.touch()
+        segment_frame_set = db_segment.frame_set
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
             media = [
                 # Insert placeholders if frames are skipped
-                # We could skip them here too, but UI can't decode chunks then
+                # TODO: remove placeholders, UI supports chunks without placeholders already
+                # after https://github.com/cvat-ai/cvat/pull/8272
                 f if f.frame in segment_frame_set else SimpleNamespace(
                     path=f'placeholder.jpg', width=f.width, height=f.height
                 )
-                for f in db_data.images.filter(
-                    frame__gte=data_start_frame,
-                    frame__lte=data_stop_frame,
-                ).all()
+                for f in db_data.images.all()
+                if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
             ]
 
         deleted_frames = set(db_data.deleted_frames)
@@ -2198,7 +2155,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
         db_data.size = len(segment_frame_set)
-        db_data.included_frames = db_job.segment.frames or None
+        db_data.included_frames = db_segment.frames or None
 
         frame_meta = [{
             'width': item.width,

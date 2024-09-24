@@ -2404,12 +2404,12 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       tags:
-      - tasks
+      - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
+              $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -9243,6 +9243,14 @@ components:
           nullable: true
         resolved:
           type: boolean
+    PatchedJobDataMetaWriteRequest:
+      type: object
+      properties:
+        deleted_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
     PatchedJobWriteRequest:
       type: object
       properties:

@@ -1836,6 +1836,85 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
         model = models.Data
         fields = ('deleted_frames',)
 
+class JobDataMetaWriteSerializer(serializers.ModelSerializer):
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
+
+    class Meta:
+        model = models.Job
+        fields = ('deleted_frames',)
+
+    @transaction.atomic
+    def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
+        db_segment = instance.segment
+        db_task = db_segment.task
+        db_data = db_task.data
+
+        deleted_frames = validated_data.get('deleted_frames')
+
+        task_frame_provider = TaskFrameProvider(db_task)
+        segment_rel_frame_set = set(
+            map(task_frame_provider.get_rel_frame_number, db_segment.frame_set)
+        )
+
+        unknown_deleted_frames = set(deleted_frames) - segment_rel_frame_set
+        if unknown_deleted_frames:
+            raise serializers.ValidationError("Frames {} do not belong to the job".format(
+                format_list(list(map(str, unknown_deleted_frames)))
+            ))
+
+        updated_validation_frames = None
+        updated_task_frames = None
+
+        if instance.type == models.JobType.GROUND_TRUTH:
+            updated_validation_frames = deleted_frames + [
+                f
+                for f in db_data.validation_layout.disabled_frames
+                if f not in segment_rel_frame_set
+            ]
+
+            if db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
+                # GT pool owns its frames, so we exclude them from the task
+                # Them and the related honeypots in jobs
+                updated_validation_abs_frame_set = set(
+                    map(task_frame_provider.get_abs_frame_number, updated_validation_frames)
+                )
+                excluded_placeholder_frames = [
+                    task_frame_provider.get_rel_frame_number(frame)
+                    for frame, real_frame in (
+                        models.Image.objects
+                        .filter(data=db_data, is_placeholder=True)
+                        .values_list('frame', 'real_frame')
+                        .iterator(chunk_size=10000)
+                    )
+                    if real_frame in updated_validation_abs_frame_set
+                ]
+                updated_task_frames = deleted_frames + excluded_placeholder_frames
+            elif db_data.validation_layout.mode == models.ValidationMode.GT:
+                # Regular GT jobs only refer to the task frames, without data ownership
+                pass
+            else:
+                assert False
+        else:
+            updated_task_frames = deleted_frames + [
+                f
+                for f in db_data.deleted_frames
+                if f not in segment_rel_frame_set
+            ]
+
+        if updated_validation_frames is not None:
+            db_data.validation_layout.disabled_frames = updated_validation_frames
+            db_data.validation_layout.save(update_fields=['disabled_frames'])
+
+        if updated_task_frames is not None:
+            db_data.deleted_frames = updated_task_frames
+            db_data.save(update_fields=['deleted_frames'])
+
+        db_task.touch()
+        if db_task.project:
+            db_task.project.touch()
+
+        return instance
+
 class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()
     value = serializers.CharField(max_length=4096, allow_blank=True)

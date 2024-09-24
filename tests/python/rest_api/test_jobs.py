@@ -709,7 +709,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
@@ -815,7 +815,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
 
         task_frame_ids = range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
         rng = np.random.Generator(np.random.MT19937(42))
@@ -898,7 +898,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
