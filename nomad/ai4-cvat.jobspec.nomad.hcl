@@ -2,7 +2,7 @@ job "{###JOB_UUID###}" {
   datacenters = ["ifca-ai4eosc"]
   namespace = "ai4eosc"
   type = "service"
-  
+
   meta {
     force_pull_img_cvat_server         = false
     force_pull_img_cvat_ui             = false
@@ -17,7 +17,7 @@ job "{###JOB_UUID###}" {
     grafana_clickhouse_plugin_version  = "3.3.0"
     smokescreen_opts                   = ""
     clickhouse_image                   = "clickhouse/clickhouse-server:22.3-alpine"
-    db_image                           = "postgres:16-alpine"
+    db_image                           = "postgres:16.4-alpine"
     grafana_image                      = "grafana/grafana-oss:9.3.6"
     redis_image                        = "eqalpha/keydb:x86_64_v6.3.2"
     ui_image                           = "registry.services.ai4os.eu/ai4os/ai4-cvat-ui"
@@ -37,7 +37,7 @@ job "{###JOB_UUID###}" {
     RCLONE_CONFIG_RSHARE_PASS          = "{###CVAT_NEXTCLOUD_PASSWORD###}"
     #
     # remote path common for CVAT instances, without trailing /
-    RCLONE_REMOTE_PATH                 = "/.cvat-instances"
+    RCLONE_REMOTE_PATH                 = "/ai4os-storage/tools/cvat"
   }
 
   group "cvat" {
@@ -48,25 +48,18 @@ job "{###JOB_UUID###}" {
       operator  = "="
       value     = "true"
     }
-    
+
     # Avoid rescheduling the job on **other** nodes during a network cut
     # Command not working due to https://github.com/hashicorp/nomad/issues/16515
     reschedule {
       attempts  = 0
       unlimited = false
     }
-    
-    restart {
-      attempts = 3
-      interval = "5m"
-      delay = "30s"
-      mode = "delay"
-    }
-    
+
     ephemeral_disk {
-      size = 1024
+      size = 4096
     }
-    
+
     network {
       port "ui" {
         to = 80
@@ -120,7 +113,7 @@ job "{###JOB_UUID###}" {
         to = 80
       }
     }
-    
+
     service {
       name = "${BASE}-ui"
       port = "ui"
@@ -131,7 +124,7 @@ job "{###JOB_UUID###}" {
         "traefik.http.routers.${NOMAD_META_job_uuid}-ui.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`)"
       ]
     }
-    
+
     service {
       name = "${BASE}-server"
       port = "server"
@@ -142,7 +135,7 @@ job "{###JOB_UUID###}" {
         "traefik.http.routers.${NOMAD_META_job_uuid}-server.rule=Host(`${NOMAD_META_job_uuid}.${NOMAD_META_cvat_hostname}`) && PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)"
       ]
     }
-    
+
     service {
       name = "${BASE}-grafana"
       port = "grafana"
@@ -159,13 +152,14 @@ job "{###JOB_UUID###}" {
         "traefik.services.${NOMAD_META_job_uuid}-grafana.loadbalancer.passHostHeader=false"
       ]
     }
-    
-    task "storagetask" {
+
+    task "share" {
       lifecycle {
         hook = "prestart"
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       env {
         RCLONE_CONFIG               = "${NOMAD_META_RCLONE_CONFIG}"
         RCLONE_CONFIG_RSHARE_TYPE   = "webdav"
@@ -173,17 +167,13 @@ job "{###JOB_UUID###}" {
         RCLONE_CONFIG_RSHARE_VENDOR = "${NOMAD_META_RCLONE_CONFIG_RSHARE_VENDOR}"
         RCLONE_CONFIG_RSHARE_USER   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}"
         RCLONE_CONFIG_RSHARE_PASS   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}"
-        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}/${NOMAD_META_job_uuid}"
-        LOCAL_PATH                  = "/storage"
+        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}"
+        LOCAL_PATH                  = "/alloc/data"
       }
       config {
-        image   = "ignacioheredia/ai4-docker-storage"
+        force_pull = true
+        image   = "registry.services.ai4os.eu/ai4os/docker-storage:latest"
         privileged = true
-        volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/storage/data:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/db:/storage/db:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/share:/storage/share:shared",
-        ]
         mount {
           type = "bind"
           target = "/srv/.rclone/rclone.conf"
@@ -192,10 +182,15 @@ job "{###JOB_UUID###}" {
         }
         mount {
           type = "bind"
-          target = "/mount_storage.sh"
-          source = "local/mount_storage.sh"
+          target = "/entrypoint.sh"
+          source = "local/entrypoint.sh"
           readonly = false
         }
+        entrypoint = [
+          "/bin/bash",
+          "-c",
+          "chmod +x /entrypoint.sh; /entrypoint.sh"
+        ]
       }
       template {
         data = <<-EOF
@@ -211,37 +206,189 @@ job "{###JOB_UUID###}" {
       template {
         data = <<-EOF
         export RCLONE_CONFIG_RSHARE_PASS=$(rclone obscure $RCLONE_CONFIG_RSHARE_PASS)
-        rclone mkdir $REMOTE_PATH/data
-        rclone mkdir $REMOTE_PATH/db
+        rm -rf $LOCAL_PATH/share
+        mkdir -p $LOCAL_PATH/share
         rclone mkdir $REMOTE_PATH/share
-        rclone mount $REMOTE_PATH/data $LOCAL_PATH/data --uid 1000 --gid 1000 --dir-perms 0750 --allow-non-empty --allow-other --vfs-cache-mode full &
-        rclone mount $REMOTE_PATH/db $LOCAL_PATH/db --uid 70 --gid 70 --dir-perms 0700 --allow-non-empty --allow-other --vfs-cache-mode full &
-        rclone mount $REMOTE_PATH/share $LOCAL_PATH/share --uid 1000 --gid 1000 --dir-perms 0750 --allow-non-empty --allow-other --vfs-cache-mode full
+        rclone mount $REMOTE_PATH/share $LOCAL_PATH/share \
+          --uid 1000 \
+          --gid 1000 \
+          --dir-perms 0750 \
+          --allow-non-empty \
+          --allow-other \
+          --vfs-cache-mode full
         EOF
-        destination = "local/mount_storage.sh"
+        destination = "local/entrypoint.sh"
       }
       resources {
         cpu    = 50        # minimum number of CPU MHz is 2
         memory = 2000
       }
     }
-    
-    task "storagecleanup" {
+
+    task "synclocal" {
       lifecycle {
-        hook = "poststop"
+        hook = "prestart"
+        sidecar = "false"
       }
-      driver = "raw_exec"
+      driver = "docker"
+      kill_timeout = "30s"
+      env {
+        RCLONE_CONFIG               = "${NOMAD_META_RCLONE_CONFIG}"
+        RCLONE_CONFIG_RSHARE_TYPE   = "webdav"
+        RCLONE_CONFIG_RSHARE_URL    = "${NOMAD_META_RCLONE_CONFIG_RSHARE_URL}"
+        RCLONE_CONFIG_RSHARE_VENDOR = "${NOMAD_META_RCLONE_CONFIG_RSHARE_VENDOR}"
+        RCLONE_CONFIG_RSHARE_USER   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}"
+        RCLONE_CONFIG_RSHARE_PASS   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}"
+        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}"
+        LOCAL_PATH                  = "/alloc/data"
+      }
       config {
-        command = "/bin/bash"
-        args = [
-          "-c", 
-          "sudo umount /nomad-storage/${NOMAD_META_job_uuid}/data && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/data && sudo umount /nomad-storage/${NOMAD_META_job_uuid}/db && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/db && sudo umount /nomad-storage/${NOMAD_META_job_uuid}/share && sudo rmdir /nomad-storage/${NOMAD_META_job_uuid}/share"
+        force_pull = true
+        image   = "registry.services.ai4os.eu/ai4os/docker-storage:latest"
+        mount {
+          type = "bind"
+          target = "/srv/.rclone/rclone.conf"
+          source = "local/rclone.conf"
+          readonly = false
+        }
+        mount {
+          type = "bind"
+          target = "/sync_local.sh"
+          source = "local/sync_local.sh"
+          readonly = false
+        }
+        entrypoint = [
+          "/bin/bash",
+          "-c",
+          "chmod +x /sync_local.sh; /sync_local.sh"
         ]
       }
+      template {
+        data = <<-EOF
+        [ai4eosc-share]
+        type = webdav
+        url = https://share.services.ai4os.eu/remote.php/dav
+        vendor = nextcloud
+        user = ${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}
+        pass = ${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}
+        EOF
+        destination = "local/rclone.conf"
+      }
+      template {
+        data = <<-EOF
+        #!/usr/bin/env bash
+        tarbals='db data events redis'
+        export RCLONE_CONFIG_RSHARE_PASS=$(rclone obscure $RCLONE_CONFIG_RSHARE_PASS)
+        for tarbal in $tarbals; do
+            rm -rf $LOCAL_PATH/$tarbal
+            mkdir -p $LOCAL_PATH/$tarbal
+            if [[ $tarbal == "data" ]]; then
+              chown -R 1000 $LOCAL_PATH/data
+              chgrp -R 1000 $LOCAL_PATH/data
+              chmod -R 750 $LOCAL_PATH/data
+            fi
+        done
+        if [[ $(rclone lsd $REMOTE_PATH/backup; echo $?) == 0 ]]; then
+          echo "found a CVAT backup, syncing ..."
+          rm -rf $LOCAL_PATH/backup
+          mkdir -p $LOCAL_PATH/backup
+          rclone sync $REMOTE_PATH/backup $LOCAL_PATH/backup --progress
+          for tarbal in $tarbals; do
+            if [ -f $LOCAL_PATH/backup/$tarbal.tar.gz ]; then
+              echo "restoring $tarbal ..."
+              cd $LOCAL_PATH/$tarbal && tar -xvf $LOCAL_PATH/backup/$tarbal.tar.gz --strip 1
+            else
+              echo "file not found: $LOCAL_PATH/backup/$tarbal.tar.gz"
+            fi
+          done
+        else
+          echo "CVAT backup not found"
+        fi
+        EOF
+        destination = "local/sync_local.sh"
+      }
+      resources {
+        cpu    = 50        # minimum number of CPU MHz is 2
+        memory = 2000
+      }
     }
-    
+
+    task "syncremote" {
+      lifecycle {
+        hook = "poststop"
+        sidecar = "false"
+      }
+      driver = "docker"
+      kill_timeout = "30s"
+      env {
+        RCLONE_CONFIG               = "${NOMAD_META_RCLONE_CONFIG}"
+        RCLONE_CONFIG_RSHARE_TYPE   = "webdav"
+        RCLONE_CONFIG_RSHARE_URL    = "${NOMAD_META_RCLONE_CONFIG_RSHARE_URL}"
+        RCLONE_CONFIG_RSHARE_VENDOR = "${NOMAD_META_RCLONE_CONFIG_RSHARE_VENDOR}"
+        RCLONE_CONFIG_RSHARE_USER   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}"
+        RCLONE_CONFIG_RSHARE_PASS   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}"
+        REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}"
+        LOCAL_PATH                  = "/alloc/data"
+      }
+      config {
+        force_pull = true
+        image   = "registry.services.ai4os.eu/ai4os/docker-storage:latest"
+        mount {
+          type = "bind"
+          target = "/srv/.rclone/rclone.conf"
+          source = "local/rclone.conf"
+          readonly = false
+        }
+        mount {
+          type = "bind"
+          target = "/sync_remote.sh"
+          source = "local/sync_remote.sh"
+          readonly = false
+        }
+        entrypoint = [
+          "/bin/bash",
+          "-c",
+          "chmod +x /sync_remote.sh; /sync_remote.sh"
+        ]
+      }
+      template {
+        data = <<-EOF
+        [ai4eosc-share]
+        type = webdav
+        url = https://share.services.ai4os.eu/remote.php/dav
+        vendor = nextcloud
+        user = ${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}
+        pass = ${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}
+        EOF
+        destination = "local/rclone.conf"
+      }
+      template {
+        data = <<-EOF
+        #!/usr/bin/env bash
+        tarbals='db data events redis'
+        export RCLONE_CONFIG_RSHARE_PASS=$(rclone obscure $RCLONE_CONFIG_RSHARE_PASS)
+        echo "creating a CVAT backup ..."
+        rm -rf $LOCAL_PATH/backup
+        mkdir -p $LOCAL_PATH/backup
+        cd $LOCAL_PATH
+        for tarbal in $tarbals; do
+          echo "creating $tarbal ..."
+          tar -czvf $LOCAL_PATH/backup/$tarbal.tar.gz $tarbal
+        done
+        rclone mkdir $REMOTE_PATH/backup
+        rclone sync $LOCAL_PATH/backup $REMOTE_PATH/backup --progress
+        EOF
+        destination = "local/sync_remote.sh"
+      }
+      resources {
+        cpu    = 50        # minimum number of CPU MHz is 2
+        memory = 2000
+      }
+    }
+
     task "clickhouse" {
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         memory = 2048
       }
@@ -253,12 +400,9 @@ job "{###JOB_UUID###}" {
       config {
         image = "${NOMAD_META_clickhouse_image}"
         ports = ["clickhouse_native", "clickhouse_http", "clickhouse_inter_server"]
-        mount {
-          type = "volume"
-          target = "/var/lib/clickhouse"
-          source = "${NOMAD_META_job_uuid}-events-db"
-          readonly = false
-        }
+        volumes = [
+          "..${NOMAD_ALLOC_DIR}/data/events:/var/lib/clickhouse"
+        ]
         mount {
           type = "bind"
           target = "/docker-entrypoint-initdb.d/init.sh"
@@ -301,9 +445,10 @@ job "{###JOB_UUID###}" {
         destination = "local/docker-entrypoint-initdb.d/init.sh"
       }
     }
-    
+
     task "grafana" {
       driver = "docker"
+      kill_timeout = "30s"
       env {
         GF_PATHS_PROVISIONING = "/etc/grafana/provisioning"
         GF_AUTH_BASIC_ENABLED = false
@@ -398,27 +543,30 @@ job "{###JOB_UUID###}" {
         destination = "local/etc/grafana/provisioning/datasources/ds.yaml"
       }
     }
-         
+
     task "db" {
       driver = "docker"
+      kill_timeout = "30s"
       env {
         POSTGRES_USER = "root"
         POSTGRES_DB = "cvat"
         POSTGRES_HOST_AUTH_METHOD = "trust"
-        PGDATA = "/home/postgresql/pgdata"
+        PGDATA = "/var/lib/postgresql/data/pgdata"
       }
       config {
         image = "${NOMAD_META_db_image}"
+        privileged = true
         force_pull = "false"
         ports = ["db"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/db:/home/postgresql:shared",
+          "..${NOMAD_ALLOC_DIR}/data/db:/var/lib/postgresql/data"
         ]
       }
     }
-    
+
     task "redis" {
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 5120
@@ -426,12 +574,9 @@ job "{###JOB_UUID###}" {
       config {
         image = "${NOMAD_META_redis_image}"
         ports = ["redis"]
-        mount {
-          type = "volume"
-          target = "/data"
-          source = "${NOMAD_META_job_uuid}-redis"
-          readonly = false
-        }
+        volumes = [
+          "..${NOMAD_ALLOC_DIR}/data/redis:/data"
+        ]
         command = "keydb-server"
         args = [
           "/etc/keydb/keydb.conf",
@@ -441,9 +586,10 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "vector" {
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         memory = 1024
       }
@@ -469,9 +615,10 @@ job "{###JOB_UUID###}" {
         destination = "local/etc/vector/"
       }
     }
-    
+
     task "server" {
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 4096
@@ -507,8 +654,8 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["server"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
+          "..${NOMAD_ALLOC_DIR}/data/share:/home/django/share"
         ]
         command = "init"
         args = [
@@ -518,13 +665,14 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "utils" {
       lifecycle {
         hook = "poststart"
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 1024
@@ -546,8 +694,8 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["utils"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
+          "..${NOMAD_ALLOC_DIR}/data/share:/home/django/share",
         ]
         command = "run"
         args = [
@@ -562,6 +710,7 @@ job "{###JOB_UUID###}" {
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 1024
@@ -582,8 +731,8 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-import"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
+          "..${NOMAD_ALLOC_DIR}/data/share:/home/django/share",
         ]
         command = "run"
         args = [
@@ -591,13 +740,14 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
- 
+
     task "worker-export" {
       lifecycle {
         hook = "poststart"
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 1024
@@ -617,8 +767,8 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-export"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
+          "..${NOMAD_ALLOC_DIR}/data/share:/home/django/share",
         ]
         command = "run"
         args = [
@@ -633,6 +783,7 @@ job "{###JOB_UUID###}" {
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 1024
@@ -652,8 +803,8 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-annotation"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
-          "/nomad-storage/${NOMAD_META_job_uuid}/share:/home/django/share:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
+          "..${NOMAD_ALLOC_DIR}/data/share:/home/django/share",
         ]
         command = "run"
         args = [
@@ -668,6 +819,7 @@ job "{###JOB_UUID###}" {
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -684,7 +836,7 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-webhooks"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
         ]
         command = "run"
         args = [
@@ -699,6 +851,7 @@ job "{###JOB_UUID###}" {
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       env {
         CVAT_REDIS_HOST = "${NOMAD_HOST_IP_redis}"
         CVAT_REDIS_PORT = "${NOMAD_HOST_PORT_redis}"
@@ -714,7 +867,7 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-quality-reports"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
         ]
         command = "run"
         args = [
@@ -729,6 +882,7 @@ job "{###JOB_UUID###}" {
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       resources {
         cores = 1
         memory = 1024
@@ -748,7 +902,7 @@ job "{###JOB_UUID###}" {
         force_pull = "${NOMAD_META_force_pull_img_cvat_server}"
         ports = ["worker-analytics-reports"]
         volumes = [
-          "/nomad-storage/${NOMAD_META_job_uuid}/data:/home/django/data:shared",
+          "..${NOMAD_ALLOC_DIR}/data/data:/home/django/data",
         ]
         command = "run"
         args = [
@@ -759,6 +913,7 @@ job "{###JOB_UUID###}" {
 
     task "opa" {
       driver = "docker"
+      kill_timeout = "30s"
       config {
         image = "${NOMAD_META_opa_image}"
         ports = ["opa"]
@@ -774,13 +929,14 @@ job "{###JOB_UUID###}" {
         ]
       }
     }
-    
+
     task "ui" {
       lifecycle {
         hook = "poststart"
         sidecar = "true"
       }
       driver = "docker"
+      kill_timeout = "30s"
       config {
         image = "${NOMAD_META_ui_image}:${NOMAD_META_cvat_version}${NOMAD_META_cvat_version_custom}"
         force_pull = "${NOMAD_META_force_pull_img_cvat_ui}"
