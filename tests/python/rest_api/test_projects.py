@@ -371,19 +371,27 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup("admin1", project["id"], api_version=api_version)
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_get_backup_project_when_all_tasks_have_no_data(self, api_version: int):
-        project = next((p for p in self.projects if 0 == p["tasks"]["count"]))
+    def test_can_get_backup_project_when_all_tasks_have_no_data(
+        self, api_version: int, filter_projects
+    ):
+        project = filter_projects(tasks__count=0)[0]
 
         # add empty tasks to empty project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task1", "project_id": project["id"]},
+            org_id=project["organization"],
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task2", "project_id": project["id"]},
+            org_id=project["organization"],
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_can_get_project_backup("admin1", project["id"], api_version=api_version)
 
@@ -896,7 +904,13 @@ class TestImportExportDatasetProject:
 
         # add empty task to project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {
+                "name": "empty_task",
+                "project_id": project["id"],
+                "organization": project["organization"],
+            },
         )
         assert response.status_code == HTTPStatus.CREATED
 
@@ -917,14 +931,20 @@ class TestImportExportDatasetProject:
 
         # add empty tasks to empty project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task1", "project_id": project["id"]},
+            org_id=project["organization"],
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task2", "project_id": project["id"]},
+            org_id=project["organization"],
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_export_dataset(
             "admin1",
