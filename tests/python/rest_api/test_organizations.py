@@ -243,12 +243,29 @@ class TestDeleteOrganizations:
             ("worker", None, False, False),
         ],
     )
-    def test_can_delete(self, privilege, role, is_member, is_allow, find_users):
+    def test_can_delete(
+        self,
+        privilege: Optional[str],
+        role: Optional[str],
+        is_member: Optional[bool],
+        is_allow: bool,
+        find_users,
+    ):
         exclude_org = None if is_member else self._ORG
         org = self._ORG if is_member else None
-        user = find_users(privilege=privilege, role=role, org=org, exclude_org=exclude_org)[0][
-            "username"
-        ]
+
+        filters = {}
+
+        for key, value in {
+            "privilege": privilege,
+            "role": role,
+            "org": org,
+            "exclude_org": exclude_org,
+        }.items():
+            if value is not None:
+                filters[key] = value
+
+        user = find_users(**filters)[0]["username"]
 
         response = delete_method(user, f"organizations/{self._ORG}")
 
