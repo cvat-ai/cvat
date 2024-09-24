@@ -175,12 +175,15 @@ job "{###JOB_UUID###}" {
         RCLONE_CONFIG_RSHARE_USER   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_USER}"
         RCLONE_CONFIG_RSHARE_PASS   = "${NOMAD_META_RCLONE_CONFIG_RSHARE_PASS}"
         REMOTE_PATH                 = "rshare:${NOMAD_META_RCLONE_REMOTE_PATH}"
-        LOCAL_PATH                  = "/alloc/data"
+        LOCAL_PATH                  = "/mnt"
       }
       config {
         force_pull = true
         image   = "registry.services.ai4os.eu/ai4os/docker-storage:latest"
         privileged = true
+        volumes = [
+          "..${NOMAD_ALLOC_DIR}/data/share:/mnt/share:rshared"
+        ]
         mount {
           type = "bind"
           target = "/srv/.rclone/rclone.conf"
@@ -216,6 +219,8 @@ job "{###JOB_UUID###}" {
         rm -rf $LOCAL_PATH/share
         mkdir -p $LOCAL_PATH/share
         rclone mkdir $REMOTE_PATH/share
+        chown 1000:1000 $LOCAL_PATH/share
+        chmod 750 $LOCAL_PATH/share
         rclone mount $REMOTE_PATH/share $LOCAL_PATH/share \
           --uid 1000 \
           --gid 1000 \
@@ -302,8 +307,9 @@ job "{###JOB_UUID###}" {
           rclone sync $REMOTE_PATH/backup $LOCAL_PATH/backup --progress
           for tarbal in $tarbals; do
             if [ -f $LOCAL_PATH/backup/$tarbal.tar.gz ]; then
-              echo "restoring $tarbal ..."
-              cd $LOCAL_PATH/$tarbal && tar -xvf $LOCAL_PATH/backup/$tarbal.tar.gz --strip 1
+              echo -n "extracting $tarbal.tar.gz ... "
+              cd $LOCAL_PATH/$tarbal && tar -xf $LOCAL_PATH/backup/$tarbal.tar.gz --strip 1
+              if [[ $? == 0 ]]; then echo "OK"; else "ERROR"; fi
             else
               echo "file not found: $LOCAL_PATH/backup/$tarbal.tar.gz"
             fi
@@ -379,8 +385,9 @@ job "{###JOB_UUID###}" {
         mkdir -p $LOCAL_PATH/backup
         cd $LOCAL_PATH
         for tarbal in $tarbals; do
-          echo "creating $tarbal ..."
-          tar -czvf $LOCAL_PATH/backup/$tarbal.tar.gz $tarbal
+          echo -n "creating $tarbal.tar.gz ..."
+          tar -czf $LOCAL_PATH/backup/$tarbal.tar.gz $tarbal
+          if [ -f $LOCAL_PATH/backup/$tarbal.tar.gz ]; then echo "OK"; else echo "ERROR"; fi
         done
         rclone mkdir $REMOTE_PATH/backup
         rclone sync $LOCAL_PATH/backup $REMOTE_PATH/backup --progress
