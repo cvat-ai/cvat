@@ -6,9 +6,11 @@
 import io
 import itertools
 import json
+import operator
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
+from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
@@ -1389,10 +1391,17 @@ class TestPatchProject:
                 project["id"], patched_project_write_request={"assignee_id": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_project.assignee_updated_date == project["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
+
+            # FUTURE-TODO: currently it is possible to have a project with assignee but with assignee_updated_date == None
+            # because there were no migration to set some assignee_updated_date for such projects/tasks/jobs
+            if isinstance(updated_project.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_project.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    project["assignee_updated_date"],
+                )
             else:
-                assert updated_project.assignee_updated_date != project["assignee_updated_date"]
+                assert op(updated_project.assignee_updated_date, project["assignee_updated_date"])
 
             if new_assignee_id:
                 assert updated_project.assignee.id == new_assignee_id

@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-09-23T10:46:55.413Z",
+    "last_login": "2024-04-03T09:51:04.664Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -80,7 +80,7 @@
   "pk": 3,
   "fields": {
     "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
-    "last_login": "2024-09-23T21:37:14.107Z",
+    "last_login": "2022-09-28T12:19:33.698Z",
     "is_superuser": false,
     "username": "user2",
     "first_name": "User",
@@ -102,7 +102,7 @@
   "pk": 4,
   "fields": {
     "password": "md5$Ijexsnap6Uj1P8RcKUf5Q5$7fb70bf35ebab0f2c2e96509a5ce44bc",
-    "last_login": "2024-09-23T21:38:20.570Z",
+    "last_login": null,
     "is_superuser": false,
     "username": "user3",
     "first_name": "User",
@@ -124,7 +124,7 @@
   "pk": 5,
   "fields": {
     "password": "md5$NIHgzYn7rUqnnAdqA9NRuM$2086d4ab6134a938f7111b689a53e568",
-    "last_login": "2024-09-23T21:39:52.628Z",
+    "last_login": null,
     "is_superuser": false,
     "username": "user4",
     "first_name": "User",
@@ -710,14 +710,6 @@
   }
 },
 {
-  "model": "sessions.session",
-  "pk": "yd84wvjxzet8gusv2macno3vmhqt2y7k",
-  "fields": {
-    "session_data": ".eJxVjMEOwiAQRP-FsyFlm2XRo3e_gSwLSNXQpLSnxn9Xkh50jvPezK48b2vxW0uLn6K6KKNOv11geabaQXxwvc9a5rouU9Bd0Qdt-jbH9Loe7t9B4Va-a7ExoIBAANeDIwESATlwQnmwgBkDsjUoZ2fFgmGSmCUMJo8O1PsDw_U3Jg:1sse7a:xa7yfiJwfhjV2cXSK2Pr2NcPnMw4VzVcgVENo96qr0E",
-    "expire_date": "2024-10-07T08:08:38.273Z"
-  }
-},
-{
   "model": "authtoken.token",
   "pk": "0df6f76f61b1fcacb0536c357e10032048f1a4f5",
   "fields": {
@@ -745,16 +737,6 @@
       "business2"
     ],
     "created": "2022-03-17T07:22:55.921Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "563f50e2dcc5107740e7a4beee5a0217650806f1",
-  "fields": {
-    "user": [
-      "user4"
-    ],
-    "created": "2024-09-23T21:39:52.626Z"
   }
 },
 {

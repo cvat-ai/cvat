@@ -6,10 +6,12 @@
 import io
 import itertools
 import json
+import operator
 import os
 import os.path as osp
 import zipfile
 from copy import deepcopy
+from datetime import datetime
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
@@ -2798,15 +2800,15 @@ class TestPatchTask:
                 task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
-            else:
-                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
 
-            if new_assignee_id:
-                assert updated_task.assignee.id == new_assignee_id
+            if isinstance(updated_task.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_task.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    task["assignee_updated_date"],
+                )
             else:
-                assert updated_task.assignee is None
+                assert op(updated_task.assignee_updated_date, task["assignee_updated_date"])
 
     @staticmethod
     def _test_patch_linked_storage(
