@@ -29,7 +29,7 @@ from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import Count
+from django.db import models as django_models
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpRequest, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
@@ -1573,6 +1573,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def metadata(self, request, pk):
         self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
+            'segments',
             Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
             ))
@@ -1597,6 +1598,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         db_data = db_task.data
         db_data.frames = frame_meta
+        db_data.chunks_updated_date = db_task.segment_set.aggregate(
+            django_models.Max("chunks_updated_date")
+        )
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
@@ -1716,7 +1720,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
     ).annotate(
-        Count('issues', distinct=True),
+        django_models.Count('issues', distinct=True),
     ).all()
 
     iam_organization_field = 'segment__task__organization'
@@ -2160,6 +2164,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         db_data.stop_frame = data_stop_frame
         db_data.size = len(segment_frame_set)
         db_data.included_frames = db_segment.frames or None
+        db_data.chunks_updated_date = db_segment.chunks_updated_date
 
         frame_meta = [{
             'width': item.width,

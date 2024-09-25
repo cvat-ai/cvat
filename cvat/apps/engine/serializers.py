@@ -1831,10 +1831,12 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         help_text=textwrap.dedent("""\
         A list of valid frame ids. The None value means all frames are included.
         """))
+    chunks_updated_date = serializers.DateTimeField()
 
     class Meta:
         model = models.Data
         fields = (
+            'chunks_updated_date',
             'chunk_size',
             'size',
             'image_quality',
@@ -1847,11 +1849,17 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
         extra_kwargs = {
+            'chunks_updated_date': {
+                'help_text': textwrap.dedent("""\
+                    The date of the last chunk data update.
+                    Chunks downloaded before this date are outdated and should be redownloaded.
+                """)
+            },
             'size': {
                 'help_text': textwrap.dedent("""\
                     The number of frames included. Deleted frames do not affect this value.
                 """)
-            }
+            },
         }
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):

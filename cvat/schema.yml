@@ -7302,6 +7302,9 @@ components:
     DataMetaRead:
       type: object
       properties:
+        chunks_updated_date:
+          type: string
+          format: date-time
         chunk_size:
           type: integer
           readOnly: true
@@ -7343,6 +7346,7 @@ components:
           description: |
             A list of valid frame ids. The None value means all frames are included.
       required:
+      - chunks_updated_date
       - deleted_frames
       - frames
       - image_quality

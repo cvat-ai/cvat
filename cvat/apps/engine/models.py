@@ -685,9 +685,9 @@ class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE) # TODO: add related name
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
+    chunks_updated_date = models.DateTimeField(null=False)
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
 
-    # TODO: try to reuse this field for custom task segments (aka job_file_mapping)
     # SegmentType.SPECIFIC_FRAMES fields
     frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
 
