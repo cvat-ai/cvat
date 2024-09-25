@@ -60,6 +60,26 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- if .Values.cvat.backend.worker.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+              - python
+              - manage.py
+              - workerprobe
+              - webhooks
+            {{- toYaml (omit .Values.cvat.backend.worker.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cvat.backend.worker.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+              - python
+              - manage.py
+              - workerprobe
+              - webhooks
+            {{- toYaml (omit .Values.cvat.backend.worker.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
