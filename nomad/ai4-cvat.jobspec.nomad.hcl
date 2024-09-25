@@ -404,7 +404,7 @@ job "{###JOB_UUID###}" {
       driver = "docker"
       kill_timeout = "30s"
       resources {
-        memory = 2048
+        memory = 4096
       }
       env {
         CLICKHOUSE_DB = "cvat"
