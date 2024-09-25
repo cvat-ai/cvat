@@ -3664,6 +3664,38 @@ class TestWorkWithSimpleGtJobTasks:
                         if j["start_frame"] <= i <= j["stop_frame"]
                     ] == updated_job_meta.deleted_frames
 
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
+    def test_can_delete_gt_frames_by_changing_job_meta_in_owning_annotation_job(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            frame_step = parse_frame_step(task_meta.frame_filter)
+
+            gt_frames = [
+                (f - gt_job_meta.start_frame) // frame_step for f in gt_job_meta.included_frames
+            ]
+            deleted_gt_frame = gt_frames[0]
+
+            annotation_job = next(
+                j
+                for j in annotation_jobs
+                if j["start_frame"] <= deleted_gt_frame <= j["stop_frame"]
+            )
+            api_client.jobs_api.partial_update_data_meta(
+                annotation_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[deleted_gt_frame]
+                ),
+            )
+
+            updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert updated_gt_job_meta.deleted_frames == [deleted_gt_frame]
+
+            updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            assert task_meta.deleted_frames == updated_task_meta.deleted_frames
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWorkWithHoneypotTasks:
@@ -3750,14 +3782,14 @@ class TestWorkWithHoneypotTasks:
             task_meta = task_obj.get_meta()
 
         task_frame_names = [frame.name for frame in task_meta.frames]
-        validation_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
-        validation_frame_names = [task_frame_names[i] for i in validation_frame_ids]
+        gt_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+        gt_frame_names = [task_frame_names[i] for i in gt_frame_ids]
 
         frame_step = parse_frame_step(task_meta.frame_filter)
         expected_frames = [
             (task_meta.start_frame + frame * frame_step, name)
             for frame, name in enumerate(task_frame_names)
-            if frame in validation_frame_ids or name not in validation_frame_names
+            if frame in gt_frame_ids or name not in gt_frame_names
         ]
 
         with zipfile.ZipFile(dataset_file, "r") as archive:
@@ -3812,6 +3844,73 @@ class TestWorkWithHoneypotTasks:
                         for i in updated_task_meta.deleted_frames
                         if j["start_frame"] <= i <= j["stop_frame"]
                     ] == updated_job_meta.deleted_frames
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    def test_can_delete_honeypot_frames_by_changing_job_meta_in_annotation_job(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        with make_api_client(admin_user) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+
+            task_frame_names = [frame.name for frame in task_meta.frames]
+            gt_frame_ids = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            gt_frame_names = [task_frame_names[i] for i in gt_frame_ids]
+
+            honeypot_frame_ids = [
+                i for i, f in enumerate(task_meta.frames) if f.name in gt_frame_names
+            ]
+            deleted_honeypot_frame = honeypot_frame_ids[0]
+
+            annotation_job_with_honeypot = next(
+                j
+                for j in annotation_jobs
+                if j["start_frame"] <= deleted_honeypot_frame <= j["stop_frame"]
+            )
+            api_client.jobs_api.partial_update_data_meta(
+                annotation_job_with_honeypot["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[deleted_honeypot_frame]
+                ),
+            )
+
+            updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            assert updated_gt_job_meta.deleted_frames == []  # must not be affected
+
+            updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
+            assert updated_task_meta.deleted_frames == [deleted_honeypot_frame]  # must be affected
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    def test_can_restore_gt_frames_via_task_meta_only_if_all_frames_are_restored(
+        self, admin_user, task, gt_job, annotation_jobs
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[gt_job["start_frame"]]
+                ),
+            )
+
+            _, response = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=[gt_job["start_frame"], gt_job["start_frame"] + 1]
+                ),
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"GT frames can only be deleted" in response.data
+
+            updated_task_meta, _ = api_client.tasks_api.partial_update_data_meta(
+                task["id"],
+                patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(
+                    deleted_frames=[]
+                ),
+            )
+            assert updated_task_meta.deleted_frames == []
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

@@ -1836,6 +1836,21 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
         model = models.Data
         fields = ('deleted_frames',)
 
+    def update(self, instance: models.Data, validated_data: dict[str, Any]) -> models.Data:
+        deleted_frames = validated_data['deleted_frames']
+        validation_layout = getattr(instance, 'validation_layout', None)
+        if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
+            gt_frame_set = set(validation_layout.frames)
+            changed_deleted_frames = set(deleted_frames).difference(instance.deleted_frames)
+            if not gt_frame_set.isdisjoint(changed_deleted_frames):
+                raise serializers.ValidationError(
+                    f"When task validation mode is {models.ValidationMode.GT_POOL}, "
+                    "GT frames can only be deleted and restored via the "
+                    "GT job's api/jobs/\{id\}/data/meta endpoint"
+                )
+
+        return super().update(instance, validated_data)
+
 class JobDataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
 

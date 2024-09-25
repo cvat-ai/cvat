@@ -1576,8 +1576,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                db_task.data = serializer.save()
+            serializer.is_valid(raise_exception=True)
+            db_task.data = serializer.save()
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
