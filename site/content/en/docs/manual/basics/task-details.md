@@ -31,7 +31,8 @@ and the details of the task (specified when the task was created) and the jobs s
   - A state of the job. The state can be changed by an assigned user in the menu inside the job.
     There are several possible states: `new`, `in progress`, `rejected`, `completed`.
   - Duration — is the amount of time the job is being worked.
-  - Assignee is the user who is working on the job (annotator, {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "reviewer or corrector" >}}).
+  - Assignee is the user who is working on the job (annotator,
+    {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "reviewer or corrector" >}}).
     You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
 
   You can filter or sort jobs by status, as well as by assigner or reviewer.
