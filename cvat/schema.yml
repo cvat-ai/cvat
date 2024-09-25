@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.19.0
+  version: 2.20.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2404,12 +2404,12 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       tags:
-      - tasks
+      - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
+              $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -9308,6 +9308,7 @@ components:
           nullable: true
         resolved:
           type: boolean
+<<<<<<< HEAD
     PatchedJobHoneypotWriteRequest:
       type: object
       properties:
@@ -9320,6 +9321,16 @@ components:
             minLength: 1
           nullable: true
           default: []
+=======
+    PatchedJobDataMetaWriteRequest:
+      type: object
+      properties:
+        deleted_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+>>>>>>> zm/validation-core
     PatchedJobWriteRequest:
       type: object
       properties:

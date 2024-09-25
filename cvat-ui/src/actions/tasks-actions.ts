@@ -11,6 +11,7 @@ import {
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -256,13 +257,17 @@ ThunkAction {
 
         let extras = {};
 
-        if (data.quality.validationMode) {
+        if (data.quality.validationMode !== ValidationMode.NONE) {
             extras = {
                 validation_params: {
                     mode: data.quality.validationMode,
                     frame_selection_method: data.quality.frameSelectionMethod,
-                    frame_percent: data.quality.validationFramesPercent,
-                    frames_per_job_percent: data.quality.validationFramesPerJobPercent,
+                    frame_share: data.quality.validationFramesPercent ? (
+                        data.quality.validationFramesPercent / 100
+                    ) : data.quality.validationFramesPercent,
+                    frames_per_job_share: data.quality.validationFramesPerJobPercent ? (
+                        data.quality.validationFramesPerJobPercent / 100
+                    ) : data.quality.validationFramesPerJobPercent,
                 },
             };
         }

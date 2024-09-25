@@ -13,21 +13,21 @@ export interface Props {
     activeCount: number;
 }
 
-export function SummaryComponent(props: Readonly<Props>): JSX.Element {
+export default function SummaryComponent(props: Readonly<Props>): JSX.Element {
     const { excludedCount, totalCount, activeCount } = props;
 
     const reportInfo = (
         <Row>
             <Col span={10} className='cvat-allocation-summary'>
                 <Row>
-                    <Col span={12}>
+                    <Col span={12} className='cvat-allocation-summary-excluded'>
                         <Text>
                             Excluded count:
                             {' '}
                             <Text strong>{excludedCount}</Text>
                         </Text>
                     </Col>
-                    <Col span={12}>
+                    <Col span={12} className='cvat-allocation-summary-total'>
                         <Text>
                             Total count:
                             {' '}
@@ -36,7 +36,7 @@ export function SummaryComponent(props: Readonly<Props>): JSX.Element {
                     </Col>
                 </Row>
                 <Row>
-                    <Col span={12}>
+                    <Col span={12} className='cvat-allocation-summary-active'>
                         <Text>
                             Active count:
                             {' '}

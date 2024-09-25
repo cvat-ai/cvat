@@ -633,7 +633,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.id !== 'undefined') {
                 // If the task has been already created, we update it
                 const taskData = {
-                    ...fields,
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
@@ -680,7 +679,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const taskSpec: any = {
-                ...fields,
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };

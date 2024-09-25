@@ -134,9 +134,11 @@ class Job(
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
-        self._client.api_client.tasks_api.jobs_partial_update_data_meta(
+        self.api.partial_update_data_meta(
             self.id,
-            patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
+            patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                deleted_frames=ids
+            ),
         )
 
     def get_issues(self) -> List[Issue]:

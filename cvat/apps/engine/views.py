@@ -76,10 +76,10 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
-    FileInfoSerializer, JobHoneypotReadSerializer, JobHoneypotWriteSerializer,
-    JobReadSerializer, JobWriteSerializer, LabelSerializer,
-    LabeledDataSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, FileInfoSerializer,
+    JobDataMetaWriteSerializer, JobReadSerializer, JobWriteSerializer,
+    JobHoneypotReadSerializer, JobHoneypotWriteSerializer,
+    LabelSerializer, LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
@@ -1580,8 +1580,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                db_task.data = serializer.save()
+            serializer.is_valid(raise_exception=True)
+            db_task.data = serializer.save()
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
@@ -2086,70 +2086,80 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Update metainformation for media files in a job',
-        request=DataMetaWriteSerializer,
+        request=JobDataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
-        }, tags=['tasks'], versions=['2.0'])
+        }, versions=['2.0'])
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        db_job = models.Job.objects.prefetch_related(
+
+        db_job = models.Job.objects.select_related(
             'segment',
             'segment__task',
-            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
+        ).prefetch_related(
+            Prefetch(
+                'segment__task__data',
+                queryset=models.Data.objects.select_related(
+                    'video',
+                    'validation_layout',
+                ).prefetch_related(
+                    Prefetch(
+                        'images',
+                        queryset=(
+                            models.Image.objects
+                            .prefetch_related('related_files')
+                            .order_by('frame')
+                        )
+                    )
+                )
+            )
         ).get(pk=pk)
 
-        db_data = db_job.segment.task.data
-        start_frame = db_job.segment.start_frame
-        stop_frame = db_job.segment.stop_frame
+        if request.method == 'PATCH':
+            serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            db_job = serializer.save()
+
+        db_segment = db_job.segment
+        db_task = db_segment.task
+        db_data = db_task.data
+        start_frame = db_segment.start_frame
+        stop_frame = db_segment.stop_frame
         frame_step = db_data.get_frame_step()
         data_start_frame = db_data.start_frame + start_frame * frame_step
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
-        frame_set = db_job.segment.frame_set
-
-        if request.method == 'PATCH':
-            serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.validated_data['deleted_frames'] = list(filter(
-                    lambda frame: frame >= start_frame and frame <= stop_frame,
-                    serializer.validated_data['deleted_frames']
-                )) + list(filter(
-                    lambda frame: frame < start_frame or frame > stop_frame,
-                    db_data.deleted_frames,
-                ))
-                db_data = serializer.save()
-                db_job.segment.task.touch()
-                if db_job.segment.task.project:
-                    db_job.segment.task.project.touch()
+        segment_frame_set = db_segment.frame_set
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
             media = [
                 # Insert placeholders if frames are skipped
-                # We could skip them here too, but UI can't decode chunks then
-                f if f.frame in frame_set else SimpleNamespace(
+                # TODO: remove placeholders, UI supports chunks without placeholders already
+                # after https://github.com/cvat-ai/cvat/pull/8272
+                f if f.frame in segment_frame_set else SimpleNamespace(
                     path=f'placeholder.jpg', width=f.width, height=f.height
                 )
-                for f in db_data.images.filter(
-                    frame__gte=data_start_frame,
-                    frame__lte=data_stop_frame,
-                ).all()
+                for f in db_data.images.all()
+                if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
             ]
 
+        deleted_frames = set(db_data.deleted_frames)
+        if db_job.type == models.JobType.GROUND_TRUTH:
+            deleted_frames.update(db_data.validation_layout.disabled_frames)
+
         # Filter data with segment size
-        # Should data.size also be cropped by segment size?
-        db_data.deleted_frames = filter(
+        db_data.deleted_frames = sorted(filter(
             lambda frame: frame >= start_frame and frame <= stop_frame,
-            db_data.deleted_frames,
-        )
+            deleted_frames,
+        ))
+
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
-        db_data.size = len(frame_set)
-        db_data.included_frames = db_job.segment.frames or None
+        db_data.size = len(segment_frame_set)
+        db_data.included_frames = db_segment.frames or None
 
         frame_meta = [{
             'width': item.width,
@@ -3654,7 +3664,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         job = self._get_rq_job_by_id(pk)
 
         if not job:
-            return HttpResponseNotFound(f"There is no request with specified id: {pk}")
+            return HttpResponseNotFound("There is no request with specified id")
 
         self.check_object_permissions(request, job)
 
@@ -3691,7 +3701,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
-            return HttpResponseNotFound(f"There is no request with specified id: {pk!r}")
+            return HttpResponseNotFound("There is no request with specified id")
 
         self.check_object_permissions(request, rq_job)
 

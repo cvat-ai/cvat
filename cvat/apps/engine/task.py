@@ -1147,10 +1147,10 @@ def _create_thread(
 
         # Store information about the real frame placement in validation frames in jobs
         for image in images[:-len(validation_params['frames'])]:
-            real_frame_idx = frame_idx_map.get(image.path)
-            if real_frame_idx is not None:
+            real_frame = frame_idx_map.get(image.path)
+            if real_frame is not None:
                 image.is_placeholder = True
-                image.real_frame_id = real_frame_idx
+                image.real_frame = real_frame
 
         # Exclude the previous GT job from the list of jobs to be created with normal segments
         # It must be the last one
@@ -1273,7 +1273,7 @@ def _create_thread(
 
                 if job_frame in job_validation_frames:
                     image.is_placeholder = True
-                    image.real_frame_id = job_frame
+                    image.real_frame = job_frame
                     validation_frames.append(image.frame)
 
                 job_images.append(image.path)
@@ -1304,7 +1304,7 @@ def _create_thread(
         for validation_frame in validation_frames:
             image = new_db_images[validation_frame]
             assert image.is_placeholder
-            image.real_frame_id = frame_id_map[image.real_frame_id]
+            image.real_frame = frame_id_map[image.real_frame]
 
         images = new_db_images
         db_data.size = len(images)
@@ -1393,7 +1393,7 @@ def _create_thread(
                             f"than task segment size ({db_task.segment_size})"
                         )
                 elif frame_share := validation_params.get("frames_per_job_share"):
-                    frame_count = max(1, int(frame_share * db_task.segment_size))
+                    frame_count = min(max(1, int(frame_share * db_task.segment_size)), db_data.size)
                 else:
                     raise ValidationError("The number of validation frames is not specified")
 

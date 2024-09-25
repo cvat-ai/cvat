@@ -256,13 +256,21 @@ class ValidationFrame(models.Model):
     path = models.CharField(max_length=1024, default='')
 
 class ValidationLayout(models.Model):
+    "Represents validation configuration in a task"
+
     task_data = models.OneToOneField(
         'Data', on_delete=models.CASCADE, related_name="validation_layout"
     )
 
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())
-    frames = IntArrayField(store_sorted=True, unique_values=True)
+
     frames_per_job_count = models.IntegerField(null=True)
+
+    frames = IntArrayField(store_sorted=True, unique_values=True)
+    "Stores task frame numbers of the validation frames"
+
+    disabled_frames = IntArrayField(store_sorted=True, unique_values=True)
+    "Stores task frame numbers of the disabled (deleted) validation frames"
 
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
@@ -387,7 +395,7 @@ class Image(models.Model):
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
     is_placeholder = models.BooleanField(default=False)
-    real_frame_id = models.PositiveIntegerField(default=0)
+    real_frame = models.PositiveIntegerField(default=0)
 
     class Meta:
         default_permissions = ()

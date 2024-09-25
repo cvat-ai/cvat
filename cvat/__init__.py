@@ -4,6 +4,6 @@
 
 from cvat.utils.version import get_version
 
-VERSION = (2, 19, 0, 'alpha', 0)
+VERSION = (2, 20, 0, 'alpha', 0)
 
 __version__ = get_version(VERSION)

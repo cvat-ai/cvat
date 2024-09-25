@@ -808,6 +808,9 @@ class JobData(CommonData):
                 if self.abs_frame_id(frame) not in frame_set
             )
 
+            if self.db_instance.type == JobType.GROUND_TRUTH:
+                self._excluded_frames.update(self.db_data.validation_layout.disabled_frames)
+
         if self._required_frames:
             abs_range = self.abs_range
             self._required_frames = set(
