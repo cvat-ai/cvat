@@ -248,7 +248,9 @@ class MediaCache:
             )
         )
 
-    def remove_segment_chunk(self, db_segment: models.Segment, chunk_number: str, *, quality: str):
+    def remove_segment_chunk(
+        self, db_segment: models.Segment, chunk_number: str, *, quality: str
+    ) -> None:
         self._delete_cache_item(
             self._make_segment_chunk_key(
                 db_segment=db_segment, chunk_number=chunk_number, quality=quality
