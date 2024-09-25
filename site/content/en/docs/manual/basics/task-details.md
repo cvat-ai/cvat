@@ -35,7 +35,7 @@ and the details of the task (specified when the task was created) and the jobs s
     {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "reviewer or corrector" >}}).
     You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
 
-  You can filter or sort jobs by status, as well as by assigner or reviewer.
+  You can filter or sort jobs by status, assignee and updated date using filters panel.
 
 Follow a link inside `Jobs` section to start annotation process.
 In some cases, you can have several links. It depends on size of your
