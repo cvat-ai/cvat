@@ -9308,7 +9308,14 @@ components:
           nullable: true
         resolved:
           type: boolean
-<<<<<<< HEAD
+    PatchedJobDataMetaWriteRequest:
+      type: object
+      properties:
+        deleted_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
     PatchedJobHoneypotWriteRequest:
       type: object
       properties:
@@ -9321,16 +9328,6 @@ components:
             minLength: 1
           nullable: true
           default: []
-=======
-    PatchedJobDataMetaWriteRequest:
-      type: object
-      properties:
-        deleted_frames:
-          type: array
-          items:
-            type: integer
-            minimum: 0
->>>>>>> zm/validation-core
     PatchedJobWriteRequest:
       type: object
       properties:
