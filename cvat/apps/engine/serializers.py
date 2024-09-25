@@ -1846,7 +1846,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     f"When task validation mode is {models.ValidationMode.GT_POOL}, "
                     "GT frames can only be deleted and restored via the "
-                    "GT job's api/jobs/\{id\}/data/meta endpoint"
+                    "GT job's api/jobs/{id}/data/meta endpoint"
                 )
 
         return super().update(instance, validated_data)
