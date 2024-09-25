@@ -629,6 +629,8 @@ class JobPermission(OpenPolicyAgentPermission):
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
         UPDATE_METADATA = 'update:metadata'
+        VIEW_HONEYPOTS = 'view:honeypots'
+        UPDATE_HONEYPOTS = 'update:honeypots'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -724,6 +726,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
+            ('honeypot', 'GET'): Scopes.VIEW_HONEYPOTS,
+            ('honeypot', 'PATCH'): Scopes.UPDATE_HONEYPOTS,
         }[(view.action, request.method)]
 
         scopes = []

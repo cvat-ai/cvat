@@ -252,9 +252,7 @@ class MediaCache:
         self, db_segment: models.Segment, chunk_number: str, *, quality: str
     ) -> None:
         self._delete_cache_item(
-            self._make_segment_chunk_key(
-                db_segment=db_segment, chunk_number=chunk_number, quality=quality
-            )
+            self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:

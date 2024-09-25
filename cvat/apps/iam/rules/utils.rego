@@ -57,6 +57,8 @@ IMPORT_DATASET := "import:dataset"
 IMPORT_BACKUP := "import:backup"
 EXPORT_BACKUP := "export:backup"
 UPDATE_ORG := "update:organization"
+VIEW_HONEYPOTS := "view:honeypots"
+UPDATE_HONEYPOTS := "update:honeypots"
 
 
 get_priority(privilege) := {

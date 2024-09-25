@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections import Counter
+from contextlib import closing
+import random
 import warnings
 from copy import copy
 from inspect import isclass
@@ -948,15 +951,221 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
     def validate(self, attrs):
         frame_selection_method = attrs["frame_selection_method"]
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
-            required_field_name = "frames"
-            if required_field_name not in attrs:
-                raise serializers.ValidationError("'{}' must be set".format(required_field_name))
+            field_validation.require_field(attrs, "frames")
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             pass
         else:
             assert False
 
         return super().validate(attrs)
+
+    @transaction.atomic
+    def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
+        from cvat.apps.engine.cache import MediaCache
+        from cvat.apps.engine.frame_provider import FrameQuality, JobFrameProvider, prepare_chunk
+        from cvat.apps.dataset_manager.task import JobAnnotation, AnnotationManager
+
+        db_job = instance
+        db_segment = db_job.segment
+        db_task = db_segment.task
+        db_data = db_task.data
+        task_all_honeypots = set(db_task.gt_job.segment.frame_set)
+
+        db_task_frames: dict[int, models.Image] = {
+            frame.frame: frame for frame in db_data.images.all()
+        }
+        task_placeholder_frames = set(
+            frame_id for frame_id, frame in db_task_frames.items()
+            if frame.is_placeholder
+        )
+        segment_honeypots = set(db_segment.frame_set) & task_placeholder_frames
+
+        deleted_task_frames = db_data.deleted_frames
+        task_active_honeypots = task_all_honeypots.difference(deleted_task_frames)
+
+        segment_honeypots_count = len(segment_honeypots)
+
+        frame_selection_method = validated_data['frame_selection_method']
+        if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+            task_honeypot_frame_map: dict[str, int] = {
+                v.path: k for k, v in db_task_frames.items()
+            } # frame_name -> id
+
+            requested_frame_names: list[str] = validated_data['frames']
+            requested_frame_ids: list[int] = []
+            requested_unknown_frames: list[str] = []
+            requested_inactive_frames: list[str] = []
+            requested_normal_frames: list[str] = []
+            for requested_frame_name in requested_frame_names:
+                requested_frame_id = task_honeypot_frame_map.get(requested_frame_name)
+
+                if requested_frame_id is None:
+                    requested_unknown_frames.append(requested_frame_name)
+                    continue
+
+                if requested_frame_id not in task_all_honeypots:
+                    requested_normal_frames.append(requested_frame_name)
+                    continue
+
+                if requested_frame_id not in task_active_honeypots:
+                    requested_inactive_frames.append(requested_frame_name)
+                    continue
+
+                requested_frame_ids.append(requested_frame_id)
+
+            if requested_unknown_frames:
+                raise serializers.ValidationError(
+                    "Could not update honeypot frames: "
+                    "frames {} do not exist in the task".format(
+                        format_list(requested_unknown_frames)
+                    )
+                )
+
+            if requested_normal_frames:
+                raise serializers.ValidationError(
+                    "Could not update honeypot frames: "
+                    "frames {} are not in the honeypot pool. ".format(
+                        format_list(requested_normal_frames)
+                    )
+                )
+
+            if requested_inactive_frames:
+                raise serializers.ValidationError(
+                    "Could not update honeypot frames: frames {} are removed. "
+                    "Restore them in the honeypot pool first.".format(
+                        format_list(requested_inactive_frames)
+                    )
+                )
+
+            if len(requested_frame_names) != segment_honeypots_count:
+                raise serializers.ValidationError(
+                    "Could not update honeypot frames: "
+                    "the requested number of validation frames must be remain the same."
+                    "Requested {}, current {}".format(
+                        len(requested_frame_names), segment_honeypots_count
+                    )
+                )
+
+            if len(set(requested_frame_ids)) != len(requested_frame_names):
+                repeated_frames = tuple(
+                    frame_name
+                    for frame_name, repeats in Counter(requested_frame_names).most_common()
+                    if 1 < repeats
+                )
+                raise serializers.ValidationError(
+                    "Could not update honeypot frames: validation frames cannot repeat. "
+                    "Repeated frames: {}".format(format_list(repeated_frames))
+                )
+
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            requested_frame_ids = random.sample(
+                task_active_honeypots, k=segment_honeypots_count
+            )
+        else:
+            assert False
+
+        # Replace validation frames in the job
+        old_honeypot_real_ids = []
+        updated_db_frames = []
+        new_validation_frame_iter = iter(requested_frame_ids)
+        for current_frame_id in db_segment.frame_set:
+            if current_frame_id in segment_honeypots:
+                requested_frame_id = next(new_validation_frame_iter)
+                requested_frame = db_task_frames[requested_frame_id]
+                segment_frame = db_task_frames[current_frame_id]
+                assert segment_frame.is_placeholder
+
+                old_honeypot_real_ids.append(segment_frame.real_frame)
+
+                # Change image in the current segment frame
+                segment_frame.path = requested_frame.path
+                segment_frame.width = requested_frame.width
+                segment_frame.height = requested_frame.height
+                segment_frame.real_frame = requested_frame.frame
+
+                updated_db_frames.append(segment_frame)
+
+        assert next(new_validation_frame_iter, None) is None
+
+        models.Image.objects.bulk_update(
+            updated_db_frames, fields=['path', 'width', 'height', 'real_frame']
+        )
+
+        updated_validation_frames = [
+            segment_frame_id
+            for new_honeypot_id, old_honeypot_id, segment_frame_id in zip(
+                requested_frame_ids, old_honeypot_real_ids, segment_honeypots
+            )
+            if new_honeypot_id != old_honeypot_id
+        ]
+        if updated_validation_frames:
+            # Remove annotations on changed validation frames
+            job_annotation = JobAnnotation(db_job.id)
+            job_annotation.init_from_db()
+            job_annotation_manager = AnnotationManager(
+                job_annotation.ir_data, dimension=db_task.dimension
+            )
+            job_annotation_manager.clear_frames(
+                set(db_segment.frame_set).difference(updated_validation_frames)
+            )
+            job_annotation.delete(job_annotation_manager.data)
+
+            # Update chunks
+            task_frame_provider = TaskFrameProvider(db_task)
+            job_frame_provider = JobFrameProvider(db_job)
+            updated_segment_chunk_ids = set(
+                job_frame_provider.get_chunk_number(updated_segment_frame_id)
+                for updated_segment_frame_id in requested_frame_ids
+            )
+            segment_frames = sorted(db_segment.frame_set)
+
+            media_cache = MediaCache()
+            for chunk_id in sorted(updated_segment_chunk_ids):
+                chunk_frames = segment_frames[
+                    chunk_id * db_task.segment_size :
+                    (chunk_id + 1) * db_task.segment_size
+                ]
+
+                for quality in FrameQuality.__members__.values():
+                    media_cache.remove_segment_chunk(db_segment, chunk_id, quality=quality)
+
+                    if db_data.storage_method != models.StorageMethodChoice.FILE_SYSTEM:
+                        continue
+
+                    # Write updated chunks
+                    def _iterate_chunk_frames():
+                        for chunk_frame in chunk_frames:
+                            yield task_frame_provider.get_frame(chunk_frame, quality=quality)[0]
+
+                    with closing(_iterate_chunk_frames()) as frame_iter:
+                        chunk, _ = prepare_chunk(
+                            frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
+                        )
+
+                        get_chunk_path = {
+                            FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
+                            FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
+                        }[quality]
+
+                        with open(get_chunk_path(chunk_id, db_segment.id), 'bw') as f:
+                            f.write(chunk)
+
+            db_segment.chunks_updated_date = timezone.now()
+            db_segment.save(update_fields=['chunks_updated_date'])
+
+            if set(db_data.deleted_frames).intersection(updated_validation_frames):
+                db_data.deleted_frames = sorted(
+                    set(db_data.deleted_frames).difference(updated_validation_frames)
+                )
+                db_data.save(update_fields=['deleted_frames'])
+
+            db_job.touch()
+            db_segment.job_set.exclude(id=db_job.id).update(updated_date=timezone.now())
+            db_task.touch()
+            if db_task.project:
+                db_task.project.touch()
+
+        return instance
 
 class JobHoneypotReadSerializer(serializers.Serializer):
     frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
