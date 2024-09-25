@@ -3630,7 +3630,7 @@ class TestWorkWithSimpleGtJobTasks:
             assert not annotation_source.tracks
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
-    def test_can_exclude_and_restore_gt_frames_via_job_meta(
+    def test_can_exclude_and_restore_gt_frames_via_gt_job_meta(
         self, admin_user, task, gt_job, annotation_jobs
     ):
         with make_api_client(admin_user) as api_client:
@@ -3654,15 +3654,11 @@ class TestWorkWithSimpleGtJobTasks:
 
                 # the excluded GT frames must be excluded only from the GT job
                 updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
-                assert task_meta.deleted_frames == updated_task_meta.deleted_frames
+                assert updated_task_meta.deleted_frames == []
 
                 for j in annotation_jobs:
                     updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
-                    assert [
-                        i
-                        for i in updated_task_meta.deleted_frames
-                        if j["start_frame"] <= i <= j["stop_frame"]
-                    ] == updated_job_meta.deleted_frames
+                    assert updated_job_meta.deleted_frames == []
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_gt_job)])
     def test_can_delete_gt_frames_by_changing_job_meta_in_owning_annotation_job(
@@ -3690,11 +3686,12 @@ class TestWorkWithSimpleGtJobTasks:
                 ),
             )
 
+            # in this case deleted frames are deleted everywhere
             updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
             assert updated_gt_job_meta.deleted_frames == [deleted_gt_frame]
 
             updated_task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
-            assert task_meta.deleted_frames == updated_task_meta.deleted_frames
+            assert updated_task_meta.deleted_frames == [deleted_gt_frame]
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
