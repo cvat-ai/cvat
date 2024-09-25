@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -32,9 +32,9 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.models import (
-    Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget,
+    Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
@@ -489,19 +489,19 @@ class LambdaFunction:
 
     def _get_image(self, db_task, frame, quality):
         if quality is None or quality == "original":
-            quality = FrameProvider.Quality.ORIGINAL
+            quality = FrameQuality.ORIGINAL
         elif  quality == "compressed":
-            quality = FrameProvider.Quality.COMPRESSED
+            quality = FrameQuality.COMPRESSED
         else:
             raise ValidationError(
                 '`{}` lambda function was run '.format(self.id) +
                 'with wrong arguments (quality={})'.format(quality),
                 code=status.HTTP_400_BAD_REQUEST)
 
-        frame_provider = FrameProvider(db_task.data)
+        frame_provider = TaskFrameProvider(db_task)
         image = frame_provider.get_frame(frame, quality=quality)
 
-        return base64.b64encode(image[0].getvalue()).decode('utf-8')
+        return base64.b64encode(image.data.getvalue()).decode('utf-8')
 
 class LambdaQueue:
     RESULT_TTL = timedelta(minutes=30)

@@ -72,8 +72,8 @@ export function decodeContextImages(
 decodeContextImages.mutex = new Mutex();
 
 interface BlockToDecode {
-    start: number;
-    end: number;
+    chunkFrameNumbers: number[];
+    chunkIndex: number;
     block: ArrayBuffer;
     onDecodeAll(): void;
     onDecode(frame: number, bitmap: ImageBitmap | Blob): void;
@@ -82,7 +82,6 @@ interface BlockToDecode {
 
 export class FrameDecoder {
     private blockType: BlockType;
-    private chunkSize: number;
     /*
         ImageBitmap when decode zip or video chunks
         Blob when 3D dimension
@@ -100,11 +99,12 @@ export class FrameDecoder {
     private renderHeight: number;
     private zipWorker: Worker | null;
     private videoWorker: Worker | null;
+    private getChunkIndex: (frame: number) => number;
 
     constructor(
         blockType: BlockType,
-        chunkSize: number,
         cachedBlockCount: number,
+        getChunkIndex: (frame: number) => number,
         dimension: DimensionType = DimensionType.DIMENSION_2D,
     ) {
         this.mutex = new Mutex();
@@ -117,7 +117,7 @@ export class FrameDecoder {
 
         this.renderWidth = 1920;
         this.renderHeight = 1080;
-        this.chunkSize = chunkSize;
+        this.getChunkIndex = getChunkIndex;
         this.blockType = blockType;
 
         this.decodedChunks = {};
@@ -125,8 +125,8 @@ export class FrameDecoder {
         this.chunkIsBeingDecoded = null;
     }
 
-    isChunkCached(chunkNumber: number): boolean {
-        return chunkNumber in this.decodedChunks;
+    isChunkCached(chunkIndex: number): boolean {
+        return chunkIndex in this.decodedChunks;
     }
 
     hasFreeSpace(): boolean {
@@ -155,17 +155,37 @@ export class FrameDecoder {
         }
     }
 
+    private validateFrameNumbers(frameNumbers: number[]): void {
+        if (!Array.isArray(frameNumbers) || !frameNumbers.length) {
+            throw new Error('chunkFrameNumbers must not be empty');
+        }
+
+        // ensure is ordered
+        for (let i = 1; i < frameNumbers.length; ++i) {
+            const prev = frameNumbers[i - 1];
+            const current = frameNumbers[i];
+            if (current <= prev) {
+                throw new Error(
+                    'chunkFrameNumbers must be sorted in the ascending order, ' +
+                    `got a (${prev}, ${current}) pair instead`,
+                );
+            }
+        }
+    }
+
     requestDecodeBlock(
         block: ArrayBuffer,
-        start: number,
-        end: number,
+        chunkIndex: number,
+        chunkFrameNumbers: number[],
         onDecode: (frame: number, bitmap: ImageBitmap | Blob) => void,
         onDecodeAll: () => void,
         onReject: (e: Error) => void,
     ): void {
+        this.validateFrameNumbers(chunkFrameNumbers);
+
         if (this.requestedChunkToDecode !== null) {
             // a chunk was already requested to be decoded, but decoding didn't start yet
-            if (start === this.requestedChunkToDecode.start && end === this.requestedChunkToDecode.end) {
+            if (chunkIndex === this.requestedChunkToDecode.chunkIndex) {
                 // it was the same chunk
                 this.requestedChunkToDecode.onReject(new RequestOutdatedError());
 
@@ -175,12 +195,14 @@ export class FrameDecoder {
                 // it was other chunk
                 this.requestedChunkToDecode.onReject(new RequestOutdatedError());
             }
-        } else if (this.chunkIsBeingDecoded === null || this.chunkIsBeingDecoded.start !== start) {
+        } else if (this.chunkIsBeingDecoded === null ||
+            chunkIndex !== this.chunkIsBeingDecoded.chunkIndex
+        ) {
             // everything was decoded or decoding other chunk is in process
             this.requestedChunkToDecode = {
+                chunkFrameNumbers,
+                chunkIndex,
                 block,
-                start,
-                end,
                 onDecode,
                 onDecodeAll,
                 onReject,
@@ -203,9 +225,9 @@ export class FrameDecoder {
     }
 
     frame(frameNumber: number): ImageBitmap | Blob | null {
-        const chunkNumber = Math.floor(frameNumber / this.chunkSize);
-        if (chunkNumber in this.decodedChunks) {
-            return this.decodedChunks[chunkNumber][frameNumber];
+        const chunkIndex = this.getChunkIndex(frameNumber);
+        if (chunkIndex in this.decodedChunks) {
+            return this.decodedChunks[chunkIndex][frameNumber];
         }
 
         return null;
@@ -253,8 +275,8 @@ export class FrameDecoder {
             releaseMutex();
         };
         try {
-            const { start, end, block } = this.requestedChunkToDecode;
-            if (start !== blockToDecode.start) {
+            const { chunkFrameNumbers, chunkIndex, block } = this.requestedChunkToDecode;
+            if (chunkIndex !== blockToDecode.chunkIndex) {
                 // request is not relevant, another block was already requested
                 // it happens when A is being decoded, B comes and wait for mutex, C comes and wait for mutex
                 // B is not necessary anymore, because C already was requested
@@ -262,8 +284,11 @@ export class FrameDecoder {
                 throw new RequestOutdatedError();
             }
 
-            const chunkNumber = Math.floor(start / this.chunkSize);
-            this.orderedStack = [chunkNumber, ...this.orderedStack];
+            const getFrameNumber = (chunkFrameIndex: number): number => (
+                chunkFrameNumbers[chunkFrameIndex]
+            );
+
+            this.orderedStack = [chunkIndex, ...this.orderedStack];
             this.cleanup();
             const decodedFrames: Record<number, ImageBitmap | Blob> = {};
             this.chunkIsBeingDecoded = this.requestedChunkToDecode;
@@ -273,7 +298,7 @@ export class FrameDecoder {
                 this.videoWorker = new Worker(
                     new URL('./3rdparty/Decoder.worker', import.meta.url),
                 );
-                let index = start;
+                let index = 0;
 
                 this.videoWorker.onmessage = (e) => {
                     if (e.data.consoleLog) {
@@ -281,6 +306,7 @@ export class FrameDecoder {
                         return;
                     }
                     const keptIndex = index;
+                    const frameNumber = getFrameNumber(keptIndex);
 
                     // do not use e.data.height and e.data.width because they might be not correct
                     // instead, try to understand real height and width of decoded image via scale factor
@@ -295,11 +321,11 @@ export class FrameDecoder {
                         width,
                         height,
                     )).then((bitmap) => {
-                        decodedFrames[keptIndex] = bitmap;
-                        this.chunkIsBeingDecoded.onDecode(keptIndex, decodedFrames[keptIndex]);
+                        decodedFrames[frameNumber] = bitmap;
+                        this.chunkIsBeingDecoded.onDecode(frameNumber, decodedFrames[frameNumber]);
 
-                        if (keptIndex === end) {
-                            this.decodedChunks[chunkNumber] = decodedFrames;
+                        if (keptIndex === chunkFrameNumbers.length - 1) {
+                            this.decodedChunks[chunkIndex] = decodedFrames;
                             this.chunkIsBeingDecoded.onDecodeAll();
                             this.chunkIsBeingDecoded = null;
                             release();
@@ -343,7 +369,7 @@ export class FrameDecoder {
                 this.zipWorker = this.zipWorker || new Worker(
                     new URL('./unzip_imgs.worker', import.meta.url),
                 );
-                let index = start;
+                let decodedCount = 0;
 
                 this.zipWorker.onmessage = async (event) => {
                     if (event.data.error) {
@@ -353,16 +379,18 @@ export class FrameDecoder {
                         return;
                     }
 
-                    decodedFrames[event.data.index] = event.data.data as ImageBitmap | Blob;
-                    this.chunkIsBeingDecoded.onDecode(event.data.index, decodedFrames[event.data.index]);
+                    const frameNumber = getFrameNumber(event.data.index);
+                    decodedFrames[frameNumber] = event.data.data as ImageBitmap | Blob;
+                    this.chunkIsBeingDecoded.onDecode(frameNumber, decodedFrames[frameNumber]);
 
-                    if (index === end) {
-                        this.decodedChunks[chunkNumber] = decodedFrames;
+                    if (decodedCount === chunkFrameNumbers.length - 1) {
+                        this.decodedChunks[chunkIndex] = decodedFrames;
                         this.chunkIsBeingDecoded.onDecodeAll();
                         this.chunkIsBeingDecoded = null;
                         release();
                     }
-                    index++;
+
+                    decodedCount++;
                 };
 
                 this.zipWorker.onerror = (event: ErrorEvent) => {
@@ -373,8 +401,8 @@ export class FrameDecoder {
 
                 this.zipWorker.postMessage({
                     block,
-                    start,
-                    end,
+                    start: 0,
+                    end: chunkFrameNumbers.length - 1,
                     dimension: this.dimension,
                     dimension2D: DimensionType.DIMENSION_2D,
                 });
@@ -400,9 +428,12 @@ export class FrameDecoder {
     }
 
     public cachedChunks(includeInProgress = false): number[] {
-        const chunkIsBeingDecoded = includeInProgress && this.chunkIsBeingDecoded ?
-            Math.floor(this.chunkIsBeingDecoded.start / this.chunkSize) : null;
-        return Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).concat(
+        const chunkIsBeingDecoded = (
+            includeInProgress && this.chunkIsBeingDecoded ?
+                this.chunkIsBeingDecoded.chunkIndex :
+                null
+        );
+        return Object.keys(this.decodedChunks).map((chunkIndex: string) => +chunkIndex).concat(
             ...(chunkIsBeingDecoded !== null ? [chunkIsBeingDecoded] : []),
         ).sort((a, b) => a - b);
     }

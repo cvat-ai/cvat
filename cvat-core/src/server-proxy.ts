@@ -1438,7 +1438,7 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
                 ...enableOrganization(),
                 quality,
                 type: 'chunk',
-                number: chunk,
+                index: chunk,
             },
             responseType: 'arraybuffer',
         });
