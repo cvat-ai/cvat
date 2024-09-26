@@ -3,7 +3,7 @@
     "summary": "Image annotation tools that uses the Computer Vision Annotation Tool (CVAT)",
     "description": [
         "Annotate and label your images with the [Computer Vision Annotation Tool (CVAT)](https://www.cvat.ai/).\n",
-        "<img class='fit', src='https://github.com/ai4os/ai4-cvat/blob/v2.7.3-AI4OS/site/content/en/images/cvat-ai-screencast.gif'/>"
+        "<img class='fit', src='https://raw.githubusercontent.com/ai4os/ai4os-cvat/refs/heads/v2.7.3-AI4OS/site/content/en/images/cvat-ai-screencast.gif'/>"
         ],
     "keywords": [
         "docker"
