@@ -404,6 +404,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "WiderFace 1.0", "YOLO 1.1",
                         "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
                         "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                        "YOLOv8 Classification 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -512,6 +513,7 @@ class TaskDumpUploadTest(_DbTestBase):
                             "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1",
                             "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
                             "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                            "YOLOv8 Classification 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -953,6 +955,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0",
                         "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
                         "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                        "YOLOv8 Classification 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1070,6 +1073,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Open Images V6 1.0", "Datumaro 1.0", "KITTI 1.0",
                         "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
                         "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                        "YOLOv8 Classification 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -2101,6 +2105,7 @@ class ProjectDumpUpload(_DbTestBase):
                     "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
                     "Segmentation mask 1.1", "VGGFace2 1.0",
                     "WiderFace 1.0", "YOLO 1.1", "YOLOv8 Detection 1.0",
+                    "YOLOv8 Classification 1.0",
                 ]:
                     self._create_annotations(task, dump_format_name, "default")
                 else:

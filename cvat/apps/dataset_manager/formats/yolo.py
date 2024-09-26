@@ -103,7 +103,7 @@ def _export_yolov8_pose(*args, **kwargs):
 
 
 @exporter(name='YOLOv8 Classification', ext='ZIP', version='1.0')
-def _export_yolov8_pose(*args, **kwargs):
+def _export_yolov8_classification(*args, **kwargs):
     _export_common(*args, format_name='yolov8_classification', **kwargs)
 
 
@@ -142,5 +142,5 @@ def _import_yolov8_pose(src_file, temp_dir, instance_data, **kwargs):
 
 
 @importer(name='YOLOv8 Classification', ext="ZIP", version="1.0")
-def _import_yolov8_segmentation(*args, **kwargs):
+def _import_yolov8_classification(*args, **kwargs):
     _import_common(*args, format_name="yolov8_classification", **kwargs)
