@@ -65,7 +65,7 @@ class ServerPermission(OpenPolicyAgentPermission):
             ('about', 'GET'): Scopes.VIEW,
             ('plugins', 'GET'): Scopes.VIEW,
             ('share', 'GET'): Scopes.LIST_CONTENT,
-        }.get((view.action, request.method))]
+        }[(view.action, request.method)]]
 
     def get_resource(self):
         return None
@@ -100,7 +100,7 @@ class UserPermission(OpenPolicyAgentPermission):
             'retrieve': Scopes.VIEW,
             'partial_update': Scopes.UPDATE,
             'destroy': Scopes.DELETE,
-        }.get(view.action)]
+        }[view.action]]
 
     @classmethod
     def create_scope_view(cls, iam_context, user_id):
@@ -178,7 +178,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'preview': Scopes.VIEW,
             'status': Scopes.VIEW,
             'actions': Scopes.VIEW,
-        }.get(view.action)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -210,6 +210,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
         UPDATE_ASSIGNEE = 'update:assignee'
         UPDATE_DESC = 'update:desc'
         UPDATE_ORG = 'update:organization'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         VIEW = 'view'
         IMPORT_DATASET = 'import:dataset'
         EXPORT_ANNOTATIONS = 'export:annotations'
@@ -281,10 +282,13 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.UPDATE:
+            # user should have permissions to view a project
+            scopes.append(Scopes.VIEW)
+
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
@@ -299,6 +303,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
                     break
             if 'organization' in request.data:
                 scopes.append(Scopes.UPDATE_ORG)
+
+            if {'source_storage', 'target_storage'} & request.data.keys():
+                scopes.append(Scopes.UPDATE_ASSOCIATED_STORAGE)
         else:
             scopes.append(scope)
 
@@ -376,6 +383,7 @@ class TaskPermission(OpenPolicyAgentPermission):
         UPDATE_ASSIGNEE = 'update:assignee'
         UPDATE_PROJECT = 'update:project'
         UPDATE_OWNER = 'update:owner'
+        UPDATE_ASSOCIATED_STORAGE = 'update:associated_storage'
         DELETE = 'delete'
         VIEW_ANNOTATIONS = 'view:annotations'
         UPDATE_ANNOTATIONS = 'update:annotations'
@@ -498,7 +506,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
             ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.CREATE:
@@ -509,6 +517,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             scopes.append(scope)
 
         elif scope == Scopes.UPDATE:
+            # user should have permissions to view a task
+            scopes.append(Scopes.VIEW)
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
@@ -530,6 +540,9 @@ class TaskPermission(OpenPolicyAgentPermission):
             if request.data.get('organization'):
                 scopes.append(Scopes.UPDATE_ORGANIZATION)
 
+            if {'source_storage', 'target_storage'} & request.data.keys():
+                scopes.append(Scopes.UPDATE_ASSOCIATED_STORAGE)
+
         elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
                 scope = Scopes.EXPORT_ANNOTATIONS
@@ -542,13 +555,8 @@ class TaskPermission(OpenPolicyAgentPermission):
 
             scopes.append(scope)
 
-        elif scope is not None:
-            scopes.append(scope)
-
         else:
-            # TODO: think if we can protect from missing endpoints
-            # assert False, "Unknown scope"
-            pass
+            scopes.append(scope)
 
         return scopes
 
@@ -619,11 +627,8 @@ class JobPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
         UPDATE = 'update'
         UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_PROJECT = 'update:project'
         UPDATE_STAGE = 'update:stage'
         UPDATE_STATE = 'update:state'
-        UPDATE_DESC = 'update:desc'
         DELETE = 'delete'
         VIEW_ANNOTATIONS = 'view:annotations'
         UPDATE_ANNOTATIONS = 'update:annotations'
@@ -729,29 +734,23 @@ class JobPermission(OpenPolicyAgentPermission):
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
-        }.get((view.action, request.method))
+        }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.UPDATE:
-            if any(k in request.data for k in ('owner_id', 'owner')):
-                owner_id = request.data.get('owner_id') or request.data.get('owner')
-                if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(Scopes.UPDATE_OWNER)
+            # user should have permissions to view a job
+            scopes.append(Scopes.VIEW)
+
             if any(k in request.data for k in ('assignee_id', 'assignee')):
                 assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
                 if assignee_id != getattr(obj.assignee, 'id', None):
                     scopes.append(Scopes.UPDATE_ASSIGNEE)
-            if any(k in request.data for k in ('project_id', 'project')):
-                project_id = request.data.get('project_id') or request.data.get('project')
-                if project_id != getattr(obj.project, 'id', None):
-                    scopes.append(Scopes.UPDATE_PROJECT)
+
             if 'stage' in request.data:
                 scopes.append(Scopes.UPDATE_STAGE)
             if 'state' in request.data:
                 scopes.append(Scopes.UPDATE_STATE)
 
-            if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
-                scopes.append(Scopes.UPDATE_DESC)
         elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
                 scope = Scopes.EXPORT_ANNOTATIONS
@@ -849,7 +848,7 @@ class CommentPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -941,7 +940,7 @@ class IssuePermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
             'comments': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -1065,7 +1064,7 @@ class LabelPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -1127,7 +1126,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         data = {}
@@ -1205,7 +1204,7 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
             'create': Scopes.CREATE,
             'destroy': Scopes.DELETE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
 
 class RequestPermission(OpenPolicyAgentPermission):
@@ -1237,7 +1236,7 @@ class RequestPermission(OpenPolicyAgentPermission):
             ('list', 'GET'): Scopes.LIST,
             ('retrieve', 'GET'): Scopes.VIEW,
             ('cancel', 'POST'): Scopes.CANCEL,
-        }.get((view.action, request.method))]
+        }[(view.action, request.method)]]
 
 
     def get_resource(self):
