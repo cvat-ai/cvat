@@ -5,24 +5,28 @@
 import os
 import tempfile
 import unittest
-from typing import Optional
+from types import TracebackType
+from typing import Optional, Type
 
-from datumaro import IDataset
-from datumaro.components.operations import ExactComparator
 from datumaro.util.os_util import rmfile, rmtree
 
 from cvat.apps.dataset_manager.util import current_function_name
 
 
 class FileRemover:
-    def __init__(self, path, is_dir=False):
+    def __init__(self, path: str, is_dir: bool = False):
         self.path = path
         self.is_dir = is_dir
 
-    def __enter__(self):
+    def __enter__(self) -> str:
         return self.path
 
-    def __exit__(self, exc_type=None, exc_value=None, traceback=None):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         if self.is_dir:
             try:
                 rmtree(self.path)
@@ -72,14 +76,3 @@ class TestDir(FileRemover):
             os.makedirs(path, exist_ok=False)
 
         return path
-
-
-def compare_datasets(expected: IDataset, actual: IDataset):
-    comparator = ExactComparator()
-    _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
-        expected, actual
-    )
-    assert not unmatched, f"Datasets have unmatched items: {unmatched}"
-    assert not actual_extra, f"Actual has following extra items: {actual_extra}"
-    assert not expected_extra, f"Expected has following extra items: {expected_extra}"
-    assert not errors, f"There were following errors while comparing datasets: {errors}"
