@@ -939,19 +939,21 @@ class SimpleJobSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type')
         read_only_fields = fields
 
-class JobHoneypotWriteSerializer(serializers.Serializer):
+class JobValidationLayoutWriteSerializer(serializers.Serializer):
     frame_selection_method = serializers.ChoiceField(
-        choices=models.JobFrameSelectionMethod.choices(), required=True
+        choices=models.JobFrameSelectionMethod.choices(),
+        required=True,
     )
-    frames = serializers.ListSerializer(
-        child=serializers.CharField(max_length=MAX_FILENAME_LENGTH),
-        default=[], required=False, allow_null=True
+    honeypot_real_frames = serializers.ListSerializer(
+        child=serializers.IntegerField(min_value=0),
+        default=[],
+        required=False,
     )
 
     def validate(self, attrs):
         frame_selection_method = attrs["frame_selection_method"]
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
-            field_validation.require_field(attrs, "frames")
+            field_validation.require_field(attrs, "honeypot_real_frames")
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             pass
         else:
@@ -969,97 +971,86 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
         db_segment = db_job.segment
         db_task = db_segment.task
         db_data = db_task.data
-        task_all_honeypots = set(db_task.gt_job.segment.frame_set)
 
-        db_task_frames: dict[int, models.Image] = {
-            frame.frame: frame for frame in db_data.images.all()
+        if not (
+            hasattr(db_job.segment.task.data, 'validation_layout') and
+            db_job.segment.task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            raise serializers.ValidationError(
+                "Honeypots can only be modified if the task "
+                f"validation mode is '{models.ValidationMode.GT_POOL}'"
+            )
+
+        if db_job.type == models.JobType.GROUND_TRUTH:
+            raise serializers.ValidationError(
+                f"Honeypots cannot exist in {models.JobType.GROUND_TRUTH} jobs"
+            )
+
+        frame_step = db_data.get_frame_step()
+
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // frame_step
+
+        all_task_frames: dict[int, models.Image] = {
+            _to_rel_frame(frame.frame): frame
+            for frame in db_data.images.all()
         }
-        task_placeholder_frames = set(
-            frame_id for frame_id, frame in db_task_frames.items()
+        task_honeypot_frames = set(
+            _to_rel_frame(frame_id)
+            for frame_id, frame in all_task_frames.items()
             if frame.is_placeholder
         )
-        segment_honeypots = set(db_segment.frame_set) & task_placeholder_frames
+        segment_frame_set = set(map(_to_rel_frame, db_segment.frame_set))
+        segment_honeypots = segment_frame_set & task_honeypot_frames
 
         deleted_task_frames = db_data.deleted_frames
-        task_active_honeypots = task_all_honeypots.difference(deleted_task_frames)
+        task_all_validation_frames = set(map(_to_rel_frame, db_task.gt_job.segment.frame_set))
+        task_active_validation_frames = task_all_validation_frames.difference(deleted_task_frames)
 
         segment_honeypots_count = len(segment_honeypots)
 
         frame_selection_method = validated_data['frame_selection_method']
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
-            task_honeypot_frame_map: dict[str, int] = {
-                v.path: k for k, v in db_task_frames.items()
-            } # frame_name -> id
-
-            requested_frame_names: list[str] = validated_data['frames']
-            requested_frame_ids: list[int] = []
-            requested_unknown_frames: list[str] = []
-            requested_inactive_frames: list[str] = []
-            requested_normal_frames: list[str] = []
-            for requested_frame_name in requested_frame_names:
-                requested_frame_id = task_honeypot_frame_map.get(requested_frame_name)
-
-                if requested_frame_id is None:
-                    requested_unknown_frames.append(requested_frame_name)
+            requested_frames: list[int] = validated_data['honeypot_real_frames']
+            requested_inactive_frames: set[int] = set()
+            requested_normal_frames: set[int] = set()
+            for requested_validation_frame in requested_frames:
+                if requested_validation_frame not in task_all_validation_frames:
+                    requested_normal_frames.add(requested_validation_frame)
                     continue
 
-                if requested_frame_id not in task_all_honeypots:
-                    requested_normal_frames.append(requested_frame_name)
+                if requested_validation_frame not in task_active_validation_frames:
+                    requested_inactive_frames.add(requested_validation_frame)
                     continue
-
-                if requested_frame_id not in task_active_honeypots:
-                    requested_inactive_frames.append(requested_frame_name)
-                    continue
-
-                requested_frame_ids.append(requested_frame_id)
-
-            if requested_unknown_frames:
-                raise serializers.ValidationError(
-                    "Could not update honeypot frames: "
-                    "frames {} do not exist in the task".format(
-                        format_list(requested_unknown_frames)
-                    )
-                )
 
             if requested_normal_frames:
                 raise serializers.ValidationError(
                     "Could not update honeypot frames: "
-                    "frames {} are not in the honeypot pool. ".format(
-                        format_list(requested_normal_frames)
+                    "frames {} are not from the validation pool".format(
+                        format_list(tuple(map(str, requested_normal_frames)))
                     )
                 )
 
             if requested_inactive_frames:
                 raise serializers.ValidationError(
-                    "Could not update honeypot frames: frames {} are removed. "
-                    "Restore them in the honeypot pool first.".format(
-                        format_list(requested_inactive_frames)
+                    "Could not update honeypot frames: frames {} are disabled. "
+                    "Restore them in the validation pool first".format(
+                        format_list(tuple(map(str, requested_inactive_frames)))
                     )
                 )
 
-            if len(requested_frame_names) != segment_honeypots_count:
+            if len(requested_frames) != segment_honeypots_count:
                 raise serializers.ValidationError(
                     "Could not update honeypot frames: "
-                    "the requested number of validation frames must be remain the same."
+                    "the number of honeypots must remain the same. "
                     "Requested {}, current {}".format(
-                        len(requested_frame_names), segment_honeypots_count
+                        len(requested_frames), segment_honeypots_count
                     )
-                )
-
-            if len(set(requested_frame_ids)) != len(requested_frame_names):
-                repeated_frames = tuple(
-                    frame_name
-                    for frame_name, repeats in Counter(requested_frame_names).most_common()
-                    if 1 < repeats
-                )
-                raise serializers.ValidationError(
-                    "Could not update honeypot frames: validation frames cannot repeat. "
-                    "Repeated frames: {}".format(format_list(repeated_frames))
                 )
 
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            requested_frame_ids = random.sample(
-                task_active_honeypots, k=segment_honeypots_count
+            requested_frames = random.sample(
+                task_active_validation_frames, k=segment_honeypots_count
             )
         else:
             assert False
@@ -1067,36 +1058,31 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
         # Replace validation frames in the job
         old_honeypot_real_ids = []
         updated_db_frames = []
-        new_validation_frame_iter = iter(requested_frame_ids)
-        for current_frame_id in db_segment.frame_set:
-            if current_frame_id in segment_honeypots:
-                requested_frame_id = next(new_validation_frame_iter)
-                requested_frame = db_task_frames[requested_frame_id]
-                segment_frame = db_task_frames[current_frame_id]
-                assert segment_frame.is_placeholder
+        for frame, requested_validation_frame in zip(segment_honeypots, requested_frames):
+            db_requested_frame = all_task_frames[requested_validation_frame]
+            db_segment_frame = all_task_frames[frame]
+            assert db_segment_frame.is_placeholder
 
-                old_honeypot_real_ids.append(segment_frame.real_frame)
+            old_honeypot_real_ids.append(_to_rel_frame(db_segment_frame.real_frame))
 
-                # Change image in the current segment frame
-                segment_frame.path = requested_frame.path
-                segment_frame.width = requested_frame.width
-                segment_frame.height = requested_frame.height
-                segment_frame.real_frame = requested_frame.frame
+            # Change image in the current segment honeypot frame
+            db_segment_frame.path = db_requested_frame.path
+            db_segment_frame.width = db_requested_frame.width
+            db_segment_frame.height = db_requested_frame.height
+            db_segment_frame.real_frame = db_requested_frame.frame
 
-                updated_db_frames.append(segment_frame)
-
-        assert next(new_validation_frame_iter, None) is None
+            updated_db_frames.append(db_segment_frame)
 
         models.Image.objects.bulk_update(
             updated_db_frames, fields=['path', 'width', 'height', 'real_frame']
         )
 
         updated_validation_frames = [
-            segment_frame_id
-            for new_honeypot_id, old_honeypot_id, segment_frame_id in zip(
-                requested_frame_ids, old_honeypot_real_ids, segment_honeypots
+            frame
+            for new_validation_frame, old_validation_frame, frame in zip(
+                requested_frames, old_honeypot_real_ids, segment_honeypots
             )
-            if new_honeypot_id != old_honeypot_id
+            if new_validation_frame != old_validation_frame
         ]
         if updated_validation_frames:
             # Remove annotations on changed validation frames
@@ -1106,8 +1092,8 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
                 job_annotation.ir_data, dimension=db_task.dimension
             )
             job_annotation_manager.clear_frames(
-                set(db_segment.frame_set).difference(updated_validation_frames)
-            )
+                segment_frame_set.difference(updated_validation_frames)
+            ) # TODO: check if there are absolute frame ids
             job_annotation.delete(job_annotation_manager.data)
 
             # Update chunks
@@ -1115,15 +1101,15 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
             job_frame_provider = JobFrameProvider(db_job)
             updated_segment_chunk_ids = set(
                 job_frame_provider.get_chunk_number(updated_segment_frame_id)
-                for updated_segment_frame_id in requested_frame_ids
+                for updated_segment_frame_id in requested_frames
             )
-            segment_frames = sorted(db_segment.frame_set)
+            segment_frames = sorted(segment_frame_set)
 
             media_cache = MediaCache()
             for chunk_id in sorted(updated_segment_chunk_ids):
                 chunk_frames = segment_frames[
-                    chunk_id * db_task.segment_size :
-                    (chunk_id + 1) * db_task.segment_size
+                    chunk_id * db_data.chunk_size :
+                    (chunk_id + 1) * db_data.chunk_size
                 ]
 
                 for quality in FrameQuality.__members__.values():
@@ -1153,9 +1139,9 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
             db_segment.chunks_updated_date = timezone.now()
             db_segment.save(update_fields=['chunks_updated_date'])
 
-            if set(db_data.deleted_frames).intersection(updated_validation_frames):
+            if set(deleted_task_frames).intersection(updated_validation_frames):
                 db_data.deleted_frames = sorted(
-                    set(db_data.deleted_frames).difference(updated_validation_frames)
+                    set(deleted_task_frames).difference(updated_validation_frames)
                 )
                 db_data.save(update_fields=['deleted_frames'])
 
@@ -1167,8 +1153,187 @@ class JobHoneypotWriteSerializer(serializers.Serializer):
 
         return instance
 
-class JobHoneypotReadSerializer(serializers.Serializer):
-    frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
+class JobValidationLayoutReadSerializer(serializers.Serializer):
+    honeypot_count = serializers.IntegerField(min_value=0, required=False)
+    honeypot_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), required=False,
+    )
+    honeypot_real_frames = serializers.ListSerializer(
+        child=serializers.IntegerField(min_value=0), required=False
+    )
+
+    def to_representation(self, instance: models.Job):
+        validation_layout = getattr(instance.segment.task.data, 'validation_layout', None)
+        if not validation_layout:
+            return {}
+
+        data = {}
+
+        if validation_layout.mode == models.ValidationMode.GT_POOL:
+            db_segment = instance.segment
+            segment_frame_set = db_segment.frame_set
+
+            db_data = db_segment.task.data
+            frame_step = db_data.get_frame_step()
+
+            def _to_rel_frame(abs_frame: int) -> int:
+                return (abs_frame - db_data.start_frame) // frame_step
+
+            segment_honeypot_frames = []
+            segment_honeypot_real_frames = []
+            for frame in db_segment.task.data.images.all():
+                if not frame.is_placeholder:
+                    continue
+
+                if not frame.frame in segment_frame_set:
+                    continue
+
+                segment_honeypot_frames.append(_to_rel_frame(frame.frame))
+                segment_honeypot_real_frames.append(_to_rel_frame(frame.real_frame))
+
+            data = {
+                'honeypot_count': len(segment_honeypot_frames),
+                'honeypot_frames': sorted(segment_honeypot_frames),
+                'honeypot_real_frames': sorted(segment_honeypot_real_frames),
+            }
+
+        return super().to_representation(data)
+
+class TaskValidationLayoutWriteSerializer(serializers.Serializer):
+    frame_selection_method = serializers.ChoiceField(
+        choices=models.JobFrameSelectionMethod.choices(),
+        required=True,
+    )
+    honeypot_real_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), required=False
+    )
+
+    def validate(self, attrs):
+        frame_selection_method = attrs["frame_selection_method"]
+        if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+            field_validation.require_field(attrs, "honeypot_real_frames")
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            pass
+        else:
+            assert False
+
+        return super().validate(attrs)
+
+    @transaction.atomic
+    def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
+        if not (
+            hasattr(instance.data, 'validation_layout') and
+            instance.data.validation_layout.mode == models.ValidationMode.GT_POOL
+        ):
+            raise serializers.ValidationError(
+                "Honeypots can only be modified if the task "
+                f"validation mode is '{models.ValidationMode.GT_POOL}'"
+            )
+
+        if validated_data["frame_selection_method"] == models.JobFrameSelectionMethod.MANUAL:
+            requested_honeypot_real_frames = sorted(validated_data['honeypot_real_frames'])
+
+            task_honeypot_abs_frames = (
+                instance.data.images
+                .filter(is_placeholder=True)
+                .order_by('frame')
+                .values_list('frame', flat=True)
+            )
+
+            task_honeypot_frames_count = len(task_honeypot_abs_frames)
+            if task_honeypot_frames_count != len(requested_honeypot_real_frames):
+                raise serializers.ValidationError(
+                    "Invalid size of 'honeypot_real_frames' array, "
+                    f"expected {task_honeypot_frames_count}"
+                )
+
+        for db_job in (
+            models.Job.objects.select_related("segment")
+            .filter(segment__task_id=instance.id, type=models.JobType.ANNOTATION)
+            .order_by("segment__start_frame")
+            .all()
+        ):
+            job_serializer_params = {
+                'frame_selection_method': validated_data['frame_selection_method']
+            }
+
+            if validated_data["frame_selection_method"] == models.JobFrameSelectionMethod.MANUAL:
+                segment_frame_set = db_job.segment.frame_set
+                job_serializer_params['honeypot_real_frames'] = [
+                    requested_frame
+                    for abs_frame, requested_frame in zip(
+                        task_honeypot_abs_frames, requested_honeypot_real_frames
+                    )
+                    if abs_frame in segment_frame_set
+                ]
+
+            job_validation_layout_serializer = JobValidationLayoutWriteSerializer(
+                db_job, job_serializer_params
+            )
+            job_validation_layout_serializer.is_valid(raise_exception=True)
+            job_validation_layout_serializer.save()
+
+        return instance
+
+class TaskValidationLayoutReadSerializer(serializers.ModelSerializer):
+    validation_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), source='frames', required=False,
+    )
+    disabled_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), required=False
+    )
+    honeypot_count = serializers.IntegerField(min_value=0, required=False)
+    honeypot_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), required=False,
+    )
+    honeypot_real_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), required=False,
+    )
+
+    class Meta:
+        model = models.ValidationLayout
+        fields = (
+            'mode',
+            'frames_per_job_count',
+            'validation_frames',
+            'disabled_frames',
+            'honeypot_count',
+            'honeypot_frames',
+            'honeypot_real_frames',
+        )
+        read_only_fields = fields
+        extra_kwargs = {
+            'mode': { 'allow_null': True },
+        }
+
+    def to_representation(self, instance: models.ValidationLayout):
+        if instance.mode == models.ValidationMode.GT_POOL:
+            db_data: models.Data = instance.task_data
+            frame_step = db_data.get_frame_step()
+
+            def _to_rel_frame(abs_frame: int) -> int:
+                return (abs_frame - db_data.start_frame) // frame_step
+
+            placeholder_queryset = models.Image.objects.filter(
+                data_id=instance.task_data_id, is_placeholder=True
+            )
+            honeypot_count = placeholder_queryset.count()
+
+            instance.honeypot_count = honeypot_count
+
+            # TODO: make this information optional, if there are use cases with too big responses
+            instance.honeypot_frames = []
+            instance.honeypot_real_frames = []
+            for frame, real_frame in (
+                placeholder_queryset
+                .order_by('frame')
+                .values_list('frame', 'real_frame')
+                .iterator(chunk_size=10000)
+            ):
+                instance.honeypot_frames.append(_to_rel_frame(frame))
+                instance.honeypot_real_frames.append(_to_rel_frame(real_frame))
+
+        return super().to_representation(instance)
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')

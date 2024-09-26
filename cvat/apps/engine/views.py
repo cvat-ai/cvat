@@ -3,22 +3,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABCMeta, abstractmethod
+import functools
 import itertools
 import os
 import os.path as osp
 import re
 import shutil
-import functools
-import random
-
-from contextlib import closing, suppress
+import textwrap
+import traceback
+import zlib
+from abc import ABCMeta, abstractmethod
+from contextlib import suppress
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, Union, cast, Callable, Mapping, Iterable
-import traceback
-import textwrap
-from collections import Counter, namedtuple
+from collections import namedtuple
 from copy import copy
 from datetime import datetime
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -55,15 +54,13 @@ from rest_framework.settings import api_settings
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.annotation import AnnotationManager
-from cvat.apps.dataset_manager.task import JobAnnotation
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage
 from cvat.apps.events.handlers import handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import (
-    IFrameProvider, TaskFrameProvider, JobFrameProvider, FrameQuality
+    DataWithMeta, IFrameProvider, TaskFrameProvider, JobFrameProvider, FrameQuality
 )
 from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
 from cvat.apps.engine.media_extractors import get_mime
@@ -78,10 +75,10 @@ from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, FileInfoSerializer,
     JobDataMetaWriteSerializer, JobReadSerializer, JobWriteSerializer,
-    JobHoneypotReadSerializer, JobHoneypotWriteSerializer,
+    JobValidationLayoutReadSerializer, JobValidationLayoutWriteSerializer,
     LabelSerializer, LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskValidationLayoutReadSerializer, TaskValidationLayoutWriteSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
     AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
     AssetReadSerializer, AssetWriteSerializer,
@@ -94,7 +91,7 @@ from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, format_list, process_failed_job,
+    av_scan_paths, process_failed_job,
     parse_exception_message, get_rq_job_meta,
     import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
 )
@@ -109,7 +106,7 @@ from . import models, task
 from .log import ServerLogManager
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import PolicyEnforcer, IsAuthenticatedOrReadPublicResource
-from cvat.apps.engine.cache import MediaCache, prepare_chunk
+from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
@@ -697,7 +694,11 @@ class _DataGetter(metaclass=ABCMeta):
         try:
             if self.type == 'chunk':
                 data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
+                return HttpResponse(
+                    data.data.getvalue(),
+                    content_type=data.mime,
+                    headers=self._get_chunk_response_headers(data),
+                )
             elif self.type == 'frame' or self.type == 'preview':
                 if self.type == 'preview':
                     data = frame_provider.get_preview()
@@ -720,6 +721,20 @@ class _DataGetter(metaclass=ABCMeta):
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
 
+    @abstractmethod
+    def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
+
+    _CHUNK_HEADER_BYTES_LENGTH = 1000
+
+    def _get_chunk_checksum(self, chunk_data: DataWithMeta) -> str:
+        return str(zlib.crc32(chunk_data.data.getbuffer()[:self._CHUNK_HEADER_BYTES_LENGTH]))
+
+    def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
+        return {
+            'X-Checksum': str(checksum or ''),
+            'X-Updated-Date': serializers.DateTimeField().to_representation(updated_date),
+        }
+
 class _TaskDataGetter(_DataGetter):
     def __init__(
         self,
@@ -734,6 +749,12 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_frame_provider(self) -> TaskFrameProvider:
         return TaskFrameProvider(self._db_task)
+
+    def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
+        return self._make_chunk_response_headers(
+            self._get_chunk_checksum(chunk_data),
+            self._db_task.segment_set.aggregate(django_models.Max('chunks_updated_date')),
+        )
 
 
 class _JobDataGetter(_DataGetter):
@@ -789,9 +810,20 @@ class _JobDataGetter(_DataGetter):
                     self.number, quality=self.quality, is_task_chunk=True
                 )
 
-            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+            return HttpResponse(
+                data.data.getvalue(),
+                content_type=data.mime,
+                headers=self._get_chunk_response_headers(data),
+            )
         else:
             return super().__call__()
+
+    def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
+        return self._make_chunk_response_headers(
+            self._get_chunk_checksum(chunk_data),
+            self._db_job.segment.chunks_updated_date
+        )
+
 
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
@@ -835,12 +867,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
     queryset = Task.objects.select_related(
-        'data', 'assignee', 'owner',
-        'target_storage', 'source_storage', 'annotation_guide',
+        'data',
+        'data__validation_layout',
+        'assignee',
+        'owner',
+        'target_storage',
+        'source_storage',
+        'annotation_guide',
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',
-    ).with_job_summary().all()
+    ).with_job_summary()
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -1676,6 +1713,44 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
         return data_getter()
 
+    @extend_schema(
+        methods=["GET"],
+        summary="Allows getting current validation configuration",
+        responses={
+            '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
+        })
+    @extend_schema(
+        methods=["PATCH"],
+        summary="Allows updating current validation configuration",
+        request=TaskValidationLayoutWriteSerializer,
+        responses={
+            '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
+        })
+    @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
+    @transaction.atomic
+    def validation_layout(self, request, pk):
+        db_task = self.get_object() # call check_object_permissions as well
+
+        validation_layout = getattr(db_task.data, 'validation_layout', None)
+
+        if request.method == "PATCH":
+            if not validation_layout:
+                return ValidationError(
+                    "Task has no validation setup configured. "
+                    "Validation must be initialized during task creation"
+                )
+
+            request_serializer = TaskValidationLayoutWriteSerializer(db_task, data=request.data)
+            request_serializer.is_valid(raise_exception=True)
+            validation_layout = request_serializer.save().data.validation_layout
+
+        if not validation_layout:
+            response_serializer = TaskValidationLayoutReadSerializer(SimpleNamespace(mode=None))
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+        response_serializer = TaskValidationLayoutReadSerializer(validation_layout)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
 
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
@@ -2195,20 +2270,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     @extend_schema(
         methods=["GET"],
-        summary="Allows to get current honeypot frames",
+        summary="Allows getting current validation configuration",
         responses={
-            '200': OpenApiResponse(JobHoneypotReadSerializer),
+            '200': OpenApiResponse(JobValidationLayoutReadSerializer),
         })
     @extend_schema(
         methods=["PATCH"],
-        summary="Allows to update current honeypot frames",
-        request=JobHoneypotWriteSerializer,
+        summary="Allows updating current validation configuration",
+        request=JobValidationLayoutWriteSerializer,
         responses={
-            '200': OpenApiResponse(JobHoneypotReadSerializer),
+            '200': OpenApiResponse(JobValidationLayoutReadSerializer),
         })
-    @action(detail=True, methods=["GET", "PATCH"], url_path='honeypot')
+    @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
-    def honeypot(self, request, pk):
+    def validation_layout(self, request, pk):
         self.get_object() # call check_object_permissions as well
 
         db_job = models.Job.objects.prefetch_related(
@@ -2225,31 +2300,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             )
         ).get(pk=pk)
 
-        if not (
-            hasattr(db_job.segment.task.data, 'validation_layout') and
-            db_job.segment.task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
-            raise ValidationError("Honeypots are not configured in the task")
-
-        if db_job.type == models.JobType.GROUND_TRUTH:
-            raise ValidationError(f"Honeypots cannot exist in {models.JobType.GROUND_TRUTH} jobs")
-
         if request.method == "PATCH":
-            request_serializer = JobHoneypotWriteSerializer(instance=db_job, data=request.data)
+            request_serializer = JobValidationLayoutWriteSerializer(db_job, data=request.data)
             request_serializer.is_valid(raise_exception=True)
             db_job = request_serializer.save()
 
-        db_segment = db_job.segment
-        db_task_frames: dict[int, models.Image] = {
-            frame.frame: frame for frame in db_segment.task.data.images.all()
-        }
-        task_placeholder_frames = set(
-            frame_id for frame_id, frame in db_task_frames.items()
-            if frame.is_placeholder
-        )
-        segment_honeypots = set(db_segment.frame_set) & task_placeholder_frames
-
-        response_serializer = JobHoneypotReadSerializer({'frames': sorted(segment_honeypots)})
+        response_serializer = JobValidationLayoutReadSerializer(db_job)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 @extend_schema(tags=['issues'])

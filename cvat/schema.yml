@@ -2572,62 +2572,6 @@ paths:
           description: Format is not available
         '409':
           description: Exporting is already in progress
-  /api/jobs/{id}/honeypot:
-    get:
-      operationId: jobs_retrieve_honeypot
-      summary: Allows to get current honeypot frames
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      tags:
-      - jobs
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/JobHoneypotRead'
-          description: ''
-    patch:
-      operationId: jobs_partial_update_honeypot
-      summary: Allows to update current honeypot frames
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      tags:
-      - jobs
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedJobHoneypotWriteRequest'
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/JobHoneypotRead'
-          description: ''
   /api/jobs/{id}/preview:
     get:
       operationId: jobs_retrieve_preview
@@ -2650,6 +2594,62 @@ paths:
       responses:
         '200':
           description: Job image preview
+  /api/jobs/{id}/validation_layout:
+    get:
+      operationId: jobs_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: jobs_partial_update_validation_layout
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobValidationLayoutWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
   /api/labels:
     get:
       operationId: labels_list
@@ -6045,6 +6045,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/RqStatus'
           description: ''
+  /api/tasks/{id}/validation_layout:
+    get:
+      operationId: tasks_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: tasks_partial_update_validation_layout
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskValidationLayoutWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
+          description: ''
   /api/tasks/backup/:
     post:
       operationId: tasks_create_backup
@@ -8074,15 +8130,6 @@ components:
       oneOf:
       - $ref: '#/components/schemas/LabeledDataRequest'
       - $ref: '#/components/schemas/AnnotationFileRequest'
-    JobHoneypotRead:
-      type: object
-      properties:
-        frames:
-          type: array
-          items:
-            type: integer
-      required:
-      - frames
     JobRead:
       type: object
       properties:
@@ -8224,6 +8271,22 @@ components:
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
+    JobValidationLayoutRead:
+      type: object
+      properties:
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
     JobWriteRequest:
       type: object
       properties:
@@ -9320,17 +9383,16 @@ components:
           items:
             type: integer
             minimum: 0
-    PatchedJobHoneypotWriteRequest:
+    PatchedJobValidationLayoutWriteRequest:
       type: object
       properties:
         frame_selection_method:
           $ref: '#/components/schemas/FrameSelectionMethod'
-        frames:
+        honeypot_real_frames:
           type: array
           items:
-            type: string
-            minLength: 1
-          nullable: true
+            type: integer
+            minimum: 0
           default: []
     PatchedJobWriteRequest:
       type: object
@@ -9541,6 +9603,16 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+    PatchedTaskValidationLayoutWriteRequest:
+      type: object
+      properties:
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -10660,6 +10732,42 @@ components:
       required:
       - jobs
       - labels
+    TaskValidationLayoutRead:
+      type: object
+      properties:
+        mode:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ValidationMode'
+          - $ref: '#/components/schemas/NullEnum'
+        frames_per_job_count:
+          type: integer
+          readOnly: true
+          nullable: true
+        validation_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
     TaskWriteRequest:
       type: object
       properties:
