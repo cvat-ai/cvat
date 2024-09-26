@@ -23,6 +23,7 @@ The downloaded file is a .zip archive with the following structure:
 ```bash
 archive.zip/
 ├── train
+│    ├── labels.json  # optional cvat extension. Contains original ids and labels
 │    ├── label_0
 │    │      ├── <image_name_0>.jpg
 │    │      ├── <image_name_1>.jpg
