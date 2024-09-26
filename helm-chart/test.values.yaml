@@ -27,6 +27,12 @@ cvat:
   frontend:
     imagePullPolicy: Never
 
+redis:
+  master:
+    # The "flushall" command, which we use in tests, is disabled in helm by default
+    # https://artifacthub.io/packages/helm/bitnami/redis#redis-master-configuration-parameters
+    disableCommands: []
+
 keydb:
   resources:
     requests:

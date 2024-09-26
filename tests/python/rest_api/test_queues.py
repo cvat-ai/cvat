@@ -18,7 +18,7 @@ from .utils import create_task
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestRQQueueWorking:
     _USER_1 = "admin1"

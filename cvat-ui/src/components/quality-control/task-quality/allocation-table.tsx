@@ -109,10 +109,12 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
             render: (active: boolean, record: RowData): JSX.Element => (
                 active ? (
                     <DeleteOutlined
+                        className='cvat-allocation-frame-delete'
                         onClick={() => { onDeleteFrames([record.frame]); }}
                     />
                 ) : (
                     <Icon
+                        className='cvat-allocation-frame-restore'
                         onClick={() => { onRestoreFrames([record.frame]); }}
                         component={RestoreIcon}
                     />
@@ -130,7 +132,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                 {
                     selection.selectedRowKeys.length !== 0 ? (
                         <>
-                            <Col>
+                            <Col className='cvat-allocation-selection-frame-delete'>
                                 <DeleteOutlined
                                     onClick={() => {
                                         const framesToUpdate = selection.selectedRows
@@ -141,7 +143,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                                     }}
                                 />
                             </Col>
-                            <Col>
+                            <Col className='cvat-allocation-selection-frame-restore'>
                                 <Icon
                                     onClick={() => {
                                         const framesToUpdate = selection.selectedRows
@@ -163,7 +165,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                     if (!rowData.active) {
                         return 'cvat-allocation-frame-row cvat-allocation-frame-row-excluded';
                     }
-                    return 'cvat-allocation-frame';
+                    return 'cvat-allocation-frame-row';
                 }}
                 columns={columns}
                 dataSource={data}

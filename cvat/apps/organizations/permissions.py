@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import cast
-
 from django.conf import settings
 
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
@@ -175,7 +173,10 @@ class MembershipPermission(OpenPolicyAgentPermission):
         }[view.action]
 
         if scope == Scopes.UPDATE:
-            if request.data.get('role') != cast(Membership, obj).role:
+            # user should have permissions to view a membership
+            scopes.append(Scopes.VIEW)
+
+            if 'role' in request.data.keys():
                 scopes.append(Scopes.UPDATE_ROLE)
         else:
             scopes.append(scope)
