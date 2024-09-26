@@ -8,6 +8,7 @@ from typing import ClassVar, List
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ForbiddenException
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, make_api_client, patch_method
@@ -136,6 +137,15 @@ class TestPatchMemberships:
         self._test_cannot_change_membership(
             user["username"], user["membership_id"], self.ROLES[abs(self.ROLES.index(who) - 1)]
         )
+
+    def test_malefactor_cannot_obtain_membership_details_via_empty_partial_update_request(
+        self, regular_lonely_user, memberships
+    ):
+        membership = next(iter(memberships))
+
+        with make_api_client(regular_lonely_user) as api_client:
+            with pytest.raises(ForbiddenException):
+                api_client.memberships_api.partial_update(membership["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
