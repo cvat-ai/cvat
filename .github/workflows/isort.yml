@@ -14,7 +14,6 @@ jobs:
               tests/python/**/*.py
               cvat/apps/quality_control/**/*.py
               cvat/apps/analytics_report/**/*.py
-              cvat/apps/dataset_manager/tests/utils.py
           dir_names: true
 
       - name: Run checks
