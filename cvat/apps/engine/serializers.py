@@ -1139,6 +1139,11 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             db_segment.chunks_updated_date = timezone.now()
             db_segment.save(update_fields=['chunks_updated_date'])
 
+        if updated_validation_frames or (
+            # even if the randomly selected frames were the same as before, we should still
+            # consider it an update to the validation frames and restore them, if they were deleted
+            frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM
+        ):
             if set(deleted_task_frames).intersection(updated_validation_frames):
                 db_data.deleted_frames = sorted(
                     set(deleted_task_frames).difference(updated_validation_frames)
