@@ -1049,6 +1049,16 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            if len(task_active_validation_frames) < segment_honeypots_count:
+                raise serializers.ValidationError(
+                    "Can't select validation frames: "
+                    "the remaining number of validation frames ({}) "
+                    "is less than the number of honeypots in a job ({}). "
+                    "Try to restore some validation frames".format(
+                        len(task_active_validation_frames), segment_honeypots_count
+                    )
+                )
+
             requested_frames = random.sample(
                 task_active_validation_frames, k=segment_honeypots_count
             )
