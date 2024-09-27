@@ -2250,10 +2250,23 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance: models.Data, validated_data: dict[str, Any]) -> models.Data:
         deleted_frames = validated_data['deleted_frames']
+
+        deleted_frame_set = set(deleted_frames)
+        if len(deleted_frame_set) != len(deleted_frames):
+            raise serializers.ValidationError("Deleted frames cannot repeat")
+
+        unknown_deleted_frames = deleted_frame_set.difference(range(instance.size))
+        if unknown_deleted_frames:
+            raise serializers.ValidationError(
+                "Unknown frames {} requested for removal".format(
+                    format_list(tuple(map(str, unknown_deleted_frames)))
+                )
+            )
+
         validation_layout = getattr(instance, 'validation_layout', None)
         if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
             gt_frame_set = set(validation_layout.frames)
-            changed_deleted_frames = set(deleted_frames).difference(instance.deleted_frames)
+            changed_deleted_frames = deleted_frame_set.difference(instance.deleted_frames)
             if not gt_frame_set.isdisjoint(changed_deleted_frames):
                 raise serializers.ValidationError(
                     f"When task validation mode is {models.ValidationMode.GT_POOL}, "
