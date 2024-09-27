@@ -381,7 +381,7 @@ class TestGetPostProjectBackup:
             "admin1",
             "tasks",
             {"name": "empty_task1", "project_id": project["id"]},
-            org_id=project["organization"],
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED, response.text
 
@@ -389,7 +389,7 @@ class TestGetPostProjectBackup:
             "admin1",
             "tasks",
             {"name": "empty_task2", "project_id": project["id"]},
-            org_id=project["organization"],
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED, response.text
 
@@ -909,8 +909,8 @@ class TestImportExportDatasetProject:
             {
                 "name": "empty_task",
                 "project_id": project["id"],
-                "organization": project["organization"],
             },
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED
 
@@ -934,7 +934,7 @@ class TestImportExportDatasetProject:
             "admin1",
             "tasks",
             {"name": "empty_task1", "project_id": project["id"]},
-            org_id=project["organization"],
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED, response.text
 
@@ -942,7 +942,7 @@ class TestImportExportDatasetProject:
             "admin1",
             "tasks",
             {"name": "empty_task2", "project_id": project["id"]},
-            org_id=project["organization"],
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED, response.text
 
@@ -1413,8 +1413,8 @@ class TestPatchProject:
 
             op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
 
-            # FUTURE-TODO: currently it is possible to have a project with assignee but with assignee_updated_date == None
-            # because there were no migration to set some assignee_updated_date for such projects/tasks/jobs
+            # FUTURE-TODO: currently it is possible to have a project with an assignee but with assignee_updated_date == None
+            # because there was no migration to set some assignee_updated_date for projects/tasks/jobs with assignee != None
             if isinstance(updated_project.assignee_updated_date, datetime):
                 assert op(
                     str(updated_project.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
@@ -1476,22 +1476,28 @@ class TestPatchProject:
         projects,
         find_users,
     ):
-        username, project_id = next(
-            (
-                (user["username"], project["id"])
-                for user in find_users(role=role, exclude_privilege="admin")
-                for project in projects
-                if project["organization"] == user["org"]
-                and project["owner"]["id"] != user["id"]
-                and (
-                    (is_project_assignee and (project["assignee"] or {}).get("id") == user["id"])
-                    or (
-                        not is_project_assignee
-                        and (project["assignee"] or {}).get("id") != user["id"]
+        project_id: Optional[int] = None
+        username: Optional[str] = None
+
+        for project in projects:
+            if project_id is not None:
+                break
+            for user in find_users(role=role, exclude_privilege="admin"):
+                is_user_project_assignee = (project["assignee"] or {}).get("id") == user["id"]
+                if (
+                    project["organization"] == user["org"]
+                    and project["owner"]["id"] != user["id"]
+                    and (
+                        is_project_assignee
+                        and is_user_project_assignee
+                        or not (is_project_assignee or is_user_project_assignee)
                     )
-                )
-            )
-        )
+                ):
+                    project_id = project["id"]
+                    username = user["username"]
+                    break
+
+        assert project_id is not None
 
         self._test_patch_linked_storage(
             username,
@@ -1515,27 +1521,31 @@ class TestPatchProject:
         find_users,
         filter_projects,
     ):
-        username, project_id = next(
-            (
-                (user["username"], project["id"])
-                for user in find_users(exclude_privilege="admin")
-                for project in filter_projects(organization=None)
+        username: Optional[str] = None
+        project_id: Optional[int] = None
+
+        projects = filter_projects(organization=None)
+        users = find_users(exclude_privilege="admin")
+
+        for project in projects:
+            if project_id is not None:
+                break
+            for user in users:
+                is_user_project_owner = project["owner"]["id"] == user["id"]
+                is_user_project_assignee = (project["assignee"] or {}).get("id") == user["id"]
+
                 if (
-                    (is_owner and project["owner"]["id"] == user["id"])
-                    or (
-                        is_assignee
-                        and project["owner"]["id"] != user["id"]
-                        and (project["assignee"] or {}).get("id") == user["id"]
+                    (is_owner and is_user_project_owner)
+                    or (is_assignee and not is_user_project_owner and is_user_project_assignee)
+                    or not any(
+                        [is_owner, is_assignee, is_user_project_owner, is_user_project_assignee]
                     )
-                    or (
-                        not is_owner
-                        and not is_assignee
-                        and project["owner"]["id"] != user["id"]
-                        and (project["assignee"] or {}).get("id") != user["id"]
-                    )
-                )
-            )
-        )
+                ):
+                    project_id = project["id"]
+                    username = user["username"]
+                    break
+
+        assert project_id is not None
 
         self._test_patch_linked_storage(
             username,

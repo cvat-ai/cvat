@@ -3453,26 +3453,35 @@ class TestPatchTask:
                 if org and task["organization"] != user["org"]:
                     continue
 
+                is_user_task_owner = task["owner"]["id"] == user["id"]
+                is_user_task_assignee = (task["assignee"] or {}).get("id") == user["id"]
+                project = projects[task["project_id"]] if task["project_id"] else None
+                is_user_project_owner = (project or {}).get("owner", {}).get("id") == user["id"]
+                is_user_project_assignee = ((project or {}).get("assignee") or {}).get(
+                    "id"
+                ) == user["id"]
+
                 if (
                     is_task_owner
-                    and task["owner"]["id"] == user["id"]
+                    and is_user_task_owner
                     or is_task_assignee
-                    and (task["assignee"] or {}).get("id") == user["id"]
+                    and is_user_task_assignee
                     or is_project_owner
-                    and projects[task["project_id"]]["owner"]["id"] == user["id"]
+                    and is_user_project_owner
                     or is_project_assignee
-                    and (projects[task["project_id"]]["assignee"] or {}).get("id") == user["id"]
+                    and is_user_project_assignee
                     or (
                         not any(
-                            [is_task_owner, is_task_assignee, is_project_owner, is_project_assignee]
-                        )
-                        and task["owner"]["id"] != user["id"]
-                        and (task["assignee"] or {}).get("id") != user["id"]
-                        and (
-                            not task["project_id"]
-                            or projects[task["project_id"]]["owner"]["id"] != user["id"]
-                            and (projects[task["project_id"]]["assignee"] or {}).get("id")
-                            != user["id"]
+                            [
+                                is_task_owner,
+                                is_task_assignee,
+                                is_project_owner,
+                                is_project_assignee,
+                                is_user_task_owner,
+                                is_user_task_assignee,
+                                is_user_project_owner,
+                                is_project_assignee,
+                            ]
                         )
                     )
                 ):
