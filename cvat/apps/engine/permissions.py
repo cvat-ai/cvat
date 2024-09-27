@@ -286,6 +286,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
         scopes = []
         if scope == Scopes.UPDATE:
+            # user should have permissions to view a project
+            scopes.append(Scopes.VIEW)
+
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
@@ -514,6 +517,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             scopes.append(scope)
 
         elif scope == Scopes.UPDATE:
+            # user should have permissions to view a task
+            scopes.append(Scopes.VIEW)
             if any(k in request.data for k in ('owner_id', 'owner')):
                 owner_id = request.data.get('owner_id') or request.data.get('owner')
                 if owner_id != getattr(obj.owner, 'id', None):
@@ -622,11 +627,8 @@ class JobPermission(OpenPolicyAgentPermission):
         VIEW = 'view'
         UPDATE = 'update'
         UPDATE_ASSIGNEE = 'update:assignee'
-        UPDATE_OWNER = 'update:owner'
-        UPDATE_PROJECT = 'update:project'
         UPDATE_STAGE = 'update:stage'
         UPDATE_STATE = 'update:state'
-        UPDATE_DESC = 'update:desc'
         DELETE = 'delete'
         VIEW_ANNOTATIONS = 'view:annotations'
         UPDATE_ANNOTATIONS = 'update:annotations'
@@ -736,25 +738,19 @@ class JobPermission(OpenPolicyAgentPermission):
 
         scopes = []
         if scope == Scopes.UPDATE:
-            if any(k in request.data for k in ('owner_id', 'owner')):
-                owner_id = request.data.get('owner_id') or request.data.get('owner')
-                if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(Scopes.UPDATE_OWNER)
+            # user should have permissions to view a job
+            scopes.append(Scopes.VIEW)
+
             if any(k in request.data for k in ('assignee_id', 'assignee')):
                 assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
                 if assignee_id != getattr(obj.assignee, 'id', None):
                     scopes.append(Scopes.UPDATE_ASSIGNEE)
-            if any(k in request.data for k in ('project_id', 'project')):
-                project_id = request.data.get('project_id') or request.data.get('project')
-                if project_id != getattr(obj.project, 'id', None):
-                    scopes.append(Scopes.UPDATE_PROJECT)
+
             if 'stage' in request.data:
                 scopes.append(Scopes.UPDATE_STAGE)
             if 'state' in request.data:
                 scopes.append(Scopes.UPDATE_STATE)
 
-            if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
-                scopes.append(Scopes.UPDATE_DESC)
         elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
                 scope = Scopes.EXPORT_ANNOTATIONS
