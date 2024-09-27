@@ -454,9 +454,7 @@ class JobAnnotation:
 
         db_data = self.db_job.segment.task.data
 
-        if data.tracks and hasattr(db_data, 'validation_layout') and (
-            db_data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if data.tracks and db_data.validation.mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
             raise ValidationError("Tracks are not supported when task validation mode is {}".format(
                 models.ValidationMode.GT_POOL
@@ -795,9 +793,7 @@ class TaskAnnotation:
         ).get(id=pk)
 
         requested_job_types = [models.JobType.ANNOTATION]
-        if hasattr(self.db_task.data, 'validation_layout') and (
-            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
 
         self.db_jobs = (
@@ -815,10 +811,7 @@ class TaskAnnotation:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
-        if (
-            hasattr(self.db_task.data, 'validation_layout') and
-            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
 
         splitted_data = {}
@@ -940,8 +933,7 @@ class TaskAnnotation:
 
         for db_job in self.db_jobs:
             if db_job.type == models.JobType.GROUND_TRUTH and not (
-                hasattr(self.db_task.data, 'validation_layout') and
-                self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+                self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
             ):
                 continue
 

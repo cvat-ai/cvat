@@ -1763,7 +1763,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             raise ValidationError("Only ground truth jobs can be removed")
 
         validation_layout: Optional[models.ValidationLayout] = getattr(
-            instance.segment.task.data, 'validation_layout', None
+            instance.segment.task.data.validation_mode, None
         )
         if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):
             raise ValidationError(

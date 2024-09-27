@@ -937,9 +937,7 @@ class TaskData(CommonData):
     def _init_frame_info(self):
         super()._init_frame_info()
 
-        if hasattr(self.db_data, 'validation_layout') and (
-            self.db_data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if self.db_data.validation_mode == models.ValidationMode.GT_POOL:
             # For GT pool-enabled tasks, we:
             # - skip validation frames in normal jobs on annotation export
             # - load annotations for GT pool frames on annotation import
