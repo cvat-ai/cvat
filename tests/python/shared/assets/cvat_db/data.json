@@ -1194,8 +1194,9 @@
   "fields": {
     "task_data": 25,
     "mode": "gt_pool",
+    "frames_per_job_count": 3,
     "frames": "23,24,25,26,27,28",
-    "frames_per_job_count": 3
+    "disabled_frames": "[]"
   }
 },
 {
@@ -1204,8 +1205,9 @@
   "fields": {
     "task_data": 21,
     "mode": "gt",
+    "frames_per_job_count": null,
     "frames": "0,1,2",
-    "frames_per_job_count": null
+    "disabled_frames": "[]"
   }
 },
 {
@@ -1214,8 +1216,9 @@
   "fields": {
     "task_data": 22,
     "mode": "gt",
+    "frames_per_job_count": null,
     "frames": "4,5,7",
-    "frames_per_job_count": null
+    "disabled_frames": "[]"
   }
 },
 {
@@ -5690,6 +5693,7 @@
     "task": 2,
     "start_frame": 0,
     "stop_frame": 22,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5701,6 +5705,7 @@
     "task": 5,
     "start_frame": 0,
     "stop_frame": 24,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5712,6 +5717,7 @@
     "task": 6,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5723,6 +5729,7 @@
     "task": 7,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5734,6 +5741,7 @@
     "task": 8,
     "start_frame": 0,
     "stop_frame": 13,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5745,6 +5753,7 @@
     "task": 9,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5756,6 +5765,7 @@
     "task": 9,
     "start_frame": 5,
     "stop_frame": 9,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5767,6 +5777,7 @@
     "task": 9,
     "start_frame": 10,
     "stop_frame": 14,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5778,6 +5789,7 @@
     "task": 9,
     "start_frame": 15,
     "stop_frame": 19,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5789,6 +5801,7 @@
     "task": 11,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5800,6 +5813,7 @@
     "task": 13,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5811,6 +5825,7 @@
     "task": 14,
     "start_frame": 0,
     "stop_frame": 7,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5822,6 +5837,7 @@
     "task": 15,
     "start_frame": 0,
     "stop_frame": 24,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5833,6 +5849,7 @@
     "task": 17,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5844,6 +5861,7 @@
     "task": 18,
     "start_frame": 0,
     "stop_frame": 1,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5855,6 +5873,7 @@
     "task": 19,
     "start_frame": 0,
     "stop_frame": 1,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5866,6 +5885,7 @@
     "task": 20,
     "start_frame": 0,
     "stop_frame": 1,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5877,6 +5897,7 @@
     "task": 21,
     "start_frame": 0,
     "stop_frame": 5,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5888,6 +5909,7 @@
     "task": 21,
     "start_frame": 6,
     "stop_frame": 9,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5899,6 +5921,7 @@
     "task": 22,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5910,6 +5933,7 @@
     "task": 22,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "specific_frames",
     "frames": "0,1,2"
   }
@@ -5921,6 +5945,7 @@
     "task": 23,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5932,6 +5957,7 @@
     "task": 23,
     "start_frame": 5,
     "stop_frame": 9,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5943,6 +5969,7 @@
     "task": 23,
     "start_frame": 10,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5954,6 +5981,7 @@
     "task": 23,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "specific_frames",
     "frames": "4,5,7"
   }
@@ -5965,6 +5993,7 @@
     "task": 24,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5976,6 +6005,7 @@
     "task": 25,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5987,6 +6017,7 @@
     "task": 26,
     "start_frame": 0,
     "stop_frame": 7,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5998,6 +6029,7 @@
     "task": 26,
     "start_frame": 8,
     "stop_frame": 15,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -6009,6 +6041,7 @@
     "task": 26,
     "start_frame": 16,
     "stop_frame": 22,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
@@ -6020,6 +6053,7 @@
     "task": 26,
     "start_frame": 23,
     "stop_frame": 28,
+    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
     "type": "range",
     "frames": "[]"
   }
