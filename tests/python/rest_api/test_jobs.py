@@ -101,7 +101,7 @@ class TestPostJobs:
         idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
     )
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_gt_job_in_a_task(
+    def test_can_create_gt_job_in_a_task(
         self,
         admin_user,
         tasks,
