@@ -1221,7 +1221,7 @@ def _create_thread(
 
                 if unknown_requested_frames:
                     raise ValidationError("Unknown validation frames requested: {}".format(
-                        format_list(unknown_requested_frames))
+                        format_list(sorted(unknown_requested_frames)))
                     )
             case _:
                 assert False
@@ -1438,7 +1438,7 @@ def _create_thread(
 
                 if unknown_requested_frames:
                     raise ValidationError("Unknown validation frames requested: {}".format(
-                        format_list(unknown_requested_frames))
+                        format_list(sorted(unknown_requested_frames)))
                     )
             case _:
                 assert False, (

@@ -8282,11 +8282,15 @@ components:
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of frame ids for honeypots in the job
         honeypot_real_frames:
           type: array
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
       type: object
       properties:
@@ -9387,13 +9391,23 @@ components:
       type: object
       properties:
         frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethod'
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the job
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
         honeypot_real_frames:
           type: array
           items:
             type: integer
             minimum: 0
           default: []
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedJobWriteRequest:
       type: object
       properties:
@@ -9606,13 +9620,30 @@ components:
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be excluded from validation
         frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethod'
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the task
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
         honeypot_real_frames:
           type: array
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -10750,11 +10781,15 @@ components:
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of frame ids to be used for validation
         disabled_frames:
           type: array
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of frame ids excluded from validation
         honeypot_count:
           type: integer
           minimum: 0
@@ -10763,11 +10798,15 @@ components:
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of frame ids for all honeypots in the task
         honeypot_real_frames:
           type: array
           items:
             type: integer
             minimum: 0
+          description: |
+            The list of real (validation) frame ids for all honeypots in the task
     TaskWriteRequest:
       type: object
       properties:

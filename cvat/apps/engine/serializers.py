@@ -867,7 +867,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             if invalid_ids:
                 raise serializers.ValidationError(
                     "The following frames do not exist in the task: {}".format(
-                        format_list(tuple(map(str, invalid_ids)))
+                        format_list(tuple(map(str, sorted(invalid_ids))))
                     )
                 )
 
@@ -943,11 +943,17 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(),
         required=True,
+        help_text=textwrap.dedent("""\
+            The method to use for frame selection of new real frames for honeypots in the job
+        """)
     )
     honeypot_real_frames = serializers.ListSerializer(
         child=serializers.IntegerField(min_value=0),
         default=[],
         required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids. Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.MANUAL))
     )
 
     def validate(self, attrs):
@@ -1027,15 +1033,15 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     "Could not update honeypot frames: "
                     "frames {} are not from the validation pool".format(
-                        format_list(tuple(map(str, requested_normal_frames)))
+                        format_list(tuple(map(str, sorted(requested_normal_frames))))
                     )
                 )
 
             if requested_inactive_frames:
                 raise serializers.ValidationError(
-                    "Could not update honeypot frames: frames {} are disabled. "
-                    "Restore them in the validation pool first".format(
-                        format_list(tuple(map(str, requested_inactive_frames)))
+                    "Could not update honeypot frames: "
+                    "frames {} are disabled. Restore them in the validation pool first".format(
+                        format_list(tuple(map(str, sorted(requested_inactive_frames))))
                     )
                 )
 
@@ -1172,9 +1178,15 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
     honeypot_count = serializers.IntegerField(min_value=0, required=False)
     honeypot_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids for honeypots in the job
+        """)
     )
     honeypot_real_frames = serializers.ListSerializer(
-        child=serializers.IntegerField(min_value=0), required=False
+        child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of real (validation) frame ids for honeypots in the job
+        """)
     )
 
     def to_representation(self, instance: models.Job):
@@ -1215,22 +1227,34 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
         return super().to_representation(data)
 
 class TaskValidationLayoutWriteSerializer(serializers.Serializer):
+    disabled_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids to be excluded from validation
+        """)
+    )
     frame_selection_method = serializers.ChoiceField(
-        choices=models.JobFrameSelectionMethod.choices(),
-        required=True,
+        choices=models.JobFrameSelectionMethod.choices(), required=False,
+        help_text=textwrap.dedent("""\
+            The method to use for frame selection of new real frames for honeypots in the task
+        """)
     )
     honeypot_real_frames = serializers.ListField(
-        child=serializers.IntegerField(min_value=0), required=False
+        child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids. Applicable only to the "{}" frame selection method
+        """.format(models.JobFrameSelectionMethod.MANUAL))
     )
 
     def validate(self, attrs):
-        frame_selection_method = attrs["frame_selection_method"]
+        frame_selection_method = attrs.get("frame_selection_method")
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             field_validation.require_field(attrs, "honeypot_real_frames")
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             pass
-        else:
-            assert False
+
+        if "honeypot_real_frames" in attrs:
+            field_validation.require_field(attrs, "frame_selection_method")
 
         return super().validate(attrs)
 
@@ -1317,16 +1341,28 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 class TaskValidationLayoutReadSerializer(serializers.ModelSerializer):
     validation_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), source='frames', required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids to be used for validation
+        """)
     )
     disabled_frames = serializers.ListField(
-        child=serializers.IntegerField(min_value=0), required=False
+        child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids excluded from validation
+        """)
     )
     honeypot_count = serializers.IntegerField(min_value=0, required=False)
     honeypot_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of frame ids for all honeypots in the task
+        """)
     )
     honeypot_real_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), required=False,
+        help_text=textwrap.dedent("""\
+            The list of real (validation) frame ids for all honeypots in the task
+        """)
     )
 
     class Meta:
@@ -2283,24 +2319,26 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
         fields = ('deleted_frames',)
 
     def update(self, instance: models.Data, validated_data: dict[str, Any]) -> models.Data:
-        deleted_frames = validated_data['deleted_frames']
+        requested_deleted_frames = validated_data['deleted_frames']
 
-        deleted_frame_set = set(deleted_frames)
-        if len(deleted_frame_set) != len(deleted_frames):
+        requested_deleted_frames_set = set(requested_deleted_frames)
+        if len(requested_deleted_frames_set) != len(requested_deleted_frames):
             raise serializers.ValidationError("Deleted frames cannot repeat")
 
-        unknown_deleted_frames = deleted_frame_set.difference(range(instance.size))
-        if unknown_deleted_frames:
+        unknown_requested_deleted_frames = (
+            requested_deleted_frames_set.difference(range(instance.size))
+        )
+        if unknown_requested_deleted_frames:
             raise serializers.ValidationError(
                 "Unknown frames {} requested for removal".format(
-                    format_list(tuple(map(str, unknown_deleted_frames)))
+                    format_list(tuple(map(str, sorted(unknown_requested_deleted_frames))))
                 )
             )
 
         validation_layout = getattr(instance, 'validation_layout', None)
         if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
             gt_frame_set = set(validation_layout.frames)
-            changed_deleted_frames = deleted_frame_set.difference(instance.deleted_frames)
+            changed_deleted_frames = requested_deleted_frames_set.difference(instance.deleted_frames)
             if not gt_frame_set.isdisjoint(changed_deleted_frames):
                 raise serializers.ValidationError(
                     f"When task validation mode is {models.ValidationMode.GT_POOL}, "
