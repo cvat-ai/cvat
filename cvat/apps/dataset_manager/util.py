@@ -89,7 +89,7 @@ def faster_deepcopy(v):
     if t is dict:
         return {k: faster_deepcopy(vv) for k, vv in v.items()}
     elif t in (list, tuple, set):
-        return type(v)(faster_deepcopy(vv) for vv in v)
+        return t(faster_deepcopy(vv) for vv in v)
     elif isinstance(v, (int, float, str, bool)) or v is None:
         return v
     else:

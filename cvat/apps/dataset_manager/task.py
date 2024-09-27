@@ -857,9 +857,9 @@ class TaskAnnotation:
                 models.ValidationMode.GT_POOL
             ))
 
-        gt_job = next(
-            db_job for db_job in self.db_jobs if db_job.type == models.JobType.GROUND_TRUTH
-        )
+        gt_job = self.db_task.gt_job
+        if gt_job is None:
+            raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
 
         # Copy GT pool annotations into other jobs, with replacement of any existing annotations
         gt_pool_frames = gt_job.segment.frame_set

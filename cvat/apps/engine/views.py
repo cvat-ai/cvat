@@ -831,8 +831,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
     queryset = Task.objects.select_related(
-        'data', 'assignee', 'owner',
-        'target_storage', 'source_storage', 'annotation_guide',
+        'data',
+        'data__validation_layout',
+        'assignee',
+        'owner',
+        'target_storage',
+        'source_storage',
+        'annotation_guide',
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',

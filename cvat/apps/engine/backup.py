@@ -362,7 +362,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
             self._write_directory(
-                source_dir=self._db_data.get_upload_dirname(),
+                source_dir=data_dir,
                 zip_object=zip_object,
                 target_dir=target_data_dir,
                 exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
