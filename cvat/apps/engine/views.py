@@ -725,9 +725,12 @@ class _DataGetter(metaclass=ABCMeta):
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
 
     _CHUNK_HEADER_BYTES_LENGTH = 1000
+    "The number of significant bytes from the chunk header, used for checksum computation"
 
     def _get_chunk_checksum(self, chunk_data: DataWithMeta) -> str:
-        return str(zlib.crc32(chunk_data.data.getbuffer()[:self._CHUNK_HEADER_BYTES_LENGTH]))
+        data = chunk_data.data.getbuffer()
+        size_checksum =  zlib.crc32(str(len(data)).encode())
+        return str(zlib.crc32(data[:self._CHUNK_HEADER_BYTES_LENGTH], value=size_checksum))
 
     def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
         return {
