@@ -1236,8 +1236,31 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        if not (
-            hasattr(instance.data, 'validation_layout') and
+        validation_layout = getattr(instance.data, 'validation_layout', None)
+        if not validation_layout:
+            raise serializers.ValidationError("Validation is not configured in the task")
+
+        if 'disabled_frames' in validated_data:
+            requested_disabled_frames = validated_data['disabled_frames']
+            unknown_requested_disabled_frames = (
+                set(requested_disabled_frames).difference(validation_layout.frames)
+            )
+            if unknown_requested_disabled_frames:
+                raise serializers.ValidationError(
+                    "Unknown frames requested for exclusion from the validation set {}".format(
+                        format_list(tuple(map(str, sorted(unknown_requested_disabled_frames))))
+                    )
+                )
+
+            gt_job_meta_serializer = JobDataMetaWriteSerializer(instance.gt_job, {
+                "deleted_frames": requested_disabled_frames
+            })
+            gt_job_meta_serializer.is_valid(raise_exception=True)
+            gt_job_meta_serializer.save()
+
+        frame_selection_method = validated_data.get('frame_selection_method')
+        if frame_selection_method and not (
+            validation_layout and
             instance.data.validation_layout.mode == models.ValidationMode.GT_POOL
         ):
             raise serializers.ValidationError(
@@ -1245,8 +1268,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 f"validation mode is '{models.ValidationMode.GT_POOL}'"
             )
 
-        if validated_data["frame_selection_method"] == models.JobFrameSelectionMethod.MANUAL:
-            requested_honeypot_real_frames = sorted(validated_data['honeypot_real_frames'])
+        if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+            requested_honeypot_real_frames = validated_data['honeypot_real_frames']
 
             task_honeypot_abs_frames = (
                 instance.data.images
@@ -1262,31 +1285,32 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     f"expected {task_honeypot_frames_count}"
                 )
 
-        for db_job in (
-            models.Job.objects.select_related("segment")
-            .filter(segment__task_id=instance.id, type=models.JobType.ANNOTATION)
-            .order_by("segment__start_frame")
-            .all()
-        ):
-            job_serializer_params = {
-                'frame_selection_method': validated_data['frame_selection_method']
-            }
+        if frame_selection_method:
+            for db_job in (
+                models.Job.objects.select_related("segment")
+                .filter(segment__task_id=instance.id, type=models.JobType.ANNOTATION)
+                .order_by("segment__start_frame")
+                .all()
+            ):
+                job_serializer_params = {
+                    'frame_selection_method': frame_selection_method
+                }
 
-            if validated_data["frame_selection_method"] == models.JobFrameSelectionMethod.MANUAL:
-                segment_frame_set = db_job.segment.frame_set
-                job_serializer_params['honeypot_real_frames'] = [
-                    requested_frame
-                    for abs_frame, requested_frame in zip(
-                        task_honeypot_abs_frames, requested_honeypot_real_frames
-                    )
-                    if abs_frame in segment_frame_set
-                ]
+                if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+                    segment_frame_set = db_job.segment.frame_set
+                    job_serializer_params['honeypot_real_frames'] = [
+                        requested_frame
+                        for abs_frame, requested_frame in zip(
+                            task_honeypot_abs_frames, requested_honeypot_real_frames
+                        )
+                        if abs_frame in segment_frame_set
+                    ]
 
-            job_validation_layout_serializer = JobValidationLayoutWriteSerializer(
-                db_job, job_serializer_params
-            )
-            job_validation_layout_serializer.is_valid(raise_exception=True)
-            job_validation_layout_serializer.save()
+                job_validation_layout_serializer = JobValidationLayoutWriteSerializer(
+                    db_job, job_serializer_params
+                )
+                job_validation_layout_serializer.is_valid(raise_exception=True)
+                job_validation_layout_serializer.save()
 
         return instance
 
@@ -2299,7 +2323,7 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
         db_task = db_segment.task
         db_data = db_task.data
 
-        deleted_frames = validated_data.get('deleted_frames')
+        deleted_frames = validated_data['deleted_frames']
 
         task_frame_provider = TaskFrameProvider(db_task)
         segment_rel_frame_set = set(
@@ -2312,11 +2336,11 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
                 format_list(list(map(str, unknown_deleted_frames)))
             ))
 
-        updated_validation_frames = None
-        updated_task_frames = None
+        updated_deleted_validation_frames = None
+        updated_deleted_task_frames = None
 
         if instance.type == models.JobType.GROUND_TRUTH:
-            updated_validation_frames = deleted_frames + [
+            updated_deleted_validation_frames = deleted_frames + [
                 f
                 for f in db_data.validation_layout.disabled_frames
                 if f not in segment_rel_frame_set
@@ -2326,8 +2350,9 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
                 # GT pool owns its frames, so we exclude them from the task
                 # Them and the related honeypots in jobs
                 updated_validation_abs_frame_set = set(
-                    map(task_frame_provider.get_abs_frame_number, updated_validation_frames)
+                    map(task_frame_provider.get_abs_frame_number, updated_deleted_validation_frames)
                 )
+
                 excluded_placeholder_frames = [
                     task_frame_provider.get_rel_frame_number(frame)
                     for frame, real_frame in (
@@ -2338,25 +2363,25 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
                     )
                     if real_frame in updated_validation_abs_frame_set
                 ]
-                updated_task_frames = deleted_frames + excluded_placeholder_frames
+                updated_deleted_task_frames = deleted_frames + excluded_placeholder_frames
             elif db_data.validation_layout.mode == models.ValidationMode.GT:
                 # Regular GT jobs only refer to the task frames, without data ownership
                 pass
             else:
                 assert False
         else:
-            updated_task_frames = deleted_frames + [
+            updated_deleted_task_frames = deleted_frames + [
                 f
                 for f in db_data.deleted_frames
                 if f not in segment_rel_frame_set
             ]
 
-        if updated_validation_frames is not None:
-            db_data.validation_layout.disabled_frames = updated_validation_frames
+        if updated_deleted_validation_frames is not None:
+            db_data.validation_layout.disabled_frames = updated_deleted_validation_frames
             db_data.validation_layout.save(update_fields=['disabled_frames'])
 
-        if updated_task_frames is not None:
-            db_data.deleted_frames = updated_task_frames
+        if updated_deleted_task_frames is not None:
+            db_data.deleted_frames = updated_deleted_task_frames
             db_data.save(update_fields=['deleted_frames'])
 
         db_task.touch()
