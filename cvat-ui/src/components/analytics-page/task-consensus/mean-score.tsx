@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 
 import { ConsensusReport, getCore } from 'cvat-core-wrapper';
-import { toRepresentation } from 'utils/quality';
+import { toRepresentation } from 'utils/consensus';
 import AnalyticsCard from '../views/analytics-card';
 
 interface Props {

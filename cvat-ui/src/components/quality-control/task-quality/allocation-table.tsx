@@ -15,6 +15,8 @@ import { RestoreIcon } from 'icons';
 import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { sorter } from 'utils/quality';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 
 interface Props {
     task: Task;
@@ -30,7 +32,7 @@ interface RowData {
     active: boolean;
 }
 
-function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
+function AllocationTable(props: Readonly<Props>): JSX.Element {
     const {
         task, gtJob, gtJobMeta,
         onDeleteFrames, onRestoreFrames,
@@ -107,10 +109,12 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
             render: (active: boolean, record: RowData): JSX.Element => (
                 active ? (
                     <DeleteOutlined
+                        className='cvat-allocation-frame-delete'
                         onClick={() => { onDeleteFrames([record.frame]); }}
                     />
                 ) : (
                     <Icon
+                        className='cvat-allocation-frame-restore'
                         onClick={() => { onRestoreFrames([record.frame]); }}
                         component={RestoreIcon}
                     />
@@ -128,7 +132,7 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
                 {
                     selection.selectedRowKeys.length !== 0 ? (
                         <>
-                            <Col>
+                            <Col className='cvat-allocation-selection-frame-delete'>
                                 <DeleteOutlined
                                     onClick={() => {
                                         const framesToUpdate = selection.selectedRows
@@ -139,7 +143,7 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
                                     }}
                                 />
                             </Col>
-                            <Col>
+                            <Col className='cvat-allocation-selection-frame-restore'>
                                 <Icon
                                     onClick={() => {
                                         const framesToUpdate = selection.selectedRows
@@ -161,7 +165,7 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
                     if (!rowData.active) {
                         return 'cvat-allocation-frame-row cvat-allocation-frame-row-excluded';
                     }
-                    return 'cvat-allocation-frame';
+                    return 'cvat-allocation-frame-row';
                 }}
                 columns={columns}
                 dataSource={data}
@@ -182,4 +186,17 @@ function AllocationTableComponent(props: Readonly<Props>): JSX.Element {
     );
 }
 
-export default React.memo(AllocationTableComponent);
+function AllocationTableWrap(props: Readonly<Props>): JSX.Element {
+    const overrides = useSelector(
+        (state: CombinedState) => state.plugins.overridableComponents.qualityControlPage.allocationTable,
+    );
+
+    if (overrides.length) {
+        const [Component] = overrides.slice(-1);
+        return <Component {...props} />;
+    }
+
+    return <AllocationTable {...props} />;
+}
+
+export default React.memo(AllocationTableWrap);

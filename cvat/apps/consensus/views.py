@@ -43,7 +43,7 @@ from cvat.apps.consensus.serializers import (
     ConsensusSettingsSerializer,
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 
@@ -262,7 +262,6 @@ class ConsensusReportViewSet(
         self.check_permissions(request)
         input_serializer = ConsensusReportCreateSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
-        task_id = input_serializer.validated_data["task_id"]
 
         queue_name = settings.CVAT_QUEUES.CONSENSUS.value
         queue = django_rq.get_queue(queue_name)
@@ -270,14 +269,19 @@ class ConsensusReportViewSet(
 
         if rq_id is None:
             try:
-                task = Task.objects.get(pk=task_id)
+                task_id = input_serializer.validated_data.get("task_id", 0)
+                job_id = input_serializer.validated_data.get("job_id", 0)
+                if task_id:
+                    instance = Task.objects.get(pk=task_id)
+                elif job_id:
+                    instance = Job.objects.get(pk=job_id)
+                else:
+                    raise ValidationError("Task or Job id is required")
             except Task.DoesNotExist as ex:
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
-                rq_id = scehdule_consensus_merging(task, request)
-                serializer = RqIdSerializer({"rq_id": rq_id})
-                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                return scehdule_consensus_merging(instance, request)
             except Exception as ex:
                 raise ValidationError(str(ex))
 
@@ -323,7 +327,7 @@ class ConsensusReportViewSet(
     def data(self, request, pk):
         report = self.get_object()  # check permissions
         json_report = prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode())
+        return HttpResponse(json_report.encode(), content_type="application/json")
 
 
 @extend_schema(tags=["consensus"])
@@ -465,4 +469,4 @@ class AssigneeConsensusReportViewSet(
     def data(self, request, pk):
         report = self.get_object()  # check permissions
         json_report = prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode())
+        return HttpResponse(json_report.encode(), content_type="application/json")

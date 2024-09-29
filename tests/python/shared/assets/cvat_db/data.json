@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-07-27T09:02:01.682Z",
+    "last_login": "2024-04-03T09:51:04.664Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -491,14 +491,6 @@
   "fields": {
     "session_data": ".eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI",
     "expire_date": "2022-03-07T10:37:08.963Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "74j8i3qheodsdqonl1hc8k8fdvaf2xip",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAQRf-FtSEUmKG4dO83kBkGbNWUpI-V8d-1SRe6veec-1KJtnVI21LmNIo6q06dfjem_CjTDuRO063p3KZ1Hlnvij7ooq9NyvNyuH8HAy3DtzbRs_XekeGAVIG5RkRvoOS-78AYwC6IpWKDCxyFHCARAkINVWpU7w_H4Dd5:1sXdJR:AEXt7VjtsAJOsqz2Dpw1BtajRr3nttYMmqX7SZgNBqk",
-    "expire_date": "2024-08-10T09:02:01.693Z"
   }
 },
 {
@@ -1547,25 +1539,6 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
-    "frame_filter": "",
-    "compressed_chunk_type": "imageset",
-    "original_chunk_type": "imageset",
-    "storage_method": "cache",
-    "storage": "local",
-    "cloud_storage": null,
-    "sorting_method": "lexicographical",
-    "deleted_frames": "[]"
-  }
-},
-{
-  "model": "engine.data",
-  "pk": 25,
-  "fields": {
-    "chunk_size": 72,
-    "size": 3,
-    "image_quality": 70,
-    "start_frame": 0,
-    "stop_frame": 2,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -3115,39 +3088,6 @@
   }
 },
 {
-  "model": "engine.image",
-  "pk": 491,
-  "fields": {
-    "data": 25,
-    "path": "0.png",
-    "frame": 0,
-    "width": 118,
-    "height": 247
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 492,
-  "fields": {
-    "data": 25,
-    "path": "1.png",
-    "frame": 1,
-    "width": 219,
-    "height": 641
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 493,
-  "fields": {
-    "data": 25,
-    "path": "2.png",
-    "frame": 2,
-    "width": 247,
-    "height": 532
-  }
-},
-{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3431,8 +3371,7 @@
     "subset": "",
     "organization": 1,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3460,8 +3399,7 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3487,8 +3425,7 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3516,8 +3453,7 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3545,8 +3481,7 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3574,8 +3509,7 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3603,8 +3537,7 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": 4,
-    "target_storage": 2,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 2
   }
 },
 {
@@ -3630,8 +3563,7 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3659,8 +3591,7 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3686,8 +3617,7 @@
     "subset": "",
     "organization": 2,
     "source_storage": 7,
-    "target_storage": 8,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 8
   }
 },
 {
@@ -3713,8 +3643,7 @@
     "subset": "",
     "organization": null,
     "source_storage": 15,
-    "target_storage": 16,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 16
   }
 },
 {
@@ -3742,8 +3671,7 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3769,8 +3697,7 @@
     "subset": "",
     "organization": 2,
     "source_storage": 23,
-    "target_storage": 24,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 24
   }
 },
 {
@@ -3796,8 +3723,7 @@
     "subset": "",
     "organization": null,
     "source_storage": 25,
-    "target_storage": 26,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 26
   }
 },
 {
@@ -3823,8 +3749,7 @@
     "subset": "",
     "organization": null,
     "source_storage": 29,
-    "target_storage": 30,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 30
   }
 },
 {
@@ -3850,8 +3775,7 @@
     "subset": "",
     "organization": null,
     "source_storage": 33,
-    "target_storage": 34,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 34
   }
 },
 {
@@ -3877,8 +3801,7 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3904,8 +3827,7 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": null
   }
 },
 {
@@ -3931,8 +3853,7 @@
     "subset": "Train",
     "organization": null,
     "source_storage": 37,
-    "target_storage": 38,
-    "consensus_jobs_per_regular_job": 0
+    "target_storage": 38
   }
 },
 {
@@ -3958,35 +3879,7 @@
     "subset": "Validation",
     "organization": null,
     "source_storage": 39,
-    "target_storage": 40,
-    "consensus_jobs_per_regular_job": 0
-  }
-},
-{
-  "model": "engine.task",
-  "pk": 26,
-  "fields": {
-    "created_date": "2024-07-27T09:03:47.546Z",
-    "updated_date": "2024-07-27T09:03:48.198Z",
-    "project": null,
-    "name": "task with consensus jobs",
-    "mode": "annotation",
-    "owner": [
-      "admin1"
-    ],
-    "assignee": null,
-    "assignee_updated_date": null,
-    "bug_tracker": "",
-    "overlap": 0,
-    "segment_size": 3,
-    "status": "annotation",
-    "data": 25,
-    "dimension": "2d",
-    "subset": "",
-    "organization": null,
-    "source_storage": 41,
-    "target_storage": 42,
-    "consensus_jobs_per_regular_job": 3
+    "target_storage": 40
   }
 },
 {
@@ -4894,30 +4787,6 @@
   }
 },
 {
-  "model": "engine.clientfile",
-  "pk": 461,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/2.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 462,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/1.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 463,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/0.png"
-  }
-},
-{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -5224,17 +5093,6 @@
   }
 },
 {
-  "model": "engine.segment",
-  "pk": 35,
-  "fields": {
-    "task": 26,
-    "start_frame": 0,
-    "stop_frame": 2,
-    "type": "range",
-    "frames": "[]"
-  }
-},
-{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -5248,8 +5106,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5266,8 +5123,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5282,8 +5138,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5298,8 +5153,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5316,8 +5170,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5334,8 +5187,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5350,8 +5202,7 @@
     "status": "validation",
     "stage": "validation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5366,8 +5217,7 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5382,8 +5232,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5400,8 +5249,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5416,8 +5264,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5432,8 +5279,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5448,8 +5294,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5464,8 +5309,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5480,8 +5324,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5496,8 +5339,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5512,8 +5354,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5528,8 +5369,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5544,8 +5384,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5560,8 +5399,7 @@
     "status": "validation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5576,8 +5414,7 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth",
-    "parent_job_id": null
+    "type": "ground_truth"
   }
 },
 {
@@ -5592,8 +5429,7 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5608,8 +5444,7 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5624,8 +5459,7 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5640,8 +5474,7 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth",
-    "parent_job_id": null
+    "type": "ground_truth"
   }
 },
 {
@@ -5656,8 +5489,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
+    "type": "annotation"
   }
 },
 {
@@ -5672,72 +5504,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 35,
-  "fields": {
-    "created_date": "2024-07-27T09:03:48.103Z",
-    "updated_date": "2024-07-27T09:03:48.103Z",
-    "segment": 35,
-    "assignee": null,
-    "assignee_updated_date": null,
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new",
-    "type": "annotation",
-    "parent_job_id": null
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 36,
-  "fields": {
-    "created_date": "2024-07-27T09:03:48.115Z",
-    "updated_date": "2024-07-27T09:03:48.115Z",
-    "segment": 35,
-    "assignee": null,
-    "assignee_updated_date": null,
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new",
-    "type": "consensus",
-    "parent_job_id": 35
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 37,
-  "fields": {
-    "created_date": "2024-07-27T09:03:48.118Z",
-    "updated_date": "2024-07-27T09:03:48.118Z",
-    "segment": 35,
-    "assignee": null,
-    "assignee_updated_date": null,
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new",
-    "type": "consensus",
-    "parent_job_id": 35
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 38,
-  "fields": {
-    "created_date": "2024-07-27T09:03:48.121Z",
-    "updated_date": "2024-07-27T09:03:48.121Z",
-    "segment": 35,
-    "assignee": null,
-    "assignee_updated_date": null,
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new",
-    "type": "consensus",
-    "parent_job_id": 35
+    "type": "annotation"
   }
 },
 {
@@ -6540,18 +6307,6 @@
     "project": null,
     "name": "dog",
     "color": "#406040",
-    "type": "any",
-    "parent": null
-  }
-},
-{
-  "model": "engine.label",
-  "pk": 75,
-  "fields": {
-    "task": 26,
-    "project": null,
-    "name": "person",
-    "color": "#c06060",
     "type": "any",
     "parent": null
   }
@@ -11837,22 +11592,6 @@
   }
 },
 {
-  "model": "engine.storage",
-  "pk": 41,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
-  "model": "engine.storage",
-  "pk": 42,
-  "fields": {
-    "location": "local",
-    "cloud_storage": null
-  }
-},
-{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -16926,25 +16665,6 @@
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
-  }
-},
-{
-  "model": "quality_control.qualitysettings",
-  "pk": 21,
-  "fields": {
-    "task": 26,
-    "iou_threshold": 0.4,
-    "oks_sigma": 0.09,
-    "line_thickness": 0.01,
-    "low_overlap_threshold": 0.8,
-    "compare_line_orientation": true,
-    "line_orientation_threshold": 0.1,
-    "compare_groups": true,
-    "group_match_threshold": 0.5,
-    "check_covered_annotations": true,
-    "object_visibility_threshold": 0.05,
-    "panoptic_comparison": true,
-    "compare_attributes": true
   }
 },
 {
