@@ -454,7 +454,7 @@ class JobAnnotation:
 
         db_data = self.db_job.segment.task.data
 
-        if data.tracks and db_data.validation.mode == models.ValidationMode.GT_POOL:
+        if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
             raise ValidationError("Tracks are not supported when task validation mode is {}".format(
                 models.ValidationMode.GT_POOL
