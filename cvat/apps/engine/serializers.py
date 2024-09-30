@@ -1431,7 +1431,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
     validation_mode = serializers.CharField(
-        source='data.validation_mode', required=False, allow_null=True
+        source='data.validation_mode', required=False, allow_null=True,
+        help_text="Describes how the task validation is performed. Configured at task creation"
     )
 
     class Meta:

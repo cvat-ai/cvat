@@ -10576,6 +10576,8 @@ components:
         validation_mode:
           type: string
           nullable: true
+          description: Describes how the task validation is performed. Configured
+            at task creation
       required:
       - jobs
       - labels
