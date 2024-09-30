@@ -1308,6 +1308,9 @@ def _create_thread(
 
         images = new_db_images
         db_data.size = len(images)
+        db_data.start_frame = 0
+        db_data.stop_frame = 0
+        db_data.frame_filter = ''
 
         # Update manifest
         manifest = ImageManifestManager(db_data.get_manifest_path())
