@@ -362,7 +362,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         if self._db_data.storage == StorageChoice.LOCAL:
             data_dir = self._db_data.get_upload_dirname()
             self._write_directory(
-                source_dir=self._db_data.get_upload_dirname(),
+                source_dir=data_dir,
                 zip_object=zip_object,
                 target_dir=target_data_dir,
                 exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
@@ -429,11 +429,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             segment.update(job_data)
 
             if (
-                self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE or
-                (
-                    hasattr(self._db_data, 'validation_layout') and
-                    self._db_data.validation_layout.mode == models.ValidationMode.GT_POOL
-                )
+                self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE
+                or self._db_data.validation_mode == models.ValidationMode.GT_POOL
             ):
                 segment.update(serialize_segment_file_names(db_segment))
 

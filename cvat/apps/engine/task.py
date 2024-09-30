@@ -1308,6 +1308,9 @@ def _create_thread(
 
         images = new_db_images
         db_data.size = len(images)
+        db_data.start_frame = 0
+        db_data.stop_frame = 0
+        db_data.frame_filter = ''
 
         # Update manifest
         manifest = ImageManifestManager(db_data.get_manifest_path())
@@ -1611,7 +1614,6 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             media_extractor, MEDIA_TYPES['video']['extractor']
         ) else 2
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrency) as executor:
-            frame_step = db_data.get_frame_step()
             for segment_idx, db_segment in enumerate(db_segments):
                 frame_counter = itertools.count()
                 for chunk_idx, chunk_frame_ids in (
@@ -1620,7 +1622,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                         (
                             # Convert absolute to relative ids (extractor output positions)
                             # Extractor will skip frames outside requested
-                            (abs_frame_id - db_data.start_frame) // frame_step
+                            (abs_frame_id - media_extractor.start) // media_extractor.step
                             for abs_frame_id in (
                                 frame_map.get(frame, frame)
                                 for frame in db_segment.frame_set

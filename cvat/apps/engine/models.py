@@ -377,6 +377,10 @@ class Data(models.Model):
 
         return validation_layout
 
+    @property
+    def validation_mode(self) -> Optional[ValidationMode]:
+        return getattr(getattr(self, 'validation_layout', None), 'mode', None)
+
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)

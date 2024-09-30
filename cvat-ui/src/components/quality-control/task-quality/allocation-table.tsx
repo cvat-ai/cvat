@@ -33,6 +33,55 @@ interface RowData {
     active: boolean;
 }
 
+interface TableRowData extends RowData {
+    key: Key;
+}
+
+export function getAllocationTableContents(gtJobMeta: FramesMetaData, gtJob: Job): TableRowData[] {
+    // A workaround for meta "includedFrames" using source data numbers
+    // TODO: remove once meta is migrated to relative frame numbers
+
+    function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
+        return meta.startFrame - localStartFrame * meta.frameStep;
+    }
+
+    function getFrameNumber(dataFrameNumber: number, dataStartFrame: number, step: number): number {
+        return (dataFrameNumber - dataStartFrame) / step;
+    }
+
+    const dataStartFrame = getDataStartFrame(gtJobMeta, gtJob.startFrame);
+    const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameID: number) => (
+        getFrameNumber(dataFrameID, dataStartFrame, gtJobMeta.frameStep)
+    ));
+
+    const jobDataSegmentFrameNumbers = range(
+        gtJobMeta.startFrame, gtJobMeta.stopFrame + 1, gtJobMeta.frameStep,
+    );
+
+    let includedIndex = 0;
+    const result: TableRowData[] = [];
+    for (let index = 0; index < jobDataSegmentFrameNumbers.length; ++index) {
+        const dataFrameID = jobDataSegmentFrameNumbers[index];
+
+        if (gtJobMeta.includedFrames && !gtJobMeta.includedFrames.includes(dataFrameID)) {
+            continue;
+        }
+
+        const frameID = jobFrameNumbers[includedIndex];
+
+        result.push({
+            key: frameID,
+            frame: frameID,
+            name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
+            active: !(frameID in gtJobMeta.deletedFrames),
+        });
+
+        ++includedIndex;
+    }
+
+    return result;
+}
+
 function AllocationTable(props: Readonly<Props>): JSX.Element {
     const {
         task, gtJob, gtJobMeta,
@@ -45,49 +94,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         selectedRows: [],
     });
 
-    const data = (() => {
-        // A workaround for meta frames using source data numbers
-        // TODO: remove once meta is migrated to relative frame numbers
-        function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
-            return meta.startFrame - localStartFrame * meta.frameStep;
-        }
-
-        function getFrameNumber(dataFrameNumber: number, dataStartFrame: number, step: number): number {
-            return (dataFrameNumber - dataStartFrame) / step;
-        }
-
-        const dataStartFrame = getDataStartFrame(gtJobMeta, gtJob.startFrame);
-        const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameID: number) => (
-            getFrameNumber(dataFrameID, dataStartFrame, gtJobMeta.frameStep)
-        ));
-
-        const jobDataSegmentFrameNumbers = range(
-            gtJobMeta.startFrame, gtJobMeta.stopFrame + 1, gtJobMeta.frameStep,
-        );
-
-        let includedIndex = 0;
-        const result: any[] = [];
-        for (let index = 0; index < jobDataSegmentFrameNumbers.length; ++index) {
-            const dataFrameID = jobDataSegmentFrameNumbers[index];
-
-            if (gtJobMeta.includedFrames && !gtJobMeta.includedFrames.includes(dataFrameID)) {
-                continue;
-            }
-
-            const frameID = jobFrameNumbers[includedIndex];
-
-            result.push({
-                key: frameID,
-                frame: frameID,
-                name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
-                active: !(frameID in gtJobMeta.deletedFrames),
-            });
-
-            ++includedIndex;
-        }
-
-        return result;
-    })();
+    const data = getAllocationTableContents(gtJobMeta, gtJob);
 
     const columns = [
         {

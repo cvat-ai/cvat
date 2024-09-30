@@ -768,15 +768,9 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 "Ground Truth jobs can only be added in 2d tasks"
             )
 
-        if (
-            (validation_layout := getattr(task.data, 'validation_layout', None)) and
-            (
-                validation_layout.mode == models.ValidationMode.GT_POOL or
-                validation_layout.mode == models.ValidationMode.GT
-            )
-        ):
+        if task.data.validation_mode in (models.ValidationMode.GT_POOL, models.ValidationMode.GT):
             raise serializers.ValidationError(
-                f'Task with validation mode "{validation_layout.mode}" '
+                f'Task with validation mode "{task.data.validation_mode}" '
                 'cannot have more than 1 GT job'
             )
 
@@ -1911,7 +1905,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
     validation_mode = serializers.CharField(
-        source='data.validation_layout.mode', required=False, allow_null=True
+        source='data.validation_mode', required=False, allow_null=True
     )
 
     class Meta:

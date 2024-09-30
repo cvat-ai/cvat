@@ -454,9 +454,7 @@ class JobAnnotation:
 
         db_data = self.db_job.segment.task.data
 
-        if data.tracks and hasattr(db_data, 'validation_layout') and (
-            db_data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
             # Only tags and shapes can be used in tasks with GT pool
             raise ValidationError("Tracks are not supported when task validation mode is {}".format(
                 models.ValidationMode.GT_POOL
@@ -795,9 +793,7 @@ class TaskAnnotation:
         ).get(id=pk)
 
         requested_job_types = [models.JobType.ANNOTATION]
-        if hasattr(self.db_task.data, 'validation_layout') and (
-            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
 
         self.db_jobs = (
@@ -815,10 +811,7 @@ class TaskAnnotation:
         if not isinstance(data, AnnotationIR):
             data = AnnotationIR(self.db_task.dimension, data)
 
-        if (
-            hasattr(self.db_task.data, 'validation_layout') and
-            self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
 
         splitted_data = {}
@@ -864,23 +857,31 @@ class TaskAnnotation:
                 models.ValidationMode.GT_POOL
             ))
 
-        gt_job = next(
-            db_job for db_job in self.db_jobs if db_job.type == models.JobType.GROUND_TRUTH
-        )
+        gt_job = self.db_task.gt_job
+        if gt_job is None:
+            raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
+
+        db_data = self.db_task.data
+        frame_step = db_data.get_frame_step()
+
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // frame_step
 
         # Copy GT pool annotations into other jobs, with replacement of any existing annotations
-        gt_pool_frames = gt_job.segment.frame_set
-        task_validation_frame_groups: dict[int, int] = {} # real_id -> [placeholder_id, ...]
-        task_validation_frame_ids: set[int] = set()
-        for frame, real_frame in (
+        gt_abs_frame_set = sorted(gt_job.segment.frame_set)
+        task_gt_honeypots: dict[int, int] = {} # real_id -> [placeholder_id, ...]
+        task_gt_frames: set[int] = set()
+        for abs_frame, abs_real_frame in (
             self.db_task.data.images
-            .filter(is_placeholder=True, real_frame__in=gt_pool_frames)
+            .filter(is_placeholder=True, real_frame__in=gt_abs_frame_set)
             .values_list('frame', 'real_frame')
             .iterator(chunk_size=1000)
         ):
-            task_validation_frame_ids.add(frame)
-            task_validation_frame_groups.setdefault(real_frame, []).append(frame)
+            frame = _to_rel_frame(abs_frame)
+            task_gt_frames.add(frame)
+            task_gt_honeypots.setdefault(_to_rel_frame(abs_real_frame), []).append(frame)
 
+        gt_pool_frames = tuple(map(_to_rel_frame, gt_abs_frame_set))
         assert sorted(gt_pool_frames) == list(range(min(gt_pool_frames), max(gt_pool_frames) + 1))
         gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
 
@@ -899,17 +900,17 @@ class TaskAnnotation:
             )
 
         task_annotation_manager = AnnotationManager(data, dimension=self.db_task.dimension)
-        task_annotation_manager.clear_frames(task_validation_frame_ids)
+        task_annotation_manager.clear_frames(task_gt_frames)
 
         for ann_type, gt_annotation in itertools.chain(
             zip(itertools.repeat('tag'), gt_annotations.tags),
             zip(itertools.repeat('shape'), gt_annotations.shapes),
         ):
-            for placeholder_frame_id in task_validation_frame_groups.get(
+            for honeypot_frame_id in task_gt_honeypots.get(
                 gt_annotation["frame"], [] # some GT frames may be unused
             ):
                 copied_annotation = faster_deepcopy(gt_annotation)
-                copied_annotation["frame"] = placeholder_frame_id
+                copied_annotation["frame"] = honeypot_frame_id
 
                 for ann in itertools.chain(
                     [copied_annotation], copied_annotation.get('elements', [])
@@ -940,8 +941,7 @@ class TaskAnnotation:
 
         for db_job in self.db_jobs:
             if db_job.type == models.JobType.GROUND_TRUTH and not (
-                hasattr(self.db_task.data, 'validation_layout') and
-                self.db_task.data.validation_layout.mode == models.ValidationMode.GT_POOL
+                self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
             ):
                 continue
 

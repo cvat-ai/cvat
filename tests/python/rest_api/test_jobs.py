@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
@@ -101,7 +102,7 @@ class TestPostJobs:
         idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
     )
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_gt_job_in_a_task(
+    def test_can_create_gt_job_in_a_task(
         self,
         admin_user,
         tasks,
@@ -1364,6 +1365,15 @@ class TestPatchJob:
                 assert updated_job.assignee.id == new_assignee_id
             else:
                 assert updated_job.assignee is None
+
+    def test_malefactor_cannot_obtain_job_details_via_empty_partial_update_request(
+        self, regular_lonely_user, jobs
+    ):
+        job = next(iter(jobs))
+
+        with make_api_client(regular_lonely_user) as api_client:
+            with pytest.raises(ForbiddenException):
+                api_client.jobs_api.partial_update(job["id"])
 
 
 def _check_coco_job_annotations(content, values_to_be_checked):

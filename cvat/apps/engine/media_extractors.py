@@ -259,6 +259,19 @@ class IMediaReader(ABC):
     def get_image_size(self, i):
         pass
 
+    @property
+    def start(self) -> int:
+        return self._start
+
+    @property
+    def stop(self) -> Optional[int]:
+        return self._stop
+
+    @property
+    def step(self) -> int:
+        return self._step
+
+
 class ImageListReader(IMediaReader):
     def __init__(self,
         source_path,
