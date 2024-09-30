@@ -20,7 +20,7 @@ def require_one_of_fields(data: dict[str, Any], keys: Sequence[str]) -> None:
         raise serializers.ValidationError(f"Only 1 of the fields {options} can be used")
 
 
-def require_field(data: dict[str, Any], key: Sequence[str]) -> None:
+def require_field(data: dict[str, Any], key: str) -> None:
     if key not in data:
         raise serializers.ValidationError(f'The "{key}" field is required')
 
