@@ -1398,3 +1398,12 @@ class TestPatchProject:
                 assert updated_project.assignee.id == new_assignee_id
             else:
                 assert updated_project.assignee is None
+
+    def test_malefactor_cannot_obtain_project_details_via_empty_partial_update_request(
+        self, regular_lonely_user, projects
+    ):
+        project = next(iter(projects))
+
+        with make_api_client(regular_lonely_user) as api_client:
+            with pytest.raises(ForbiddenException):
+                api_client.projects_api.partial_update(project["id"])

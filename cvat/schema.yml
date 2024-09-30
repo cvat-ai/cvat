@@ -2323,10 +2323,17 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: index
+        schema:
+          type: integer
+        description: A unique number value identifying chunk, starts from 0 for each
+          job
+      - in: query
         name: number
         schema:
           type: integer
-        description: A unique number value identifying chunk or frame
+        description: A unique number value identifying chunk or frame. The numbers
+          are the same as for the task. Deprecated for chunks in favor of 'index'
       - in: query
         name: quality
         schema:
@@ -8071,6 +8078,10 @@ components:
           nullable: true
           readOnly: true
         data_compressed_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
+        data_original_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
