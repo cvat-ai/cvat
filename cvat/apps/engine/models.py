@@ -373,7 +373,6 @@ class Data(models.Model):
             validation_layout.save()
 
         ValidationParams.objects.filter(task_data_id=self.id).delete()
-        ValidationFrame.objects.filter(validation_params__task_data_id=self.id).delete()
 
         return validation_layout
 
