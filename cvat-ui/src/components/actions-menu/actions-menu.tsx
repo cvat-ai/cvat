@@ -6,12 +6,12 @@
 import './styles.scss';
 import React, { useCallback } from 'react';
 import Modal from 'antd/lib/modal';
+import { LoadingOutlined } from '@ant-design/icons';
 import { DimensionType, CVATCore } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
-import { LoadingOutlined } from '@ant-design/icons';
 
 type AnnotationFormats = Awaited<ReturnType<CVATCore['server']['formats']>>;
 

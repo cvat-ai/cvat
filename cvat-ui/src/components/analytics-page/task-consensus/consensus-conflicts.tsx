@@ -7,7 +7,7 @@ import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 
 import ConsensusReport, { ConsensusSummary } from 'cvat-core/src/consensus-report';
-import { clampValue } from 'utils/quality';
+import { clampValue } from 'utils/consensus';
 import AnalyticsCard from '../views/analytics-card';
 
 interface Props {

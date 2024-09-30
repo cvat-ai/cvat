@@ -57,7 +57,7 @@ class ConsensusReportSerializer(serializers.ModelSerializer):
 
 class ConsensusReportCreateSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(write_only=True, required=False)
-
+    job_id = serializers.IntegerField(write_only=True, required=False)
 
 class AssigneeConsensusReportSerializer(serializers.ModelSerializer):
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)

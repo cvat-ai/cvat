@@ -8,11 +8,11 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import { Col, Row } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
-import CVATTooltip from 'components/common/cvat-tooltip';
-import { ConsensusSettings } from 'cvat-core-wrapper';
 import { Button, Divider } from 'antd/lib';
 import notification from 'antd/lib/notification';
 import { LoadingOutlined } from '@ant-design/icons';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import { ConsensusSettings } from 'cvat-core-wrapper';
 
 interface Props {
     settings: ConsensusSettings | null;
