@@ -378,8 +378,8 @@ class JobPartialUpdateAPITestCase(ApiTestBase):
         self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
     def test_api_v2_jobs_id_admin_partial(self):
-        data = {"assignee_id": self.user.id}
-        response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
+        data = {"assignee": self.user.id}
+        response = self._run_api_v2_jobs_id(self.job.id, self.admin, data)
         self._check_request(response, data)
 
 class JobUpdateAPITestCase(ApiTestBase):
