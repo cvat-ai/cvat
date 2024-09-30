@@ -35,7 +35,7 @@ def get_segment_rel_frame_set(db_segment) -> Collection[int]:
     elif db_segment.type == "specific_frames":
         frame_set = set(frame_range).intersection(db_segment.frames or [])
     else:
-        assert False
+        raise ValueError(f"Unknown segment type: {db_segment.type}")
 
     return sorted(get_rel_frame(abs_frame, db_data) for abs_frame in frame_set)
 
