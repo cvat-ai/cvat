@@ -16,7 +16,7 @@ import { FieldUpdateTrigger } from './common';
 // frame storage by job id
 const frameDataCache: Record<string, {
     meta: FramesMetaData;
-    fetchTimestamp: number;
+    metaFetchedTimestamp: number;
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
@@ -605,7 +605,7 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     }
 
     const META_DATA_RELOAD_PERIOD = 1 * 60 * 60 * 1000; // 1 hour
-    const isOutdated = (Date.now() - cached.fetchTimestamp) > META_DATA_RELOAD_PERIOD;
+    const isOutdated = (Date.now() - cached.metaFetchedTimestamp) > META_DATA_RELOAD_PERIOD;
 
     if (isOutdated) {
         // get metadata again if outdated
@@ -625,7 +625,7 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
             cached.contextCache = {};
         }
 
-        cached.fetchTimestamp = Date.now();
+        cached.metaFetchedTimestamp = Date.now();
     }
 }
 
@@ -758,7 +758,7 @@ export async function getFrame(
 
         frameDataCache[jobID] = {
             meta,
-            fetchTimestamp: Date.now(),
+            metaFetchedTimestamp: Date.now(),
             chunkSize,
             mode,
             startFrame,
@@ -796,7 +796,7 @@ export async function getFrame(
     // In this case (extremely rare, but nevertheless possible) user may get context images related to another frame
     // - if cache gets outdated after getFrame() call
     // - and before getContextImage() call
-    // - and both calls refer to the same fram that is refreshed honeypot frame and this frame has context images
+    // - and both calls refer to the same frame that is refreshed honeypot frame and this frame has context images
     // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
     await refreshJobCacheIfOutdated(jobID);
 
