@@ -2486,7 +2486,7 @@ class _TaskSpecBase(_TaskSpec):
 
     @property
     def frame_step(self) -> int:
-        v = getattr(self, "frame_filter", "step=1")
+        v = getattr(self, "frame_filter", None) or "step=1"
         return int(v.split("=")[-1])
 
     def __getattr__(self, k: str) -> Any:
@@ -2617,9 +2617,12 @@ class TestTaskData:
             step=step,
         )
 
-    @pytest.fixture(scope="class")
-    def fxt_uploaded_images_task_with_segments_and_honeypots(
-        self, request: pytest.FixtureRequest
+    def _uploaded_images_task_with_honeypots_and_segments_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        start_frame: Optional[int] = None,
+        step: Optional[int] = None,
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
             mode="gt_pool",
@@ -2629,9 +2632,10 @@ class TestTaskData:
             frames_per_job_count=2,
         )
 
+        used_frames_count = 15
+        total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
         base_segment_size = 4
-        total_frame_count = 15
-        regular_frame_count = 15 - validation_params.frame_count
+        regular_frame_count = used_frames_count - validation_params.frame_count
         final_segment_size = base_segment_size + validation_params.frames_per_job_count
         final_task_size = (
             regular_frame_count
@@ -2649,6 +2653,8 @@ class TestTaskData:
                 image_files=image_files,
                 segment_size=base_segment_size,
                 sorting_method="random",
+                start_frame=start_frame,
+                step=step,
                 validation_params=validation_params,
             )
         ) as task_gen:
@@ -2667,7 +2673,29 @@ class TestTaskData:
                 task_spec.size = final_task_size
                 task_spec._params.segment_size = final_segment_size
 
+                # These parameters are not applicable to the resulting task,
+                # they are only effective during task creation
+                if start_frame or step:
+                    task_spec._data_params.start_frame = 0
+                    task_spec._data_params.stop_frame = task_spec.size
+                    task_spec._data_params.frame_filter = ""
+
                 yield task_spec, task_id
+
+    @fixture(scope="class")
+    def fxt_uploaded_images_task_with_honeypots_and_segments(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_with_honeypots_and_segments_base(request)
+
+    @fixture(scope="class")
+    @parametrize("start_frame, step", [(2, 3)])
+    def fxt_uploaded_images_task_with_honeypots_and_segments_start_step(
+        self, request: pytest.FixtureRequest, start_frame: Optional[int], step: Optional[int]
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_with_honeypots_and_segments_base(
+            request, start_frame=start_frame, step=step
+        )
 
     def _uploaded_video_task_fxt_base(
         self,
@@ -2767,9 +2795,13 @@ class TestTaskData:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
     _tasks_with_honeypots_cases = [
-        fixture_ref("fxt_uploaded_images_task_with_segments_and_honeypots"),
+        fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments"),
+        fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments_start_step"),
     ]
 
+    # Keep in mind that these fixtures are generated eagerly
+    # (before each depending test or group of tests),
+    # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
     _all_task_cases = [
         fixture_ref("fxt_uploaded_images_task"),
         fixture_ref("fxt_uploaded_images_task_with_segments"),
