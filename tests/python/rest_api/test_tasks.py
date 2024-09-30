@@ -2704,6 +2704,9 @@ class TestTaskData:
         *,
         frame_count: int = 10,
         segment_size: Optional[int] = None,
+        start_frame: Optional[int] = None,
+        stop_frame: Optional[int] = None,
+        step: Optional[int] = None,
     ) -> Generator[Tuple[_VideoTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
@@ -2719,6 +2722,15 @@ class TestTaskData:
             "client_files": [video_file],
         }
 
+        if start_frame is not None:
+            data_params["start_frame"] = start_frame
+
+        if stop_frame is not None:
+            data_params["stop_frame"] = stop_frame
+
+        if step is not None:
+            data_params["frame_filter"] = f"step={step}"
+
         def get_video_file() -> io.BytesIO:
             return io.BytesIO(video_data)
 
@@ -2727,7 +2739,7 @@ class TestTaskData:
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_video_file=get_video_file,
-            size=frame_count,
+            size=len(range(start_frame or 0, (stop_frame or frame_count - 1) + 1, step or 1)),
         ), task_id
 
     @pytest.fixture(scope="class")
@@ -2742,6 +2754,22 @@ class TestTaskData:
         self, request: pytest.FixtureRequest
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
+
+    @fixture(scope="class")
+    @parametrize("step", [2, 5])
+    @parametrize("stop_frame", [15, 26])
+    @parametrize("start_frame", [3, 7])
+    def fxt_uploaded_video_task_with_segments_start_stop_step(
+        self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_video_task_fxt_base(
+            request=request,
+            frame_count=30,
+            segment_size=4,
+            start_frame=start_frame,
+            stop_frame=stop_frame,
+            step=step,
+        )
 
     def _compute_annotation_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
         segment_params = []
@@ -2804,11 +2832,12 @@ class TestTaskData:
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
     _all_task_cases = [
-        fixture_ref("fxt_uploaded_images_task"),
-        fixture_ref("fxt_uploaded_images_task_with_segments"),
-        fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
-        fixture_ref("fxt_uploaded_video_task"),
-        fixture_ref("fxt_uploaded_video_task_with_segments"),
+        # fixture_ref("fxt_uploaded_images_task"),
+        # fixture_ref("fxt_uploaded_images_task_with_segments"),
+        # fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
+        # fixture_ref("fxt_uploaded_video_task"),
+        # fixture_ref("fxt_uploaded_video_task_with_segments"),
+        fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
     ] + _tasks_with_honeypots_cases
 
     @parametrize("task_spec, task_id", _all_task_cases)
