@@ -1614,7 +1614,6 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
             media_extractor, MEDIA_TYPES['video']['extractor']
         ) else 2
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrency) as executor:
-            frame_step = db_data.get_frame_step()
             for segment_idx, db_segment in enumerate(db_segments):
                 frame_counter = itertools.count()
                 for chunk_idx, chunk_frame_ids in (
