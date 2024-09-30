@@ -1623,7 +1623,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                         (
                             # Convert absolute to relative ids (extractor output positions)
                             # Extractor will skip frames outside requested
-                            (abs_frame_id - db_data.start_frame) // frame_step
+                            (abs_frame_id - media_extractor.start) // media_extractor.step
                             for abs_frame_id in (
                                 frame_map.get(frame, frame)
                                 for frame in db_segment.frame_set
