@@ -9332,12 +9332,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
-          writeOnly: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9657,12 +9651,6 @@ components:
         source_storage:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
-          writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
           writeOnly: true
       required:
       - name
