@@ -7,7 +7,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "created_date": "2024-10-01T12:36:21.364662Z",
+      "created_date": "2024-10-01T12:36:21.364000Z",
       "data": 28,
       "data_chunk_size": 3,
       "data_compressed_chunk_type": "imageset",
@@ -43,7 +43,7 @@
       "status": "annotation",
       "subset": "",
       "target_storage": null,
-      "updated_date": "2024-10-01T12:38:26.883235Z",
+      "updated_date": "2024-10-01T12:38:26.883000Z",
       "url": "http://localhost:8080/api/tasks/29",
       "validation_mode": "gt_pool"
     },

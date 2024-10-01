@@ -7,7 +7,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": null,
-      "created_date": "2024-10-01T12:36:21.511822Z",
+      "created_date": "2024-10-01T12:36:21.511000Z",
       "data_chunk_size": 3,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
@@ -34,14 +34,14 @@
       "target_storage": null,
       "task_id": 29,
       "type": "ground_truth",
-      "updated_date": "2024-10-01T12:38:26.967041Z",
+      "updated_date": "2024-10-01T12:38:26.967000Z",
       "url": "http://localhost:8080/api/jobs/41"
     },
     {
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": null,
-      "created_date": "2024-10-01T12:36:21.491902Z",
+      "created_date": "2024-10-01T12:36:21.491000Z",
       "data_chunk_size": 3,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
@@ -68,14 +68,14 @@
       "target_storage": null,
       "task_id": 29,
       "type": "annotation",
-      "updated_date": "2024-10-01T12:36:21.651801Z",
+      "updated_date": "2024-10-01T12:36:21.651000Z",
       "url": "http://localhost:8080/api/jobs/40"
     },
     {
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": null,
-      "created_date": "2024-10-01T12:36:21.484944Z",
+      "created_date": "2024-10-01T12:36:21.484000Z",
       "data_chunk_size": 3,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
@@ -102,14 +102,14 @@
       "target_storage": null,
       "task_id": 29,
       "type": "annotation",
-      "updated_date": "2024-10-01T12:36:21.628442Z",
+      "updated_date": "2024-10-01T12:36:21.628000Z",
       "url": "http://localhost:8080/api/jobs/39"
     },
     {
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": null,
-      "created_date": "2024-10-01T12:36:21.476403Z",
+      "created_date": "2024-10-01T12:36:21.476000Z",
       "data_chunk_size": 3,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
@@ -136,7 +136,7 @@
       "target_storage": null,
       "task_id": 29,
       "type": "annotation",
-      "updated_date": "2024-10-01T12:36:21.606506Z",
+      "updated_date": "2024-10-01T12:36:21.606000Z",
       "url": "http://localhost:8080/api/jobs/38"
     },
     {
