@@ -5,10 +5,12 @@
 
 import io
 import json
+import operator
 import os
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
+from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
@@ -1270,10 +1272,15 @@ class TestPatchJob:
                 job["id"], patched_job_write_request={"assignee": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_job.assignee_updated_date == job["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
+
+            if isinstance(updated_job.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_job.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    job["assignee_updated_date"],
+                )
             else:
-                assert updated_job.assignee_updated_date != job["assignee_updated_date"]
+                assert op(updated_job.assignee_updated_date, job["assignee_updated_date"])
 
             if new_assignee_id:
                 assert updated_job.assignee.id == new_assignee_id
