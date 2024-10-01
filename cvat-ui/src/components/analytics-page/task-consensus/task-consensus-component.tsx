@@ -187,7 +187,7 @@ function TaskConsensusComponent(props: Props): JSX.Element {
                 {
                     key: DetailsTabs.ASSIGNEES,
                     label: 'Assignees',
-                    children: <AssigneeListComponent assigneeReports={assigneeReports} task={task} />,
+                    children: <AssigneeListComponent assigneeReports={assigneeReports} />,
                 },
             ]}
         />
