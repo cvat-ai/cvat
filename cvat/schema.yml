@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.19.1
+  version: 2.20.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2323,10 +2323,17 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: index
+        schema:
+          type: integer
+        description: A unique number value identifying chunk, starts from 0 for each
+          job
+      - in: query
         name: number
         schema:
           type: integer
-        description: A unique number value identifying chunk or frame
+        description: A unique number value identifying chunk or frame. The numbers
+          are the same as for the task. Deprecated for chunks in favor of 'index'
       - in: query
         name: quality
         schema:
@@ -8074,6 +8081,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        data_original_chunk_type:
+          allOf:
+          - $ref: '#/components/schemas/ChunkType'
+          readOnly: true
         created_date:
           type: string
           format: date-time
@@ -9321,12 +9332,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
-          writeOnly: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9646,12 +9651,6 @@ components:
         source_storage:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
-          writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
           writeOnly: true
       required:
       - name

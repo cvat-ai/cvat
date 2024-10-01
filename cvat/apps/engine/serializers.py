@@ -594,6 +594,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
     organization = serializers.ReadOnlyField(source='segment.task.organization.id', allow_null=True)
+    data_original_chunk_type = serializers.ReadOnlyField(source='segment.task.data.original_chunk_type')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
     mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
@@ -607,7 +608,8 @@ class JobReadSerializer(serializers.ModelSerializer):
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
-            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
+            'start_frame', 'stop_frame',
+            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
             'target_storage', 'source_storage', 'assignee_updated_date')
         read_only_fields = fields
@@ -1369,7 +1371,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    task_subsets = serializers.ListField(write_only=True, child=serializers.CharField(), required=False)
 
     target_storage = StorageSerializer(write_only=True, required=False)
     source_storage = StorageSerializer(write_only=True, required=False)
@@ -1377,7 +1378,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
-            'target_storage', 'source_storage', 'task_subsets',
+            'target_storage', 'source_storage',
         )
 
     def to_representation(self, instance):

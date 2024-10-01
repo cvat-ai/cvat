@@ -928,7 +928,11 @@ class TestLabelUpdates:
     ):
         # Checks for regressions against the issue https://github.com/cvat-ai/cvat/issues/6871
 
-        task = next(t for t in tasks_wlc if t["jobs"]["count"] and t["labels"]["count"])
+        task = next(
+            t
+            for t in tasks_wlc
+            if t["jobs"]["count"] and t["labels"]["count"] and not t["project_id"]
+        )
         task_labels = [l for l in labels if l.get("task_id") == task["id"]]
         nested_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 
