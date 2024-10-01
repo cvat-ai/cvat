@@ -116,6 +116,9 @@ slogger = ServerLogManager(__name__)
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
+_DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
+_DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
+
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -734,8 +737,8 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
         return {
-            'X-Checksum': str(checksum or ''),
-            'X-Updated-Date': serializers.DateTimeField().to_representation(updated_date),
+            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ''),
+            _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(updated_date),
         }
 
 class _TaskDataGetter(_DataGetter):
@@ -1328,6 +1331,18 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 description="Specifies the quality level of the requested data"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame"),
+            OpenApiParameter(
+                _DATA_CHECKSUM_HEADER_NAME,
+                location=OpenApiParameter.HEADER, type=OpenApiTypes.STR, required=False,
+                response=[200],
+                description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_UPDATED_DATE_HEADER_NAME,
+                location=OpenApiParameter.HEADER, type=OpenApiTypes.DATETIME, required=False,
+                response=[200],
+                description="Data update date, applicable for chunks only",
+            )
         ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),

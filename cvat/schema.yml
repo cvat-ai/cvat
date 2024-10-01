@@ -5686,6 +5686,16 @@ paths:
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           description: Data of a specific type
     post:
       operationId: tasks_create_data
