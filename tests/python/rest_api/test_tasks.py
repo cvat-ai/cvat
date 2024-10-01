@@ -287,15 +287,16 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
     @pytest.mark.parametrize(
         "field",
         (
+            "assignee",
+            "dimension",
+            "mode",
             "name",
             "owner",
-            "status",
-            "assignee",
-            "subset",
-            "mode",
-            "dimension",
             "project_id",
+            "status",
+            "subset",
             "tracker_link",
+            "validation_mode",
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
