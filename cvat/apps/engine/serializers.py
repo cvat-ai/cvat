@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import Counter
 from contextlib import closing
 import random
 import warnings
