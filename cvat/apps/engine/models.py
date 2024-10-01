@@ -11,7 +11,7 @@ import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Collection, Dict, Optional, Type
+from typing import Any, ClassVar, Collection, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
