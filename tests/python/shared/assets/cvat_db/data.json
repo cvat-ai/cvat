@@ -5767,7 +5767,9 @@
   "fields": {
     "data": 6,
     "path": "/home/django/data/data/6/raw/test_pointcloud_pcd/related_images/000001_pcd/000001.png",
-    "primary_image": 360
+    "images": [
+      360
+    ]
   }
 },
 {
