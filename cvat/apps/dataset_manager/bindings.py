@@ -30,8 +30,8 @@ from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
@@ -301,7 +301,7 @@ class CommonData(InstanceLabelData):
 
     @property
     def stop(self) -> int:
-        return len(self)
+        return max(0, len(self) - 1)
 
     def _get_queryset(self):
         raise NotImplementedError()
@@ -437,7 +437,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, self.stop, self._annotation_ir.dimension)
+            track, 0, self.stop + 1, self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = track["track_id"] if self._use_server_track_ids else idx
@@ -493,7 +493,7 @@ class CommonData(InstanceLabelData):
 
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(
-            anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
+            anno_manager.to_shapes(self.stop + 1, self._annotation_ir.dimension,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 include_outside=False,
@@ -841,7 +841,7 @@ class JobData(CommonData):
     @property
     def stop(self) -> int:
         segment = self._db_job.segment
-        return segment.stop_frame + 1
+        return segment.stop_frame
 
     @property
     def db_instance(self):
@@ -1411,7 +1411,7 @@ class ProjectData(InstanceLabelData):
 
 @attrs(frozen=True, auto_attribs=True)
 class ImageSource:
-    db_data: Data
+    db_task: Task
     is_video: bool = attrib(kw_only=True)
 
 class ImageProvider:
@@ -1440,8 +1440,10 @@ class ImageProvider2D(ImageProvider):
                 # optimization for videos: use numpy arrays instead of bytes
                 # some formats or transforms can require image data
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.NUMPY_ARRAY)[0]
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.NUMPY_ARRAY
+                ).data
+
             return dm.Image(data=video_frame_loader, **image_kwargs)
         else:
             def image_loader(_):
@@ -1449,8 +1451,10 @@ class ImageProvider2D(ImageProvider):
 
                 # for images use encoded data to avoid recoding
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.BUFFER)[0].getvalue()
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.BUFFER
+                ).data.getvalue()
+
             return dm.ByteImage(data=image_loader, **image_kwargs)
 
     def _load_source(self, source_id: int, source: ImageSource) -> None:
@@ -1458,7 +1462,7 @@ class ImageProvider2D(ImageProvider):
             return
 
         self._unload_source()
-        self._frame_provider = FrameProvider(source.db_data)
+        self._frame_provider = TaskFrameProvider(source.db_task)
         self._current_source_id = source_id
 
     def _unload_source(self) -> None:
@@ -1474,7 +1478,7 @@ class ImageProvider3D(ImageProvider):
         self._images_per_source = {
             source_id: {
                 image.id: image
-                for image in source.db_data.images.prefetch_related('related_files')
+                for image in source.db_task.data.images.prefetch_related('related_files')
             }
             for source_id, source in sources.items()
         }
@@ -1483,7 +1487,7 @@ class ImageProvider3D(ImageProvider):
         source = self._sources[source_id]
 
         point_cloud_path = osp.join(
-            source.db_data.get_upload_dirname(), image_kwargs['path'],
+            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
         )
 
         image = self._images_per_source[source_id][frame_id]
@@ -1596,11 +1600,18 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         is_video = instance_meta['mode'] == 'interpolation'
         ext = ''
         if is_video:
-            ext = FrameProvider.VIDEO_FRAME_EXT
+            ext = TaskFrameProvider.VIDEO_FRAME_EXT
 
         if dimension == DimensionType.DIM_3D or include_images:
+            if isinstance(instance_data, TaskData):
+                db_task = instance_data.db_instance
+            elif isinstance(instance_data, JobData):
+                db_task = instance_data.db_instance.segment.task
+            else:
+                assert False
+
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
-                {0: ImageSource(instance_data.db_data, is_video=is_video)}
+                {0: ImageSource(db_task, is_video=is_video)}
             )
 
         for frame_data in instance_data.group_by_frame(include_empty=True):
@@ -1682,13 +1693,13 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         if self._dimension == DimensionType.DIM_3D or include_images:
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[self._dimension](
                 {
-                    task.id: ImageSource(task.data, is_video=task.mode == 'interpolation')
+                    task.id: ImageSource(task, is_video=task.mode == 'interpolation')
                     for task in project_data.tasks
                 }
             )
 
         ext_per_task: Dict[int, str] = {
-            task.id: FrameProvider.VIDEO_FRAME_EXT if is_video else ''
+            task.id: TaskFrameProvider.VIDEO_FRAME_EXT if is_video else ''
             for task in project_data.tasks
             for is_video in [task.mode == 'interpolation']
         }

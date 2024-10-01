@@ -253,6 +253,13 @@ class Data(models.Model):
     def get_upload_dirname(self):
         return os.path.join(self.get_data_dirname(), "raw")
 
+    def get_raw_data_dirname(self) -> str:
+        return {
+            StorageChoice.LOCAL: self.get_upload_dirname(),
+            StorageChoice.SHARE: settings.SHARE_ROOT,
+            StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
+        }[self.storage]
+
     def get_compressed_cache_dirname(self):
         return os.path.join(self.get_data_dirname(), "compressed")
 
@@ -260,7 +267,7 @@ class Data(models.Model):
         return os.path.join(self.get_data_dirname(), "original")
 
     @staticmethod
-    def _get_chunk_name(chunk_number, chunk_type):
+    def _get_chunk_name(segment_id: int, chunk_number: int, chunk_type: DataChoice | str) -> str:
         if chunk_type == DataChoice.VIDEO:
             ext = 'mp4'
         elif chunk_type == DataChoice.IMAGESET:
@@ -268,21 +275,21 @@ class Data(models.Model):
         else:
             ext = 'list'
 
-        return '{}.{}'.format(chunk_number, ext)
+        return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
-    def _get_compressed_chunk_name(self, chunk_number):
-        return self._get_chunk_name(chunk_number, self.compressed_chunk_type)
+    def _get_compressed_chunk_name(self, segment_id: int, chunk_number: int) -> str:
+        return self._get_chunk_name(segment_id, chunk_number, self.compressed_chunk_type)
 
-    def _get_original_chunk_name(self, chunk_number):
-        return self._get_chunk_name(chunk_number, self.original_chunk_type)
+    def _get_original_chunk_name(self, segment_id: int, chunk_number: int) -> str:
+        return self._get_chunk_name(segment_id, chunk_number, self.original_chunk_type)
 
-    def get_original_chunk_path(self, chunk_number):
+    def get_original_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
         return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(chunk_number))
+            self._get_original_chunk_name(segment_id, chunk_number))
 
-    def get_compressed_chunk_path(self, chunk_number):
+    def get_compressed_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
         return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(chunk_number))
+            self._get_compressed_chunk_name(segment_id, chunk_number))
 
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
@@ -603,7 +610,7 @@ class SegmentType(str, Enum):
 
 class Segment(models.Model):
     # Common fields
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE) # TODO: add related name
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)

@@ -26,6 +26,9 @@ for paths in \
     "cvat/apps/consensus" \
     "cvat/apps/engine/lazy_list.py" \
     "cvat/apps/engine/background.py" \
+    "cvat/apps/engine/frame_provider.py" \
+    "cvat/apps/engine/cache.py" \
+    "cvat/apps/engine/default_settings.py" \
     ; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}

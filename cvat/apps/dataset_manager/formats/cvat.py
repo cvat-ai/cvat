@@ -27,7 +27,7 @@ from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData, detect_
                                                 import_dm_annotations,
                                                 match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.frame_provider import FrameQuality, FrameOutputType, make_frame_provider
 
 from .registry import dm_env, exporter, importer
 
@@ -1371,16 +1371,19 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
     dumper.close_document()
 
 def dump_media_files(instance_data: CommonData, img_dir: str, project_data: ProjectData = None):
+    frame_provider = make_frame_provider(instance_data.db_instance)
+
     ext = ''
     if instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation':
-        ext = FrameProvider.VIDEO_FRAME_EXT
+        ext = frame_provider.VIDEO_FRAME_EXT
 
-    frame_provider = FrameProvider(instance_data.db_data)
-    frames = frame_provider.get_frames(
-        instance_data.start, instance_data.stop,
-        frame_provider.Quality.ORIGINAL,
-        frame_provider.Type.BUFFER)
-    for frame_id, (frame_data, _) in zip(instance_data.rel_range, frames):
+    frames = frame_provider.iterate_frames(
+        start_frame=instance_data.start,
+        stop_frame=instance_data.stop,
+        quality=FrameQuality.ORIGINAL,
+        out_type=FrameOutputType.BUFFER,
+    )
+    for frame_id, frame in zip(instance_data.rel_range, frames):
         if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
             or frame_id in instance_data.deleted_frames:
             continue
@@ -1389,7 +1392,7 @@ def dump_media_files(instance_data: CommonData, img_dir: str, project_data: Proj
         img_path = osp.join(img_dir, frame_name + ext)
         os.makedirs(osp.dirname(img_path), exist_ok=True)
         with open(img_path, 'wb') as f:
-            f.write(frame_data.getvalue())
+            f.write(frame.data.getvalue())
 
 def _export_task_or_job(dst_file, temp_dir, instance_data, anno_callback, save_images=False):
     with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
