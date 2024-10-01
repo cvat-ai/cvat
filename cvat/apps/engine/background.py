@@ -12,7 +12,6 @@ from typing import Any, Callable, Dict, Optional, Union
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
-from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ
 from rest_framework import serializers, status
@@ -260,11 +259,9 @@ class DatasetExportManager(_ResourceExportManager):
             "Please request export first by sending a request without the action=download parameter."
         )
         if not rq_job:
-            return (
-                None
-                if action != "download"
-                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
-            )
+            if action == "download":
+                raise serializers.ValidationError(msg_no_such_job_when_downloading)
+            return None
 
         # define status once to avoid refreshing it on each check
         # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of returning None in one of the next releases
@@ -273,15 +270,14 @@ class DatasetExportManager(_ResourceExportManager):
         # handle cases where the status is None for some reason
         if not rq_job_status:
             rq_job.delete()
-            return (
-                None
-                if action != "download"
-                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
-            )
+
+            if action == "download":
+                raise serializers.ValidationError(msg_no_such_job_when_downloading)
+            return None
 
         if action == "download":
             if self.export_args.location != Location.LOCAL:
-                return HttpResponseBadRequest(
+                raise serializers.ValidationError(
                     'Action "download" is only supported for a local dataset location'
                 )
             if rq_job_status not in {
@@ -290,7 +286,7 @@ class DatasetExportManager(_ResourceExportManager):
                 RQJobStatus.CANCELED,
                 RQJobStatus.STOPPED,
             }:
-                return HttpResponseBadRequest("Dataset export has not been finished yet")
+                raise serializers.ValidationError("Dataset export has not been finished yet")
 
         instance_update_time = self.get_instance_update_time()
         instance_timestamp = self.get_timestamp(instance_update_time)
@@ -543,11 +539,9 @@ class BackupExportManager(_ResourceExportManager):
             "Please request export first by sending a request without the action=download parameter."
         )
         if not rq_job:
-            return (
-                None
-                if action != "download"
-                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
-            )
+            if action == "download":
+                raise serializers.ValidationError(msg_no_such_job_when_downloading)
+            return None
 
         # define status once to avoid refreshing it on each check
         # FUTURE-TODO: get_status will raise InvalidJobOperation exception instead of None in one of the next releases
@@ -556,15 +550,13 @@ class BackupExportManager(_ResourceExportManager):
         # handle cases where the status is None for some reason
         if not rq_job_status:
             rq_job.delete()
-            return (
-                None
-                if action != "download"
-                else HttpResponseBadRequest(msg_no_such_job_when_downloading)
-            )
+            if action == "download":
+                raise serializers.ValidationError(msg_no_such_job_when_downloading)
+            return None
 
         if action == "download":
             if self.export_args.location != Location.LOCAL:
-                return HttpResponseBadRequest(
+                raise serializers.ValidationError(
                     'Action "download" is only supported for a local backup location'
                 )
             if rq_job_status not in {
@@ -573,7 +565,7 @@ class BackupExportManager(_ResourceExportManager):
                 RQJobStatus.CANCELED,
                 RQJobStatus.STOPPED,
             }:
-                return HttpResponseBadRequest("Backup export has not been finished yet")
+                raise serializers.ValidationError("Backup export has not been finished yet")
 
         if rq_job_status == RQJobStatus.FINISHED:
             if self.export_args.location == Location.CLOUD_STORAGE:

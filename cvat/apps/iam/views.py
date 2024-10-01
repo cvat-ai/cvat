@@ -5,9 +5,8 @@
 
 import functools
 
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from rest_framework import views, serializers
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from django.conf import settings
 from django.http import HttpResponse
@@ -47,7 +46,7 @@ class SigningView(views.APIView):
     def post(self, request):
         url = request.data.get('url')
         if not url:
-            raise ValidationError('Please provide `url` parameter')
+            raise serializers.ValidationError('Please provide `url` parameter')
 
         signer = Signer()
         url = self.request.build_absolute_uri(url)
@@ -74,7 +73,7 @@ class LoginViewEx(LoginView):
         self.serializer = self.get_serializer(data=self.request.data)
         try:
             self.serializer.is_valid(raise_exception=True)
-        except ValidationError:
+        except serializers.ValidationError:
             user = self.serializer.get_auth_user(
                 self.serializer.data.get('username'),
                 self.serializer.data.get('email'),
@@ -90,7 +89,7 @@ class LoginViewEx(LoginView):
                 # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
                 # because redirect will make a POST request and we'll get a 404 code
                 # (although in the browser request method will be displayed like GET)
-                return HttpResponseBadRequest('Unverified email')
+                raise serializers.ValidationError('Unverified email')
         except Exception: # nosec
             pass
 

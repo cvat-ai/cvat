@@ -30,7 +30,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.db.models.query import Prefetch
-from django.http import HttpResponse, HttpRequest, HttpResponseNotFound, HttpResponseBadRequest
+from django.http import HttpResponse, HttpRequest
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -45,7 +45,7 @@ from drf_spectacular.utils import (
 from pathlib import Path
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
+from rest_framework.exceptions import NotFound
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
@@ -636,7 +636,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         first_task: Optional[models.Task] = self._object.tasks.order_by('-id').first()
         if not first_task:
-            return HttpResponseNotFound('Project image preview not found')
+            raise NotFound('Project image preview not found')
 
         data_getter = _TaskDataGetter(
             db_task=first_task,
@@ -672,12 +672,12 @@ class _DataGetter(metaclass=ABCMeta):
         possible_quality_values = ('compressed', 'original')
 
         if not data_type or data_type not in possible_data_type_values:
-            raise ValidationError('Data type not specified or has wrong value')
+            raise serializers.ValidationError('Data type not specified or has wrong value')
         elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
             if data_num is None and data_type != 'preview':
-                raise ValidationError('Number is not specified')
+                raise serializers.ValidationError('Number is not specified')
             elif data_quality not in possible_quality_values:
-                raise ValidationError('Wrong quality value')
+                raise serializers.ValidationError('Wrong quality value')
 
         self.type = data_type
         self.number = int(data_num) if data_num is not None else None
@@ -690,31 +690,25 @@ class _DataGetter(metaclass=ABCMeta):
     def __call__(self):
         frame_provider = self._get_frame_provider()
 
-        try:
-            if self.type == 'chunk':
-                data = frame_provider.get_chunk(self.number, quality=self.quality)
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
-            elif self.type == 'frame' or self.type == 'preview':
-                if self.type == 'preview':
-                    data = frame_provider.get_preview()
-                else:
-                    data = frame_provider.get_frame(self.number, quality=self.quality)
-
-                return HttpResponse(data.data.getvalue(), content_type=data.mime)
-
-            elif self.type == 'context_image':
-                data = frame_provider.get_frame_context_images_chunk(self.number)
-                if not data:
-                    return HttpResponseNotFound()
-
-                return HttpResponse(data.data, content_type=data.mime)
+        if self.type == 'chunk':
+            data = frame_provider.get_chunk(self.number, quality=self.quality)
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+        elif self.type == 'frame' or self.type == 'preview':
+            if self.type == 'preview':
+                data = frame_provider.get_preview()
             else:
-                return Response(data='unknown data type {}.'.format(self.type),
-                    status=status.HTTP_400_BAD_REQUEST)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
-            msg = str(ex) if not isinstance(ex, ValidationError) else \
-                '\n'.join([str(d) for d in ex.detail])
-            return Response(data=msg, status=ex.status_code)
+                data = frame_provider.get_frame(self.number, quality=self.quality)
+
+            return HttpResponse(data.data.getvalue(), content_type=data.mime)
+
+        elif self.type == 'context_image':
+            data = frame_provider.get_frame_context_images_chunk(self.number)
+            if not data:
+                raise NotFound()
+
+            return HttpResponse(data.data, content_type=data.mime)
+        else:
+            raise serializers.ValidationError(f'unknown data type {self.type}.')
 
 class _TaskDataGetter(_DataGetter):
     def __init__(
@@ -746,17 +740,17 @@ class _JobDataGetter(_DataGetter):
         possible_quality_values = ('compressed', 'original')
 
         if not data_type or data_type not in possible_data_type_values:
-            raise ValidationError('Data type not specified or has wrong value')
+            raise serializers.ValidationError('Data type not specified or has wrong value')
         elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
             if data_type == 'chunk':
                 if data_num is None and data_index is None:
-                    raise ValidationError('Number or Index is not specified')
+                    raise serializers.ValidationError('Number or Index is not specified')
                 if data_num is not None and data_index is not None:
-                    raise ValidationError('Number and Index cannot be used together')
+                    raise serializers.ValidationError('Number and Index cannot be used together')
             elif data_num is None and data_type != 'preview':
-                raise ValidationError('Number is not specified')
+                raise serializers.ValidationError('Number is not specified')
             elif data_quality not in possible_quality_values:
-                raise ValidationError('Wrong quality value')
+                raise serializers.ValidationError('Wrong quality value')
 
         self.type = data_type
 
@@ -1043,7 +1037,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
             ]
             remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
-            raise ValidationError(
+            raise serializers.ValidationError(
                 "Uploaded files do not match the '{}' field contents. "
                 "Please check the uploaded data and the list of uploaded files. "
                 "Mismatching files: {}{}"
@@ -1447,7 +1441,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     get_data=dm.task.get_task_data,
                 )
             else:
-                return HttpResponseBadRequest("Exporting annotations from a task without data is not allowed")
+                raise serializers.ValidationError("Exporting annotations from a task without data is not allowed")
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
             # NOTE: initialization process of annotations import
@@ -1641,7 +1635,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 save_images=True
             )
 
-        return HttpResponseBadRequest("Exporting a dataset from a task without data is not allowed")
+        raise serializers.ValidationError("Exporting a dataset from a task without data is not allowed")
 
     @extend_schema(summary='Get a preview image for a task',
         responses={
@@ -1653,7 +1647,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object() # call check_object_permissions as well
 
         if not self._object.data:
-            return HttpResponseNotFound('Task image preview not found')
+            raise NotFound('Task image preview not found')
 
         data_getter = _TaskDataGetter(
             db_task=self._object,
@@ -1753,7 +1747,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
     def perform_destroy(self, instance):
         if instance.type != JobType.GROUND_TRUTH:
-            raise ValidationError("Only ground truth jobs can be removed")
+            raise serializers.ValidationError("Only ground truth jobs can be removed")
 
         return super().perform_destroy(instance)
 
@@ -2367,9 +2361,8 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             task_id = self.request.GET.get('task_id', None)
             project_id = self.request.GET.get('project_id', None)
             if sum(v is not None for v in [job_id, task_id, project_id]) > 1:
-                raise ValidationError(
+                raise serializers.ValidationError(
                     "job_id, task_id and project_id parameters cannot be used together",
-                    code=status.HTTP_400_BAD_REQUEST
                 )
 
             if job_id or task_id or project_id:
@@ -2420,20 +2413,20 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def perform_update(self, serializer):
         if serializer.instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
-            raise ValidationError(
+            raise serializers.ValidationError(
                 "Sublabels cannot be modified this way. "
                 "Please send a PATCH request with updated parent label data instead.",
-                code=status.HTTP_400_BAD_REQUEST)
+            )
 
         return super().perform_update(serializer)
 
     def perform_destroy(self, instance: models.Label):
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
-            raise ValidationError(
+            raise serializers.ValidationError(
                 "Sublabels cannot be deleted this way. "
                 "Please send a PATCH request with updated parent label data instead.",
-                code=status.HTTP_400_BAD_REQUEST)
+            )
 
         if project := instance.project:
             project.touch()
@@ -2609,29 +2602,13 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if provider_type:
             if provider_type in CloudProviderChoice.list():
                 return queryset.filter(provider_type=provider_type)
-            raise ValidationError('Unsupported type of cloud provider')
+            raise serializers.ValidationError('Unsupported type of cloud provider')
         return queryset
 
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization'])
-
-    def create(self, request, *args, **kwargs):
-        try:
-            response = super().create(request, *args, **kwargs)
-        except ValidationError as exceptions:
-            msg_body = ""
-            for ex in exceptions.args:
-                for field, ex_msg in ex.items():
-                    msg_body += ': '.join([field, ex_msg if isinstance(ex_msg, str) else str(ex_msg[0])])
-                    msg_body += '\n'
-            return HttpResponseBadRequest(msg_body)
-        except APIException as ex:
-            return Response(data=ex.get_full_details(), status=ex.status_code)
-        except Exception as ex:
-            response = HttpResponseBadRequest(str(ex))
-        return response
 
     @extend_schema(summary='Get cloud storage content',
         parameters=[
@@ -2649,64 +2626,48 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     )
     @action(detail=True, methods=['GET'], url_path='content-v2')
     def content_v2(self, request, pk):
-        storage = None
-        try:
-            db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            prefix = request.query_params.get('prefix', "")
-            page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
-            if not page_size.isnumeric():
-                return HttpResponseBadRequest('Wrong value for page_size was found')
-            page_size = min(int(page_size), settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
+        db_storage = self.get_object()
+        storage = db_storage_to_storage_instance(db_storage)
+        prefix = request.query_params.get('prefix', "")
+        page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
+        if not page_size.isnumeric():
+            raise serializers.ValidationError('Wrong value for page_size was found')
+        page_size = min(int(page_size), settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
 
-            # make api identical to share api
-            if prefix and prefix.startswith('/'):
-                prefix = prefix[1:]
+        # make api identical to share api
+        if prefix and prefix.startswith('/'):
+            prefix = prefix[1:]
 
 
-            next_token = request.query_params.get('next_token')
+        next_token = request.query_params.get('next_token')
 
-            if (manifest_path := request.query_params.get('manifest_path')):
-                manifest_prefix = os.path.dirname(manifest_path)
+        if (manifest_path := request.query_params.get('manifest_path')):
+            manifest_prefix = os.path.dirname(manifest_path)
 
-                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-                if not os.path.exists(full_manifest_path) or \
-                        datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
-                    storage.download_file(manifest_path, full_manifest_path)
-                manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
-                # need to update index
-                manifest.set_index()
-                try:
-                    start_index = int(next_token or '0')
-                except ValueError:
-                    return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
-                content = manifest.emulate_hierarchical_structure(
-                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
-            else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
-            for i in content['content']:
-                mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
-                if mime_type == 'zip':
-                    mime_type = 'archive'
-                i['mime_type'] = mime_type
-            serializer = CloudStorageContentSerializer(data=content)
-            serializer.is_valid(raise_exception=True)
-            content = serializer.data
-            return Response(data=content)
-
-        except CloudStorageModel.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
-            msg = str(ex) if not isinstance(ex, ValidationError) else \
-                '\n'.join([str(d) for d in ex.detail])
-            slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=ex.status_code)
-        except Exception as ex:
-            slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
+                storage.download_file(manifest_path, full_manifest_path)
+            manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
+            # need to update index
+            manifest.set_index()
+            try:
+                start_index = int(next_token or '0')
+            except ValueError as e:
+                raise serializers.ValidationError('Wrong value for the next_token parameter was found.') from e
+            content = manifest.emulate_hierarchical_structure(
+                page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
+        else:
+            content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
+        for i in content['content']:
+            mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
+            if mime_type == 'zip':
+                mime_type = 'archive'
+            i['mime_type'] = mime_type
+        serializer = CloudStorageContentSerializer(data=content)
+        serializer.is_valid(raise_exception=True)
+        content = serializer.data
+        return Response(data=content)
 
     @extend_schema(summary='Get a preview image for a cloud storage',
         responses={
@@ -2716,33 +2677,19 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
-        try:
-            db_storage = self.get_object()
-            cache = MediaCache()
+        db_storage = self.get_object()
+        cache = MediaCache()
 
-            # The idea is try to define real manifest preview only for the storages that have related manifests
-            # because otherwise it can lead to extra calls to a bucket, that are usually not free.
-            if not db_storage.has_at_least_one_manifest:
-                result = cache.get_cloud_preview(db_storage)
-                if not result:
-                    return HttpResponseNotFound('Cloud storage preview not found')
-                return HttpResponse(result[0].getvalue(), result[1])
+        # The idea is try to define real manifest preview only for the storages that have related manifests
+        # because otherwise it can lead to extra calls to a bucket, that are usually not free.
+        if not db_storage.has_at_least_one_manifest:
+            result = cache.get_cloud_preview(db_storage)
+            if not result:
+                raise NotFound('Cloud storage preview not found')
+            return HttpResponse(result[0].getvalue(), result[1])
 
-            preview, mime = cache.get_or_set_cloud_preview(db_storage)
-            return HttpResponse(preview.getvalue(), mime)
-        except CloudStorageModel.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
-            msg = str(ex) if not isinstance(ex, ValidationError) else \
-                '\n'.join([str(d) for d in ex.detail])
-            slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=ex.status_code)
-        except Exception as ex:
-            slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        preview, mime = cache.get_or_set_cloud_preview(db_storage)
+        return HttpResponse(preview.getvalue(), mime)
 
     @extend_schema(summary='Get the status of a cloud storage',
         responses={
@@ -2750,18 +2697,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request, pk):
-        try:
-            db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            storage_status = storage.get_status()
-            return Response(storage_status)
-        except CloudStorageModel.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except Exception as ex:
-            msg = str(ex)
-            return HttpResponseBadRequest(msg)
+        db_storage = self.get_object()
+        storage = db_storage_to_storage_instance(db_storage)
+        storage_status = storage.get_status()
+        return Response(storage_status)
 
     @extend_schema(summary='Get allowed actions for a cloud storage',
         responses={
@@ -2772,18 +2711,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         '''
         Method return allowed actions for cloud storage. It's required for reading/writing
         '''
-        try:
-            db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            actions = storage.supported_actions
-            return Response(actions, content_type="text/plain")
-        except CloudStorageModel.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except Exception as ex:
-            msg = str(ex)
-            return HttpResponseBadRequest(msg)
+        db_storage = self.get_object()
+        storage = db_storage_to_storage_instance(db_storage)
+        actions = storage.supported_actions
+        return Response(actions, content_type="text/plain")
 
 @extend_schema(tags=['assets'])
 @extend_schema_view(
@@ -2842,18 +2773,18 @@ class AssetsViewSet(
     def create(self, request, *args, **kwargs):
         file = request.data.get('file', None)
         if not file:
-            raise ValidationError('Asset file was not provided')
+            raise serializers.ValidationError('Asset file was not provided')
 
         if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+            raise serializers.ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
 
         if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
-            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+            raise serializers.ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
 
         guide_id = request.data.get('guide_id')
         db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f'Maximum number of assets per guide reached')
+            raise serializers.ValidationError(f'Maximum number of assets per guide reached')
 
         serializer = self.get_serializer(data={
             'filename': file.name,
@@ -3398,7 +3329,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         job = self._get_rq_job_by_id(pk)
 
         if not job:
-            return HttpResponseNotFound("There is no request with specified id")
+            raise NotFound("There is no request with specified id")
 
         self.check_object_permissions(request, job)
 
@@ -3435,12 +3366,12 @@ class RequestViewSet(viewsets.GenericViewSet):
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
-            return HttpResponseNotFound("There is no request with specified id")
+            raise NotFound("There is no request with specified id")
 
         self.check_object_permissions(request, rq_job)
 
         if rq_job.get_status(refresh=False) not in {RQJobStatus.QUEUED, RQJobStatus.DEFERRED}:
-            return HttpResponseBadRequest("Only requests that have not yet been started can be cancelled")
+            raise serializers.ValidationError("Only requests that have not yet been started can be cancelled")
 
         # FUTURE-TODO: race condition is possible here
         rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
