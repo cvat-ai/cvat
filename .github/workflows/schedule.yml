@@ -127,7 +127,7 @@ jobs:
           context: .
           file: ./Dockerfile.ui
           cache-from: type=local,src=/tmp/cvat_cache_ui
-          tags: cvat/ui:latest
+          tags: cvat/ui:dev
           load: true
 
       - name: CVAT server. Extract metadata (tags, labels) for Docker
@@ -147,9 +147,9 @@ jobs:
       - name: Pull CVAT server image
         run: |
           docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:dev
+          #TODO fix tag in Dockerfile.ci
           docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:local
-          docker tag ${{ steps.meta-server.outputs.tags }} cvat/server:latest
-          docker tag cvat/ui:latest cvat/ui:local
 
       - name: OPA tests
         run: |
