@@ -5009,7 +5009,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
 
           There are few examples for complex filtering tasks:
 
@@ -5071,7 +5071,7 @@ paths:
         in: query
         description: 'A search term. Available search_fields: (''project_name'', ''name'',
           ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'')'
+          ''tracker_link'', ''validation_mode'')'
         schema:
           type: string
       - name: sort
@@ -5079,7 +5079,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''id'', ''project_id'', ''updated_date'']'
+          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
+          ''project_id'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -5101,6 +5102,14 @@ paths:
         description: A simple equality filter for the tracker_link field
         schema:
           type: string
+      - name: validation_mode
+        in: query
+        description: A simple equality filter for the validation_mode field
+        schema:
+          type: string
+          enum:
+          - gt
+          - gt_pool
       tags:
       - tasks
       security:

@@ -887,10 +887,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'owner': 'owner__username',
         'assignee': 'assignee__username',
         'tracker_link': 'bug_tracker',
+        'validation_mode': 'data__validation_layout__mode',
     }
     search_fields = (
         'project_name', 'name', 'owner', 'status', 'assignee',
-        'subset', 'mode', 'dimension', 'tracker_link'
+        'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode'
     )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
     filter_description = textwrap.dedent("""
