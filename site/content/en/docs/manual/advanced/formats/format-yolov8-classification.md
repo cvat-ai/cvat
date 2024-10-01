@@ -23,7 +23,9 @@ The downloaded file is a .zip archive with the following structure:
 ```bash
 archive.zip/
 ├── train
-│    ├── labels.json  # optional cvat extension. Contains original ids and labels
+│    ├── labels.json  # CVAT extension. Contains original ids and labels
+│    │                # is not needed when using dataset with YOLOv8 framework
+│    │                # but is useful when importing it back to CVAT
 │    ├── label_0
 │    │      ├── <image_name_0>.jpg
 │    │      ├── <image_name_1>.jpg
@@ -35,5 +37,4 @@ archive.zip/
 │    │      ├── <image_name_2>.jpg
 │    │      ├── ...
 ├── ...
-
 ```
