@@ -729,8 +729,8 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _get_chunk_checksum(self, chunk_data: DataWithMeta) -> str:
         data = chunk_data.data.getbuffer()
-        size_checksum =  zlib.crc32(str(len(data)).encode())
-        return str(zlib.crc32(data[:self._CHUNK_HEADER_BYTES_LENGTH], value=size_checksum))
+        size_checksum = zlib.crc32(str(len(data)).encode())
+        return str(zlib.crc32(data[:self._CHUNK_HEADER_BYTES_LENGTH], size_checksum))
 
     def _make_chunk_response_headers(self, checksum: str, updated_date: datetime) -> dict[str, str]:
         return {
@@ -755,8 +755,7 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data),
-            self._db_task.segment_set.aggregate(django_models.Max('chunks_updated_date')),
+            self._get_chunk_checksum(chunk_data), self._db_task.get_chunks_updated_date(),
         )
 
 
@@ -1614,7 +1613,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def metadata(self, request, pk):
         self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
-            'segments',
+            'segment_set',
             Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
             ))
@@ -1639,9 +1638,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         db_data = db_task.data
         db_data.frames = frame_meta
-        db_data.chunks_updated_date = db_task.segment_set.aggregate(
-            django_models.Max("chunks_updated_date")
-        )
+        db_data.chunks_updated_date = db_task.get_chunks_updated_date()
 
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)

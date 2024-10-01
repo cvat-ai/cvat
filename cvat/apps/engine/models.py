@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import datetime
 import os
 import re
 import shutil
@@ -600,6 +601,11 @@ class Task(TimestampedModel):
             job_ids = list(self.segment_set.values_list('job__id', flat=True))
             clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
+
+    def get_chunks_updated_date(self) -> datetime.datetime:
+        return self.segment_set.aggregate(
+            chunks_updated_date=models.Max('chunks_updated_date')
+        )['chunks_updated_date']
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.

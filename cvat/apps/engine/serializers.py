@@ -1082,10 +1082,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
             updated_db_frames.append(db_segment_frame)
 
-        models.Image.objects.bulk_update(
-            updated_db_frames, fields=['path', 'width', 'height', 'real_frame']
-        )
-
         updated_validation_frames = [
             frame
             for new_validation_frame, old_validation_frame, frame in zip(
@@ -1094,6 +1090,10 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             if new_validation_frame != old_validation_frame
         ]
         if updated_validation_frames:
+            models.Image.objects.bulk_update(
+                updated_db_frames, fields=['path', 'width', 'height', 'real_frame']
+            )
+
             # Remove annotations on changed validation frames
             job_annotation = JobAnnotation(db_job.id)
             job_annotation.init_from_db()
@@ -1200,7 +1200,6 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
                 return (abs_frame - db_data.start_frame) // frame_step
 
             segment_honeypot_frames = []
-            segment_honeypot_real_frames = []
             for frame in db_segment.task.data.images.all():
                 if not frame.is_placeholder:
                     continue
@@ -1208,13 +1207,16 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
                 if not frame.frame in segment_frame_set:
                     continue
 
-                segment_honeypot_frames.append(_to_rel_frame(frame.frame))
-                segment_honeypot_real_frames.append(_to_rel_frame(frame.real_frame))
+                segment_honeypot_frames.append(
+                    (_to_rel_frame(frame.frame), _to_rel_frame(frame.real_frame))
+                )
+
+            segment_honeypot_frames.sort(key=lambda v: v[0])
 
             data = {
                 'honeypot_count': len(segment_honeypot_frames),
-                'honeypot_frames': sorted(segment_honeypot_frames),
-                'honeypot_real_frames': sorted(segment_honeypot_real_frames),
+                'honeypot_frames': [v[0] for v in segment_honeypot_frames],
+                'honeypot_real_frames': [v[1] for v in segment_honeypot_frames],
             }
 
         return super().to_representation(data)

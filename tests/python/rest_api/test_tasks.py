@@ -2699,6 +2699,43 @@ class TestTaskData:
             request, start_frame=start_frame, step=step
         )
 
+    @fixture(scope="class")
+    def fxt_uploaded_images_task_with_honeypots_and_changed_real_frames(
+        self, request: pytest.FixtureRequest
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        with closing(
+            self._uploaded_images_task_with_honeypots_and_segments_base(
+                request, start_frame=2, step=3
+            )
+        ) as gen_iter:
+            task_spec, task_id = next(gen_iter)
+
+            with make_api_client(self._USERNAME) as api_client:
+                validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
+                validation_frames = validation_layout.validation_frames
+
+                new_honeypot_real_frames = [
+                    validation_frames[(validation_frames.index(f) + 1) % len(validation_frames)]
+                    for f in validation_layout.honeypot_real_frames
+                ]
+                api_client.tasks_api.partial_update_validation_layout(
+                    task_id,
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(
+                            frame_selection_method="manual",
+                            honeypot_real_frames=new_honeypot_real_frames,
+                        )
+                    ),
+                )
+
+                # Get the new frame order
+                frame_map = dict(zip(validation_layout.honeypot_frames, new_honeypot_real_frames))
+
+                _get_frame = task_spec._get_frame
+                task_spec._get_frame = lambda i: _get_frame(frame_map.get(i, i))
+
+            yield task_spec, task_id
+
     def _uploaded_video_task_fxt_base(
         self,
         request: pytest.FixtureRequest,
@@ -2827,17 +2864,18 @@ class TestTaskData:
     _tasks_with_honeypots_cases = [
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments"),
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments_start_step"),
+        fixture_ref("fxt_uploaded_images_task_with_honeypots_and_changed_real_frames"),
     ]
 
     # Keep in mind that these fixtures are generated eagerly
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
     _all_task_cases = [
-        # fixture_ref("fxt_uploaded_images_task"),
-        # fixture_ref("fxt_uploaded_images_task_with_segments"),
-        # fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
-        # fixture_ref("fxt_uploaded_video_task"),
-        # fixture_ref("fxt_uploaded_video_task_with_segments"),
+        fixture_ref("fxt_uploaded_images_task"),
+        fixture_ref("fxt_uploaded_images_task_with_segments"),
+        fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
+        fixture_ref("fxt_uploaded_video_task"),
+        fixture_ref("fxt_uploaded_video_task_with_segments"),
         fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
     ] + _tasks_with_honeypots_cases
 
@@ -3870,23 +3908,42 @@ class TestWorkWithHoneypotTasks:
                 assert False
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
-    def test_can_exclude_and_restore_gt_frames_via_job_meta(
-        self, admin_user, task, gt_job, annotation_jobs
+    @parametrize("method", ["gt_job_meta", "task_validation_layout"])
+    def test_can_exclude_and_restore_gt_frames(
+        self, admin_user, task, gt_job, annotation_jobs, method: str
     ):
         with make_api_client(admin_user) as api_client:
             task_meta, _ = api_client.tasks_api.retrieve_data_meta(task["id"])
             task_frames = [f.name for f in task_meta.frames]
 
             for deleted_gt_frames in [
-                [v] for v in range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+                [v] for v in range(gt_job["start_frame"], gt_job["stop_frame"] + 1)[:2]
             ] + [[]]:
-                updated_gt_job_meta, _ = api_client.jobs_api.partial_update_data_meta(
-                    gt_job["id"],
-                    patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
-                        deleted_frames=deleted_gt_frames
-                    ),
-                )
+                if method == "gt_job_meta":
+                    api_client.jobs_api.partial_update_data_meta(
+                        gt_job["id"],
+                        patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                            deleted_frames=deleted_gt_frames
+                        ),
+                    )
+                elif method == "task_validation_layout":
+                    api_client.tasks_api.partial_update_validation_layout(
+                        task["id"],
+                        patched_task_validation_layout_write_request=(
+                            models.PatchedTaskValidationLayoutWriteRequest(
+                                disabled_frames=deleted_gt_frames
+                            )
+                        ),
+                    )
+                else:
+                    assert False
 
+                updated_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(
+                    task["id"]
+                )
+                assert updated_validation_layout.disabled_frames == deleted_gt_frames
+
+                updated_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
                 assert updated_gt_job_meta.deleted_frames == deleted_gt_frames
 
                 # the excluded GT frames must be excluded from all the jobs with the same frame
@@ -3898,12 +3955,14 @@ class TestWorkWithHoneypotTasks:
                 )
 
                 for j in annotation_jobs:
-                    updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
-                    assert [
+                    deleted_job_frames = [
                         i
                         for i in updated_task_meta.deleted_frames
                         if j["start_frame"] <= i <= j["stop_frame"]
-                    ] == updated_job_meta.deleted_frames
+                    ]
+
+                    updated_job_meta, _ = api_client.jobs_api.retrieve_data_meta(j["id"])
+                    assert deleted_job_frames == updated_job_meta.deleted_frames
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
     def test_can_delete_honeypot_frames_by_changing_job_meta_in_annotation_job(
@@ -4117,12 +4176,13 @@ class TestWorkWithHoneypotTasks:
                 old_validation_layout = json.loads(
                     api_client.jobs_api.retrieve_validation_layout(annotation_job["id"])[1].data
                 )
+                old_job_meta, _ = api_client.jobs_api.retrieve_data_meta(annotation_job["id"])
 
                 params = {"frame_selection_method": frame_selection_method}
 
                 if frame_selection_method == "manual":
                     requested_honeypot_real_frames = [
-                        gt_frame_set[(old_real_frame + 1) % len(gt_frame_set)]
+                        gt_frame_set[(gt_frame_set.index(old_real_frame) + 1) % len(gt_frame_set)]
                         for old_real_frame in old_validation_layout["honeypot_real_frames"]
                     ]
 
@@ -4153,6 +4213,9 @@ class TestWorkWithHoneypotTasks:
                     )
                     == {}
                 )
+
+                new_job_meta, _ = api_client.jobs_api.retrieve_data_meta(annotation_job["id"])
+                assert new_job_meta.chunks_updated_date > old_job_meta.chunks_updated_date
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
