@@ -2488,7 +2488,7 @@ class _TaskSpecBase(_TaskSpec):
 
     @property
     def frame_step(self) -> int:
-        return parse_frame_step(getattr(self, "frame_filter", ''))
+        return parse_frame_step(getattr(self, "frame_filter", ""))
 
     def __getattr__(self, k: str) -> Any:
         notfound = object()
@@ -3608,7 +3608,7 @@ class TestTaskBackups:
                 old_meta,
                 new_meta,
                 ignore_order=True,
-                exclude_regex_paths=[r"root\[chunks_updated_date\]"],  # must be different
+                exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
             )
             == {}
         )
