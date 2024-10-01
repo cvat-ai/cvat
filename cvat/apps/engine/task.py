@@ -1226,6 +1226,12 @@ def _create_thread(
             case _:
                 assert False
 
+        if len(all_frames) - len(pool_frames) < 1:
+            raise ValidationError(
+                "Cannot create task: "
+                "too few non-honeypot frames left after selecting validation frames"
+            )
+
         # Even though the sorting is random overall,
         # it's convenient to be able to reasonably navigate in the GT job
         pool_frames = sort(
@@ -1332,19 +1338,29 @@ def _create_thread(
         ))
 
     if db_task.mode == 'annotation':
-        models.Image.objects.bulk_create(images)
-        images = models.Image.objects.filter(data_id=db_data.id)
+        images = models.Image.objects.bulk_create(images)
 
         db_related_files = [
             models.RelatedFile(
-                data=image.data,
-                primary_image=image,
+                data=db_data,
                 path=os.path.join(upload_dir, related_file_path),
             )
-            for image in images.all()
-            for related_file_path in related_images.get(image.path, [])
+            for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
         ]
-        models.RelatedFile.objects.bulk_create(db_related_files)
+        db_related_files = models.RelatedFile.objects.bulk_create(db_related_files)
+        db_related_files_by_path = {
+            os.path.relpath(rf.path.path, upload_dir): rf for rf in db_related_files
+        }
+
+        ThroughModel = models.RelatedFile.images.through
+        models.RelatedFile.images.through.objects.bulk_create((
+            ThroughModel(
+                relatedfile_id=db_related_files_by_path[related_file_path].id,
+                image_id=image.id
+            )
+            for image in images
+            for related_file_path in related_images.get(image.path, [])
+        ))
     else:
         models.Video.objects.create(
             data=db_data,

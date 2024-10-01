@@ -11,7 +11,7 @@ import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Collection, Dict, Optional
+from typing import Any, ClassVar, Collection, Dict, Optional, Type
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -660,7 +660,7 @@ class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
     path = models.FileField(upload_to=upload_path_handler,
                             max_length=1024, storage=MyFileSystemStorage())
-    primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
+    images = models.ManyToManyField(Image, related_name="related_files")
 
     class Meta:
         default_permissions = ()
