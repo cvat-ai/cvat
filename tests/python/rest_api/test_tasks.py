@@ -2488,8 +2488,7 @@ class _TaskSpecBase(_TaskSpec):
 
     @property
     def frame_step(self) -> int:
-        v = getattr(self, "frame_filter", None) or "step=1"
-        return int(v.split("=")[-1])
+        return parse_frame_step(getattr(self, "frame_filter", ''))
 
     def __getattr__(self, k: str) -> Any:
         notfound = object()
@@ -3604,7 +3603,15 @@ class TestTaskBackups:
 
         old_meta = json.loads(old_task.api.retrieve_data_meta(old_task.id)[1].data)
         new_meta = json.loads(new_task.api.retrieve_data_meta(new_task.id)[1].data)
-        assert DeepDiff(old_meta, new_meta, ignore_order=True) == {}
+        assert (
+            DeepDiff(
+                old_meta,
+                new_meta,
+                ignore_order=True,
+                exclude_regex_paths=[r"root\[chunks_updated_date\]"],  # must be different
+            )
+            == {}
+        )
 
         old_jobs = sorted(old_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
         new_jobs = sorted(new_task.get_jobs(), key=lambda j: (j.start_frame, j.type))
