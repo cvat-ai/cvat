@@ -1,5 +1,5 @@
 {
-  "count": 42,
+  "count": 43,
   "next": null,
   "previous": null,
   "results": [
@@ -830,25 +830,25 @@
       "type": "any"
     },
     {
-      "attributes": [
-        {
-          "default_value": "",
-          "id": 15,
-          "input_type": "text",
-          "mutable": false,
-          "name": "id",
-          "values": [
-            ""
-          ]
-        }
-      ],
+      "attributes": [],
       "color": "#6080c0",
       "has_parent": false,
       "id": 75,
-      "name": "label",
+      "name": "cat",
       "parent_id": null,
       "sublabels": [],
       "task_id": 26,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 76,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 27,
       "type": "any"
     }
   ]

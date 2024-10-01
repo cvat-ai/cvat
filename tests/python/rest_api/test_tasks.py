@@ -7,6 +7,7 @@ import io
 import itertools
 import json
 import math
+import operator
 import os
 import os.path as osp
 import re
@@ -15,6 +16,7 @@ from abc import ABCMeta, abstractmethod
 from collections import Counter
 from contextlib import closing
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from functools import partial
 from http import HTTPStatus
@@ -566,12 +568,16 @@ class TestPatchTaskAnnotations:
         is_allow,
         find_task_staff_user,
         find_users,
-        tasks_by_org,
         request_data,
+        tasks_with_shapes,
     ):
         users = find_users(role=role, org=org)
-        tasks = tasks_by_org[org]
-        tasks = [t for t in tasks if t["validation_mode"] != "gt_pool"]
+        tasks = (
+            t
+            for t in tasks_with_shapes
+            if t["organization"] == org
+            if t["validation_mode"] != "gt_pool"
+        )
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
@@ -4241,15 +4247,159 @@ class TestPatchTask:
                 task["id"], patched_task_write_request={"assignee_id": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_task.assignee_updated_date == task["assignee_updated_date"]
-            else:
-                assert updated_task.assignee_updated_date != task["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
 
-            if new_assignee_id:
-                assert updated_task.assignee.id == new_assignee_id
+            if isinstance(updated_task.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_task.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    task["assignee_updated_date"],
+                )
             else:
-                assert updated_task.assignee is None
+                assert op(updated_task.assignee_updated_date, task["assignee_updated_date"])
+
+    @staticmethod
+    def _test_patch_linked_storage(
+        user: str, task_id: int, *, expected_status: HTTPStatus = HTTPStatus.OK
+    ) -> None:
+        with make_api_client(user) as api_client:
+            for associated_storage in ("source_storage", "target_storage"):
+                patch_data = {
+                    associated_storage: {
+                        "location": "local",
+                    }
+                }
+                (_, response) = api_client.tasks_api.partial_update(
+                    task_id,
+                    patched_task_write_request=patch_data,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == expected_status, response.status
+
+    @pytest.mark.parametrize(
+        "role, is_allow",
+        [
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
+        ],
+    )
+    def test_update_task_linked_storage_by_org_roles(
+        self,
+        role: str,
+        is_allow: bool,
+        tasks,
+        find_users,
+    ):
+        username, task_id = next(
+            (
+                (user["username"], task["id"])
+                for user in find_users(role=role, exclude_privilege="admin")
+                for task in tasks
+                if task["organization"] == user["org"]
+                and not task["project_id"]
+                and task["owner"]["id"] != user["id"]
+            )
+        )
+
+        self._test_patch_linked_storage(
+            username,
+            task_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
+
+    @pytest.mark.parametrize("org", (True, False))
+    @pytest.mark.parametrize(
+        "is_task_owner, is_task_assignee, is_project_owner, is_project_assignee",
+        [tuple(i == j for j in range(4)) for i in range(5)],
+    )
+    def test_update_task_linked_storage_by_assignee_or_owner(
+        self,
+        org: bool,
+        is_task_owner: bool,
+        is_task_assignee: bool,
+        is_project_owner: bool,
+        is_project_assignee: bool,
+        tasks,
+        find_users,
+        projects,
+    ):
+        is_allow = is_task_owner or is_project_owner
+        has_project = is_project_owner or is_project_assignee
+
+        username: Optional[str] = None
+        task_id: Optional[int] = None
+
+        filtered_users = (
+            (find_users(role="worker") + find_users(role="supervisor"))
+            if org
+            else find_users(org=None)
+        )
+
+        for task in tasks:
+            if task_id is not None:
+                break
+
+            if (
+                org
+                and not task["organization"]
+                or not org
+                and task["organization"]
+                or has_project
+                and task["project_id"] is None
+                or not has_project
+                and task["project_id"]
+            ):
+                continue
+
+            for user in filtered_users:
+                if org and task["organization"] != user["org"]:
+                    continue
+
+                is_user_task_owner = task["owner"]["id"] == user["id"]
+                is_user_task_assignee = (task["assignee"] or {}).get("id") == user["id"]
+                project = projects[task["project_id"]] if task["project_id"] else None
+                is_user_project_owner = (project or {}).get("owner", {}).get("id") == user["id"]
+                is_user_project_assignee = ((project or {}).get("assignee") or {}).get(
+                    "id"
+                ) == user["id"]
+
+                if (
+                    is_task_owner
+                    and is_user_task_owner
+                    or is_task_assignee
+                    and is_user_task_assignee
+                    or is_project_owner
+                    and is_user_project_owner
+                    or is_project_assignee
+                    and is_user_project_assignee
+                    or (
+                        not any(
+                            [
+                                is_task_owner,
+                                is_task_assignee,
+                                is_project_owner,
+                                is_project_assignee,
+                                is_user_task_owner,
+                                is_user_task_assignee,
+                                is_user_project_owner,
+                                is_project_assignee,
+                            ]
+                        )
+                    )
+                ):
+                    task_id = task["id"]
+                    username = user["username"]
+                    break
+
+        assert task_id is not None
+
+        self._test_patch_linked_storage(
+            username,
+            task_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

@@ -403,7 +403,7 @@ class TaskFrameProvider(IFrameProvider):
                 )
                 if abs_frame_number in s.frame_set
             ),
-            None
+            None,
         )
         if segment is None:
             raise AssertionError(

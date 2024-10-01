@@ -1,5 +1,5 @@
 {
-  "count": 21,
+  "count": 23,
   "next": null,
   "previous": null,
   "results": [
@@ -7,9 +7,123 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "created_date": "2024-09-13T19:29:38.200000Z",
+      "created_date": "2024-09-23T21:42:22.676000Z",
+      "data": 27,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 28,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=28",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=28"
+      },
+      "mode": "annotation",
+      "name": "task 1",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 5,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/5",
+        "username": "user4"
+      },
+      "project_id": 10,
+      "segment_size": 1,
+      "size": 1,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 49,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 50,
+        "location": "local"
+      },
+      "updated_date": "2024-09-23T21:42:23.082000Z",
+      "url": "http://localhost:8080/api/tasks/28"
+    },
+    {
+      "assignee": {
+        "first_name": "User",
+        "id": 5,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/5",
+        "username": "user4"
+      },
+      "assignee_updated_date": "2024-09-23T10:52:48.769000Z",
+      "bug_tracker": "",
+      "created_date": "2024-09-23T10:52:04.357000Z",
+      "data": 26,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "guide_id": null,
+      "id": 27,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 0,
+        "count": 1,
+        "url": "http://localhost:8080/api/jobs?task_id=27",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=27"
+      },
+      "mode": "annotation",
+      "name": "task assigned to maintainer",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 4,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/4",
+        "username": "user3"
+      },
+      "project_id": null,
+      "segment_size": 1,
+      "size": 1,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 47,
+        "location": "local"
+      },
+      "status": "annotation",
+      "subset": "",
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 48,
+        "location": "local"
+      },
+      "updated_date": "2024-09-23T10:52:48.778000Z",
+      "url": "http://localhost:8080/api/tasks/27"
+    },
+    {
+      "assignee": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "business1"
+      },
+      "assignee_updated_date": "2024-09-23T10:51:45.525000Z",
+      "bug_tracker": "",
+      "created_date": "2024-09-23T10:51:32.778000Z",
       "data": 25,
-      "data_chunk_size": 3,
+      "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "data_original_chunk_type": "imageset",
       "dimension": "2d",
@@ -18,7 +132,7 @@
       "image_quality": 70,
       "jobs": {
         "completed": 0,
-        "count": 4,
+        "count": 1,
         "url": "http://localhost:8080/api/jobs?task_id=26",
         "validation": 0
       },
@@ -26,26 +140,33 @@
         "url": "http://localhost:8080/api/labels?task_id=26"
       },
       "mode": "annotation",
-      "name": "task with honeypots",
+      "name": "task assigned to owner",
       "organization": 2,
       "overlap": 0,
       "owner": {
-        "first_name": "Admin",
-        "id": 1,
-        "last_name": "First",
-        "url": "http://localhost:8080/api/users/1",
-        "username": "admin1"
+        "first_name": "User",
+        "id": 4,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/4",
+        "username": "user3"
       },
       "project_id": null,
-      "segment_size": 0,
-      "size": 29,
-      "source_storage": null,
+      "segment_size": 1,
+      "size": 1,
+      "source_storage": {
+        "cloud_storage_id": null,
+        "id": 45,
+        "location": "local"
+      },
       "status": "annotation",
       "subset": "",
-      "target_storage": null,
-      "updated_date": "2024-09-13T19:42:20.126000Z",
-      "url": "http://localhost:8080/api/tasks/26",
-      "validation_mode": "gt_pool"
+      "target_storage": {
+        "cloud_storage_id": null,
+        "id": 46,
+        "location": "local"
+      },
+      "updated_date": "2024-09-23T10:51:45.533000Z",
+      "url": "http://localhost:8080/api/tasks/26"
     },
     {
       "assignee": null,
@@ -96,8 +217,7 @@
         "location": "local"
       },
       "updated_date": "2024-07-15T15:34:53.692000Z",
-      "url": "http://localhost:8080/api/tasks/25",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/25"
     },
     {
       "assignee": null,
@@ -148,8 +268,7 @@
         "location": "local"
       },
       "updated_date": "2024-07-15T15:33:10.641000Z",
-      "url": "http://localhost:8080/api/tasks/24",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/24"
     },
     {
       "assignee": null,
@@ -192,8 +311,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2024-03-21T20:50:05.947000Z",
-      "url": "http://localhost:8080/api/tasks/23",
-      "validation_mode": "gt"
+      "url": "http://localhost:8080/api/tasks/23"
     },
     {
       "assignee": null,
@@ -236,8 +354,7 @@
       "subset": "Train",
       "target_storage": null,
       "updated_date": "2023-11-24T15:23:30.045000Z",
-      "url": "http://localhost:8080/api/tasks/22",
-      "validation_mode": "gt"
+      "url": "http://localhost:8080/api/tasks/22"
     },
     {
       "assignee": null,
@@ -288,8 +405,7 @@
         "location": "local"
       },
       "updated_date": "2023-03-27T19:08:40.032000Z",
-      "url": "http://localhost:8080/api/tasks/21",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/21"
     },
     {
       "assignee": null,
@@ -340,8 +456,7 @@
         "location": "local"
       },
       "updated_date": "2023-03-10T11:57:48.835000Z",
-      "url": "http://localhost:8080/api/tasks/20",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/20"
     },
     {
       "assignee": null,
@@ -392,8 +507,7 @@
         "location": "local"
       },
       "updated_date": "2023-03-10T11:56:54.904000Z",
-      "url": "http://localhost:8080/api/tasks/19",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/19"
     },
     {
       "assignee": null,
@@ -444,8 +558,7 @@
         "location": "local"
       },
       "updated_date": "2023-03-01T15:36:37.897000Z",
-      "url": "http://localhost:8080/api/tasks/18",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/18"
     },
     {
       "assignee": {
@@ -494,8 +607,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2023-02-10T14:08:05.873000Z",
-      "url": "http://localhost:8080/api/tasks/17",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/17"
     },
     {
       "assignee": null,
@@ -546,8 +658,7 @@
         "location": "local"
       },
       "updated_date": "2022-12-01T12:53:35.028000Z",
-      "url": "http://localhost:8080/api/tasks/15",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/15"
     },
     {
       "assignee": null,
@@ -598,8 +709,7 @@
         "location": "local"
       },
       "updated_date": "2022-09-23T11:57:02.300000Z",
-      "url": "http://localhost:8080/api/tasks/14",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/14"
     },
     {
       "assignee": {
@@ -648,8 +758,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2023-02-10T11:50:18.414000Z",
-      "url": "http://localhost:8080/api/tasks/13",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/13"
     },
     {
       "assignee": null,
@@ -686,8 +795,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-03-14T13:24:05.861000Z",
-      "url": "http://localhost:8080/api/tasks/12",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/12"
     },
     {
       "assignee": {
@@ -744,8 +852,7 @@
         "location": "cloud_storage"
       },
       "updated_date": "2022-06-30T08:56:45.594000Z",
-      "url": "http://localhost:8080/api/tasks/11",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/11"
     },
     {
       "assignee": {
@@ -794,8 +901,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-11-03T13:57:26.007000Z",
-      "url": "http://localhost:8080/api/tasks/9",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/9"
     },
     {
       "assignee": {
@@ -844,8 +950,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2023-05-02T09:28:57.638000Z",
-      "url": "http://localhost:8080/api/tasks/8",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/8"
     },
     {
       "assignee": {
@@ -894,8 +999,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-02-21T10:41:38.540000Z",
-      "url": "http://localhost:8080/api/tasks/7",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/7"
     },
     {
       "assignee": null,
@@ -938,8 +1042,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-02-16T06:26:54.836000Z",
-      "url": "http://localhost:8080/api/tasks/6",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/6"
     },
     {
       "assignee": {
@@ -988,8 +1091,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2022-02-21T10:40:21.257000Z",
-      "url": "http://localhost:8080/api/tasks/5",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/5"
     },
     {
       "assignee": {
@@ -1038,8 +1140,7 @@
       "subset": "",
       "target_storage": null,
       "updated_date": "2021-12-22T07:14:15.234000Z",
-      "url": "http://localhost:8080/api/tasks/2",
-      "validation_mode": null
+      "url": "http://localhost:8080/api/tasks/2"
     }
   ]
 }
