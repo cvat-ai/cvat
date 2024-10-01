@@ -6,12 +6,12 @@
 import './styles.scss';
 import React, { useCallback } from 'react';
 import Modal from 'antd/lib/modal';
+import { LoadingOutlined } from '@ant-design/icons';
 import { DimensionType, CVATCore } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
-import { LoadingOutlined } from '@ant-design/icons';
 
 type AnnotationFormats = Awaited<ReturnType<CVATCore['server']['formats']>>;
 
@@ -37,6 +37,7 @@ export enum Actions {
     OPEN_BUG_TRACKER = 'open_bug_tracker',
     BACKUP_TASK = 'backup_task',
     VIEW_ANALYTICS = 'view_analytics',
+    QUALITY_CONTROL = 'quality_control',
     VIEW_CONSENSUS_ANALYTICS = 'view_consensus_analytics',
     MERGE_CONSENSUS_JOBS = 'merge_consensus_jobs',
 }
@@ -134,6 +135,14 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         </Menu.Item>
     ), 50]);
 
+    menuItems.push([(
+        <Menu.Item
+            key={Actions.QUALITY_CONTROL}
+        >
+            Quality control
+        </Menu.Item>
+    ), 60]);
+
     if (consensusJobsPerRegularJob) {
         menuItems.push([(
             <Menu.Item
@@ -156,7 +165,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
     if (projectID === null) {
         menuItems.push([(
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
-        ), 60]);
+        ), 70]);
     }
 
     menuItems.push([(

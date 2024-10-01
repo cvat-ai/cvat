@@ -70,7 +70,7 @@ class AnalyticsReportPermission(OpenPolicyAgentPermission):
             {
                 "list": Scopes.LIST,
                 "create": Scopes.CREATE,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):

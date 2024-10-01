@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import { Task } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
-import { clampValue, percent } from 'utils/quality';
+import { clampValue, percent } from 'utils/consensus';
 import AnalyticsCard from '../views/analytics-card';
 
 interface Props {
@@ -57,8 +57,8 @@ function Issues(props: Props): JSX.Element {
             title='Issues'
             className='cvat-task-issues'
             value={issuesCount}
-            size={12}
             bottomElement={bottomElement}
+            size={{ cardSize: 12 }}
         />
     );
 }

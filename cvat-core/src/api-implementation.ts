@@ -40,7 +40,7 @@ import {
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
-import { FramesMetaData } from './frames';
+import { getFramesMeta } from './frames';
 import AnalyticsReport from './analytics-report';
 import { listActions, registerAction, runActions } from './annotations-actions';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
@@ -532,9 +532,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const settings = await serverProxy.analytics.quality.settings.get(params);
         const schema = await getServerAPISchema();
         const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
-        return new QualitySettings({
-            ...settings, descriptions,
-        });
+
+        return new QualitySettings({ ...settings, descriptions });
     });
     implementationMixin(cvat.consensus.reports, async (filter: ConsensusReportsFilter) => {
         checkFilter(filter, {
@@ -571,7 +570,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const params = fieldsToSnakeCase({ ...filter, sort: '-id' });
 
-        const reportsData = await serverProxy.consensus.assignee_reports(params);
+        const reportsData = await serverProxy.consensus.assigneeReports(params);
         const reports = Object.assign(
             reportsData.map((report) => new AssigneeConsensusReport({ ...report })),
             { count: reportsData.count },
@@ -632,12 +631,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(body);
         await serverProxy.analytics.performance.calculate(params, onUpdate);
     });
-    implementationMixin(cvat.frames.getMeta, async (type, id) => {
-        const result = await serverProxy.frames.getMeta(type, id);
-        return new FramesMetaData({
-            ...result,
-            deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
-        });
+    implementationMixin(cvat.frames.getMeta, async (type: 'job' | 'task', id: number) => {
+        const result = await getFramesMeta(type, id);
+        return result;
     });
 
     return cvat;

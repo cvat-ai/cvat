@@ -27,7 +27,7 @@ import ObjectState from './object-state';
 import MLModel from './ml-model';
 import Issue from './issue';
 import Comment from './comment';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
@@ -225,6 +225,12 @@ export default interface CVATCore {
         Webhook: typeof Webhook;
         AnnotationGuide: typeof AnnotationGuide;
         BaseSingleFrameAction: typeof BaseSingleFrameAction;
+        QualityReport: typeof QualityReport;
+        QualityConflict: typeof QualityConflict;
+        QualitySettings: typeof QualitySettings;
+        AnalyticsReport: typeof AnalyticsReport;
+        Request: typeof Request;
+        FramesMetaData: typeof FramesMetaData;
     };
     utils: {
         mask2Rle: typeof mask2Rle;

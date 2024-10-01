@@ -8,7 +8,6 @@ from __future__ import annotations
 import os.path as osp
 import re
 import sys
-from collections import namedtuple
 from functools import reduce
 from operator import add
 from pathlib import Path
@@ -31,19 +30,25 @@ from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
                                      JobType, Label, LabelType, Project, SegmentType, ShapeType,
                                      Task)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.lazy_list import LazyList
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import MaskConverter, EllipsesToMasks
+from ..engine.log import ServerLogManager
+
+slogger = ServerLogManager(__name__)
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
 class InstanceLabelData:
-    Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
+    class Attribute(NamedTuple):
+        name: str
+        value: Any
 
     @classmethod
     def add_prefetch_info(cls, queryset: QuerySet):
@@ -188,20 +193,76 @@ class InstanceLabelData:
         return exported_attributes
 
 class CommonData(InstanceLabelData):
-    Shape = namedtuple("Shape", 'id, label_id')  # 3d
-    LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order, elements, outside, id')
-    LabeledShape.__new__.__defaults__ = (0, 0, 0, [], False, None)
-    TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id, elements, id')
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0, [], None)
-    Track = namedtuple('Track', 'label, group, source, shapes, elements, id')
-    Track.__new__.__defaults__ = ([], None)
-    Tag = namedtuple('Tag', 'frame, label, attributes, source, group, id')
-    Tag.__new__.__defaults__ = (0, None)
-    Frame = namedtuple(
-        'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels, subset')
-    Label = namedtuple('Label', 'id, name, color, type')
+    class Shape(NamedTuple):
+        id: int
+        label_id: int
+
+    class LabeledShape(NamedTuple):
+        type: int
+        frame: int
+        label: int
+        points: Sequence[int]
+        occluded: bool
+        attributes: Sequence[CommonData.Attribute]
+        source: str | None
+        rotation: float = 0
+        group: int = 0
+        z_order: int = 0
+        elements: Sequence[CommonData.LabeledShape] = ()
+        outside: bool = False
+        id: int | None = None
+
+    class TrackedShape(NamedTuple):
+        type: int
+        frame: int
+        points: Sequence[int]
+        occluded: bool
+        outside: bool
+        keyframe: bool
+        attributes: Sequence[CommonData.Attribute]
+        rotation: float = 0
+        source: str = "manual"
+        group: int = 0
+        z_order: int = 0
+        label: str | None = None
+        track_id: int = 0
+        elements: Sequence[CommonData.TrackedShape] = ()
+        id: int | None = None
+
+    class Track(NamedTuple):
+        label: int
+        group: int
+        source: str
+        shapes: Sequence[CommonData.TrackedShape]
+        elements: Sequence[int] = ()
+        id: int | None = None
+
+    class Tag(NamedTuple):
+        frame: int
+        label: int
+        attributes: Sequence[CommonData.Attribute]
+        source: str | None
+        group: int | None = 0
+        id: int | None = None
+
+    class Frame(NamedTuple):
+        idx: int
+        id: int
+        frame: int
+        name: str
+        width: int
+        height: int
+        labeled_shapes: Sequence[CommonData.LabeledShape]
+        tags: Sequence[CommonData.Tag]
+        shapes: Sequence[CommonData.Shape]
+        labels: Sequence[CommonData.Label]
+        subset: str
+
+    class Label(NamedTuple):
+        id: int
+        name: str
+        color: str | None
+        type: str | None
 
     def __init__(self,
         annotation_ir,
@@ -240,7 +301,7 @@ class CommonData(InstanceLabelData):
 
     @property
     def stop(self) -> int:
-        return len(self)
+        return max(0, len(self) - 1)
 
     def _get_queryset(self):
         raise NotImplementedError()
@@ -376,7 +437,7 @@ class CommonData(InstanceLabelData):
     def _export_track(self, track, idx):
         track['shapes'] = list(filter(lambda x: not self._is_frame_deleted(x['frame']), track['shapes']))
         tracked_shapes = TrackManager.get_interpolated_shapes(
-            track, 0, self.stop, self._annotation_ir.dimension)
+            track, 0, self.stop + 1, self._annotation_ir.dimension)
         for tracked_shape in tracked_shapes:
             tracked_shape["attributes"] += track["attributes"]
             tracked_shape["track_id"] = track["track_id"] if self._use_server_track_ids else idx
@@ -432,7 +493,7 @@ class CommonData(InstanceLabelData):
 
         anno_manager = AnnotationManager(self._annotation_ir)
         for shape in sorted(
-            anno_manager.to_shapes(self.stop, self._annotation_ir.dimension,
+            anno_manager.to_shapes(self.stop + 1, self._annotation_ir.dimension,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 include_outside=False,
@@ -536,12 +597,7 @@ class CommonData(InstanceLabelData):
             )
         ]
 
-        # TODO: remove once importers are guaranteed to return correct type
-        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
-        points = _shape["points"]
-        for i, point in enumerate(map(float, points)):
-            points[i] = point
-
+        self._ensure_points_converted_to_floats(_shape)
         _shape['elements'] = [self._import_shape(element, label_id) for element in _shape.get('elements', [])]
 
         return _shape
@@ -567,13 +623,34 @@ class CommonData(InstanceLabelData):
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name)
             ]
-        # TODO: remove once importers are guaranteed to return correct type
-        # (see https://github.com/cvat-ai/cvat/pull/8226/files#r1695445137)
-            points = shape["points"]
-            for i, point in enumerate(map(float, points)):
-                points[i] = point
+            self._ensure_points_converted_to_floats(shape)
 
         return _track
+
+    def _ensure_points_converted_to_floats(self, shape) -> None:
+        """
+        Historically, there were importers that were not converting points to ints/floats.
+        The only place to make sure that all points in shapes have the right type was this one.
+        However, this does eat up a lot of memory for some reason.
+        (see https://github.com/cvat-ai/cvat/pull/1898)
+
+        So, before we can guarantee that all the importers are returning the right data,
+        we have to have this conversion.
+        """
+        # if points is LazyList or tuple, we can be sure it has the right type already
+        if isinstance(points := shape["points"], LazyList | tuple):
+            return
+
+        for point in points:
+            if not isinstance(point, int | float):
+                slogger.glob.error(
+                    f"Points must be type of "
+                    f"`tuple[int | float] | list[int | float] | LazyList`, "
+                    f"not `{points.__class__.__name__}[{point.__class__.__name__}]`"
+                    "Please, update import code to return the correct type."
+                )
+                shape["points"] = tuple(map(float, points))
+                return
 
     def _call_callback(self):
         if self._len() > self._MAX_ANNO_SIZE:
@@ -764,7 +841,7 @@ class JobData(CommonData):
     @property
     def stop(self) -> int:
         segment = self._db_job.segment
-        return segment.stop_frame + 1
+        return segment.stop_frame
 
     @property
     def db_instance(self):
@@ -1149,7 +1226,7 @@ class ProjectData(InstanceLabelData):
                 for i, element in enumerate(track.get("elements", []))]
         )
 
-    def group_by_frame(self, include_empty=False):
+    def group_by_frame(self, include_empty: bool = False):
         frames: Dict[Tuple[str, int], ProjectData.Frame] = {}
         def get_frame(task_id: int, idx: int) -> ProjectData.Frame:
             frame_info = self._frame_info[(task_id, idx)]
@@ -1334,7 +1411,7 @@ class ProjectData(InstanceLabelData):
 
 @attrs(frozen=True, auto_attribs=True)
 class ImageSource:
-    db_data: Data
+    db_task: Task
     is_video: bool = attrib(kw_only=True)
 
 class ImageProvider:
@@ -1363,8 +1440,10 @@ class ImageProvider2D(ImageProvider):
                 # optimization for videos: use numpy arrays instead of bytes
                 # some formats or transforms can require image data
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.NUMPY_ARRAY)[0]
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.NUMPY_ARRAY
+                ).data
+
             return dm.Image(data=video_frame_loader, **image_kwargs)
         else:
             def image_loader(_):
@@ -1372,8 +1451,10 @@ class ImageProvider2D(ImageProvider):
 
                 # for images use encoded data to avoid recoding
                 return self._frame_provider.get_frame(frame_index,
-                    quality=FrameProvider.Quality.ORIGINAL,
-                    out_type=FrameProvider.Type.BUFFER)[0].getvalue()
+                    quality=FrameQuality.ORIGINAL,
+                    out_type=FrameOutputType.BUFFER
+                ).data.getvalue()
+
             return dm.ByteImage(data=image_loader, **image_kwargs)
 
     def _load_source(self, source_id: int, source: ImageSource) -> None:
@@ -1381,7 +1462,7 @@ class ImageProvider2D(ImageProvider):
             return
 
         self._unload_source()
-        self._frame_provider = FrameProvider(source.db_data)
+        self._frame_provider = TaskFrameProvider(source.db_task)
         self._current_source_id = source_id
 
     def _unload_source(self) -> None:
@@ -1397,7 +1478,7 @@ class ImageProvider3D(ImageProvider):
         self._images_per_source = {
             source_id: {
                 image.id: image
-                for image in source.db_data.images.prefetch_related('related_files')
+                for image in source.db_task.data.images.prefetch_related('related_files')
             }
             for source_id, source in sources.items()
         }
@@ -1406,7 +1487,7 @@ class ImageProvider3D(ImageProvider):
         source = self._sources[source_id]
 
         point_cloud_path = osp.join(
-            source.db_data.get_upload_dirname(), image_kwargs['path'],
+            source.db_task.data.get_upload_dirname(), image_kwargs['path'],
         )
 
         image = self._images_per_source[source_id][frame_id]
@@ -1519,11 +1600,18 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         is_video = instance_meta['mode'] == 'interpolation'
         ext = ''
         if is_video:
-            ext = FrameProvider.VIDEO_FRAME_EXT
+            ext = TaskFrameProvider.VIDEO_FRAME_EXT
 
         if dimension == DimensionType.DIM_3D or include_images:
+            if isinstance(instance_data, TaskData):
+                db_task = instance_data.db_instance
+            elif isinstance(instance_data, JobData):
+                db_task = instance_data.db_instance.segment.task
+            else:
+                assert False
+
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
-                {0: ImageSource(instance_data.db_data, is_video=is_video)}
+                {0: ImageSource(db_task, is_video=is_video)}
             )
 
         for frame_data in instance_data.group_by_frame(include_empty=True):
@@ -1605,13 +1693,13 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         if self._dimension == DimensionType.DIM_3D or include_images:
             self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[self._dimension](
                 {
-                    task.id: ImageSource(task.data, is_video=task.mode == 'interpolation')
+                    task.id: ImageSource(task, is_video=task.mode == 'interpolation')
                     for task in project_data.tasks
                 }
             )
 
         ext_per_task: Dict[int, str] = {
-            task.id: FrameProvider.VIDEO_FRAME_EXT if is_video else ''
+            task.id: TaskFrameProvider.VIDEO_FRAME_EXT if is_video else ''
             for task in project_data.tasks
             for is_video in [task.mode == 'interpolation']
         }
@@ -2059,11 +2147,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                 if ann.type in shapes:
                     points = []
                     if ann.type == dm.AnnotationType.cuboid_3d:
-                        points = [*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0]
+                        points = (*ann.position, *ann.rotation, *ann.scale, 0, 0, 0, 0, 0, 0, 0)
                     elif ann.type == dm.AnnotationType.mask:
-                        points = MaskConverter.dm_mask_to_cvat_rle(ann)
+                        points = tuple(MaskConverter.dm_mask_to_cvat_rle(ann))
                     elif ann.type != dm.AnnotationType.skeleton:
-                        points = ann.points
+                        points = tuple(ann.points)
 
                     rotation = ann.attributes.pop('rotation', 0.0)
                     # Use safe casting to bool instead of plain reading
