@@ -689,7 +689,7 @@ class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE) # TODO: add related name
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
-    chunks_updated_date = models.DateTimeField(null=False)
+    chunks_updated_date = models.DateTimeField(null=False, auto_now_add=True)
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
 
     # SegmentType.SPECIFIC_FRAMES fields

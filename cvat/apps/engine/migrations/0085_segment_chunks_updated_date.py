@@ -53,6 +53,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="segment",
             name="chunks_updated_date",
-            field=models.DateTimeField(null=False),
+            field=models.DateTimeField(null=False, auto_now_add=True),
         ),
     ]
