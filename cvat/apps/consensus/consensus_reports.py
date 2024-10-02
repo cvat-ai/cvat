@@ -260,8 +260,9 @@ def generate_assignee_consensus_report(
         assignee_report_data.setdefault(
             assignees[idx], {"consensus_score": [], "conflict_count": 0}
         )
+        job_consensus_score = dataset_mean_consensus_score[id(consensus_datasets[idx])]
         assignee_report_data[assignees[idx]]["consensus_score"].append(
-            dataset_mean_consensus_score[id(consensus_datasets[idx])]
+            0 if np.isnan(job_consensus_score) else job_consensus_score
         )
 
     for assignee_id, assignee_info in assignee_report_data.items():
