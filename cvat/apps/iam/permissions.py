@@ -16,6 +16,7 @@ from attrs import define, field
 from django.apps import AppConfig
 from django.conf import settings
 from django.db.models import Q, Model
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
@@ -196,6 +197,27 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         # possible to get duplicate results when a QuerySet is evaluated.
         # That’s when you’d use distinct().
         return queryset.filter(q_objects[0]).distinct()
+
+    @classmethod
+    def get_per_field_update_scopes(cls, request, scopes_per_field):
+        """
+        Returns the list of required scopes for a PATCH endpoint where different
+        request body fields are associated with different scopes.
+        """
+
+        assert request.method == 'PATCH'
+
+        # Even if no fields are modified, a PATCH request typically returns the
+        # new state of the object, so we need to make sure the user has permissions
+        # to view it.
+        scopes = [cls.Scopes.VIEW]
+
+        try:
+            scopes.extend({scopes_per_field[field_name] for field_name in request.data})
+        except KeyError as ex:
+            raise PermissionDenied("Attempted to update an unknown field") from ex
+
+        return scopes
 
 T = TypeVar('T', bound=Model)
 

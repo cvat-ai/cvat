@@ -16,6 +16,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.20.0'></a>
+## \[2.20.0\] - 2024-10-01
+
+### Added
+
+- A server setting to enable or disable storage of permanent media chunks on the server filesystem
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+- \[Server API\] `GET /api/jobs/{id}/data/?type=chunk&index=x` parameter combination.
+  The new `index` parameter allows to retrieve job chunks using 0-based index in each job,
+  instead of the `number` parameter, which used task chunk ids.
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+### Changed
+
+- Job assignees will not receive frames from adjacent jobs in chunks
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+### Deprecated
+
+- \[Server API\] `GET /api/jobs/{id}/data/?type=chunk&number=x` parameter combination
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+### Removed
+
+- Removed the non-functional `task_subsets` parameter from the project create
+  and update endpoints
+  (<https://github.com/cvat-ai/cvat/pull/8492>)
+
+### Fixed
+
+- Various memory leaks in video reading on the server
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
 <a id='changelog-2.19.1'></a>
 ## \[2.19.1\] - 2024-09-26
 
