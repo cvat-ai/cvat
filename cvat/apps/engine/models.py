@@ -400,6 +400,7 @@ class Image(models.Model):
     height = models.PositiveIntegerField()
     is_placeholder = models.BooleanField(default=False)
     real_frame = models.PositiveIntegerField(default=0)
+    related_files: models.manager.RelatedManager[RelatedFile]
 
     class Meta:
         default_permissions = ()

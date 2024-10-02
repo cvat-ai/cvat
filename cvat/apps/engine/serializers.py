@@ -1079,6 +1079,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             db_segment_frame.width = db_requested_frame.width
             db_segment_frame.height = db_requested_frame.height
             db_segment_frame.real_frame = db_requested_frame.frame
+            db_segment_frame.related_files.set(db_requested_frame.related_files.all())
 
             updated_db_frames.append(db_segment_frame)
 
