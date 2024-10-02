@@ -1191,6 +1191,9 @@ def _create_thread(
         seed = validation_params.get("random_seed")
         rng = random.Generator(random.MT19937(seed=seed))
 
+        # Sort the images to be able to create reproducible results
+        images = sort(images, sorting_method=models.SortingMethod.NATURAL, func=lambda i: i.path)
+
         pool_frames: list[int] = []
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
@@ -1254,19 +1257,26 @@ def _create_thread(
 
         frames_per_job_count = min(len(pool_frames), frames_per_job_count)
 
+        non_pool_frames = list(set(all_frames).difference(pool_frames))
+        rng.shuffle(non_pool_frames)
+
+        # Don't use the same rng as for frame ordering to simplify random_seed maintenance in future
+        # We still use the same seed, but in this case the frame selection rng is separate
+        # from job frame ordering rng
+        job_frame_ordering_rng = random.Generator(random.MT19937(seed=seed))
+
         # Allocate frames for jobs
         job_file_mapping: JobFileMapping = []
         new_db_images: list[models.Image] = []
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
-        non_pool_frames = set(all_frames).difference(pool_frames)
         for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
             job_validation_frames = rng.choice(
                 pool_frames, size=frames_per_job_count, replace=False
             )
             job_frames += job_validation_frames.tolist()
 
-            random.shuffle(job_frames) # don't use the same rng
+            job_frame_ordering_rng.shuffle(job_frames)
 
             job_images = []
             for job_frame in job_frames:
