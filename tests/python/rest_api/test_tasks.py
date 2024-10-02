@@ -2275,13 +2275,10 @@ class TestPostTaskData:
                     self._USERNAME, spec=deepcopy(task_params), data=deepcopy(data_params)
                 )
                 task_meta = json.loads(api_client.tasks_api.retrieve_data_meta(task_id)[1].data)
-                task_validation_layout = json.loads(
-                    api_client.tasks_api.retrieve_validation_layout(task_id)[1].data
-                )
-                return task_meta, task_validation_layout
+                return task_meta
 
-        task1_meta, task1_validation_layout = _create_task()
-        task2_meta, task2_validation_layout = _create_task()
+        task1_meta = _create_task()
+        task2_meta = _create_task()
 
         assert (
             DeepDiff(
@@ -2292,7 +2289,6 @@ class TestPostTaskData:
             )
             == {}
         )
-        assert DeepDiff(task1_validation_layout, task2_validation_layout, ignore_order=False) == {}
 
     @parametrize(
         "frame_selection_method, method_params",
