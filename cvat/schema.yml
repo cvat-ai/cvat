@@ -2567,45 +2567,6 @@ paths:
       responses:
         '204':
           description: The job has been deleted
-  /api/jobs/{id}/aggregate/:
-    put:
-      operationId: jobs_update_aggregate
-      summary: Aggregate data of the parent job
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this job.
-        required: true
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: |
-          The report creation request id. Can be specified to check the report
-          creation status.
-      tags:
-      - jobs
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobWriteRequest'
-        required: true
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '201':
-          description: Specific Consensus Jobs Aggregated
-        '202':
-          description: Agreegation of specific Consensus Jobs started
-        '400':
-          description: Agreegating a job without data is not allowed
   /api/jobs/{id}/annotations/:
     get:
       operationId: jobs_retrieve_annotations
@@ -5775,45 +5736,6 @@ paths:
       responses:
         '204':
           description: The task has been deleted
-  /api/tasks/{id}/aggregate/:
-    put:
-      operationId: tasks_update_aggregate
-      summary: Aggregate data of a task
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      - in: query
-        name: rq_id
-        schema:
-          type: string
-        description: |
-          The report creation request id. Can be specified to check the report
-          creation status.
-      tags:
-      - tasks
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TaskWriteRequest'
-        required: true
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '201':
-          description: Consensus Jobs Aggregated
-        '202':
-          description: Agreegation of Consensus Jobs started
-        '400':
-          description: Agreegating a task without data is not allowed
   /api/tasks/{id}/annotations/:
     get:
       operationId: tasks_retrieve_annotations
@@ -7961,8 +7883,9 @@ components:
         task_id:
           type: integer
           writeOnly: true
-      required:
-      - task_id
+        job_id:
+          type: integer
+          writeOnly: true
     ConsensusReportSummary:
       type: object
       properties:
