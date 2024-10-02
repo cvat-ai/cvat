@@ -31,7 +31,6 @@ See:
 - [Step-by-Step Guide](#step-by-step-guide)
 
 ## Use Cases
-
 The basic use case is annotating the entire dataset with multiple annotators to obtain high-quality annotations in the
 dataset. In some cases it may work, but typically, however, this way of annotating is prohibitively expensive, as you
 need to annotate everything several times. There are several ways how the situation can be improved.
@@ -131,43 +130,61 @@ need to annotate everything several times. There are several ways how the situat
    1. ![consensus task](/images/consensus_task.jpeg)
    2. ![assigned workers](/images/assigned_workers.jpeg)
 4. This is the annotations made by `worker 1`
-   1. ![frame 1](/images/worker_1_1.jpeg)
-   2. ![frame 2](/images/worker_1_2.jpeg)
-   3. ![frame 3](/images/worker_1_3.jpeg)
+   1. ![frame 1](/images/worker1_frame1.jpeg)
+   2. ![frame 2](/images/worker1_frame2.jpeg)
 5. This is the annotations made by `worker 2`
-   1. ![frame 1](/images/worker_2_1.jpeg) In this frame the annotations are significantly off by our expectations.
-   2. ![frame 2](/images/worker_2_2.jpeg) In this frame worker 2 hasn't annotated one of the dogs.
-   3. ![frame 3](/images/worker_2_3.jpeg)
+   1. ![frame 1](/images/worker2_frame1.jpeg)
+   2. ![frame 2](/images/worker2_frame2.jpeg)
+   3. 4. This is the annotations made by `worker 3`
+   1. ![frame 1](/images/worker3_frame1.jpeg) Here there's an extra annotation where cat isn't there, also the bounding
+      box marked as dog contains two dogs instead of a single dog
+   2. ![frame 2](/images/worker3_frame2.jpeg) Here the shape is correct but the label is incorrect
 6. Click on `Merge Consensus Jobs`, this will merge all the consensus jobs into their regular job.
    1. ![consensus merge button](/images/consensus_merge_button.jpeg)
    2. ![consensus merge confirmation](/images/consensus_merge_confirmation.jpeg)
    3. ![loading consensus merge](/images/loading_consensus_merge.jpeg) The button will be disabled until the previous
       merge action isn't completed.
+   4. A similar merge option is available under each Regular Job, to perform merging of consensus job at job level instead of
+      task level ![job wise consensus merge button](/images/job_level_consensus_merge.jpeg)
 7. Below are the merged results
-   1. ![frame 1](/images/merged_1.jpeg)
-   2. ![frame 2](/images/merged_2.jpeg) Through consensus, it got the annotation from worker 1's annotation
-   3. ![frame 3](/images/merged_3.jpeg)
-8. On clicking on `View Consensus Analytics` ![view consensus analytics](/images/view_consensus_analytics.jpeg)
-   1. ![consensus analytics](/images/consensus_analytics_1.jpeg) Here the score corresponding to the job (merged job)
+   1. ![frame 1](/images/merged_frame_1_2_50.jpeg)
+   2. ![frame 2](/images/merged_frame_2_2_50.jpeg)
+   3. Since value of `quorum` is set to `2` (default value is half of the `consensus jobs per regular job`). The
+      extra annotation by `worker 3` were discarded as it didn't have any other annotation having overlap more
+      than `iou threshold` (default value is `50%`). The large bounding box annotation by `worker 3` didn't come up it
+      got discarded in the consensus merging process, but it had overlap more than `50%` we will see more on this with
+      in further steps
+8. On clicking on `View Consensus Analytics` ![view consensus analytics]
+   1. ![consensus analytics job](/images/consensus_analytics_job_2_50.jpeg) Here the score corresponding to the job
       represents, the mean overlap (IoU) among the annotations in its consensus jobs and the merged job.
-   2. ![consensus analytics conflicts](/images/consensus_analytics_1_conf.jpeg) There was an annotation made by worker 1
-      but not by worker 2, that annotation didn't have any matching annotations, so it raised `No matching annotation`
-      conflict. Similarly, there were two annotations in the first frame which didn't match as they did not satisfy the
-      `Min Overlap Threshold` condition. Thus, 3 `No matching annotation` conflicts are raised.
-   3. ![consensus settings](/images/consensus_settings_1.jpeg)
-9. Now we will change the `Min Overlap Threshold` from `50%` to `20%` and again merge the consensus jobs.
-   ![consensus settings](/images/consensus_settings_2.jpeg)
-10. We can see after this, in the first frame we have a single annotation instead of two annotations which weren't
-   matched previously. ![updated frame 1](/images/consensus_label.jpeg)
-11. Thus, now in the consensus analytics page the number of conflict is reduced to one.
-    1. ![updated consensus analytics](/images/consensus_analytics_2.jpeg)
-    2. ![updated consensus analytics conflicts](/images/consensus_analytics_2_conf.jpeg)
-12. On clicking on `Assignees` assignee level analytics can also be viewed.
-    ![consensus analytics assignee](/images/consensus_analytics_2_assignee.jpeg)
+   2. ![consensus analytics assignee](/images/consensus_analytics_assignee_2_50.jpeg) Here the score corresponding to
+      assignee represents, the fraction of annotation made by the assignee which are present in the merged job.
+   3. ![consensus settings](/images/consensus_setting_2_50.jpeg)
+9.  Now we will change the `quorum` from `2` to `1` and again merge the consensus jobs.
+   ![consensus settings](/images/consensus_setting_1_50.jpeg)
+10. Below are the merged results
+   1. ![frame 1](/images/merged_frame_1_1_50.jpeg)
+   2. ![frame 2](/images/merged_frame_2_1_50.jpeg)
+   3. Now, `frame 1` has the extra annotation as it doesn't need overlapping annotation to pass `quorum` criteria. Same
+      goes with annotation in `frame 2`
+11. As the quality of annotations in the merged job is reduced the mean consensus score also has reduced
+    1. ![consensus analytics jobs](/images/consensus_analytics_job_1_50.jpeg)
+    2. ![consensus analytics assignee](/images/consensus_analytics_assignee_1_50.jpeg) since the number of annotations
+       made by `worker 3` used for consensus has increased it's score has also increased.
+12. Now we will change the `Min Overlap Threshold` from `50%` to `100%` and again merge the consensus jobs.
+   ![consensus settings](/images/consensus_setting_1_100.jpeg)
+13. Below are the merged results
+   1. ![frame 1](/images/merged_frame_1_1_100.jpeg)
+   2. ![frame 2](/images/merged_frame_2_1_100.jpeg)
+   3. Now, the merged job contains all the annotations present in all the consensus jobs. Since, `min iou threshold` is
+      `100%` annotations to be grouped together must have a `100%` overlap with each other, so no for consensus the
+      group will be of single individual annotations only and as the `quorum` is `1` all these groups wouldn't be
+      filtered out.
+14. As the quality of annotations in the merged job is further reduced the value of mean consensus score also has
+    reduced subsequently
+    1. ![consensus analytics jobs](/images/consensus_analytics_job_1_100.jpeg)
+    2. ![consensus analytics assignee](/images/consensus_analytics_assignee_1_100.jpeg) since now all the annotations
+       by assignees is present in the merged job thus there score is also `100%`
 
-- Annotations made manually have a tag of `MANUAL` in them, whereas annotations obtained through consensus have
-  `CONSENSUS` tag in them.
-  - ![manual label](/images/manual_label.jpeg)
-  - ![consensus label](/images/consensus_label.jpeg)
-- Similar merge option is available under each Regular Job, to perform merging of consensus job at job level instead of
-  task level ![job wise consensus merge button](/images/job_wise_consensus.jpeg)
+- It can be noticed throughout above steps that the annotations made manually (by assignee) have a tag of `MANUAL` in
+  them, whereas annotations obtained through consensus (in merged job) have `CONSENSUS` tag in them.
