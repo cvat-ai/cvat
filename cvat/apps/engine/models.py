@@ -291,6 +291,8 @@ class Data(models.Model):
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
 
+    related_files: models.manager.RelatedManager[RelatedFile]
+
     validation_params: ValidationParams
     """
     Represents user-requested validation params before task is created.
@@ -399,6 +401,7 @@ class Image(models.Model):
     height = models.PositiveIntegerField()
     is_placeholder = models.BooleanField(default=False)
     real_frame = models.PositiveIntegerField(default=0)
+    related_files: models.manager.RelatedManager[RelatedFile]
 
     class Meta:
         default_permissions = ()
