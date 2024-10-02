@@ -22,8 +22,9 @@ from django.db.models.fields import FloatField
 from django.db.models import Q, TextChoices
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
-from cvat.apps.engine.lazy_list import LazyList
 
+from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
 from cvat.apps.events.utils import cache_deleted
 
@@ -291,15 +292,19 @@ class Data(models.Model):
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
 
+    images: models.manager.RelatedManager[Image]
+    video: MaybeUndefined[Video]
     related_files: models.manager.RelatedManager[RelatedFile]
+    validation_layout: MaybeUndefined[ValidationLayout]
 
-    validation_params: ValidationParams
+    client_files: models.manager.RelatedManager[ClientFile]
+    server_files: models.manager.RelatedManager[ServerFile]
+    remote_files: models.manager.RelatedManager[RemoteFile]
+    validation_params: MaybeUndefined[ValidationParams]
     """
     Represents user-requested validation params before task is created.
     After the task creation, 'validation_layout' is used instead.
     """
-
-    validation_layout: ValidationLayout
 
     class Meta:
         default_permissions = ()
@@ -536,6 +541,8 @@ class Task(TimestampedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    segment_set: models.manager.RelatedManager[Segment]
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
@@ -696,6 +703,8 @@ class Segment(models.Model):
     # TODO: try to reuse this field for custom task segments (aka job_file_mapping)
     # SegmentType.SPECIFIC_FRAMES fields
     frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
+
+    job_set: models.manager.RelatedManager[Job]
 
     def contains_frame(self, idx: int) -> bool:
         return idx in self.frame_set
