@@ -11,13 +11,14 @@ import zipfile
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
-from itertools import product
+from itertools import groupby, product
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pytest
 from cvat_sdk import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
@@ -361,7 +362,7 @@ class TestDeleteJobs:
             assert response.status == expected_status
         return response
 
-    @pytest.mark.usefixtures("restore_cvat_data")
+    @pytest.mark.usefixtures("restore_cvat_data_per_function")
     @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("annotation", False)))
     def test_destroy_job(self, admin_user, jobs, job_type, allow):
         job = next(j for j in jobs if j["type"] == job_type)
@@ -603,12 +604,8 @@ class TestGetJobs:
             self._test_get_job_403(user["username"], job["id"])
 
 
-@pytest.mark.usefixtures(
-    # if the db is restored per test, there are conflicts with the server data cache
-    # if we don't clean the db, the gt jobs created will be reused, and their
-    # ids won't conflict
-    "restore_db_per_class"
-)
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 class TestGetGtJobData:
     def _delete_gt_job(self, user, gt_job_id):
         with make_api_client(user) as api_client:
@@ -636,11 +633,10 @@ class TestGetGtJobData:
             :job_frame_count
         ]
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
-
-        request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -691,11 +687,10 @@ class TestGetGtJobData:
         task_frame_ids = range(start_frame, stop_frame, frame_step)
         job_frame_ids = list(task_frame_ids[::3])
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         with make_api_client(admin_user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
-
-        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -717,7 +712,10 @@ class TestGetGtJobData:
 
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
     @pytest.mark.parametrize("quality", ["compressed", "original"])
-    def test_can_get_gt_job_chunk(self, admin_user, tasks, jobs, task_mode, quality, request):
+    @pytest.mark.parametrize("indexing", ["absolute", "relative"])
+    def test_can_get_gt_job_chunk(
+        self, admin_user, tasks, jobs, task_mode, quality, request, indexing
+    ):
         user = admin_user
         job_frame_count = 4
         task = next(
@@ -734,41 +732,49 @@ class TestGetGtJobData:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
             frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
 
-        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
-            :job_frame_count
-        ]
+        task_frame_ids = range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
+        rng = np.random.Generator(np.random.MT19937(42))
+        job_frame_ids = sorted(rng.choice(task_frame_ids, job_frame_count, replace=False).tolist())
+
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
-
-        with make_api_client(admin_user) as api_client:
-            (chunk_file, response) = api_client.jobs_api.retrieve_data(
-                gt_job.id, number=0, quality=quality, type="chunk"
-            )
-            assert response.status == HTTPStatus.OK
-
         request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
-        frame_range = range(
-            task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
-        )
-        included_frames = job_frame_ids
+        if indexing == "absolute":
+            chunk_iter = groupby(task_frame_ids, key=lambda f: f // task_meta.chunk_size)
+        else:
+            chunk_iter = groupby(job_frame_ids, key=lambda f: f // task_meta.chunk_size)
 
-        # The frame count is the same as in the whole range
-        # with placeholders in the frames outside the job.
-        # This is required by the UI implementation
-        with zipfile.ZipFile(chunk_file) as chunk:
-            assert set(chunk.namelist()) == set("{:06d}.jpeg".format(i) for i in frame_range)
+        for chunk_id, chunk_frames in chunk_iter:
+            chunk_frames = list(chunk_frames)
 
-            for file_info in chunk.filelist:
-                with chunk.open(file_info) as image_file:
-                    image = Image.open(image_file)
-                    image_data = np.array(image)
+            if indexing == "absolute":
+                kwargs = {"number": chunk_id}
+            else:
+                kwargs = {"index": chunk_id}
 
-                if int(os.path.splitext(file_info.filename)[0]) not in included_frames:
-                    assert image.size == (1, 1)
-                    assert np.all(image_data == 0), image_data
-                else:
-                    assert image.size > (1, 1)
-                    assert np.any(image_data != 0)
+            with make_api_client(admin_user) as api_client:
+                (chunk_file, response) = api_client.jobs_api.retrieve_data(
+                    gt_job.id, **kwargs, quality=quality, type="chunk"
+                )
+                assert response.status == HTTPStatus.OK
+
+            # The frame count is the same as in the whole range
+            # with placeholders in the frames outside the job.
+            # This is required by the UI implementation
+            with zipfile.ZipFile(chunk_file) as chunk:
+                assert set(chunk.namelist()) == set(
+                    f"{i:06d}.jpeg" for i in range(len(chunk_frames))
+                )
+
+                for file_info in chunk.filelist:
+                    with chunk.open(file_info) as image_file:
+                        image = Image.open(image_file)
+
+                    chunk_frame_id = int(os.path.splitext(file_info.filename)[0])
+                    if chunk_frames[chunk_frame_id] not in job_frame_ids:
+                        assert image.size == (1, 1)
+                    else:
+                        assert image.size > (1, 1)
 
     def _create_gt_job(self, user, task_id, frames):
         with make_api_client(user) as api_client:
@@ -813,6 +819,7 @@ class TestGetGtJobData:
             :job_frame_count
         ]
         gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         frame_range = range(
             task_meta.start_frame, min(task_meta.stop_frame + 1, task_meta.chunk_size), frame_step
@@ -830,14 +837,12 @@ class TestGetGtJobData:
                 _check_status=False,
             )
             assert response.status == HTTPStatus.BAD_REQUEST
-            assert b"The frame number doesn't belong to the job" in response.data
+            assert b"Incorrect requested frame number" in response.data
 
             (_, response) = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
-
-        request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1274,6 +1279,15 @@ class TestPatchJob:
                 assert updated_job.assignee.id == new_assignee_id
             else:
                 assert updated_job.assignee is None
+
+    def test_malefactor_cannot_obtain_job_details_via_empty_partial_update_request(
+        self, regular_lonely_user, jobs
+    ):
+        job = next(iter(jobs))
+
+        with make_api_client(regular_lonely_user) as api_client:
+            with pytest.raises(ForbiddenException):
+                api_client.jobs_api.partial_update(job["id"])
 
 
 def _check_coco_job_annotations(content, values_to_be_checked):

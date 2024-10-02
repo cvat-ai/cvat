@@ -7,7 +7,7 @@ import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 
 import ConsensusReport, { ConsensusSummary } from 'cvat-core/src/consensus-report';
-import { clampValue } from 'utils/quality';
+import { clampValue } from 'utils/consensus';
 import AnalyticsCard from '../views/analytics-card';
 
 interface Props {
@@ -60,7 +60,7 @@ function ConsensusConflicts(props: Props): JSX.Element {
             className='cvat-task-gt-conflicts'
             value={conflictsRepresentation}
             tooltip={<ConflictsTooltip reportSummary={reportSummary} />}
-            size={12}
+            size={{ cardSize: 12 }}
         />
     );
 }

@@ -8,7 +8,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0082_alter_labeledimage_job_and_more"),
+        ("engine", "0083_move_to_segment_chunks"),
     ]
 
     operations = [

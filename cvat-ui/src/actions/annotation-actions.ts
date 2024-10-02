@@ -587,12 +587,13 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             const { instance: job } = state.annotation.job;
             const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
-            const { startFrame, stopFrame, dataChunkSize } = job;
+            const includedFrames = await job.frames.frameNumbers() as number[];
+            const { frameCount, dataChunkSize } = job;
 
             const ranges = chunks.map((chunk) => (
                 [
-                    Math.max(startFrame, chunk * dataChunkSize),
-                    Math.min(stopFrame, (chunk + 1) * dataChunkSize - 1),
+                    includedFrames[chunk * dataChunkSize],
+                    includedFrames[Math.min(frameCount - 1, (chunk + 1) * dataChunkSize - 1)],
                 ]
             )).reduce<Array<[number, number]>>((acc, val) => {
                 if (acc.length && acc[acc.length - 1][1] + 1 === val[0]) {
@@ -905,7 +906,8 @@ export function getJobAsync({
 
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
-                initialFrame as number : (await job.frames.search(
+                initialFrame as number :
+                (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 

@@ -233,6 +233,10 @@ function buildDuplicatedAPI(prototype) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
                     return result;
                 },
+                async frameNumbers() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.frameNumbers);
+                    return result;
+                },
                 async preview() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
                     return result;
@@ -255,11 +259,11 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
-                async chunk(chunkNumber, quality) {
+                async chunk(chunkIndex, quality) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.chunk,
-                        chunkNumber,
+                        chunkIndex,
                         quality,
                     );
                     return result;
@@ -380,6 +384,7 @@ export class Session {
         restore: (frame: number) => Promise<void>;
         save: () => Promise<FramesMetaData[]>;
         cachedChunks: () => Promise<number[]>;
+        frameNumbers: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
         search: (
@@ -443,6 +448,7 @@ export class Session {
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
             cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
+            frameNumbers: Object.getPrototypeOf(this).frames.frameNumbers.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),

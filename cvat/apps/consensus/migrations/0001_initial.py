@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("engine", "0083_job_parent_job_task_consensus_jobs_per_regular_job_and_more"),
+        ("engine", "0084_job_parent_job_task_consensus_jobs_per_regular_job_and_more"),
     ]
 
     operations = [

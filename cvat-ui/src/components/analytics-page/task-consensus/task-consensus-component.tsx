@@ -17,7 +17,7 @@ import { useIsMounted } from 'utils/hooks';
 import { ActionUnion, createAction } from 'utils/redux';
 import { Tabs } from 'antd';
 import ConsensusConflicts from './consensus-conflicts';
-import Issues from '../task-quality/issues';
+import Issues from './issues';
 import JobList from './job-list';
 import AssigneeListComponent from './assignee-list';
 import MeanQuality from './mean-score';
@@ -187,7 +187,7 @@ function TaskConsensusComponent(props: Props): JSX.Element {
                 {
                     key: DetailsTabs.ASSIGNEES,
                     label: 'Assignees',
-                    children: <AssigneeListComponent assigneeReports={assigneeReports} task={task} />,
+                    children: <AssigneeListComponent assigneeReports={assigneeReports} />,
                 },
             ]}
         />

@@ -570,7 +570,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const params = fieldsToSnakeCase({ ...filter, sort: '-id' });
 
-        const reportsData = await serverProxy.consensus.assignee_reports(params);
+        const reportsData = await serverProxy.consensus.assigneeReports(params);
         const reports = Object.assign(
             reportsData.map((report) => new AssigneeConsensusReport({ ...report })),
             { count: reportsData.count },
