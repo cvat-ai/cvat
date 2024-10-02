@@ -7,9 +7,10 @@ import Input from 'antd/lib/input';
 import Form, { FormInstance } from 'antd/lib/form';
 import { PercentageOutlined } from '@ant-design/icons';
 import Radio from 'antd/lib/radio';
-import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { Col, Row } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
+
+import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 
 export interface QualityConfiguration {
     validationMode: ValidationMode;
@@ -46,6 +47,8 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
         if (this.formRef.current) {
             return this.formRef.current.validateFields().then((values: QualityConfiguration) => onSubmit({
                 ...values,
+                frameSelectionMethod: values.validationMode === ValidationMode.HONEYPOTS ?
+                    FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
                 ...(typeof values.validationFramesPercent === 'number' ? {
                     validationFramesPercent: values.validationFramesPercent / 100,
                 } : {}),
@@ -141,15 +144,6 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     private honeypotsParamsBlock(): JSX.Element {
         return (
             <Row>
-                <Col>
-                    <Form.Item
-                        name='frameSelectionMethod'
-                        label='Frame selection method'
-                        rules={[{ required: true, message: 'Please, specify frame selection method' }]}
-                        hidden
-                        initialValue={FrameSelectionMethod.RANDOM}
-                    />
-                </Col>
                 <Col span={7}>
                     <Form.Item
                         label='Total honeypots'
