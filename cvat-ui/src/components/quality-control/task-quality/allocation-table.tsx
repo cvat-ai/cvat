@@ -37,6 +37,9 @@ interface TableRowData extends RowData {
     key: Key;
 }
 
+// Temporary solution: this function is necessary in one of plugins which imports it directly from CVAT code
+// Further this solution should be re-designed
+// Until then, *DO NOT RENAME/REMOVE* this exported function
 export function getAllocationTableContents(gtJobMeta: FramesMetaData, gtJob: Job): TableRowData[] {
     // A workaround for meta "includedFrames" using source data numbers
     // TODO: remove once meta is migrated to relative frame numbers
