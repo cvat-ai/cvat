@@ -1114,6 +1114,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 for updated_segment_frame_id in requested_frames
             )
             segment_frames = sorted(segment_frame_set)
+            segment_frame_map = dict(zip(segment_honeypots, requested_frames))
 
             media_cache = MediaCache()
             for chunk_id in sorted(updated_segment_chunk_ids):
@@ -1123,28 +1124,36 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 ]
 
                 for quality in FrameQuality.__members__.values():
+                    def _write_updated_static_chunk():
+                        def _iterate_chunk_frames():
+                            for chunk_frame in chunk_frames:
+                                db_frame = all_task_frames[chunk_frame]
+                                chunk_real_frame = segment_frame_map.get(chunk_frame, chunk_frame)
+                                yield (
+                                    task_frame_provider.get_frame(
+                                        chunk_real_frame, quality=quality
+                                    ).data,
+                                    os.path.basename(db_frame.path),
+                                    chunk_frame,
+                                )
+
+                        with closing(_iterate_chunk_frames()) as frame_iter:
+                            chunk, _ = prepare_chunk(
+                                frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
+                            )
+
+                            get_chunk_path = {
+                                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
+                                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
+                            }[quality]
+
+                            with open(get_chunk_path(chunk_id, db_segment.id), 'wb') as f:
+                                f.write(chunk.getvalue())
+
+                    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
+                        _write_updated_static_chunk()
+
                     media_cache.remove_segment_chunk(db_segment, chunk_id, quality=quality)
-
-                    if db_data.storage_method != models.StorageMethodChoice.FILE_SYSTEM:
-                        continue
-
-                    # Write updated chunks
-                    def _iterate_chunk_frames():
-                        for chunk_frame in chunk_frames:
-                            yield task_frame_provider.get_frame(chunk_frame, quality=quality)[0]
-
-                    with closing(_iterate_chunk_frames()) as frame_iter:
-                        chunk, _ = prepare_chunk(
-                            frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
-                        )
-
-                        get_chunk_path = {
-                            FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
-                            FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
-                        }[quality]
-
-                        with open(get_chunk_path(chunk_id, db_segment.id), 'bw') as f:
-                            f.write(chunk)
 
             db_segment.chunks_updated_date = timezone.now()
             db_segment.save(update_fields=['chunks_updated_date'])
