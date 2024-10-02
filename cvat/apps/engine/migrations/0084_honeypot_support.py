@@ -35,7 +35,7 @@ def get_segment_rel_frame_set(db_segment) -> Collection[int]:
     elif db_segment.type == "specific_frames":
         frame_set = set(frame_range).intersection(db_segment.frames or [])
     else:
-        assert False
+        raise ValueError(f"Unknown segment type: {db_segment.type}")
 
     return sorted(get_rel_frame(abs_frame, db_data) for abs_frame in frame_set)
 
@@ -61,6 +61,62 @@ def init_validation_layout_in_tasks_with_gt_job(apps, schema_editor):
 
     ValidationLayout.objects.bulk_create(validation_layouts, batch_size=100)
 
+
+def init_m2m_for_related_files(apps, schema_editor):
+    RelatedFile = apps.get_model("engine", "RelatedFile")
+
+    ThroughModel = RelatedFile.images.through
+    ThroughModel.objects.bulk_create(
+        (
+            ThroughModel(relatedfile_id=related_file_id, image_id=image_id)
+            for related_file_id, image_id in (
+                RelatedFile.objects.filter(primary_image__isnull=False)
+                .values_list("id", "primary_image_id")
+                .iterator(chunk_size=1000)
+            )
+        ),
+        batch_size=1000,
+    )
+
+
+def revert_m2m_for_related_files(apps, schema_editor):
+    RelatedFile = apps.get_model("engine", "RelatedFile")
+
+    if top_related_file_uses := (
+        RelatedFile.objects
+        .annotate(images_count=models.aggregates.Count(
+            "images",
+            filter=models.Q(images__is_placeholder=False)
+        ))
+        .order_by("-images_count")
+        .filter(images_count__gt=1)
+        .values_list("id", "images_count")[:10]
+    ):
+        raise Exception(
+            "Can't run backward migration: "
+            "there are RelatedFile objects with more than 1 related Image. "
+            "Top RelatedFile uses: {}".format(
+                ", ".join(f"\n\tid = {id}: {count}" for id, count in top_related_file_uses)
+            )
+        )
+
+    ThroughModel = RelatedFile.images.through
+
+    (
+        RelatedFile.objects
+        .annotate(images_count=models.aggregates.Count(
+            "images",
+            filter=models.Q(images__is_placeholder=False)
+        ))
+        .filter(images_count__gt=0)
+        .update(
+            primary_image_id=models.Subquery(
+                ThroughModel.objects
+                .filter(relatedfile_id=models.OuterRef("id"))
+                .values_list("image_id", flat=True)[:1]
+            )
+        )
+    )
 
 class Migration(migrations.Migration):
 
@@ -167,5 +223,29 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             init_validation_layout_in_tasks_with_gt_job,
             reverse_code=migrations.RunPython.noop,
+        ),
+        migrations.AddField(
+            model_name="relatedfile",
+            name="images",
+            field=models.ManyToManyField(to="engine.image"),
+        ),
+        migrations.RunPython(
+            init_m2m_for_related_files,
+            reverse_code=revert_m2m_for_related_files,
+        ),
+        migrations.RemoveField(
+            model_name="relatedfile",
+            name="primary_image",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=models.deletion.CASCADE,
+                related_name="related_files",
+                to="engine.image",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="relatedfile",
+            name="images",
+            field=models.ManyToManyField(to="engine.image", related_name="related_files"),
         ),
     ]

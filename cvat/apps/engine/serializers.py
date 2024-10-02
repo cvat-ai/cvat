@@ -1906,7 +1906,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     jobs = JobsSummarySerializer(url_filter_key='task_id', source='segment_set')
     labels = LabelsSummarySerializer(source='*')
     validation_mode = serializers.CharField(
-        source='data.validation_mode', required=False, allow_null=True
+        source='data.validation_mode', required=False, allow_null=True,
+        help_text="Describes how the task validation is performed. Configured at task creation"
     )
 
     class Meta:
@@ -2161,7 +2162,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(write_only=True, many=True, source='label_set', partial=True, default=[])
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    task_subsets = serializers.ListField(write_only=True, child=serializers.CharField(), required=False)
 
     target_storage = StorageSerializer(write_only=True, required=False)
     source_storage = StorageSerializer(write_only=True, required=False)
@@ -2169,7 +2169,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
         fields = ('name', 'labels', 'owner_id', 'assignee_id', 'bug_tracker',
-            'target_storage', 'source_storage', 'task_subsets',
+            'target_storage', 'source_storage',
         )
 
     def to_representation(self, instance):

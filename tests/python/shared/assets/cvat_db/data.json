@@ -1192,17 +1192,6 @@
   "model": "engine.validationlayout",
   "pk": 1,
   "fields": {
-    "task_data": 25,
-    "mode": "gt_pool",
-    "frames_per_job_count": 3,
-    "frames": "23,24,25,26,27,28",
-    "disabled_frames": "[]"
-  }
-},
-{
-  "model": "engine.validationlayout",
-  "pk": 5,
-  "fields": {
     "task_data": 21,
     "mode": "gt",
     "frames_per_job_count": null,
@@ -1212,12 +1201,23 @@
 },
 {
   "model": "engine.validationlayout",
-  "pk": 6,
+  "pk": 2,
   "fields": {
     "task_data": 22,
     "mode": "gt",
     "frames_per_job_count": null,
     "frames": "4,5,7",
+    "disabled_frames": "[]"
+  }
+},
+{
+  "model": "engine.validationlayout",
+  "pk": 3,
+  "fields": {
+    "task_data": 28,
+    "mode": "gt_pool",
+    "frames_per_job_count": 3,
+    "frames": "23,24,25,26,27,28",
     "disabled_frames": "[]"
   }
 },
@@ -1586,6 +1586,63 @@
   "model": "engine.data",
   "pk": 25,
   "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 26,
+  "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 27,
+  "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 28,
+  "fields": {
     "chunk_size": 3,
     "size": 29,
     "image_quality": 70,
@@ -1597,7 +1654,7 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "random",
+    "sorting_method": "lexicographical",
     "deleted_frames": "[]"
   }
 },
@@ -3420,6 +3477,45 @@
   "pk": 491,
   "fields": {
     "data": 25,
+    "path": "1.png",
+    "frame": 0,
+    "width": 569,
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 492,
+  "fields": {
+    "data": 26,
+    "path": "1.png",
+    "frame": 0,
+    "width": 569,
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 493,
+  "fields": {
+    "data": 27,
+    "path": "1.png",
+    "frame": 0,
+    "width": 569,
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 494,
+  "fields": {
+    "data": 28,
     "path": "image_1.png",
     "frame": 0,
     "width": 55,
@@ -3430,9 +3526,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 492,
+  "pk": 495,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_14.png",
     "frame": 1,
     "width": 43,
@@ -3443,9 +3539,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 493,
+  "pk": 496,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_11.png",
     "frame": 2,
     "width": 91,
@@ -3456,9 +3552,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 494,
+  "pk": 497,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_7.png",
     "frame": 3,
     "width": 76,
@@ -3469,9 +3565,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 495,
+  "pk": 498,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_4.png",
     "frame": 4,
     "width": 60,
@@ -3482,9 +3578,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 496,
+  "pk": 499,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_2.png",
     "frame": 5,
     "width": 55,
@@ -3495,9 +3591,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 497,
+  "pk": 500,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_15.png",
     "frame": 6,
     "width": 60,
@@ -3508,9 +3604,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 498,
+  "pk": 501,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_6.png",
     "frame": 7,
     "width": 70,
@@ -3521,9 +3617,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 499,
+  "pk": 502,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_1.png",
     "frame": 8,
     "width": 55,
@@ -3534,9 +3630,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 500,
+  "pk": 503,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_6.png",
     "frame": 9,
     "width": 70,
@@ -3547,9 +3643,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 501,
+  "pk": 504,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_10.png",
     "frame": 10,
     "width": 66,
@@ -3560,9 +3656,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 502,
+  "pk": 505,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_18.png",
     "frame": 11,
     "width": 54,
@@ -3573,9 +3669,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 503,
+  "pk": 506,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_0.png",
     "frame": 12,
     "width": 45,
@@ -3586,9 +3682,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 504,
+  "pk": 507,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_3.png",
     "frame": 13,
     "width": 76,
@@ -3599,9 +3695,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 505,
+  "pk": 508,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_17.png",
     "frame": 14,
     "width": 65,
@@ -3612,9 +3708,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 506,
+  "pk": 509,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_8.png",
     "frame": 15,
     "width": 31,
@@ -3625,9 +3721,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 507,
+  "pk": 510,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_2.png",
     "frame": 16,
     "width": 55,
@@ -3638,9 +3734,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 508,
+  "pk": 511,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_16.png",
     "frame": 17,
     "width": 96,
@@ -3651,9 +3747,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 509,
+  "pk": 512,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_13.png",
     "frame": 18,
     "width": 54,
@@ -3664,9 +3760,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 510,
+  "pk": 513,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_5.png",
     "frame": 19,
     "width": 91,
@@ -3677,9 +3773,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 511,
+  "pk": 514,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_12.png",
     "frame": 20,
     "width": 60,
@@ -3690,9 +3786,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 512,
+  "pk": 515,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_19.png",
     "frame": 21,
     "width": 97,
@@ -3703,9 +3799,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 513,
+  "pk": 516,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_3.png",
     "frame": 22,
     "width": 76,
@@ -3716,9 +3812,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 514,
+  "pk": 517,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_1.png",
     "frame": 23,
     "width": 55,
@@ -3729,9 +3825,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 515,
+  "pk": 518,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_2.png",
     "frame": 24,
     "width": 55,
@@ -3742,9 +3838,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 516,
+  "pk": 519,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_3.png",
     "frame": 25,
     "width": 76,
@@ -3755,9 +3851,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 517,
+  "pk": 520,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_6.png",
     "frame": 26,
     "width": 70,
@@ -3768,9 +3864,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 518,
+  "pk": 521,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_9.png",
     "frame": 27,
     "width": 74,
@@ -3781,9 +3877,9 @@
 },
 {
   "model": "engine.image",
-  "pk": 519,
+  "pk": 522,
   "fields": {
-    "data": 25,
+    "data": 28,
     "path": "image_12.png",
     "frame": 28,
     "width": 60,
@@ -3959,7 +4055,7 @@
   "pk": 10,
   "fields": {
     "created_date": "2023-02-10T11:42:43.192Z",
-    "updated_date": "2023-02-10T11:42:57.733Z",
+    "updated_date": "2024-09-23T21:42:22.688Z",
     "name": "project 6",
     "owner": [
       "user3"
@@ -4049,6 +4145,48 @@
     "organization": null,
     "source_storage": 35,
     "target_storage": 36
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 15,
+  "fields": {
+    "created_date": "2024-09-22T20:40:15.423Z",
+    "updated_date": "2024-09-22T20:40:23.462Z",
+    "name": "project assigned to user4",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "user4"
+    ],
+    "assignee_updated_date": "2024-09-22T20:40:23.452Z",
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 41,
+    "target_storage": 42
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 16,
+  "fields": {
+    "created_date": "2024-09-23T08:09:42.827Z",
+    "updated_date": "2024-09-23T08:09:45.474Z",
+    "name": "project assigned to org owner",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "business1"
+    ],
+    "assignee_updated_date": "2024-09-23T08:09:45.461Z",
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 43,
+    "target_storage": 44
   }
 },
 {
@@ -4591,8 +4729,90 @@
   "model": "engine.task",
   "pk": 26,
   "fields": {
-    "created_date": "2024-09-13T19:29:38.200Z",
-    "updated_date": "2024-09-13T19:42:20.126Z",
+    "created_date": "2024-09-23T10:51:32.778Z",
+    "updated_date": "2024-09-23T10:51:45.533Z",
+    "project": null,
+    "name": "task assigned to owner",
+    "mode": "annotation",
+    "owner": [
+      "user3"
+    ],
+    "assignee": [
+      "business1"
+    ],
+    "assignee_updated_date": "2024-09-23T10:51:45.525Z",
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 25,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 45,
+    "target_storage": 46
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 27,
+  "fields": {
+    "created_date": "2024-09-23T10:52:04.357Z",
+    "updated_date": "2024-09-23T10:52:48.778Z",
+    "project": null,
+    "name": "task assigned to maintainer",
+    "mode": "annotation",
+    "owner": [
+      "user3"
+    ],
+    "assignee": [
+      "user4"
+    ],
+    "assignee_updated_date": "2024-09-23T10:52:48.769Z",
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 26,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 47,
+    "target_storage": 48
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 28,
+  "fields": {
+    "created_date": "2024-09-23T21:42:22.676Z",
+    "updated_date": "2024-09-23T21:42:23.082Z",
+    "project": 10,
+    "name": "task 1",
+    "mode": "annotation",
+    "owner": [
+      "user4"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 27,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 49,
+    "target_storage": 50
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 29,
+  "fields": {
+    "created_date": "2024-10-01T12:36:21.364Z",
+    "updated_date": "2024-10-01T12:38:26.883Z",
     "project": null,
     "name": "task with honeypots",
     "mode": "annotation",
@@ -4605,7 +4825,7 @@
     "overlap": 0,
     "segment_size": 0,
     "status": "annotation",
-    "data": 25,
+    "data": 28,
     "dimension": "2d",
     "subset": "",
     "organization": 2,
@@ -5522,159 +5742,23 @@
   "pk": 461,
   "fields": {
     "data": 25,
-    "file": "/home/django/data/data/25/raw/image_0.png"
+    "file": "/home/django/data/data/25/raw/1.png"
   }
 },
 {
   "model": "engine.clientfile",
   "pk": 462,
   "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_1.png"
+    "data": 26,
+    "file": "/home/django/data/data/26/raw/1.png"
   }
 },
 {
   "model": "engine.clientfile",
   "pk": 463,
   "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_2.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 464,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_3.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 465,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_4.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 466,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_5.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 467,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_6.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 468,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_7.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 469,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_8.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 470,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_9.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 471,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_10.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 472,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_11.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 473,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_12.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 474,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_13.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 475,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_14.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 476,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_15.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 477,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_16.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 478,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_17.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 479,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_18.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 480,
-  "fields": {
-    "data": 25,
-    "file": "/home/django/data/data/25/raw/image_19.png"
+    "data": 27,
+    "file": "/home/django/data/data/27/raw/1.png"
   }
 },
 {
@@ -5683,7 +5767,9 @@
   "fields": {
     "data": 6,
     "path": "/home/django/data/data/6/raw/test_pointcloud_pcd/related_images/000001_pcd/000001.png",
-    "primary_image": 360
+    "images": [
+      360
+    ]
   }
 },
 {
@@ -6016,8 +6102,7 @@
   "fields": {
     "task": 26,
     "start_frame": 0,
-    "stop_frame": 7,
-    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
+    "stop_frame": 0,
     "type": "range",
     "frames": "[]"
   }
@@ -6026,10 +6111,9 @@
   "model": "engine.segment",
   "pk": 36,
   "fields": {
-    "task": 26,
-    "start_frame": 8,
-    "stop_frame": 15,
-    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
+    "task": 27,
+    "start_frame": 0,
+    "stop_frame": 0,
     "type": "range",
     "frames": "[]"
   }
@@ -6038,10 +6122,9 @@
   "model": "engine.segment",
   "pk": 37,
   "fields": {
-    "task": 26,
-    "start_frame": 16,
-    "stop_frame": 22,
-    "chunks_updated_date": "2024-09-27T12:55:18.307Z",
+    "task": 28,
+    "start_frame": 0,
+    "stop_frame": 0,
     "type": "range",
     "frames": "[]"
   }
@@ -6050,7 +6133,40 @@
   "model": "engine.segment",
   "pk": 38,
   "fields": {
-    "task": 26,
+    "task": 29,
+    "start_frame": 0,
+    "stop_frame": 7,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 39,
+  "fields": {
+    "task": 29,
+    "start_frame": 8,
+    "stop_frame": 15,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 40,
+  "fields": {
+    "task": 29,
+    "start_frame": 16,
+    "stop_frame": 22,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 41,
+  "fields": {
+    "task": 29,
     "start_frame": 23,
     "stop_frame": 28,
     "chunks_updated_date": "2024-09-27T12:55:18.307Z",
@@ -6477,14 +6593,14 @@
   "model": "engine.job",
   "pk": 35,
   "fields": {
-    "created_date": "2024-09-13T19:29:38.492Z",
-    "updated_date": "2024-09-13T19:38:30.764Z",
+    "created_date": "2024-09-23T10:51:32.932Z",
+    "updated_date": "2024-09-23T10:51:32.932Z",
     "segment": 35,
     "assignee": null,
     "assignee_updated_date": null,
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress",
+    "state": "new",
     "type": "annotation"
   }
 },
@@ -6492,14 +6608,14 @@
   "model": "engine.job",
   "pk": 36,
   "fields": {
-    "created_date": "2024-09-13T19:29:38.504Z",
-    "updated_date": "2024-09-13T19:40:06.300Z",
+    "created_date": "2024-09-23T10:52:04.507Z",
+    "updated_date": "2024-09-23T10:52:04.507Z",
     "segment": 36,
     "assignee": null,
     "assignee_updated_date": null,
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress",
+    "state": "new",
     "type": "annotation"
   }
 },
@@ -6507,14 +6623,14 @@
   "model": "engine.job",
   "pk": 37,
   "fields": {
-    "created_date": "2024-09-13T19:29:38.508Z",
-    "updated_date": "2024-09-13T19:42:20.217Z",
+    "created_date": "2024-09-23T21:42:23.045Z",
+    "updated_date": "2024-09-23T21:42:23.045Z",
     "segment": 37,
     "assignee": null,
     "assignee_updated_date": null,
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress",
+    "state": "new",
     "type": "annotation"
   }
 },
@@ -6522,9 +6638,54 @@
   "model": "engine.job",
   "pk": 38,
   "fields": {
-    "created_date": "2024-09-13T19:29:38.549Z",
-    "updated_date": "2024-09-13T19:37:08.402Z",
+    "created_date": "2024-10-01T12:36:21.476Z",
+    "updated_date": "2024-10-01T12:36:21.606Z",
     "segment": 38,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 39,
+  "fields": {
+    "created_date": "2024-10-01T12:36:21.484Z",
+    "updated_date": "2024-10-01T12:36:21.628Z",
+    "segment": 39,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 40,
+  "fields": {
+    "created_date": "2024-10-01T12:36:21.491Z",
+    "updated_date": "2024-10-01T12:36:21.651Z",
+    "segment": 40,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 41,
+  "fields": {
+    "created_date": "2024-10-01T12:36:21.511Z",
+    "updated_date": "2024-10-01T12:38:26.967Z",
+    "segment": 41,
     "assignee": null,
     "assignee_updated_date": null,
     "status": "annotation",
@@ -7343,6 +7504,30 @@
   "fields": {
     "task": 26,
     "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 76,
+  "fields": {
+    "task": 27,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 77,
+  "fields": {
+    "task": 29,
+    "project": null,
     "name": "label",
     "color": "#6080c0",
     "type": "any",
@@ -7565,7 +7750,7 @@
   "model": "engine.attributespec",
   "pk": 15,
   "fields": {
-    "label": 75,
+    "label": 77,
     "name": "id",
     "mutable": false,
     "input_type": "text",
@@ -10254,115 +10439,7 @@
   "pk": 169,
   "fields": {
     "job": 38,
-    "label": 75,
-    "frame": 23,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 170,
-  "fields": {
-    "job": 38,
-    "label": 75,
-    "frame": 24,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 171,
-  "fields": {
-    "job": 38,
-    "label": 75,
-    "frame": 24,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 172,
-  "fields": {
-    "job": 38,
-    "label": 75,
-    "frame": 25,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 175,
-  "fields": {
-    "job": 38,
-    "label": 75,
-    "frame": 27,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 176,
-  "fields": {
-    "job": 38,
-    "label": 75,
-    "frame": 27,
-    "group": 0,
-    "source": "Ground truth",
-    "type": "polygon",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 177,
-  "fields": {
-    "job": 35,
-    "label": 75,
+    "label": 77,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10377,10 +10454,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 178,
+  "pk": 170,
   "fields": {
-    "job": 35,
-    "label": 75,
+    "job": 38,
+    "label": 77,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -10395,10 +10472,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 179,
+  "pk": 171,
   "fields": {
-    "job": 35,
-    "label": 75,
+    "job": 38,
+    "label": 77,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -10413,10 +10490,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 180,
+  "pk": 172,
   "fields": {
-    "job": 35,
-    "label": 75,
+    "job": 38,
+    "label": 77,
     "frame": 5,
     "group": 0,
     "source": "manual",
@@ -10431,10 +10508,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 181,
+  "pk": 173,
   "fields": {
-    "job": 36,
-    "label": 75,
+    "job": 39,
+    "label": 77,
     "frame": 8,
     "group": 0,
     "source": "manual",
@@ -10449,10 +10526,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 182,
+  "pk": 174,
   "fields": {
-    "job": 36,
-    "label": 75,
+    "job": 39,
+    "label": 77,
     "frame": 8,
     "group": 0,
     "source": "manual",
@@ -10467,10 +10544,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 183,
+  "pk": 175,
   "fields": {
-    "job": 36,
-    "label": 75,
+    "job": 39,
+    "label": 77,
     "frame": 9,
     "group": 0,
     "source": "manual",
@@ -10485,10 +10562,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 184,
+  "pk": 176,
   "fields": {
-    "job": 36,
-    "label": 75,
+    "job": 39,
+    "label": 77,
     "frame": 9,
     "group": 0,
     "source": "manual",
@@ -10503,10 +10580,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 185,
+  "pk": 177,
   "fields": {
-    "job": 36,
-    "label": 75,
+    "job": 39,
+    "label": 77,
     "frame": 12,
     "group": 0,
     "source": "manual",
@@ -10521,10 +10598,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 186,
+  "pk": 178,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 16,
     "group": 0,
     "source": "manual",
@@ -10539,10 +10616,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 187,
+  "pk": 179,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 17,
     "group": 0,
     "source": "manual",
@@ -10557,10 +10634,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 188,
+  "pk": 180,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 20,
     "group": 0,
     "source": "manual",
@@ -10575,10 +10652,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 189,
+  "pk": 181,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 20,
     "group": 0,
     "source": "manual",
@@ -10593,10 +10670,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 190,
+  "pk": 182,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 21,
     "group": 0,
     "source": "manual",
@@ -10611,10 +10688,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 191,
+  "pk": 183,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 22,
     "group": 0,
     "source": "manual",
@@ -10629,10 +10706,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 192,
+  "pk": 184,
   "fields": {
-    "job": 37,
-    "label": 75,
+    "job": 40,
+    "label": 77,
     "frame": 22,
     "group": 0,
     "source": "manual",
@@ -10641,6 +10718,114 @@
     "outside": false,
     "z_order": 0,
     "points": "52.10000000000218,17.30000000000291,59.400000000001455,21.500000000003638",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 185,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 23,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 186,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 24,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 187,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 24,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 188,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 25,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 189,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 27,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 190,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 27,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
     "rotation": 0.0,
     "parent": null
   }
@@ -11793,7 +11978,7 @@
   "pk": 128,
   "fields": {
     "spec": 15,
-    "value": "gt frame1 n1",
+    "value": "j1 frame1 n1",
     "shape": 169
   }
 },
@@ -11802,7 +11987,7 @@
   "pk": 129,
   "fields": {
     "spec": 15,
-    "value": "gt frame2 n2",
+    "value": "j1 frame2 n1",
     "shape": 170
   }
 },
@@ -11811,7 +11996,7 @@
   "pk": 130,
   "fields": {
     "spec": 15,
-    "value": "gt frame3 n3",
+    "value": "j1 frame2 n2",
     "shape": 171
   }
 },
@@ -11820,7 +12005,7 @@
   "pk": 131,
   "fields": {
     "spec": 15,
-    "value": "gt frame3 n1",
+    "value": "j1 frame6 n1",
     "shape": 172
   }
 },
@@ -11829,8 +12014,8 @@
   "pk": 132,
   "fields": {
     "spec": 15,
-    "value": "gt frame5 n1",
-    "shape": 175
+    "value": "j2 frame1 n1",
+    "shape": 173
   }
 },
 {
@@ -11838,8 +12023,8 @@
   "pk": 133,
   "fields": {
     "spec": 15,
-    "value": "gt frame5 n2",
-    "shape": 176
+    "value": "j2 frame1 n2",
+    "shape": 174
   }
 },
 {
@@ -11847,8 +12032,8 @@
   "pk": 134,
   "fields": {
     "spec": 15,
-    "value": "j1 frame1 n1",
-    "shape": 177
+    "value": "j2 frame2 n1",
+    "shape": 175
   }
 },
 {
@@ -11856,8 +12041,8 @@
   "pk": 135,
   "fields": {
     "spec": 15,
-    "value": "j1 frame2 n1",
-    "shape": 178
+    "value": "j2 frame2 n2",
+    "shape": 176
   }
 },
 {
@@ -11865,8 +12050,8 @@
   "pk": 136,
   "fields": {
     "spec": 15,
-    "value": "j1 frame2 n2",
-    "shape": 179
+    "value": "j2 frame5 n1",
+    "shape": 177
   }
 },
 {
@@ -11874,8 +12059,8 @@
   "pk": 137,
   "fields": {
     "spec": 15,
-    "value": "j1 frame6 n1",
-    "shape": 180
+    "value": "j3 frame1 n1",
+    "shape": 178
   }
 },
 {
@@ -11883,8 +12068,8 @@
   "pk": 138,
   "fields": {
     "spec": 15,
-    "value": "j2 frame1 n1",
-    "shape": 181
+    "value": "j3 frame2 n1",
+    "shape": 179
   }
 },
 {
@@ -11892,8 +12077,8 @@
   "pk": 139,
   "fields": {
     "spec": 15,
-    "value": "j2 frame1 n2",
-    "shape": 182
+    "value": "j3 frame5 n1",
+    "shape": 180
   }
 },
 {
@@ -11901,8 +12086,8 @@
   "pk": 140,
   "fields": {
     "spec": 15,
-    "value": "j2 frame2 n1",
-    "shape": 183
+    "value": "j3 frame5 n2",
+    "shape": 181
   }
 },
 {
@@ -11910,8 +12095,8 @@
   "pk": 141,
   "fields": {
     "spec": 15,
-    "value": "j2 frame2 n2",
-    "shape": 184
+    "value": "j3 frame6 n1",
+    "shape": 182
   }
 },
 {
@@ -11919,8 +12104,8 @@
   "pk": 142,
   "fields": {
     "spec": 15,
-    "value": "j2 frame5 n1",
-    "shape": 185
+    "value": "j3 frame7 n1",
+    "shape": 183
   }
 },
 {
@@ -11928,8 +12113,8 @@
   "pk": 143,
   "fields": {
     "spec": 15,
-    "value": "j3 frame1 n1",
-    "shape": 186
+    "value": "j3 frame7 n2",
+    "shape": 184
   }
 },
 {
@@ -11937,8 +12122,8 @@
   "pk": 144,
   "fields": {
     "spec": 15,
-    "value": "j3 frame2 n1",
-    "shape": 187
+    "value": "gt frame1 n1",
+    "shape": 185
   }
 },
 {
@@ -11946,17 +12131,8 @@
   "pk": 145,
   "fields": {
     "spec": 15,
-    "value": "j3 frame5 n1",
-    "shape": 188
-  }
-},
-{
-  "model": "engine.labeledshapeattributeval",
-  "pk": 146,
-  "fields": {
-    "spec": 15,
-    "value": "j3 frame5 n2",
-    "shape": 189
+    "value": "gt frame2 n2",
+    "shape": 186
   }
 },
 {
@@ -11964,8 +12140,8 @@
   "pk": 147,
   "fields": {
     "spec": 15,
-    "value": "j3 frame6 n1",
-    "shape": 190
+    "value": "gt frame3 n1",
+    "shape": 188
   }
 },
 {
@@ -11973,8 +12149,8 @@
   "pk": 148,
   "fields": {
     "spec": 15,
-    "value": "j3 frame7 n1",
-    "shape": 191
+    "value": "gt frame5 n1",
+    "shape": 189
   }
 },
 {
@@ -11982,8 +12158,17 @@
   "pk": 149,
   "fields": {
     "spec": 15,
-    "value": "j3 frame7 n2",
-    "shape": 192
+    "value": "gt frame5 n2",
+    "shape": 190
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 150,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame2 n1",
+    "shape": 187
   }
 },
 {
@@ -13230,6 +13415,86 @@
 {
   "model": "engine.storage",
   "pk": 40,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 41,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 42,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 43,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 44,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 45,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 46,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 47,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 48,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 49,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 50,
   "fields": {
     "location": "local",
     "cloud_storage": null
@@ -18316,6 +18581,72 @@
   "pk": 21,
   "fields": {
     "task": 26,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 22,
+  "fields": {
+    "task": 27,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 23,
+  "fields": {
+    "task": 28,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 24,
+  "fields": {
+    "task": 29,
     "iou_threshold": 0.4,
     "oks_sigma": 0.09,
     "line_thickness": 0.01,

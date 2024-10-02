@@ -1362,10 +1362,10 @@ class TestQualityReportMetrics(_PermissionTestBase):
             (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
 
-    @pytest.mark.parametrize("task_id", [26])
     def test_excluded_gt_job_frames_are_not_included_in_honeypot_task_quality_report(
-        self, admin_user, task_id: int, jobs
+        self, admin_user, tasks, jobs
     ):
+        task_id = next(t["id"] for t in tasks if t["validation_mode"] == "gt_pool")
         gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
         gt_job_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
 

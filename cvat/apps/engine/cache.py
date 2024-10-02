@@ -624,7 +624,7 @@ class MediaCache:
     def prepare_context_images_chunk(self, db_data: models.Data, frame_number: int) -> DataWithMime:
         zip_buffer = io.BytesIO()
 
-        related_images = db_data.related_files.filter(primary_image__frame=frame_number).all()
+        related_images = db_data.related_files.filter(images__frame=frame_number).all()
         if not related_images:
             return zip_buffer, ""
 

@@ -882,7 +882,9 @@ class TaskAnnotation:
             task_gt_honeypots.setdefault(_to_rel_frame(abs_real_frame), []).append(frame)
 
         gt_pool_frames = tuple(map(_to_rel_frame, gt_abs_frame_set))
-        assert sorted(gt_pool_frames) == list(range(min(gt_pool_frames), max(gt_pool_frames) + 1))
+        if sorted(gt_pool_frames) != list(range(min(gt_pool_frames), max(gt_pool_frames) + 1)):
+            raise AssertionError("Expected a continuous GT pool frame set") # to be used in slice()
+
         gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
 
         if action and not (

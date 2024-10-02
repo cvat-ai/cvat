@@ -1,5 +1,5 @@
 {
-  "count": 42,
+  "count": 44,
   "next": null,
   "previous": null,
   "results": [
@@ -830,6 +830,28 @@
       "type": "any"
     },
     {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 75,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 26,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 76,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 27,
+      "type": "any"
+    },
+    {
       "attributes": [
         {
           "default_value": "",
@@ -844,11 +866,11 @@
       ],
       "color": "#6080c0",
       "has_parent": false,
-      "id": 75,
+      "id": 77,
       "name": "label",
       "parent_id": null,
       "sublabels": [],
-      "task_id": 26,
+      "task_id": 29,
       "type": "any"
     }
   ]

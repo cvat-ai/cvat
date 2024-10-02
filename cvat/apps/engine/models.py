@@ -374,7 +374,6 @@ class Data(models.Model):
             validation_layout.save()
 
         ValidationParams.objects.filter(task_data_id=self.id).delete()
-        ValidationFrame.objects.filter(validation_params__task_data_id=self.id).delete()
 
         return validation_layout
 
@@ -667,7 +666,7 @@ class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
     path = models.FileField(upload_to=upload_path_handler,
                             max_length=1024, storage=MyFileSystemStorage())
-    primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
+    images = models.ManyToManyField(Image, related_name="related_files")
 
     class Meta:
         default_permissions = ()
