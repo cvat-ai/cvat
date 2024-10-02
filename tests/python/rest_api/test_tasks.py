@@ -3626,7 +3626,15 @@ class TestTaskBackups:
         for old_job, new_job in zip(old_jobs, new_jobs):
             old_job_meta = json.loads(old_job.api.retrieve_data_meta(old_job.id)[1].data)
             new_job_meta = json.loads(new_job.api.retrieve_data_meta(new_job.id)[1].data)
-            assert DeepDiff(old_job_meta, new_job_meta, ignore_order=True) == {}
+            assert (
+                DeepDiff(
+                    old_job_meta,
+                    new_job_meta,
+                    ignore_order=True,
+                    exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+                )
+                == {}
+            )
 
             old_job_annotations = json.loads(old_job.api.retrieve_annotations(old_job.id)[1].data)
             new_job_annotations = json.loads(new_job.api.retrieve_annotations(new_job.id)[1].data)
