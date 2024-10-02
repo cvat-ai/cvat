@@ -2124,7 +2124,7 @@ class TestPostTaskData:
     )
     def test_can_create_task_with_honeypots(
         self,
-        request: pytest.FixtureRequest,
+        fxt_test_name,
         frame_selection_method: str,
         method_params: Set[str],
         per_job_count_param: str,
@@ -2170,7 +2170,7 @@ class TestPostTaskData:
             assert False
 
         task_params = {
-            "name": request.node.name,
+            "name": fxt_test_name,
             "labels": [{"name": "a"}],
             "segment_size": base_segment_size,
         }
@@ -2237,6 +2237,63 @@ class TestPostTaskData:
                 len(set(f.name for f in job_meta.frames if f.name in validation_frames))
                 == validation_per_job_count
             )
+
+    @pytest.mark.parametrize("random_seed", [1, 2, 5])
+    def test_can_create_task_with_honeypots_random_seed_guarantees_the_same_layout(
+        self, fxt_test_name, random_seed: int
+    ):
+        base_segment_size = 4
+        total_frame_count = 15
+        validation_frames_count = 5
+        validation_per_job_count = 2
+
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params = {
+            "mode": "gt_pool",
+            "frame_selection_method": "random_uniform",
+            "frame_count": validation_frames_count,
+            "frames_per_job_count": validation_per_job_count,
+            "random_seed": random_seed,
+        }
+
+        task_params = {
+            "name": fxt_test_name,
+            "labels": [{"name": "a"}],
+            "segment_size": base_segment_size,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "sorting_method": "random",
+            "validation_params": validation_params,
+        }
+
+        def _create_task():
+            with make_api_client(self._USERNAME) as api_client:
+                task_id, _ = create_task(
+                    self._USERNAME, spec=deepcopy(task_params), data=deepcopy(data_params)
+                )
+                task_meta = json.loads(api_client.tasks_api.retrieve_data_meta(task_id)[1].data)
+                task_validation_layout = json.loads(
+                    api_client.tasks_api.retrieve_validation_layout(task_id)[1].data
+                )
+                return task_meta, task_validation_layout
+
+        task1_meta, task1_validation_layout = _create_task()
+        task2_meta, task2_validation_layout = _create_task()
+
+        assert (
+            DeepDiff(
+                task1_meta,
+                task2_meta,
+                ignore_order=False,
+                exclude_regex_paths=[r"root\['chunks_updated_date'\]"],  # must be different
+            )
+            == {}
+        )
+        assert DeepDiff(task1_validation_layout, task2_validation_layout, ignore_order=False) == {}
 
     @parametrize(
         "frame_selection_method, method_params",
@@ -2630,11 +2687,12 @@ class TestTaskData:
         *,
         start_frame: Optional[int] = None,
         step: Optional[int] = None,
+        random_seed: int = 42,
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
             mode="gt_pool",
             frame_selection_method="random_uniform",
-            random_seed=42,
+            random_seed=random_seed,
             frame_count=5,
             frames_per_job_count=2,
         )
@@ -2705,12 +2763,13 @@ class TestTaskData:
         )
 
     @fixture(scope="class")
+    @parametrize("random_seed", [1, 2, 5])
     def fxt_uploaded_images_task_with_honeypots_and_changed_real_frames(
-        self, request: pytest.FixtureRequest
+        self, request: pytest.FixtureRequest, random_seed: int
     ) -> Generator[Tuple[_TaskSpec, int], None, None]:
         with closing(
             self._uploaded_images_task_with_honeypots_and_segments_base(
-                request, start_frame=2, step=3
+                request, start_frame=2, step=3, random_seed=random_seed
             )
         ) as gen_iter:
             task_spec, task_id = next(gen_iter)
