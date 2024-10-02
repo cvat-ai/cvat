@@ -7,6 +7,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { Row, Col } from 'antd/lib/grid';
+import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
@@ -59,6 +60,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
+    consensusJobsPerRegularJob: number;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -70,6 +72,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
+            consensusJobsPerRegularJob: taskInstance.consensusJobsPerRegularJob,
         };
     }
 
@@ -86,29 +89,35 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     private renderTaskName(): JSX.Element {
         const { name } = this.state;
         const { task: taskInstance, onUpdateTask } = this.props;
+        const taskName = name;
 
         return (
-            <Title
-                level={4}
-                editable={{
-                    onChange: (value: string): void => {
-                        this.setState({
-                            name: value,
-                        });
+            <Row>
+                <Col>
+                    <Title
+                        level={4}
+                        editable={{
+                            onChange: (value: string): void => {
+                                this.setState({
+                                    name: value,
+                                });
 
-                        taskInstance.name = value;
-                        onUpdateTask(taskInstance);
-                    },
-                }}
-                className='cvat-text-color cvat-task-name'
-            >
-                {name}
-            </Title>
+                                taskInstance.name = value;
+                                onUpdateTask(taskInstance);
+                            },
+                        }}
+                        className='cvat-text-color cvat-task-name'
+                    >
+                        {taskName}
+                    </Title>
+                </Col>
+            </Row>
         );
     }
 
     private renderDescription(): JSX.Element {
         const { task: taskInstance, onUpdateTask } = this.props;
+        const { consensusJobsPerRegularJob } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -127,8 +136,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             <Row className='cvat-task-details-user-block' justify='space-between' align='middle'>
                 <Col span={12}>
                     {owner && (
-                        <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
+                        <div>
+                            <Text type='secondary'>
+                                {`Task #${taskInstance.id} Created by ${owner} on ${created}`}
+                            </Text>
+                        </div>
                     )}
+                    {consensusJobsPerRegularJob > 0 && <Tag color='#1890ff'>Consensus Based Annotation</Tag>}
                 </Col>
                 <Col>
                     <Text type='secondary'>Assigned to</Text>

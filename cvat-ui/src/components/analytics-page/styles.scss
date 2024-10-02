@@ -88,3 +88,16 @@
     width: 100%;
     height: 100%;
 }
+
+.cvat-task-analytics-tabs {
+    width: 100%;
+}
+
+.cvat-task-gt-conflicts, .cvat-task-issues {
+    padding-top: $grid-unit-size;
+    padding-bottom: $grid-unit-size;
+}
+
+.cvat-analytics-card-holder {
+    min-height: $grid-unit-size * 19;
+}
