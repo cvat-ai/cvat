@@ -1193,6 +1193,8 @@ def _create_thread(
 
         # Sort the images to be able to create reproducible results
         images = sort(images, sorting_method=models.SortingMethod.NATURAL, func=lambda i: i.path)
+        for i, image in enumerate(images):
+            image.frame = i
 
         pool_frames: list[int] = []
         match validation_params["frame_selection_method"]:
