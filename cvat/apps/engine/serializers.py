@@ -1000,7 +1000,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             if frame.is_placeholder
         )
         segment_frame_set = set(map(_to_rel_frame, db_segment.frame_set))
-        segment_honeypots = segment_frame_set & task_honeypot_frames
+        segment_honeypots = sorted(segment_frame_set & task_honeypot_frames)
 
         deleted_task_frames = db_data.deleted_frames
         task_all_validation_frames = set(map(_to_rel_frame, db_task.gt_job.segment.frame_set))
