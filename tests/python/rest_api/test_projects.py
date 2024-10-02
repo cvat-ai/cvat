@@ -6,9 +6,11 @@
 import io
 import itertools
 import json
+import operator
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
+from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
@@ -369,19 +371,27 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup("admin1", project["id"], api_version=api_version)
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_get_backup_project_when_all_tasks_have_no_data(self, api_version: int):
-        project = next((p for p in self.projects if 0 == p["tasks"]["count"]))
+    def test_can_get_backup_project_when_all_tasks_have_no_data(
+        self, api_version: int, filter_projects
+    ):
+        project = filter_projects(tasks__count=0)[0]
 
         # add empty tasks to empty project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task1", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task2", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_can_get_project_backup("admin1", project["id"], api_version=api_version)
 
@@ -894,7 +904,13 @@ class TestImportExportDatasetProject:
 
         # add empty task to project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {
+                "name": "empty_task",
+                "project_id": project["id"],
+            },
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED
 
@@ -915,14 +931,20 @@ class TestImportExportDatasetProject:
 
         # add empty tasks to empty project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task1", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task2", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_export_dataset(
             "admin1",
@@ -1389,10 +1411,17 @@ class TestPatchProject:
                 project["id"], patched_project_write_request={"assignee_id": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_project.assignee_updated_date == project["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
+
+            # FUTURE-TODO: currently it is possible to have a project with an assignee but with assignee_updated_date == None
+            # because there was no migration to set some assignee_updated_date for projects/tasks/jobs with assignee != None
+            if isinstance(updated_project.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_project.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    project["assignee_updated_date"],
+                )
             else:
-                assert updated_project.assignee_updated_date != project["assignee_updated_date"]
+                assert op(updated_project.assignee_updated_date, project["assignee_updated_date"])
 
             if new_assignee_id:
                 assert updated_project.assignee.id == new_assignee_id
@@ -1407,3 +1436,119 @@ class TestPatchProject:
         with make_api_client(regular_lonely_user) as api_client:
             with pytest.raises(ForbiddenException):
                 api_client.projects_api.partial_update(project["id"])
+
+    @staticmethod
+    def _test_patch_linked_storage(
+        user: str, project_id: int, *, expected_status: HTTPStatus = HTTPStatus.OK
+    ) -> None:
+        with make_api_client(user) as api_client:
+            for associated_storage in ("source_storage", "target_storage"):
+                patch_data = {
+                    associated_storage: {
+                        "location": "local",
+                    }
+                }
+                (_, response) = api_client.projects_api.partial_update(
+                    project_id,
+                    patched_project_write_request=patch_data,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == expected_status, response.status
+
+    @pytest.mark.parametrize(
+        "is_project_assignee", [True, False]
+    )  # being a project assignee must not change anything
+    @pytest.mark.parametrize(
+        "role, is_allow",
+        [
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
+        ],
+    )
+    def test_org_update_project_associated_storage(
+        self,
+        is_project_assignee: bool,
+        role: str,
+        is_allow: bool,
+        projects,
+        find_users,
+    ):
+        project_id: Optional[int] = None
+        username: Optional[str] = None
+
+        for project in projects:
+            if project_id is not None:
+                break
+            for user in find_users(role=role, exclude_privilege="admin"):
+                is_user_project_assignee = (project["assignee"] or {}).get("id") == user["id"]
+                if (
+                    project["organization"] == user["org"]
+                    and project["owner"]["id"] != user["id"]
+                    and (
+                        is_project_assignee
+                        and is_user_project_assignee
+                        or not (is_project_assignee or is_user_project_assignee)
+                    )
+                ):
+                    project_id = project["id"]
+                    username = user["username"]
+                    break
+
+        assert project_id is not None
+
+        self._test_patch_linked_storage(
+            username,
+            project_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
+
+    @pytest.mark.parametrize(
+        "is_owner, is_assignee, is_allow",
+        [
+            (True, False, True),
+            (False, True, False),
+            (False, False, False),
+        ],
+    )
+    def test_sandbox_update_project_associated_storage(
+        self,
+        is_owner: bool,
+        is_assignee: str,
+        is_allow: bool,
+        find_users,
+        filter_projects,
+    ):
+        username: Optional[str] = None
+        project_id: Optional[int] = None
+
+        projects = filter_projects(organization=None)
+        users = find_users(exclude_privilege="admin")
+
+        for project in projects:
+            if project_id is not None:
+                break
+            for user in users:
+                is_user_project_owner = project["owner"]["id"] == user["id"]
+                is_user_project_assignee = (project["assignee"] or {}).get("id") == user["id"]
+
+                if (
+                    (is_owner and is_user_project_owner)
+                    or (is_assignee and not is_user_project_owner and is_user_project_assignee)
+                    or not any(
+                        [is_owner, is_assignee, is_user_project_owner, is_user_project_assignee]
+                    )
+                ):
+                    project_id = project["id"]
+                    username = user["username"]
+                    break
+
+        assert project_id is not None
+
+        self._test_patch_linked_storage(
+            username,
+            project_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
