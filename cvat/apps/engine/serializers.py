@@ -1634,8 +1634,8 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
             field_validation.require_field(attrs, "frames")
 
         if (
-            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL and
-            attrs.get('frames')
+            'frames' in attrs and
+            attrs['frame_selection_method'] != models.JobFrameSelectionMethod.MANUAL
         ):
             raise serializers.ValidationError(
                 '"frames" can only be used when "frame_selection_method" is "{}"'.format(
