@@ -6181,6 +6181,50 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 38,
+  "fields": {
+    "task": 29,
+    "start_frame": 0,
+    "stop_frame": 7,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 39,
+  "fields": {
+    "task": 29,
+    "start_frame": 8,
+    "stop_frame": 15,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 40,
+  "fields": {
+    "task": 29,
+    "start_frame": 16,
+    "stop_frame": 22,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 41,
+  "fields": {
+    "task": 29,
+    "start_frame": 23,
+    "stop_frame": 28,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
