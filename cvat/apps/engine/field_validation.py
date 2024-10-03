@@ -28,7 +28,7 @@ def require_field(data: dict[str, Any], key: str) -> None:
 def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any]) -> None:
     assert values
 
-    if data[key] not in values:
+    if data.get(key) not in values:
         if len(values) == 1:
             raise serializers.ValidationError(
                 'The "{}" field must be {}'.format(key, ", ".join(f"{k}" for k in values))
