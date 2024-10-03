@@ -184,7 +184,7 @@ export class FramesMetaData {
 
         let frameIndex = null;
         if (this.includedFrames) {
-            frameIndex = sortedIndexOf(this.includedFrames, dataFrameNumber);
+            frameIndex = sortedIndexOf(this.includedFrames, dataFrameNumber - this.startFrame);
             if (frameIndex === -1) {
                 throw new ArgumentError(`Frame number ${dataFrameNumber} doesn't belong to the job`);
             }
@@ -324,7 +324,14 @@ function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): numbe
     return meta.startFrame - localStartFrame * meta.frameStep;
 }
 
-function getDataFrameNumber(frameNumber: number, dataStartFrame: number, step: number): number {
+function getDataFrameNumber(meta: FramesMetaData, frameNumber: number, dataStartFrame: number, step: number): number {
+    if (meta.includedFrames) {
+        if (frameNumber >= meta.includedFrames.length) {
+            throw new ArgumentError(`Frame number ${frameNumber} is out of included frames range`);
+        }
+        return meta.includedFrames[frameNumber] + dataStartFrame;
+    }
+
     return frameNumber * step + dataStartFrame;
 }
 
@@ -347,7 +354,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             const requestId = +_.uniqueId();
             const dataStartFrame = getDataStartFrame(meta, startFrame);
             const requestedDataFrameNumber = getDataFrameNumber(
-                this.number, dataStartFrame, meta.frameStep,
+                meta, this.number, dataStartFrame, meta.frameStep,
             );
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
             const segmentFrameNumbers = meta.getDataFrameNumbers().map(
@@ -713,7 +720,7 @@ export async function getFrame(
         // TODO: migrate to local frame numbers
         const dataStartFrame = getDataStartFrame(meta, startFrame);
         const dataFrameNumberGetter = (frameNumber: number): number => (
-            getDataFrameNumber(frameNumber, dataStartFrame, meta.frameStep)
+            getDataFrameNumber(meta, frameNumber, dataStartFrame, meta.frameStep)
         );
 
         frameDataCache[jobID] = {
@@ -795,29 +802,63 @@ export async function patchMeta(jobID: number): Promise<FramesMetaData> {
 }
 
 export async function findFrame(
-    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
+    jobID: number, from: number, to: number, filters: { offset?: number, notDeleted: boolean },
 ): Promise<number | null> {
-    const offset = filters.offset || 1;
     const meta = await getFramesMeta('job', jobID);
-
+    let frameFrom = from;
+    let frameTo = to;
     const sign = Math.sign(frameTo - frameFrom);
-    const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
-    const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+
+    if (meta.includedFrames) {
+        // adjust start and stop for a ground truth jobs
+        const [sortedFrom, sortedTo] = [frameFrom, frameTo].sort((a: number, b: number) => a - b);
+        const minIdx = meta.includedFrames.reduce<number | null>((acc, val, index) => {
+            if (acc === null && val >= sortedFrom) {
+                return index;
+            }
+
+            return acc;
+        }, null);
+
+        const maxIdx = meta.includedFrames.reduceRight<number | null>((acc, val, index) => {
+            if (acc === null && val <= sortedTo) {
+                return index;
+            }
+
+            return acc;
+        }, null);
+
+        if (minIdx === null || maxIdx === null) {
+            // passed range is out of gt job range (left or right)
+            return null;
+        }
+
+        if (sign > 0) {
+            frameFrom = meta.includedFrames[minIdx];
+            frameTo = meta.includedFrames[maxIdx];
+        } else {
+            frameFrom = meta.includedFrames[maxIdx];
+            frameTo = meta.includedFrames[minIdx];
+        }
+    }
+
+    const offset = filters.offset || 1;
+    const predicate = sign > 0 ? (frame: number) => frame <= frameTo : (frame: number) => frame >= frameTo;
+    const update = sign > 0 ? (frame: number) => frame + 1 : (frame: number) => frame - 1;
     let framesCounter = 0;
     let lastUndeletedFrame = null;
-    const check = (frame): boolean => {
+    const check = (frame: number): boolean => {
         if (meta.includedFrames) {
-            // meta.includedFrames contains input frame numbers now
-            const dataStartFrame = meta.startFrame; // this is only true when includedFrames is set
-            return (meta.includedFrames.includes(
-                getDataFrameNumber(frame, dataStartFrame, meta.frameStep))
-            ) && (!filters.notDeleted || !(frame in meta.deletedFrames));
+            return meta.includedFrames.includes(frame) && (!filters.notDeleted || !(frame in meta.deletedFrames));
         }
+
         if (filters.notDeleted) {
             return !(frame in meta.deletedFrames);
         }
+
         return true;
     };
+
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
         if (check(frame)) {
             lastUndeletedFrame = frame;
