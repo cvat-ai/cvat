@@ -490,7 +490,8 @@ class SegmentFrameProvider(IFrameProvider):
         abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
         frame_index = bisect(segment_frames, abs_frame_number) - 1
         if not (
-            0 <= frame_index < len(segment_frames) and segment_frames[frame_index] == frame_number
+            0 <= frame_index < len(segment_frames) and
+            segment_frames[frame_index] == abs_frame_number
         ):
             return None
 
