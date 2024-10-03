@@ -9424,7 +9424,6 @@ components:
           items:
             type: integer
             minimum: 0
-          default: []
           description: |
             The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedJobWriteRequest:
