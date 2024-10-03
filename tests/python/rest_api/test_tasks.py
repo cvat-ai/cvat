@@ -737,6 +737,7 @@ class TestPatchTaskAnnotations:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestGetTaskDataset:
 
     @staticmethod
@@ -987,6 +988,7 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -2593,8 +2595,9 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -3571,6 +3574,8 @@ class TestWorkWithTask:
 
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestTaskBackups:
     @pytest.fixture(autouse=True)
     def setup(
@@ -4379,6 +4384,8 @@ class TestGetTaskPreview:
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
 
 
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestUnequalJobs:
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
