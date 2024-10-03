@@ -1117,7 +1117,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             job_frame_provider = JobFrameProvider(db_job)
             updated_segment_chunk_ids = set(
                 job_frame_provider.get_chunk_number(updated_segment_frame_id)
-                for updated_segment_frame_id in requested_frames
+                for updated_segment_frame_id in updated_validation_frames
             )
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))

@@ -488,11 +488,13 @@ class SegmentFrameProvider(IFrameProvider):
     def get_frame_index(self, frame_number: int) -> Optional[int]:
         segment_frames = sorted(self._db_segment.frame_set)
         abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
-        frame_index = bisect(segment_frames, abs_frame_number)
-        if not frame_index:
+        frame_index = bisect(segment_frames, abs_frame_number) - 1
+        if not (
+            0 <= frame_index < len(segment_frames) and segment_frames[frame_index] == frame_number
+        ):
             return None
 
-        return frame_index - 1
+        return frame_index
 
     def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
         frame_index = self.get_frame_index(frame_number)
