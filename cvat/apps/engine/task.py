@@ -1484,11 +1484,14 @@ def _create_thread(
     # TODO: refactor
     if hasattr(db_data, 'validation_layout'):
         if db_data.validation_layout.mode == models.ValidationMode.GT:
+            def _to_abs_frame(rel_frame: int) -> int:
+                return rel_frame * db_data.get_frame_step() + db_data.start_frame
+
             db_gt_segment = models.Segment(
                 task=db_task,
                 start_frame=0,
                 stop_frame=db_data.size - 1,
-                frames=db_data.validation_layout.frames,
+                frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
                 type=models.SegmentType.SPECIFIC_FRAMES,
             )
         elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
