@@ -7,12 +7,12 @@ description: 'Step-by-step guide on how to create and set up multiple tasks'
 
 Use **Create multi tasks** to create multiple video annotation tasks with the same configuration.
 
-> The **Сreate multi tasks** feature is available for videos only.
-
 To create the multi tasks, on the **Tasks** page click **+** and
 select **Create multi tasks**.
 
-![](/images/image254.jpg)
+> **Note:** The **Сreate multi tasks** feature is available for videos only.
+
+![](/images/create_multi_tasks_1.png)
 
 See:
 
@@ -25,16 +25,15 @@ See:
 
 To add several tasks in one go, open the task configurator:
 
-![Multitack configurator](/images/multitask_configurator.png)
+![Multitack configurator](/images/create_multi_tasks_2.png)
 
 And specify the following parameters:
 
 1. In the **Name** field, enter the name of the new task:
 
-   - Enter the name of the task. If the name includes more than one word, use the underscore: `Word1 word2 word3`
+   - Enter the name of the task
    - (Optional) `{{index}}` adds an index to the file in the set (starting from 0).
    - (Optional) `{{file_name}}` adds the file's name to the task's name.
-     > **Note:** use hyphen between three parameters: `Word1 word2 word3 {{index}} {{file_name}}`
 
 2. (Optional) From the **Projects** drop-down, select a project for the tasks.
    <br>Leave this field empty if you do not want to assign tasks to any project.
