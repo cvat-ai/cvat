@@ -2626,10 +2626,16 @@ class TestTaskData:
             frame_count = len(image_files)
 
         images_data = [f.getvalue() for f in image_files]
+
+        resulting_task_size = len(
+            range(start_frame or 0, (stop_frame or len(images_data) - 1) + 1, step or 1)
+        )
+
         data_params = {
             "image_quality": 70,
             "client_files": image_files,
             "sorting_method": "natural",
+            "chunk_size": max(1, (segment_size or resulting_task_size) // 2),
         }
         data_params.update(data_kwargs)
 
@@ -2650,7 +2656,7 @@ class TestTaskData:
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_frame=get_frame,
-            size=len(range(start_frame or 0, (stop_frame or len(images_data) - 1) + 1, step or 1)),
+            size=resulting_task_size,
         ), task_id
 
     @pytest.fixture(scope="class")
@@ -2817,11 +2823,16 @@ class TestTaskData:
         if segment_size:
             task_params["segment_size"] = segment_size
 
+        resulting_task_size = len(
+            range(start_frame or 0, (stop_frame or frame_count - 1) + 1, step or 1)
+        )
+
         video_file = generate_video_file(frame_count)
         video_data = video_file.getvalue()
         data_params = {
             "image_quality": 70,
             "client_files": [video_file],
+            "chunk_size": max(1, (segment_size or resulting_task_size) // 2),
         }
 
         if start_frame is not None:
@@ -2841,7 +2852,7 @@ class TestTaskData:
             models.TaskWriteRequest._from_openapi_data(**task_params),
             models.DataRequest._from_openapi_data(**data_params),
             get_video_file=get_video_file,
-            size=len(range(start_frame or 0, (stop_frame or frame_count - 1) + 1, step or 1)),
+            size=resulting_task_size,
         ), task_id
 
     @pytest.fixture(scope="class")
@@ -3025,13 +3036,17 @@ class TestTaskData:
             else:
                 assert False
 
-            task_frames = range(
+            task_abs_frames = range(
                 task_meta.start_frame, task_meta.stop_frame + 1, task_spec.frame_step
             )
             task_chunk_frames = [
                 (chunk_number, list(chunk_frames))
                 for chunk_number, chunk_frames in groupby(
-                    task_frames, key=lambda frame: frame // task_meta.chunk_size
+                    task_abs_frames,
+                    key=lambda abs_frame: (
+                        (abs_frame - task_meta.start_frame) // task_spec.frame_step
+                    )
+                    // task_meta.chunk_size,
                 )
             ]
             for quality, (chunk_id, expected_chunk_frame_ids) in product(
@@ -3209,7 +3224,7 @@ class TestTaskData:
                     assert False
 
                 if indexing == "absolute":
-                    chunk_count = math.ceil(task_meta.size / job_meta.chunk_size)
+                    chunk_count = math.ceil(task_meta.size / task_meta.chunk_size)
 
                     def get_task_chunk_abs_frame_ids(chunk_id: int) -> Sequence[int]:
                         return range(
@@ -3286,7 +3301,9 @@ class TestTaskData:
                     else:
                         chunk_images = dict(enumerate(read_video_file(chunk_file)))
 
-                    assert sorted(chunk_images.keys()) == list(range(job_meta.size))
+                    assert sorted(chunk_images.keys()) == list(
+                        range(len(expected_chunk_abs_frame_ids))
+                    )
 
                     for chunk_frame, abs_frame_id in zip(
                         chunk_images, expected_chunk_abs_frame_ids
