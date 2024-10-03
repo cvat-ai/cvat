@@ -22,7 +22,6 @@ import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
-import { ArgumentError } from 'cvat-core/src/exceptions';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
@@ -441,7 +440,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
-        const { projectId, quality } = this.state;
+        const { projectId } = this.state;
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
@@ -450,21 +449,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             });
             reject();
             return;
-        }
-
-        try {
-            this.validateQualityParams(quality);
-        } catch (e) {
-            if (e instanceof Error) {
-                notification.error({
-                    message: 'Could not create a task',
-                    description: e.message,
-                    className: 'cvat-notification-create-task-fail',
-                });
-                reject();
-                return;
-            }
-            throw e;
         }
 
         if (!this.validateFiles()) {
@@ -485,7 +469,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.basicConfigurationComponent.current
             .submit()
             .then(() => {
-                const promises = [];
+                const promises: Promise<void>[] = [];
 
                 if (this.advancedConfigurationComponent.current) {
                     promises.push(this.advancedConfigurationComponent.current.submit());
@@ -495,7 +479,33 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     promises.push(this.qualityConfigurationComponent.current.submit());
                 }
 
-                return Promise.all(promises);
+                const formIsValid = new Promise<void>((_resolve, _reject) => {
+                    Promise.all(promises).then(() => {
+                        const { quality, advanced } = this.state;
+                        if (
+                            quality.validationMode === ValidationMode.HONEYPOTS &&
+                            advanced.sortingMethod !== SortingMethod.RANDOM
+                        ) {
+                            this.setState({
+                                advanced: {
+                                    ...advanced,
+                                    sortingMethod: SortingMethod.RANDOM,
+                                },
+                            }, () => {
+                                _resolve();
+                                notification.info({
+                                    message: 'Task parameters were automatically updated',
+                                    description: 'Sorting method has been updated as Honeypots' +
+                                        ' quality method only supports RANDOM sorting',
+                                });
+                            });
+                        } else {
+                            _resolve();
+                        }
+                    }).catch(_reject);
+                });
+
+                return formIsValid;
             }).then(() => {
                 if (projectId) {
                     return core.projects.get({ id: projectId }).then((response) => {
@@ -778,21 +788,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 .replaceAll('{{index}}', indexFile.toString()) :
             basic.name;
     };
-
-    private validateQualityParams(value: QualityConfiguration): QualityConfiguration {
-        const { advanced } = this.state;
-        if (
-            advanced.sortingMethod !== SortingMethod.RANDOM &&
-            value.validationMode === ValidationMode.HONEYPOTS
-        ) {
-            throw new ArgumentError(
-                `Validation mode ${value.validationMode} ` +
-                `can only be used with ${SortingMethod.RANDOM} sorting method`,
-            );
-        }
-
-        return value;
-    }
 
     private renderBasicBlock(): JSX.Element {
         const { many } = this.props;

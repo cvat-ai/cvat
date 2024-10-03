@@ -7,23 +7,24 @@ import Input from 'antd/lib/input';
 import Form, { FormInstance } from 'antd/lib/form';
 import { PercentageOutlined } from '@ant-design/icons';
 import Radio from 'antd/lib/radio';
-import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { Col, Row } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 
+import { FrameSelectionMethod } from 'components/create-job-page/job-form';
+
 export interface QualityConfiguration {
     validationMode: ValidationMode;
-    validationFramesPercent: number;
-    validationFramesPerJobPercent: number;
+    validationFramesPercent?: number;
+    validationFramesPerJobPercent?: number;
     frameSelectionMethod: FrameSelectionMethod;
 }
 
 interface Props {
-    onSubmit(values: QualityConfiguration): Promise<void>;
     initialValues: QualityConfiguration;
     frameSelectionMethod: FrameSelectionMethod;
-    onChangeFrameSelectionMethod: (method: FrameSelectionMethod) => void;
     validationMode: ValidationMode;
+    onSubmit(values: QualityConfiguration): Promise<void>;
+    onChangeFrameSelectionMethod: (method: FrameSelectionMethod) => void;
     onChangeValidationMode: (method: ValidationMode) => void;
 }
 
@@ -44,9 +45,18 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: QualityConfiguration) => {
-                onSubmit(values);
-            });
+            return this.formRef.current.validateFields().then((values: QualityConfiguration) => onSubmit({
+                ...values,
+                frameSelectionMethod: values.validationMode === ValidationMode.HONEYPOTS ?
+                    FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
+                ...(typeof values.validationFramesPercent === 'number' ? {
+                    validationFramesPercent: values.validationFramesPercent / 100,
+                } : {}),
+                ...(typeof values.validationFramesPerJobPercent === 'number' ? {
+                    validationFramesPerJobPercent: values.validationFramesPerJobPercent / 100,
+                } : {}),
+            }),
+            );
         }
 
         return Promise.reject(new Error('Quality form ref is empty'));
@@ -78,57 +88,54 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 </Col>
 
                 {
-                    (frameSelectionMethod === FrameSelectionMethod.RANDOM) ?
-                        (
-                            <Col span={7}>
-                                <Form.Item
-                                    label='Quantity'
-                                    name='validationFramesPercent'
-                                    normalize={(value) => +value}
-                                    rules={[
-                                        { required: true, message: 'The field is required' },
-                                        {
-                                            type: 'number', min: 0, max: 100, message: 'Value is not valid',
-                                        },
-                                    ]}
-                                >
-                                    <Input
-                                        size='large'
-                                        type='number'
-                                        min={0}
-                                        max={100}
-                                        suffix={<PercentageOutlined />}
-                                    />
-                                </Form.Item>
-                            </Col>
-                        ) : ('')
+                    frameSelectionMethod === FrameSelectionMethod.RANDOM && (
+                        <Col span={7}>
+                            <Form.Item
+                                label='Quantity'
+                                name='validationFramesPercent'
+                                normalize={(value) => +value}
+                                rules={[
+                                    { required: true, message: 'The field is required' },
+                                    {
+                                        type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={0}
+                                    max={100}
+                                    suffix={<PercentageOutlined />}
+                                />
+                            </Form.Item>
+                        </Col>
+                    )
                 }
-
                 {
-                    (frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB) ?
-                        (
-                            <Col span={7}>
-                                <Form.Item
-                                    label='Quantity per job'
-                                    name='validationFramesPerJobPercent'
-                                    normalize={(value) => +value}
-                                    rules={[
-                                        { required: true, message: 'The field is required' },
-                                        {
-                                            type: 'number', min: 0, max: 100, message: 'Value is not valid',
-                                        },
-                                    ]}
-                                >
-                                    <Input
-                                        size='large'
-                                        type='number'
-                                        min={0}
-                                        max={100}
-                                        suffix={<PercentageOutlined />}
-                                    />
-                                </Form.Item>
-                            </Col>
-                        ) : ('')
+                    frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
+                        <Col span={7}>
+                            <Form.Item
+                                label='Quantity per job'
+                                name='validationFramesPerJobPercent'
+                                normalize={(value) => +value}
+                                rules={[
+                                    { required: true, message: 'The field is required' },
+                                    {
+                                        type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={0}
+                                    max={100}
+                                    suffix={<PercentageOutlined />}
+                                />
+                            </Form.Item>
+                        </Col>
+                    )
                 }
             </>
         );
@@ -137,15 +144,6 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     private honeypotsParamsBlock(): JSX.Element {
         return (
             <Row>
-                <Col>
-                    <Form.Item
-                        name='frameSelectionMethod'
-                        label='Frame selection method'
-                        rules={[{ required: true, message: 'Please, specify frame selection method' }]}
-                        hidden
-                        initialValue={FrameSelectionMethod.RANDOM}
-                    />
-                </Col>
                 <Col span={7}>
                     <Form.Item
                         label='Total honeypots'

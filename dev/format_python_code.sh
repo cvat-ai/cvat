@@ -29,6 +29,7 @@ for paths in \
     "cvat/apps/engine/cache.py" \
     "cvat/apps/engine/default_settings.py" \
     "cvat/apps/engine/field_validation.py" \
+    "cvat/apps/engine/model_utils.py" \
     ; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}
