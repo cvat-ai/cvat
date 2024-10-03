@@ -99,6 +99,13 @@ class MediaCache:
 
         return item
 
+    def _delete_cache_item(self, key: str):
+        try:
+            self._cache.delete(key)
+            slogger.glob.info(f"Removed chunk from the cache: key {key}")
+        except pickle.UnpicklingError:
+            slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
+
     def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
         slogger.glob.info(f"Starting to get chunk from cache: key {key}")
         try:
@@ -239,6 +246,13 @@ class MediaCache:
                 self._make_preview_key(db_segment),
                 create_callback=lambda: self._prepare_segment_preview(db_segment),
             )
+        )
+
+    def remove_segment_chunk(
+        self, db_segment: models.Segment, chunk_number: str, *, quality: str
+    ) -> None:
+        self._delete_cache_item(
+            self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
@@ -610,15 +624,15 @@ class MediaCache:
     def prepare_context_images_chunk(self, db_data: models.Data, frame_number: int) -> DataWithMime:
         zip_buffer = io.BytesIO()
 
-        related_images = db_data.related_files.filter(primary_image__frame=frame_number).all()
+        related_images = db_data.related_files.filter(images__frame=frame_number).all()
         if not related_images:
             return zip_buffer, ""
 
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
             common_path = os.path.commonpath(list(map(lambda x: str(x.path), related_images)))
-            for i in related_images:
-                path = os.path.realpath(str(i.path))
-                name = os.path.relpath(str(i.path), common_path)
+            for related_image in related_images:
+                path = os.path.realpath(str(related_image.path))
+                name = os.path.relpath(str(related_image.path), common_path)
                 image = cv2.imread(path)
                 success, result = cv2.imencode(".JPEG", image)
                 if not success:

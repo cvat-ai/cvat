@@ -306,3 +306,17 @@ allow if {
     is_project_staff
 }
 
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    utils.has_perm(utils.USER)
+    utils.is_sandbox
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.SUPERVISOR)
+    utils.has_perm(utils.USER)
+    is_task_staff
+}

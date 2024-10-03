@@ -22,12 +22,13 @@ import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
+import { ArgumentError } from 'cvat-core/src/exceptions';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
 import MultiTasksProgress from './multi-task-progress';
 import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
-import QualityConfigurationForm, { QualityConfiguration, ValidationMethod } from './quality-configuration-form';
+import QualityConfigurationForm, { QualityConfiguration, ValidationMode } from './quality-configuration-form';
 
 type TabName = 'local' | 'share' | 'remote' | 'cloudStorage';
 const core = getCore();
@@ -87,9 +88,9 @@ const defaultState: State = {
         useProjectTargetStorage: true,
     },
     quality: {
-        validationMethod: ValidationMethod.NONE,
+        validationMode: ValidationMode.NONE,
         validationFramesPercent: 5,
-        validationFramesPerJob: 1,
+        validationFramesPerJobPercent: 1,
         frameSelectionMethod: FrameSelectionMethod.RANDOM,
     },
     labels: [],
@@ -303,12 +304,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }));
     };
 
-    private handleValidationMethodChange = (value: ValidationMethod): void => {
+    private handleValidationModeChange = (value: ValidationMode): void => {
         this.qualityConfigurationComponent.current?.resetFields();
         this.setState(() => ({
             quality: {
                 ...defaultState.quality,
-                validationMethod: value,
+                validationMode: value,
+            },
+        }));
+    };
+
+    private handleFrameSelectionMethodChange = (value: FrameSelectionMethod): void => {
+        this.setState((state) => ({
+            quality: {
+                ...state.quality,
+                frameSelectionMethod: value,
             },
         }));
     };
@@ -431,7 +441,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
-        const { projectId } = this.state;
+        const { projectId, quality } = this.state;
         if (!this.validateLabelsOrProject()) {
             notification.error({
                 message: 'Could not create a task',
@@ -440,6 +450,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             });
             reject();
             return;
+        }
+
+        try {
+            this.validateQualityParams(quality);
+        } catch (e) {
+            if (e instanceof Error) {
+                notification.error({
+                    message: 'Could not create a task',
+                    description: e.message,
+                    className: 'cvat-notification-create-task-fail',
+                });
+                reject();
+                return;
+            }
+            throw e;
         }
 
         if (!this.validateFiles()) {
@@ -721,6 +746,15 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         });
     };
 
+    private handleSortingMethodChange = (value: SortingMethod): void => {
+        this.setState((state) => ({
+            advanced: {
+                ...state.advanced,
+                sortingMethod: value,
+            },
+        }));
+    };
+
     private getTaskName = (indexFile: number, fileManagerTabName: TabName, defaultFileName = ''): string => {
         const { many } = this.props;
         const { basic } = this.state;
@@ -744,6 +778,21 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 .replaceAll('{{index}}', indexFile.toString()) :
             basic.name;
     };
+
+    private validateQualityParams(value: QualityConfiguration): QualityConfiguration {
+        const { advanced } = this.state;
+        if (
+            advanced.sortingMethod !== SortingMethod.RANDOM &&
+            value.validationMode === ValidationMode.HONEYPOTS
+        ) {
+            throw new ArgumentError(
+                `Validation mode ${value.validationMode} ` +
+                `can only be used with ${SortingMethod.RANDOM} sorting method`,
+            );
+        }
+
+        return value;
+    }
 
     private renderBasicBlock(): JSX.Element {
         const { many } = this.props;
@@ -899,6 +948,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                                 useProjectTargetStorage={useProjectTargetStorage}
                                 sourceStorageLocation={sourceStorageLocation}
                                 targetStorageLocation={targetStorageLocation}
+                                onChangeSortingMethod={this.handleSortingMethodChange}
                                 onChangeUseProjectSourceStorage={this.handleUseProjectSourceStorageChange}
                                 onChangeUseProjectTargetStorage={this.handleUseProjectTargetStorageChange}
                                 onChangeSourceStorageLocation={(value: StorageLocation) => {
@@ -916,7 +966,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderQualityBlock(): JSX.Element {
-        const { quality: { validationMethod } } = this.state;
+        const { quality: { frameSelectionMethod, validationMode } } = this.state;
 
         return (
             <Col span={24}>
@@ -930,8 +980,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                                 ref={this.qualityConfigurationComponent}
                                 initialValues={defaultState.quality}
                                 onSubmit={this.handleSubmitQualityConfiguration}
-                                validationMethod={validationMethod}
-                                onChangeValidationMethod={this.handleValidationMethodChange}
+                                frameSelectionMethod={frameSelectionMethod}
+                                onChangeFrameSelectionMethod={this.handleFrameSelectionMethodChange}
+                                validationMode={validationMode}
+                                onChangeValidationMode={this.handleValidationModeChange}
                             />
                         ),
                     }]}
@@ -1030,7 +1082,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 {this.renderLabelsBlock()}
                 {this.renderFilesBlock()}
                 {this.renderAdvancedBlock()}
-                {/* {this.renderQualityBlock()} disabled while https://github.com/cvat-ai/cvat/pull/8348 not merged */}
+                {this.renderQualityBlock()}
 
                 <Col span={24} className='cvat-create-task-content-footer'>
                     {many ? this.renderFooterMultiTasks() : this.renderFooterSingleTask() }

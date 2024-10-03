@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.20.0
+  version: 2.21.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2404,12 +2404,12 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       tags:
-      - tasks
+      - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
+              $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -2594,6 +2594,62 @@ paths:
       responses:
         '200':
           description: Job image preview
+  /api/jobs/{id}/validation_layout:
+    get:
+      operationId: jobs_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: jobs_partial_update_validation_layout
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobValidationLayoutWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
   /api/labels:
     get:
       operationId: labels_list
@@ -4953,7 +5009,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
 
           There are few examples for complex filtering tasks:
 
@@ -5015,7 +5071,7 @@ paths:
         in: query
         description: 'A search term. Available search_fields: (''project_name'', ''name'',
           ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'')'
+          ''tracker_link'', ''validation_mode'')'
         schema:
           type: string
       - name: sort
@@ -5023,7 +5079,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''id'', ''project_id'', ''updated_date'']'
+          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
+          ''project_id'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -5045,6 +5102,14 @@ paths:
         description: A simple equality filter for the tracker_link field
         schema:
           type: string
+      - name: validation_mode
+        in: query
+        description: A simple equality filter for the validation_mode field
+        schema:
+          type: string
+          enum:
+          - gt
+          - gt_pool
       tags:
       - tasks
       security:
@@ -5621,6 +5686,16 @@ paths:
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           description: Data of a specific type
     post:
       operationId: tasks_create_data
@@ -5988,6 +6063,62 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqStatus'
+          description: ''
+  /api/tasks/{id}/validation_layout:
+    get:
+      operationId: tasks_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: tasks_partial_update_validation_layout
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskValidationLayoutWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
           description: ''
   /api/tasks/backup/:
     post:
@@ -7246,6 +7377,9 @@ components:
     DataMetaRead:
       type: object
       properties:
+        chunks_updated_date:
+          type: string
+          format: date-time
         chunk_size:
           type: integer
           readOnly: true
@@ -7287,6 +7421,7 @@ components:
           description: |
             A list of valid frame ids. The None value means all frames are included.
       required:
+      - chunks_updated_date
       - deleted_frames
       - frames
       - image_quality
@@ -7460,6 +7595,10 @@ components:
             If you want to send files in an arbitrary order
             and reorder them afterwards on the server,
             pass the list of file names in the required order.
+        validation_params:
+          allOf:
+          - $ref: '#/components/schemas/ValidationParamsRequest'
+          nullable: true
       required:
       - image_quality
     DataResponse:
@@ -7747,13 +7886,15 @@ components:
       - name
       - related_files
       - width
-    FrameSelectionMethodEnum:
+    FrameSelectionMethod:
       enum:
       - random_uniform
+      - random_per_job
       - manual
       type: string
       description: |-
         * `random_uniform` - RANDOM_UNIFORM
+        * `random_per_job` - RANDOM_PER_JOB
         * `manual` - MANUAL
     FunctionCall:
       type: object
@@ -8149,6 +8290,26 @@ components:
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
+    JobValidationLayoutRead:
+      type: object
+      properties:
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids for honeypots in the job
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
       type: object
       properties:
@@ -8164,28 +8325,50 @@ components:
         task_id:
           type: integer
         frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethodEnum'
+          $ref: '#/components/schemas/FrameSelectionMethod'
         frame_count:
           type: integer
-          minimum: 0
+          minimum: 1
           description: |
-            The number of frames included in the job.
-            Applicable only to the random frame selection
-        seed:
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
           type: integer
           minimum: 0
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection.
+            Applicable only to random frame selection methods.
             By default, a random value is used.
+        seed:
+          type: integer
+          minimum: 0
+          description: Deprecated. Use random_seed instead.
         frames:
           type: array
           items:
             type: integer
             minimum: 0
           description: |
-            The list of frame ids. Applicable only to the manual frame selection
+            The list of frame ids. Applicable only to the "manual" frame selection method
       required:
       - task_id
       - type
@@ -9215,6 +9398,35 @@ components:
           nullable: true
         resolved:
           type: boolean
+    PatchedJobDataMetaWriteRequest:
+      type: object
+      properties:
+        deleted_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+    PatchedJobValidationLayoutWriteRequest:
+      type: object
+      properties:
+        frame_selection_method:
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the job
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          default: []
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedJobWriteRequest:
       type: object
       properties:
@@ -9332,12 +9544,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
-          writeOnly: true
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9424,6 +9630,33 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+    PatchedTaskValidationLayoutWriteRequest:
+      type: object
+      properties:
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be excluded from validation
+        frame_selection_method:
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the task
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -9657,12 +9890,6 @@ components:
         source_storage:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
-          writeOnly: true
-        task_subsets:
-          type: array
-          items:
-            type: string
-            minLength: 1
           writeOnly: true
       required:
       - name
@@ -10537,9 +10764,58 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        validation_mode:
+          type: string
+          nullable: true
+          description: Describes how the task validation is performed. Configured
+            at task creation
       required:
       - jobs
       - labels
+    TaskValidationLayoutRead:
+      type: object
+      properties:
+        mode:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ValidationMode'
+          - $ref: '#/components/schemas/NullEnum'
+        frames_per_job_count:
+          type: integer
+          readOnly: true
+          nullable: true
+        validation_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be used for validation
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids excluded from validation
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids for all honeypots in the task
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of real (validation) frame ids for all honeypots in the task
     TaskWriteRequest:
       type: object
       properties:
@@ -10766,6 +11042,67 @@ components:
           maxLength: 150
       required:
       - username
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
+    ValidationParamsRequest:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ValidationMode'
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        random_seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+        frames:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          writeOnly: true
+          description: |
+            The list of file names to be included in the validation set.
+            Applicable only to the "manual" frame selection method.
+            Can only be used for images.
+        frame_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames to be included in the validation set.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames to be included in the validation set.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames to be included in the validation set from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames to be included in the validation set from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+      required:
+      - frame_selection_method
+      - mode
     WebhookContentType:
       enum:
       - application/json

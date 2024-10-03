@@ -580,11 +580,17 @@ def compare_annotations(a, b):
         a,
         b,
         ignore_order=True,
+        significant_digits=2,  # annotations are stored with 2 decimal digit precision
         exclude_obj_callback=_exclude_cb,
         exclude_regex_paths=[
             r"root\['version|updated_date'\]",
             r"root(\['\w+'\]\[\d+\])+\['id'\]",
             r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
             r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['source'\]",
         ],
     )
+
+
+def parse_frame_step(frame_filter: str) -> int:
+    return int((frame_filter or "step=1").split("=")[1])
