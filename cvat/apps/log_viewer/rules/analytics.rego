@@ -9,7 +9,8 @@ import data.utils
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"business"|"user"|"worker"> or null,
+#             "has_analytics_access": <true|false>
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -36,4 +37,8 @@ allow if {
     input.resource.visibility == utils.PUBLIC
     input.scope == utils.VIEW
     utils.has_perm(utils.BUSINESS)
+}
+
+allow if {
+    input.auth.user.has_analytics_access
 }
