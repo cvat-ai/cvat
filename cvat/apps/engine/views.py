@@ -1745,6 +1745,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
     def validation_layout(self, request, pk):
+        print("enter TaskViewSet.validation_layout")
+
         db_task = self.get_object() # call check_object_permissions as well
 
         validation_layout = getattr(db_task.data, 'validation_layout', None)
@@ -1765,6 +1767,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(response_serializer.data, status=status.HTTP_200_OK)
 
         response_serializer = TaskValidationLayoutReadSerializer(validation_layout)
+
+        print("exit TaskViewSet.validation_layout")
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
