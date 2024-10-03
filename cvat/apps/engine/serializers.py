@@ -668,7 +668,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
     frame_share = serializers.FloatField(
         required=False,
-        validators=[field_validation.validate_percent],
+        validators=[field_validation.validate_share],
         help_text=textwrap.dedent("""\
             The share of frames included in the GT job.
             Applicable only to the "{}" frame selection method
@@ -684,7 +684,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
     frames_per_job_share = serializers.FloatField(
         required=False,
-        validators=[field_validation.validate_percent],
+        validators=[field_validation.validate_share],
         help_text=textwrap.dedent("""\
             The share of frames included in the GT job from each annotation job.
             Applicable only to the "{}" frame selection method
@@ -1558,7 +1558,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
     )
     frame_share = serializers.FloatField(
         required=False,
-        validators=[field_validation.validate_percent],
+        validators=[field_validation.validate_share],
         help_text=textwrap.dedent("""\
             The share of frames to be included in the validation set.
             Applicable only to the "{}" frame selection method
@@ -1574,7 +1574,7 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
     )
     frames_per_job_share = serializers.FloatField(
         required=False,
-        validators=[field_validation.validate_percent],
+        validators=[field_validation.validate_share],
         help_text=textwrap.dedent("""\
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "{}" frame selection method

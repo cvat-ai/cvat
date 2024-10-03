@@ -1916,6 +1916,50 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JobWriteRequest'
+            examples:
+              CreateGtJobWithRandom10Frames:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_uniform
+                  frame_count: 10
+                  random_seed: 1
+                summary: create gt job with random 10 frames
+              CreateGtJobWithRandom15%Frames:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_uniform
+                  frame_share: 0.15
+                  random_seed: 1
+                summary: create gt job with random 15% frames
+              CreateGtJobWith3RandomFramesInEachJob:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_per_job
+                  frames_per_job_count: 3
+                  random_seed: 1
+                summary: create gt job with 3 random frames in each job
+              CreateGtJobWith20%RandomFramesInEachJob:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_per_job
+                  frames_per_job_share: 0.2
+                  random_seed: 1
+                summary: create gt job with 20% random frames in each job
+              CreateGtJobWithManualFrameSelection:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: manual
+                  frames:
+                  - 1
+                  - 5
+                  - 10
+                  - 18
+                summary: create gt job with manual frame selection
         required: true
       security:
       - sessionAuth: []
@@ -2637,6 +2681,19 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedJobValidationLayoutWriteRequest'
+            examples:
+              SetHoneypotsToRandomValidationFrames:
+                value:
+                  frame_selection_method: random_uniform
+                summary: set honeypots to random validation frames
+              SetHoneypotsManually:
+                value:
+                  frame_selection_method: manual
+                  honeypot_real_frames:
+                  - 10
+                  - 20
+                  - 22
+                summary: set honeypots manually
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -6107,6 +6164,30 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedTaskValidationLayoutWriteRequest'
+            examples:
+              SetHoneypotsToRandomValidationFrames:
+                value:
+                  frame_selection_method: random_uniform
+                summary: set honeypots to random validation frames
+              SetHoneypotsManually:
+                value:
+                  frame_selection_method: manual
+                  honeypot_real_frames:
+                  - 10
+                  - 20
+                  - 22
+                summary: set honeypots manually
+              DisableValidationFrames:
+                value:
+                  disabled_frames:
+                  - 4
+                  - 5
+                  - 8
+                summary: disable validation frames
+              RestoreAllValidationFrames:
+                value:
+                  disabled_frames: []
+                summary: restore all validation frames
       security:
       - sessionAuth: []
         csrfAuth: []

@@ -39,7 +39,7 @@ def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any])
             )
 
 
-def validate_percent(value: float) -> float:
+def validate_share(value: float) -> float:
     if not 0 <= value <= 1:
         raise serializers.ValidationError("Value must be in the range [0; 1]")
 

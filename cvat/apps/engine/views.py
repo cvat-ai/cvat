@@ -38,7 +38,7 @@ from django_rq.queues import DjangoRQ
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
-    OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
+    OpenApiExample, OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
     extend_schema_view, extend_schema
 )
 
@@ -1741,7 +1741,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=TaskValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
-        })
+        },
+        examples=[
+            OpenApiExample("set honeypots to random validation frames", {
+                "frame_selection_method": models.JobFrameSelectionMethod.RANDOM_UNIFORM
+            }),
+            OpenApiExample("set honeypots manually", {
+                "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                "honeypot_real_frames": [10, 20, 22]
+            }),
+            OpenApiExample("disable validation frames", {
+                "disabled_frames": [4, 5, 8]
+            }),
+            OpenApiExample("restore all validation frames", {
+                "disabled_frames": []
+            }),
+        ])
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
     def validation_layout(self, request, pk):
@@ -1775,7 +1790,43 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=JobWriteSerializer,
         responses={
             '201': JobReadSerializer, # check JobWriteSerializer.to_representation
-        }),
+        },
+        examples=[
+            OpenApiExample("create gt job with random 10 frames", {
+                "type": models.JobType.GROUND_TRUTH,
+                "task_id": 42,
+                "frame_selection_method": models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                "frame_count": 10,
+                "random_seed": 1,
+            }),
+            OpenApiExample("create gt job with random 15% frames", {
+                "type": models.JobType.GROUND_TRUTH,
+                "task_id": 42,
+                "frame_selection_method": models.JobFrameSelectionMethod.RANDOM_UNIFORM,
+                "frame_share": 0.15,
+                "random_seed": 1,
+            }),
+            OpenApiExample("create gt job with 3 random frames in each job", {
+                "type": models.JobType.GROUND_TRUTH,
+                "task_id": 42,
+                "frame_selection_method": models.JobFrameSelectionMethod.RANDOM_PER_JOB,
+                "frames_per_job_count": 3,
+                "random_seed": 1,
+            }),
+            OpenApiExample("create gt job with 20% random frames in each job", {
+                "type": models.JobType.GROUND_TRUTH,
+                "task_id": 42,
+                "frame_selection_method": models.JobFrameSelectionMethod.RANDOM_PER_JOB,
+                "frames_per_job_share": 0.2,
+                "random_seed": 1,
+            }),
+            OpenApiExample("create gt job with manual frame selection", {
+                "type": models.JobType.GROUND_TRUTH,
+                "task_id": 42,
+                "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                "frames": [1, 5, 10, 18],
+            }),
+        ]),
     retrieve=extend_schema(
         summary='Get job details',
         responses={
@@ -2296,7 +2347,16 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         request=JobValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(JobValidationLayoutReadSerializer),
-        })
+        },
+        examples=[
+            OpenApiExample("set honeypots to random validation frames", {
+                "frame_selection_method": models.JobFrameSelectionMethod.RANDOM_UNIFORM
+            }),
+            OpenApiExample("set honeypots manually", {
+                "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                "honeypot_real_frames": [10, 20, 22]
+            }),
+        ])
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
     def validation_layout(self, request, pk):
