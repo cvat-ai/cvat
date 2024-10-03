@@ -6187,6 +6187,7 @@
     "task": 29,
     "start_frame": 0,
     "stop_frame": 7,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -6198,6 +6199,7 @@
     "task": 29,
     "start_frame": 8,
     "stop_frame": 15,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -6209,6 +6211,7 @@
     "task": 29,
     "start_frame": 16,
     "stop_frame": 22,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -6220,6 +6223,7 @@
     "task": 29,
     "start_frame": 23,
     "stop_frame": 28,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
