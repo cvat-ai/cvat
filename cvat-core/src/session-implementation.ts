@@ -633,7 +633,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.id !== 'undefined') {
                 // If the task has been already created, we update it
                 const taskData = {
-                    ...fields,
                     ...this._updateTrigger.getUpdated(this, {
                         bugTracker: 'bug_tracker',
                         projectId: 'project_id',
@@ -680,7 +679,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const taskSpec: any = {
-                ...fields,
                 name: this.name,
                 labels: this.labels.map((el) => el.toJSON()),
             };
@@ -723,6 +721,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
+                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(

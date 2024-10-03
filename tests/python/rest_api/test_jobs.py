@@ -5,6 +5,7 @@
 
 import io
 import json
+import math
 import operator
 import os
 import xml.etree.ElementTree as ET
@@ -14,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pytest
@@ -24,6 +25,7 @@ from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
+from pytest_cases import parametrize
 
 from shared.utils.config import make_api_client
 from shared.utils.helpers import generate_image_files
@@ -33,6 +35,7 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
+    parse_frame_step,
 )
 
 
@@ -89,74 +92,130 @@ class TestPostJobs:
             assert response.status == expected_status
         return response
 
+    @parametrize(
+        "frame_selection_method, method_params",
+        [
+            *tuple(product(["random_uniform"], [{"frame_count"}, {"frame_share"}])),
+            *tuple(
+                product(["random_per_job"], [{"frames_per_job_count"}, {"frames_per_job_share"}])
+            ),
+            ("manual", {}),
+        ],
+        idgen=lambda **args: "-".join([args["frame_selection_method"], *args["method_params"]]),
+    )
     @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_manual_frames(self, admin_user, tasks, jobs, task_mode):
-        user = admin_user
-        job_frame_count = 4
+    def test_can_create_gt_job_in_a_task(
+        self,
+        admin_user,
+        tasks,
+        task_mode: str,
+        frame_selection_method: str,
+        method_params: Set[str],
+    ):
+        required_task_size = 15
+
         task = next(
             t
             for t in tasks
-            if not t["project_id"]
-            and not t["organization"]
-            and t["mode"] == task_mode
-            and t["size"] > job_frame_count
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
+            if t["mode"] == task_mode
+            if required_task_size <= t["size"]
+            if not t["validation_mode"]
         )
         task_id = task["id"]
-        with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
 
-        job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
-            :job_frame_count
+        segment_size = task["segment_size"]
+        total_frame_count = task["size"]
+
+        job_params = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": frame_selection_method,
+        }
+
+        if "random" in frame_selection_method:
+            job_params["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            validation_frames_count = 5
+
+            for method_param in method_params:
+                if method_param == "frame_count":
+                    job_params[method_param] = validation_frames_count
+                elif method_param == "frame_share":
+                    job_params[method_param] = validation_frames_count / total_frame_count
+                else:
+                    assert False
+        elif frame_selection_method == "random_per_job":
+            validation_per_job_count = 2
+            validation_frames_count = validation_per_job_count * math.ceil(
+                total_frame_count / segment_size
+            )
+
+            for method_param in method_params:
+                if method_param == "frames_per_job_count":
+                    job_params[method_param] = validation_per_job_count
+                elif method_param == "frames_per_job_share":
+                    job_params[method_param] = validation_per_job_count / segment_size
+                else:
+                    assert False
+        elif frame_selection_method == "manual":
+            validation_frames_count = 5
+
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            job_params["frames"] = rng.choice(
+                range(total_frame_count), validation_frames_count, replace=False
+            ).tolist()
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            (gt_job, _) = api_client.jobs_api.create(job_write_request=job_params)
+
+            # GT jobs occupy the whole task frame range
+            assert gt_job.start_frame == 0
+            assert gt_job.stop_frame + 1 == task["size"]
+            assert gt_job.type == "ground_truth"
+            assert gt_job.task_id == task_id
+
+            annotation_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="annotation"
+                )
+            ]
+            gt_job_metas = [
+                api_client.jobs_api.retrieve_data_meta(job.id)[0]
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                )
+            ]
+
+            assert len(gt_job_metas) == 1
+
+        frame_step = parse_frame_step(gt_job_metas[0].frame_filter)
+        validation_frames = [
+            abs_frame_id
+            for abs_frame_id in range(
+                gt_job_metas[0].start_frame,
+                gt_job_metas[0].stop_frame + 1,
+                frame_step,
+            )
+            if abs_frame_id in gt_job_metas[0].included_frames
         ]
-        job_spec = {
-            "task_id": task_id,
-            "type": "ground_truth",
-            "frame_selection_method": "manual",
-            "frames": job_frame_ids,
-        }
 
-        response = self._test_create_job_ok(user, job_spec)
-        job_id = json.loads(response.data)["id"]
-
-        with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
-
-        assert job_frame_count == gt_job_meta.size
-        assert job_frame_ids == gt_job_meta.included_frames
-
-    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
-    def test_can_create_gt_job_with_random_frames(self, admin_user, tasks, jobs, task_mode):
-        user = admin_user
-        job_frame_count = 3
-        required_task_frame_count = job_frame_count + 1
-        task = next(
-            t
-            for t in tasks
-            if not t["project_id"]
-            and not t["organization"]
-            and t["mode"] == task_mode
-            and t["size"] > required_task_frame_count
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
-        )
-        task_id = task["id"]
-
-        job_spec = {
-            "task_id": task_id,
-            "type": "ground_truth",
-            "frame_selection_method": "random_uniform",
-            "frame_count": job_frame_count,
-        }
-
-        response = self._test_create_job_ok(user, job_spec)
-        job_id = json.loads(response.data)["id"]
-
-        with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
-
-        assert job_frame_count == gt_job_meta.size
-        assert job_frame_count == len(gt_job_meta.included_frames)
+        if frame_selection_method == "random_per_job":
+            # each job must have the specified number of validation frames
+            for job_meta in annotation_job_metas:
+                assert (
+                    len(
+                        set(
+                            range(job_meta.start_frame, job_meta.stop_frame + 1, frame_step)
+                        ).intersection(validation_frames)
+                    )
+                    == validation_per_job_count
+                )
+        else:
+            assert len(validation_frames) == validation_frames_count
 
     @pytest.mark.parametrize(
         "task_id, frame_ids",
@@ -212,9 +271,15 @@ class TestPostJobs:
 
         assert task["size"] == gt_job_meta.size
 
-    def test_can_create_no_more_than_1_gt_job(self, admin_user, jobs):
+    @pytest.mark.parametrize("validation_mode", ["gt", "gt_pool"])
+    def test_can_create_no_more_than_1_gt_job(self, admin_user, tasks, jobs, validation_mode):
         user = admin_user
-        task_id = next(j for j in jobs if j["type"] == "ground_truth")["task_id"]
+        task_id = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth"
+            if tasks[j["task_id"]]["validation_mode"] == validation_mode
+        )["task_id"]
 
         job_spec = {
             "task_id": task_id,
@@ -226,7 +291,11 @@ class TestPostJobs:
         response = self._test_create_job_fails(
             user, job_spec, expected_status=HTTPStatus.BAD_REQUEST
         )
-        assert b"A task can have only 1 ground truth job" in response.data
+
+        assert (
+            f'Task with validation mode \\"{validation_mode}\\" '
+            "cannot have more than 1 GT job".encode() in response.data
+        )
 
     def test_can_create_gt_job_in_sandbox_task(self, tasks, jobs, users):
         task = next(
@@ -365,9 +434,23 @@ class TestDeleteJobs:
         return response
 
     @pytest.mark.usefixtures("restore_cvat_data_per_function")
-    @pytest.mark.parametrize("job_type, allow", (("ground_truth", True), ("annotation", False)))
-    def test_destroy_job(self, admin_user, jobs, job_type, allow):
-        job = next(j for j in jobs if j["type"] == job_type)
+    @pytest.mark.parametrize(
+        "validation_mode, job_type, allow",
+        (
+            (None, "annotation", False),
+            ("gt", "ground_truth", True),
+            ("gt", "annotation", False),
+            ("gt_pool", "ground_truth", False),
+            ("gt_pool", "annotation", False),
+        ),
+    )
+    def test_destroy_job(self, admin_user, tasks, jobs, validation_mode, job_type, allow):
+        job = next(
+            j
+            for j in jobs
+            if j["type"] == job_type
+            if tasks[j["task_id"]]["validation_mode"] == validation_mode
+        )
 
         if allow:
             self._test_destroy_job_ok(admin_user, job["id"])
@@ -381,8 +464,8 @@ class TestDeleteJobs:
             t
             for t in tasks
             if t["organization"] is None
-            and all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
-            and not users[t["owner"]["id"]]["is_superuser"]
+            if all(j["type"] != "ground_truth" for j in jobs if j["task_id"] == t["id"])
+            if not users[t["owner"]["id"]]["is_superuser"]
         )
         user = task["owner"]["username"]
 
@@ -629,7 +712,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
@@ -687,8 +770,8 @@ class TestGetGtJobData:
         )
 
         task_frame_ids = range(start_frame, stop_frame, frame_step)
-        job_frame_ids = list(task_frame_ids[::3])
-        gt_job = self._create_gt_job(admin_user, task_id, job_frame_ids)
+        gt_frame_ids = list(range(len(task_frame_ids)))[::3]
+        gt_job = self._create_gt_job(admin_user, task_id, gt_frame_ids)
         request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         with make_api_client(admin_user) as api_client:
@@ -699,8 +782,11 @@ class TestGetGtJobData:
         assert len(task_frame_ids) - 1 == gt_job.stop_frame
 
         # The size is adjusted by the frame step and included frames
-        assert len(job_frame_ids) == gt_job_meta.size
-        assert job_frame_ids == gt_job_meta.included_frames
+        assert len(gt_frame_ids) == gt_job_meta.size
+        assert (
+            list(task_frame_ids[gt_frame] for gt_frame in gt_frame_ids)
+            == gt_job_meta.included_frames
+        )
 
         # The frames themselves are the same as in the whole range
         # with placeholders in the frames outside the job.
@@ -708,7 +794,7 @@ class TestGetGtJobData:
         assert start_frame == gt_job_meta.start_frame
         assert max(task_frame_ids) == gt_job_meta.stop_frame
         assert [frame_info["name"] for frame_info in gt_job_meta.frames] == [
-            images[frame].name if frame in job_frame_ids else "placeholder.jpg"
+            images[frame].name if frame in gt_job_meta.included_frames else "placeholder.jpg"
             for frame in task_frame_ids
         ]
 
@@ -732,7 +818,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
 
         task_frame_ids = range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
         rng = np.random.Generator(np.random.MT19937(42))
@@ -815,7 +901,7 @@ class TestGetGtJobData:
         task_id = task["id"]
         with make_api_client(user) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = int(task_meta.frame_filter.split("=")[-1]) if task_meta.frame_filter else 1
+            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
