@@ -459,6 +459,7 @@ export interface SerializedFramesMetaData {
     deleted_frames: number[];
     included_frames: number[];
     frame_filter: string;
+    chunks_updated_date: string;
     frames: {
         width: number;
         height: number;
