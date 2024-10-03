@@ -653,6 +653,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0),
         required=False,
+        allow_empty=False,
         help_text=textwrap.dedent("""\
             The list of frame ids. Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.MANUAL))
@@ -734,13 +735,9 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             field_validation.require_field(attrs, "frames")
 
-            frames = attrs['frames']
-            if not frames:
-                raise serializers.ValidationError("The list of frames cannot be empty")
-
         if (
-            frame_selection_method != models.JobFrameSelectionMethod.MANUAL and
-            attrs.get('frames')
+            'frames' in attrs and
+            frame_selection_method != models.JobFrameSelectionMethod.MANUAL
         ):
             raise serializers.ValidationError(
                 '"frames" can only be used when "frame_selection_method" is "{}"'.format(
@@ -942,8 +939,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
     )
     honeypot_real_frames = serializers.ListSerializer(
         child=serializers.IntegerField(min_value=0),
-        default=[],
         required=False,
+        allow_empty=False,
         help_text=textwrap.dedent("""\
             The list of frame ids. Applicable only to the "{}" frame selection method
         """.format(models.JobFrameSelectionMethod.MANUAL))
@@ -957,6 +954,15 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             pass
         else:
             assert False
+
+        if (
+            'honeypot_real_frames' in attrs and
+            frame_selection_method != models.JobFrameSelectionMethod.MANUAL
+        ):
+            raise serializers.ValidationError(
+                '"honeypot_real_frames" can only be used when '
+                f'"frame_selection_method" is "{models.JobFrameSelectionMethod.MANUAL}"'
+            )
 
         return super().validate(attrs)
 
@@ -1258,8 +1264,14 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             pass
 
-        if "honeypot_real_frames" in attrs:
-            field_validation.require_field(attrs, "frame_selection_method")
+        if (
+            'honeypot_real_frames' in attrs and
+            frame_selection_method != models.JobFrameSelectionMethod.MANUAL
+        ):
+            raise serializers.ValidationError(
+                '"honeypot_real_frames" can only be used when '
+                f'"frame_selection_method" is "{models.JobFrameSelectionMethod.MANUAL}"'
+            )
 
         return super().validate(attrs)
 
