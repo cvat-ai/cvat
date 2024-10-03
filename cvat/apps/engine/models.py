@@ -15,18 +15,20 @@ from typing import Any, ClassVar, Collection, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
-from django.db.models.fields import FloatField
 from django.db.models import Q, TextChoices
+from django.db.models.fields import FloatField
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
-from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
+from cvat.apps.engine.utils import chunked_list, parse_specific_attributes
 from cvat.apps.events.utils import cache_deleted
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -1085,9 +1087,16 @@ class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
+    has_analytics_access = models.BooleanField(
+        _("has /analytics access"),
+        default=False,
+        help_text=_("Designates whether the user can access /analytics."),
+    )
+
 
 class Issue(TimestampedModel):
     frame = models.PositiveIntegerField()
