@@ -962,8 +962,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
-        print("enter JobValidationLayoutWriteSerializer.update")
-
         from cvat.apps.engine.cache import MediaCache
         from cvat.apps.engine.frame_provider import FrameQuality, JobFrameProvider, prepare_chunk
         from cvat.apps.dataset_manager.task import JobAnnotation, AnnotationManager
@@ -1177,8 +1175,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             if db_task.project:
                 db_task.project.touch()
 
-        print("exit JobValidationLayoutWriteSerializer.update")
-
         return instance
 
 class JobValidationLayoutReadSerializer(serializers.Serializer):
@@ -1269,8 +1265,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        print("enter TaskValidationLayoutWriteSerializer.update")
-
         validation_layout = getattr(instance.data, 'validation_layout', None)
         if not validation_layout:
             raise serializers.ValidationError("Validation is not configured in the task")
@@ -1346,8 +1340,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
                 job_validation_layout_serializer.is_valid(raise_exception=True)
                 job_validation_layout_serializer.save()
-
-        print("exit TaskValidationLayoutWriteSerializer.update")
 
         return instance
 
