@@ -504,8 +504,7 @@ class MediaCache:
                     frame_range = (
                         (
                             db_data.start_frame
-                            + chunk_number * db_data.chunk_size
-                            + chunk_frame_idx * frame_step
+                            + (chunk_number * db_data.chunk_size + chunk_frame_idx) * frame_step
                         )
                         for chunk_frame_idx in range(db_data.chunk_size)
                     )
