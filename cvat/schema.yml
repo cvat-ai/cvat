@@ -10778,6 +10778,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        has_analytics_access:
+          type: boolean
+          title: Has /analytics access
+          description: Designates whether the user can access /analytics.
+          readOnly: true
       required:
       - groups
       - username
