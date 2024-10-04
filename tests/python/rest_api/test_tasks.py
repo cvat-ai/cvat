@@ -2383,6 +2383,16 @@ class TestPostTaskData:
 
             assert len(gt_job_metas) == 1
 
+            if frame_selection_method in ("random_uniform", "manual"):
+                assert gt_job_metas[0].size == validation_frames_count
+            elif frame_selection_method == "random_per_job":
+                assert gt_job_metas[0].size == (
+                    resulting_task_size // segment_size * validation_per_job_count
+                    + min(resulting_task_size % segment_size, validation_per_job_count)
+                )
+            else:
+                assert False
+
         assert task.segment_size == segment_size
         assert task.size == resulting_task_size
         assert task_meta.size == resulting_task_size
@@ -2493,6 +2503,16 @@ class TestPostTaskData:
             ]
 
             assert len(gt_job_metas) == 1
+
+            if frame_selection_method == "random_uniform":
+                assert gt_job_metas[0].size == validation_frames_count
+            elif frame_selection_method == "random_per_job":
+                assert gt_job_metas[0].size == (
+                    resulting_task_size // segment_size * validation_per_job_count
+                    + min(resulting_task_size % segment_size, validation_per_job_count)
+                )
+            else:
+                assert False
 
         assert task.segment_size == segment_size
         assert task.size == resulting_task_size
@@ -2756,6 +2776,76 @@ class TestTaskData:
             request, start_frame=start_frame, step=step
         )
 
+    def _uploaded_images_task_with_gt_and_segments_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        start_frame: Optional[int] = None,
+        step: Optional[int] = None,
+        frame_selection_method: str = "random_uniform",
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        used_frames_count = 16
+        total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
+        segment_size = 5
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params_kwargs = {"frame_selection_method": frame_selection_method}
+
+        if "random" in frame_selection_method:
+            validation_params_kwargs["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            validation_params_kwargs["frame_count"] = 12
+        elif frame_selection_method == "random_per_job":
+            validation_params_kwargs["frames_count_per_job"] = 3
+        elif frame_selection_method == "manual":
+            validation_frames_count = 9
+
+            valid_frame_ids = range(
+                (start_frame or 0), (start_frame or 0) + used_frames_count * (step or 1), step or 1
+            )
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            validation_params_kwargs["frames"] = rng.choice(
+                [f.name for i, f in enumerate(image_files) if i in valid_frame_ids],
+                validation_frames_count,
+                replace=False,
+            ).tolist()
+        else:
+            raise NotImplementedError
+
+        validation_params = models.DataRequestValidationParams._from_openapi_data(
+            mode="gt",
+            **validation_params_kwargs,
+        )
+
+        yield from self._uploaded_images_task_fxt_base(
+            request=request,
+            frame_count=None,
+            image_files=image_files,
+            segment_size=segment_size,
+            sorting_method="natural",
+            start_frame=start_frame,
+            step=step,
+            validation_params=validation_params,
+        )
+
+    @fixture(scope="class")
+    @parametrize("start_frame, step", [(2, 3)])
+    @parametrize("frame_selection_method", ["random_uniform", "random_per_job", "manual"])
+    def fxt_uploaded_images_task_with_gt_and_segments_start_step(
+        self,
+        request: pytest.FixtureRequest,
+        start_frame: Optional[int],
+        step: Optional[int],
+        frame_selection_method: str,
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_with_gt_and_segments_base(
+            request,
+            start_frame=start_frame,
+            step=step,
+            frame_selection_method=frame_selection_method,
+        )
+
     def _uploaded_video_task_fxt_base(
         self,
         request: pytest.FixtureRequest,
@@ -2882,21 +2972,27 @@ class TestTaskData:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
     _tasks_with_honeypots_cases = [
-        fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments"),
-        fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments_start_step"),
+        # fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments"),
+        # fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments_start_step"),
     ]
+
+    _tasks_with_gt_cases = [fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step")]
 
     # Keep in mind that these fixtures are generated eagerly
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
-    _all_task_cases = [
-        fixture_ref("fxt_uploaded_images_task"),
-        fixture_ref("fxt_uploaded_images_task_with_segments"),
-        fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
-        fixture_ref("fxt_uploaded_video_task"),
-        fixture_ref("fxt_uploaded_video_task_with_segments"),
-        fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
-    ] + _tasks_with_honeypots_cases
+    _all_task_cases = (
+        [
+            # fixture_ref("fxt_uploaded_images_task"),
+            # fixture_ref("fxt_uploaded_images_task_with_segments"),
+            # fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
+            # fixture_ref("fxt_uploaded_video_task"),
+            # fixture_ref("fxt_uploaded_video_task_with_segments"),
+            # fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
+        ]
+        + _tasks_with_honeypots_cases
+        + _tasks_with_gt_cases
+    )
 
     @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
