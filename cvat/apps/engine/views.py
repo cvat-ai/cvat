@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+import itertools
 import os
 import os.path as osp
 import re
@@ -21,7 +22,6 @@ from copy import copy
 from datetime import datetime
 from redis.exceptions import ConnectionError as RedisConnectionError
 from tempfile import NamedTemporaryFile
-from textwrap import dedent
 
 import django_rq
 from attr.converters import to_bool
@@ -73,8 +73,8 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, FileInfoSerializer,
+    JobDataMetaWriteSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
     LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
@@ -831,8 +831,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
 ):
     queryset = Task.objects.select_related(
-        'data', 'assignee', 'owner',
-        'target_storage', 'source_storage', 'annotation_guide',
+        'data',
+        'data__validation_layout',
+        'assignee',
+        'owner',
+        'target_storage',
+        'source_storage',
+        'annotation_guide',
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',
@@ -849,7 +854,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'subset', 'mode', 'dimension', 'tracker_link'
     )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
-    filter_description = dedent("""
+    filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
             - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
@@ -1115,9 +1120,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # Create a temporary copy of the parameters we will try to create the task with
                 data = copy(serializer.data)
 
-                for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                for optional_field in ['job_file_mapping', 'server_files_exclude', 'validation_params']:
                     if optional_field in serializer.validated_data:
                         data[optional_field] = serializer.validated_data[optional_field]
+
+                if validation_params := getattr(db_data, 'validation_params', None):
+                    data['validation_params']['frames'] = set(itertools.chain(
+                        data['validation_params'].get('frames', []),
+                        validation_params.frames.values_list('path', flat=True).all()
+                    ))
 
                 if (
                     data['sorting_method'] == models.SortingMethod.PREDEFINED
@@ -1570,8 +1581,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                db_task.data = serializer.save()
+            serializer.is_valid(raise_exception=True)
+            db_task.data = serializer.save()
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
@@ -1751,11 +1762,25 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
+    @transaction.atomic
     def perform_destroy(self, instance):
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        return super().perform_destroy(instance)
+        validation_layout: Optional[models.ValidationLayout] = getattr(
+            instance.segment.task.data, 'validation_layout', None
+        )
+        if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):
+            raise ValidationError(
+                'GT jobs cannot be removed when task validation mode is "{}"'.format(
+                    models.ValidationMode.GT_POOL
+                )
+            )
+
+        super().perform_destroy(instance)
+
+        if validation_layout:
+            validation_layout.delete()
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -2062,70 +2087,80 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': DataMetaReadSerializer,
         })
     @extend_schema(methods=['PATCH'], summary='Update metainformation for media files in a job',
-        request=DataMetaWriteSerializer,
+        request=JobDataMetaWriteSerializer,
         responses={
             '200': DataMetaReadSerializer,
-        }, tags=['tasks'], versions=['2.0'])
+        }, versions=['2.0'])
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
         self.get_object() # force call of check_object_permissions()
-        db_job = models.Job.objects.prefetch_related(
+
+        db_job = models.Job.objects.select_related(
             'segment',
             'segment__task',
-            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
-                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
-            ))
+        ).prefetch_related(
+            Prefetch(
+                'segment__task__data',
+                queryset=models.Data.objects.select_related(
+                    'video',
+                    'validation_layout',
+                ).prefetch_related(
+                    Prefetch(
+                        'images',
+                        queryset=(
+                            models.Image.objects
+                            .prefetch_related('related_files')
+                            .order_by('frame')
+                        )
+                    )
+                )
+            )
         ).get(pk=pk)
 
-        db_data = db_job.segment.task.data
-        start_frame = db_job.segment.start_frame
-        stop_frame = db_job.segment.stop_frame
+        if request.method == 'PATCH':
+            serializer = JobDataMetaWriteSerializer(instance=db_job, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            db_job = serializer.save()
+
+        db_segment = db_job.segment
+        db_task = db_segment.task
+        db_data = db_task.data
+        start_frame = db_segment.start_frame
+        stop_frame = db_segment.stop_frame
         frame_step = db_data.get_frame_step()
         data_start_frame = db_data.start_frame + start_frame * frame_step
         data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
-        frame_set = db_job.segment.frame_set
-
-        if request.method == 'PATCH':
-            serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.validated_data['deleted_frames'] = list(filter(
-                    lambda frame: frame >= start_frame and frame <= stop_frame,
-                    serializer.validated_data['deleted_frames']
-                )) + list(filter(
-                    lambda frame: frame < start_frame or frame > stop_frame,
-                    db_data.deleted_frames,
-                ))
-                db_data = serializer.save()
-                db_job.segment.task.touch()
-                if db_job.segment.task.project:
-                    db_job.segment.task.project.touch()
+        segment_frame_set = db_segment.frame_set
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
             media = [
                 # Insert placeholders if frames are skipped
-                # We could skip them here too, but UI can't decode chunks then
-                f if f.frame in frame_set else SimpleNamespace(
+                # TODO: remove placeholders, UI supports chunks without placeholders already
+                # after https://github.com/cvat-ai/cvat/pull/8272
+                f if f.frame in segment_frame_set else SimpleNamespace(
                     path=f'placeholder.jpg', width=f.width, height=f.height
                 )
-                for f in db_data.images.filter(
-                    frame__gte=data_start_frame,
-                    frame__lte=data_stop_frame,
-                ).all()
+                for f in db_data.images.all()
+                if f.frame in range(data_start_frame, data_stop_frame + frame_step, frame_step)
             ]
 
+        deleted_frames = set(db_data.deleted_frames)
+        if db_job.type == models.JobType.GROUND_TRUTH:
+            deleted_frames.update(db_data.validation_layout.disabled_frames)
+
         # Filter data with segment size
-        # Should data.size also be cropped by segment size?
-        db_data.deleted_frames = filter(
+        db_data.deleted_frames = sorted(filter(
             lambda frame: frame >= start_frame and frame <= stop_frame,
-            db_data.deleted_frames,
-        )
+            deleted_frames,
+        ))
+
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
-        db_data.size = len(frame_set)
-        db_data.included_frames = db_job.segment.frames or None
+        db_data.size = len(segment_frame_set)
+        db_data.included_frames = db_segment.frames or None
 
         frame_meta = [{
             'width': item.width,
@@ -2153,7 +2188,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             data_quality='compressed',
         )
         return data_getter()
-
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(

@@ -11,7 +11,7 @@ import importlib
 import sys
 import traceback
 from contextlib import suppress, nullcontext
-from typing import Any, Dict, Optional, Callable, Union, Iterable
+from typing import Any, Dict, Optional, Callable, Sequence, Union, Iterable
 import subprocess
 import os
 import urllib.parse
@@ -417,6 +417,25 @@ def directory_tree(path, max_depth=None) -> str:
 def is_dataset_export(request: HttpRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
+
 def chunked_list(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
+
+
+FORMATTED_LIST_DISPLAY_THRESHOLD = 10
+"""
+Controls maximum rendered list items. The remainder is appended as ' (and X more)'.
+"""
+
+def format_list(
+    items: Sequence[str], *, max_items: Optional[int] = None, separator: str = ", "
+) -> str:
+    if max_items is None:
+        max_items = FORMATTED_LIST_DISPLAY_THRESHOLD
+
+    remainder_count = len(items) - max_items
+    return "{}{}".format(
+        separator.join(items[:max_items]),
+        f" (and {remainder_count} more)" if 0 < remainder_count else "",
+    )
