@@ -83,7 +83,7 @@ def get_data(scope, context, ownership, privilege, membership, resource, has_ana
         "scope": scope,
         "auth": {
             "user": {
-                "id": random.randrange(0, 100),
+                "id": random.randrange(0, 100),  # nosec B311 NOSONAR
                 "privilege": privilege,
                 "has_analytics_access": has_analytics_access,
             },
