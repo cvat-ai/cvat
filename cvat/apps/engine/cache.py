@@ -484,7 +484,7 @@ class MediaCache:
             for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all():
                 segment_frame_provider = make_frame_provider(db_segment)
 
-                for chunk_number, chunk_frames in groupby(
+                for i, chunk_frames in groupby(
                     sorted(required_frame_set.intersection(db_segment.frame_set)),
                     key=lambda abs_frame: (
                         segment_frame_provider.validate_frame_number(
@@ -496,7 +496,7 @@ class MediaCache:
                         continue
 
                     chunk_available = self._has_key(
-                        self._make_chunk_key(db_segment, chunk_number, quality=quality)
+                        self._make_chunk_key(db_segment, i, quality=quality)
                     )
                     available_chunks.append(chunk_available)
 
