@@ -2390,6 +2390,16 @@ class TestPostTaskData:
 
             assert len(gt_job_metas) == 1
 
+            if frame_selection_method in ("random_uniform", "manual"):
+                assert gt_job_metas[0].size == validation_frames_count
+            elif frame_selection_method == "random_per_job":
+                assert gt_job_metas[0].size == (
+                    resulting_task_size // segment_size * validation_per_job_count
+                    + min(resulting_task_size % segment_size, validation_per_job_count)
+                )
+            else:
+                assert False
+
         assert task.segment_size == segment_size
         assert task.size == resulting_task_size
         assert task_meta.size == resulting_task_size
@@ -2500,6 +2510,16 @@ class TestPostTaskData:
             ]
 
             assert len(gt_job_metas) == 1
+
+            if frame_selection_method == "random_uniform":
+                assert gt_job_metas[0].size == validation_frames_count
+            elif frame_selection_method == "random_per_job":
+                assert gt_job_metas[0].size == (
+                    resulting_task_size // segment_size * validation_per_job_count
+                    + min(resulting_task_size % segment_size, validation_per_job_count)
+                )
+            else:
+                assert False
 
         assert task.segment_size == segment_size
         assert task.size == resulting_task_size
@@ -2809,6 +2829,81 @@ class TestTaskData:
 
             yield task_spec, task_id
 
+    def _uploaded_images_task_with_gt_and_segments_base(
+        self,
+        request: pytest.FixtureRequest,
+        *,
+        start_frame: Optional[int] = None,
+        step: Optional[int] = None,
+        frame_selection_method: str = "random_uniform",
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        used_frames_count = 16
+        total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
+        segment_size = 5
+        image_files = generate_image_files(total_frame_count)
+
+        validation_params_kwargs = {"frame_selection_method": frame_selection_method}
+
+        if "random" in frame_selection_method:
+            validation_params_kwargs["random_seed"] = 42
+
+        if frame_selection_method == "random_uniform":
+            validation_frames_count = 10
+            validation_params_kwargs["frame_count"] = validation_frames_count
+        elif frame_selection_method == "random_per_job":
+            frames_per_job_count = 3
+            validation_params_kwargs["frames_per_job_count"] = frames_per_job_count
+            validation_frames_count = used_frames_count // segment_size + min(
+                used_frames_count % segment_size, frames_per_job_count
+            )
+        elif frame_selection_method == "manual":
+            validation_frames_count = 10
+
+            valid_frame_ids = range(
+                (start_frame or 0), (start_frame or 0) + used_frames_count * (step or 1), step or 1
+            )
+            rng = np.random.Generator(np.random.MT19937(seed=42))
+            validation_params_kwargs["frames"] = rng.choice(
+                [f.name for i, f in enumerate(image_files) if i in valid_frame_ids],
+                validation_frames_count,
+                replace=False,
+            ).tolist()
+        else:
+            raise NotImplementedError
+
+        validation_params = models.DataRequestValidationParams._from_openapi_data(
+            mode="gt",
+            **validation_params_kwargs,
+        )
+
+        yield from self._uploaded_images_task_fxt_base(
+            request=request,
+            frame_count=None,
+            image_files=image_files,
+            segment_size=segment_size,
+            sorting_method="natural",
+            start_frame=start_frame,
+            step=step,
+            validation_params=validation_params,
+        )
+
+    @fixture(scope="class")
+    @parametrize("start_frame, step", [(2, 3)])
+    @parametrize("frame_selection_method", ["random_uniform", "random_per_job", "manual"])
+    def fxt_uploaded_images_task_with_gt_and_segments_start_step(
+        self,
+        request: pytest.FixtureRequest,
+        start_frame: Optional[int],
+        step: Optional[int],
+        frame_selection_method: str,
+    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+        yield from self._uploaded_images_task_with_gt_and_segments_base(
+            request,
+            start_frame=start_frame,
+            step=step,
+            frame_selection_method=frame_selection_method,
+        )
+
     def _uploaded_video_task_fxt_base(
         self,
         request: pytest.FixtureRequest,
@@ -2892,10 +2987,10 @@ class TestTaskData:
         frame_step = task_spec.frame_step
         segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size * frame_step
         start_frame = getattr(task_spec, "start_frame", 0)
-        end_frame = (
-            getattr(task_spec, "stop_frame", None) or ((task_spec.size - 1) * frame_step)
-        ) + frame_step
-        end_frame = end_frame - ((end_frame - frame_step - start_frame) % frame_step)
+        stop_frame = getattr(task_spec, "stop_frame", None) or (
+            start_frame + (task_spec.size - 1) * frame_step
+        )
+        end_frame = stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step
 
         validation_params = getattr(task_spec, "validation_params", None)
         if validation_params and validation_params.mode.value == "gt_pool":
@@ -2939,23 +3034,41 @@ class TestTaskData:
         else:
             assert np.array_equal(chunk_frame_pixels, expected_pixels)
 
+    def _get_job_abs_frame_set(self, job_meta: models.DataMetaRead) -> Sequence[int]:
+        if job_meta.included_frames:
+            return job_meta.included_frames
+        else:
+            return range(
+                job_meta.start_frame,
+                job_meta.stop_frame + 1,
+                parse_frame_step(job_meta.frame_filter),
+            )
+
     _tasks_with_honeypots_cases = [
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments"),
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments_start_step"),
         fixture_ref("fxt_uploaded_images_task_with_honeypots_and_changed_real_frames"),
     ]
 
+    _tasks_with_simple_gt_job_cases = [
+        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step")
+    ]
+
     # Keep in mind that these fixtures are generated eagerly
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
-    _all_task_cases = [
-        fixture_ref("fxt_uploaded_images_task"),
-        fixture_ref("fxt_uploaded_images_task_with_segments"),
-        fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
-        fixture_ref("fxt_uploaded_video_task"),
-        fixture_ref("fxt_uploaded_video_task_with_segments"),
-        fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
-    ] + _tasks_with_honeypots_cases
+    _all_task_cases = (
+        [
+            fixture_ref("fxt_uploaded_images_task"),
+            fixture_ref("fxt_uploaded_images_task_with_segments"),
+            fixture_ref("fxt_uploaded_images_task_with_segments_start_stop_step"),
+            fixture_ref("fxt_uploaded_video_task"),
+            fixture_ref("fxt_uploaded_video_task_with_segments"),
+            fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
+        ]
+        + _tasks_with_honeypots_cases
+        + _tasks_with_simple_gt_job_cases
+    )
 
     @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
@@ -3085,7 +3198,7 @@ class TestTaskData:
                     )
 
     @parametrize("task_spec, task_id", _all_task_cases)
-    def test_can_get_job_meta(self, task_spec: _TaskSpec, task_id: int):
+    def test_can_get_annotation_job_meta(self, task_spec: _TaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
 
         with make_api_client(self._USERNAME) as api_client:
@@ -3106,10 +3219,15 @@ class TestTaskData:
                 segment_size = math.ceil((segment_stop - segment_start + 1) / task_spec.frame_step)
                 assert job_meta.size == segment_size
 
-                job_frame_set = set(
-                    range(job_meta.start_frame, job_meta.stop_frame + 1, task_spec.frame_step)
+                job_abs_frame_set = self._get_job_abs_frame_set(job_meta)
+                assert len(job_abs_frame_set) == job_meta.size
+                assert set(job_abs_frame_set).issubset(
+                    range(
+                        job_meta.start_frame,
+                        job_meta.stop_frame + 1,
+                        parse_frame_step(job_meta.frame_filter),
+                    )
                 )
-                assert len(job_frame_set) == job_meta.size
 
                 if getattr(task_spec, "chunk_size", None):
                     assert job_meta.chunk_size == task_spec.chunk_size
@@ -3118,6 +3236,62 @@ class TestTaskData:
                     assert len(job_meta.frames) == 1
                 else:
                     assert len(job_meta.frames) == job_meta.size
+
+    @parametrize("task_spec, task_id", _tasks_with_simple_gt_job_cases)
+    def test_can_get_simple_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
+        with make_api_client(self._USERNAME) as api_client:
+            jobs = sorted(
+                get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id, type="ground_truth"
+                ),
+                key=lambda j: j.start_frame,
+            )
+            assert len(jobs) == 1
+
+            gt_job = jobs[0]
+            (job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+
+            task_start_frame = getattr(task_spec, "start_frame", 0)
+            assert (job_meta.start_frame, job_meta.stop_frame) == (
+                task_start_frame,
+                task_start_frame + (task_spec.size - 1) * task_spec.frame_step,
+            )
+            assert job_meta.frame_filter == getattr(task_spec, "frame_filter", "")
+
+            frame_selection_method = task_spec.validation_params.frame_selection_method.value
+            if frame_selection_method == "random_uniform":
+                validation_frames_count = task_spec.validation_params.frame_count
+            elif frame_selection_method == "random_per_job":
+                frames_per_job_count = task_spec.validation_params.frames_per_job_count
+                validation_frames_count = (
+                    task_spec.size // task_spec.segment_size * frames_per_job_count
+                    + min(task_spec.size % task_spec.segment_size, frames_per_job_count)
+                )
+            elif frame_selection_method == "manual":
+                validation_frames_count = len(task_spec.validation_params.frames)
+            else:
+                raise NotImplementedError(frame_selection_method)
+
+            assert job_meta.size == validation_frames_count
+
+            job_abs_frame_set = self._get_job_abs_frame_set(job_meta)
+            assert len(job_abs_frame_set) == job_meta.size
+            assert set(job_abs_frame_set).issubset(
+                range(
+                    job_meta.start_frame,
+                    job_meta.stop_frame + 1,
+                    parse_frame_step(job_meta.frame_filter),
+                )
+            )
+
+            if getattr(task_spec, "chunk_size", None):
+                assert job_meta.chunk_size == task_spec.chunk_size
+
+            if task_spec.source_data_type == _SourceDataType.video:
+                assert len(job_meta.frames) == 1
+            else:
+                # there are placeholders on the non-included places
+                assert len(job_meta.frames) == task_spec.size
 
     @parametrize("task_spec, task_id", _tasks_with_honeypots_cases)
     def test_can_get_honeypot_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
@@ -3161,12 +3335,11 @@ class TestTaskData:
             )
             for job in jobs:
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_abs_frames = self._get_job_abs_frame_set(job_meta)
 
                 for quality, (frame_pos, abs_frame_id) in product(
                     ["original", "compressed"],
-                    enumerate(
-                        range(job_meta.start_frame, job_meta.stop_frame, task_spec.frame_step)
-                    ),
+                    enumerate(job_abs_frames),
                 ):
                     rel_frame_id = (
                         abs_frame_id - getattr(task_spec, "start_frame", 0)
@@ -3202,6 +3375,8 @@ class TestTaskData:
     @parametrize("task_spec, task_id", _all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
+        _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))
+
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
                 get_paginated_collection(api_client.jobs_api.list_endpoint, task_id=task_id),
@@ -3212,6 +3387,9 @@ class TestTaskData:
 
             for job in jobs:
                 (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job.id)
+
+                if job_meta.included_frames:
+                    assert len(job_meta.included_frames) == job_meta.size
 
                 if task_spec.source_data_type == _SourceDataType.images:
                     assert job.data_original_chunk_type == "imageset"
@@ -3259,18 +3437,10 @@ class TestTaskData:
                     job_chunk_ids = range(chunk_count)
 
                     def get_expected_chunk_abs_frame_ids(chunk_id: int):
-                        return sorted(
-                            frame
-                            for frame in range(
-                                job_meta.start_frame
-                                + chunk_id * job_meta.chunk_size * task_spec.frame_step,
-                                job_meta.start_frame
-                                + min((chunk_id + 1) * job_meta.chunk_size, job_meta.size)
-                                * task_spec.frame_step,
-                                task_spec.frame_step,
-                            )
-                            if not job_meta.included_frames or frame in job_meta.included_frames
-                        )
+                        job_abs_frames = self._get_job_abs_frame_set(job_meta)
+                        return job_abs_frames[
+                            chunk_id * job_meta.chunk_size : (chunk_id + 1) * job_meta.chunk_size
+                        ]
 
                 for quality, chunk_id in product(["original", "compressed"], job_chunk_ids):
                     expected_chunk_abs_frame_ids = get_expected_chunk_abs_frame_ids(chunk_id)
@@ -3311,8 +3481,17 @@ class TestTaskData:
                     for chunk_frame, abs_frame_id in zip(
                         chunk_images, expected_chunk_abs_frame_ids
                     ):
+                        if (
+                            indexing == "absolute"
+                            and job_meta.included_frames
+                            and abs_frame_id not in job_meta.included_frames
+                        ):
+                            expected_image = _placeholder_image
+                        else:
+                            expected_image = task_spec.read_frame(abs_frame_id)
+
                         self._compare_images(
-                            task_spec.read_frame(abs_frame_id),
+                            expected_image,
                             chunk_images[chunk_frame],
                             must_be_identical=(
                                 task_spec.source_data_type == _SourceDataType.images

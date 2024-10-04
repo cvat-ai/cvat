@@ -1398,6 +1398,9 @@ def _create_thread(
         seed = validation_params.get("random_seed")
         rng = random.Generator(random.MT19937(seed=seed))
 
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
+
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 all_frames = range(db_data.size)
@@ -1431,7 +1434,7 @@ def _create_thread(
                 validation_frames: list[int] = []
                 overlap = db_task.overlap
                 for segment in db_task.segment_set.all():
-                    segment_frames = set(segment.frame_set)
+                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
                     selected_frames = segment_frames.intersection(validation_frames)
                     selected_count = len(selected_frames)
 
@@ -1440,7 +1443,7 @@ def _create_thread(
                         continue
 
                     selectable_segment_frames = set(
-                        sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                        sorted(segment_frames)[overlap * (segment.start_frame != 0) : ]
                     ).difference(selected_frames)
 
                     validation_frames.extend(rng.choice(
@@ -1457,7 +1460,7 @@ def _create_thread(
                     )
 
                 validation_frames: list[int] = []
-                known_frame_names = {frame.path: frame.frame for frame in images}
+                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
                 unknown_requested_frames = []
                 for frame_filename in validation_params['frames']:
                     frame_id = known_frame_names.get(frame_filename)
