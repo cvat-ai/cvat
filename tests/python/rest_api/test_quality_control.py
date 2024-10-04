@@ -82,7 +82,7 @@ class _PermissionTestBase:
 
     @pytest.fixture(scope="class")
     @classmethod
-    def find_sandbox_task(self, tasks, jobs, users, is_task_staff):
+    def find_sandbox_task(cls, tasks, jobs, users, is_task_staff):
         def _find(
             is_staff: bool, *, has_gt_jobs: Optional[bool] = None
         ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
