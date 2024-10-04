@@ -221,20 +221,25 @@ class BasicUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name')
 
+
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
+    has_analytics_access = serializers.SlugRelatedField(
+        source='profile', many=False, slug_field='has_analytics_access', read_only=True,
+    )
 
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
             'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined')
+            'date_joined', 'has_analytics_access')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
         extra_kwargs = {
             'last_login': { 'allow_null': True }
         }
+
 
 class DelimitedStringListField(serializers.ListField):
     def to_representation(self, value):
@@ -242,6 +247,7 @@ class DelimitedStringListField(serializers.ListField):
 
     def to_internal_value(self, data):
         return '\n'.join(super().to_internal_value(data))
+
 
 class AttributeSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -252,6 +258,7 @@ class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
+
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -271,6 +278,7 @@ class SublabelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'color', 'attributes', 'type', 'has_parent', )
         read_only_fields = ('parent',)
 
+
 class SkeletonSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
@@ -278,6 +286,7 @@ class SkeletonSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Skeleton
         fields = ('id', 'svg',)
+
 
 class LabelSerializer(SublabelSerializer):
     deleted = serializers.BooleanField(required=False, write_only=True,

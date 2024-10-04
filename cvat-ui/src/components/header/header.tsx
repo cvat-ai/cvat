@@ -513,7 +513,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         Models
                     </Button>
                 ) : null}
-                {isAnalyticsPluginActive && user.isSuperuser ? (
+                {isAnalyticsPluginActive && (user.isSuperuser || user.hasAnalyticsAccess) ? (
                     <Button
                         className={getButtonClassName('analytics', false)}
                         type='link'

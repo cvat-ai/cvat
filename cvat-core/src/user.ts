@@ -18,6 +18,7 @@ export default class User {
     public readonly isSuperuser: boolean;
     public readonly isActive: boolean;
     public readonly isVerified: boolean;
+    public readonly hasAnalyticsAccess: boolean;
 
     constructor(initialData: SerializedUser) {
         const data = {
@@ -33,6 +34,7 @@ export default class User {
             is_superuser: null,
             is_active: null,
             email_verification_required: null,
+            has_analytics_access: null,
         };
 
         for (const property in data) {
@@ -80,6 +82,9 @@ export default class User {
                 isVerified: {
                     get: () => !data.email_verification_required,
                 },
+                hasAnalyticsAccess: {
+                    get: () => data.has_analytics_access,
+                },
             }),
         );
     }
@@ -98,6 +103,7 @@ export default class User {
             is_superuser: this.isSuperuser,
             is_active: this.isActive,
             email_verification_required: this.isVerified,
+            has_analytics_access: this.hasAnalyticsAccess,
         };
     }
 }
