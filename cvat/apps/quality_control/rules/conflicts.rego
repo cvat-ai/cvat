@@ -61,7 +61,7 @@ allow if {
 allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
-    quality_utils.is_task_staff(input.resource.task, input.resource.project)
+    quality_utils.is_task_staff(input.resource.task, input.resource.project, input.auth)
     utils.has_perm(utils.WORKER)
 }
 
@@ -74,7 +74,7 @@ allow if {
 
 allow if {
     input.scope == utils.VIEW
-    quality_utils.is_task_staff(input.resource.task, input.resource.project)
+    quality_utils.is_task_staff(input.resource.task, input.resource.project, input.auth)
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
