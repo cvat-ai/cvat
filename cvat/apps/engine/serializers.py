@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 from contextlib import closing
-import random
 import warnings
 from copy import copy
 from inspect import isclass
@@ -26,6 +25,7 @@ from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.utils import timezone
+from numpy import random
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import TaskFrameProvider
@@ -794,7 +794,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             # The RNG backend must not change to yield reproducible results,
             # so here we specify it explicitly
-            from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
             if deprecated_seed is not None and frame_count < task_size:
@@ -826,7 +825,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
             # The RNG backend must not change to yield reproducible results,
             # so here we specify it explicitly
-            from numpy import random
             rng = random.Generator(random.MT19937(seed=seed))
 
             frames: list[int] = []
@@ -1067,9 +1065,13 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            requested_frames = random.sample(
-                task_active_validation_frames, k=segment_honeypots_count
-            )
+            # Guarantee uniformness by using a known distribution
+            # overall task honeypot distribution is not guaranteed though
+            rng = random.Generator(random.MT19937())
+            requested_frames = rng.choice(
+                tuple(task_active_validation_frames), size=segment_honeypots_count,
+                shuffle=False, replace=False
+            ).tolist()
         else:
             assert False
 
@@ -1112,7 +1114,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             )
             job_annotation_manager.clear_frames(
                 segment_frame_set.difference(updated_validation_frames)
-            ) # TODO: check if there are absolute frame ids
+            )
             job_annotation.delete(job_annotation_manager.data)
 
             # Update chunks
