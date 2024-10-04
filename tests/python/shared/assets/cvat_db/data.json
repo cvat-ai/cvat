@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-04-03T09:51:04.664Z",
+    "last_login": "2024-10-03T22:17:21.550Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -80,7 +80,7 @@
   "pk": 3,
   "fields": {
     "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
-    "last_login": "2022-09-28T12:19:33.698Z",
+    "last_login": "2024-10-02T22:12:48.519Z",
     "is_superuser": false,
     "username": "user2",
     "first_name": "User",
@@ -479,6 +479,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "1a6gjlrbfdewc15gobo2l056xk1y8x7n",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBhoIBL9z0DGYZBqoYmpV0Z765NutDtf-_9l4i4rTVunZc4ZXERSpx-t4T04LaDfMd2myXNbV2mJHdFHrTLcc78vB7u30HFXr-1BlA6WPTJecDsOdNZK0ATDBmCQLoMwTApGxLawuidHwqwVVlxcCjeH9L2N98:1sw7zo:-axKgOjaJcK6KNQunB341VxiBmm-vTTth5KxK7Gcx6g",
+    "expire_date": "2024-10-16T22:39:00.489Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
   "fields": {
     "session_data": ".eJxVjDEOAiEQAP9CbQiwgGBp7xsIC6ycGkiOu8r4d0NyhbYzk3mzEPethn2UNSyZXZhkp1-GMT1LmyI_Yrt3nnrb1gX5TPhhB7_1XF7Xo_0b1Djq3AoglJTJACKS9zGB0eAdopNkz6TIWq2LLQ611gkEgjFJCTIChFPs8wX0UDee:1p26BE:nXJF4Fl6fGAvhi1ZZfLr4WJSgvc53poHLXXAM5V6NdU",
@@ -487,10 +495,26 @@
 },
 {
   "model": "sessions.session",
+  "pk": "42u6skumo7r5id9ywrroodh93yzgarh2",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hDKABWX7j0DGYZBqgaS0q6Md7dNutDte-__twi4LiWsnecwJXERgzj9soj05LqL9MB6b5JaXeYpyj2Rh-3y1hK_rkf7d1Cwl23tFQMNSqfRISggn5FQOWWdThTZJ2ILOaOxAEzK6rONcSOax2yMAfH5Auz1OB4:1svzTc:bhEmIVopSVwdFQdiRNwPfP2kdH7c4Hhgm4AwwqotqSw",
+    "expire_date": "2024-10-16T13:33:12.745Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "5x9v6r58e4l9if78anupog0ittsq2w3j",
   "fields": {
     "session_data": ".eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI",
     "expire_date": "2022-03-07T10:37:08.963Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "6fa8ghvr6johhhebcdxybm9078ggfhvh",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSE8xung0n2_gQADUjU0Ke3K-O_apAvd3nPOfQkftrX6refFTywuQovT7xZDeuS2A76Hdptlmtu6TFHuijxol-PM-Xk93L-DGnr91iqRQ-AQrTZIVg8M0YSCmZGY0ZFVhdiiMlAiADkYFGZtwURHxGfx_gDN5jb5:1swU8P:yoMWEuQUpQZBnYoG3WFapdDb4ZYacDpPndbCXWASMoM",
+    "expire_date": "2024-10-17T22:17:21.564Z"
   }
 },
 {
@@ -519,10 +543,26 @@
 },
 {
   "model": "sessions.session",
+  "pk": "bha2iulpf1xvrjw23u28ml0st6b07ecm",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGlnrD5hQ0ucM1q53jQPIluKkQtwdIqWA9s3Me6mI61Li2mWOE6uLMurwuxGmh9QN8B3rrenU6jJPpDdF77TrsbE8r7v7d1Cwl29txfuBwKA9O_aQRRJYTtbkgCknYSBnjicOniHYQBm8Y3KBzJBdBlTvD_RmOG8:1sw70L:EiJ-bfnni9H5d3NicDpeNLe3foQEb1G9MtmfMAW789o",
+    "expire_date": "2024-10-16T21:35:29.995Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "ceh8i7822nedm91xl70vi5ve4cpdmxc0",
   "fields": {
     "session_data": ".eJxVjEEOwiAQRe_C2pABWgZduu8ZyDBDpWpoUtqV8e7apAvd_vfef6lI21ri1vISJ1EXZdTpd0vEj1x3IHeqt1nzXNdlSnpX9EGbHmbJz-vh_h0UauVbZwSXMbF1vVjrAU3gwJBghHRGYeLQgWcvRNb7HrPHEIxBgM4hjU69P9b4NzY:1rrxGq:0se0EMwmZG4vJDquTqcFR7Tp-qDa-SzKJoV5OZ82UvM",
     "expire_date": "2024-04-17T09:51:04.787Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "d2iixg4ki5tabk49c28mjyq69zr50bki",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pABBoou3fcMZIBRqgaS0q6Md7dNutDtf-_9twi0LiWsnecwZXERRpx-t0jpyXUH-UH13mRqdZmnKHdFHrTLsWV-XQ_376BQL1uNSjtwrLMZMrC1oLJmNJoYEYDwdt6Yx6RYo_JJoYtsFbgBiZM3Vny-vXA29Q:1sw7aS:CGIXZjimKrjUtjkufRvB59CnzREKgonsswBoSH3tuyk",
+    "expire_date": "2024-10-16T22:12:48.528Z"
   }
 },
 {
@@ -587,6 +627,14 @@
   "fields": {
     "session_data": ".eJxVjMsOwiAQRf-FtSEDFRhcuu83kBkeUjU0Ke3K-O_apAvd3nPOfYlA21rD1vMSpiQuQonT78YUH7ntIN2p3WYZ57YuE8tdkQftcpxTfl4P9--gUq_fWns0mX22NsLZDlE7INLWAzkyODjFyKwzAnExUQNQUamgRnIOkzLi_QHSyzeb:1mxPj7:Bl2FnM4tKrtDftiy20PMjYuIfpHYUK6FG6IYdZjPS6o",
     "expire_date": "2021-12-29T08:33:29.459Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "j6rbyoe8fyqz2dwanq0ss8hkx1paz8wi",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGlmOP5ssJX3OYG3sNQ4gR4qTCnF3HCkFtG_mzVt42rfs98qrn6O4CiMuv9tE4cnlAPFB5b7IsJRtnSd5KPKkVY5L5NftdP8CmWpub5eIBtbauMECJY1WMasErUAIGvrehQDOEWpEpNRFw12ztQK0FI34fAHjTDd9:1sw6zW:YaOF6niaHGRBVR4zo12kfF4yv4INKPOgOYuRnun2W04",
+    "expire_date": "2024-10-16T21:34:38.394Z"
   }
 },
 {
@@ -717,6 +765,16 @@
       "user1"
     ],
     "created": "2023-09-15T07:52:46.956Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "110306e6f863a04bc31a747bc0ab4b92b409b22c",
+  "fields": {
+    "user": [
+      "user2"
+    ],
+    "created": "2024-10-02T21:34:38.370Z"
   }
 },
 {
@@ -1533,6 +1591,63 @@
 {
   "model": "engine.data",
   "pk": 24,
+  "fields": {
+    "chunk_size": 72,
+    "size": 1,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 25,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 26,
+  "fields": {
+    "chunk_size": 72,
+    "size": 3,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 2,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 27,
   "fields": {
     "chunk_size": 72,
     "size": 1,
@@ -3088,6 +3203,61 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 491,
+  "fields": {
+    "data": 25,
+    "path": "0.png",
+    "frame": 0,
+    "width": 774,
+    "height": 220
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 492,
+  "fields": {
+    "data": 25,
+    "path": "1.png",
+    "frame": 1,
+    "width": 198,
+    "height": 186
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 493,
+  "fields": {
+    "data": 26,
+    "path": "0.png",
+    "frame": 0,
+    "width": 679,
+    "height": 530
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 494,
+  "fields": {
+    "data": 26,
+    "path": "1.png",
+    "frame": 1,
+    "width": 994,
+    "height": 440
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 495,
+  "fields": {
+    "data": 26,
+    "path": "2.png",
+    "frame": 2,
+    "width": 431,
+    "height": 148
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3347,6 +3517,48 @@
   }
 },
 {
+  "model": "engine.project",
+  "pk": 15,
+  "fields": {
+    "created_date": "2024-09-22T20:40:15.423Z",
+    "updated_date": "2024-09-22T20:40:23.462Z",
+    "name": "project assigned to user4",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "user4"
+    ],
+    "assignee_updated_date": "2024-09-22T20:40:23.452Z",
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 41,
+    "target_storage": 42
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 16,
+  "fields": {
+    "created_date": "2024-09-23T08:09:42.827Z",
+    "updated_date": "2024-09-23T08:09:45.474Z",
+    "name": "project assigned to org owner",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": [
+      "business1"
+    ],
+    "assignee_updated_date": "2024-09-23T08:09:45.461Z",
+    "bug_tracker": "",
+    "status": "annotation",
+    "organization": 2,
+    "source_storage": 43,
+    "target_storage": 44
+  }
+},
+{
   "model": "engine.task",
   "pk": 2,
   "fields": {
@@ -3371,7 +3583,8 @@
     "subset": "",
     "organization": 1,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3399,7 +3612,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3425,7 +3639,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3453,7 +3668,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3481,7 +3697,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3509,7 +3726,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3537,7 +3755,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": 4,
-    "target_storage": 2
+    "target_storage": 2,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3563,7 +3782,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3591,7 +3811,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3617,7 +3838,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 7,
-    "target_storage": 8
+    "target_storage": 8,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3643,7 +3865,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 15,
-    "target_storage": 16
+    "target_storage": 16,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3671,7 +3894,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3697,7 +3921,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 23,
-    "target_storage": 24
+    "target_storage": 24,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3723,7 +3948,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 25,
-    "target_storage": 26
+    "target_storage": 26,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3749,7 +3975,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 29,
-    "target_storage": 30
+    "target_storage": 30,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3775,7 +4002,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 33,
-    "target_storage": 34
+    "target_storage": 34,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3801,7 +4029,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3827,7 +4056,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3853,7 +4083,8 @@
     "subset": "Train",
     "organization": null,
     "source_storage": 37,
-    "target_storage": 38
+    "target_storage": 38,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3879,7 +4110,91 @@
     "subset": "Validation",
     "organization": null,
     "source_storage": 39,
-    "target_storage": 40
+    "target_storage": 40,
+    "consensus_jobs_per_regular_job": 0
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 26,
+  "fields": {
+    "created_date": "2024-10-02T13:33:20.177Z",
+    "updated_date": "2024-10-02T13:36:15.969Z",
+    "project": null,
+    "name": "task with consensus jobs",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 25,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 2
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 27,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.413Z",
+    "updated_date": "2024-10-03T22:17:35.612Z",
+    "project": null,
+    "name": "task with consensus jobs",
+    "mode": "annotation",
+    "owner": [
+      "user2"
+    ],
+    "assignee": [
+      "user2"
+    ],
+    "assignee_updated_date": "2024-10-02T22:12:58.892Z",
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 26,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 3
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 28,
+  "fields": {
+    "created_date": "2024-09-23T21:42:22.676Z",
+    "updated_date": "2024-09-23T21:42:23.082Z",
+    "project": 10,
+    "name": "task 1",
+    "mode": "annotation",
+    "owner": [
+      "user4"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 1,
+    "status": "annotation",
+    "data": 27,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 49,
+    "target_storage": 50,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4787,6 +5102,30 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 461,
+  "fields": {
+    "data": 25,
+    "file": "/home/django/data/data/25/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 462,
+  "fields": {
+    "data": 26,
+    "file": "/home/django/data/data/26/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 463,
+  "fields": {
+    "data": 27,
+    "file": "/home/django/data/data/27/raw/1.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -5093,6 +5432,39 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 35,
+  "fields": {
+    "task": 26,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 36,
+  "fields": {
+    "task": 27,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 37,
+  "fields": {
+    "task": 27,
+    "start_frame": 2,
+    "stop_frame": 2,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -5106,7 +5478,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5123,7 +5496,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5138,7 +5512,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5153,7 +5528,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5170,7 +5546,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5187,7 +5564,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5202,7 +5580,8 @@
     "status": "validation",
     "stage": "validation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5217,7 +5596,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5232,7 +5612,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5249,7 +5630,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5264,7 +5646,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5279,7 +5662,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5294,7 +5678,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5309,7 +5694,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5324,7 +5710,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5339,7 +5726,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5354,7 +5742,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5369,7 +5758,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5384,7 +5774,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5399,7 +5790,8 @@
     "status": "validation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5414,7 +5806,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -5429,7 +5822,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5444,7 +5838,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5459,7 +5854,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5474,7 +5870,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -5489,7 +5886,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5504,7 +5902,194 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 35,
+  "fields": {
+    "created_date": "2024-10-02T13:33:20.289Z",
+    "updated_date": "2024-10-02T13:36:15.967Z",
+    "segment": 35,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 36,
+  "fields": {
+    "created_date": "2024-10-02T13:33:20.297Z",
+    "updated_date": "2024-10-02T13:34:49.516Z",
+    "segment": 35,
+    "assignee": [
+      "dummy1"
+    ],
+    "assignee_updated_date": "2024-10-02T13:33:39.499Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 35
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 37,
+  "fields": {
+    "created_date": "2024-10-02T13:33:20.301Z",
+    "updated_date": "2024-10-02T13:34:47.956Z",
+    "segment": 35,
+    "assignee": [
+      "dummy2"
+    ],
+    "assignee_updated_date": "2024-10-02T13:33:41.217Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 35
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 38,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.514Z",
+    "updated_date": "2024-10-03T22:17:35.495Z",
+    "segment": 36,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 39,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.520Z",
+    "updated_date": "2024-10-02T21:36:00.610Z",
+    "segment": 36,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 38
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 40,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.524Z",
+    "updated_date": "2024-10-02T21:35:58.540Z",
+    "segment": 36,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 38
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 41,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.528Z",
+    "updated_date": "2024-10-02T21:35:56.674Z",
+    "segment": 36,
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": "2024-10-02T21:35:10.809Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 38
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 42,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.533Z",
+    "updated_date": "2024-10-03T22:17:35.609Z",
+    "segment": 37,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 43,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.537Z",
+    "updated_date": "2024-10-02T21:36:08.821Z",
+    "segment": 37,
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": "2024-10-02T21:35:04.467Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 42
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 44,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.540Z",
+    "updated_date": "2024-10-02T21:36:06.300Z",
+    "segment": 37,
+    "assignee": [
+      "worker3"
+    ],
+    "assignee_updated_date": "2024-10-02T21:35:06.620Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 42
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 45,
+  "fields": {
+    "created_date": "2024-10-02T21:34:47.544Z",
+    "updated_date": "2024-10-02T21:36:03.724Z",
+    "segment": 37,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 42
   }
 },
 {
@@ -6312,6 +6897,150 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 75,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 76,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 77,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "human",
+    "color": "#c080e0",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 78,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "1",
+    "color": "#d12345",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 79,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "2",
+    "color": "#350dea",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 80,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "3",
+    "color": "#479ffe",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 81,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "4",
+    "color": "#4a649f",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 82,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "5",
+    "color": "#478144",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 83,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "6",
+    "color": "#57236b",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 84,
+  "fields": {
+    "task": 26,
+    "project": null,
+    "name": "7",
+    "color": "#1cdda5",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 85,
+  "fields": {
+    "task": 27,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 86,
+  "fields": {
+    "task": 27,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -6365,6 +7094,14 @@
   "fields": {
     "root": 68,
     "svg": "<line x1=\"45.96969985961914\" y1=\"28.54729652404785\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"45.96969985961914\" y2=\"28.54729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"2\"></line>\n<circle r=\"0.75\" cx=\"31.7805118560791\" cy=\"16.04729652404785\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"69\"></circle>\n<circle r=\"0.75\" cx=\"45.96969985961914\" cy=\"28.54729652404785\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"70\"></circle>\n<circle r=\"0.75\" cx=\"32.11834716796875\" cy=\"28.716217041015625\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"71\"></circle>\n<circle r=\"0.75\" cx=\"32.62510681152344\" cy=\"40.202701568603516\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"72\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 8,
+  "fields": {
+    "root": 77,
+    "svg": "<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"28.118427276611328\" y2=\"34.79792022705078\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"2\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"41.1402587890625\" y2=\"24.113340377807617\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"1\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"59.003536224365234\" y2=\"34.464027404785156\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"3\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"42.97666931152344\" y2=\"35.29875946044922\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"6\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"57.000179290771484\" y2=\"55.16539764404297\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"33.460716247558594\" y1=\"54.998451232910156\" x2=\"43.14361572265625\" y2=\"44.64776611328125\" data-type=\"edge\" data-node-from=\"4\" data-node-to=\"7\"></line>\n<circle r=\"0.75\" cx=\"41.1402587890625\" cy=\"24.113340377807617\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"78\"></circle>\n<circle r=\"0.75\" cx=\"28.118427276611328\" cy=\"34.79792022705078\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"59.003536224365234\" cy=\"34.464027404785156\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"33.460716247558594\" cy=\"54.998451232910156\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"57.000179290771484\" cy=\"55.16539764404297\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"82\"></circle>\n<circle r=\"0.75\" cx=\"42.97666931152344\" cy=\"35.29875946044922\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"83\"></circle>\n<circle r=\"0.75\" cx=\"43.14361572265625\" cy=\"44.64776611328125\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"84\"></circle>"
   }
 },
 {
@@ -9200,6 +9937,1500 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 195,
+  "fields": {
+    "job": 36,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "120.275390625,143.0654296875,189.58921363986337,141.48988922250646,158.0831059429056,162.49396102048013,151.7818844035137,129.41254793867301",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 196,
+  "fields": {
+    "job": 36,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 197,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "609.3837890625,65.89111328125,705.21484375,34.91015625",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 198,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "39.41010028435994,30.693410488202062,149.68147722371577,97.90644024171343",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 199,
+  "fields": {
+    "job": 36,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "602.3193359375,121.0107421875,542.9827216407521,127.83724255382549,540.8823144609541,155.66763768613782,576.0641347225574,158.2931466608843,621.2228890881997,155.66763768613782,622.2730926780969,133.61336229826702,611.771056779111,121.01091921948318",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 200,
+  "fields": {
+    "job": 36,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 201,
+  "fields": {
+    "job": 36,
+    "label": 75,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "22.875,17.2861328125,73.2763925913896,17.286595909086827,103.01108687464694,29.517888592979943,106.38523658054692,61.783195155661815,77.70496408038525,77.59952190207514,30.466868197763688,73.17095041307948",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 202,
+  "fields": {
+    "job": 36,
+    "label": 76,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "148.7734375,65.1572265625,130.0042845218577,45.12333098277304,106.17435222392851,49.34101811515029,85.71856963190112,62.83761693875749,85.71856963190112,85.4022430969726,116.92945441148913,87.0893179499235",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 203,
+  "fields": {
+    "job": 36,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "384.0046066966488,142.02346439397604",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 204,
+  "fields": {
+    "job": 36,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "383.21553539494596,93.48824817247015",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 205,
+  "fields": {
+    "job": 36,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "449.49757882842584,196.6255776921854",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 206,
+  "fields": {
+    "job": 36,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "458.96643444886047,89.15475026053907",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 207,
+  "fields": {
+    "job": 36,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "338.2384351375898,195.75887810979918",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 208,
+  "fields": {
+    "job": 36,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "312.9881354529516,90.88814942531151",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 209,
+  "fields": {
+    "job": 36,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "374.5357510762142,35.419326642746455",
+    "rotation": 0.0,
+    "parent": 196
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 210,
+  "fields": {
+    "job": 36,
+    "label": 80,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "72.85462387815187,134.81948013789315",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 211,
+  "fields": {
+    "job": 36,
+    "label": 79,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "12.541697885162648,135.5564410107208",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 212,
+  "fields": {
+    "job": 36,
+    "label": 83,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "41.55710637064079,136.66188231996227",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 213,
+  "fields": {
+    "job": 36,
+    "label": 81,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "22.97420372099967,180.14260749565682",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 214,
+  "fields": {
+    "job": 36,
+    "label": 82,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "68.94243698323825,180.51108793207067",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 215,
+  "fields": {
+    "job": 36,
+    "label": 78,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "37.970935050303325,111.97367203094655",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 216,
+  "fields": {
+    "job": 36,
+    "label": 84,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "41.88312194521692,157.29680359856806",
+    "rotation": 0.0,
+    "parent": 200
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 217,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "604.1328125,60.3779296875,693.6630859375,24.93359375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 218,
+  "fields": {
+    "job": 37,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 219,
+  "fields": {
+    "job": 37,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.23828125,110.5087890625,648.5281824255635,115.75990126999022,648.5281824255635,150.41661973664486,616.4969729336553,164.06926640532765,559.7859790791299,159.34335025078326",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 220,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.807657205577925,25.96749433365767,145.48066286412177,88.45460793262646",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 221,
+  "fields": {
+    "job": 37,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "153.357421875,119.435546875,118.70047132170657,134.66356588816598,202.1916567186472,146.21580537705086,154.40739337826017,163.0190628154287",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 222,
+  "fields": {
+    "job": 37,
+    "label": 75,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.3740234375,27.1767578125,67.66686870532794,27.598840947748613,94.23829763930189,48.89816096625145,82.42877366864741,64.29271899942614,70.83013405461134,87.70088258411852,36.034215212501294,78.6328552495088,13.258704697665962,71.46278712446656",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 223,
+  "fields": {
+    "job": 37,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 224,
+  "fields": {
+    "job": 37,
+    "label": 76,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "143.0791015625,46.810546875,109.54850192983031,46.81040583572394,74.54169873110186,50.81720861148278,74.54169873110186,85.613127453591,56.40564406188241,95.94646092791481,80.44646071643001,110.70836589123428,98.37163102903105,106.27979440223862",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 225,
+  "fields": {
+    "job": 37,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.4936883582824,189.79925435784392",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 226,
+  "fields": {
+    "job": 37,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "324.24518202191325,188.97772478626612",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 227,
+  "fields": {
+    "job": 37,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "303.53630314386464,89.57257153810352",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 228,
+  "fields": {
+    "job": 37,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "354.0142037269721,36.99463202759398",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 229,
+  "fields": {
+    "job": 37,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.2595123923079,87.92951239494789",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 230,
+  "fields": {
+    "job": 37,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "361.1328757581622,92.03716025283697",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 231,
+  "fields": {
+    "job": 37,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "361.7800277609976,138.0428538048181",
+    "rotation": 0.0,
+    "parent": 218
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 232,
+  "fields": {
+    "job": 37,
+    "label": 84,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.91456145430965,157.84782406648097",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 233,
+  "fields": {
+    "job": 37,
+    "label": 83,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.565747587805113,136.57798213314885",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 234,
+  "fields": {
+    "job": 37,
+    "label": 79,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "0.5212895578879397,135.43852724516148",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 235,
+  "fields": {
+    "job": 37,
+    "label": 80,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "65.05190268325403,134.6788906531699",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 236,
+  "fields": {
+    "job": 37,
+    "label": 78,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "27.728795056255237,111.1301346044711",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 237,
+  "fields": {
+    "job": 37,
+    "label": 82,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "60.866136285199616,181.77639407178364",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 238,
+  "fields": {
+    "job": 37,
+    "label": 81,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.68334125637091,181.39657577578785",
+    "rotation": 0.0,
+    "parent": 223
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 239,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.81,25.97,145.48,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 240,
+  "fields": {
+    "job": 35,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "120.28,143.07,189.59,141.49,158.08,162.49,151.78,129.41",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 241,
+  "fields": {
+    "job": 35,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 242,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "75,31,139,52,122,67,108,79,97,89,88,97,80,105,73,111,66,118,61,123,55,129,50,133,46,138,40,142,37,146,34,149,30,153,27,156,23,159,20,162,18,165,15,167,13,169,11,171,10,171,9,173,7,175,5,177,4,177,3,179,2,179,2,179,1,1267,1,179,2,179,2,179,3,177,5,175,6,175,7,173,9,171,10,171,11,169,13,167,15,165,17,162,21,159,23,157,26,153,30,149,33,146,37,142,42,138,45,133,50,129,55,123,60,118,67,111,73,105,80,97,88,89,97,79,108,67,121,52,140,31,75,514,25,694,95",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 243,
+  "fields": {
+    "job": 35,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "602.32,121.01,542.98,127.84,540.88,155.67,576.06,158.29,621.22,155.67,622.27,133.61,611.77,121.01",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 244,
+  "fields": {
+    "job": 35,
+    "label": 76,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 245,
+  "fields": {
+    "job": 35,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 246,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "22.88,17.29,73.28,17.29,103.01,29.52,106.39,61.78,77.7,77.6,30.47,73.17",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 247,
+  "fields": {
+    "job": 35,
+    "label": 76,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "148.77,65.16,130.0,45.12,106.17,49.34,85.72,62.84,85.72,85.4,116.93,87.09",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 248,
+  "fields": {
+    "job": 35,
+    "label": 75,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.37,27.18,67.67,27.6,94.24,48.9,82.43,64.29,70.83,87.7,36.03,78.63,13.26,71.46",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 249,
+  "fields": {
+    "job": 35,
+    "label": 76,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "143.08,46.81,109.55,46.81,74.54,50.82,74.54,85.61,56.41,95.95,80.45,110.71,98.37,106.28",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 250,
+  "fields": {
+    "job": 35,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 251,
+  "fields": {
+    "job": 35,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "374.54,35.42",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 252,
+  "fields": {
+    "job": 35,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "383.22,93.49",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 253,
+  "fields": {
+    "job": 35,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "449.5,196.63",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 254,
+  "fields": {
+    "job": 35,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "384.0,142.02",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 255,
+  "fields": {
+    "job": 35,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "338.24,195.76",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 256,
+  "fields": {
+    "job": 35,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "312.99,90.89",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 257,
+  "fields": {
+    "job": 35,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "458.97,89.15",
+    "rotation": 0.0,
+    "parent": 245
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 258,
+  "fields": {
+    "job": 35,
+    "label": 82,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "68.94,180.51",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 259,
+  "fields": {
+    "job": 35,
+    "label": 81,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "22.97,180.14",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 260,
+  "fields": {
+    "job": 35,
+    "label": 79,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "12.54,135.56",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 261,
+  "fields": {
+    "job": 35,
+    "label": 78,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "37.97,111.97",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 262,
+  "fields": {
+    "job": 35,
+    "label": 84,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "41.88,157.3",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 263,
+  "fields": {
+    "job": 35,
+    "label": 80,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "72.85,134.82",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 264,
+  "fields": {
+    "job": 35,
+    "label": 83,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "41.56,136.66",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 265,
+  "fields": {
+    "job": 43,
+    "label": 86,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "174.8515625,61.4287109375,194.15003641501426,44.177240933991925,209.06251949072612,65.23015821734953,217.24976510091983,45.63924907867113,237.13307586853443,66.69216636202691,246.19752636553494,47.6860604812191,266.95804201995634,46.5164539654761,263.1568208437948,62.30614192799476",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 266,
+  "fields": {
+    "job": 43,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "15.2001953125,13.1826171875,112.27758031307167,20.785110619151965,54.966861041713855,63.18334681480155,32.45193561367887,19.32310247447458,108.4763591369101,16.6914878140542,80.1134011301674,46.22405233654172,72.80336040677867,29.849561116152472,48.24162357619571,39.206413242089184",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 267,
+  "fields": {
+    "job": 43,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "310.2333984375,79.5576171875,310.2334831024109,64.35295333054273,297.9526146871194,62.598543556929144,279.8237136931184,68.1541745067043,279.8237136931184,83.65146084028675",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 268,
+  "fields": {
+    "job": 43,
+    "label": 86,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "162.1357421875,103.09375,189.1826171875,82.771484375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 269,
+  "fields": {
+    "job": 44,
+    "label": 86,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "189.4755859375,100.900390625,222.224609375,78.677734375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 270,
+  "fields": {
+    "job": 44,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.1064453125,18.1533203125,38.59236982132461,18.73829921660399,51.45804149448668,36.282396952734416,65.20091805445554,53.24169143099425,74.26536855145605,24.586331795313527,84.79182719313394,40.37601975783036,98.5347037531028,16.10668455618361,102.62832655820057,21.66231550595876",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 271,
+  "fields": {
+    "job": 44,
+    "label": 86,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "167.541015625,46.5166015625,186.25519243375675,60.55173215438117,204.96889668562835,44.177240933991925,224.26740419537236,57.6277158650264,240.3494937868254,36.5747985816688,259.063198038697,51.48728165738066,273.0984762276021,34.235585550184624,280.7009185799252,45.63924907867113",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 272,
+  "fields": {
+    "job": 44,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "317.2509765625,63.18359375,299.1222212028624,74.58701034328624,299.707024460733,89.49949341899628,322.5143515177024,92.71591133728725,327.48517920960694,79.55783803518898",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 273,
+  "fields": {
+    "job": 45,
+    "label": 86,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "330.1171875,47.978515625,313.15749939176567,59.674527267574376,319.5903352283476,72.54019894073645,351.1697111533831,79.85023966412518,351.1697111533831,57.6277158650264",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 274,
+  "fields": {
+    "job": 45,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "192.5458984375,106.017578125,231.8740234375,81.89453125",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 275,
+  "fields": {
+    "job": 45,
+    "label": 86,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.1064453125,16.984375,35.66835353196984,17.276291071926607,41.20000000000073,46.20000000000073,57.0,72.80000000000109,72.5,33.900000000001455,90.10000000000036,50.600000000000364,102.92072818713677,15.814282927249224,107.89155587903952,19.90790573234517",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 276,
+  "fields": {
+    "job": 45,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "180.4072265625,50.3173828125,196.78165107543464,61.13653541225176,208.4777162328537,45.34684744973492,234.79386283705026,61.13653541225176,241.51910030256659,45.05444582079872,269.8820583093111,52.65688817312184,276.02249251695685,43.592437676121335,295.61340165563524,47.3936588522829",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 278,
+  "fields": {
+    "job": 42,
+    "label": 85,
+    "frame": 2,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.11,18.15,38.59,18.74,51.46,36.28,65.2,53.24,74.27,24.59,84.79,40.38,98.53,16.11,102.63,21.66",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -10523,6 +12754,90 @@
   }
 },
 {
+  "model": "engine.labeledtrack",
+  "pk": 16,
+  "fields": {
+    "job": 39,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 17,
+  "fields": {
+    "job": 39,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 18,
+  "fields": {
+    "job": 40,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 19,
+  "fields": {
+    "job": 40,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 20,
+  "fields": {
+    "job": 41,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 21,
+  "fields": {
+    "job": 41,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 23,
+  "fields": {
+    "job": 38,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledtrackattributeval",
   "pk": 3,
   "fields": {
@@ -10821,6 +13136,104 @@
   }
 },
 {
+  "model": "engine.trackedshape",
+  "pk": 21,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "15.631922633976501,16.83373663344173,185.08769655857213,145.42783457621954",
+    "rotation": 0.0,
+    "track": 16,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 22,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "110.57522859172786,227.75209353958599,265.60923452274073,341.92442348878103",
+    "rotation": 0.0,
+    "track": 17,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 23,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "24.645527629965727,46.27817962033987,177.87681256178075,160.45050956953492",
+    "rotation": 0.0,
+    "track": 18,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 24,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "147.23055557541738,206.11944154921366,266.21014152247335,308.2736315037564",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 25,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "15.631922633976501,29.452783627826648,148.4323695748826,140.019671578626",
+    "rotation": 0.0,
+    "track": 20,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 26,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "96.75436759787954,179.6795335609786,226.55027954012257,292.0491425109758",
+    "rotation": 0.0,
+    "track": 21,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 28,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "15.63,16.83,185.09,145.43",
+    "rotation": 0.0,
+    "track": 23,
+    "frame": 0
+  }
+},
+{
   "model": "engine.profile",
   "pk": 1,
   "fields": {
@@ -11037,7 +13450,7 @@
     "created_date": "2022-03-16T11:04:39.444Z",
     "updated_date": "2022-03-16T11:04:39.444Z",
     "frame": 0,
-    "position": "244.58581235698148, 319.63386727689067, 326.9656750572103, 192.76887871853796, 543.6247139588122, 175.4691075514893, 835.2494279176244, 360.0000000000018, 609.5286041189956, 586.544622425632, 364.0361328125, 528.87890625, 244.58581235698148, 319.63386727689067",
+    "position": "244.58581235698148,319.63386727689067,326.9656750572103,192.76887871853796,543.6247139588122,175.4691075514893,835.2494279176244,360.0000000000018,609.5286041189956,586.544622425632,364.0361328125,528.87890625,244.58581235698148,319.63386727689067",
     "job": 7,
     "owner": [
       "user1"
@@ -11053,7 +13466,7 @@
     "created_date": "2022-03-16T11:07:22.170Z",
     "updated_date": "2022-03-16T11:07:22.170Z",
     "frame": 0,
-    "position": "98.48046875, 696.72265625, 326.1220703125, 841.5859375",
+    "position": "98.48046875,696.72265625,326.1220703125,841.5859375",
     "job": 9,
     "owner": [
       "business2"
@@ -11069,7 +13482,7 @@
     "created_date": "2022-03-16T11:08:18.367Z",
     "updated_date": "2022-03-16T11:08:18.367Z",
     "frame": 5,
-    "position": "108.1845703125, 235.0, 720.0087890625, 703.3505859375",
+    "position": "108.1845703125,235.0,720.0087890625,703.3505859375",
     "job": 16,
     "owner": [
       "business2"
@@ -11085,7 +13498,7 @@
     "created_date": "2022-03-16T12:40:00.764Z",
     "updated_date": "2022-03-16T12:40:00.764Z",
     "frame": 5,
-    "position": "295.36328125, 243.6044921875, 932.23046875, 561.4921875",
+    "position": "295.36328125,243.6044921875,932.23046875,561.4921875",
     "job": 10,
     "owner": [
       "user1"
@@ -11103,7 +13516,7 @@
     "created_date": "2022-03-16T12:49:29.369Z",
     "updated_date": "2022-03-16T12:49:29.369Z",
     "frame": 0,
-    "position": "65.6189987163034, 100.96585365853753, 142.12734274711147, 362.6243902439037",
+    "position": "65.6189987163034,100.96585365853753,142.12734274711147,362.6243902439037",
     "job": 11,
     "owner": [
       "user6"
@@ -11592,6 +14005,86 @@
   }
 },
 {
+  "model": "engine.storage",
+  "pk": 41,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 42,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 43,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 44,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 45,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 46,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 47,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 48,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 49,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 50,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
   "model": "webhooks.webhook",
   "pk": 1,
   "fields": {
@@ -11851,6 +14344,893 @@
       }
     },
     "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n"
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 6,
+  "fields": {
+    "created_date": "2024-10-03T22:11:53.272Z",
+    "updated_date": "2024-10-03T22:11:53.272Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 1,
+        "role": "owner",
+        "user": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "is_active": true,
+        "invitation": null,
+        "joined_date": "2021-12-14T18:45:40.172000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 7,
+  "fields": {
+    "created_date": "2024-10-03T22:11:53.637Z",
+    "updated_date": "2024-10-03T22:11:53.637Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 2,
+        "role": "worker",
+        "user": {
+          "id": 6,
+          "url": "/api/users/6",
+          "username": "worker1",
+          "last_name": "First",
+          "first_name": "Worker"
+        },
+        "is_active": true,
+        "invitation": "Lzyzgo161I7Fej1vC5RXPdyUgCBfbuxsEEhHYeYOJqvbeJe5clPDnqCm7pKOC9tr",
+        "joined_date": "2021-12-14T18:47:39.935000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 8,
+  "fields": {
+    "created_date": "2024-10-03T22:11:54.006Z",
+    "updated_date": "2024-10-03T22:11:54.006Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 3,
+        "role": "worker",
+        "user": {
+          "id": 7,
+          "url": "/api/users/7",
+          "username": "worker2",
+          "last_name": "Second",
+          "first_name": "Worker"
+        },
+        "is_active": true,
+        "invitation": "aViZkw9TaieLoZaswEnkMy8tTet1yYDRof3eKZDtZaHf1BItgCNNM6y6fnjrkrej",
+        "joined_date": "2021-12-14T18:47:49.322000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 9,
+  "fields": {
+    "created_date": "2024-10-03T22:11:54.362Z",
+    "updated_date": "2024-10-03T22:11:54.362Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 4,
+        "role": "maintainer",
+        "user": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "business1",
+          "last_name": "First",
+          "first_name": "Business"
+        },
+        "is_active": true,
+        "invitation": "cbmm587Z05WQUYvesIZUCtbTl7CEL4thv1Au6Nr51psflITn9X6BsvNFXcNEkoYn",
+        "joined_date": "2021-12-14T18:48:46.579000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 10,
+  "fields": {
+    "created_date": "2024-10-03T22:11:54.740Z",
+    "updated_date": "2024-10-03T22:11:54.740Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 13,
+        "role": "supervisor",
+        "user": {
+          "id": 19,
+          "url": "/api/users/19",
+          "username": "user5",
+          "last_name": "Fifth",
+          "first_name": "User"
+        },
+        "is_active": true,
+        "invitation": "hIH9RB3QqZLFwdUDmufaSPc2H8uS5cNjcG6pk8gfAIQ4jg6nJZZWDIQHMN1gFMk9",
+        "joined_date": "2022-09-28T13:11:37.839000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 11,
+  "fields": {
+    "created_date": "2024-10-03T22:11:55.165Z",
+    "updated_date": "2024-10-03T22:11:55.165Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 14,
+        "role": "supervisor",
+        "user": {
+          "id": 5,
+          "url": "/api/users/5",
+          "username": "user4",
+          "last_name": "Fourth",
+          "first_name": "User"
+        },
+        "is_active": true,
+        "invitation": "d2Zaawf81uImG1nmWA0Va0Bv5EPERt1edJDTgTgMZiefZ2QmC1IdPld9LIPnkiWR",
+        "joined_date": "2023-09-15T07:53:52.115000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 12,
+  "fields": {
+    "created_date": "2024-10-03T22:11:55.568Z",
+    "updated_date": "2024-10-03T22:11:55.568Z",
+    "webhook": 6,
+    "event": "update:membership",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:membership",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "membership": {
+        "id": 15,
+        "role": "maintainer",
+        "user": {
+          "id": 11,
+          "url": "/api/users/11",
+          "username": "business2",
+          "last_name": "Second",
+          "first_name": "Business"
+        },
+        "is_active": true,
+        "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
+        "joined_date": "2023-09-15T07:53:52.116000Z",
+        "organization": 1
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 13,
+  "fields": {
+    "created_date": "2024-10-03T22:11:55.914Z",
+    "updated_date": "2024-10-03T22:11:55.914Z",
+    "webhook": 2,
+    "event": "update:project",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:project",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "project": {
+        "id": 1,
+        "url": "/api/projects/1",
+        "name": "project1",
+        "owner": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "business1",
+          "last_name": "First",
+          "first_name": "Business"
+        },
+        "tasks": {
+          "url": null,
+          "count": 1
+        },
+        "labels": null,
+        "status": "annotation",
+        "assignee": {
+          "id": 20,
+          "url": "/api/users/20",
+          "username": "user6",
+          "last_name": "Sixth",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "bug_tracker": "",
+        "created_date": "2021-12-14T19:46:37.969000Z",
+        "organization": null,
+        "task_subsets": [],
+        "updated_date": "2022-11-03T13:57:25.895000Z",
+        "source_storage": null,
+        "target_storage": null,
+        "assignee_updated_date": null
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 14,
+  "fields": {
+    "created_date": "2024-10-03T22:11:56.295Z",
+    "updated_date": "2024-10-03T22:11:56.295Z",
+    "webhook": 3,
+    "event": "update:project",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:project",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "project": {
+        "id": 3,
+        "url": "/api/projects/3",
+        "name": "project 3",
+        "owner": {
+          "id": 3,
+          "url": "/api/users/3",
+          "username": "user2",
+          "last_name": "Second",
+          "first_name": "User"
+        },
+        "tasks": {
+          "url": null,
+          "count": 0
+        },
+        "labels": null,
+        "status": "annotation",
+        "assignee": {
+          "id": 19,
+          "url": "/api/users/19",
+          "username": "user5",
+          "last_name": "Fifth",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": null,
+        "bug_tracker": "",
+        "created_date": "2022-03-28T13:05:24.659000Z",
+        "organization": 2,
+        "task_subsets": [],
+        "updated_date": "2022-03-28T13:06:09.283000Z",
+        "source_storage": null,
+        "target_storage": null,
+        "assignee_updated_date": null
+      },
+      "webhook_id": 3
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 15,
+  "fields": {
+    "created_date": "2024-10-03T22:11:56.653Z",
+    "updated_date": "2024-10-03T22:11:56.653Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "task": {
+        "id": 2,
+        "url": "/api/tasks/2",
+        "data": 2,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task2",
+        "size": 23,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": {
+          "id": 7,
+          "url": "/api/users/7",
+          "username": "worker2",
+          "last_name": "Second",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2021-12-14T18:50:29.458000Z",
+        "organization": 1,
+        "segment_size": 23,
+        "updated_date": "2021-12-22T07:14:15.234000Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 0
+      },
+      "event": "update:task",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 16,
+  "fields": {
+    "created_date": "2024-10-03T22:11:57.040Z",
+    "updated_date": "2024-10-03T22:11:57.040Z",
+    "webhook": 2,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "task": {
+        "id": 9,
+        "url": "/api/tasks/9",
+        "data": 9,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task1_in_project1",
+        "size": 20,
+        "owner": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "business1",
+          "last_name": "First",
+          "first_name": "Business"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": {
+          "id": 1,
+          "url": "/api/users/1",
+          "username": "admin1",
+          "last_name": "First",
+          "first_name": "Admin"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": 1,
+        "bug_tracker": "",
+        "created_date": "2022-03-05T09:33:10.420000Z",
+        "organization": null,
+        "segment_size": 5,
+        "updated_date": "2022-11-03T13:57:26.007000Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 0
+      },
+      "event": "update:task",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 17,
+  "fields": {
+    "created_date": "2024-10-03T22:11:57.457Z",
+    "updated_date": "2024-10-03T22:11:57.457Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "job": {
+        "id": 2,
+        "url": "/api/jobs/2",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "annotation",
+        "task_id": 2,
+        "assignee": {
+          "id": 6,
+          "url": "/api/users/6",
+          "username": "worker1",
+          "last_name": "First",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 22,
+        "bug_tracker": null,
+        "frame_count": 23,
+        "start_frame": 0,
+        "created_date": "2021-12-14T18:50:29.458000Z",
+        "organization": 1,
+        "updated_date": "2022-06-22T09:18:45.296000Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 18,
+  "fields": {
+    "created_date": "2024-10-03T22:11:57.816Z",
+    "updated_date": "2024-10-03T22:11:57.817Z",
+    "webhook": 2,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "job": {
+        "id": 11,
+        "url": "/api/jobs/11",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "in progress",
+        "issues": null,
+        "labels": null,
+        "status": "annotation",
+        "task_id": 9,
+        "assignee": {
+          "id": 9,
+          "url": "/api/users/9",
+          "username": "worker4",
+          "last_name": "Fourth",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": 1,
+        "stop_frame": 4,
+        "bug_tracker": "",
+        "frame_count": 5,
+        "start_frame": 0,
+        "created_date": "2022-03-05T09:33:10.420000Z",
+        "organization": null,
+        "updated_date": "2022-06-22T09:18:45.296000Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 19,
+  "fields": {
+    "created_date": "2024-10-03T22:11:58.171Z",
+    "updated_date": "2024-10-03T22:11:58.171Z",
+    "webhook": 2,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "job": {
+        "id": 12,
+        "url": "/api/jobs/12",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "validation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "validation",
+        "task_id": 9,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": 1,
+        "stop_frame": 9,
+        "bug_tracker": "",
+        "frame_count": 5,
+        "start_frame": 5,
+        "created_date": "2022-03-05T09:33:10.420000Z",
+        "organization": null,
+        "updated_date": "2022-06-22T09:18:45.296000Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 20,
+  "fields": {
+    "created_date": "2024-10-03T22:11:58.537Z",
+    "updated_date": "2024-10-03T22:11:58.537Z",
+    "webhook": 2,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "job": {
+        "id": 13,
+        "url": "/api/jobs/13",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "acceptance",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "validation",
+        "task_id": 9,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": 1,
+        "stop_frame": 14,
+        "bug_tracker": "",
+        "frame_count": 5,
+        "start_frame": 10,
+        "created_date": "2022-03-05T09:33:10.420000Z",
+        "organization": null,
+        "updated_date": "2022-06-22T09:18:45.296000Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 21,
+  "fields": {
+    "created_date": "2024-10-03T22:11:58.920Z",
+    "updated_date": "2024-10-03T22:11:58.920Z",
+    "webhook": 2,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "job": {
+        "id": 14,
+        "url": "/api/jobs/14",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "in progress",
+        "issues": null,
+        "labels": null,
+        "status": "annotation",
+        "task_id": 9,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": 1,
+        "stop_frame": 19,
+        "bug_tracker": "",
+        "frame_count": 5,
+        "start_frame": 15,
+        "created_date": "2022-03-05T09:33:10.420000Z",
+        "organization": null,
+        "updated_date": "2022-11-03T13:57:26.346000Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 22,
+  "fields": {
+    "created_date": "2024-10-03T22:11:59.258Z",
+    "updated_date": "2024-10-03T22:11:59.258Z",
+    "webhook": 2,
+    "event": "update:issue",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:issue",
+      "issue": {
+        "id": 5,
+        "job": 11,
+        "frame": 0,
+        "owner": {
+          "id": 20,
+          "url": "/api/users/20",
+          "username": "user6",
+          "last_name": "Sixth",
+          "first_name": "User"
+        },
+        "assignee": null,
+        "comments": {
+          "url": null,
+          "count": 1
+        },
+        "position": [
+          65.6189987163034,
+          100.96585365853753,
+          142.12734274711147,
+          362.6243902439037
+        ],
+        "resolved": false,
+        "created_date": "2022-03-16T12:49:29.369000Z",
+        "updated_date": "2022-03-16T12:49:29.369000Z"
+      },
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "webhook_id": 2
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 23,
+  "fields": {
+    "created_date": "2024-10-03T22:11:59.626Z",
+    "updated_date": "2024-10-03T22:11:59.626Z",
+    "webhook": 2,
+    "event": "update:comment",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "event": "update:comment",
+      "sender": {
+        "username": "",
+        "last_name": "",
+        "first_name": ""
+      },
+      "comment": {
+        "id": 6,
+        "issue": 5,
+        "owner": {
+          "id": 20,
+          "url": "/api/users/20",
+          "username": "user6",
+          "last_name": "Sixth",
+          "first_name": "User"
+        },
+        "message": "Wrong position",
+        "created_date": "2022-03-16T12:49:29.372000Z",
+        "updated_date": "2022-03-16T12:49:29.372000Z"
+      },
+      "webhook_id": 2
+    },
+    "response": ""
   }
 },
 {
@@ -16665,6 +20045,1680 @@
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 21,
+  "fields": {
+    "task": 26,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 22,
+  "fields": {
+    "task": 27,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 23,
+  "fields": {
+    "task": 28,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 1,
+  "fields": {
+    "task": 2,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 2,
+  "fields": {
+    "task": 5,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 3,
+  "fields": {
+    "task": 6,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 4,
+  "fields": {
+    "task": 7,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 5,
+  "fields": {
+    "task": 8,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 6,
+  "fields": {
+    "task": 9,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 7,
+  "fields": {
+    "task": 11,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 8,
+  "fields": {
+    "task": 12,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 9,
+  "fields": {
+    "task": 13,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 10,
+  "fields": {
+    "task": 14,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 11,
+  "fields": {
+    "task": 15,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 12,
+  "fields": {
+    "task": 17,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 13,
+  "fields": {
+    "task": 18,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 14,
+  "fields": {
+    "task": 19,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 15,
+  "fields": {
+    "task": 20,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 16,
+  "fields": {
+    "task": 21,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 17,
+  "fields": {
+    "task": 22,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 18,
+  "fields": {
+    "task": 23,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 19,
+  "fields": {
+    "task": 24,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 20,
+  "fields": {
+    "task": 25,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 21,
+  "fields": {
+    "task": 26,
+    "agreement_score_threshold": 0.0,
+    "quorum": 1,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 22,
+  "fields": {
+    "task": 27,
+    "agreement_score_threshold": 0.0,
+    "quorum": 2,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 23,
+  "fields": {
+    "task": 28,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 25,
+  "fields": {
+    "task": 27,
+    "agreement_score_threshold": 0.0,
+    "quorum": 2,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 1,
+  "fields": {
+    "task": 26,
+    "job": null,
+    "created_date": "2024-10-02T13:36:15.977Z",
+    "target_last_updated": "2024-10-02T13:36:15.969Z",
+    "consensus_score": 62,
+    "assignee": null,
+    "parent": null,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":1,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":8,\"conflicts_by_type\":{\"no_matching_annotation\":8},\"frame_count\":2,\"mean_conflict_count\":4.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":195,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":221,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":199,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":219,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"polygon\"}]}],\"consensus_score\":0.6573107678934524,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":4}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":201,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":202,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":222,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":224,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"polyline\"}]}],\"consensus_score\":0.5750468108354576,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":4}}},\"consensus_score\":62.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 2,
+  "fields": {
+    "task": 26,
+    "job": 35,
+    "created_date": "2024-10-02T13:36:15.980Z",
+    "target_last_updated": "2024-10-02T13:33:20.387Z",
+    "consensus_score": 62,
+    "assignee": null,
+    "parent": 1,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":1,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":8,\"conflicts_by_type\":{\"no_matching_annotation\":8},\"frame_count\":2,\"mean_conflict_count\":4.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":195,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":221,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":199,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":219,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"polygon\"}]}],\"consensus_score\":0.6573107678934524,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":4}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":201,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":202,\"job_id\":36,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":222,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":224,\"job_id\":37,\"type\":\"shape\",\"shape_type\":\"polyline\"}]}],\"consensus_score\":0.5750468108354576,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":4}}},\"consensus_score\":62.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 3,
+  "fields": {
+    "task": 27,
+    "job": null,
+    "created_date": "2024-10-02T21:36:12.911Z",
+    "target_last_updated": "2024-10-02T21:36:12.904Z",
+    "consensus_score": 68,
+    "assignee": null,
+    "parent": null,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1,2],\"conflict_count\":33,\"conflicts_by_type\":{\"no_matching_annotation\":17,\"failed_label_voting\":16},\"frame_count\":3,\"mean_conflict_count\":11.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179484,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179484,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}},\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":268,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":269,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":274,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":265,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":271,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":276,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":266,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":275,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":267,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":272,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":273,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.6042464963086314,\"conflict_count\":21,\"conflicts_by_type\":{\"no_matching_annotation\":11,\"failed_label_voting\":10}}},\"consensus_score\":71.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 4,
+  "fields": {
+    "task": 27,
+    "job": 38,
+    "created_date": "2024-10-02T21:36:12.913Z",
+    "target_last_updated": "2024-10-02T21:34:47.565Z",
+    "consensus_score": 77,
+    "assignee": null,
+    "parent": 3,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":6,\"failed_label_voting\":6},\"frame_count\":2,\"mean_conflict_count\":8.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179484,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179484,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}}},\"consensus_score\":77.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 5,
+  "fields": {
+    "task": 27,
+    "job": 42,
+    "created_date": "2024-10-02T21:36:12.913Z",
+    "target_last_updated": "2024-10-02T21:34:47.598Z",
+    "consensus_score": 60,
+    "assignee": null,
+    "parent": 3,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[2],\"conflict_count\":22,\"conflicts_by_type\":{\"no_matching_annotation\":11,\"failed_label_voting\":10},\"frame_count\":1,\"mean_conflict_count\":22.0},\"frame_results\":{\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":268,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":269,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":274,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":265,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":271,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":276,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":266,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":275,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":267,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":272,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":273,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.6042464963086314,\"conflict_count\":21,\"conflicts_by_type\":{\"no_matching_annotation\":11,\"failed_label_voting\":10}}},\"consensus_score\":60.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 6,
+  "fields": {
+    "task": 27,
+    "job": null,
+    "created_date": "2024-10-03T22:17:35.620Z",
+    "target_last_updated": "2024-10-03T22:17:35.612Z",
+    "consensus_score": 68,
+    "assignee": [
+      "user2"
+    ],
+    "parent": null,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1,2],\"conflict_count\":33,\"conflicts_by_type\":{\"no_matching_annotation\":17,\"failed_label_voting\":16},\"frame_count\":3,\"mean_conflict_count\":11.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179484,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179486,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}},\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":276,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":271,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":265,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":274,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":269,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":268,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":273,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":272,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":267,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":275,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":270,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.6042464963086314,\"conflict_count\":21,\"conflicts_by_type\":{\"no_matching_annotation\":11,\"failed_label_voting\":10}}},\"consensus_score\":71.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 7,
+  "fields": {
+    "task": 27,
+    "job": 38,
+    "created_date": "2024-10-03T22:17:35.622Z",
+    "target_last_updated": "2024-10-02T21:36:12.814Z",
+    "consensus_score": 77,
+    "assignee": null,
+    "parent": 6,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":6,\"failed_label_voting\":6},\"frame_count\":2,\"mean_conflict_count\":8.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179484,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":41,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":40,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":17,\"job_id\":39,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.7681180018179486,\"conflict_count\":6,\"conflicts_by_type\":{\"no_matching_annotation\":3,\"failed_label_voting\":3}}},\"consensus_score\":77.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 8,
+  "fields": {
+    "task": 27,
+    "job": 42,
+    "created_date": "2024-10-03T22:17:35.622Z",
+    "target_last_updated": "2024-10-02T21:36:12.902Z",
+    "consensus_score": 60,
+    "assignee": null,
+    "parent": 6,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[2],\"conflict_count\":22,\"conflicts_by_type\":{\"no_matching_annotation\":11,\"failed_label_voting\":10},\"frame_count\":1,\"mean_conflict_count\":22.0},\"frame_results\":{\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":276,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":271,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":265,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":274,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":269,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":268,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":273,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":272,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":267,\"job_id\":43,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":275,\"job_id\":45,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":270,\"job_id\":44,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.6042464963086314,\"conflict_count\":21,\"conflicts_by_type\":{\"no_matching_annotation\":11,\"failed_label_voting\":10}}},\"consensus_score\":60.0}"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 1,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 2,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 3,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 4,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 5,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 6,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 7,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 8,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 9,
+  "fields": {
+    "report": 4,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 10,
+  "fields": {
+    "report": 4,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 11,
+  "fields": {
+    "report": 4,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 12,
+  "fields": {
+    "report": 4,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 13,
+  "fields": {
+    "report": 4,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 14,
+  "fields": {
+    "report": 4,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 15,
+  "fields": {
+    "report": 4,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 16,
+  "fields": {
+    "report": 4,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 17,
+  "fields": {
+    "report": 4,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 18,
+  "fields": {
+    "report": 4,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 19,
+  "fields": {
+    "report": 4,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 20,
+  "fields": {
+    "report": 4,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 21,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 22,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 23,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 24,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 25,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 26,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 27,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 28,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 29,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 30,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 31,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 32,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 33,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 34,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 35,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 36,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 37,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 38,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 39,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 40,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 41,
+  "fields": {
+    "report": 5,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 42,
+  "fields": {
+    "report": 7,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 43,
+  "fields": {
+    "report": 7,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 44,
+  "fields": {
+    "report": 7,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 45,
+  "fields": {
+    "report": 7,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 46,
+  "fields": {
+    "report": 7,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 47,
+  "fields": {
+    "report": 7,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 48,
+  "fields": {
+    "report": 7,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 49,
+  "fields": {
+    "report": 7,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 50,
+  "fields": {
+    "report": 7,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 51,
+  "fields": {
+    "report": 7,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 52,
+  "fields": {
+    "report": 7,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 53,
+  "fields": {
+    "report": 7,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 54,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 55,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 56,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 57,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 58,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 59,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 60,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 61,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 62,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 63,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 64,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 65,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 66,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 67,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 68,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 69,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 70,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 71,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 72,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 73,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 74,
+  "fields": {
+    "report": 8,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 1,
+  "fields": {
+    "conflict": 1,
+    "obj_id": 195,
+    "job_id": 36,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 2,
+  "fields": {
+    "conflict": 2,
+    "obj_id": 221,
+    "job_id": 37,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 3,
+  "fields": {
+    "conflict": 3,
+    "obj_id": 199,
+    "job_id": 36,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 4,
+  "fields": {
+    "conflict": 4,
+    "obj_id": 219,
+    "job_id": 37,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 5,
+  "fields": {
+    "conflict": 5,
+    "obj_id": 201,
+    "job_id": 36,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 6,
+  "fields": {
+    "conflict": 6,
+    "obj_id": 202,
+    "job_id": 36,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 7,
+  "fields": {
+    "conflict": 7,
+    "obj_id": 222,
+    "job_id": 37,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 8,
+  "fields": {
+    "conflict": 8,
+    "obj_id": 224,
+    "job_id": 37,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 9,
+  "fields": {
+    "conflict": 9,
+    "obj_id": 21,
+    "job_id": 41,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 10,
+  "fields": {
+    "conflict": 10,
+    "obj_id": 17,
+    "job_id": 39,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 11,
+  "fields": {
+    "conflict": 11,
+    "obj_id": 19,
+    "job_id": 40,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 12,
+  "fields": {
+    "conflict": 15,
+    "obj_id": 21,
+    "job_id": 41,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 13,
+  "fields": {
+    "conflict": 16,
+    "obj_id": 17,
+    "job_id": 39,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 14,
+  "fields": {
+    "conflict": 17,
+    "obj_id": 19,
+    "job_id": 40,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 15,
+  "fields": {
+    "conflict": 21,
+    "obj_id": 268,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 16,
+  "fields": {
+    "conflict": 22,
+    "obj_id": 269,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 17,
+  "fields": {
+    "conflict": 23,
+    "obj_id": 274,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 18,
+  "fields": {
+    "conflict": 27,
+    "obj_id": 265,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 19,
+  "fields": {
+    "conflict": 28,
+    "obj_id": 271,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 20,
+  "fields": {
+    "conflict": 29,
+    "obj_id": 276,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 21,
+  "fields": {
+    "conflict": 33,
+    "obj_id": 266,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 22,
+  "fields": {
+    "conflict": 34,
+    "obj_id": 275,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 23,
+  "fields": {
+    "conflict": 36,
+    "obj_id": 267,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 24,
+  "fields": {
+    "conflict": 37,
+    "obj_id": 272,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 25,
+  "fields": {
+    "conflict": 38,
+    "obj_id": 273,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 26,
+  "fields": {
+    "conflict": 42,
+    "obj_id": 21,
+    "job_id": 41,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 27,
+  "fields": {
+    "conflict": 43,
+    "obj_id": 19,
+    "job_id": 40,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 28,
+  "fields": {
+    "conflict": 44,
+    "obj_id": 17,
+    "job_id": 39,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 29,
+  "fields": {
+    "conflict": 48,
+    "obj_id": 21,
+    "job_id": 41,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 30,
+  "fields": {
+    "conflict": 49,
+    "obj_id": 19,
+    "job_id": 40,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 31,
+  "fields": {
+    "conflict": 50,
+    "obj_id": 17,
+    "job_id": 39,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 32,
+  "fields": {
+    "conflict": 54,
+    "obj_id": 276,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 33,
+  "fields": {
+    "conflict": 55,
+    "obj_id": 271,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 34,
+  "fields": {
+    "conflict": 56,
+    "obj_id": 265,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 35,
+  "fields": {
+    "conflict": 60,
+    "obj_id": 274,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 36,
+  "fields": {
+    "conflict": 61,
+    "obj_id": 269,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 37,
+  "fields": {
+    "conflict": 62,
+    "obj_id": 268,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 38,
+  "fields": {
+    "conflict": 66,
+    "obj_id": 273,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 39,
+  "fields": {
+    "conflict": 67,
+    "obj_id": 272,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 40,
+  "fields": {
+    "conflict": 68,
+    "obj_id": 267,
+    "job_id": 43,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 41,
+  "fields": {
+    "conflict": 72,
+    "obj_id": 275,
+    "job_id": 45,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 42,
+  "fields": {
+    "conflict": 73,
+    "obj_id": 270,
+    "job_id": 44,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 1,
+  "fields": {
+    "task": 26,
+    "assignee": [
+      "dummy1"
+    ],
+    "consensus_score": 91,
+    "conflict_count": 4,
+    "consensus_report_id": 1
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 2,
+  "fields": {
+    "task": 26,
+    "assignee": [
+      "dummy2"
+    ],
+    "consensus_score": 100,
+    "conflict_count": 4,
+    "consensus_report_id": 1
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 3,
+  "fields": {
+    "task": 27,
+    "assignee": [
+      "worker2"
+    ],
+    "consensus_score": 74,
+    "conflict_count": 6,
+    "consensus_report_id": 3
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 4,
+  "fields": {
+    "task": 27,
+    "assignee": [
+      "worker3"
+    ],
+    "consensus_score": 100,
+    "conflict_count": 3,
+    "consensus_report_id": 3
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 5,
+  "fields": {
+    "task": 27,
+    "assignee": [
+      "worker2"
+    ],
+    "consensus_score": 74,
+    "conflict_count": 5,
+    "consensus_report_id": 6
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 6,
+  "fields": {
+    "task": 27,
+    "assignee": [
+      "worker3"
+    ],
+    "consensus_score": 100,
+    "conflict_count": 4,
+    "consensus_report_id": 6
   }
 },
 {

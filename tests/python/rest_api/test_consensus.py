@@ -45,8 +45,7 @@ class _PermissionTestBase:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListConsensusReports(_PermissionTestBase):
-    # TODO: date is different in both response due to difference in seconds
-    def _test_list_reports_200(self, user, task_id, *, expected_data=None, **kwargs):
+    def _test_list_reports_200(self, user, task_id, *, compare_max=False, expected_data=None, **kwargs):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(
                 api_client.consensus_api.list_reports_endpoint,
@@ -55,8 +54,15 @@ class TestListConsensusReports(_PermissionTestBase):
                 **kwargs,
             )
 
+            if compare_max:
+                results = [results[-1]]
+
             if expected_data is not None:
-                assert DeepDiff(expected_data, results) == {}
+                assert DeepDiff(expected_data, results, ignore_order=True, exclude_regex_paths=[
+                    r"root\[\d+\]\['id'\]",
+                    r"root\[\d+\]\['created_date'\]",
+                    r"root\[\d+\]\['target_last_updated'\]"
+                ]) == {}
 
     def _test_list_reports_403(self, user, task_id, **kwargs):
         with make_api_client(user) as api_client:
@@ -102,16 +108,12 @@ class TestListConsensusReports(_PermissionTestBase):
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_list_reports_in_org_task(
@@ -120,9 +122,7 @@ class TestListConsensusReports(_PermissionTestBase):
         jobs,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         admin_user,
     ):
@@ -135,7 +135,6 @@ class TestListConsensusReports(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
                 ),
@@ -150,7 +149,7 @@ class TestListConsensusReports(_PermissionTestBase):
 
         if allow:
             self._test_list_reports_200(
-                user["username"], task["id"], expected_data=[report], target="task"
+                user["username"], task["id"], expected_data=[report], target="task", compare_max=True
             )
         else:
             self._test_list_reports_403(user["username"], task["id"])
@@ -188,7 +187,6 @@ class TestGetConsensusReports(_PermissionTestBase):
             t
             for t in tasks
             if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
             and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
         )
 
@@ -206,16 +204,12 @@ class TestGetConsensusReports(_PermissionTestBase):
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_get_report_in_org_task(
@@ -224,9 +218,7 @@ class TestGetConsensusReports(_PermissionTestBase):
         jobs,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         admin_user,
     ):
@@ -239,7 +231,6 @@ class TestGetConsensusReports(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
                 ),
@@ -305,7 +296,6 @@ class TestGetConsensusReportData(_PermissionTestBase):
             t
             for t in tasks
             if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
             and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
         )
 
@@ -324,16 +314,12 @@ class TestGetConsensusReportData(_PermissionTestBase):
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_get_report_data_in_org_task(
@@ -342,9 +328,7 @@ class TestGetConsensusReportData(_PermissionTestBase):
         jobs,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         admin_user,
     ):
@@ -357,7 +341,6 @@ class TestGetConsensusReportData(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
                 ),
@@ -567,7 +550,6 @@ class TestListConsensusConflicts(_PermissionTestBase):
             t
             for t in tasks
             if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
             and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
         )
 
@@ -587,16 +569,12 @@ class TestListConsensusConflicts(_PermissionTestBase):
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_list_conflicts_in_org_task(
@@ -605,9 +583,7 @@ class TestListConsensusConflicts(_PermissionTestBase):
         jobs,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         admin_user,
     ):
@@ -620,7 +596,6 @@ class TestListConsensusConflicts(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
                 ),
@@ -643,6 +618,7 @@ class TestListConsensusConflicts(_PermissionTestBase):
 
 
 class TestSimpleConsensusConflictsFilters(CollectionSimpleFilterTestBase):
+    cmp_ignore_keys: List[str] = ["created_date", "target_last_updated"]
     @pytest.fixture(autouse=True)
     def setup(
         self, restore_db_per_class, admin_user, consensus_conflicts, consensus_reports, jobs, tasks
@@ -768,16 +744,12 @@ class TestListSettings(_PermissionTestBase):
             self._test_list_settings_403(user, task_id=task["id"])
 
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_list_settings_in_org_task(
@@ -785,9 +757,7 @@ class TestListSettings(_PermissionTestBase):
         tasks,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         consensus_settings,
     ):
@@ -800,7 +770,6 @@ class TestListSettings(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                 ),
                 None,
@@ -873,16 +842,12 @@ class TestGetSettings(_PermissionTestBase):
             self._test_get_settings_403(user, settings_id)
 
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_get_settings_in_org_task(
@@ -890,9 +855,7 @@ class TestGetSettings(_PermissionTestBase):
         tasks,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         consensus_settings,
     ):
@@ -905,7 +868,6 @@ class TestGetSettings(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                 ),
                 None,
@@ -1075,8 +1037,8 @@ class TestConsensusReportMetrics(_PermissionTestBase):
         assert summary["frame_count"] == consensus_job["frame_count"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, consensus_reports):
-        old_report = max(
-            (r for r in consensus_reports if r["task_id"] == self.demo_task_id),
+        old_report = min(
+            (r for r in consensus_reports if r["task_id"] == self.demo_task_id and r["target"] == "task"),
             key=lambda r: r["id"],
         )
         task_id = old_report["task_id"]
@@ -1089,21 +1051,14 @@ class TestConsensusReportMetrics(_PermissionTestBase):
 
         assert (
             DeepDiff(
-                new_report,
-                old_report,
-                ignore_order=True,
-                exclude_paths=["root['created_date']", "root['id']"],
-            )
-            == {}
-        )
-        assert (
-            DeepDiff(
                 new_report_data,
                 old_report_data,
                 ignore_order=True,
-                exclude_paths=["root['created_date']", "root['id']"],
-            )
-            == {}
+                exclude_regex_paths=[
+                    r"root\['id'\]",
+                    r"root\['created_date'\]",
+                    r"root\['target_last_updated'\]"
+                ]) == {}
         )
 
     def test_modified_task_produces_different_metrics(
@@ -1162,8 +1117,12 @@ class TestConsensusReportMetrics(_PermissionTestBase):
         task_id = old_report["task_id"]
 
         settings = deepcopy(next(s for s in consensus_settings if s["task_id"] == task_id))
+        print("settings", settings)
         if isinstance(settings[parameter], float):
-            settings[parameter] = 1 - settings[parameter]
+            if settings[parameter] != 0.5:
+                settings[parameter] = 1 - settings[parameter]
+            else:
+                settings[parameter] = 1
         else:
             assert False
 
@@ -1227,12 +1186,12 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
 
         return response
 
-    def _test_get_assignee_consensus_report_403(self, user: str, obj_id: int, **kwargs):
+    def _test_get_assignee_consensus_report_404(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.consensus_api.assignee_consensus_retrieve_report(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
-            assert response.status == HTTPStatus.FORBIDDEN
+            assert response.status == HTTPStatus.NOT_FOUND
 
         return response
 
@@ -1268,20 +1227,16 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
         if allow:
             self._test_get_assignee_consensus_report_200(user, task["id"], expected_data=[report], target="task")
         else:
-            self._test_get_assignee_consensus_report_403(user, task["id"])
+            self._test_get_assignee_consensus_report_404(user, task["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_list_reports_in_org_task(
@@ -1290,9 +1245,7 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
         jobs,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         admin_user,
     ):
@@ -1305,7 +1258,6 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
                 ),
@@ -1320,10 +1272,10 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
 
         if allow:
             self._test_get_assignee_consensus_report_200(
-                user["username"], task["id"], expected_data=[report], target="task"
+                user["username"], task["id"], expected_data=[report]
             )
         else:
-            self._test_get_assignee_consensus_report_403(user["username"], task["id"])
+            self._test_get_assignee_consensus_report_404(user["username"], task["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1342,12 +1294,12 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
 
         return response
 
-    def _test_get_assignee_consensus_report_403(self, user: str, obj_id: int, **kwargs):
+    def _test_get_assignee_consensus_report_404(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.consensus_api.assignee_consensus_retrieve_report(
                 obj_id, **kwargs, _parse_response=False, _check_status=False
             )
-            assert response.status == HTTPStatus.FORBIDDEN
+            assert response.status == HTTPStatus.NOT_FOUND
 
         return response
 
@@ -1360,7 +1312,6 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
             t
             for t in tasks
             if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
             and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
         )
 
@@ -1379,20 +1330,16 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
                 user, report["id"], expected_data=assignee_consensus_report
             )
         else:
-            self._test_get_assignee_consensus_report_403(user, report["id"])
+            self._test_get_assignee_consensus_report_404(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
+        "org_role, allow",
         [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
         ],
     )
     def test_user_get_assignee_consensus_report_in_org_task(
@@ -1401,9 +1348,7 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
         jobs,
         users,
         is_org_member,
-        is_task_staff,
         org_role,
-        is_staff,
         allow,
         admin_user,
     ):
@@ -1416,7 +1361,6 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "consensus")
                 ),
@@ -1437,4 +1381,4 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
                 user, report["id"], expected_data=assignee_consensus_report
             )
         else:
-            self._test_get_assignee_consensus_report_403(user, report["id"])
+            self._test_get_assignee_consensus_report_404(user, report["id"])

@@ -1,20 +1,46 @@
 {
-  "count": 3,
+  "count": 6,
   "next": null,
   "previous": null,
   "results": [
     {
       "assignee": {
-        "first_name": "Admin",
-        "id": 1,
+        "first_name": "Dummy",
+        "id": 14,
         "last_name": "First",
-        "url": "http://localhost:8080/api/users/1",
-        "username": "admin1"
+        "url": "http://localhost:8080/api/users/14",
+        "username": "dummy1"
       },
-      "conflict_count": 5,
+      "conflict_count": 4,
       "consensus_report_id": 1,
-      "consensus_score": 43,
+      "consensus_score": 91,
       "task_id": 26
+    },
+    {
+      "assignee": {
+        "first_name": "Dummy",
+        "id": 15,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/15",
+        "username": "dummy2"
+      },
+      "conflict_count": 4,
+      "consensus_report_id": 1,
+      "consensus_score": 100,
+      "task_id": 26
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
+      "conflict_count": 6,
+      "consensus_report_id": 3,
+      "consensus_score": 74,
+      "task_id": 27
     },
     {
       "assignee": {
@@ -24,9 +50,9 @@
         "url": "http://localhost:8080/api/users/8",
         "username": "worker3"
       },
-      "conflict_count": 5,
+      "conflict_count": 3,
       "consensus_report_id": 3,
-      "consensus_score": 83,
+      "consensus_score": 100,
       "task_id": 27
     },
     {
@@ -37,9 +63,22 @@
         "url": "http://localhost:8080/api/users/7",
         "username": "worker2"
       },
-      "conflict_count": 0,
-      "consensus_report_id": 3,
-      "consensus_score": 90,
+      "conflict_count": 5,
+      "consensus_report_id": 6,
+      "consensus_score": 74,
+      "task_id": 27
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 8,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/8",
+        "username": "worker3"
+      },
+      "conflict_count": 4,
+      "consensus_report_id": 6,
+      "consensus_score": 100,
       "task_id": 27
     }
   ]

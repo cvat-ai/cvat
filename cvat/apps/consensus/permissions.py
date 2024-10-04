@@ -263,7 +263,6 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
 
         return data
 
-
 class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
     obj: Optional[AssigneeConsensusReport]
     job_owner_id: Optional[int]
@@ -271,7 +270,6 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         LIST = "list"
         VIEW = "view"
-        VIEW_STATUS = "view:status"
 
     @classmethod
     def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
@@ -280,7 +278,7 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, scope="view:status", job_owner_id=job_owner_id)
 
     @classmethod
-    def create_scope_view(cls, request, report: Union[int, ConsensusReport], iam_context=None):
+    def create_scope_view(cls, request, report: Union[int, AssigneeConsensusReport], iam_context=None):
         if isinstance(report, int):
             try:
                 report = AssigneeConsensusReport.objects.get(id=report)
@@ -306,6 +304,8 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
                     permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
+
+                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 

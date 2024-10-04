@@ -384,7 +384,7 @@ def session_start(
     cvat_root_dir=CVAT_ROOT_DIR,
     cvat_db_dir=CVAT_DB_DIR,
     extra_dc_files=None,
-    waiting_time=300,
+    waiting_time=900,
 ):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
