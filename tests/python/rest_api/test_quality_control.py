@@ -570,6 +570,98 @@ class TestPostQualityReports(_PermissionTestBase):
             "stage and in the completed state"
         ) in capture.value.body
 
+    def _test_create_report_200(self, user: str, task_id: int):
+        return self.create_quality_report(user, task_id)
+
+    def _test_create_report_403(self, user: str, task_id: int):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
+
+    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    def test_user_create_report_in_sandbox_task(
+        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+    ):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and not users[t["owner"]["id"]]["is_superuser"]
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
+        )
+
+        if is_staff:
+            user = task["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+
+        self.create_gt_job(admin_user, task["id"])
+
+        if allow:
+            self._test_create_report_200(user, task["id"])
+        else:
+            self._test_create_report_403(user, task["id"])
+
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+    def test_user_create_report_in_org_task(
+        self,
+        tasks,
+        jobs,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        for user in users:
+            if user["is_superuser"]:
+                continue
+
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                    and not any(
+                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
+                    )
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        self.create_gt_job(admin_user, task["id"])
+
+        if allow:
+            self._test_create_report_200(user["username"], task["id"])
+        else:
+            self._test_create_report_403(user["username"], task["id"])
+
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)

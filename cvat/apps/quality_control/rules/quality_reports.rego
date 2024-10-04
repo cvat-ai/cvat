@@ -4,6 +4,7 @@ import rego.v1
 
 import data.utils
 import data.organizations
+import data.tasks
 
 # input: {
 #     "scope": <"view"|"list"|"create"|"view:status"> or null,
@@ -23,7 +24,7 @@ import data.organizations
 #         } or null,
 #     },
 #     "resource": {
-#         "id": <num>,
+#         "id": <num> or null,
 #         "owner": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #         "task": {
@@ -41,6 +42,42 @@ import data.organizations
 #     }
 # }
 
+is_task_owner if {
+    input.resource.task.owner.id == input.auth.user.id
+}
+
+is_task_assignee if {
+    input.resource.task.assignee.id == input.auth.user.id
+}
+
+is_project_owner if {
+    input.resource.project.owner.id == input.auth.user.id
+}
+
+is_project_assignee if {
+    input.resource.project.assignee.id == input.auth.user.id
+}
+
+is_project_staff if {
+    is_project_owner
+}
+
+is_project_staff if {
+    is_project_assignee
+}
+
+is_task_staff if {
+    is_project_staff
+}
+
+is_task_staff if {
+    is_task_owner
+}
+
+is_task_staff if {
+    is_task_assignee
+}
+
 default allow := false
 
 allow if {
@@ -55,6 +92,33 @@ allow if {
 allow if {
     input.scope == utils.LIST
     organizations.is_member
+}
+
+allow if {
+    input.scope == utils.VIEW_STATUS
+    input.auth.user.id == input.resource.owner.id
+}
+
+allow if {
+    input.scope in {utils.CREATE, utils.VIEW}
+    utils.is_sandbox
+    is_task_staff
+    utils.has_perm(utils.WORKER)
+}
+
+allow if {
+    input.scope in {utils.CREATE, utils.VIEW}
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
+}
+
+allow if {
+    input.scope in {utils.CREATE, utils.VIEW}
+    is_task_staff
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.WORKER)
 }
 
 filter := [] if { # Django Q object to filter list of entries

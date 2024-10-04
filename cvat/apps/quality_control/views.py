@@ -272,8 +272,8 @@ class QualityReportViewSet(
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
-                rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
-                    task, user_id=request.user.id
+                rq_id = qc.QualityReportUpdateManager().schedule_custom_quality_check_job(
+                    request=request, task=task, user_id=request.user.id
                 )
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -290,7 +290,7 @@ class QualityReportViewSet(
             if (
                 not rq_job
                 or not QualityReportPermission.create_scope_check_status(
-                    request, job_owner_id=rq_job.meta["user_id"]
+                    request, job_owner_id=rq_job.meta["user"]["id"]
                 )
                 .check_access()
                 .allow

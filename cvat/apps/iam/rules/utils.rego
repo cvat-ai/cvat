@@ -58,6 +58,7 @@ IMPORT_DATASET := "import:dataset"
 IMPORT_BACKUP := "import:backup"
 EXPORT_BACKUP := "export:backup"
 UPDATE_ORG := "update:organization"
+VIEW_STATUS := "view:status"
 
 
 get_priority(privilege) := {
