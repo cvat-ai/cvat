@@ -59,7 +59,7 @@ class TestGetAuditEvents:
         return project.id, response.headers.get("X-Request-Id")
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_clickhouse_db_per_function):
+    def setup(self, restore_clickhouse_db_per_function, restore_redis_inmem_per_function):
         project_spec = {
             "name": f"Test project created by {self._USERNAME}",
             "labels": [
