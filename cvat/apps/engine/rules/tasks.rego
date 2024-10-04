@@ -183,7 +183,8 @@ filter := [] if { # Django Q object to filter list of entries
 allow if {
     input.scope in {
         utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP
+        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
+        utils.VIEW_VALIDATION_LAYOUT
     }
     utils.is_sandbox
     is_task_staff
@@ -192,7 +193,8 @@ allow if {
 allow if {
     input.scope in {
         utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP
+        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
+        utils.VIEW_VALIDATION_LAYOUT
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -202,7 +204,8 @@ allow if {
 allow if {
     input.scope in {
         utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP
+        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
+        utils.VIEW_VALIDATION_LAYOUT
     }
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
@@ -212,7 +215,8 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS
+        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS,
+        utils.UPDATE_VALIDATION_LAYOUT
     }
     utils.is_sandbox
     is_task_staff
@@ -222,7 +226,8 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS
+        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS,
+        utils.UPDATE_VALIDATION_LAYOUT
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -232,7 +237,8 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS
+        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS,
+        utils.UPDATE_VALIDATION_LAYOUT
     }
     is_task_staff
     input.auth.organization.id == input.resource.organization.id
@@ -304,19 +310,4 @@ allow if {
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
-}
-
-allow if {
-    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
-    utils.has_perm(utils.USER)
-    utils.is_sandbox
-    is_task_staff
-}
-
-allow if {
-    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.SUPERVISOR)
-    utils.has_perm(utils.USER)
-    is_task_staff
 }
