@@ -10,7 +10,6 @@ from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
-from time import sleep
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
 
 import datumaro as dm
