@@ -225,9 +225,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
-    has_analytics_access = serializers.SlugRelatedField(
-        source='profile', many=False, slug_field='has_analytics_access', read_only=True,
-    )
+    has_analytics_access = serializers.BooleanField(source='profile.has_analytics_access')
 
     class Meta:
         model = User

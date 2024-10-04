@@ -273,8 +273,8 @@ class PolicyEnforcer(BasePermission):
 class IsAuthenticatedOrReadPublicResource(BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
         return bool(
-            request.user and request.user.is_authenticated or
-            request.method == 'GET' and is_public_obj(obj)
+            (request.user and request.user.is_authenticated) or
+            (request.method == 'GET' and is_public_obj(obj))
         )
 
 
