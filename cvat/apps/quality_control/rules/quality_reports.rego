@@ -4,7 +4,7 @@ import rego.v1
 
 import data.utils
 import data.organizations
-import data.tasks
+import data.quality_utils
 
 # input: {
 #     "scope": <"view"|"list"|"create"|"view:status"> or null,
@@ -42,41 +42,7 @@ import data.tasks
 #     }
 # }
 
-is_task_owner if {
-    input.resource.task.owner.id == input.auth.user.id
-}
 
-is_task_assignee if {
-    input.resource.task.assignee.id == input.auth.user.id
-}
-
-is_project_owner if {
-    input.resource.project.owner.id == input.auth.user.id
-}
-
-is_project_assignee if {
-    input.resource.project.assignee.id == input.auth.user.id
-}
-
-is_project_staff if {
-    is_project_owner
-}
-
-is_project_staff if {
-    is_project_assignee
-}
-
-is_task_staff if {
-    is_project_staff
-}
-
-is_task_staff if {
-    is_task_owner
-}
-
-is_task_staff if {
-    is_task_assignee
-}
 
 default allow := false
 
@@ -102,7 +68,7 @@ allow if {
 allow if {
     input.scope in {utils.CREATE, utils.VIEW}
     utils.is_sandbox
-    is_task_staff
+    quality_utils.is_task_staff(input.resource.task, input.resource.project)
     utils.has_perm(utils.WORKER)
 }
 
@@ -115,7 +81,7 @@ allow if {
 
 allow if {
     input.scope in {utils.CREATE, utils.VIEW}
-    is_task_staff
+    quality_utils.is_task_staff(input.resource.task, input.resource.project)
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
