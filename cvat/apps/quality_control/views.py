@@ -303,7 +303,7 @@ class QualityReportViewSet(
                 rq_job.delete()
                 raise ValidationError(message)
             elif rq_job.is_queued or rq_job.is_started:
-                return Response(status=status.HTTP_202_ACCEPTED)
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             elif rq_job.is_finished:
                 return_value = rq_job.return_value()
                 rq_job.delete()
