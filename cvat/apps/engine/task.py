@@ -1659,7 +1659,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                             (abs_frame_id - media_extractor.start) // media_extractor.step
                             for abs_frame_id in (
                                 frame_map.get(frame, frame)
-                                for frame in db_segment.frame_set
+                                for frame in sorted(db_segment.frame_set)
                             )
                         ),
                         lambda _: next(frame_counter) // db_data.chunk_size
