@@ -263,6 +263,7 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
 
         return data
 
+
 class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
     obj: Optional[AssigneeConsensusReport]
     job_owner_id: Optional[int]
@@ -278,7 +279,9 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, scope="view:status", job_owner_id=job_owner_id)
 
     @classmethod
-    def create_scope_view(cls, request, report: Union[int, AssigneeConsensusReport], iam_context=None):
+    def create_scope_view(
+        cls, request, report: Union[int, AssigneeConsensusReport], iam_context=None
+    ):
         if isinstance(report, int):
             try:
                 report = AssigneeConsensusReport.objects.get(id=report)

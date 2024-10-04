@@ -311,7 +311,9 @@ class ConsensusReportViewSet(
                     raise ValidationError("No report has been computed")
 
                 report = self.get_queryset().get(pk=return_value)
-                report_serializer = ConsensusReportSerializer(instance=report, context={"request": request})
+                report_serializer = ConsensusReportSerializer(
+                    instance=report, context={"request": request}
+                )
                 return Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,

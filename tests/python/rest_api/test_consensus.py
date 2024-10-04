@@ -45,7 +45,9 @@ class _PermissionTestBase:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListConsensusReports(_PermissionTestBase):
-    def _test_list_reports_200(self, user, task_id, *, compare_max=False, expected_data=None, **kwargs):
+    def _test_list_reports_200(
+        self, user, task_id, *, compare_max=False, expected_data=None, **kwargs
+    ):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(
                 api_client.consensus_api.list_reports_endpoint,
@@ -58,11 +60,19 @@ class TestListConsensusReports(_PermissionTestBase):
                 results = [results[-1]]
 
             if expected_data is not None:
-                assert DeepDiff(expected_data, results, ignore_order=True, exclude_regex_paths=[
-                    r"root\[\d+\]\['id'\]",
-                    r"root\[\d+\]\['created_date'\]",
-                    r"root\[\d+\]\['target_last_updated'\]"
-                ]) == {}
+                assert (
+                    DeepDiff(
+                        expected_data,
+                        results,
+                        ignore_order=True,
+                        exclude_regex_paths=[
+                            r"root\[\d+\]\['id'\]",
+                            r"root\[\d+\]\['created_date'\]",
+                            r"root\[\d+\]\['target_last_updated'\]",
+                        ],
+                    )
+                    == {}
+                )
 
     def _test_list_reports_403(self, user, task_id, **kwargs):
         with make_api_client(user) as api_client:
@@ -149,7 +159,11 @@ class TestListConsensusReports(_PermissionTestBase):
 
         if allow:
             self._test_list_reports_200(
-                user["username"], task["id"], expected_data=[report], target="task", compare_max=True
+                user["username"],
+                task["id"],
+                expected_data=[report],
+                target="task",
+                compare_max=True,
             )
         else:
             self._test_list_reports_403(user["username"], task["id"])
@@ -619,6 +633,7 @@ class TestListConsensusConflicts(_PermissionTestBase):
 
 class TestSimpleConsensusConflictsFilters(CollectionSimpleFilterTestBase):
     cmp_ignore_keys: List[str] = ["created_date", "target_last_updated"]
+
     @pytest.fixture(autouse=True)
     def setup(
         self, restore_db_per_class, admin_user, consensus_conflicts, consensus_reports, jobs, tasks
@@ -1038,7 +1053,11 @@ class TestConsensusReportMetrics(_PermissionTestBase):
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, consensus_reports):
         old_report = min(
-            (r for r in consensus_reports if r["task_id"] == self.demo_task_id and r["target"] == "task"),
+            (
+                r
+                for r in consensus_reports
+                if r["task_id"] == self.demo_task_id and r["target"] == "task"
+            ),
             key=lambda r: r["id"],
         )
         task_id = old_report["task_id"]
@@ -1057,8 +1076,10 @@ class TestConsensusReportMetrics(_PermissionTestBase):
                 exclude_regex_paths=[
                     r"root\['id'\]",
                     r"root\['created_date'\]",
-                    r"root\['target_last_updated'\]"
-                ]) == {}
+                    r"root\['target_last_updated'\]",
+                ],
+            )
+            == {}
         )
 
     def test_modified_task_produces_different_metrics(
@@ -1225,7 +1246,9 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
         report = self.create_consensus_report(admin_user, task["id"])
 
         if allow:
-            self._test_get_assignee_consensus_report_200(user, task["id"], expected_data=[report], target="task")
+            self._test_get_assignee_consensus_report_200(
+                user, task["id"], expected_data=[report], target="task"
+            )
         else:
             self._test_get_assignee_consensus_report_404(user, task["id"])
 
