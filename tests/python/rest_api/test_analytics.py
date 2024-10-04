@@ -48,6 +48,7 @@ class TestGetAnalytics:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_clickhouse_db_per_class")
 class TestGetAuditEvents:
     _USERNAME = "admin1"
 
