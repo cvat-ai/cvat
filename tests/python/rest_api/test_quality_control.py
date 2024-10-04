@@ -4,6 +4,7 @@
 
 import json
 from copy import deepcopy
+from functools import partial
 from http import HTTPStatus
 from itertools import groupby
 from typing import Any, Dict, List, Optional, Tuple
@@ -79,6 +80,100 @@ class _PermissionTestBase:
 
         return job
 
+    @pytest.fixture(scope="class")
+    @classmethod
+    def find_sandbox_task(self, tasks, jobs, users, is_task_staff):
+        def _find(
+            is_staff: bool, *, has_gt_jobs: Optional[bool] = None
+        ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+            task = next(
+                t
+                for t in tasks
+                if t["organization"] is None
+                and not users[t["owner"]["id"]]["is_superuser"]
+                and not users[t["owner"]["id"]]["is_superuser"]
+                and (
+                    has_gt_jobs is None
+                    or has_gt_jobs
+                    == any(
+                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
+                    )
+                )
+            )
+
+            if is_staff:
+                user = task["owner"]["username"]
+            else:
+                user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+
+            return task, user
+
+        return _find
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def find_sandbox_task_without_gt(cls, find_sandbox_task):
+        return partial(find_sandbox_task, has_gt_jobs=False)
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def find_org_task(cls, tasks, jobs, users, is_org_member, is_task_staff):
+        def _find(
+            is_staff: bool, user_org_role: str, *, has_gt_jobs: Optional[bool] = None
+        ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+            for user in users:
+                if user["is_superuser"]:
+                    continue
+
+                task = next(
+                    (
+                        t
+                        for t in tasks
+                        if t["organization"] is not None
+                        and is_task_staff(user["id"], t["id"]) == is_staff
+                        and is_org_member(user["id"], t["organization"], role=user_org_role)
+                        and (
+                            has_gt_jobs is None
+                            or has_gt_jobs
+                            == any(
+                                j
+                                for j in jobs
+                                if j["task_id"] == t["id"] and j["type"] == "ground_truth"
+                            )
+                        )
+                    ),
+                    None,
+                )
+                if task is not None:
+                    break
+
+            assert task
+
+            return task, user
+
+        return _find
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def find_org_task_without_gt(cls, find_org_task):
+        return partial(find_org_task, has_gt_jobs=False)
+
+    _default_sandbox_cases = ("is_staff, allow", [(True, True), (False, False)])
+
+    _default_org_cases = (
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListQualityReports(_PermissionTestBase):
@@ -117,22 +212,11 @@ class TestListQualityReports(_PermissionTestBase):
         self._test_list_reports_200(admin_user, task_id, expected_data=reports)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_list_reports_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+        self, is_staff, allow, admin_user, find_sandbox_task_without_gt
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task_without_gt(is_staff)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -143,52 +227,16 @@ class TestListQualityReports(_PermissionTestBase):
             self._test_list_reports_403(user, task["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_list_reports_in_org_task(
         self,
-        tasks,
-        jobs,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task_without_gt,
         org_role,
         is_staff,
         allow,
         admin_user,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                    and not any(
-                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
-                    )
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task_without_gt(is_staff, org_role)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -225,22 +273,11 @@ class TestGetQualityReports(_PermissionTestBase):
         return response
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_get_report_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+        self, is_staff, allow, admin_user, find_sandbox_task_without_gt
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task_without_gt(is_staff)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -251,52 +288,16 @@ class TestGetQualityReports(_PermissionTestBase):
             self._test_get_report_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_get_report_in_org_task(
         self,
-        tasks,
-        jobs,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task_without_gt,
         org_role,
         is_staff,
         allow,
         admin_user,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                    and not any(
-                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
-                    )
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task_without_gt(is_staff, org_role)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -344,22 +345,11 @@ class TestGetQualityReportData(_PermissionTestBase):
             assert key in report_data.keys(), key
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_get_report_data_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+        self, is_staff, allow, admin_user, find_sandbox_task_without_gt
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task_without_gt(is_staff)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -371,52 +361,16 @@ class TestGetQualityReportData(_PermissionTestBase):
             self._test_get_report_data_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_get_report_data_in_org_task(
         self,
-        tasks,
-        jobs,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task_without_gt,
         org_role,
         is_staff,
         allow,
         admin_user,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                    and not any(
-                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
-                    )
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task_without_gt(is_staff, org_role)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -584,22 +538,11 @@ class TestPostQualityReports(_PermissionTestBase):
 
         return response
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_create_report_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+        self, is_staff, allow, admin_user, find_sandbox_task_without_gt
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task_without_gt(is_staff)
 
         self.create_gt_job(admin_user, task["id"])
 
@@ -608,52 +551,16 @@ class TestPostQualityReports(_PermissionTestBase):
         else:
             self._test_create_report_403(user, task["id"])
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_create_report_in_org_task(
         self,
-        tasks,
-        jobs,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task_without_gt,
         org_role,
         is_staff,
         allow,
         admin_user,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                    and not any(
-                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
-                    )
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task_without_gt(is_staff, org_role)
 
         self.create_gt_job(admin_user, task["id"])
 
@@ -743,22 +650,11 @@ class TestListQualityConflicts(_PermissionTestBase):
         self._test_list_conflicts_200(admin_user, report["id"], expected_data=conflicts)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_list_conflicts_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+        self, is_staff, allow, admin_user, find_sandbox_task_without_gt
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
-            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task_without_gt(is_staff)
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
@@ -771,52 +667,16 @@ class TestListQualityConflicts(_PermissionTestBase):
             self._test_list_conflicts_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_list_conflicts_in_org_task(
         self,
-        tasks,
-        jobs,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task_without_gt,
         org_role,
         is_staff,
         allow,
         admin_user,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                    and not any(
-                        j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth"
-                    )
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task_without_gt(is_staff, org_role)
         user = user["username"]
 
         self.create_gt_job(admin_user, task["id"])
@@ -936,20 +796,11 @@ class TestListSettings(_PermissionTestBase):
 
         return response
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_list_settings_in_sandbox(
-        self, quality_settings, tasks, users, is_task_staff, is_staff, allow
+        self, quality_settings, find_sandbox_task, is_staff, allow
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task(is_staff)
 
         settings = [s for s in quality_settings if s["task_id"] == task["id"]]
 
@@ -958,48 +809,16 @@ class TestListSettings(_PermissionTestBase):
         else:
             self._test_list_settings_403(user, task_id=task["id"])
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_list_settings_in_org_task(
         self,
-        tasks,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task,
         org_role,
         is_staff,
         allow,
         quality_settings,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task(is_staff, org_role)
 
         settings = [s for s in quality_settings if s["task_id"] == task["id"]]
         org_id = task["organization"]
@@ -1040,20 +859,11 @@ class TestGetSettings(_PermissionTestBase):
         settings_id = settings["id"]
         self._test_get_settings_200(admin_user, settings_id, expected_data=settings)
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_get_settings_in_sandbox_task(
-        self, quality_settings, tasks, users, is_task_staff, is_staff, allow
+        self, quality_settings, find_sandbox_task, is_staff, allow
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task(is_staff)
 
         settings = next(s for s in quality_settings if s["task_id"] == task["id"])
         settings_id = settings["id"]
@@ -1063,48 +873,16 @@ class TestGetSettings(_PermissionTestBase):
         else:
             self._test_get_settings_403(user, settings_id)
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_get_settings_in_org_task(
         self,
-        tasks,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task,
         org_role,
         is_staff,
         allow,
         quality_settings,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task(is_staff, org_role)
 
         settings = next(s for s in quality_settings if s["task_id"] == task["id"])
         settings_id = settings["id"]
@@ -1169,20 +947,11 @@ class TestPatchSettings(_PermissionTestBase):
         data, expected_data = self._get_request_data(settings)
         self._test_patch_settings_200(admin_user, settings_id, data, expected_data=expected_data)
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_patch_settings_in_sandbox_task(
-        self, quality_settings, tasks, users, is_task_staff, is_staff, allow
+        self, quality_settings, find_sandbox_task, is_staff, allow
     ):
-        task = next(
-            t
-            for t in tasks
-            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
-        )
-
-        if is_staff:
-            user = task["owner"]["username"]
-        else:
-            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+        task, user = find_sandbox_task(is_staff)
 
         settings = next(s for s in quality_settings if s["task_id"] == task["id"])
         settings_id = settings["id"]
@@ -1193,48 +962,16 @@ class TestPatchSettings(_PermissionTestBase):
         else:
             self._test_patch_settings_403(user, settings_id, data)
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_patch_settings_in_org_task(
         self,
-        tasks,
-        users,
-        is_org_member,
-        is_task_staff,
+        find_org_task,
         org_role,
         is_staff,
         allow,
         quality_settings,
     ):
-        for user in users:
-            if user["is_superuser"]:
-                continue
-
-            task = next(
-                (
-                    t
-                    for t in tasks
-                    if t["organization"] is not None
-                    and is_task_staff(user["id"], t["id"]) == is_staff
-                    and is_org_member(user["id"], t["organization"], role=org_role)
-                ),
-                None,
-            )
-            if task is not None:
-                break
-
-        assert task
+        task, user = find_org_task(is_staff, org_role)
 
         settings = next(s for s in quality_settings if s["task_id"] == task["id"])
         settings_id = settings["id"]
