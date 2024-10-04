@@ -822,6 +822,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     "The number of validation frames is not specified"
                 )
 
+            task_frame_provider = TaskFrameProvider(task)
             seed = validated_data.pop("random_seed", None)
 
             # The RNG backend must not change to yield reproducible results,
@@ -832,7 +833,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             frames: list[int] = []
             overlap = task.overlap
             for segment in task.segment_set.all():
-                segment_frames = set(segment.frame_set)
+                segment_frames = set(map(task_frame_provider.get_rel_frame_number, segment.frame_set))
                 selected_frames = segment_frames.intersection(frames)
                 selected_count = len(selected_frames)
 
@@ -841,12 +842,14 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     continue
 
                 selectable_segment_frames = set(
-                    sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                    sorted(segment_frames)[overlap * (segment.start_frame != 0) : ]
                 ).difference(selected_frames)
 
                 frames.extend(rng.choice(
                     tuple(selectable_segment_frames), size=missing_count, replace=False
                 ).tolist())
+
+            frames = list(map(task_frame_provider.get_abs_frame_number, frames))
         elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             frames = validated_data.pop("frames")
 
