@@ -81,8 +81,7 @@ class _PermissionTestBase:
         return job
 
     @pytest.fixture(scope="class")
-    @classmethod
-    def find_sandbox_task(cls, tasks, jobs, users, is_task_staff):
+    def find_sandbox_task(self, tasks, jobs, users, is_task_staff):
         def _find(
             is_staff: bool, *, has_gt_jobs: Optional[bool] = None
         ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -111,13 +110,11 @@ class _PermissionTestBase:
         return _find
 
     @pytest.fixture(scope="class")
-    @classmethod
-    def find_sandbox_task_without_gt(cls, find_sandbox_task):
+    def find_sandbox_task_without_gt(self, find_sandbox_task):
         return partial(find_sandbox_task, has_gt_jobs=False)
 
     @pytest.fixture(scope="class")
-    @classmethod
-    def find_org_task(cls, tasks, jobs, users, is_org_member, is_task_staff):
+    def find_org_task(self, tasks, jobs, users, is_org_member, is_task_staff):
         def _find(
             is_staff: bool, user_org_role: str, *, has_gt_jobs: Optional[bool] = None
         ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -154,8 +151,7 @@ class _PermissionTestBase:
         return _find
 
     @pytest.fixture(scope="class")
-    @classmethod
-    def find_org_task_without_gt(cls, find_org_task):
+    def find_org_task_without_gt(self, find_org_task):
         return partial(find_org_task, has_gt_jobs=False)
 
     _default_sandbox_cases = ("is_staff, allow", [(True, True), (False, False)])
