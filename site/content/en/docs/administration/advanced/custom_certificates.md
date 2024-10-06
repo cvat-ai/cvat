@@ -5,14 +5,16 @@ description: 'Use Custom Certificates in CVAT'
 weight: 100
 ---
 
-CVAT use traefik as a reverse proxy to manage SSL certificates. By default, traefik uses Let's Encrypt to generate SSL certificates. However, you can use your own certificates instead of Let's Encrypt.
+CVAT use traefik as a reverse proxy to manage SSL certificates.
+By default, traefik uses Let's Encrypt to generate SSL certificates.
+However, you can use your own certificates instead of Let's Encrypt.
 
 See:
 
 - [Setup Custom Certificates](#setup-custom-certificates)
-    - [Create Certificates Directory](#create-certificates-directory)
-    - [Change Traefik Configuration](#change-traefik-configuration)
-    - [Start CVAT](#start-cvat)
+- [Create Certificates Directory](#create-certificates-directory)
+- [Change Traefik Configuration](#change-traefik-configuration)
+- [Start CVAT](#start-cvat)
 
 
 ## Setup Custom Certificates
@@ -75,6 +77,3 @@ Start CVAT with the following command:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
-
-
-
