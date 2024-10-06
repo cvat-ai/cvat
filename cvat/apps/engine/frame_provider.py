@@ -289,10 +289,12 @@ class TaskFrameProvider(IFrameProvider):
             [
                 s
                 for s in self._db_task.segment_set.all()
-                if s.type == models.SegmentType.RANGE
                 if not task_chunk_frame_set.isdisjoint(s.frame_set)
             ],
-            key=lambda s: s.start_frame,
+            key=lambda s: (
+                s.type != models.SegmentType.RANGE,  # prioritize RANGE segments,
+                s.start_frame,
+            ),
         )
         assert matching_segments
 
@@ -392,12 +394,24 @@ class TaskFrameProvider(IFrameProvider):
 
         abs_frame_number = self.get_abs_frame_number(validated_frame_number)
 
-        return next(
-            s
-            for s in self._db_task.segment_set.all()
-            if s.type == models.SegmentType.RANGE
-            if abs_frame_number in s.frame_set
+        segment = next(
+            (
+                s
+                for s in sorted(
+                    self._db_task.segment_set.all(),
+                    key=lambda s: s.type != models.SegmentType.RANGE,  # prioritize RANGE segments
+                )
+                if abs_frame_number in s.frame_set
+            ),
+            None,
         )
+        if segment is None:
+            raise AssertionError(
+                f"Can't find a segment with frame {validated_frame_number} "
+                f"in task {self._db_task.id}"
+            )
+
+        return segment
 
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
         return SegmentFrameProvider(self._get_segment(self.validate_frame_number(frame_number)))

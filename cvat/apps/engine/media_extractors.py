@@ -87,7 +87,7 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     elif sorting_method == SortingMethod.PREDEFINED:
         return images
     elif sorting_method == SortingMethod.RANDOM:
-        shuffle(images)
+        shuffle(images) # TODO: support seed to create reproducible results
         return images
     else:
         raise NotImplementedError()
@@ -258,6 +258,19 @@ class IMediaReader(ABC):
     @abstractmethod
     def get_image_size(self, i):
         pass
+
+    @property
+    def start(self) -> int:
+        return self._start
+
+    @property
+    def stop(self) -> Optional[int]:
+        return self._stop
+
+    @property
+    def step(self) -> int:
+        return self._step
+
 
 class ImageListReader(IMediaReader):
     def __init__(self,

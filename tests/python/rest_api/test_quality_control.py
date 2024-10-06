@@ -5,6 +5,7 @@
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from itertools import groupby
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
@@ -15,7 +16,7 @@ from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
 
-from .utils import CollectionSimpleFilterTestBase
+from .utils import CollectionSimpleFilterTestBase, parse_frame_step
 
 
 class _PermissionTestBase:
@@ -1360,3 +1361,106 @@ class TestQualityReportMetrics(_PermissionTestBase):
         with make_api_client(admin_user) as api_client:
             (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
+
+    def test_excluded_gt_job_frames_are_not_included_in_honeypot_task_quality_report(
+        self, admin_user, tasks, jobs
+    ):
+        task_id = next(t["id"] for t in tasks if t["validation_mode"] == "gt_pool")
+        gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
+        gt_job_frames = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+
+        with make_api_client(admin_user) as api_client:
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            gt_frame_names = [f.name for f in gt_job_meta.frames]
+
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            honeypot_frames = [
+                i
+                for i, f in enumerate(task_meta.frames)
+                if f.name in gt_frame_names and i not in gt_job_frames
+            ]
+            gt_frame_uses = {
+                name: (gt_job["start_frame"] + gt_frame_names.index(name), list(ids))
+                for name, ids in groupby(
+                    sorted(
+                        [
+                            i
+                            for i in range(task_meta.size)
+                            if task_meta.frames[i].name in gt_frame_names
+                        ],
+                        key=lambda i: task_meta.frames[i].name,
+                    ),
+                    key=lambda i: task_meta.frames[i].name,
+                )
+            }
+
+            api_client.jobs_api.partial_update(
+                gt_job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    stage="acceptance", state="completed"
+                ),
+            )
+            report = self.create_quality_report(admin_user, task_id)
+
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK
+            assert honeypot_frames == json.loads(response.data)["comparison_summary"]["frames"]
+
+            excluded_gt_frame, excluded_gt_frame_honeypots = next(
+                (i, honeypots) for i, honeypots in gt_frame_uses.values() if len(honeypots) > 1
+            )
+            api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[excluded_gt_frame]
+                ),
+            )
+
+            report = self.create_quality_report(admin_user, task_id)
+
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK
+            assert [
+                v for v in honeypot_frames if v not in excluded_gt_frame_honeypots
+            ] == json.loads(response.data)["comparison_summary"]["frames"]
+
+    @pytest.mark.parametrize("task_id", [23])
+    def test_excluded_gt_job_frames_are_not_included_in_simple_gt_job_task_quality_report(
+        self, admin_user, task_id: int, jobs
+    ):
+        gt_job = next(j for j in jobs if j["task_id"] == task_id if j["type"] == "ground_truth")
+
+        with make_api_client(admin_user) as api_client:
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            gt_frames = [
+                (f - gt_job_meta.start_frame) // parse_frame_step(gt_job_meta.frame_filter)
+                for f in gt_job_meta.included_frames
+            ]
+
+            api_client.jobs_api.partial_update(
+                gt_job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    stage="acceptance", state="completed"
+                ),
+            )
+            report = self.create_quality_report(admin_user, task_id)
+
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK
+            assert gt_frames == json.loads(response.data)["comparison_summary"]["frames"]
+
+            excluded_gt_frame = gt_frames[0]
+            api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[excluded_gt_frame]
+                ),
+            )
+
+            report = self.create_quality_report(admin_user, task_id)
+
+            (_, response) = api_client.quality_api.retrieve_report_data(report["id"])
+            assert response.status == HTTPStatus.OK
+            assert [f for f in gt_frames if f != excluded_gt_frame] == json.loads(response.data)[
+                "comparison_summary"
+            ]["frames"]
