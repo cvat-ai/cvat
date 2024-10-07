@@ -523,3 +523,9 @@ export interface SerializedRequest {
     expiry_date?: string;
     owner?: any;
 }
+
+export interface SerializedValidationLayout {
+    honeypot_count?: number;
+    honeypot_frames?: number[];
+    honeypot_real_frames?: number[];
+}
