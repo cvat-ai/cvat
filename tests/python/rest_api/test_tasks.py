@@ -3758,10 +3758,7 @@ class TestWorkWithTask:
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
-<<<<<<< HEAD
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
-=======
->>>>>>> develop
 class TestTaskBackups:
     @pytest.fixture(autouse=True)
     def setup(
