@@ -38,7 +38,7 @@ And specify the following parameters:
 2. (Optional) From the **Projects** drop-down, select a project for the tasks.
    <br>Leave this field empty if you do not want to assign tasks to any project.
 
-   ![Select project](/images/image193.jpg)
+   ![Select project](/images/select_project.png)
 
    > **Note:** Following steps are valid if the tasks do not belong to a project.
    > <br>If the tasks have been assigned to a project, the project's labels will be applied to the tasks.
@@ -62,22 +62,22 @@ A step-by-step example for creating the multiple tasks:
 2. Add labels.
 3. Select files. <br>In case there are more than four files,
    only the total number of selected files will be displayed:
-   ![](/images/image258.jpg)
+   ![](/images/create_multi_tasks_3.png)
 4. Click **Submit `N` tasks**
 
-   ![](/images/image257.jpg)
+   ![](/images/create_multi_tasks_4.png)
 
 5. You will see a progress bar that shows the progress of the tasks being created:
 
-   ![](/images/image259.jpg)
+   ![](/images/create_multi_tasks_5.png)
 
 6. Click **Ok**.
 
-   ![](/images/image260.jpg)
+   ![](/images/create_multi_tasks_6.png)
 
 The result will look like the following:
 
-![](/images/image261.jpg)
+![](/images/create_multi_tasks_7.png)
 
 ## Errors
 
@@ -87,8 +87,8 @@ During the process of adding multiple tasks, the following errors may occur:
 
 | Error                     | Description                                                                                                                                                                                                                                                                                      |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ![](/images/image262.jpg) | Wrong file format. You can add only video files.                                                                                                                                                                                                                                                 |
-| ![](/images/image263.jpg) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
+| ![](/images/create_multi_tasks_8.png) | Wrong file format. You can add only video files.                                                                                                                                                                                                                                                 |
+| ![](/images/create_multi_tasks_9.png) | In the process of creating a task, CVAT was not able to process the video file. <br>The name of the failed file will be displayed on the progress bar. <br><br> To fix this issue: <li> If you want to try again, click **Retry failed tasks**. <li> If you want to skip the file, click **OK**. |
 
 <!--lint enable maximum-line-length-->
 
