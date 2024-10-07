@@ -485,7 +485,7 @@ class SegmentFrameProvider(IFrameProvider):
         return self._db_segment.frame_count
 
     def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
-        frame_sequence = list(self._db_segment.frame_set)
+        frame_sequence = sorted(self._db_segment.frame_set)
         abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
         if abs_frame_number not in frame_sequence:
             raise ValidationError(f"Incorrect requested frame number: {frame_number}")
