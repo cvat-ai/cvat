@@ -4568,10 +4568,7 @@ class TestGetTaskPreview:
 
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
-<<<<<<< HEAD
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
-=======
->>>>>>> develop
 class TestUnequalJobs:
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
