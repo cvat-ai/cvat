@@ -3054,6 +3054,10 @@ class TestTaskData:
         fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step")
     ]
 
+    _tasks_with_simple_gt_job_cases = [
+        fixture_ref("fxt_uploaded_images_task_with_gt_and_segments_start_step")
+    ]
+
     # Keep in mind that these fixtures are generated eagerly
     # (before each depending test or group of tests),
     # e.g. a failing task creation in one the fixtures will fail all the depending tests cases.
@@ -3754,7 +3758,10 @@ class TestWorkWithTask:
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+<<<<<<< HEAD
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+=======
+>>>>>>> develop
 class TestTaskBackups:
     @pytest.fixture(autouse=True)
     def setup(
@@ -4564,7 +4571,10 @@ class TestGetTaskPreview:
 
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+<<<<<<< HEAD
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+=======
+>>>>>>> develop
 class TestUnequalJobs:
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
