@@ -2404,12 +2404,12 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       tags:
-      - tasks
+      - jobs
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedDataMetaWriteRequest'
+              $ref: '#/components/schemas/PatchedJobDataMetaWriteRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -7460,6 +7460,10 @@ components:
             If you want to send files in an arbitrary order
             and reorder them afterwards on the server,
             pass the list of file names in the required order.
+        validation_params:
+          allOf:
+          - $ref: '#/components/schemas/ValidationParamsRequest'
+          nullable: true
       required:
       - image_quality
     DataResponse:
@@ -7747,13 +7751,15 @@ components:
       - name
       - related_files
       - width
-    FrameSelectionMethodEnum:
+    FrameSelectionMethod:
       enum:
       - random_uniform
+      - random_per_job
       - manual
       type: string
       description: |-
         * `random_uniform` - RANDOM_UNIFORM
+        * `random_per_job` - RANDOM_PER_JOB
         * `manual` - MANUAL
     FunctionCall:
       type: object
@@ -8164,28 +8170,50 @@ components:
         task_id:
           type: integer
         frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethodEnum'
+          $ref: '#/components/schemas/FrameSelectionMethod'
         frame_count:
           type: integer
-          minimum: 0
+          minimum: 1
           description: |
-            The number of frames included in the job.
-            Applicable only to the random frame selection
-        seed:
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
           type: integer
           minimum: 0
           description: |
             The seed value for the random number generator.
             The same value will produce the same frame sets.
-            Applicable only to the random frame selection.
+            Applicable only to random frame selection methods.
             By default, a random value is used.
+        seed:
+          type: integer
+          minimum: 0
+          description: Deprecated. Use random_seed instead.
         frames:
           type: array
           items:
             type: integer
             minimum: 0
           description: |
-            The list of frame ids. Applicable only to the manual frame selection
+            The list of frame ids. Applicable only to the "manual" frame selection method
       required:
       - task_id
       - type
@@ -9215,6 +9243,14 @@ components:
           nullable: true
         resolved:
           type: boolean
+    PatchedJobDataMetaWriteRequest:
+      type: object
+      properties:
+        deleted_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
     PatchedJobWriteRequest:
       type: object
       properties:
@@ -10525,6 +10561,11 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        validation_mode:
+          type: string
+          nullable: true
+          description: Describes how the task validation is performed. Configured
+            at task creation
       required:
       - jobs
       - labels
@@ -10754,6 +10795,67 @@ components:
           maxLength: 150
       required:
       - username
+    ValidationMode:
+      enum:
+      - gt
+      - gt_pool
+      type: string
+      description: |-
+        * `gt` - GT
+        * `gt_pool` - GT_POOL
+    ValidationParamsRequest:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ValidationMode'
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        random_seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+        frames:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 1024
+          writeOnly: true
+          description: |
+            The list of file names to be included in the validation set.
+            Applicable only to the "manual" frame selection method.
+            Can only be used for images.
+        frame_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames to be included in the validation set.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames to be included in the validation set.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames to be included in the validation set from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames to be included in the validation set from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+      required:
+      - frame_selection_method
+      - mode
     WebhookContentType:
       enum:
       - application/json

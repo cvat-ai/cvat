@@ -52,6 +52,22 @@ annotation_path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
 with open(annotation_path) as file:
     annotations = json.load(file)
 
+DEFAULT_ATTRIBUTES_FORMATS = [
+    "VGGFace2 1.0",
+    "WiderFace 1.0",
+    "YOLOv8 Classification 1.0",
+    "YOLO 1.1",
+    "YOLOv8 Detection 1.0",
+    "YOLOv8 Segmentation 1.0",
+    "YOLOv8 Oriented Bounding Boxes 1.0",
+    "YOLOv8 Pose 1.0",
+    "PASCAL VOC 1.1",
+    "Segmentation mask 1.1",
+    "ImageNet 1.0",
+    "Cityscapes 1.0",
+    "MOTS PNG 1.0",
+]
+
 
 def generate_image_file(filename, size=(100, 50)):
     f = BytesIO()
@@ -401,14 +417,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
-                    if dump_format_name in [
-                        "Cityscapes 1.0", "Datumaro 1.0",
-                        "ImageNet 1.0", "MOTS PNG 1.0",
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "VGGFace2 1.0",
-                        "WiderFace 1.0", "YOLO 1.1",
-                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                        "Datumaro 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -510,14 +520,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], video)
                     task_id = task["id"]
 
-                    if dump_format_name in [
-                            "Cityscapes 1.0", "ImageNet 1.0",
-                            "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                            "Segmentation mask 1.1",
-                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1",
-                            "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                            "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
-                    ]:
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
                         self._create_annotations(task, dump_format_name, "random")
@@ -951,13 +954,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
 
-                    if dump_format_name in [
-                        "MOT 1.1", "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "YOLO 1.1", "ImageNet 1.0",
-                        "WiderFace 1.0", "VGGFace2 1.0",
-                        "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0",
-                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                        "MOT 1.1", "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1067,14 +1065,9 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
 
                     # create annotations
-                    if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0",
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "YOLO 1.1", "ImageNet 1.0",
-                        "WiderFace 1.0", "VGGFace2 1.0", "LFW 1.0",
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                        "MOT 1.1", "LFW 1.0",
                         "Open Images V6 1.0", "Datumaro 1.0", "KITTI 1.0",
-                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -2101,11 +2094,8 @@ class ProjectDumpUpload(_DbTestBase):
 
                 url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
 
-                if dump_format_name in [
-                    "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
-                    "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                    "Segmentation mask 1.1", "VGGFace2 1.0",
-                    "WiderFace 1.0", "YOLO 1.1", "YOLOv8 Detection 1.0",
+                if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                    "Datumaro 1.0", "MOT 1.1",
                 ]:
                     self._create_annotations(task, dump_format_name, "default")
                 else:

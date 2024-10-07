@@ -31,7 +31,6 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
-    deleteFrameAvailable: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<HTMLInputElement>;
@@ -77,7 +76,6 @@ function PlayerNavigation(props: Props): JSX.Element {
         ranges,
         keyMap,
         workspace,
-        deleteFrameAvailable,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -192,9 +190,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
-                        {
-                            deleteFrameAvailable && deleteFrameIcon
-                        }
+                        { deleteFrameIcon }
                     </Col>
                 </Row>
             </Col>

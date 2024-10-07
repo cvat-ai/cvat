@@ -1012,7 +1012,7 @@ export function saveAnnotationsAsync(): ThunkAction {
             dispatch(saveLogsAsync());
 
             if (jobInstance instanceof cvat.classes.Job && jobInstance.state === cvat.enums.JobState.NEW) {
-                dispatch(updateCurrentJobAsync({ state: JobState.IN_PROGRESS }));
+                await dispatch(updateCurrentJobAsync({ state: JobState.IN_PROGRESS }));
             }
 
             dispatch({
