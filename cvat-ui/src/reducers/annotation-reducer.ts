@@ -56,12 +56,15 @@ const defaultState: AnnotationState = {
         openTime: null,
         labels: [],
         requestedId: null,
-        groundTruthJobFramesMeta: null,
-        groundTruthInstance: null,
         queryParameters: {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
+        },
+        groundTruthInfo: {
+            validationLayout: null,
+            groundTruthJobFramesMeta: null,
+            groundTruthInstance: null,
         },
         instance: null,
         attributes: {},
@@ -165,6 +168,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
+                validationLayout,
             } = action.payload;
 
             const defaultLabel = job.labels.length ? job.labels[0] : null;
@@ -207,8 +211,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    groundTruthInstance,
-                    groundTruthJobFramesMeta,
+                    groundTruthInfo: {
+                        validationLayout,
+                        groundTruthInstance,
+                        groundTruthJobFramesMeta,
+                    },
                     queryParameters: {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,

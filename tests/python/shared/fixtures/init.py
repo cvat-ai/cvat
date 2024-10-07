@@ -634,3 +634,14 @@ def restore_redis_ondisk_per_class(request):
         docker_restore_redis_ondisk()
     else:
         kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_after_class(request):
+    yield
+
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()

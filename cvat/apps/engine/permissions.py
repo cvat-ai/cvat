@@ -387,6 +387,8 @@ class TaskPermission(OpenPolicyAgentPermission):
         UPLOAD_DATA = 'upload:data'
         IMPORT_BACKUP = 'import:backup'
         EXPORT_BACKUP = 'export:backup'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -496,6 +498,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
             ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
+            ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
+            ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
         }[(view.action, request.method)]
 
         scopes = []
@@ -616,6 +620,8 @@ class JobPermission(OpenPolicyAgentPermission):
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
         UPDATE_METADATA = 'update:metadata'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -711,6 +717,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
+            ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
+            ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
         }[(view.action, request.method)]
 
         scopes = []

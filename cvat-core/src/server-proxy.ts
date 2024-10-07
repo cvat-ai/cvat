@@ -19,7 +19,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest,
+    SerializedRequest, SerializedValidationLayout,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -1382,6 +1382,24 @@ async function deleteJob(jobID: number): Promise<void> {
     }
 }
 
+const validationLayout = (instance: 'tasks' | 'jobs') => async (
+    id: number,
+): Promise<SerializedValidationLayout | null> => {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/${instance}/${id}/validation_layout`, {
+            params: {
+                ...enableOrganization(),
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+};
+
 async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
@@ -2376,6 +2394,7 @@ export default Object.freeze({
         getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
+        validationLayout: validationLayout('tasks'),
     }),
 
     labels: Object.freeze({
@@ -2391,6 +2410,7 @@ export default Object.freeze({
         create: createJob,
         delete: deleteJob,
         exportDataset: exportDataset('jobs'),
+        validationLayout: validationLayout('jobs'),
     }),
 
     users: Object.freeze({
