@@ -2140,7 +2140,7 @@ class QualityReportUpdateManager:
 
     def _make_custom_quality_check_job_id(self, task_id: int, user_id: int) -> str:
         # FUTURE-TODO: it looks like job ID template should not include user_id because:
-        # 1. There is no need to commutate quality reports several times for different users
+        # 1. There is no need to compute quality reports several times for different users
         # 2. Each user (not only rq job owner) that has permission to access a task should
         # be able to check the status of the computation process
         return f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}-user-{user_id}"
