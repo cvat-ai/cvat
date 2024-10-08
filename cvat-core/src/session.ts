@@ -28,6 +28,7 @@ import { Request } from './request';
 import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
+import ValidationLayout from './validation-layout';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -685,6 +686,11 @@ export class Job extends Session {
         return result;
     }
 
+    async validationLayout(): Promise<ValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.validationLayout);
+        return result;
+    }
+
     async openIssue(issue: Issue, message: string): Promise<Issue> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
@@ -737,9 +743,9 @@ export class Task extends Session {
     public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
 
-    public readonly validationMethod: string;
+    public readonly validationMode: string | null;
     public readonly validationFramesPercent: number;
-    public readonly validationFramesPerJob: number;
+    public readonly validationFramesPerJobPercent: number;
     public readonly frameSelectionMethod: string;
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
@@ -786,6 +792,8 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
+
+            validation_mode: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -1113,6 +1121,9 @@ export class Task extends Session {
                 progress: {
                     get: () => data.progress,
                 },
+                validationMode: {
+                    get: () => data.validation_mode,
+                },
                 _internalData: {
                     get: () => data,
                 },
@@ -1172,6 +1183,11 @@ export class Task extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<ValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.validationLayout);
         return result;
     }
 }

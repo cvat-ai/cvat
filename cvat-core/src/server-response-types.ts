@@ -459,6 +459,7 @@ export interface SerializedFramesMetaData {
     deleted_frames: number[];
     included_frames: number[];
     frame_filter: string;
+    chunks_updated_date: string;
     frames: {
         width: number;
         height: number;
@@ -521,4 +522,10 @@ export interface SerializedRequest {
     finished_date?: string;
     expiry_date?: string;
     owner?: any;
+}
+
+export interface SerializedValidationLayout {
+    honeypot_count?: number;
+    honeypot_frames?: number[];
+    honeypot_real_frames?: number[];
 }

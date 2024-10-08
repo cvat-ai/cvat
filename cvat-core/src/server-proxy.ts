@@ -19,7 +19,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest,
+    SerializedRequest, SerializedValidationLayout,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -593,7 +593,7 @@ async function healthCheck(
         } catch (error) {
             lastError = error;
             if (attempt < adjustedMaxRetries) {
-                await new Promise((resolve) => setTimeout(resolve, adjustedCheckPeriod));
+                await new Promise((resolve) => { setTimeout(resolve, adjustedCheckPeriod); });
             }
         }
     }
@@ -605,7 +605,7 @@ export interface ServerRequestConfig {
     fetchAll: boolean,
 }
 
-export const sleep = (time: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, time));
+export const sleep = (time: number): Promise<void> => new Promise((resolve) => { setTimeout(resolve, time); });
 
 const defaultRequestConfig = {
     fetchAll: false,
@@ -865,7 +865,8 @@ async function importDataset(
     try {
         if (isCloudStorage) {
             const response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -880,13 +881,15 @@ async function importDataset(
             },
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
         await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Finish': true },
             });
@@ -945,7 +948,8 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
         if (isCloudStorage) {
             params.filename = file as string;
             response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -957,13 +961,15 @@ async function restoreTask(storage: Storage, file: File | string): Promise<strin
             totalSize: (file as File).size,
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
         const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
@@ -1024,7 +1030,8 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
         if (isCloudStorage) {
             params.filename = file;
             response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -1036,13 +1043,15 @@ async function restoreProject(storage: Storage, file: File | string): Promise<st
             totalSize: (file as File).size,
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
         const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params: { ...params, filename },
                 headers: { 'Upload-Finish': true },
             });
@@ -1088,7 +1097,7 @@ async function createTask(
             value.forEach((element, idx) => {
                 taskData.append(`${key}[${idx}]`, element);
             });
-        } else {
+        } else if (typeof value !== 'object') {
             taskData.set(key, value);
         }
     }
@@ -1153,7 +1162,8 @@ async function createTask(
     let rqID = null;
     try {
         await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-            taskData, {
+            {},
+            {
                 ...params,
                 headers: { 'Upload-Start': true },
             });
@@ -1178,7 +1188,8 @@ async function createTask(
             await bulkUpload(response.data.id, bulkFiles);
         }
         const dataResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-            taskData, {
+            taskDataSpec,
+            {
                 ...params,
                 headers: { 'Upload-Finish': true },
             });
@@ -1370,6 +1381,24 @@ async function deleteJob(jobID: number): Promise<void> {
         throw generateError(errorData);
     }
 }
+
+const validationLayout = (instance: 'tasks' | 'jobs') => async (
+    id: number,
+): Promise<SerializedValidationLayout | null> => {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/${instance}/${id}/validation_layout`, {
+            params: {
+                ...enableOrganization(),
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+};
 
 async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
@@ -1568,7 +1597,8 @@ async function uploadAnnotations(
     try {
         if (isCloudStorage) {
             const response = await Axios.post(url,
-                new FormData(), {
+                new FormData(),
+                {
                     params,
                 });
             return response.data.rq_id;
@@ -1579,13 +1609,15 @@ async function uploadAnnotations(
             endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
         };
         await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Start': true },
             });
         await chunkUpload(file as File, uploadConfig);
         const response = await Axios.post(url,
-            new FormData(), {
+            new FormData(),
+            {
                 params,
                 headers: { 'Upload-Finish': true },
             });
@@ -2362,6 +2394,7 @@ export default Object.freeze({
         getPreview: getPreview('tasks'),
         backup: backupTask,
         restore: restoreTask,
+        validationLayout: validationLayout('tasks'),
     }),
 
     labels: Object.freeze({
@@ -2377,6 +2410,7 @@ export default Object.freeze({
         create: createJob,
         delete: deleteJob,
         exportDataset: exportDataset('jobs'),
+        validationLayout: validationLayout('jobs'),
     }),
 
     users: Object.freeze({
