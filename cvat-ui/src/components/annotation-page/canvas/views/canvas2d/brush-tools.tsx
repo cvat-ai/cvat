@@ -264,40 +264,44 @@ function BrushTools(): React.ReactPortal | null {
                 handlers={handlers}
             />
             <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
-                <Button
-                    type='text'
-                    className='cvat-brush-tools-finish'
-                    icon={<Icon component={CheckIcon} />}
-                    onClick={() => {
-                        if (canvasInstance instanceof Canvas) {
-                            if (editableState) {
-                                canvasInstance.edit({ enabled: false });
-                            } else {
-                                canvasInstance.draw({ enabled: false });
-                            }
-                        }
-                    }}
-                />
-                {!editableState && (
+                <CVATTooltip title={`Finish ${normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}`}>
                     <Button
                         type='text'
-                        disabled={!!editableState}
-                        className='cvat-brush-tools-continue'
-                        icon={<Icon component={PlusIcon} />}
+                        className='cvat-brush-tools-finish'
+                        icon={<Icon component={CheckIcon} />}
                         onClick={() => {
                             if (canvasInstance instanceof Canvas) {
-                                canvasInstance.draw({ enabled: false, continue: true });
-
-                                dispatch(
-                                    rememberObject({
-                                        activeObjectType: ObjectType.SHAPE,
-                                        activeShapeType: ShapeType.MASK,
-                                        activeLabelID: defaultLabelID,
-                                    }),
-                                );
+                                if (editableState) {
+                                    canvasInstance.edit({ enabled: false });
+                                } else {
+                                    canvasInstance.draw({ enabled: false });
+                                }
                             }
                         }}
                     />
+                </CVATTooltip>
+                {!editableState && (
+                    <CVATTooltip title={`Continue ${normalizedKeyMap.SWITCH_REDRAW_MODE_STANDARD_CONTROLS}`}>
+                        <Button
+                            type='text'
+                            disabled={!!editableState}
+                            className='cvat-brush-tools-continue'
+                            icon={<Icon component={PlusIcon} />}
+                            onClick={() => {
+                                if (canvasInstance instanceof Canvas) {
+                                    canvasInstance.draw({ enabled: false, continue: true });
+
+                                    dispatch(
+                                        rememberObject({
+                                            activeObjectType: ObjectType.SHAPE,
+                                            activeShapeType: ShapeType.MASK,
+                                            activeLabelID: defaultLabelID,
+                                        }),
+                                    );
+                                }
+                            }}
+                        />
+                    </CVATTooltip>
                 )}
                 <hr />
                 <CVATTooltip title={`Brush tool ${normalizedKeyMap.ACTIVATE_BRUSH_TOOL_STANDARD_CONTROLS}`}>
