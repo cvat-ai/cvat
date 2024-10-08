@@ -240,16 +240,26 @@ def kube_restore_clickhouse_db():
 
 
 def docker_restore_redis_inmem():
-    docker_exec_redis_inmem(["sh", "-c",
-                                    "for p in rq:finished:* rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
-                                    "do redis-cli -e --scan --pattern \"$p\" | xargs -r redis-cli -e del ; done"])
+    docker_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            "for p in rq:finished:* rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
+            'do redis-cli -e --scan --pattern "$p" | xargs -r redis-cli -e del ; done',
+        ]
+    )
 
 
 def kube_restore_redis_inmem():
-    kube_exec_redis_inmem(["sh", "-c",
-                                    "for p in rq:finished:* rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
-                                    "do redis-cli -e -a \"${REDIS_PASSWORD}\" --scan --pattern \"$p\" | "
-                                    "xargs -r redis-cli -e -a \"${REDIS_PASSWORD}\" del ; done"])
+    kube_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            "for p in rq:finished:* rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
+            'do redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "$p" | '
+            'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del ; done',
+        ]
+    )
 
 
 def docker_restore_redis_ondisk():
