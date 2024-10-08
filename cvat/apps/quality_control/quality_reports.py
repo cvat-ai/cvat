@@ -23,6 +23,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from django_rq.queues import DjangoRQ as RqQueue
+from rest_framework.request import Request
 from rq.job import Job as RqJob
 from rq_scheduler import Scheduler as RqScheduler
 from scipy.optimize import linear_sum_assignment
@@ -2138,6 +2139,10 @@ class QualityReportUpdateManager:
         return f"{self._QUEUE_AUTOUPDATE_JOB_PREFIX}task-{task.id}"
 
     def _make_custom_quality_check_job_id(self, task_id: int, user_id: int) -> str:
+        # FUTURE-TODO: it looks like job ID template should not include user_id because:
+        # 1. There is no need to commutate quality reports several times for different users
+        # 2. Each user (not only rq job owner) that has permission to access a task should
+        # be able to check the status of the computation process
         return f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}-user-{user_id}"
 
     @classmethod
@@ -2195,7 +2200,9 @@ class QualityReportUpdateManager:
         def __str__(self):
             return "Quality computation job for this task already enqueued"
 
-    def schedule_custom_quality_check_job(self, request, task: Task, *, user_id: int) -> str:
+    def schedule_custom_quality_check_job(
+        self, request: Request, task: Task, *, user_id: int
+    ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
         """
@@ -2207,12 +2214,16 @@ class QualityReportUpdateManager:
         with get_rq_lock_by_user(queue, user_id=user_id):
             rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
             rq_job = queue.fetch_job(rq_id)
-            if rq_job and rq_job.get_status(refresh=False) in (
-                rq.job.JobStatus.QUEUED,
-                rq.job.JobStatus.STARTED,
-                rq.job.JobStatus.SCHEDULED,
-            ):
-                raise self.JobAlreadyExists()
+            if rq_job:
+                if rq_job.get_status(refresh=False) in (
+                    rq.job.JobStatus.QUEUED,
+                    rq.job.JobStatus.STARTED,
+                    rq.job.JobStatus.SCHEDULED,
+                    rq.job.JobStatus.DEFERRED,
+                ):
+                    raise self.JobAlreadyExists()
+
+                rq_job.delete()
 
             dependency = define_dependent_job(
                 queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
@@ -2227,7 +2238,6 @@ class QualityReportUpdateManager:
                 failure_ttl=self._JOB_RESULT_TTL,
                 depends_on=dependency,
             )
-            print(queue.fetch_job(rq_id).get_status())
 
         return rq_id
 

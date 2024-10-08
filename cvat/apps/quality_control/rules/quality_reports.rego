@@ -7,7 +7,7 @@ import data.organizations
 import data.quality_utils
 
 # input: {
-#     "scope": <"view"|"list"|"create"|"view:status"> or null,
+#     "scope": <"create"|"view"|"view:status"|"list"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -62,7 +62,7 @@ allow if {
 
 allow if {
     input.scope == utils.VIEW_STATUS
-    input.auth.user.id == input.resource.owner.id
+    utils.is_resource_owner
 }
 
 allow if {

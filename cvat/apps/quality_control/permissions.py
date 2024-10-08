@@ -8,7 +8,7 @@ from typing import Optional, Union, cast
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
@@ -118,20 +118,23 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         data = None
 
         if self.obj or self.scope == self.Scopes.CREATE:
-            task = None
+            task: Optional[Task] = None
+            project: Optional[Project] = None
+            obj_id: Optional[int] = None
+
             if self.obj:
                 obj_id = self.obj.id
                 task = self.obj.get_task()
             elif self.scope == self.Scopes.CREATE:
-                obj_id = None
-
                 if self.task_id:
-                    task = Task.objects.get(id=self.task_id)
-            else:
-                raise AssertionError(self.scope)
+                    try:
+                        task = Task.objects.get(id=self.task_id)
+                    except Task.DoesNotExist as ex:
+                        raise ValidationError(str(ex))
 
             if task and task.project:
-                organization = task.project.organization
+                project = task.project
+                organization = project.organization
             else:
                 organization = getattr(task, "organization", None)
 
@@ -148,10 +151,10 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": getattr(project.owner, "id", None)},
+                        "assignee": {"id": getattr(project.assignee, "id", None)},
                     }
-                    if getattr(task, "project", None)
+                    if project
                     else None
                 ),
             }
