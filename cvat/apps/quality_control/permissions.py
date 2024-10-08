@@ -70,8 +70,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                         # Here we need to retrieve iam_context for this user, based on the task_id
                         try:
                             task = Task.objects.get(id=task_id)
-                        except Task.DoesNotExist as ex:
-                            raise ValidationError(str(ex))
+                        except Task.DoesNotExist:
+                            raise ValidationError("The specified task does not exist")
 
                         iam_context = get_iam_context(request, task)
 
@@ -129,8 +129,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 if self.task_id:
                     try:
                         task = Task.objects.get(id=self.task_id)
-                    except Task.DoesNotExist as ex:
-                        raise ValidationError(str(ex))
+                    except Task.DoesNotExist:
+                        raise ValidationError("The specified task does not exist")
 
             if task and task.project:
                 project = task.project
