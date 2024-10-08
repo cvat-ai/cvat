@@ -42,24 +42,28 @@ const componentShortcuts = {
         description: 'Activate brush tool (in mask edit mode)',
         sequences: ['shift+1'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        weight: 10,
     },
     ACTIVATE_ERASER_TOOL_STANDARD_CONTROLS: {
         name: 'Eraser tool',
         description: 'Activate eraser tool (in mask edit mode)',
         sequences: ['shift+2'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        weight: 10,
     },
     ACTIVATE_POLYGON_TOOL_STANDARD_CONTROLS: {
         name: 'Polygon tool',
         description: 'Activate polygon tool (in mask edit mode)',
         sequences: ['shift+3'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        weight: 10,
     },
     ACTIVATE_POLYGON_REMOVE_TOOL_STANDARD_CONTROLS: {
         name: 'Polygon remove tool',
         description: 'Activate polygon remove tool (in mask edit mode)',
         sequences: ['shift+4'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        weight: 10,
     },
 };
 registerComponentShortcuts(componentShortcuts);
