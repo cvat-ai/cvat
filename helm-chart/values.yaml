@@ -52,11 +52,6 @@ cvat:
         failureThreshold: 10
         initialDelaySeconds: 60
     worker:
-      readinessProbe:
-        enabled: true
-        periodSeconds: 120
-        initialDelaySeconds: 30
-        timeoutSeconds: 10
       livenessProbe:
         enabled: true
         periodSeconds: 120

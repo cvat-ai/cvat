@@ -60,16 +60,6 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- if .Values.cvat.backend.worker.readinessProbe.enabled }}
-          readinessProbe:
-            exec:
-              command:
-              - python
-              - manage.py
-              - workerprobe
-              - quality_reports
-            {{- toYaml (omit .Values.cvat.backend.worker.readinessProbe "enabled") | nindent 12 }}
-          {{- end }}
           {{- if .Values.cvat.backend.worker.livenessProbe.enabled }}
           livenessProbe:
             exec:
