@@ -1859,8 +1859,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
     UploadMixin, DatasetMixin, CsrfWorkaroundMixin
 ):
-    queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
+    queryset = Job.objects.select_related(
+        'assignee',
+        'segment__task__data',
+        'segment__task__project',
+        'segment__task__annotation_guide',
+        'segment__task__project__annotation_guide',
+        'segment__task__source_storage',
+        'segment__task__target_storage',
+    ).prefetch_related(
+        'segment__task__organization',
+        'segment__task__owner',
     ).annotate(
         django_models.Count('issues', distinct=True),
     ).all()
@@ -2806,7 +2815,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.prefetch_related('data').all()
+    queryset = CloudStorageModel.objects.prefetch_related('data', 'owner', 'manifests')
 
     search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
