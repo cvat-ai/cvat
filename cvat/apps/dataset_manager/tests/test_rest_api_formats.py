@@ -27,7 +27,6 @@ from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 from attr import define, field
 from datumaro.components.dataset import Dataset
 from datumaro.components.operations import ExactComparator
-from datumaro.util.test_utils import TestDir
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -35,6 +34,7 @@ from rest_framework import status
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
 from cvat.apps.engine.models import Task
