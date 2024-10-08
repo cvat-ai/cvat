@@ -156,7 +156,7 @@ function BrushTools(): React.ReactPortal | null {
                         type: currentTool,
                         size: brushSize,
                         form: brushForm,
-                        color: label.color,
+                        color: label.color as string,
                         onBlockUpdated,
                     },
                     onUpdateConfiguration,
@@ -169,7 +169,7 @@ function BrushTools(): React.ReactPortal | null {
                         type: currentTool,
                         size: brushSize,
                         form: brushForm,
-                        color: label.color,
+                        color: label.color as string,
                         onBlockUpdated,
                     },
                     onUpdateConfiguration,
@@ -288,7 +288,7 @@ function BrushTools(): React.ReactPortal | null {
                             className='cvat-brush-tools-continue'
                             icon={<Icon component={PlusIcon} />}
                             onClick={() => {
-                                if (canvasInstance instanceof Canvas) {
+                                if (canvasInstance instanceof Canvas && defaultLabelID) {
                                     canvasInstance.draw({ enabled: false, continue: true });
 
                                     dispatch(
