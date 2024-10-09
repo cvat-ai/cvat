@@ -75,7 +75,7 @@ spec:
           {{- if $localValues.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
-              path: /api/server/health/
+              path: /api/server/about
               port: 8080
             {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
           {{- end }}

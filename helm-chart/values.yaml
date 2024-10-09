@@ -49,7 +49,7 @@ cvat:
       livenessProbe:
         enabled: true
         periodSeconds: 15
-        failureThreshold: 10
+        failureThreshold: 5
         initialDelaySeconds: 60
     worker:
       livenessProbe:
@@ -188,8 +188,12 @@ cvat:
     #     subPath: test
     readinessProbe:
       enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
     livenessProbe:
       enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
     service:
       type: ClusterIP
       ports:

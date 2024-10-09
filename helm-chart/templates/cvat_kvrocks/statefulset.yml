@@ -66,7 +66,7 @@ spec:
               command:
               - /bin/sh
               - -c
-              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)' || exit 1
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)'
             {{- toYaml (omit .Values.cvat.kvrocks.readinessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- if .Values.cvat.kvrocks.livenessProbe.enabled }}
@@ -75,7 +75,7 @@ spec:
               command:
               - /bin/sh
               - -c
-              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)' || exit 1
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)'
             {{- toYaml (omit .Values.cvat.kvrocks.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           volumeMounts:

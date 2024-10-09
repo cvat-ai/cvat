@@ -1,6 +1,6 @@
 import os
 import platform
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from rq.worker import Worker
@@ -14,16 +14,19 @@ class Command(BaseCommand):
         parser.add_argument("queue_names", nargs="+", type=str)
 
     def handle(self, *args, **options):
-        allowed_queue_names = list(q.value for q in settings.CVAT_QUEUES)
         hostname = platform.node()
         for queue_name in options["queue_names"]:
-            if queue_name not in allowed_queue_names:
+            if queue_name not in settings.RQ_QUEUES:
                 raise CommandError(f"Queue {queue_name} is not defined")
 
-            queue = django_rq.get_queue(queue_name)
+            connection = django_rq.get_connection(queue_name)
+            workers = [w for w in Worker.all(connection) if queue_name in w.queue_names() and w.hostname == hostname]
 
-            workers = [w for w in Worker.all(queue.connection) if queue.name in w.queue_names() and w.hostname == hostname]
+            expected_workers = int(os.getenv("NUMPROCS", 1))
 
-            if len(workers) != int(os.getenv("NUMPROCS", 1)) or \
-                not all((datetime.now() - w.last_heartbeat).seconds < w.worker_ttl for w in workers):
-                raise CommandError(f"Unhealthy workers in the {queue_name} queue")
+            if len(workers) != expected_workers:
+                raise CommandError("Number of registered workers does not match the expected number, " \
+                                    f"actual: {len(workers)}, expected: {expected_workers}")
+            for worker in workers:
+                if datetime.now() - worker.last_heartbeat > timedelta(seconds=worker.worker_ttl):
+                    raise CommandError(f"It seems that worker {worker.name}, pid: {worker.pid} is dead")
