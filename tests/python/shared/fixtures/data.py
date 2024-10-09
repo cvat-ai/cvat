@@ -367,7 +367,7 @@ def find_users(test_db):
 @pytest.fixture(scope="session")
 def test_db(users, users_by_name, memberships):
     data = []
-    fields = ["username", "id", "privilege", "role", "org", "membership_id"]
+    fields = ["username", "id", "privilege", "role", "org", "membership_id", "is_superuser"]
 
     def add_row(**kwargs):
         data.append({field: kwargs.get(field) for field in fields})

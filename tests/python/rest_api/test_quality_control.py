@@ -7,7 +7,7 @@ from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import groupby
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import pytest
 from cvat_sdk.api_client import exceptions, models
@@ -90,7 +90,6 @@ class _PermissionTestBase:
                 for t in tasks
                 if t["organization"] is None
                 and not users[t["owner"]["id"]]["is_superuser"]
-                and not users[t["owner"]["id"]]["is_superuser"]
                 and (
                     has_gt_jobs is None
                     or has_gt_jobs
@@ -101,9 +100,9 @@ class _PermissionTestBase:
             )
 
             if is_staff:
-                user = task["owner"]["username"]
+                user = task["owner"]
             else:
-                user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+                user = next(u for u in users if not is_task_staff(u["id"], task["id"]))
 
             return task, user
 
@@ -218,9 +217,11 @@ class TestListQualityReports(_PermissionTestBase):
         report = self.create_quality_report(admin_user, task["id"])
 
         if allow:
-            self._test_list_reports_200(user, task["id"], expected_data=[report], target="task")
+            self._test_list_reports_200(
+                user["username"], task["id"], expected_data=[report], target="task"
+            )
         else:
-            self._test_list_reports_403(user, task["id"])
+            self._test_list_reports_403(user["username"], task["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
@@ -279,9 +280,9 @@ class TestGetQualityReports(_PermissionTestBase):
         report = self.create_quality_report(admin_user, task["id"])
 
         if allow:
-            self._test_get_report_200(user, report["id"], expected_data=report)
+            self._test_get_report_200(user["username"], report["id"], expected_data=report)
         else:
-            self._test_get_report_403(user, report["id"])
+            self._test_get_report_403(user["username"], report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
@@ -352,9 +353,11 @@ class TestGetQualityReportData(_PermissionTestBase):
         report_data = json.loads(self._test_get_report_data_200(admin_user, report["id"]).data)
 
         if allow:
-            self._test_get_report_data_200(user, report["id"], expected_data=report_data)
+            self._test_get_report_data_200(
+                user["username"], report["id"], expected_data=report_data
+            )
         else:
-            self._test_get_report_data_403(user, report["id"])
+            self._test_get_report_data_403(user["username"], report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
@@ -543,9 +546,9 @@ class TestPostQualityReports(_PermissionTestBase):
         self.create_gt_job(admin_user, task["id"])
 
         if allow:
-            self._test_create_report_200(user, task["id"])
+            self._test_create_report_200(user["username"], task["id"])
         else:
-            self._test_create_report_403(user, task["id"])
+            self._test_create_report_403(user["username"], task["id"])
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_create_report_in_org_task(
@@ -564,6 +567,122 @@ class TestPostQualityReports(_PermissionTestBase):
             self._test_create_report_200(user["username"], task["id"])
         else:
             self._test_create_report_403(user["username"], task["id"])
+
+    @staticmethod
+    def _initialize_report_creation(task_id: int, user: str) -> str:
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                _parse_response=False,
+            )
+            rq_id = json.loads(response.data)["rq_id"]
+            assert rq_id
+
+            return rq_id
+
+    # only rq job owner or admin now has the right to check status of report creation
+    def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_sandbox(
+        self,
+        find_sandbox_task_without_gt: Callable[[bool], Tuple[Dict[str, Any], Dict[str, Any]]],
+        admin_user: str,
+        users: Iterable,
+    ):
+        task, task_staff = find_sandbox_task_without_gt(is_staff=True)
+
+        self.create_gt_job(admin_user, task["id"])
+
+        another_user = next(
+            u
+            for u in users
+            if (
+                u["id"] != task_staff["id"]
+                and not u["is_superuser"]
+                and u["id"] != task["owner"]["id"]
+            )
+        )
+        rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
+
+        with make_api_client(another_user["username"]) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                rq_id=rq_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.NOT_FOUND
+            assert json.loads(response.data)["detail"] == "Unknown request id"
+
+        with make_api_client(task_staff["username"]) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                rq_id=rq_id, _parse_response=False, _check_status=False
+            )
+            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+
+    @pytest.mark.parametrize("role", ("owner", "maintainer", "supervisor", "worker"))
+    def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_org(
+        self,
+        role: str,
+        admin_user: str,
+        find_org_task_without_gt: Callable[[bool, str], Tuple[Dict[str, Any], Dict[str, Any]]],
+        find_users: Callable[..., List[Dict[str, Any]]],
+    ):
+        task, task_staff = find_org_task_without_gt(is_staff=True, user_org_role="supervisor")
+
+        self.create_gt_job(admin_user, task["id"])
+
+        another_user = next(
+            u
+            for u in find_users(role=role, org=task["organization"])
+            if (
+                u["id"] != task_staff["id"]
+                and not u["is_superuser"]
+                and u["id"] != task["owner"]["id"]
+            )
+        )
+        rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
+
+        with make_api_client(another_user["username"]) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                rq_id=rq_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.NOT_FOUND
+            assert json.loads(response.data)["detail"] == "Unknown request id"
+
+        with make_api_client(task_staff["username"]) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                rq_id=rq_id, _parse_response=False, _check_status=False
+            )
+            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+
+    @pytest.mark.parametrize("is_sandbox", (True, False))
+    def test_admin_can_check_status_of_report_creation(
+        self,
+        is_sandbox: bool,
+        users: Iterable,
+        admin_user: str,
+        find_org_task_without_gt: Callable[[bool, str], Tuple[Dict[str, Any], Dict[str, Any]]],
+        find_sandbox_task_without_gt: Callable[[bool], Tuple[Dict[str, Any], Dict[str, Any]]],
+    ):
+        if is_sandbox:
+            task, task_staff = find_sandbox_task_without_gt(is_staff=True)
+        else:
+            task, task_staff = find_org_task_without_gt(is_staff=True, user_org_role="owner")
+
+        admin = next(
+            u
+            for u in users
+            if (
+                u["is_superuser"]
+                and u["id"] != task_staff["id"]
+                and u["id"] != task["owner"]["id"]
+                and u["id"] != (task["assignee"] or {}).get("id")
+            )
+        )
+
+        self.create_gt_job(admin_user, task["id"])
+
+        rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
+
+        with make_api_client(admin["username"]) as api_client:
+            (_, response) = api_client.quality_api.create_report(rq_id=rq_id, _parse_response=False)
+            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
 
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
@@ -658,9 +777,9 @@ class TestListQualityConflicts(_PermissionTestBase):
         assert conflicts
 
         if allow:
-            self._test_list_conflicts_200(user, report["id"], expected_data=conflicts)
+            self._test_list_conflicts_200(user["username"], report["id"], expected_data=conflicts)
         else:
-            self._test_list_conflicts_403(user, report["id"])
+            self._test_list_conflicts_403(user["username"], report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
@@ -801,9 +920,11 @@ class TestListSettings(_PermissionTestBase):
         settings = [s for s in quality_settings if s["task_id"] == task["id"]]
 
         if allow:
-            self._test_list_settings_200(user, task_id=task["id"], expected_data=settings)
+            self._test_list_settings_200(
+                user["username"], task_id=task["id"], expected_data=settings
+            )
         else:
-            self._test_list_settings_403(user, task_id=task["id"])
+            self._test_list_settings_403(user["username"], task_id=task["id"])
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_list_settings_in_org_task(
@@ -865,9 +986,9 @@ class TestGetSettings(_PermissionTestBase):
         settings_id = settings["id"]
 
         if allow:
-            self._test_get_settings_200(user, settings_id, expected_data=settings)
+            self._test_get_settings_200(user["username"], settings_id, expected_data=settings)
         else:
-            self._test_get_settings_403(user, settings_id)
+            self._test_get_settings_403(user["username"], settings_id)
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_get_settings_in_org_task(
@@ -954,9 +1075,11 @@ class TestPatchSettings(_PermissionTestBase):
         data, expected_data = self._get_request_data(settings)
 
         if allow:
-            self._test_patch_settings_200(user, settings_id, data, expected_data=expected_data)
+            self._test_patch_settings_200(
+                user["username"], settings_id, data, expected_data=expected_data
+            )
         else:
-            self._test_patch_settings_403(user, settings_id, data)
+            self._test_patch_settings_403(user["username"], settings_id, data)
 
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
     def test_user_patch_settings_in_org_task(
