@@ -249,7 +249,7 @@ def docker_restore_redis_inmem():
             "sh",
             "-c",
             'redis-cli -e --scan --pattern "*" |'
-            'grep -v "' + "\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
             "xargs -r redis-cli -e del",
         ]
     )
@@ -261,7 +261,7 @@ def kube_restore_redis_inmem():
             "sh",
             "-c",
             'redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "*" |'
-            'grep -v "' + "\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
             'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del',
         ]
     )
