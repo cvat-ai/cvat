@@ -6,7 +6,7 @@
 from typing import Optional, Union, cast
 
 from django.conf import settings
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.permissions import TaskPermission
@@ -60,11 +60,17 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
                 elif scope == Scopes.CREATE:
-                    if request.query_params.get("rq_id"):
+                    # Note: POST /api/quality/reports is used to initiate report creation and to check the process status
+                    rq_id = request.query_params.get("rq_id")
+                    task_id = request.data.get("task_id")
+
+                    if not (task_id or rq_id):
+                        raise PermissionDenied("Either task_id or rq_id must be specified")
+
+                    if rq_id:
                         # There will be another check for this case during request processing
                         continue
 
-                    task_id = request.data.get("task_id")
                     if task_id is not None:
                         # The request may have a different org or org unset
                         # Here we need to retrieve iam_context for this user, based on the task_id
@@ -125,12 +131,11 @@ class QualityReportPermission(OpenPolicyAgentPermission):
             if self.obj:
                 obj_id = self.obj.id
                 task = self.obj.get_task()
-            elif self.scope == self.Scopes.CREATE:
-                if self.task_id:
-                    try:
-                        task = Task.objects.get(id=self.task_id)
-                    except Task.DoesNotExist:
-                        raise ValidationError("The specified task does not exist")
+            elif self.scope == self.Scopes.CREATE and self.task_id:
+                try:
+                    task = Task.objects.get(id=self.task_id)
+                except Task.DoesNotExist:
+                    raise ValidationError("The specified task does not exist")
 
             if task and task.project:
                 project = task.project
