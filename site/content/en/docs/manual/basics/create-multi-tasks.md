@@ -10,7 +10,7 @@ Use **Create multi tasks** to create multiple video annotation tasks with the sa
 To create the multi tasks, on the **Tasks** page click **+** and
 select **Create multi tasks**.
 
-> **Note:** The **Сreate multi tasks** feature is available for videos only.
+> **Note:** The **Create multi tasks** feature is available for videos only.
 
 ![](/images/create_multi_tasks_1.png)
 
