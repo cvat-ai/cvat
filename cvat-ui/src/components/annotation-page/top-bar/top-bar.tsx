@@ -42,7 +42,6 @@ interface Props {
     focusFrameInputShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
-    deleteFrameAvailable: boolean;
     annotationFilters: object[];
     initialOpenGuide: boolean;
     keyMap: KeyMap;
@@ -101,7 +100,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         toolsBlockerState,
         annotationFilters,
         initialOpenGuide,
-        deleteFrameAvailable,
         navigationType,
         jobInstance,
         keyMap,
@@ -176,7 +174,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onDeleteFrame={onDeleteFrame}
             onRestoreFrame={onRestoreFrame}
             switchNavigationBlocked={switchNavigationBlocked}
-            deleteFrameAvailable={deleteFrameAvailable}
         />
     ), 10]);
 

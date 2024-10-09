@@ -976,6 +976,20 @@
     ],
     "tracks": []
   },
+  "YOLOv8 Classification 1.0": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [],
+    "tracks": []
+  },
   "YOLOv8 Detection 1.0": {
     "version": 0,
     "tags": [],

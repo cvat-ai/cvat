@@ -99,6 +99,7 @@ class Task(
                     "filename_pattern",
                     "cloud_storage_id",
                     "server_files_exclude",
+                    "validation_params",
                 ],
             )
         )
