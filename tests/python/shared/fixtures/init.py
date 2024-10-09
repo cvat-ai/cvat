@@ -244,7 +244,7 @@ def docker_restore_redis_inmem():
         [
             "sh",
             "-c",
-            "for p in rq:finished:* rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
+            "for p in rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
             'do redis-cli -e --scan --pattern "$p" | xargs -r redis-cli -e del ; done',
         ]
     )
@@ -255,7 +255,7 @@ def kube_restore_redis_inmem():
         [
             "sh",
             "-c",
-            "for p in rq:finished:* rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
+            "for p in rq:job:* rq:wip:* rq:finished:* rq:failed:*; "
             'do redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "$p" | '
             'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del ; done',
         ]
