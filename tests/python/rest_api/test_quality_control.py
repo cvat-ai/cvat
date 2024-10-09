@@ -581,6 +581,26 @@ class TestPostQualityReports(_PermissionTestBase):
             return rq_id
 
     # only rq job owner or admin now has the right to check status of report creation
+    def _test_check_status_of_report_creation_by_non_rq_job_owner(
+        self,
+        rq_id: str,
+        *,
+        task_staff: str,
+        another_user: str,
+    ):
+        with make_api_client(another_user) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                rq_id=rq_id, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.NOT_FOUND
+            assert json.loads(response.data)["detail"] == "Unknown request id"
+
+        with make_api_client(task_staff) as api_client:
+            (_, response) = api_client.quality_api.create_report(
+                rq_id=rq_id, _parse_response=False, _check_status=False
+            )
+            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+
     def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_sandbox(
         self,
         find_sandbox_task_without_gt: Callable[[bool], Tuple[Dict[str, Any], Dict[str, Any]]],
@@ -601,19 +621,9 @@ class TestPostQualityReports(_PermissionTestBase):
             )
         )
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
-
-        with make_api_client(another_user["username"]) as api_client:
-            (_, response) = api_client.quality_api.create_report(
-                rq_id=rq_id, _parse_response=False, _check_status=False
-            )
-            assert response.status == HTTPStatus.NOT_FOUND
-            assert json.loads(response.data)["detail"] == "Unknown request id"
-
-        with make_api_client(task_staff["username"]) as api_client:
-            (_, response) = api_client.quality_api.create_report(
-                rq_id=rq_id, _parse_response=False, _check_status=False
-            )
-            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+        self._test_check_status_of_report_creation_by_non_rq_job_owner(
+            rq_id, task_staff=task_staff["username"], another_user=another_user["username"]
+        )
 
     @pytest.mark.parametrize("role", ("owner", "maintainer", "supervisor", "worker"))
     def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_org(
@@ -637,19 +647,9 @@ class TestPostQualityReports(_PermissionTestBase):
             )
         )
         rq_id = self._initialize_report_creation(task["id"], task_staff["username"])
-
-        with make_api_client(another_user["username"]) as api_client:
-            (_, response) = api_client.quality_api.create_report(
-                rq_id=rq_id, _parse_response=False, _check_status=False
-            )
-            assert response.status == HTTPStatus.NOT_FOUND
-            assert json.loads(response.data)["detail"] == "Unknown request id"
-
-        with make_api_client(task_staff["username"]) as api_client:
-            (_, response) = api_client.quality_api.create_report(
-                rq_id=rq_id, _parse_response=False, _check_status=False
-            )
-            assert response.status in {HTTPStatus.ACCEPTED, HTTPStatus.CREATED}
+        self._test_check_status_of_report_creation_by_non_rq_job_owner(
+            rq_id, task_staff=task_staff["username"], another_user=another_user["username"]
+        )
 
     @pytest.mark.parametrize("is_sandbox", (True, False))
     def test_admin_can_check_status_of_report_creation(
