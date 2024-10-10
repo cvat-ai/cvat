@@ -10041,8 +10041,6 @@ components:
         task_id:
           type: integer
           writeOnly: true
-      required:
-      - task_id
     QualityReportSummary:
       type: object
       properties:
