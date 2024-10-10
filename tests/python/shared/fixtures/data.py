@@ -367,7 +367,7 @@ def find_users(test_db):
 @pytest.fixture(scope="session")
 def test_db(users, users_by_name, memberships):
     data = []
-    fields = ["username", "id", "privilege", "role", "org", "membership_id"]
+    fields = ["username", "id", "privilege", "role", "org", "membership_id", "is_superuser"]
 
     def add_row(**kwargs):
         data.append({field: kwargs.get(field) for field in fields})
@@ -521,3 +521,14 @@ def regular_lonely_user(users):
         if user["username"] == "lonely_user":
             return user["username"]
     raise Exception("Can't find the lonely user in the test DB")
+
+
+@pytest.fixture(scope="session")
+def job_has_annotations(annotations) -> bool:
+    def check_has_annotations(job_id: int) -> bool:
+        job_annotations = annotations["job"][str(job_id)]
+        return bool(
+            job_annotations["tags"] or job_annotations["shapes"] or job_annotations["tracks"]
+        )
+
+    return check_has_annotations

@@ -147,6 +147,15 @@ class TestPatchMemberships:
             with pytest.raises(ForbiddenException):
                 api_client.memberships_api.partial_update(membership["id"])
 
+    def test_user_cannot_update_unknown_field(self, admin_user, memberships):
+        membership = next(iter(memberships))
+
+        response = patch_method(
+            admin_user, f"memberships/{membership['id']}", {"foo": "bar"}, org_id=self._ORG
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteMemberships:

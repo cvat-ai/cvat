@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from itertools import groupby
 from typing import Dict, Optional
 from unittest import mock, skip
@@ -1300,9 +1300,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
-            "frames": [
-                self.start_frame + frame * self.frame_step for frame in requested_frame_range
-            ],
+            "frames": list(requested_frame_range),
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = response.json()
@@ -1319,13 +1317,8 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(len(annotations["tracks"]), 0)
 
         self.assertEqual(
-            {
-                frame: 1 for frame in requested_frame_range
-            },
-            {
-                frame: len(list(group))
-                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
-            }
+            { frame: 1 for frame in requested_frame_range },
+            Counter(a["frame"] for a in annotations["shapes"])
         )
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
@@ -1339,9 +1332,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
-            "frames": [
-                self.start_frame + frame * self.frame_step for frame in requested_frame_range
-            ],
+            "frames": list(requested_frame_range),
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = response.json()
@@ -1411,10 +1402,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
             "type": "ground_truth",
             "task_id": self.task["id"],
             "frame_selection_method": "manual",
-            "frames": [
-                self.start_frame + frame * self.frame_step
-                for frame in self.task_rel_frame_range[::3]
-            ],
+            "frames": list(self.task_rel_frame_range[::3]),
         })
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         job = response.json()
@@ -1431,13 +1419,8 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         requested_frame_range = self.task_rel_frame_range
         self.assertEqual(
-            {
-                frame: 1 for frame in requested_frame_range
-            },
-            {
-                frame: len(list(group))
-                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
-            }
+            { frame: 1 for frame in requested_frame_range },
+            Counter(a["frame"] for a in annotations["shapes"])
         )
 
         response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)

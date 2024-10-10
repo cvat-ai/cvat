@@ -638,6 +638,8 @@ SPECTACULAR_SETTINGS = {
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
         'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
+        'ValidationMode': 'cvat.apps.engine.models.ValidationMode',
+        'FrameSelectionMethod': 'cvat.apps.engine.models.JobFrameSelectionMethod',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,

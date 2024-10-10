@@ -286,26 +286,16 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
         scopes = []
         if scope == Scopes.UPDATE:
-            # user should have permissions to view a project
-            scopes.append(Scopes.VIEW)
-
-            if any(k in request.data for k in ('owner_id', 'owner')):
-                owner_id = request.data.get('owner_id') or request.data.get('owner')
-                if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(Scopes.UPDATE_OWNER)
-            if any(k in request.data for k in ('assignee_id', 'assignee')):
-                assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
-                if assignee_id != getattr(obj.assignee, 'id', None):
-                    scopes.append(Scopes.UPDATE_ASSIGNEE)
-            for field in ('name', 'labels', 'bug_tracker'):
-                if field in request.data:
-                    scopes.append(Scopes.UPDATE_DESC)
-                    break
-            if 'organization' in request.data:
-                scopes.append(Scopes.UPDATE_ORG)
-
-            if {'source_storage', 'target_storage'} & request.data.keys():
-                scopes.append(Scopes.UPDATE_ASSOCIATED_STORAGE)
+            scopes.extend(__class__.get_per_field_update_scopes(request, {
+                'owner_id': Scopes.UPDATE_OWNER,
+                'assignee_id': Scopes.UPDATE_ASSIGNEE,
+                'name': Scopes.UPDATE_DESC,
+                'labels': Scopes.UPDATE_DESC,
+                'bug_tracker': Scopes.UPDATE_DESC,
+                'organization': Scopes.UPDATE_ORG,
+                'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
+                'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
+            }))
         else:
             scopes.append(scope)
 
@@ -397,6 +387,8 @@ class TaskPermission(OpenPolicyAgentPermission):
         UPLOAD_DATA = 'upload:data'
         IMPORT_BACKUP = 'import:backup'
         EXPORT_BACKUP = 'export:backup'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -506,6 +498,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
             ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
+            ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
+            ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
         }[(view.action, request.method)]
 
         scopes = []
@@ -517,31 +511,18 @@ class TaskPermission(OpenPolicyAgentPermission):
             scopes.append(scope)
 
         elif scope == Scopes.UPDATE:
-            # user should have permissions to view a task
-            scopes.append(Scopes.VIEW)
-            if any(k in request.data for k in ('owner_id', 'owner')):
-                owner_id = request.data.get('owner_id') or request.data.get('owner')
-                if owner_id != getattr(obj.owner, 'id', None):
-                    scopes.append(Scopes.UPDATE_OWNER)
-
-            if any(k in request.data for k in ('assignee_id', 'assignee')):
-                assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
-                if assignee_id != getattr(obj.assignee, 'id', None):
-                    scopes.append(Scopes.UPDATE_ASSIGNEE)
-
-            if any(k in request.data for k in ('project_id', 'project')):
-                project_id = request.data.get('project_id') or request.data.get('project')
-                if project_id != getattr(obj.project, 'id', None):
-                    scopes.append(Scopes.UPDATE_PROJECT)
-
-            if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
-                scopes.append(Scopes.UPDATE_DESC)
-
-            if request.data.get('organization'):
-                scopes.append(Scopes.UPDATE_ORGANIZATION)
-
-            if {'source_storage', 'target_storage'} & request.data.keys():
-                scopes.append(Scopes.UPDATE_ASSOCIATED_STORAGE)
+            scopes.extend(__class__.get_per_field_update_scopes(request, {
+                'owner_id': Scopes.UPDATE_OWNER,
+                'assignee_id': Scopes.UPDATE_ASSIGNEE,
+                'project_id': Scopes.UPDATE_PROJECT,
+                'name': Scopes.UPDATE_DESC,
+                'labels': Scopes.UPDATE_DESC,
+                'bug_tracker': Scopes.UPDATE_DESC,
+                'subset': Scopes.UPDATE_DESC,
+                'organization': Scopes.UPDATE_ORGANIZATION,
+                'source_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
+                'target_storage': Scopes.UPDATE_ASSOCIATED_STORAGE,
+            }))
 
         elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
@@ -639,6 +620,8 @@ class JobPermission(OpenPolicyAgentPermission):
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
         UPDATE_METADATA = 'update:metadata'
+        VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
+        UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -734,23 +717,17 @@ class JobPermission(OpenPolicyAgentPermission):
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
+            ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
+            ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
         }[(view.action, request.method)]
 
         scopes = []
         if scope == Scopes.UPDATE:
-            # user should have permissions to view a job
-            scopes.append(Scopes.VIEW)
-
-            if any(k in request.data for k in ('assignee_id', 'assignee')):
-                assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
-                if assignee_id != getattr(obj.assignee, 'id', None):
-                    scopes.append(Scopes.UPDATE_ASSIGNEE)
-
-            if 'stage' in request.data:
-                scopes.append(Scopes.UPDATE_STAGE)
-            if 'state' in request.data:
-                scopes.append(Scopes.UPDATE_STATE)
-
+            scopes.extend(__class__.get_per_field_update_scopes(request, {
+                'assignee': Scopes.UPDATE_ASSIGNEE,
+                'stage': Scopes.UPDATE_STAGE,
+                'state': Scopes.UPDATE_STATE,
+            }))
         elif scope == Scopes.VIEW_ANNOTATIONS:
             if 'format' in request.query_params:
                 scope = Scopes.EXPORT_ANNOTATIONS

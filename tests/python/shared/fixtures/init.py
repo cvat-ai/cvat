@@ -239,12 +239,32 @@ def kube_restore_clickhouse_db():
     )
 
 
+def _get_redis_inmem_keys_to_keep():
+    return ("rq:worker:", "rq:workers", "rq:scheduler_instance:", "rq:queues:")
+
+
 def docker_restore_redis_inmem():
-    docker_exec_redis_inmem(["redis-cli", "-e", "flushall"])
+    docker_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            'redis-cli -e --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            "xargs -r redis-cli -e del",
+        ]
+    )
 
 
 def kube_restore_redis_inmem():
-    kube_exec_redis_inmem(["sh", "-c", 'redis-cli -e -a "${REDIS_PASSWORD}" flushall'])
+    kube_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            'redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del',
+        ]
+    )
 
 
 def docker_restore_redis_ondisk():
@@ -567,6 +587,15 @@ def restore_cvat_data_per_function(request):
         kube_restore_data_volumes()
 
 
+@pytest.fixture(scope="class")
+def restore_cvat_data_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_data_volumes()
+    else:
+        kube_restore_data_volumes()
+
+
 @pytest.fixture(scope="function")
 def restore_clickhouse_db_per_function(request):
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
@@ -620,6 +649,17 @@ def restore_redis_ondisk_per_function(request):
 
 @pytest.fixture(scope="class")
 def restore_redis_ondisk_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_after_class(request):
+    yield
+
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()
