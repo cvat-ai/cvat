@@ -14,6 +14,7 @@ To ensure transparency with the annotator, the immediate feedback shows the coll
 the minimum required score.
 Immediate feedback settings, such as `Target metric`, `Target metric threshold`, 
 `Max validations per job` and others, can be configured on the quality settings page:
+<!--- TODO: Update quality page documentation and refer from this section -->
 
 <img src="/images/immediate-feedback-quality-settings.png" style="max-width: 600px;">
 
@@ -32,6 +33,7 @@ Notes:
 
 > Immediate feedback has a default timeout of 20 seconds.
 Feedback may be unavailable for large jobs or when there are too many immediate feedback requests.
+In this case annotators do not see any feedback dialogs.
 
 > The number of attempts does not decrease for staff members who have access to a job with ground truth annotations.
 
