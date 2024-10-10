@@ -121,15 +121,6 @@ jobs:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
-      - name: Building CVAT UI image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.ui
-          cache-from: type=local,src=/tmp/cvat_cache_ui
-          tags: cvat/ui:dev
-          load: true
-
       - name: CVAT server. Extract metadata (tags, labels) for Docker
         id: meta-server
         uses: docker/metadata-action@master
