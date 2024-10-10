@@ -449,14 +449,14 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 
     def _compare_results(self, gt_objects, received_objects):
         if self.cmp_ignore_keys:
-            ignore_keys = [f"root['{k}']" for k in self.cmp_ignore_keys]
+                ignore_regex_keys = [f"root(\\[\\d+\\])?\\['{k}'\\]" for k in self.cmp_ignore_keys]
         else:
             ignore_keys = None
 
         diff = DeepDiff(
             list(gt_objects),
             received_objects,
-            exclude_paths=ignore_keys,
+            exclude_regex_paths=ignore_regex_keys,
             ignore_order=True,
         )
 

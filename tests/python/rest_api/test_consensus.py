@@ -481,6 +481,7 @@ class TestSimpleConsensusReportsFilters(CollectionSimpleFilterTestBase):
         self.samples = consensus_reports
         self.job_samples = jobs
         self.task_samples = tasks
+        self.cmp_ignore_keys = ["created_date", "target_last_updated"]
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.consensus_api.list_reports_endpoint
@@ -632,7 +633,6 @@ class TestListConsensusConflicts(_PermissionTestBase):
 
 
 class TestSimpleConsensusConflictsFilters(CollectionSimpleFilterTestBase):
-    cmp_ignore_keys: List[str] = ["created_date", "target_last_updated"]
 
     @pytest.fixture(autouse=True)
     def setup(
@@ -643,6 +643,7 @@ class TestSimpleConsensusConflictsFilters(CollectionSimpleFilterTestBase):
         self.report_samples = consensus_reports
         self.task_samples = tasks
         self.job_samples = jobs
+        self.cmp_ignore_keys = ["created_date", "target_last_updated"]
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.consensus_api.list_conflicts_endpoint
