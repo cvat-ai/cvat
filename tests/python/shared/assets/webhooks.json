@@ -30,8 +30,8 @@
       ],
       "id": 6,
       "is_active": true,
-      "last_delivery_date": "2023-09-15T07:53:53.135000Z",
-      "last_status": 200,
+      "last_delivery_date": "2024-10-03T22:11:57.457221Z",
+      "last_status": 405,
       "organization": 1,
       "owner": {
         "first_name": "Admin",
@@ -59,6 +59,8 @@
       ],
       "id": 3,
       "is_active": true,
+      "last_delivery_date": "2024-10-03T22:11:56.295101Z",
+      "last_status": 405,
       "organization": 2,
       "owner": {
         "first_name": "User",
@@ -93,6 +95,8 @@
       ],
       "id": 2,
       "is_active": true,
+      "last_delivery_date": "2024-10-03T22:11:59.626763Z",
+      "last_status": 405,
       "organization": null,
       "owner": {
         "first_name": "Business",
