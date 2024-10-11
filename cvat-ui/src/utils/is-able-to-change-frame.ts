@@ -20,9 +20,10 @@ export default function isAbleToChangeFrame(frame?: number): boolean {
     let frameInTheJob = true;
     if (typeof frame === 'number') {
         // frame argument comes in relative job coordinates
-        // hovewer includedFrames contains absolute values, so, we need to adjust it with the frameStep
+        // hovewer includedFrames contains absolute values, so, we need to adjust it with the frameStep and startFrame
         frameInTheJob = meta.includedFrames ?
-            meta.includedFrames.includes(frame * meta.frameStep) : frame >= job.startFrame && frame <= job.stopFrame;
+            meta.includedFrames.includes(frame * meta.frameStep + meta.startFrame) :
+            frame >= job.startFrame && frame <= job.stopFrame;
     }
 
     return canvas.isAbleToChangeFrame() && frameInTheJob && !state.annotation.player.navigationBlocked;
