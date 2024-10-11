@@ -576,7 +576,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState();
                 if (state && state.keyframes) {
                     const frame = typeof state.keyframes.next === 'number' ? state.keyframes.next : null;
-                    if (frame !== null && isAbleToChangeFrame()) {
+                    if (frame !== null && isAbleToChangeFrame(frame)) {
                         changeFrame(frame);
                     }
                 }
@@ -586,7 +586,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState();
                 if (state && state.keyframes) {
                     const frame = typeof state.keyframes.prev === 'number' ? state.keyframes.prev : null;
-                    if (frame !== null && isAbleToChangeFrame()) {
+                    if (frame !== null && isAbleToChangeFrame(frame)) {
                         changeFrame(frame);
                     }
                 }

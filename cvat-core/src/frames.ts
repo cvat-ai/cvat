@@ -44,7 +44,7 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
 export class FramesMetaData {
     public chunkSize: number;
     public deletedFrames: Record<number, boolean>;
-    public includedFrames: number[];
+    public includedFrames: number[] | null;
     public frameFilter: string;
     public frames: {
         width: number;

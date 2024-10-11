@@ -206,7 +206,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             frameNumber + 1,
             jobInstance.stopFrame,
         );
-        if (frame !== null && isAbleToChangeFrame()) {
+        if (frame !== null && isAbleToChangeFrame(frame)) {
             changeFrame(frame);
         }
     };

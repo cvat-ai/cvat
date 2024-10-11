@@ -32,9 +32,11 @@ export function filterAnnotations(annotations: ObjectState[], params: FilterAnno
         }
 
         // GT tracks are shown only on GT frames
-        if (workspace === Workspace.REVIEW && groundTruthJobFramesMeta && frame) {
+        if (workspace === Workspace.REVIEW && groundTruthJobFramesMeta?.includedFrames && frame) {
             if (state.objectType === ObjectType.TRACK && state.isGroundTruth) {
-                return groundTruthJobFramesMeta.includedFrames.includes(frame);
+                // includedFrames has exactly absolute numeration of frames
+                // frame N actually corresponds to N * frameStep in absolute numeration
+                return groundTruthJobFramesMeta.includedFrames.includes(frame * groundTruthJobFramesMeta.frameStep);
             }
         }
 
