@@ -195,6 +195,31 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-brush-tools-underlying-pixels').should('not.have.class', 'cvat-brush-tools-active-tool');
             cy.finishMaskDrawing();
         });
+
+        it('Check brush tools shortcuts', () => {
+            const mask1 = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400]],
+            }];
+            cy.startMaskDrawing();
+            cy.drawMask(mask1);
+            cy.get('.cvat-brush-tools-polygon-minus').click();
+            cy.get('.cvat-brush-tools-polygon-minus').should('have.class', 'cvat-brush-tools-active-tool');
+
+            cy.get('body').type('{shift}{1}');
+            cy.get('.cvat-brush-tools-brush').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.get('body').type('{shift}{2}');
+            cy.get('.cvat-brush-tools-eraser').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.get('body').type('{shift}{3}');
+            cy.get('.cvat-brush-tools-polygon-plus').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.get('body').type('{shift}{4}');
+            cy.get('.cvat-brush-tools-polygon-minus').should('have.class', 'cvat-brush-tools-active-tool');
+
+            cy.get('.cvat-brush-tools-finish').trigger('mouseover');
+            cy.get('.cvat-brush-tools-finish').trigger('mouseout');
+            cy.get('body').type('n');
+            cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
+        });
     });
 
     describe('Tests to make sure that empty masks cannot be created', () => {
