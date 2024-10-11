@@ -42,7 +42,21 @@ cvat:
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
+      readinessProbe:
+        enabled: true
+        periodSeconds: 15
+        initialDelaySeconds: 15
+      livenessProbe:
+        enabled: true
+        periodSeconds: 15
+        failureThreshold: 5
+        initialDelaySeconds: 60
     worker:
+      livenessProbe:
+        enabled: true
+        periodSeconds: 120
+        initialDelaySeconds: 30
+        timeoutSeconds: 10
       export:
         replicas: 2
         labels: {}
@@ -172,6 +186,14 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
     service:
       type: ClusterIP
       ports:
@@ -216,6 +238,14 @@ cvat:
     #     name: tmp
     #     subPath: test
     composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    readinessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
+    livenessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
     service:
       type: ClusterIP
       ports:
@@ -266,6 +296,14 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
     defaultStorage:
       enabled: true
 #     storageClassName: default

@@ -67,7 +67,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
 
 
 class QualityReportCreateSerializer(serializers.Serializer):
-    task_id = serializers.IntegerField(write_only=True)
+    task_id = serializers.IntegerField(write_only=True, required=False)
 
 
 class QualitySettingsSerializer(serializers.ModelSerializer):
