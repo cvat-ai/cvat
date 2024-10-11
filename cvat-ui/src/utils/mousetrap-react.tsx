@@ -15,7 +15,7 @@ export interface KeyMapItem {
     scope: ShortcutScope;
     nonActive?: boolean;
     applicable?: string[];
-    weight?: number;
+    displayWeight?: number;
 }
 
 export interface KeyMap {
