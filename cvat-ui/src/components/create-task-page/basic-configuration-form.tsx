@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,6 +74,7 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form ref={this.formRef} layout='vertical'>
                 <Form.Item
+                    className={many ? 'cvat-task-name-field-has-tooltip' : ''}
                     hasFeedback
                     name='name'
                     label={<span>Name</span>}
@@ -94,7 +95,7 @@ export default class BasicConfigurationForm extends React.PureComponent<Props> {
                     <Text type='secondary'>
                         <Tooltip title={() => (
                             <>
-                                You can substitute in the template:
+                                You can use in the template:
                                 <ul>
                                     <li>
                                         some_text - any text
