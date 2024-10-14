@@ -1324,24 +1324,15 @@ def _create_thread(
             assert image.is_placeholder
             image.real_frame = frame_id_map[image.real_frame]
 
+        # Update manifest
+        manifest.reorder([images[frame_idx_map[image.frame]].path for image in new_db_images])
+
         images = new_db_images
         db_data.size = len(images)
         db_data.start_frame = 0
         db_data.stop_frame = 0
         db_data.frame_filter = ''
 
-        # Update manifest
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        manifest.link(
-            sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
-            meta={
-                k: {'related_images': related_images[k] }
-                for k in related_images
-            },
-            data_dir=upload_dir,
-            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-        )
-        manifest.create()
 
         db_data.update_validation_layout(models.ValidationLayout(
             mode=models.ValidationMode.GT_POOL,
