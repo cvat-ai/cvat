@@ -183,7 +183,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
-            job: { instance: jobInstance, groundTruthJobFramesMeta },
+            job: { instance: jobInstance, groundTruthInfo: { groundTruthJobFramesMeta } },
             player: {
                 frame: { number: frameNumber },
             },

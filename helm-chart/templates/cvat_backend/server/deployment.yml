@@ -65,6 +65,20 @@ spec:
           {{- end }}
           ports:
           - containerPort: 8080
+          {{- if $localValues.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if $localValues.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
           volumeMounts:
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache

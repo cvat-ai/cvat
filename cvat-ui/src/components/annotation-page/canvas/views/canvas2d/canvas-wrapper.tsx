@@ -154,7 +154,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { activeControl, instance: canvasInstance, ready: canvasIsReady },
             drawing: { activeLabelID, activeObjectType },
-            job: { instance: jobInstance, groundTruthJobFramesMeta },
+            job: { instance: jobInstance, groundTruthInfo: { groundTruthJobFramesMeta } },
             player: {
                 frame: { data: frameData, number: frame },
                 frameAngles,
