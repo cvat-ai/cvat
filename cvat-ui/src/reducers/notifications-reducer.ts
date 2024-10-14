@@ -30,9 +30,14 @@ import { ExportActionTypes } from 'actions/export-actions';
 import config from 'config';
 import { NotificationsState } from '.';
 
-const shouldLog = (error: Error): boolean => (
-    ![ServerError, RequestError].some((ErrorClass) => error instanceof ErrorClass)
-);
+const shouldLog = (error: Error): boolean => {
+    if (error instanceof ServerError) {
+        const ignoredCodes = [400, 401, 403, 404, 405, 500];
+        return !ignoredCodes.includes(error.code);
+    }
+
+    return !(error instanceof RequestError);
+};
 
 const defaultState: NotificationsState = {
     errors: {
