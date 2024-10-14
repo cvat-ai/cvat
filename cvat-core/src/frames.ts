@@ -348,9 +348,9 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             const requestId = +_.uniqueId();
             const requestedDataFrameNumber = meta.getDataFrameNumber(this.number - jobStartFrame);
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
-            const segmentFrameNumbers = meta.getDataFrameNumbers()
-                .map((dataFrameNumber: number) => meta.getJobRelativeFrameNumber(dataFrameNumber) + jobStartFrame,
-                );
+            const segmentFrameNumbers = meta.getDataFrameNumbers().map((dataFrameNumber: number) => (
+                meta.getJobRelativeFrameNumber(dataFrameNumber) + jobStartFrame
+            ));
             const frame = provider.frame(this.number);
 
             function findTheNextNotDecodedChunk(currentFrameIndex: number): number | null {
