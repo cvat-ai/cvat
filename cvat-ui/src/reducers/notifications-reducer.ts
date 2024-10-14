@@ -32,7 +32,7 @@ import { NotificationsState } from '.';
 
 const shouldLog = (error: Error): boolean => {
     if (error instanceof ServerError) {
-        const ignoredCodes = [0, 400, 401, 403, 404, 500];
+        const ignoredCodes = [0, 400, 401, 403, 404, 429, 500];
         return !ignoredCodes.includes(error.code);
     }
 
