@@ -9,6 +9,7 @@ import io
 import itertools
 import math
 from abc import ABCMeta, abstractmethod
+from bisect import bisect
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
@@ -484,20 +485,28 @@ class SegmentFrameProvider(IFrameProvider):
     def __len__(self):
         return self._db_segment.frame_count
 
-    def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
-        frame_sequence = list(self._db_segment.frame_set)
+    def get_frame_index(self, frame_number: int) -> Optional[int]:
+        segment_frames = sorted(self._db_segment.frame_set)
         abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
-        if abs_frame_number not in frame_sequence:
+        frame_index = bisect(segment_frames, abs_frame_number) - 1
+        if not (
+            0 <= frame_index < len(segment_frames)
+            and segment_frames[frame_index] == abs_frame_number
+        ):
+            return None
+
+        return frame_index
+
+    def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
+        frame_index = self.get_frame_index(frame_number)
+        if frame_index is None:
             raise ValidationError(f"Incorrect requested frame number: {frame_number}")
 
-        # TODO: maybe optimize search
-        chunk_number, frame_position = divmod(
-            frame_sequence.index(abs_frame_number), self._db_segment.task.data.chunk_size
-        )
+        chunk_number, frame_position = divmod(frame_index, self._db_segment.task.data.chunk_size)
         return frame_number, chunk_number, frame_position
 
     def get_chunk_number(self, frame_number: int) -> int:
-        return int(frame_number) // self._db_segment.task.data.chunk_size
+        return self.get_frame_index(frame_number) // self._db_segment.task.data.chunk_size
 
     def find_matching_chunk(self, frames: Sequence[int]) -> Optional[int]:
         return next(

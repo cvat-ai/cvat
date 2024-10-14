@@ -16,6 +16,7 @@ import { FieldUpdateTrigger } from './common';
 // frame storage by job id
 const frameDataCache: Record<string, {
     meta: FramesMetaData;
+    metaFetchedTimestamp: number;
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
@@ -57,6 +58,7 @@ export class FramesMetaData {
     public stopFrame: number;
     public frameStep: number;
     public chunkCount: number;
+    public chunksUpdatedDate: string;
 
     #updateTrigger: FieldUpdateTrigger;
 
@@ -71,6 +73,7 @@ export class FramesMetaData {
             size: undefined,
             start_frame: undefined,
             stop_frame: undefined,
+            chunks_updated_date: undefined,
         };
 
         this.#updateTrigger = new FieldUpdateTrigger();
@@ -148,6 +151,9 @@ export class FramesMetaData {
                 },
                 frameStep: {
                     get: () => frameStep,
+                },
+                chunksUpdatedDate: {
+                    get: () => data.chunks_updated_date,
                 },
             }),
         );
@@ -592,6 +598,37 @@ function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
     return frameMeta;
 }
 
+async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
+    const cached = frameDataCache[jobID];
+    if (!cached) {
+        throw new Error('Frame data cache is abscent');
+    }
+
+    const META_DATA_RELOAD_PERIOD = 1 * 60 * 60 * 1000; // 1 hour
+    const isOutdated = (Date.now() - cached.metaFetchedTimestamp) > META_DATA_RELOAD_PERIOD;
+
+    if (isOutdated) {
+        // get metadata again if outdated
+        const meta = await getFramesMeta('job', jobID, true);
+        if (new Date(meta.chunksUpdatedDate) > new Date(cached.meta.chunksUpdatedDate)) {
+            // chunks were re-defined. Existing data not relevant anymore
+            // currently we only re-write meta, remove all cached frames from provider and clear cached context images
+            // other parameters (e.g. chunkSize) are not supposed to be changed
+            cached.meta = meta;
+            cached.provider.cleanup(Number.MAX_SAFE_INTEGER);
+            for (const frame of Object.keys(cached.contextCache)) {
+                for (const image of Object.values(cached.contextCache[+frame].data)) {
+                    // close images to immediate memory release
+                    image.close();
+                }
+            }
+            cached.contextCache = {};
+        }
+
+        cached.metaFetchedTimestamp = Date.now();
+    }
+}
+
 export function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
     return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
         if (!(jobID in frameDataCache)) {
@@ -599,6 +636,7 @@ export function getContextImage(jobID: number, frame: number): Promise<Record<st
                 'Frame data was not initialized for this job. Try first requesting any frame.',
             ));
         }
+
         const frameData = frameDataCache[jobID];
         const requestId = frame;
         const { startFrame } = frameData;
@@ -695,7 +733,9 @@ export async function getFrame(
     dimension: DimensionType,
     getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
 ): Promise<FrameData> {
-    if (!(jobID in frameDataCache)) {
+    const dataCacheExists = jobID in frameDataCache;
+
+    if (!dataCacheExists) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
         const meta = await getFramesMeta('job', jobID);
 
@@ -718,6 +758,7 @@ export async function getFrame(
 
         frameDataCache[jobID] = {
             meta,
+            metaFetchedTimestamp: Date.now(),
             chunkSize,
             mode,
             startFrame,
@@ -743,6 +784,22 @@ export async function getFrame(
         };
     }
 
+    // basically the following functions may be affected if job cache is outdated
+    // - getFrame
+    // - getContextImage
+    // - getCachedChunks
+    // And from this idea we should call refreshJobCacheIfOutdated from each one
+    // Hovewer, following from the order, these methods are usually called
+    // it may lead to even more confusing behaviour
+    //
+    // Usually user first receives frame, then user receives ranges and finally user receives context images
+    // In this case (extremely rare, but nevertheless possible) user may get context images related to another frame
+    // - if cache gets outdated after getFrame() call
+    // - and before getContextImage() call
+    // - and both calls refer to the same frame that is refreshed honeypot frame and this frame has context images
+    // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
+    await refreshJobCacheIfOutdated(jobID);
+
     const frameMeta = getFrameMeta(jobID, frame);
     frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
@@ -759,7 +816,7 @@ export async function getFrame(
     });
 }
 
-export async function getDeletedFrames(instanceType: 'job' | 'task', id): Promise<Record<number, boolean>> {
+export async function getDeletedFrames(instanceType: 'job' | 'task', id: number): Promise<Record<number, boolean>> {
     if (instanceType === 'job') {
         const { meta } = frameDataCache[id];
         return meta.deletedFrames;

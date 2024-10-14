@@ -27,7 +27,7 @@ import {
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { SerializedLabel, SerializedTask } from './server-response-types';
+import { SerializedLabel, SerializedTask, SerializedValidationLayout } from './server-response-types';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -37,6 +37,7 @@ import AnnotationGuide from './guide';
 import requestsManager from './requests-manager';
 import { Request } from './request';
 import User from './user';
+import ValidationLayout from './validation-layout';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -161,6 +162,19 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
 
             const result = await serverProxy.guides.get(this.guideId);
             return new AnnotationGuide(result);
+        },
+    });
+
+    Object.defineProperty(Job.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.validationLayout> {
+            const result = await serverProxy.jobs.validationLayout(this.id);
+            if (Object.keys(result).length) {
+                return new ValidationLayout(result as Required<SerializedValidationLayout>);
+            }
+
+            return null;
         },
     });
 
@@ -621,6 +635,19 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             const result = await serverProxy.guides.get(this.guideId);
             return new AnnotationGuide(result);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.validationLayout> {
+            const result = await serverProxy.tasks.validationLayout(this.id);
+            if (Object.keys(result).length) {
+                return new ValidationLayout(result as Required<SerializedValidationLayout>);
+            }
+
+            return null;
         },
     });
 

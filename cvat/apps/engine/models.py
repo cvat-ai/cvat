@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import datetime
 import os
 import re
 import shutil
@@ -612,6 +613,11 @@ class Task(TimestampedModel):
             clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
+    def get_chunks_updated_date(self) -> datetime.datetime:
+        return self.segment_set.aggregate(
+            chunks_updated_date=models.Max('chunks_updated_date')
+        )['chunks_updated_date']
+
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
 class MyFileSystemStorage(FileSystemStorage):
@@ -700,9 +706,9 @@ class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE) # TODO: add related name
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
+    chunks_updated_date = models.DateTimeField(null=False, auto_now_add=True)
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
 
-    # TODO: try to reuse this field for custom task segments (aka job_file_mapping)
     # SegmentType.SPECIFIC_FRAMES fields
     frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
 

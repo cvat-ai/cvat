@@ -8,7 +8,7 @@ import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrap
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
-    Request, TargetMetric,
+    Request, TargetMetric, ValidationLayout,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -728,8 +728,11 @@ export interface AnnotationState {
             defaultLabel: string | null;
             defaultPointsCount: number | null;
         };
-        groundTruthJobFramesMeta: FramesMetaData | null;
-        groundTruthInstance: Job | null;
+        groundTruthInfo: {
+            validationLayout: ValidationLayout | null;
+            groundTruthJobFramesMeta: FramesMetaData | null;
+            groundTruthInstance: Job | null;
+        },
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;
