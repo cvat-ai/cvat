@@ -27,7 +27,7 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
 } from 'reducers';
-import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
@@ -55,7 +55,6 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
-    groundTruthJobFramesMeta: FramesMetaData | null;
     workspace: Workspace;
 }
 
@@ -183,7 +182,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
-            job: { instance: jobInstance, groundTruthInfo: { groundTruthJobFramesMeta } },
+            job: { instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
@@ -233,7 +232,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
-        groundTruthJobFramesMeta,
         workspace,
     };
 }
@@ -325,12 +323,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private updateObjects = (): void => {
         const {
-            objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+            objectStates, frameNumber, workspace,
         } = this.props;
         const { statesOrdering } = this.state;
         const filteredStates = filterAnnotations(objectStates, {
             frame: frameNumber,
-            groundTruthJobFramesMeta,
             workspace,
         });
         this.setState({

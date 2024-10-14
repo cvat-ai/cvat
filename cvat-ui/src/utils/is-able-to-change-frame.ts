@@ -17,13 +17,15 @@ export default function isAbleToChangeFrame(frame?: number): boolean {
         return false;
     }
 
-    let frameInTheJob = true;
+    const frameInTheJob = true;
     if (typeof frame === 'number') {
-        // frame argument comes in relative job coordinates
-        // hovewer includedFrames contains absolute values, so, we need to adjust it with the frameStep and startFrame
-        frameInTheJob = meta.includedFrames ?
-            meta.includedFrames.includes(frame * meta.frameStep + meta.startFrame) :
-            frame >= job.startFrame && frame <= job.stopFrame;
+        if (meta.includedFrames) {
+            // frame argument comes in job coordinates
+            // hovewer includedFrames contains absolute data values
+            return meta.includedFrames.includes(meta.getDataFrameNumber(frame - job.startFrame));
+        }
+
+        return frame >= job.startFrame && frame <= job.stopFrame;
     }
 
     return canvas.isAbleToChangeFrame() && frameInTheJob && !state.annotation.player.navigationBlocked;
