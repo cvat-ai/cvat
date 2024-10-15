@@ -40,12 +40,13 @@ def __save_job_handler(instance, created, **kwargs):
 
 @receiver(post_save, sender=User, dispatch_uid=__name__ + ".save_user_handler")
 def __save_user_handler(instance: User, **kwargs):
+    should_access_analytics = instance.is_superuser or instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
     if not hasattr(instance, 'profile'):
         profile = Profile()
         profile.user = instance
-        profile.has_analytics_access = instance.is_superuser
+        profile.has_analytics_access = should_access_analytics
         profile.save()
-    elif instance.is_superuser and not instance.profile.has_analytics_access:
+    elif should_access_analytics and not instance.profile.has_analytics_access:
         instance.profile.has_analytics_access = True
         instance.profile.save()
 
@@ -54,7 +55,7 @@ def __save_user_handler(instance: User, **kwargs):
 def __m2m_user_groups_change_handler(sender, instance: User, action: str, **kwargs):
     if action == 'post_add':
         is_admin = instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
-        if is_admin and not instance.profile.has_analytics_access:
+        if is_admin and hasattr(instance, 'profile') and not instance.profile.has_analytics_access:
             instance.profile.has_analytics_access = True
             instance.profile.save()
 
