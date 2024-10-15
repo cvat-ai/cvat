@@ -56,13 +56,12 @@ def cleanup_invalid_data(apps):
 
     groups = defaultdict(list)
     for gt_job in gt_jobs:
+        assert gt_job.type == 'ground_truth'
         groups[gt_job.segment.task.id].append(gt_job)
 
     for task_id in groups:
         while len(groups[task_id]) > 1:
             gt_job = groups[task_id].pop()
-
-            assert gt_job.type == 'ground_truth'
             gt_job.delete()
 
 def init_validation_layout_in_tasks_with_gt_job(apps, schema_editor):
