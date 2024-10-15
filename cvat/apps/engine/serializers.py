@@ -230,6 +230,7 @@ class UserSerializer(serializers.ModelSerializer):
     has_analytics_access = serializers.BooleanField(
         source='profile.has_analytics_access',
         required=False,
+        read_only=True,
     )
 
     class Meta:
@@ -237,7 +238,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
             'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
             'date_joined', 'has_analytics_access')
-        read_only_fields = ('last_login', 'date_joined')
+        read_only_fields = ('last_login', 'date_joined', 'has_analytics_access')
         write_only_fields = ('password', )
         extra_kwargs = {
             'last_login': { 'allow_null': True }
