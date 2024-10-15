@@ -9813,8 +9813,6 @@ components:
           title: Active
           description: Designates whether this user should be treated as active. Unselect
             this instead of deleting accounts.
-        has_analytics_access:
-          type: boolean
     PatchedWebhookWriteRequest:
       type: object
       properties:
@@ -11107,6 +11105,7 @@ components:
           readOnly: true
         has_analytics_access:
           type: boolean
+          readOnly: true
       required:
       - groups
       - username
