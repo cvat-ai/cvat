@@ -57,9 +57,6 @@ def RESOURCES(scope):
 
 
 def eval_rule(scope, context, ownership, privilege, membership, data, has_analytics_access):
-    if privilege == "admin":
-        return True
-
     rules = list(filter(lambda r: scope == r["scope"], simple_rules))
     rules = list(filter(lambda r: r["context"] == "na" or context == r["context"], rules))
     rules = list(filter(lambda r: r["ownership"] == "na" or ownership == r["ownership"], rules))
