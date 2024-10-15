@@ -211,7 +211,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private changeFrame(frame: number): void {
         const { changeFrame } = this.props;
-        if (isAbleToChangeFrame()) {
+        if (isAbleToChangeFrame(frame)) {
             changeFrame(frame);
         }
     }

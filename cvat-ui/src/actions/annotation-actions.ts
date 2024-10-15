@@ -651,7 +651,7 @@ export function changeFrameAsync(
                 return;
             }
 
-            if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
+            if (!isAbleToChangeFrame(toFrame) || statisticsVisible || propagateVisible) {
                 return;
             }
 
@@ -914,6 +914,7 @@ export function getJobAsync({
                 }
             }
 
+            const jobMeta = await cvat.frames.getMeta('job', job.id);
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
                 initialFrame as number :
@@ -959,6 +960,7 @@ export function getJobAsync({
                 payload: {
                     openTime,
                     job,
+                    jobMeta,
                     queryParameters,
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
