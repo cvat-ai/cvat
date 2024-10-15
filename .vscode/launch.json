@@ -523,7 +523,117 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "disableOptimisticBPs": true,
-        }
+        },
+        {
+            "name": "devcontainer: django server",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "/opt/venv/bin/python",
+            "program": "${workspaceFolder}/manage.py",
+            "env": {
+                "CVAT_SERVERLESS": "1",
+                "ALLOWED_HOSTS": "*",
+                "IAM_OPA_BUNDLE": "1",
+                "DJANGO_LOG_SERVER_HOST": "${env:DJANGO_LOG_SERVER_HOST}",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "args": [
+                "runserver",
+                "--insecure",
+                "0.0.0.0:7000"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "presentation": {
+                "hidden": true,
+            }
+        },
+        // For local development, run a single worker for all queues for easy debugging
+        // and memory efficiency
+        {
+            "name": "devcontainer: rq worker",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "/opt/venv/bin/python",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "rqworker",
+                "import",
+                "export",
+                "quality_reports",
+                "analytics_reports",
+                "notifications",
+                "annotation",
+                "webhooks",
+                "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "${env:DJANGO_LOG_SERVER_HOST}",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole",
+            "presentation": {
+                "hidden": true
+            }
+        },
+        {
+            "name": "devcontainer: ui",
+            "type": "chrome",
+            "request": "launch",
+            "preLaunchTask": "devcontainer: ui yarn run",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/cvat-ui",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack://cvat/./*": "${workspaceFolder}/cvat-core/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///src/*": "${webRoot}/*",
+                "webpack:///*": "*",
+                "webpack:///./~/*": "${webRoot}/node_modules/*"
+            },
+            "smartStep": true,
+            "presentation": {
+                "group": "devcontainer",
+                "order": 2
+            }
+        },
+        {
+            "name": "devcontainer: server: unit tests",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "/opt/venv/bin/python",
+            "program": "${workspaceFolder}/manage.py",
+            "preLaunchTask": "devcontainer: server init",
+            "args": [
+                "test",
+                "--settings",
+                "cvat.settings.testing",
+                "cvat/apps",
+                "cvat-cli/"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "IAM_OPA_HOST": "http://opa:8181"
+            },
+            "console": "internalConsole",
+            "presentation": {
+                "hidden": false,
+                "group": "devcontainer",
+                "order": 3
+            }
+        },
     ],
     "compounds": [
         {
@@ -539,6 +649,19 @@
                 "server: RQ - analytics reports",
                 "server: RQ - cleaning"
             ]
+        },
+        {
+            "name": "devcontainer: server",
+            "preLaunchTask": "devcontainer: server init",
+            "configurations": [
+                "devcontainer: django server",
+                "devcontainer: rq worker"
+            ],
+            "stopAll": true,
+            "presentation": {
+                "group": "devcontainer",
+                "order": 1
+            },
         }
     ]
 }
