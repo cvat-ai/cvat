@@ -49,10 +49,11 @@ def cleanup_invalid_data(apps):
         ground_truth_jobs_count=Count(
             'segment__job', filter=Q(segment__job__type='ground_truth')
         )
-    ).filter(ground_truth_jobs_count__gt=1).values_list('segment__task__id', flat=True)
+    ).filter(ground_truth_jobs_count__gt=1).values_list('segment__task__id', flat=True).all()
+
     gt_jobs = Job.objects.filter(
         segment__task__id__in=broken_tasks
-    ).filter(type='ground_truth').order_by('created_date').all()
+    ).filter(type='ground_truth').order_by('-updated_date').iterator(1000)
 
     groups = defaultdict(list)
     for gt_job in gt_jobs:
