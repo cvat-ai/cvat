@@ -44,17 +44,8 @@ export function getAllocationTableContents(gtJobMeta: FramesMetaData, gtJob: Job
     // A workaround for meta "includedFrames" using source data numbers
     // TODO: remove once meta is migrated to relative frame numbers
 
-    function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
-        return meta.startFrame - localStartFrame * meta.frameStep;
-    }
-
-    function getFrameNumber(dataFrameNumber: number, dataStartFrame: number, step: number): number {
-        return (dataFrameNumber - dataStartFrame) / step;
-    }
-
-    const dataStartFrame = getDataStartFrame(gtJobMeta, gtJob.startFrame);
-    const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameID: number) => (
-        getFrameNumber(dataFrameID, dataStartFrame, gtJobMeta.frameStep)
+    const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameNumber: number) => (
+        gtJobMeta.getJobRelativeFrameNumber(dataFrameNumber) + gtJob.startFrame
     ));
 
     const jobDataSegmentFrameNumbers = range(
