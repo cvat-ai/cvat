@@ -74,7 +74,6 @@ def get_membership(request, organization):
 def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]):
     return {
         'user_id': request.user.id,
-        'has_analytics_access': request.user.profile.has_analytics_access,
         'group_name': request.iam_context['privilege'],
         'org_id': getattr(organization, 'id', None),
         'org_slug': getattr(organization, 'slug', None),
@@ -100,7 +99,6 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     org_role: Optional[str]
     scope: str
     obj: Optional[Any]
-    has_analytics_access: bool
 
     @classmethod
     @abstractmethod
@@ -134,7 +132,6 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                     'user': {
                         'id': self.user_id,
                         'privilege': self.group_name,
-                        'has_analytics_access': self.has_analytics_access,
                     },
                     'organization': {
                         'id': self.org_id,
