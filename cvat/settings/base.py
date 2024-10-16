@@ -340,6 +340,12 @@ RQ_EXCEPTION_HANDLERS = [
 ]
 
 PERIODIC_RQ_JOBS = [
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'clean_up_sessions',
+        'func': 'cvat.apps.iam.utils.clean_up_sessions',
+        'cron_string': '0 0 * * *',
+    },
 ]
 
 # JavaScript and CSS compression
