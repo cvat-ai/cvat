@@ -2317,7 +2317,7 @@ class QualityReportUpdateManager:
                 job.id: JobDataProvider(
                     job.id,
                     queryset=job_queryset,
-                    included_frames=set(job.segment.frame_set) & active_validation_frames,
+                    included_frames=active_validation_frames,
                 )
                 for job in jobs
             }
