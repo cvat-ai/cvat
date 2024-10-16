@@ -41,7 +41,7 @@ def get_segment_rel_frame_set(db_segment) -> Collection[int]:
 
     return sorted(get_rel_frame(abs_frame, db_data) for abs_frame in frame_set)
 
-def cleanup_invalid_data(apps):
+def delete_duplicate_ground_truth_jobs(apps):
     Task = apps.get_model("engine", "Task")
     Job = apps.get_model("engine", "Job")
 
@@ -49,10 +49,10 @@ def cleanup_invalid_data(apps):
         ground_truth_jobs_count=Count(
             'segment__job', filter=Q(segment__job__type='ground_truth')
         )
-    ).filter(ground_truth_jobs_count__gt=1).values_list('segment__task__id', flat=True).all()
+    ).filter(ground_truth_jobs_count__gt=1)
 
     gt_jobs = Job.objects.filter(
-        segment__task__id__in=broken_tasks
+        segment__task__in=broken_tasks
     ).filter(type='ground_truth').order_by('-updated_date').iterator(1000)
 
     groups = defaultdict(list)
@@ -60,9 +60,8 @@ def cleanup_invalid_data(apps):
         assert gt_job.type == 'ground_truth'
         groups[gt_job.segment.task.id].append(gt_job)
 
-    for task_id in groups:
-        while len(groups[task_id]) > 1:
-            gt_job = groups[task_id].pop()
+    for gt_jobs in groups.values():
+        for gt_job in gt_jobs[1:]:
             gt_job.delete()
 
 def init_validation_layout_in_tasks_with_gt_job(apps, schema_editor):
@@ -246,7 +245,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.RunPython(
-            cleanup_invalid_data,
+            delete_duplicate_ground_truth_jobs,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.RunPython(
