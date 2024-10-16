@@ -22,11 +22,25 @@ There are two ways of deploying the CVAT.
    {{< ilink "/docs/administration/basics/installation" "installation instructions" >}}.
    The additional step is to add a [security group and rule to allow incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
+**minimal requirements**
+
+Tested instances : t2. Crashes were reported by `cvat_redis` due to low memory. Consult [this blog post](https://docs.keydb.dev/blog/2019/12/16/blog-post/) for more details.
+t2.2xlarge | t2.xlarge and lower
+---|---
+✅ | ❌
+
 For any of above, don't forget to set the `CVAT_HOST` environment variable to the exposed
 AWS public IP address or hostname:
 
 ```bash
 export CVAT_HOST=your-instance.amazonaws.com
+```
+
+You can also create a `.env` file in the cvat repository. The adress is saved even when restarting the server.
+
+```bash
+cd cvat/
+echo CVAT_HOST=your-instance.amazonaws.com > .env
 ```
 
 In case of problems with using hostname, you can also use the public IPV4 instead of hostname.
