@@ -98,7 +98,11 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
-        editedState: null,
+        edited: {
+            shapeType: null,
+            editedState: null,
+            editedStateHidden: false,
+        },
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -623,13 +627,44 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.EDIT_OBJECT: {
-            const { objectType } = action.payload;
+        case AnnotationActionTypes.RESET_EDITED_STATE: {
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    editedState: objectType,
+                    edited: {
+                        ...state.annotations.edited,
+                        shapeType: null,
+                        editedState: null,
+                        editedStateHidden: false,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
+            const { shapeType, editedState } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    edited: {
+                        ...state.annotations.edited,
+                        shapeType: (shapeType ?? null),
+                        editedState: (editedState ?? null),
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.HIDE_EDITED_STATE: {
+            const { hide } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    edited: {
+                        ...state.annotations.edited,
+                        editedStateHidden: hide,
+                    },
                 },
             };
         }

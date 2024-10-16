@@ -65,6 +65,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private startTimestamp: number;
     private geometry: Geometry;
     private drawingOpacity: number;
+    private isHidden: boolean;
 
     private keepDrawnPolygon(): void {
         const canvasWrapper = this.canvas.getElement().parentElement;
@@ -217,10 +218,20 @@ export class MasksHandlerImpl implements MasksHandler {
     private imageDataFromCanvas(wrappingBBox: WrappingBBox): Uint8ClampedArray {
         const imageData = this.canvas.toCanvasElement()
             .getContext('2d').getImageData(
-                wrappingBBox.left, wrappingBBox.top,
-                wrappingBBox.right - wrappingBBox.left + 1, wrappingBBox.bottom - wrappingBBox.top + 1,
+                wrappingBBox.left,
+                wrappingBBox.top,
+                wrappingBBox.right - wrappingBBox.left + 1,
+                wrappingBBox.bottom - wrappingBBox.top + 1,
             ).data;
         return imageData;
+    }
+
+    private updateHidden(value: boolean) {
+        if (value) {
+            this.canvas.getElement().parentElement.style.display = 'none';
+        } else {
+            this.canvas.getElement().parentElement.style.display = 'block';
+        }
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
@@ -530,6 +541,10 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public configurate(configuration: Configuration): void {
         this.colorBy = configuration.colorBy;
+
+        if (this.isHidden !== configuration.hideEditedObject) {
+            this.updateHidden(configuration.hideEditedObject);
+        }
     }
 
     public transform(geometry: Geometry): void {
@@ -563,7 +578,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = expandChannels(color[0], color[1], color[2], points);
-                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
                             try {
@@ -654,7 +672,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = expandChannels(color[0], color[1], color[2], points);
-                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
                             try {

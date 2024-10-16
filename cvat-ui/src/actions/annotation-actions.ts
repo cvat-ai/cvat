@@ -126,7 +126,9 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
-    EDIT_OBJECT = 'EDIT_OBJECT',
+    UPDATE_EDITED_STATE = 'UPDATE_EDITED_STATE',
+    HIDE_EDITED_STATE = 'HIDE_EDITED_STATE',
+    RESET_EDITED_STATE = 'RESET_EDITED_STATE',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
@@ -243,13 +245,40 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
-// TODO: think about better name for this action
-export function editObject(objectType: ShapeType | null): AnyAction {
+export function updateEditedState(shapeType: ShapeType | null, editedState: ObjectState | null): AnyAction {
     return {
-        type: AnnotationActionTypes.EDIT_OBJECT,
+        type: AnnotationActionTypes.UPDATE_EDITED_STATE,
         payload: {
-            objectType,
+            shapeType,
+            editedState,
         },
+    };
+}
+
+export function resetEditedState(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_EDITED_STATE,
+        payload: {},
+    };
+}
+
+// TODO: change to regular func, we dont need async
+export function hideEditedState(hide: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { instance: canvas } = state.annotation.canvas;
+        if (canvas) {
+            (canvas as Canvas).configure({
+                hideEditedObject: hide,
+            });
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.HIDE_EDITED_STATE,
+            payload: {
+                hide,
+            },
+        });
     };
 }
 

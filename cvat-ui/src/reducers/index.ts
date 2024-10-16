@@ -9,6 +9,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, TargetMetric, ValidationLayout,
+    ObjectState,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -770,7 +771,11 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
-        editedState: ShapeType | null;
+        edited: {
+            shapeType: ShapeType | null;
+            editedState: ObjectState | null;
+            editedStateHidden: boolean;
+        };
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
