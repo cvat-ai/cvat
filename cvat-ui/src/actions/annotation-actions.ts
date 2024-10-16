@@ -126,6 +126,7 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    EDIT_OBJECT = 'EDIT_OBJECT',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
@@ -238,6 +239,16 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
         type: AnnotationActionTypes.HIGHLIGHT_CONFLICT,
         payload: {
             conflict,
+        },
+    };
+}
+
+// TODO: think about better name for this action
+export function editObject(objectType: ShapeType | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.EDIT_OBJECT,
+        payload: {
+            objectType,
         },
     };
 }

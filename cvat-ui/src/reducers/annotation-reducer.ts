@@ -98,6 +98,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        editedState: null,
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -619,6 +620,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID,
                     activatedElementID,
                     activatedAttributeID,
+                },
+            };
+        }
+        case AnnotationActionTypes.EDIT_OBJECT: {
+            const { objectType } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    editedState: objectType,
                 },
             };
         }

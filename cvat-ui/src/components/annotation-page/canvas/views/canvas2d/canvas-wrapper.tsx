@@ -45,6 +45,7 @@ import {
     fetchAnnotationsAsync,
     getDataFailed,
     canvasErrorOccurred,
+    editObject,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -146,6 +147,7 @@ interface DispatchToProps {
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
     onStartIssue(position: number[]): void;
+    onEditObject(objectType: ShapeType | null): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -346,6 +348,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
+        },
+        onEditObject(objectType: ShapeType | null): void {
+            dispatch(editObject(objectType));
         },
     };
 }
@@ -634,6 +639,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
+            onEditObject,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -669,6 +675,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations([objectState]);
+        onEditObject(null);
     };
 
     private onCanvasObjectsMerged = (event: any): void => {
@@ -829,13 +836,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
-    private onCanvasEditStart = (): void => {
-        const { updateActiveControl } = this.props;
+    private onCanvasDrawStart = (event: any): void => {
+        const { onEditObject } = this.props;
+        onEditObject(event.detail.drawData.shapeType);
+    };
+
+    private onCanvasEditStart = (event: any): void => {
+        const { updateActiveControl, onEditObject } = this.props;
         updateActiveControl(ActiveControl.EDIT);
+        onEditObject(event.detail.state.shapeType);
     };
 
     private onCanvasEditDone = (event: any): void => {
-        const { activeControl, onUpdateAnnotations, updateActiveControl } = this.props;
+        const {
+            activeControl, onUpdateAnnotations, updateActiveControl, onEditObject,
+        } = this.props;
         const { state, points, rotation } = event.detail;
         if (state.rotation !== rotation) {
             state.rotation = rotation;
@@ -848,6 +863,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             updateActiveControl(ActiveControl.CURSOR);
         }
         onUpdateAnnotations([state]);
+        onEditObject(null);
     };
 
     private onCanvasSliceDone = (event: any): void => {
@@ -887,8 +903,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasCancel = (): void => {
-        const { onResetCanvas } = this.props;
+        const { onResetCanvas, onEditObject } = this.props;
         onResetCanvas();
+        onEditObject(null);
     };
 
     private onCanvasFindObject = async (e: any): Promise<void> => {
@@ -1040,6 +1057,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
+        canvasInstance.html().addEventListener('canvas.drawstart', this.onCanvasDrawStart);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().addEventListener('canvas.sliced', this.onCanvasSliceDone);
