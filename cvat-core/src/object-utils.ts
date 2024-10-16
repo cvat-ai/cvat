@@ -360,7 +360,7 @@ export function rle2Mask(rle: number[], width: number, height: number): number[]
 }
 
 export function propagateShapes<T extends SerializedShape | ObjectState>(
-    shapes: T[], from: number, frameNumbers: number[],
+    shapes: T[], from: number, to: number, frameNumbers: number[],
 ): T[] {
     const getCopy = (shape: T): SerializedShape | SerializedData => {
         if (shape instanceof ObjectState) {
@@ -397,8 +397,14 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
         };
     };
 
+    const targetFrameNumbers = frameNumbers.filter(
+        (frameNumber: number) => frameNumber >= Math.min(from, to) &&
+            frameNumber <= Math.max(from, to) &&
+            frameNumber !== from,
+    );
+
     const states: T[] = [];
-    for (const frame of frameNumbers) {
+    for (const frame of targetFrameNumbers) {
         if (frame === from) {
             continue;
         }

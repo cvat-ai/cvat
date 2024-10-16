@@ -114,14 +114,8 @@ class PropagateShapes extends BaseSingleFrameAction {
             return { collection: { shapes } };
         }
 
-        const frameNumbers = (instance instanceof Job ? await instance.frames.frameNumbers() : range(0, instance.size))
-            .filter(
-                (frameNumber: number) => frameNumber >= Math.min(number, this.#targetFrame) &&
-                    frameNumber <= Math.max(number, this.#targetFrame) &&
-                    frameNumber !== number,
-            );
-
-        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, frameNumbers);
+        const frameNumbers = instance instanceof Job ? await instance.frames.frameNumbers() : range(0, instance.size);
+        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, this.#targetFrame, frameNumbers);
         return { collection: { shapes: [...shapes, ...propagatedShapes] } };
     }
 

@@ -468,15 +468,9 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
                 throw new Error('SessionInstance is not defined, propagation is not possible');
             }
 
-            const framesToPropagate = frameNumbers.filter(
-                (frameNumber: number) => frameNumber >= Math.min(from, to) &&
-                    frameNumber <= Math.max(from, to) &&
-                    frameNumber !== from,
-            );
-
-            if (framesToPropagate.length) {
-                await sessionInstance.logger.log(EventScope.propagateObject, { count: framesToPropagate.length });
-                const states = cvat.utils.propagateShapes<ObjectState>([objectState], from, framesToPropagate);
+            const states = cvat.utils.propagateShapes<ObjectState>([objectState], from, to, frameNumbers);
+            if (states.length) {
+                await sessionInstance.logger.log(EventScope.propagateObject, { count: states.length });
                 await sessionInstance.annotations.put(states);
             }
 
