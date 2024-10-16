@@ -469,20 +469,22 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
             }
 
             const framesToPropagate = frameNumbers.filter(
-                (frameNumber: number) => frameNumber >= Math.min(from, to) && frameNumber <= Math.max(from, to),
+                (frameNumber: number) => frameNumber >= Math.min(from, to) &&
+                    frameNumber <= Math.max(from, to) &&
+                    frameNumber !== from,
             );
 
             if (framesToPropagate.length) {
                 await sessionInstance.logger.log(EventScope.propagateObject, { count: framesToPropagate.length });
                 const states = cvat.utils.propagateShapes<ObjectState>([objectState], from, framesToPropagate);
                 await sessionInstance.annotations.put(states);
-                const history = await sessionInstance.actions.get();
-
-                dispatch({
-                    type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
-                    payload: { history },
-                });
             }
+
+            const history = await sessionInstance.actions.get();
+            dispatch({
+                type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
+                payload: { history },
+            });
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.PROPAGATE_OBJECT_FAILED,
