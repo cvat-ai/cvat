@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { omit, throttle } from 'lodash';
+import { omit, range, throttle } from 'lodash';
 import { ArgumentError } from './exceptions';
 import { SerializedCollection, SerializedShape } from './server-response-types';
 import { Job, Task } from './session';
@@ -107,13 +107,15 @@ class PropagateShapes extends BaseSingleFrameAction {
     }
 
     public async run(
-        instance,
+        instance: Job | Task,
         { collection: { shapes }, frameData: { number } },
     ): Promise<SingleFrameActionOutput> {
         if (number === this.#targetFrame) {
             return { collection: { shapes } };
         }
-        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, this.#targetFrame);
+
+        const frameNumbers = instance instanceof Job ? await instance.frames.frameNumbers() : range(0, instance.size);
+        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, frameNumbers);
         return { collection: { shapes: [...shapes, ...propagatedShapes] } };
     }
 

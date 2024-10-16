@@ -450,6 +450,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
         const {
             job: {
                 instance: sessionInstance,
+                frameNumbers,
             },
             annotations: {
                 activatedStateID,
@@ -463,16 +464,25 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
                 throw new Error('There is not an activated object state to be propagated');
             }
 
-            await sessionInstance.logger.log(EventScope.propagateObject, { count: Math.abs(to - from) });
-            const states = cvat.utils.propagateShapes<ObjectState>([objectState], from, to);
+            if (!sessionInstance) {
+                throw new Error('SessionInstance is not defined, propagation is not possible');
+            }
 
-            await sessionInstance.annotations.put(states);
-            const history = await sessionInstance.actions.get();
+            const framesToPropagate = frameNumbers.filter(
+                (frameNumber: number) => frameNumber >= Math.min(from, to) && frameNumber <= Math.max(from, to),
+            );
 
-            dispatch({
-                type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
-                payload: { history },
-            });
+            if (framesToPropagate.length) {
+                await sessionInstance.logger.log(EventScope.propagateObject, { count: framesToPropagate.length });
+                const states = cvat.utils.propagateShapes<ObjectState>([objectState], from, framesToPropagate);
+                await sessionInstance.annotations.put(states);
+                const history = await sessionInstance.actions.get();
+
+                dispatch({
+                    type: AnnotationActionTypes.PROPAGATE_OBJECT_SUCCESS,
+                    payload: { history },
+                });
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.PROPAGATE_OBJECT_FAILED,
@@ -594,10 +604,10 @@ export function confirmCanvasReadyAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
             const state: CombinedState = getState();
-            const { instance: job } = state.annotation.job;
+            const job = state.annotation.job.instance as Job;
+            const includedFrames = state.annotation.job.frameNumbers;
             const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
-            const includedFrames = await job.frames.frameNumbers() as number[];
             const { frameCount, dataChunkSize } = job;
 
             const ranges = chunks.map((chunk) => (
@@ -914,7 +924,6 @@ export function getJobAsync({
                 }
             }
 
-            const jobMeta = await cvat.frames.getMeta('job', job.id);
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
                 initialFrame as number :
@@ -923,6 +932,8 @@ export function getJobAsync({
                 )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
+            const jobMeta = await cvat.frames.getMeta('job', job.id);
+            const frameNumbers = await job.frames.frameNumbers();
             try {
                 // call first getting of frame data before rendering interface
                 // to load and decode first chunk
@@ -960,6 +971,7 @@ export function getJobAsync({
                 payload: {
                     openTime,
                     job,
+                    frameNumbers,
                     jobMeta,
                     queryParameters,
                     groundTruthInstance: gtJob || null,
