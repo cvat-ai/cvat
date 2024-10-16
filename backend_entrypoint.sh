@@ -18,6 +18,9 @@ cmd_bash() {
 cmd_init() {
     wait_for_db
     ~/manage.py migrate
+
+    ~/wait-for-it.sh "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    ~/manage.py syncperiodicjobs
 }
 
 cmd_run() {

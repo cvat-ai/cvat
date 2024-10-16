@@ -339,6 +339,9 @@ RQ_EXCEPTION_HANDLERS = [
     'cvat.apps.events.handlers.handle_rq_exception',
 ]
 
+PERIODIC_RQ_JOBS = [
+]
+
 # JavaScript and CSS compression
 # https://django-compressor.readthedocs.io
 
