@@ -727,6 +727,21 @@ class ImageManifestManager(_ManifestManager):
             'next': next_start_index,
         }
 
+    def reorder(self, reordered_images: List[str]) -> None:
+        """
+        The method takes a list of image names and reorders its content based on this new list.
+        Due to the implementation of Honeypots, the reordered list of image names may contain duplicates.
+        """
+        unique_images: Dict[str, Any] = {}
+        for _, image_details in self:
+            if image_details.full_name not in unique_images:
+                unique_images[image_details.full_name] = image_details
+
+        try:
+            self.create(content=(unique_images[x] for x in reordered_images))
+        except KeyError as ex:
+            raise InvalidManifestError(f"Previous manifest does not contain {ex} image")
+
 class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):
         self._manifest = _Manifest(full_manifest_path)

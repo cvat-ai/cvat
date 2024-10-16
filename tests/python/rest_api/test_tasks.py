@@ -32,6 +32,7 @@ from typing import (
     ClassVar,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -1529,12 +1530,13 @@ class TestPostTaskData:
         server_files: List[str],
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
-        spec: Optional[Dict[str, Any]] = None,
         data_type: str = "image",
         video_frame_count: int = 10,
         server_files_exclude: Optional[List[str]] = None,
-        org: Optional[str] = None,
+        org: str = "",
         filenames: Optional[List[str]] = None,
+        task_spec_kwargs: Optional[Dict[str, Any]] = None,
+        data_spec_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Tuple[int, Any]:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
@@ -1551,7 +1553,9 @@ class TestPostTaskData:
             )
         else:
             images = generate_image_files(
-                3, **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames})
+                3,
+                sizes=[(100, 50) if i % 2 else (50, 100) for i in range(3)],
+                **({"prefixes": ["img_"] * 3} if not filenames else {"filenames": filenames}),
             )
 
             for image in images:
@@ -1598,6 +1602,7 @@ class TestPostTaskData:
                     "name": "car",
                 }
             ],
+            **(task_spec_kwargs or {}),
         }
 
         data_spec = {
@@ -1608,9 +1613,8 @@ class TestPostTaskData:
                 server_files if not use_manifest else server_files + ["test/manifest.jsonl"]
             ),
             "sorting_method": sorting_method,
+            **(data_spec_kwargs or {}),
         }
-        if spec is not None:
-            data_spec.update(spec)
 
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
@@ -1984,7 +1988,7 @@ class TestPostTaskData:
             use_cache=False,
             server_files=["test/video/video.avi"],
             org=org,
-            spec=data_spec,
+            data_spec_kwargs=data_spec,
             data_type="video",
         )
 
@@ -2549,6 +2553,85 @@ class TestPostTaskData:
                 )
         else:
             assert len(validation_frames) == validation_frames_count
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "validation_mode",
+        [
+            models.ValidationMode("gt"),
+            models.ValidationMode("gt_pool"),
+        ],
+    )
+    def test_can_create_task_with_validation_and_cloud_data(
+        self,
+        cloud_storage_id: int,
+        validation_mode: models.ValidationMode,
+        request: pytest.FixtureRequest,
+        admin_user: str,
+        cloud_storages: Iterable,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+        server_files = [f"test/sub_0/img_{i}.jpeg" for i in range(3)]
+        validation_frames = ["test/sub_0/img_1.jpeg"]
+
+        (task_id, _) = self._create_task_with_cloud_data(
+            request,
+            cloud_storage,
+            use_manifest=False,
+            server_files=server_files,
+            sorting_method=models.SortingMethod(
+                "random"
+            ),  # only random sorting can be used with gt_pool
+            data_spec_kwargs={
+                "validation_params": models.DataRequestValidationParams._from_openapi_data(
+                    mode=validation_mode,
+                    frames=validation_frames,
+                    frame_selection_method=models.FrameSelectionMethod("manual"),
+                    frames_per_job_count=1,
+                )
+            },
+            task_spec_kwargs={
+                # in case of gt_pool: each regular job will contain 1 regular and 1 validation frames,
+                # (number of validation frames is not included into segment_size)
+                "segment_size": 1,
+            },
+        )
+
+        with make_api_client(admin_user) as api_client:
+            # check that GT job was created
+            (paginated_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
+            assert 1 == len(paginated_jobs["results"])
+
+            (paginated_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="annotation")
+            jobs_count = (
+                len(server_files) - len(validation_frames)
+                if validation_mode == models.ValidationMode("gt_pool")
+                else len(server_files)
+            )
+            assert jobs_count == len(paginated_jobs["results"])
+            # check that the returned meta of images corresponds to the chunk data
+            # Note: meta is based on the order of images from database
+            # while chunk with CS data is based on the order of images in a manifest
+            for job in paginated_jobs["results"]:
+                (job_meta, _) = api_client.jobs_api.retrieve_data_meta(job["id"])
+                (_, response) = api_client.jobs_api.retrieve_data(
+                    job["id"], type="chunk", quality="compressed", index=0
+                )
+                chunk_file = io.BytesIO(response.data)
+                assert zipfile.is_zipfile(chunk_file)
+
+                with zipfile.ZipFile(chunk_file, "r") as chunk_archive:
+                    chunk_images = {
+                        int(os.path.splitext(name)[0]): np.array(
+                            Image.open(io.BytesIO(chunk_archive.read(name)))
+                        )
+                        for name in chunk_archive.namelist()
+                    }
+                    chunk_images = dict(sorted(chunk_images.items(), key=lambda e: e[0]))
+
+                    for img, img_meta in zip(chunk_images.values(), job_meta.frames):
+                        assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
 
 class _SourceDataType(str, Enum):
