@@ -41,7 +41,7 @@ def get_segment_rel_frame_set(db_segment) -> Collection[int]:
 
     return sorted(get_rel_frame(abs_frame, db_data) for abs_frame in frame_set)
 
-def delete_duplicate_ground_truth_jobs(apps):
+def delete_duplicate_ground_truth_jobs(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
     Job = apps.get_model("engine", "Job")
 
