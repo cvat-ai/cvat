@@ -316,7 +316,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
                 const frame =
                     typeof activeObjectState.keyframes.next === 'number' ? activeObjectState.keyframes.next : null;
-                if (frame !== null && isAbleToChangeFrame()) {
+                if (frame !== null && isAbleToChangeFrame(frame)) {
                     changeFrame(frame);
                 }
             }
@@ -326,7 +326,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
                 const frame =
                     typeof activeObjectState.keyframes.prev === 'number' ? activeObjectState.keyframes.prev : null;
-                if (frame !== null && isAbleToChangeFrame()) {
+                if (frame !== null && isAbleToChangeFrame(frame)) {
                     changeFrame(frame);
                 }
             }
