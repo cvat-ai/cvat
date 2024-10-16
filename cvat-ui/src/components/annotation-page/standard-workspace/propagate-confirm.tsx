@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
@@ -31,7 +31,7 @@ function PropagateConfirmComponent(): JSX.Element {
         visible: state.annotation.propagate.visible,
         frameNumber: state.annotation.player.frame.number,
         frameNumbers: state.annotation.job.frameNumbers,
-    }));
+    }), shallowEqual);
 
     const [targetFrame, setTargetFrame] = useState<number>(frameNumber);
     const startFrame = frameNumbers[0];
