@@ -812,7 +812,8 @@ class JobData(CommonData):
                 self._excluded_frames.update(self.db_data.validation_layout.disabled_frames)
 
         if self._required_frames:
-            self._required_frames = set(frame for frame in self._required_frames if frame in self.rel_range)
+            rel_range = self.rel_range
+            self._required_frames = set(frame for frame in self._required_frames if frame in rel_range)
 
     def __len__(self):
         segment = self._db_job.segment
