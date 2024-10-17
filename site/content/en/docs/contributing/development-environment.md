@@ -168,6 +168,7 @@ description: 'Installing a development environment for different operating syste
   ```bash
   python manage.py migrate
   python manage.py collectstatic
+  python manage.py syncperiodicjobs
   python manage.py createsuperuser
   ```
 

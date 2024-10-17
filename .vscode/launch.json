@@ -377,6 +377,22 @@
             "console": "internalConsole"
         },
         {
+            "name": "server: sync periodic jobs",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "syncperiodicjobs"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
             "name": "server: tests",
             "type": "debugpy",
             "request": "launch",
