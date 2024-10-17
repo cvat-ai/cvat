@@ -227,10 +227,12 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private updateHidden(value: boolean) {
+        this.isHidden = value;
         if (value) {
             this.canvas.getElement().parentElement.style.display = 'none';
         } else {
-            this.canvas.getElement().parentElement.style.display = 'block';
+            this.canvas.getElement().parentElement.style.display = this.isDrawing || this.isEditing ? 'block' : '';
+            // TODO: change brush tool position to avoid flickering
         }
     }
 
