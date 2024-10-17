@@ -10,7 +10,7 @@ from cvat.apps.engine.models import DimensionType
 
 class TrackManagerTest(TestCase):
     def _check_interpolation(self, track):
-        interpolated = TrackManager.get_interpolated_shapes(track, 0, 7, '2d')
+        interpolated = TrackManager.get_interpolated_shapes(track, 0, 7, "2d")
 
         self.assertEqual(
             [
@@ -25,7 +25,7 @@ class TrackManagerTest(TestCase):
             [
                 {k: v for k, v in shape.items() if k in ["frame", "keyframe", "outside"]}
                 for shape in interpolated
-            ]
+            ],
         )
 
     def test_point_interpolation(self):
@@ -42,7 +42,7 @@ class TrackManagerTest(TestCase):
                     "type": "points",
                     "occluded": False,
                     "outside": False,
-                    "attributes": []
+                    "attributes": [],
                 },
                 {
                     "frame": 2,
@@ -50,7 +50,7 @@ class TrackManagerTest(TestCase):
                     "points": [3.0, 4.0, 5.0, 6.0],
                     "type": "points",
                     "occluded": False,
-                    "outside": True
+                    "outside": True,
                 },
                 {
                     "frame": 4,
@@ -58,9 +58,9 @@ class TrackManagerTest(TestCase):
                     "points": [3.0, 4.0, 5.0, 6.0],
                     "type": "points",
                     "occluded": False,
-                    "outside": False
+                    "outside": False,
                 },
-            ]
+            ],
         }
 
         self._check_interpolation(track)
@@ -79,7 +79,7 @@ class TrackManagerTest(TestCase):
                     "type": "polygon",
                     "occluded": False,
                     "outside": False,
-                    "attributes": []
+                    "attributes": [],
                 },
                 {
                     "frame": 2,
@@ -87,7 +87,7 @@ class TrackManagerTest(TestCase):
                     "points": [3.0, 4.0, 5.0, 6.0, 7.0, 6.0, 4.0, 5.0],
                     "type": "polygon",
                     "occluded": False,
-                    "outside": True
+                    "outside": True,
                 },
                 {
                     "frame": 4,
@@ -95,9 +95,9 @@ class TrackManagerTest(TestCase):
                     "points": [3.0, 4.0, 5.0, 6.0, 7.0, 6.0, 4.0, 5.0],
                     "type": "polygon",
                     "occluded": False,
-                    "outside": False
+                    "outside": False,
                 },
-            ]
+            ],
         }
 
         self._check_interpolation(track)
@@ -117,7 +117,7 @@ class TrackManagerTest(TestCase):
                     "type": "rectangle",
                     "occluded": False,
                     "outside": False,
-                    "attributes": []
+                    "attributes": [],
                 },
                 {
                     "frame": 2,
@@ -126,7 +126,7 @@ class TrackManagerTest(TestCase):
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
-                    "outside": True
+                    "outside": True,
                 },
                 {
                     "frame": 4,
@@ -135,9 +135,9 @@ class TrackManagerTest(TestCase):
                     "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
-                    "outside": False
+                    "outside": False,
                 },
-            ]
+            ],
         }
 
         self._check_interpolation(track)
@@ -157,7 +157,7 @@ class TrackManagerTest(TestCase):
                     "type": "polyline",
                     "occluded": False,
                     "outside": False,
-                    "attributes": []
+                    "attributes": [],
                 },
                 {
                     "frame": 2,
@@ -166,7 +166,7 @@ class TrackManagerTest(TestCase):
                     "rotation": 0,
                     "type": "polyline",
                     "occluded": False,
-                    "outside": True
+                    "outside": True,
                 },
                 {
                     "frame": 4,
@@ -175,9 +175,9 @@ class TrackManagerTest(TestCase):
                     "rotation": 0,
                     "type": "polyline",
                     "occluded": False,
-                    "outside": False
+                    "outside": False,
                 },
-            ]
+            ],
         }
 
         self._check_interpolation(track)
@@ -197,7 +197,7 @@ class TrackManagerTest(TestCase):
                     "type": "rectangle",
                     "occluded": False,
                     "outside": False,
-                    "attributes": []
+                    "attributes": [],
                 },
                 {
                     "frame": 2,
@@ -215,9 +215,9 @@ class TrackManagerTest(TestCase):
                     "type": "rectangle",
                     "occluded": False,
                     "outside": True,
-                    "attributes": []
-                }
-            ]
+                    "attributes": [],
+                },
+            ],
         }
 
         expected_shapes = [
@@ -229,7 +229,7 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": False,
                 "attributes": [],
-                "keyframe": True
+                "keyframe": True,
             },
             {
                 "frame": 1,
@@ -239,7 +239,7 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": False,
                 "attributes": [],
-                "keyframe": False
+                "keyframe": False,
             },
             {
                 "frame": 2,
@@ -249,7 +249,7 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": True,
                 "attributes": [],
-                "keyframe": True
+                "keyframe": True,
             },
             {
                 "frame": 4,
@@ -259,11 +259,11 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": True,
                 "attributes": [],
-                "keyframe": True
-            }
+                "keyframe": True,
+            },
         ]
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 5, '2d')
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 5, "2d")
         self.assertEqual(expected_shapes, interpolated_shapes)
 
     def test_outside_polygon_interpolation(self):
@@ -280,7 +280,7 @@ class TrackManagerTest(TestCase):
                     "type": "polygon",
                     "occluded": False,
                     "outside": False,
-                    "attributes": []
+                    "attributes": [],
                 },
                 {
                     "frame": 2,
@@ -288,9 +288,9 @@ class TrackManagerTest(TestCase):
                     "type": "polygon",
                     "occluded": False,
                     "outside": True,
-                    "attributes": []
-                }
-            ]
+                    "attributes": [],
+                },
+            ],
         }
 
         expected_shapes = [
@@ -301,7 +301,7 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": False,
                 "attributes": [],
-                "keyframe": True
+                "keyframe": True,
             },
             {
                 "frame": 1,
@@ -310,7 +310,7 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": False,
                 "attributes": [],
-                "keyframe": False
+                "keyframe": False,
             },
             {
                 "frame": 2,
@@ -319,11 +319,11 @@ class TrackManagerTest(TestCase):
                 "occluded": False,
                 "outside": True,
                 "attributes": [],
-                "keyframe": True
-            }
+                "keyframe": True,
+            },
         ]
 
-        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3, '2d')
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3, "2d")
         self.assertEqual(expected_shapes, interpolated_shapes)
 
     def test_duplicated_shape_interpolation(self):
