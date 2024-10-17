@@ -327,8 +327,28 @@ class TrackManagerTest(TestCase):
         self.assertEqual(expected_shapes, interpolated_shapes)
 
     def test_duplicated_shape_interpolation(self):
-        # there should not be any new tracks with duplicated points,
-        # but it is possible that database
+        # there should not be any new tracks with duplicated shapes,
+        # but it is possible that the database still contains some
+        expected_shapes = [
+            {
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "points": [100, 100, 200, 200],
+                "frame": 0,
+                "attributes": [],
+                "rotation": 0,
+            },
+            {
+                "type": "rectangle",
+                "occluded": False,
+                "outside": True,
+                "points": [100, 100, 200, 200],
+                "frame": 1,
+                "attributes": [],
+                "rotation": 0,
+            },
+        ]
         track = {
             "id": 666,
             "frame": 0,
@@ -337,37 +357,8 @@ class TrackManagerTest(TestCase):
             "attributes": [],
             "elements": [],
             "label": "cat",
-            "shapes": [
-                {
-                    "type": "rectangle",
-                    "occluded": False,
-                    "outside": False,
-                    "points": [100, 100, 200, 200],
-                    "frame": 0,
-                    "attributes": [],
-                    "rotation": 0,
-                },
-                {
-                    "type": "rectangle",
-                    "occluded": False,
-                    "outside": True,
-                    "points": [100, 100, 200, 200],
-                    "frame": 1,
-                    "attributes": [],
-                    "rotation": 0,
-                },
-                {
-                    "type": "rectangle",
-                    "occluded": False,
-                    "outside": True,
-                    "points": [100, 100, 200, 200],
-                    "frame": 1,
-                    "attributes": [],
-                    "rotation": 0,
-                },
-            ],
+            "shapes": expected_shapes + [expected_shapes[-1]],
         }
-        expected_shapes = track["shapes"][0:2]
 
         interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2, "2d")
         self.assertEqual(expected_shapes, interpolated_shapes)
