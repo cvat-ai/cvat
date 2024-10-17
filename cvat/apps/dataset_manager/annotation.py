@@ -927,8 +927,6 @@ class TrackManager(ObjectManager):
         shapes = []
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
-            if prev_shape and dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None):
-                continue
             curr_frame = shape["frame"]
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
@@ -953,6 +951,9 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
+                if not curr_frame > prev_shape["frame"]:
+                    if dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None):
+                        continue
                 assert curr_frame > prev_shape["frame"], f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}" # Catch invalid tracks
 
                 # Propagate attributes
