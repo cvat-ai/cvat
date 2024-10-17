@@ -11103,6 +11103,9 @@ components:
           type: string
           format: date-time
           readOnly: true
+        has_analytics_access:
+          type: boolean
+          readOnly: true
       required:
       - groups
       - username
