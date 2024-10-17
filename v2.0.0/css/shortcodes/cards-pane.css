@@ -1,0 +1,21 @@
+.card-deck {
+  max-width: 83%;
+}
+
+.card {
+  max-width: 80%;
+}
+
+.card-body.code {
+  background-color: #f8f9fa;
+  padding: 0 0 0 1ex;
+}
+
+.card-body pre {
+  margin: 0;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.card .highlight {
+  border: none;
+}
