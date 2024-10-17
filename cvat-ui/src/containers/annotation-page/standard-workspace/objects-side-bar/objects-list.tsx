@@ -19,6 +19,7 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
+    hideEditedState,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -56,6 +57,11 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
     workspace: Workspace;
+    editedState: {
+        shapeType: ShapeType | null;
+        editedState: ObjectState | null;
+        editedStateHidden: boolean;
+    },
 }
 
 interface DispatchToProps {
@@ -67,6 +73,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
+    changeHideEditedState(value: boolean): void;
 }
 
 const componentShortcuts = {
@@ -180,6 +187,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
+                edited,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
@@ -233,6 +241,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         showGroundTruth,
         workspace,
+        editedState: edited,
     };
 }
 
@@ -262,6 +271,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeShowGroundTruth(value: boolean): void {
             dispatch(changeShowGroundTruthAction(value));
             dispatch(fetchAnnotationsAsync());
+        },
+        changeHideEditedState(value: boolean): void {
+            dispatch(hideEditedState(value));
         },
     };
 }
@@ -475,6 +487,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
+                const { editedState, changeHideEditedState } = this.props;
+                console.log(editedState);
+                if (editedState.shapeType === ShapeType.MASK) {
+                    changeHideEditedState(!editedState.editedStateHidden);
+                }
                 if (state) {
                     state.hidden = !state.hidden;
                     updateAnnotations([state]);
