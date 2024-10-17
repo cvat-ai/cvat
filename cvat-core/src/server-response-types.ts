@@ -524,8 +524,14 @@ export interface SerializedRequest {
     owner?: any;
 }
 
-export interface SerializedValidationLayout {
+export interface SerializedJobValidationLayout {
     honeypot_count?: number;
     honeypot_frames?: number[];
     honeypot_real_frames?: number[];
+}
+
+export interface SerializedTaskValidationLayout extends SerializedJobValidationLayout {
+    mode: 'gt' | 'gt_pool' | null;
+    validation_frames?: number[];
+    disabled_frames?: number[];
 }
