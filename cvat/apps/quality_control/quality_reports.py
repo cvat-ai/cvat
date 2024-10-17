@@ -2303,13 +2303,14 @@ class QualityReportUpdateManager:
             if validation_layout.mode == ValidationMode.GT_POOL:
                 task_frame_provider = TaskFrameProvider(task)
                 active_validation_frames = set(
-                    task_frame_provider.get_rel_frame_number(frame)
-                    for frame, real_frame in (
+                    task_frame_provider.get_rel_frame_number(abs_frame)
+                    for abs_frame, abs_real_frame in (
                         Image.objects.filter(data=task.data, is_placeholder=True)
                         .values_list("frame", "real_frame")
                         .iterator(chunk_size=10000)
                     )
-                    if real_frame in active_validation_frames
+                    if task_frame_provider.get_rel_frame_number(abs_real_frame)
+                    in active_validation_frames
                 )
 
             jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
@@ -2317,7 +2318,7 @@ class QualityReportUpdateManager:
                 job.id: JobDataProvider(
                     job.id,
                     queryset=job_queryset,
-                    included_frames=set(job.segment.frame_set) & active_validation_frames,
+                    included_frames=active_validation_frames,
                 )
                 for job in jobs
             }
