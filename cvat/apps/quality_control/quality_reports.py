@@ -2309,7 +2309,8 @@ class QualityReportUpdateManager:
                         .values_list("frame", "real_frame")
                         .iterator(chunk_size=10000)
                     )
-                    if task_frame_provider.get_rel_frame_number(abs_real_frame) in active_validation_frames
+                    if task_frame_provider.get_rel_frame_number(abs_real_frame)
+                    in active_validation_frames
                 )
 
             jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
