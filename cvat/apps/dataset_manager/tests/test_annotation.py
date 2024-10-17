@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.dataset_manager.annotation import TrackManager
-
 from unittest import TestCase
+
+from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
+from cvat.apps.engine.models import DimensionType
 
 
 class TrackManagerTest(TestCase):
@@ -324,3 +325,101 @@ class TrackManagerTest(TestCase):
 
         interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 3, '2d')
         self.assertEqual(expected_shapes, interpolated_shapes)
+
+    def test_duplicated_shape_interpolation(self):
+        # there should not be any new tracks with duplicated points,
+        # but it is possible that database
+        track = {
+            "id": 666,
+            "frame": 0,
+            "group": None,
+            "source": "manual",
+            "attributes": [],
+            "elements": [],
+            "label": "cat",
+            "shapes": [
+                {
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "points": [100, 100, 200, 200],
+                    "frame": 0,
+                    "attributes": [],
+                    "rotation": 0,
+                },
+                {
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": True,
+                    "points": [100, 100, 200, 200],
+                    "frame": 1,
+                    "attributes": [],
+                    "rotation": 0,
+                },
+                {
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": True,
+                    "points": [100, 100, 200, 200],
+                    "frame": 1,
+                    "attributes": [],
+                    "rotation": 0,
+                },
+            ],
+        }
+        expected_shapes = track["shapes"][0:2]
+
+        interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2, "2d")
+        self.assertEqual(expected_shapes, interpolated_shapes)
+
+
+class AnnotationIRTest(TestCase):
+    def test_slice_track_does_not_duplicate_outside_frame_on_the_end(self):
+        track_shapes = [
+            {
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "points": [100, 100, 200, 200],
+                "frame": 0,
+                "attributes": [],
+                "rotation": 0,
+            },
+            {
+                "type": "rectangle",
+                "occluded": False,
+                "outside": True,
+                "points": [100, 100, 200, 200],
+                "frame": 1,
+                "attributes": [],
+                "rotation": 0,
+            },
+            {
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "points": [111, 111, 222, 222],
+                "frame": 10,
+                "attributes": [],
+                "rotation": 0,
+            },
+        ]
+        data = {
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "id": 666,
+                    "frame": 0,
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [],
+                    "elements": [],
+                    "label": "cat",
+                    "shapes": track_shapes,
+                }
+            ],
+        }
+        annotation = AnnotationIR(dimension=DimensionType.DIM_2D, data=data)
+        sliced_annotation = annotation.slice(0, 1)
+        self.assertEqual(sliced_annotation.data["tracks"][0]["shapes"], track_shapes[0:2])

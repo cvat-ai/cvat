@@ -131,7 +131,8 @@ class AnnotationIR:
                 if last_key >= stop and scoped_shapes[-1]['points'] != segment_shapes[-1]['points']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif scoped_shapes[-1]['keyframe'] and \
-                        scoped_shapes[-1]['outside']:
+                        scoped_shapes[-1]['outside'] and \
+                        (len(segment_shapes) == 0 or scoped_shapes[-1]['frame'] > segment_shapes[-1]['frame']):
                     segment_shapes.append(scoped_shapes[-1])
                 elif stop + 1 < len(interpolated_shapes) and \
                         interpolated_shapes[stop + 1]['outside']:
@@ -926,6 +927,8 @@ class TrackManager(ObjectManager):
         shapes = []
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
+            if prev_shape and dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None):
+                continue
             curr_frame = shape["frame"]
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
