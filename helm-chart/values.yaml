@@ -39,6 +39,9 @@ cvat:
       tolerations: []
       envs:
         ALLOWED_HOSTS: "*"
+        # Disable the frontend elements by disabling the following key and rebuilding
+        # ui/reducers/server-api-reducer/defaultState.configuration.isRegistrationEnabled
+        IAM_REGISTRATION_ENABLED: "true"
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
