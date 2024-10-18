@@ -19,7 +19,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest, SerializedValidationLayout,
+    SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -1384,7 +1384,7 @@ async function deleteJob(jobID: number): Promise<void> {
 
 const validationLayout = (instance: 'tasks' | 'jobs') => async (
     id: number,
-): Promise<SerializedValidationLayout | null> => {
+): Promise<SerializedJobValidationLayout | SerializedTaskValidationLayout> => {
     const { backendAPI } = config;
 
     try {
