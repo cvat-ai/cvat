@@ -595,6 +595,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
+        canvasInstance.html().removeEventListener('canvas.drawstart', this.onCanvasDrawStart);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().removeEventListener('canvas.sliced', this.onCanvasSliceDone);

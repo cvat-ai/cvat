@@ -110,6 +110,7 @@ function drawCircles(): void {
                 .circle(5)
                 .stroke({
                     width: 1,
+                    color: CIRCLE_STROKE,
                 })
                 .fill('#ccc')
                 .center(p.x, p.y),

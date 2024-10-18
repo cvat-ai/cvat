@@ -228,17 +228,16 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private updateHidden(value: boolean) {
         this.isHidden = value;
-        // Need to update style of upper canvas explicilty because update of default cursor is not applied immideately
+        // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
         // https://github.com/fabricjs/fabric.js/issues/1456
-        if (value) {
-            this.canvas.getElement().parentElement.style.opacity = '0';
-            (this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement).style.cursor = 'inherit';
-            this.canvas.defaultCursor = 'inherit';
-        } else {
-            this.canvas.getElement().parentElement.style.opacity = '';
-            (this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement).style.cursor = 'none';
-            this.canvas.defaultCursor = 'none';
+        const newOpacity = value ? '0' : '';
+        const newCursor = value ? 'inherit' : 'none';
+        this.canvas.getElement().parentElement.style.opacity = newOpacity;
+        const upperCanvas = this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement;
+        if (upperCanvas) {
+            upperCanvas.style.cursor = newCursor;
         }
+        this.canvas.defaultCursor = newCursor;
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {

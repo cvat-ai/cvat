@@ -1356,15 +1356,16 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (this.isHidden !== configuration.hideEditedObject) {
             this.updateHidden(configuration.hideEditedObject);
-        } else if (!this.isHidden) {
+        } else if (!configuration.hideEditedObject) {
             this.updateDrawInstance(configuration.selectedShapeOpacity);
-            this.autobordersEnabled = configuration.autoborders;
-            if (this.drawInstance && !this.drawData.initialState) {
-                if (this.autobordersEnabled) {
-                    this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
-                } else {
-                    this.autoborderHandler.autoborder(false);
-                }
+        }
+
+        this.autobordersEnabled = configuration.autoborders;
+        if (this.drawInstance && !this.drawData.initialState) {
+            if (this.autobordersEnabled) {
+                this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
+            } else {
+                this.autoborderHandler.autoborder(false);
             }
         }
     }
@@ -1401,9 +1402,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
             const paintHandler = this.drawInstance.remember('_paintHandler');
 
-            for (const point of (paintHandler as any).set.members) {
-                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
+                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
+                }
             }
         }
     }
