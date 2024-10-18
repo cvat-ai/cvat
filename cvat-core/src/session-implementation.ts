@@ -876,6 +876,14 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.frames.frameNumbers, 'implementation', {
+        value: function includedFramesImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.frames.frameNumbers> {
+            throw new Error('Not implemented for Task');
+        },
+    });
+
     Object.defineProperty(Task.prototype.frames.preview, 'implementation', {
         value: function previewImplementation(
             this: TaskClass,
