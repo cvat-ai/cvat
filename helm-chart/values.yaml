@@ -145,6 +145,7 @@ cvat:
             name: http
     defaultStorage:
         enabled: true
+#        existingClaimName: ""
 #        storageClassName: default
 #        accessModes:
 #         - ReadWriteMany
