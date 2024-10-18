@@ -12710,7 +12710,8 @@
     "user": [
       "admin1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12720,7 +12721,8 @@
     "user": [
       "user1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12730,7 +12732,8 @@
     "user": [
       "user2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12740,7 +12743,8 @@
     "user": [
       "user3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12750,7 +12754,8 @@
     "user": [
       "user4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12760,7 +12765,8 @@
     "user": [
       "worker1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12770,7 +12776,8 @@
     "user": [
       "worker2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12780,7 +12787,8 @@
     "user": [
       "worker3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12790,7 +12798,8 @@
     "user": [
       "worker4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12800,7 +12809,8 @@
     "user": [
       "business1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12810,7 +12820,8 @@
     "user": [
       "business2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12820,7 +12831,8 @@
     "user": [
       "business3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12830,7 +12842,8 @@
     "user": [
       "business4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12840,7 +12853,8 @@
     "user": [
       "dummy1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12850,7 +12864,8 @@
     "user": [
       "dummy2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12860,7 +12875,8 @@
     "user": [
       "dummy3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12870,7 +12886,8 @@
     "user": [
       "dummy4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12880,7 +12897,8 @@
     "user": [
       "admin2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12890,7 +12908,8 @@
     "user": [
       "user5"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12900,7 +12919,8 @@
     "user": [
       "user6"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -12910,7 +12930,8 @@
     "user": [
       "lonely_user"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {

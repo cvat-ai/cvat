@@ -637,6 +637,8 @@ class UserAPITestCase(ApiTestBase):
         extra_check("is_active", data)
         extra_check("last_login", data)
         extra_check("date_joined", data)
+        extra_check("has_analytics_access", data)
+
 
 class UserListAPITestCase(UserAPITestCase):
     def _run_api_v2_users(self, user):
@@ -671,6 +673,7 @@ class UserListAPITestCase(UserAPITestCase):
         response = self._run_api_v2_users(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
 class UserSelfAPITestCase(UserAPITestCase):
     def _run_api_v2_users_self(self, user):
         with ForceLogin(user, self.client):
@@ -697,6 +700,7 @@ class UserSelfAPITestCase(UserAPITestCase):
     def test_api_v2_users_self_no_auth(self):
         response = self._run_api_v2_users_self(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
@@ -739,6 +743,7 @@ class UserGetAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_no_auth(self):
         response = self._run_api_v2_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id, data):
@@ -785,6 +790,7 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
         data = {"username": "user12"}
         response = self._run_api_v2_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserDeleteAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
