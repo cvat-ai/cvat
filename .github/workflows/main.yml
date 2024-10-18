@@ -67,7 +67,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
-          tags: cvat/server
+          tags: cvat/server:${{ env.CVAT_VERSION }}
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
@@ -81,7 +81,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
-          tags: cvat/ui
+          tags: cvat/ui:${{ env.CVAT_VERSION }}
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
       - name: CVAT SDK. Build
@@ -95,7 +95,7 @@ jobs:
         id: verify_schema
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker run --rm cvat/server bash \
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py spectacular' > cvat/schema-expected.yml
 
           if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify migrations
         run: |
-          docker run --rm cvat/server bash \
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py makemigrations --check'
 
       - name: Upload CVAT server artifact
@@ -156,8 +156,6 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Generate SDK
@@ -221,7 +219,6 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running OPA tests
@@ -304,8 +301,6 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Run CVAT instance
@@ -426,10 +421,10 @@ jobs:
           SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
           UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
         run: |
-          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
+          docker tag "cvat/server:${CVAT_VERSION}" "${SERVER_IMAGE_REPO}:dev"
           docker push "${SERVER_IMAGE_REPO}:dev"
 
-          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
+          docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
           docker push "${UI_IMAGE_REPO}:dev"
 
   codecov:
