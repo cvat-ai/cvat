@@ -6,7 +6,7 @@ import { fabric } from 'fabric';
 import debounce from 'lodash/debounce';
 
 import {
-    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
+    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy, Position,
 } from './canvasModel';
 import consts from './consts';
 import { DrawHandler } from './drawHandler';
@@ -61,7 +61,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private editData: MasksEditData | null;
 
     private colorBy: ColorBy;
-    private latestMousePos: { x: number; y: number; };
+    private latestMousePos: Position;
     private startTimestamp: number;
     private geometry: Geometry;
     private drawingOpacity: number;
@@ -228,11 +228,16 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private updateHidden(value: boolean) {
         this.isHidden = value;
+        // Need to update style of upper canvas explicilty because update of default cursor is not applied immideately
+        // https://github.com/fabricjs/fabric.js/issues/1456
         if (value) {
-            this.canvas.getElement().parentElement.style.display = 'none';
+            this.canvas.getElement().parentElement.style.opacity = '0';
+            (this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement).style.cursor = 'inherit';
+            this.canvas.defaultCursor = 'inherit';
         } else {
-            this.canvas.getElement().parentElement.style.display = this.isDrawing || this.isEditing ? 'block' : '';
-            // TODO: change brush tool position to avoid flickering
+            this.canvas.getElement().parentElement.style.opacity = '';
+            (this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement).style.cursor = 'none';
+            this.canvas.defaultCursor = 'none';
         }
     }
 
@@ -363,6 +368,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.editData = null;
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
+        this.isHidden = false;
         this.colorBy = ColorBy.LABEL;
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
@@ -465,7 +471,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.renderAll();
             }
 
-            if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
+            if (isMouseDown && !this.isHidden && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
                 const color = fabric.Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
 

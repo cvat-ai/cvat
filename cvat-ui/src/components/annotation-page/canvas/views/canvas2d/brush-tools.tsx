@@ -23,7 +23,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, ObjectType, ShapeType } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
-import { hideEditedState, rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
+import { changeHideEditedStateAsync, rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
 import { ShortcutScope } from 'utils/enums';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { subKeyMap } from 'utils/component-subkeymap';
@@ -75,7 +75,7 @@ function BrushTools(): React.ReactPortal | null {
     const config = useSelector((state: CombinedState) => state.annotation.canvas.brushTools);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const editedState = useSelector((state: CombinedState) => state.annotation.annotations.edited);
+    const editedState = useSelector((state: CombinedState) => state.annotation.annotations.editedState);
     const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
     const { visible } = config;
 
@@ -105,7 +105,7 @@ function BrushTools(): React.ReactPortal | null {
     }, [setCurrentTool, blockedTools['polygon-minus']]);
 
     const hideMask = useCallback((hide: boolean) => {
-        dispatch(hideEditedState(hide));
+        dispatch(changeHideEditedStateAsync(hide));
     }, [dispatch]);
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {

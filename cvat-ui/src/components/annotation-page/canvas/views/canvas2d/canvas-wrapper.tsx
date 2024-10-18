@@ -45,8 +45,8 @@ import {
     fetchAnnotationsAsync,
     getDataFailed,
     canvasErrorOccurred,
-    updateEditedState,
-    resetEditedState,
+    updateEditedStateAsync,
+    resetEditedStateAsync,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -352,10 +352,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(reviewActions.startIssue(position));
         },
         onUpdateEditedObject(objectType: ShapeType | null, editedState: ObjectState | null): void {
-            dispatch(updateEditedState(objectType, editedState));
+            dispatch(updateEditedStateAsync(objectType, editedState));
         },
         onResetEditedObject(): void {
-            dispatch(resetEditedState());
+            dispatch(resetEditedStateAsync());
         },
     };
 }

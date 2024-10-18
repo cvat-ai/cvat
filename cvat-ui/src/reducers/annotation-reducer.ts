@@ -98,9 +98,9 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
-        edited: {
+        editedState: {
             shapeType: null,
-            editedState: null,
+            editedStateInstance: null,
             editedStateHidden: false,
         },
         highlightedConflict: null,
@@ -632,25 +632,25 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    edited: {
-                        ...state.annotations.edited,
+                    editedState: {
+                        ...state.annotations.editedState,
                         shapeType: null,
-                        editedState: null,
+                        editedStateInstance: null,
                         editedStateHidden: false,
                     },
                 },
             };
         }
         case AnnotationActionTypes.UPDATE_EDITED_STATE: {
-            const { shapeType, editedState } = action.payload;
+            const { shapeType, editedStateInstance } = action.payload;
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    edited: {
-                        ...state.annotations.edited,
+                    editedState: {
+                        ...state.annotations.editedState,
                         shapeType: (shapeType ?? null),
-                        editedState: (editedState ?? null),
+                        editedStateInstance: (editedStateInstance ?? null),
                     },
                 },
             };
@@ -661,8 +661,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    edited: {
-                        ...state.annotations.edited,
+                    editedState: {
+                        ...state.annotations.editedState,
                         editedStateHidden: hide,
                     },
                 },

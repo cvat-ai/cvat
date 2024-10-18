@@ -19,14 +19,14 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
-    hideEditedState,
+    changeHideEditedStateAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
+    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace, EditedState,
 } from 'reducers';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
@@ -57,11 +57,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
     workspace: Workspace;
-    editedState: {
-        shapeType: ShapeType | null;
-        editedState: ObjectState | null;
-        editedStateHidden: boolean;
-    },
+    editedState: EditedState,
 }
 
 interface DispatchToProps {
@@ -187,7 +183,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
-                edited,
+                editedState,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
@@ -241,7 +237,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         showGroundTruth,
         workspace,
-        editedState: edited,
+        editedState,
     };
 }
 
@@ -273,7 +269,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(fetchAnnotationsAsync());
         },
         changeHideEditedState(value: boolean): void {
-            dispatch(hideEditedState(value));
+            dispatch(changeHideEditedStateAsync(value));
         },
     };
 }
@@ -400,8 +396,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { updateAnnotations } = this.props;
+        const { updateAnnotations, editedState, changeHideEditedState } = this.props;
         const { filteredStates } = this.state;
+
+        if (editedState.shapeType === ShapeType.MASK) {
+            changeHideEditedState(hidden);
+        }
 
         for (const objectState of filteredStates) {
             objectState.hidden = hidden;
@@ -488,7 +488,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState();
                 const { editedState, changeHideEditedState } = this.props;
-                console.log(editedState);
                 if (editedState.shapeType === ShapeType.MASK) {
                     changeHideEditedState(!editedState.editedStateHidden);
                 }

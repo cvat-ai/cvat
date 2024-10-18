@@ -245,43 +245,6 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
-export function updateEditedState(shapeType: ShapeType | null, editedState: ObjectState | null): AnyAction {
-    return {
-        type: AnnotationActionTypes.UPDATE_EDITED_STATE,
-        payload: {
-            shapeType,
-            editedState,
-        },
-    };
-}
-
-export function resetEditedState(): AnyAction {
-    return {
-        type: AnnotationActionTypes.RESET_EDITED_STATE,
-        payload: {},
-    };
-}
-
-// TODO: change to regular func, we dont need async
-export function hideEditedState(hide: boolean): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const state = getState();
-        const { instance: canvas } = state.annotation.canvas;
-        if (canvas) {
-            (canvas as Canvas).configure({
-                hideEditedObject: hide,
-            });
-        }
-
-        dispatch({
-            type: AnnotationActionTypes.HIDE_EDITED_STATE,
-            payload: {
-                hide,
-            },
-        });
-    };
-}
-
 function wrapAnnotationsInGTJob(states: ObjectState[]): ObjectState[] {
     return states.map((state: ObjectState) => new Proxy(state, {
         get(_state, prop) {
@@ -1645,6 +1608,86 @@ export function restoreFrameAsync(frame: number): ThunkAction {
                 type: AnnotationActionTypes.RESTORE_FRAME_FAILED,
                 payload: { error },
             });
+        }
+    };
+}
+
+export function updateEditedStateAsync(
+    shapeType: ShapeType | null,
+    editedStateInstance: ObjectState | null,
+): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        if (editedStateInstance) {
+            const state = getState();
+            const { instance: canvas } = state.annotation.canvas;
+            if (canvas) {
+                (canvas as Canvas).configure({
+                    hideEditedObject: editedStateInstance.hidden,
+                });
+            }
+
+            dispatch({
+                type: AnnotationActionTypes.HIDE_EDITED_STATE,
+                payload: {
+                    hide: editedStateInstance.hidden,
+                },
+            });
+        }
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_EDITED_STATE,
+            payload: {
+                shapeType,
+                editedStateInstance,
+            },
+        });
+    };
+}
+
+export function resetEditedStateAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { instance: canvas } = state.annotation.canvas;
+        if (canvas) {
+            (canvas as Canvas).configure({
+                hideEditedObject: false,
+            });
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.RESET_EDITED_STATE,
+            payload: {},
+        });
+    };
+}
+
+export function resetEditedState(): AnyAction {
+    return {
+        type: AnnotationActionTypes.RESET_EDITED_STATE,
+        payload: {},
+    };
+}
+
+export function changeHideEditedStateAsync(hide: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { instance: canvas } = state.annotation.canvas;
+        if (canvas) {
+            (canvas as Canvas).configure({
+                hideEditedObject: hide,
+            });
+
+            dispatch({
+                type: AnnotationActionTypes.HIDE_EDITED_STATE,
+                payload: {
+                    hide,
+                },
+            });
+
+            const { editedStateInstance } = state.annotation.annotations.editedState;
+            if (editedStateInstance) {
+                editedStateInstance.hidden = hide;
+                await dispatch(updateAnnotationsAsync([editedStateInstance]));
+            }
         }
     };
 }

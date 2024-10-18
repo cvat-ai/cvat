@@ -5,7 +5,7 @@
 
 import * as SVG from 'svg.js';
 import 'svg.draw.js';
-import './svg.patch';
+import { CIRCLE_STROKE } from './svg.patch';
 
 import { AutoborderHandler } from './autoborderHandler';
 import {
@@ -104,6 +104,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
     private outlinedBorders: string;
+    private isHidden: boolean;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -579,7 +580,10 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawstart', sizeDecrement);
         this.drawInstance.on('drawpoint', sizeDecrement);
-        this.drawInstance.on('drawupdate', (): void => this.transform(this.geometry));
+        this.drawInstance.on('drawupdate', (): void => {
+            this.transform(this.geometry);
+            this.updateInnerCircles(!this.isHidden);
+        });
         this.drawInstance.on('undopoint', (): number => size++);
 
         // Add ability to cancel the latest drawn point
@@ -1276,6 +1280,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';
         this.autobordersEnabled = false;
+        this.isHidden = false;
         this.startTimestamp = Date.now();
         this.onDrawDoneDefault = onDrawDone;
         this.canvas = canvas;
@@ -1301,11 +1306,17 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
-    public configurate(configuration: Configuration): void {
-        this.controlPointsSize = configuration.controlPointsSize;
-        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
-        this.outlinedBorders = configuration.outlinedBorders || 'black';
+    private updateInnerCircles(shown: boolean) {
+        const paintHandler = this.drawInstance.remember('_paintHandler');
+        if (paintHandler) {
+            for (const point of (paintHandler as any).set.members) {
+                point.attr('stroke', shown ? CIRCLE_STROKE : 'none');
+                point.fill({ opacity: shown ? 1 : 0 });
+            }
+        }
+    }
 
+    private updateDrawInstance(opacity: number) {
         const isFillableRect = this.drawData &&
             this.drawData.shapeType === 'rectangle' &&
             (this.drawData.rectDrawingMethod === RectDrawingMethod.CLASSIC || this.drawData.initialState);
@@ -1315,23 +1326,45 @@ export class DrawHandlerImpl implements DrawHandler {
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
-            this.drawInstance.fill({ opacity: configuration.selectedShapeOpacity });
+            this.drawInstance.fill({ opacity });
         }
 
         if (this.drawInstance && this.drawInstance.attr('stroke')) {
-            this.drawInstance.attr('stroke', this.outlinedBorders);
+            this.drawInstance.attr('stroke', opacity ? this.outlinedBorders : 'none');
+        }
+
+        if (this.drawInstance && (isFilalblePolygon)) {
+            this.updateInnerCircles(!this.isHidden);
         }
 
         if (this.pointsGroup && this.pointsGroup.attr('stroke')) {
-            this.pointsGroup.attr('stroke', this.outlinedBorders);
+            this.pointsGroup.attr('stroke', opacity ? this.outlinedBorders : 'none');
         }
+    }
 
-        this.autobordersEnabled = configuration.autoborders;
-        if (this.drawInstance && !this.drawData.initialState) {
-            if (this.autobordersEnabled) {
-                this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
-            } else {
-                this.autoborderHandler.autoborder(false);
+    private updateHidden(value: boolean) {
+        this.isHidden = value;
+        if (value) {
+            this.updateDrawInstance(0);
+        }
+    }
+
+    public configurate(configuration: Configuration): void {
+        this.controlPointsSize = configuration.controlPointsSize;
+        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
+        this.outlinedBorders = configuration.outlinedBorders || 'black';
+
+        if (this.isHidden !== configuration.hideEditedObject) {
+            this.updateHidden(configuration.hideEditedObject);
+        } else if (!this.isHidden) {
+            this.updateDrawInstance(configuration.selectedShapeOpacity);
+            this.autobordersEnabled = configuration.autoborders;
+            if (this.drawInstance && !this.drawData.initialState) {
+                if (this.autobordersEnabled) {
+                    this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
+                } else {
+                    this.autoborderHandler.autoborder(false);
+                }
             }
         }
     }

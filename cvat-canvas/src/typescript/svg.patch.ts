@@ -86,6 +86,7 @@ SVG.Element.prototype.draw.extend(
     }),
 );
 
+export const CIRCLE_STROKE = '#000';
 // Fix method drawCircles
 function drawCircles(): void {
     const array = this.el.array().valueOf();

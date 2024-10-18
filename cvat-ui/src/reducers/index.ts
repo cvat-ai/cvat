@@ -693,6 +693,12 @@ export enum NavigationType {
     EMPTY = 'empty',
 }
 
+export interface EditedState {
+    shapeType: ShapeType | null;
+    editedStateInstance: ObjectState | null;
+    editedStateHidden: boolean;
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -771,11 +777,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
-        edited: {
-            shapeType: ShapeType | null;
-            editedState: ObjectState | null;
-            editedStateHidden: boolean;
-        };
+        editedState: EditedState;
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;

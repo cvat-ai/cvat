@@ -9,8 +9,8 @@ import { connect } from 'react-redux';
 import { ObjectState, Job } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
-import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
-import { CombinedState } from 'reducers';
+import { updateAnnotationsAsync, changeFrameAsync, changeHideEditedStateAsync } from 'actions/annotation-actions';
+import { CombinedState, EditedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
 interface OwnProps {
@@ -29,17 +29,19 @@ interface StateToProps {
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
+    editedState: EditedState,
 }
 
 interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     changeFrame(frame: number): void;
+    changeHideEditedState(value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
-            annotations: { states },
+            annotations: { states, editedState },
             job: { instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
@@ -61,6 +63,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         objectState,
         normalizedKeyMap,
         frameNumber,
+        editedState,
         jobInstance: jobInstance as Job,
         outsideDisabled: typeof outsideDisabled === 'undefined' ? false : outsideDisabled,
         hiddenDisabled: typeof hiddenDisabled === 'undefined' ? false : hiddenDisabled,
@@ -75,6 +78,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
+        },
+        changeHideEditedState(value: boolean): void {
+            dispatch(changeHideEditedStateAsync(value));
         },
     };
 }
@@ -145,15 +151,23 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private show = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = false;
-        this.commit();
+        const { objectState, editedState, changeHideEditedState } = this.props;
+        if (objectState.clientID === editedState.editedStateInstance?.clientID) {
+            changeHideEditedState(false);
+        } else {
+            objectState.hidden = false;
+            this.commit();
+        }
     };
 
     private hide = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = true;
-        this.commit();
+        const { objectState, editedState, changeHideEditedState } = this.props;
+        if (objectState.clientID === editedState.editedStateInstance?.clientID) {
+            changeHideEditedState(true);
+        } else {
+            objectState.hidden = true;
+            this.commit();
+        }
     };
 
     private setOccluded = (): void => {
