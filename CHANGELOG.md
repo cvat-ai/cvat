@@ -16,6 +16,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.21.1'></a>
+## \[2.21.1\] - 2024-10-18
+
+### Added
+
+- Keyboard shortcuts for **brush**, **eraser**, **polygon** and **polygon remove** tools on masks drawing toolbox
+  (<https://github.com/cvat-ai/cvat/pull/8519>)
+
+### Fixed
+
+- Ground truth tracks are displayed not only on GT frames in review mode
+  (<https://github.com/cvat-ai/cvat/pull/8531>)
+
+- Incorrect navigation by keyframes when annotation job ends earlier than track in a ground truth job
+  (<https://github.com/cvat-ai/cvat/pull/8533>)
+- Tracks from a ground truth job displayed on wrong frames in review mode when frame step is not equal to 1
+  (<https://github.com/cvat-ai/cvat/pull/8533>)
+
+- Task creation with cloud storage data and GT_POOL validation mode
+  (<https://github.com/cvat-ai/cvat/pull/8539>)
+
+- Incorrect quality reports and immediate feedback with non default start frame or frame step
+  (<https://github.com/cvat-ai/cvat/pull/8551>)
+
+- av context closing issue when using AUTO thread_type
+  (<https://github.com/cvat-ai/cvat/pull/8555>)
+
 <a id='changelog-2.21.0'></a>
 ## \[2.21.0\] - 2024-10-10
 
