@@ -1309,7 +1309,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private updateInnerCircles(shown: boolean) {
         const paintHandler = this.drawInstance.remember('_paintHandler');
         if (paintHandler) {
-            for (const point of (paintHandler as any).set.members) {
+            for (const point of paintHandler.set.members) {
                 point.attr('stroke', shown ? CIRCLE_STROKE : 'none');
                 point.fill({ opacity: shown ? 1 : 0 });
             }
@@ -1403,7 +1403,7 @@ export class DrawHandlerImpl implements DrawHandler {
             const paintHandler = this.drawInstance.remember('_paintHandler');
 
             if (paintHandler) {
-                for (const point of (paintHandler as any).set.members) {
+                for (const point of paintHandler.set.members) {
                     point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
                     point.attr('r', `${this.controlPointsSize / geometry.scale}`);
                 }
