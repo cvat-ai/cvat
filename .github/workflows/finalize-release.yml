@@ -65,7 +65,7 @@ jobs:
 
       - name: Bump version
         run:
-          ./dev/update_version.py --minor
+          ./dev/update_version.py --patch
 
       - name: Commit post-release changes
         run: |
