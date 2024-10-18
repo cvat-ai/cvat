@@ -22,6 +22,7 @@ import tempfile
 from datetime import timedelta
 from enum import Enum
 import urllib
+from socket import gethostname, gethostbyname_ex
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
@@ -38,8 +39,11 @@ from django.core.exceptions import ImproperlyConfigured
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-INTERNAL_IPS = ['127.0.0.1']
+# include local name/ip in allowed hosts to support docker http liveness probes
+LOCAL_NAME, _, LOCAL_IPS = gethostbyname_ex(gethostname())
+ENV_HOSTS = [h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h]
+ALLOWED_HOSTS = list(set(*ENV_HOSTS, *LOCAL_IPS, LOCAL_NAME, "localhost", "127.0.0.1"))
+INTERNAL_IPS = list(set([*LOCAL_IPS, '127.0.0.1']))
 
 def generate_secret_key():
     """
