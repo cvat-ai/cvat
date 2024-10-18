@@ -67,6 +67,7 @@ const defaultState: AnnotationState = {
             groundTruthInstance: null,
         },
         instance: null,
+        meta: null,
         attributes: {},
         fetching: false,
         saving: false,
@@ -158,6 +159,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 job,
+                jobMeta,
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
@@ -205,6 +207,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     openTime,
                     fetching: false,
                     instance: job,
+                    meta: jobMeta,
                     labels: job.labels,
                     attributes: job.labels
                         .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {

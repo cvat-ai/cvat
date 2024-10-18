@@ -19,8 +19,7 @@ const frameDataCache: Record<string, {
     metaFetchedTimestamp: number;
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
-    startFrame: number;
-    stopFrame: number;
+    jobStartFrame: number;
     decodeForward: boolean;
     forwardStep: number;
     latestFrameDecodeRequest: number | null;
@@ -44,7 +43,7 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
 export class FramesMetaData {
     public chunkSize: number;
     public deletedFrames: Record<number, boolean>;
-    public includedFrames: number[];
+    public includedFrames: number[] | null;
     public frameFilter: string;
     public frames: {
         width: number;
@@ -170,6 +169,14 @@ export class FramesMetaData {
         );
     }
 
+    getDataFrameNumber(jobRelativeFrame: number): number {
+        return this.frameStep * jobRelativeFrame + this.startFrame;
+    }
+
+    getJobRelativeFrameNumber(dataFrameNumber: number): number {
+        return (dataFrameNumber - this.startFrame) / this.frameStep;
+    }
+
     getUpdated(): Record<string, unknown> {
         return this.#updateTrigger.getUpdated(this);
     }
@@ -206,7 +213,7 @@ export class FramesMetaData {
 
     getDataFrameNumbers(): number[] {
         if (this.includedFrames) {
-            return this.includedFrames;
+            return [...this.includedFrames];
         }
 
         return range(this.startFrame, this.stopFrame + 1, this.frameStep);
@@ -326,18 +333,6 @@ class PrefetchAnalyzer {
     }
 }
 
-function getDataStartFrame(meta: FramesMetaData, localStartFrame: number): number {
-    return meta.startFrame - localStartFrame * meta.frameStep;
-}
-
-function getDataFrameNumber(frameNumber: number, dataStartFrame: number, step: number): number {
-    return frameNumber * step + dataStartFrame;
-}
-
-function getFrameNumber(dataFrameNumber: number, dataStartFrame: number, step: number): number {
-    return (dataFrameNumber - dataStartFrame) / step;
-}
-
 Object.defineProperty(FrameData.prototype.data, 'implementation', {
     value(this: FrameData, onServerRequest) {
         return new Promise<{
@@ -346,21 +341,16 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             imageData: ImageBitmap | Blob;
         } | Blob>((resolve, reject) => {
             const {
-                meta, provider, prefetchAnalyzer, chunkSize, startFrame,
+                meta, provider, prefetchAnalyzer, chunkSize, jobStartFrame,
                 decodeForward, forwardStep, decodedBlocksCacheSize,
             } = frameDataCache[this.jobID];
 
             const requestId = +_.uniqueId();
-            const dataStartFrame = getDataStartFrame(meta, startFrame);
-            const requestedDataFrameNumber = getDataFrameNumber(
-                this.number, dataStartFrame, meta.frameStep,
-            );
+            const requestedDataFrameNumber = meta.getDataFrameNumber(this.number - jobStartFrame);
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
-            const segmentFrameNumbers = meta.getDataFrameNumbers().map(
-                (dataFrameNumber: number) => getFrameNumber(
-                    dataFrameNumber, dataStartFrame, meta.frameStep,
-                ),
-            );
+            const segmentFrameNumbers = meta.getDataFrameNumbers().map((dataFrameNumber: number) => (
+                meta.getJobRelativeFrameNumber(dataFrameNumber) + jobStartFrame
+            ));
             const frame = provider.frame(this.number);
 
             function findTheNextNotDecodedChunk(currentFrameIndex: number): number | null {
@@ -581,7 +571,7 @@ async function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesM
 }
 
 function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
-    const { meta, mode, startFrame } = frameDataCache[jobID];
+    const { meta, mode, jobStartFrame } = frameDataCache[jobID];
     let frameMeta = null;
     if (mode === 'interpolation' && meta.frames.length === 1) {
         // video tasks have 1 frame info, but image tasks will have many infos
@@ -590,7 +580,7 @@ function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
         if (frame > meta.stopFrame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
-        frameMeta = meta.frames[frame - startFrame];
+        frameMeta = meta.frames[frame - jobStartFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
@@ -639,8 +629,8 @@ export function getContextImage(jobID: number, frame: number): Promise<Record<st
 
         const frameData = frameDataCache[jobID];
         const requestId = frame;
-        const { startFrame } = frameData;
-        const { related_files: relatedFiles } = frameData.meta.frames[frame - startFrame];
+        const { jobStartFrame } = frameData;
+        const { related_files: relatedFiles } = frameData.meta.frames[frame - jobStartFrame];
 
         if (relatedFiles === 0) {
             resolve({});
@@ -726,8 +716,7 @@ export async function getFrame(
     chunkType: 'video' | 'imageset',
     mode: 'interpolation' | 'annotation', // todo: obsolete, need to remove
     frame: number,
-    startFrame: number,
-    stopFrame: number,
+    jobStartFrame: number,
     isPlaying: boolean,
     step: number,
     dimension: DimensionType,
@@ -750,10 +739,8 @@ export async function getFrame(
             Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
         );
 
-        // TODO: migrate to local frame numbers
-        const dataStartFrame = getDataStartFrame(meta, startFrame);
         const dataFrameNumberGetter = (frameNumber: number): number => (
-            getDataFrameNumber(frameNumber, dataStartFrame, meta.frameStep)
+            meta.getDataFrameNumber(frameNumber - jobStartFrame)
         );
 
         frameDataCache[jobID] = {
@@ -761,8 +748,7 @@ export async function getFrame(
             metaFetchedTimestamp: Date.now(),
             chunkSize,
             mode,
-            startFrame,
-            stopFrame,
+            jobStartFrame,
             decodeForward: isPlaying,
             forwardStep: step,
             provider: new FrameDecoder(
@@ -864,12 +850,13 @@ export async function findFrame(
     let lastUndeletedFrame = null;
     const check = (frame): boolean => {
         if (meta.includedFrames) {
-            // meta.includedFrames contains input frame numbers now
-            const dataStartFrame = meta.startFrame; // this is only true when includedFrames is set
-            return (meta.includedFrames.includes(
-                getDataFrameNumber(frame, dataStartFrame, meta.frameStep))
+            // meta.includedFrames contains absolute frame numbers
+            const jobStartFrame = 0; // this is only true when includedFrames is set
+            return (
+                meta.includedFrames.includes(meta.getDataFrameNumber(frame - jobStartFrame))
             ) && (!filters.notDeleted || !(frame in meta.deletedFrames));
         }
+
         if (filters.notDeleted) {
             return !(frame in meta.deletedFrames);
         }
@@ -888,7 +875,7 @@ export async function findFrame(
     return lastUndeletedFrame;
 }
 
-export function getCachedChunks(jobID): number[] {
+export function getCachedChunks(jobID: number): number[] {
     if (!(jobID in frameDataCache)) {
         return [];
     }
@@ -896,15 +883,14 @@ export function getCachedChunks(jobID): number[] {
     return frameDataCache[jobID].provider.cachedChunks(true);
 }
 
-export function getJobFrameNumbers(jobID): number[] {
+export function getJobFrameNumbers(jobID: number): number[] {
     if (!(jobID in frameDataCache)) {
         return [];
     }
 
-    const { meta, startFrame } = frameDataCache[jobID];
-    const dataStartFrame = getDataStartFrame(meta, startFrame);
+    const { meta, jobStartFrame } = frameDataCache[jobID];
     return meta.getDataFrameNumbers().map((dataFrameNumber: number): number => (
-        getFrameNumber(dataFrameNumber, dataStartFrame, meta.frameStep)
+        meta.getJobRelativeFrameNumber(dataFrameNumber) + jobStartFrame
     ));
 }
 
