@@ -98,6 +98,11 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        editedState: {
+            shapeType: null,
+            editedStateInstance: null,
+            editedStateHidden: false,
+        },
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -619,6 +624,47 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID,
                     activatedElementID,
                     activatedAttributeID,
+                },
+            };
+        }
+        case AnnotationActionTypes.RESET_EDITED_STATE: {
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    editedState: {
+                        ...state.annotations.editedState,
+                        shapeType: null,
+                        editedStateInstance: null,
+                        editedStateHidden: false,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
+            const { shapeType, editedStateInstance } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    editedState: {
+                        ...state.annotations.editedState,
+                        shapeType: (shapeType ?? null),
+                        editedStateInstance: (editedStateInstance ?? null),
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.HIDE_EDITED_STATE: {
+            const { hide } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    editedState: {
+                        ...state.annotations.editedState,
+                        editedStateHidden: hide,
+                    },
                 },
             };
         }
