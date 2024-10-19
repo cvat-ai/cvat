@@ -111,7 +111,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "--server-port",
         type=int,
         default=None,
-        help="port (default: 80 for http and 443 for https connections)",
+        help="port (default: 80 for http and 443 for https connections, 8080 for localhost)",
     )
     parser.add_argument(
         "--organization",
