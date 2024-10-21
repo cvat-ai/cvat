@@ -13,6 +13,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
+import Result from 'antd/lib/result';
 
 import {
     Job, JobType, QualityReport, QualitySettings, Task,
@@ -38,6 +39,7 @@ interface State {
     validationLayout: TaskValidationLayout | null;
     gtJobInstance: Job | null;
     gtJobMeta: FramesMetaData | null;
+    error: Error | null;
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
@@ -55,6 +57,7 @@ enum ReducerActionType {
     SET_GT_JOB = 'SET_GT_JOB',
     SET_GT_JOB_META = 'SET_GT_JOB_META',
     SET_VALIDATION_LAYOUT = 'SET_VALIDATION_LAYOUT',
+    SET_ERROR = 'SET_ERROR',
 }
 
 export const reducerActions = {
@@ -84,6 +87,9 @@ export const reducerActions = {
     ),
     setValidationLayout: (validationLayout: TaskValidationLayout | null) => (
         createAction(ReducerActionType.SET_VALIDATION_LAYOUT, { validationLayout })
+    ),
+    setError: (error: Error) => (
+        createAction(ReducerActionType.SET_ERROR, { error })
     ),
 };
 
@@ -144,6 +150,13 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SET_ERROR) {
+        return {
+            ...state,
+            error: action.payload.error,
+        };
+    }
+
     return state;
 };
 
@@ -155,9 +168,10 @@ function QualityControlPage(): JSX.Element {
         gtJobInstance: null,
         gtJobMeta: null,
         validationLayout: null,
+        error: null,
         qualitySettings: {
             settings: null,
-            fetching: true,
+            fetching: false,
             targetMetric: null,
         },
     });
@@ -169,18 +183,20 @@ function QualityControlPage(): JSX.Element {
 
     const initializeData = async (id: number): Promise<void> => {
         try {
-            const [taskInstance] = await core.tasks.get({ id });
-            if (!taskInstance) {
-                throw new Error('Could not receive requested task from the server');
-            } else {
-                setInstance(taskInstance);
+            let taskInstance = null;
+            try {
+                [taskInstance] = await core.tasks.get({ id });
+            } catch (error: unknown) {
+                throw new Error('The task was not found on the server');
+            }
+
+            setInstance(taskInstance);
+            try {
                 dispatch(reducerActions.setQualitySettingsFetching(true));
-                try {
-                    const settings = await core.analytics.quality.settings.get({ taskID: taskInstance.id });
-                    dispatch(reducerActions.setQualitySettings(settings));
-                } finally {
-                    dispatch(reducerActions.setQualitySettingsFetching(false));
-                }
+                const settings = await core.analytics.quality.settings.get({ taskID: taskInstance.id });
+                dispatch(reducerActions.setQualitySettings(settings));
+            } finally {
+                dispatch(reducerActions.setQualitySettingsFetching(false));
             }
 
             const gtJob = taskInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
@@ -191,13 +207,10 @@ function QualityControlPage(): JSX.Element {
                 dispatch(reducerActions.setGtJobMeta(gtJobMeta));
                 dispatch(reducerActions.setValidationLayout(validationLayout));
             }
-
-            dispatch(reducerActions.setFetching(false));
         } catch (error: unknown) {
-            notification.error({
-                message: 'Could not initialize the page',
-                description: `${error instanceof Error ? error.message : ''}`,
-            });
+            dispatch(reducerActions.setError(error instanceof Error ? error : new Error('Unknown error')));
+        } finally {
+            dispatch(reducerActions.setFetching(false));
         }
     };
 
@@ -299,7 +312,13 @@ function QualityControlPage(): JSX.Element {
         setActiveTab(key);
     }, []);
 
-    let backNavigation: JSX.Element | null = null;
+    const backNavigation: JSX.Element | null = (
+        <Row justify='center'>
+            <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
+                <GoBackButton />
+            </Col>
+        </Row>
+    );
     let title: JSX.Element | null = null;
     let tabs: JSX.Element | null = null;
 
@@ -308,6 +327,7 @@ function QualityControlPage(): JSX.Element {
         gtJobInstance,
         gtJobMeta,
         validationLayout,
+        error,
         qualitySettings: {
             settings: qualitySettings,
             fetching: qualitySettingsFetching,
@@ -315,16 +335,32 @@ function QualityControlPage(): JSX.Element {
         },
     } = state;
 
-    const settingsInitialized = qualitySettings && targetMetric;
-    if (instance && settingsInitialized) {
-        backNavigation = (
-            <Row justify='center'>
-                <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                    <GoBackButton />
-                </Col>
-            </Row>
+    if (error) {
+        return (
+            <div className='cvat-quality-control-page'>
+                <div className='cvat-quality-control-page-error'>
+                    <Result
+                        status='error'
+                        title='Could not open the page'
+                        subTitle={error.message}
+                        extra={backNavigation}
+                    />
+                </div>
+            </div>
         );
+    }
 
+    if (fetching || qualitySettingsFetching) {
+        return (
+            <div className='cvat-quality-control-page'>
+                <div className='cvat-quality-control-loading'>
+                    <CVATLoadingSpinner />
+                </div>
+            </div>
+        );
+    }
+
+    if (instance) {
         title = (
             <Col>
                 <Title level={4} className='cvat-text-color'>
@@ -335,13 +371,16 @@ function QualityControlPage(): JSX.Element {
         );
 
         const tabsItems: NonNullable<TabsProps['items']>[0][] = [];
-        tabsItems.push({
-            key: 'overview',
-            label: 'Overview',
-            children: (
-                <QualityOverviewTab task={instance} targetMetric={targetMetric} />
-            ),
-        });
+
+        if (targetMetric) {
+            tabsItems.push({
+                key: 'overview',
+                label: 'Overview',
+                children: (
+                    <QualityOverviewTab task={instance} targetMetric={targetMetric} />
+                ),
+            });
+        }
 
         if (gtJobInstance && gtJobMeta) {
             if (validationLayout) {
@@ -389,23 +428,17 @@ function QualityControlPage(): JSX.Element {
 
     return (
         <div className='cvat-quality-control-page'>
-            {fetching || qualitySettingsFetching ? (
-                <div className='cvat-quality-control-loading'>
-                    <CVATLoadingSpinner />
-                </div>
-            ) : (
-                <Row className='cvat-quality-control-wrapper'>
-                    <Col span={24}>
-                        {backNavigation}
-                        <Row justify='center'>
-                            <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
-                                {title}
-                                {tabs}
-                            </Col>
-                        </Row>
-                    </Col>
-                </Row>
-            )}
+            <Row className='cvat-quality-control-wrapper'>
+                <Col span={24}>
+                    {backNavigation}
+                    <Row justify='center'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
+                            {title}
+                            {tabs}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
         </div>
     );
 }

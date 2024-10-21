@@ -115,10 +115,11 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-quality-control-loading {
+.cvat-quality-control-loading, .cvat-quality-control-page-error {
     position: absolute;
-    right: 50%;
-    margin-top: 20%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .cvat-quality-control-overview-tab {
