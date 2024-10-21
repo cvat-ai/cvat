@@ -648,7 +648,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
-            onResetEditedObject, editedStateHidden,
+            onResetEditedObject, editedStateHidden, workspace,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -664,7 +664,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.rotation = state.rotation || 0;
         state.occluded = state.occluded || false;
         state.outside = state.outside || false;
-        state.hidden = state.hidden || editedStateHidden;
+        state.hidden = state.hidden || (editedStateHidden && workspace !== Workspace.SINGLE_SHAPE);
         if (state.shapeType === ShapeType.SKELETON && Array.isArray(state.elements)) {
             state.elements.forEach((element: Record<string, any>) => {
                 element.objectType = state.objectType;

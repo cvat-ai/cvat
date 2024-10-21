@@ -372,12 +372,16 @@ function BrushTools(): React.ReactPortal | null {
             />
             {
                 editedState && editedState.shapeType === ShapeType.MASK && (
-                    <Button
-                        type='text'
-                        className={['cvat-brush-tools-hide', ...(editedState.editedStateHidden ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                        icon={editedState.editedStateHidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
-                        onClick={() => hideMask(!editedState.editedStateHidden)}
-                    />
+                    <CVATTooltip
+                        title={`Hide mask ${normalizedKeyMap.SWITCH_HIDDEN}`}
+                    >
+                        <Button
+                            type='text'
+                            className={['cvat-brush-tools-hide', ...(editedState.editedStateHidden ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                            icon={editedState.editedStateHidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
+                            onClick={() => hideMask(!editedState.editedStateHidden)}
+                        />
+                    </CVATTooltip>
                 )
             }
 

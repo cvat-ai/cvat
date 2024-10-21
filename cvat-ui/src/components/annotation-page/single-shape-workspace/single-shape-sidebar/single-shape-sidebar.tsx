@@ -20,11 +20,14 @@ import message from 'antd/lib/message';
 
 import { CombinedState, NavigationType, ObjectType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { Job, Label, LabelType } from 'cvat-core-wrapper';
+import {
+    Job, Label, LabelType, ShapeType,
+} from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, setNavigationType,
     removeObjectAsync, finishCurrentJobAsync,
+    changeHideEditedStateAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -185,6 +188,12 @@ const componentShortcuts = {
         sequences: ['del', 'shift+del'],
         scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
+    HIDE_MASK_SINGLE_SHAPE: {
+        name: 'Hide mask',
+        description: 'Hide edited mask',
+        sequences: ['h'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -203,6 +212,7 @@ function SingleShapeSidebar(): JSX.Element {
         navigationType,
         annotations,
         activatedStateID,
+        editedState,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
@@ -214,6 +224,7 @@ function SingleShapeSidebar(): JSX.Element {
         navigationType: _state.annotation.player.navigationType,
         annotations: _state.annotation.annotations.states,
         activatedStateID: _state.annotation.annotations.activatedStateID,
+        editedState: _state.annotation.editing,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
@@ -386,6 +397,13 @@ function SingleShapeSidebar(): JSX.Element {
             const objectStateToRemove = annotations.find((_state) => _state.clientID === activatedStateID);
             if (objectStateToRemove) {
                 appDispatch(removeObjectAsync(objectStateToRemove, event?.shiftKey || false));
+            }
+        },
+        HIDE_MASK_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            const { shapeType, editedStateHidden } = editedState;
+            if (shapeType === ShapeType.MASK) {
+                appDispatch(changeHideEditedStateAsync(!editedStateHidden));
             }
         },
     };
