@@ -5,7 +5,7 @@
 import subprocess
 from contextlib import closing
 from io import BytesIO
-from typing import Generator, List, Optional
+from typing import Generator, List, Optional, Tuple
 
 import av
 import av.video.reformatter
@@ -25,7 +25,11 @@ def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):
 
 
 def generate_image_files(
-    count, prefixes=None, *, filenames: Optional[List[str]] = None
+    count: int,
+    *,
+    prefixes: Optional[List[str]] = None,
+    filenames: Optional[List[str]] = None,
+    sizes: Optional[List[Tuple[int, int]]] = None,
 ) -> List[BytesIO]:
     assert not (prefixes and filenames), "prefixes cannot be used together with filenames"
     assert not prefixes or len(prefixes) == count
@@ -35,7 +39,9 @@ def generate_image_files(
     for i in range(count):
         prefix = prefixes[i] if prefixes else ""
         filename = f"{prefix}{i}.jpeg" if not filenames else filenames[i]
-        image = generate_image_file(filename, color=(i, i, i))
+        image = generate_image_file(
+            filename, color=(i, i, i), **({"size": sizes[i]}) if sizes else {}
+        )
         images.append(image)
 
     return images
