@@ -32,7 +32,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
-import ValidationLayout from './validation-layout';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
@@ -216,7 +216,8 @@ export default interface CVATCore {
         AnalyticsReport: typeof AnalyticsReport;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;
-        ValidationLayout: typeof ValidationLayout;
+        JobValidationLayout: typeof JobValidationLayout;
+        TaskValidationLayout: typeof TaskValidationLayout;
     };
     utils: {
         mask2Rle: typeof mask2Rle;
