@@ -10,7 +10,7 @@ import { ObjectState, Job } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
 import { updateAnnotationsAsync, changeFrameAsync, changeHideEditedStateAsync } from 'actions/annotation-actions';
-import { CombinedState, EditedState } from 'reducers';
+import { CombinedState, EditingState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
 interface OwnProps {
@@ -29,7 +29,7 @@ interface StateToProps {
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
-    editedState: EditedState,
+    editedState: EditingState,
 }
 
 interface DispatchToProps {
@@ -41,11 +41,12 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
-            annotations: { states, editedState },
+            annotations: { states },
             job: { instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
+            editing: editedState,
         },
         shortcuts: { normalizedKeyMap },
     } = state;

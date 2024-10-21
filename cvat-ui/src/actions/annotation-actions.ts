@@ -1647,7 +1647,7 @@ export function resetEditedStateAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
         const { instance: canvas } = state.annotation.canvas;
-        const { editedStateHidden } = state.annotation.annotations.editedState;
+        const { editedStateHidden } = state.annotation.editing;
         if (canvas && editedStateHidden) {
             (canvas as Canvas).configure({
                 hideEditedObject: false,
@@ -1684,7 +1684,7 @@ export function changeHideEditedStateAsync(hide: boolean): ThunkAction {
                 },
             });
 
-            const { editedStateInstance } = state.annotation.annotations.editedState;
+            const { editedStateInstance } = state.annotation.editing;
             if (editedStateInstance) {
                 editedStateInstance.hidden = hide;
                 await dispatch(updateAnnotationsAsync([editedStateInstance]));

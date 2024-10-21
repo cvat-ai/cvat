@@ -94,15 +94,15 @@ const defaultState: AnnotationState = {
         activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
     },
+    editing: {
+        shapeType: null,
+        editedStateInstance: null,
+        editedStateHidden: false,
+    },
     annotations: {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
-        editedState: {
-            shapeType: null,
-            editedStateInstance: null,
-            editedStateHidden: false,
-        },
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -627,44 +627,36 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.RESET_EDITED_STATE: {
+        case AnnotationActionTypes.RESET_DRAWING_STATE: {
             return {
                 ...state,
-                annotations: {
-                    ...state.annotations,
-                    editedState: {
-                        ...state.annotations.editedState,
-                        shapeType: null,
-                        editedStateInstance: null,
-                        editedStateHidden: false,
-                    },
+                editing: {
+                    ...state.editing,
+                    shapeType: null,
+                    editedStateInstance: null,
+                    editedStateHidden: false,
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
+        case AnnotationActionTypes.UPDATE_DRAWING_STATE: {
             const { shapeType, editedStateInstance } = action.payload;
             return {
                 ...state,
-                annotations: {
-                    ...state.annotations,
-                    editedState: {
-                        ...state.annotations.editedState,
-                        shapeType: (shapeType ?? null),
-                        editedStateInstance: (editedStateInstance ?? null),
-                    },
+                ...state,
+                editing: {
+                    ...state.editing,
+                    shapeType: (shapeType ?? null),
+                    editedStateInstance: (editedStateInstance ?? null),
                 },
             };
         }
-        case AnnotationActionTypes.HIDE_EDITED_STATE: {
+        case AnnotationActionTypes.HIDE_DRAWING_STATE: {
             const { hide } = action.payload;
             return {
                 ...state,
-                annotations: {
-                    ...state.annotations,
-                    editedState: {
-                        ...state.annotations.editedState,
-                        editedStateHidden: hide,
-                    },
+                editing: {
+                    ...state.editing,
+                    editedStateHidden: hide,
                 },
             };
         }

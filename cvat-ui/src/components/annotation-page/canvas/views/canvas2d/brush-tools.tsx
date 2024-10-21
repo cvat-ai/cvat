@@ -75,7 +75,7 @@ function BrushTools(): React.ReactPortal | null {
     const config = useSelector((state: CombinedState) => state.annotation.canvas.brushTools);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const editedState = useSelector((state: CombinedState) => state.annotation.annotations.editedState);
+    const editedState = useSelector((state: CombinedState) => state.annotation.editing);
     const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
     const { visible } = config;
 

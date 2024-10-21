@@ -26,7 +26,7 @@ import {
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace, EditedState,
+    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace, EditingState,
 } from 'reducers';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
@@ -57,7 +57,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
     workspace: Workspace;
-    editedState: EditedState,
+    editedState: EditingState,
 }
 
 interface DispatchToProps {
@@ -183,13 +183,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
-                editedState,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
+            editing: editedState,
             colors,
             workspace,
         },
