@@ -41,7 +41,7 @@ import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
-import { Request } from 'cvat-core/src/request';
+import { Request, RequestOperation, RequestInitialData } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
 
@@ -119,4 +119,6 @@ export type {
     CVATCore,
     SerializedAPISchema,
     ProjectOrTaskOrJob,
+    RequestOperation,
+    RequestInitialData,
 };

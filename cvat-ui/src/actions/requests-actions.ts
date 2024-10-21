@@ -2,13 +2,22 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { Store } from 'redux';
 import { ActionUnion, createAction } from 'utils/redux';
-import { RequestsQuery, RequestsState } from 'reducers';
+import { CombinedState, RequestsQuery, RequestsState } from 'reducers';
 import {
-    Request, ProjectOrTaskOrJob, getCore, RQStatus,
+    Request, ProjectOrTaskOrJob, getCore, RQStatus, RequestOperation, RequestInitialData,
 } from 'cvat-core-wrapper';
+import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
+let store: null | Store<CombinedState> = null;
+function getStore(): Store<CombinedState> {
+    if (store === null) {
+        store = getCVATStore();
+    }
+    return store;
+}
 
 export enum RequestsActionsTypes {
     GET_REQUESTS = 'GET_REQUESTS',
@@ -86,16 +95,42 @@ export function shouldListenForProgress(rqID: string | undefined, state: Request
     );
 }
 
+export function generateInitialRequestData(
+    operation: Partial<RequestOperation> & Pick<RequestOperation, 'target' | 'type'>,
+): RequestInitialData {
+    const {
+        target, type, format, jobID, taskID, projectID, functionID,
+    } = operation;
+    const { user } = getStore().getState().auth;
+    const requestOperation = {
+        target,
+        type,
+        format: format ?? null,
+        jobID: jobID ?? null,
+        taskID: taskID ?? null,
+        projectID: projectID ?? null,
+        functionID: functionID ?? null,
+    };
+    return {
+        operation: requestOperation,
+        createdDate: new Date().toISOString(),
+        owner: user,
+    };
+}
+
 export function listen(
     requestID: string,
     dispatch: (action: RequestsActions) => void,
-    initialRequest?: Request,
+    options: {
+        initialRequest?: Request,
+        initialData: RequestInitialData,
+    },
 ) : Promise<Request> {
     return core.requests
         .listen(requestID, {
             callback: (updatedRequest) => {
                 updateRequestProgress(updatedRequest, dispatch);
             },
-            initialRequest,
+            ...options,
         });
 }

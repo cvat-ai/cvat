@@ -6,14 +6,20 @@ import { RQStatus } from './enums';
 import User from './user';
 import { SerializedRequest } from './server-response-types';
 
-type Operation = {
+export type RequestOperation = {
     target: string;
     type: string;
-    format: string;
+    format: string | null;
     jobID: number | null;
     taskID: number | null;
     projectID: number | null;
     functionID: string | null;
+};
+
+export type RequestInitialData = {
+    operation: RequestOperation;
+    createdDate: string;
+    owner: any;
 };
 
 export class Request {
@@ -44,6 +50,7 @@ export class Request {
         this.#finishedDate = initialData.finished_date;
         this.#expiryDate = initialData.expiry_date;
 
+        this.#owner = null;
         if (initialData.owner) {
             this.#owner = new User(initialData.owner);
         }
@@ -65,7 +72,7 @@ export class Request {
         return this.#message;
     }
 
-    get operation(): Operation {
+    get operation(): RequestOperation {
         return {
             target: this.#operation.target,
             type: this.#operation.type,

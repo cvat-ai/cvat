@@ -4,9 +4,11 @@
 
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
-import { Request } from './request';
+import { Request, RequestInitialData } from './request';
+import { SerializedRequest } from './server-response-types';
 import { RequestError } from './exceptions';
 import { PaginatedResource } from './core-types';
+import { fieldsToSnakeCase } from './common';
 import config from './config';
 
 const REQUESTS_COUNT = 5;
@@ -56,6 +58,7 @@ class RequestsManager {
         requestID: string,
         options: {
             callback: (request: Request) => void,
+            initialData: RequestInitialData,
             initialRequest?: Request,
         },
     ): Promise<Request> {
@@ -91,6 +94,7 @@ class RequestsManager {
 
                 try {
                     const serializedRequest = await serverProxy.requests.status(requestID);
+                    throw Error('network error');
                     if (requestID in this.listening) {
                         const request = new Request({ ...serializedRequest });
                         const { status } = request;
@@ -123,12 +127,16 @@ class RequestsManager {
                 } catch (error) {
                     if (requestID in this.listening) {
                         const { onUpdate } = this.listening[requestID];
-
+                        const { initialData } = options;
                         onUpdate
                             .forEach((update) => update(new Request({
                                 id: requestID,
                                 status: RQStatus.FAILED,
                                 message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                                ...{
+                                    ...initialData,
+                                    operation: fieldsToSnakeCase(initialData.operation) as SerializedRequest['operation'],
+                                },
                             })));
                         reject(error);
                     }

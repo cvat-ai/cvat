@@ -8,7 +8,7 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { Storage, ProjectOrTaskOrJob, Job } from 'cvat-core-wrapper';
 import {
     getInstanceType, RequestInstanceType, listen, RequestsActions,
-    shouldListenForProgress,
+    shouldListenForProgress, generateInitialRequestData,
 } from './requests-actions';
 
 export enum ExportActionTypes {
@@ -141,7 +141,12 @@ export async function listenExportBackupAsync(
     const instanceType = getInstanceType(instance) as 'project' | 'task';
 
     try {
-        const result = await listen(rqID, dispatch);
+        const result = await listen(rqID, dispatch, {
+            initialData: generateInitialRequestData({
+                target: instanceType,
+                type: 'export:backup',
+            }),
+        });
         const target = !result?.url ? 'cloudstorage' : 'local';
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
     } catch (error) {

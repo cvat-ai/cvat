@@ -505,13 +505,14 @@ export interface SerializedAPISchema {
 export interface SerializedRequest {
     id?: string;
     status: string;
-    operation?: {
+    operation: {
         target: string;
         type: string;
-        format: string;
+        format: string | null;
         job_id: number | null;
         task_id: number | null;
         project_id: number | null;
+        function_id: string | null;
     };
     progress?: number;
     message: string;
