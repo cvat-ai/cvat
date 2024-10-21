@@ -8,7 +8,7 @@ import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrap
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
-    Request, TargetMetric, JobValidationLayout,
+    Request, JobValidationLayout, QualitySettings, TaskValidationLayout,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -269,14 +269,16 @@ export interface PluginsState {
         qualityControlPage: {
             overviewTab: ((props: {
                 task: Task;
-                targetMetric: TargetMetric;
+                qualitySettings: QualitySettings;
             }) => JSX.Element)[];
 
             allocationTable: ((
                 props: {
                     task: Task;
-                    gtJob: Job;
+                    gtJobId: number;
                     gtJobMeta: FramesMetaData;
+                    qualitySettings: QualitySettings;
+                    validationLayout: TaskValidationLayout;
                     onDeleteFrames: (frames: number[]) => void;
                     onRestoreFrames: (frames: number[]) => void;
                 }) => JSX.Element)[];
