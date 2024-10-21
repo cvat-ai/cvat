@@ -134,6 +134,7 @@ RUN apt-get update && \
         supervisor \
         tzdata \
         unrar \
+        wait-for-it \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
@@ -192,7 +193,7 @@ RUN python -m pip uninstall -y pip
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
+COPY --chown=${USER} manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} rqscheduler.py ${HOME}
