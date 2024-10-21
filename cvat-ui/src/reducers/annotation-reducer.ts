@@ -627,7 +627,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.RESET_DRAWING_STATE: {
+        case AnnotationActionTypes.RESET_EDITED_STATE: {
             return {
                 ...state,
                 editing: {
@@ -638,7 +638,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_DRAWING_STATE: {
+        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
             const { shapeType, editedStateInstance } = action.payload;
             return {
                 ...state,
@@ -650,7 +650,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.HIDE_DRAWING_STATE: {
+        case AnnotationActionTypes.HIDE_EDITED_STATE: {
             const { hide } = action.payload;
             return {
                 ...state,

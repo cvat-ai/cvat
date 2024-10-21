@@ -226,8 +226,53 @@ export class MasksHandlerImpl implements MasksHandler {
         return imageData;
     }
 
+    private startPolygonDrawing() {
+        if (this.tool?.type?.startsWith('polygon-')) {
+            this.isPolygonDrawing = true;
+            this.vectorDrawHandler.draw({
+                enabled: true,
+                shapeType: 'polygon',
+                onDrawDone: (data: { points: number[] } | null) => {
+                    if (!data) return;
+                    const points = data.points.reduce((acc: fabric.Point[], _: number, idx: number) => {
+                        if (idx % 2) {
+                            acc.push(new fabric.Point(data.points[idx - 1], data.points[idx]));
+                        }
+
+                        return acc;
+                    }, []);
+
+                    const color = fabric.Color.fromHex(this.tool.color);
+                    color.setAlpha(this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity);
+                    const polygon = new fabric.Polygon(points, {
+                        fill: color.toRgba(),
+                        selectable: false,
+                        objectCaching: false,
+                        absolutePositioned: true,
+                        globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
+                    });
+
+                    this.canvas.add(polygon);
+                    this.drawnObjects.push(polygon);
+                    this.canvas.renderAll();
+                },
+            }, this.geometry);
+
+            const canvasWrapper = this.canvas.getElement().parentElement as HTMLDivElement;
+            canvasWrapper.style.pointerEvents = 'none';
+            canvasWrapper.style.zIndex = '0';
+        }
+    }
+
     private updateHidden(value: boolean) {
         this.isHidden = value;
+
+        if (value && this.isPolygonDrawing) {
+            this.vectorDrawHandler.cancel();
+        } else if (this.isPolygonDrawing) {
+            this.startPolygonDrawing();
+        }
+
         // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
         // https://github.com/fabricjs/fabric.js/issues/1456
         const newOpacity = value ? '0' : '';
@@ -276,41 +321,7 @@ export class MasksHandlerImpl implements MasksHandler {
             this.updateBlockedTools();
         }
 
-        if (this.tool?.type?.startsWith('polygon-')) {
-            this.isPolygonDrawing = true;
-            this.vectorDrawHandler.draw({
-                enabled: true,
-                shapeType: 'polygon',
-                onDrawDone: (data: { points: number[] } | null) => {
-                    if (!data) return;
-                    const points = data.points.reduce((acc: fabric.Point[], _: number, idx: number) => {
-                        if (idx % 2) {
-                            acc.push(new fabric.Point(data.points[idx - 1], data.points[idx]));
-                        }
-
-                        return acc;
-                    }, []);
-
-                    const color = fabric.Color.fromHex(this.tool.color);
-                    color.setAlpha(this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity);
-                    const polygon = new fabric.Polygon(points, {
-                        fill: color.toRgba(),
-                        selectable: false,
-                        objectCaching: false,
-                        absolutePositioned: true,
-                        globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
-                    });
-
-                    this.canvas.add(polygon);
-                    this.drawnObjects.push(polygon);
-                    this.canvas.renderAll();
-                },
-            }, this.geometry);
-
-            const canvasWrapper = this.canvas.getElement().parentElement as HTMLDivElement;
-            canvasWrapper.style.pointerEvents = 'none';
-            canvasWrapper.style.zIndex = '0';
-        }
+        this.startPolygonDrawing();
     }
 
     private updateBlockedTools(): void {
