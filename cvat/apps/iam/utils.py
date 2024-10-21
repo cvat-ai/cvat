@@ -2,8 +2,12 @@ from pathlib import Path
 from typing import Tuple
 import functools
 import hashlib
+import importlib
 import io
 import tarfile
+
+from django.conf import settings
+from django.contrib.sessions.backends.base import SessionBase
 
 _OPA_RULES_PATHS = {
     Path(__file__).parent / 'rules',
@@ -43,3 +47,7 @@ def get_dummy_user(email):
         if email.verified:
             return None
     return user
+
+def clean_up_sessions() -> None:
+    SessionStore: type[SessionBase] = importlib.import_module(settings.SESSION_ENGINE).SessionStore
+    SessionStore.clear_expired()
