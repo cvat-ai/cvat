@@ -409,7 +409,7 @@ class Drawn extends Annotation {
         super(data, clientID, color, injection);
         this.frameMeta = injection.frameMeta;
         this.descriptions = data.descriptions || [];
-        this.hidden = false;
+        this.hidden = data.hidden || false;
         this.pinned = true;
         this.shapeType = null;
     }

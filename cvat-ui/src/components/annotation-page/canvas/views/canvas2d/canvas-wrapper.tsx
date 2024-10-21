@@ -121,6 +121,7 @@ interface StateToProps {
     highlightedConflict: QualityConflict | null;
     imageFilters: ImageFilter[];
     activeControl: ActiveControl;
+    editedStateHidden: boolean;
 }
 
 interface DispatchToProps {
@@ -157,6 +158,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { activeControl, instance: canvasInstance, ready: canvasIsReady },
             drawing: { activeLabelID, activeObjectType },
+            editing: { editedStateHidden },
             job: { instance: jobInstance },
             player: {
                 frame: { data: frameData, number: frame },
@@ -259,6 +261,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showGroundTruth,
         highlightedConflict,
         imageFilters,
+        editedStateHidden,
     };
 }
 
@@ -645,7 +648,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
-            onResetEditedObject,
+            onResetEditedObject, editedStateHidden,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -661,6 +664,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.rotation = state.rotation || 0;
         state.occluded = state.occluded || false;
         state.outside = state.outside || false;
+        state.hidden = state.hidden || editedStateHidden;
         if (state.shapeType === ShapeType.SKELETON && Array.isArray(state.elements)) {
             state.elements.forEach((element: Record<string, any>) => {
                 element.objectType = state.objectType;
