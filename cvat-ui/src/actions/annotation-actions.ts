@@ -12,7 +12,7 @@ import {
 } from 'cvat-canvas-wrapper';
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
-    ObjectState, JobState, ValidationLayout,
+    ObjectState, JobState, JobValidationLayout,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -38,7 +38,7 @@ interface AnnotationsParameters {
     showGroundTruth: boolean;
     jobInstance: Job;
     groundTruthInstance: Job | null;
-    validationLayout: ValidationLayout | null;
+    validationLayout: JobValidationLayout | null;
 }
 
 const cvat = getCore();
