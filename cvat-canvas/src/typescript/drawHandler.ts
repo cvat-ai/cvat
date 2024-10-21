@@ -580,10 +580,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('drawstart', sizeDecrement);
         this.drawInstance.on('drawpoint', sizeDecrement);
-        this.drawInstance.on('drawupdate', (): void => {
-            this.transform(this.geometry);
-            this.updateInnerCircles(!this.isHidden);
-        });
+        this.drawInstance.on('drawupdate', (): void => this.transform(this.geometry));
         this.drawInstance.on('undopoint', (): number => size++);
 
         // Add ability to cancel the latest drawn point
@@ -1306,17 +1303,12 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
-    private updateInnerCircles(shown: boolean) {
-        const paintHandler = this.drawInstance.remember('_paintHandler');
-        if (paintHandler) {
-            for (const point of paintHandler.set.members) {
-                point.attr('stroke', shown ? CIRCLE_STROKE : 'none');
-                point.fill({ opacity: shown ? 1 : 0 });
-            }
-        }
-    }
+    public configurate(configuration: Configuration): void {
+        this.controlPointsSize = configuration.controlPointsSize;
+        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
+        this.outlinedBorders = configuration.outlinedBorders || 'black';
+        this.isHidden = configuration.hideEditedObject;
 
-    private updateDrawInstance(opacity: number) {
         const isFillableRect = this.drawData &&
             this.drawData.shapeType === 'rectangle' &&
             (this.drawData.rectDrawingMethod === RectDrawingMethod.CLASSIC || this.drawData.initialState);
@@ -1326,38 +1318,27 @@ export class DrawHandlerImpl implements DrawHandler {
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
-            this.drawInstance.fill({ opacity });
-        }
-
-        if (this.drawInstance && this.drawInstance.attr('stroke')) {
-            this.drawInstance.attr('stroke', opacity ? this.outlinedBorders : 'none');
+            this.drawInstance.fill({
+                opacity: configuration.hideEditedObject ? 0 : configuration.selectedShapeOpacity,
+            });
         }
 
         if (this.drawInstance && (isFilalblePolygon)) {
-            this.updateInnerCircles(!this.isHidden);
+            const paintHandler = this.drawInstance.remember('_paintHandler');
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    point.attr('stroke', configuration.hideEditedObject ? 'none' : CIRCLE_STROKE);
+                    point.fill({ opacity: configuration.hideEditedObject ? 0 : 1 });
+                }
+            }
+        }
+
+        if (this.drawInstance && this.drawInstance.attr('stroke')) {
+            this.drawInstance.attr('stroke', configuration.hideEditedObject ? 'none' : this.outlinedBorders);
         }
 
         if (this.pointsGroup && this.pointsGroup.attr('stroke')) {
-            this.pointsGroup.attr('stroke', opacity ? this.outlinedBorders : 'none');
-        }
-    }
-
-    private updateHidden(value: boolean) {
-        this.isHidden = value;
-        if (value) {
-            this.updateDrawInstance(0);
-        }
-    }
-
-    public configurate(configuration: Configuration): void {
-        this.controlPointsSize = configuration.controlPointsSize;
-        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
-        this.outlinedBorders = configuration.outlinedBorders || 'black';
-
-        if (this.isHidden !== configuration.hideEditedObject) {
-            this.updateHidden(configuration.hideEditedObject);
-        } else if (!configuration.hideEditedObject) {
-            this.updateDrawInstance(configuration.selectedShapeOpacity);
+            this.pointsGroup.attr('stroke', configuration.hideEditedObject ? 'none' : this.outlinedBorders);
         }
 
         this.autobordersEnabled = configuration.autoborders;
@@ -1402,11 +1383,11 @@ export class DrawHandlerImpl implements DrawHandler {
 
             const paintHandler = this.drawInstance.remember('_paintHandler');
 
-            if (paintHandler) {
-                for (const point of paintHandler.set.members) {
-                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
-                }
+            for (const point of (paintHandler as any).set.members) {
+                point.attr('stroke', this.isHidden ? 'none' : CIRCLE_STROKE);
+                point.fill({ opacity: this.isHidden ? 0 : 1 });
+                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
+                point.attr('r', `${this.controlPointsSize / geometry.scale}`);
             }
         }
     }
