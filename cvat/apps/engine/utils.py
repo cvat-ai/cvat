@@ -11,7 +11,7 @@ import importlib
 import sys
 import traceback
 from contextlib import suppress, nullcontext
-from typing import Any, Dict, Optional, Callable, Sequence, Union, Iterable
+from typing import Any, Dict, Optional, Callable, Sequence, Union
 import subprocess
 import os
 import urllib.parse
