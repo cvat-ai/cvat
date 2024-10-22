@@ -763,6 +763,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
                     }
                 },
+                initialRequest: options?.getInitialRequest(taskID),
             });
 
             const [task] = await serverProxy.tasks.get({ id: taskID });

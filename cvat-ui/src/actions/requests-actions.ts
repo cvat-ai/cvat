@@ -6,7 +6,7 @@ import { Store } from 'redux';
 import { ActionUnion, createAction } from 'utils/redux';
 import { CombinedState, RequestsQuery, RequestsState } from 'reducers';
 import {
-    Request, ProjectOrTaskOrJob, getCore, RQStatus, RequestOperation, RequestInitialData,
+    Request, ProjectOrTaskOrJob, getCore, RQStatus, RequestOperation, fieldsToSnakeCase,
 } from 'cvat-core-wrapper';
 import { getCVATStore } from 'cvat-store';
 
@@ -88,42 +88,45 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
     );
 }
 
-export function shouldListenForProgress(rqID: string | undefined, state: RequestsState): boolean {
+export function shouldListenForProgress(rqID: string | void, state: RequestsState): boolean {
     return (
         typeof rqID === 'string' &&
         (!state.requests[rqID] || [RQStatus.FINISHED, RQStatus.FAILED].includes(state.requests[rqID]?.status))
     );
 }
 
-export function generateInitialRequestData(
-    operation: Partial<RequestOperation> & Pick<RequestOperation, 'target' | 'type'>,
-): RequestInitialData {
+export function generateInitialRequest(
+    initialData: Partial<RequestOperation> &
+    Pick<RequestOperation, 'target' | 'type'> &
+    { instance?: ProjectOrTaskOrJob | RequestInstanceType },
+): Request {
     const {
-        target, type, format, jobID, taskID, projectID, functionID,
-    } = operation;
+        target, type, format, instance,
+    } = initialData;
     const { user } = getStore().getState().auth;
     const requestOperation = {
         target,
         type,
         format: format ?? null,
-        jobID: jobID ?? null,
-        taskID: taskID ?? null,
-        projectID: projectID ?? null,
-        functionID: functionID ?? null,
+        jobID: instance && target === 'job' ? instance.id : null,
+        taskID: instance && target === 'task' ? instance.id : null,
+        projectID: instance && target === 'project' ? instance.id : null,
+        functionID: null,
     };
-    return {
-        operation: requestOperation,
-        createdDate: new Date().toISOString(),
+    return new Request({
+        status: RQStatus.QUEUED,
+        operation: fieldsToSnakeCase(requestOperation) as any,
+        created_date: new Date().toISOString(),
+        message: 'Status request sent',
         owner: user,
-    };
+    });
 }
 
 export function listen(
     requestID: string,
     dispatch: (action: RequestsActions) => void,
     options: {
-        initialRequest?: Request,
-        initialData: RequestInitialData,
+        initialRequest: Request,
     },
 ) : Promise<Request> {
     return core.requests

@@ -15,7 +15,7 @@ import {
     Label, Attribute,
 } from 'cvat-core/src/labels';
 import {
-    SerializedAttribute, SerializedLabel, SerializedAPISchema,
+    SerializedAttribute, SerializedLabel, SerializedAPISchema, SerializedRequest,
 } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
@@ -29,6 +29,7 @@ import {
     ModelReturnType, DimensionType, JobType,
     JobStage, JobState, RQStatus,
 } from 'cvat-core/src/enums';
+import { fieldsToSnakeCase } from 'cvat-core/src/common';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
@@ -41,7 +42,7 @@ import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
-import { Request, RequestOperation, RequestInitialData } from 'cvat-core/src/request';
+import { Request, RequestOperation } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
 
@@ -106,6 +107,7 @@ export {
     ActionParameterType,
     FrameSelectionType,
     Request,
+    fieldsToSnakeCase,
     ValidationLayout,
 };
 
@@ -120,5 +122,5 @@ export type {
     SerializedAPISchema,
     ProjectOrTaskOrJob,
     RequestOperation,
-    RequestInitialData,
+    SerializedRequest,
 };

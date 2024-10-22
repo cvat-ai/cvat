@@ -4,7 +4,7 @@
 
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
-import { Request, RequestInitialData } from './request';
+import { Request } from './request';
 import { SerializedRequest } from './server-response-types';
 import { RequestError } from './exceptions';
 import { PaginatedResource } from './core-types';
@@ -58,15 +58,14 @@ class RequestsManager {
         requestID: string,
         options: {
             callback: (request: Request) => void,
-            initialData: RequestInitialData,
-            initialRequest?: Request,
+            initialRequest: Request,
         },
     ): Promise<Request> {
         if (!requestID) {
             throw new Error('Request id is not provided');
         }
         const callback = options?.callback;
-        const initialRequest = options?.initialRequest;
+        const { initialRequest } = options;
 
         if (requestID in this.listening) {
             if (callback) {
@@ -94,7 +93,6 @@ class RequestsManager {
 
                 try {
                     const serializedRequest = await serverProxy.requests.status(requestID);
-                    throw Error('network error');
                     if (requestID in this.listening) {
                         const request = new Request({ ...serializedRequest });
                         const { status } = request;
@@ -127,15 +125,16 @@ class RequestsManager {
                 } catch (error) {
                     if (requestID in this.listening) {
                         const { onUpdate } = this.listening[requestID];
-                        const { initialData } = options;
                         onUpdate
                             .forEach((update) => update(new Request({
                                 id: requestID,
                                 status: RQStatus.FAILED,
                                 message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                                ...{
-                                    ...initialData,
-                                    operation: fieldsToSnakeCase(initialData.operation) as SerializedRequest['operation'],
+                                operation: fieldsToSnakeCase(initialRequest.operation) as SerializedRequest['operation'],
+                                created_date: initialRequest.createdDate,
+                                owner: {
+                                    id: initialRequest.owner.id,
+                                    username: initialRequest.owner.username,
                                 },
                             })));
                         reject(error);
