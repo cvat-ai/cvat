@@ -54,7 +54,7 @@ from cvat.apps.engine.media_extractors import (
     ZipChunkWriter,
     ZipCompressedChunkWriter,
 )
-from cvat.apps.engine.utils import md5_hash, load_images
+from cvat.apps.engine.utils import md5_hash, load_image
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -321,14 +321,13 @@ class MediaCache:
                 cloud_storage_instance.bulk_download_to_dir(
                     files=files_to_download, upload_dir=tmp_dir
                 )
-                media = load_images(images=media, preload=False)
 
                 for checksum, media_item in zip(checksums, media):
                     if checksum and not md5_hash(media_item[1]) == checksum:
                         slogger.cloud_storage[db_cloud_storage.id].warning(
                             "Hash sums of files {} do not match".format(file_name)
                         )
-                    yield media_item
+                    yield load_image(media_item)
         else:
             requested_frame_iter = iter(frame_ids)
             next_requested_frame_id = next(requested_frame_iter, None)
@@ -358,7 +357,7 @@ class MediaCache:
             assert next_requested_frame_id is None
 
             if db_task.dimension == models.DimensionType.DIM_2D:
-                media = load_images(images=media, preload=False)
+                media = map(load_image, media)
 
             yield from media
 
