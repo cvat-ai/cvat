@@ -367,14 +367,19 @@ def find_users(test_db):
 @pytest.fixture(scope="session")
 def test_db(users, users_by_name, memberships):
     data = []
-    fields = ["username", "id", "privilege", "role", "org", "membership_id", "is_superuser"]
+    fields = ["username", "id", "privilege", "role", "org", "membership_id", "is_superuser", "has_analytics_access"]
 
     def add_row(**kwargs):
         data.append({field: kwargs.get(field) for field in fields})
 
     for user in users:
         for group in user["groups"]:
-            add_row(username=user["username"], id=user["id"], privilege=group)
+            add_row(
+                username=user["username"],
+                id=user["id"],
+                privilege=group,
+                has_analytics_access=user["has_analytics_access"],
+            )
 
     for membership in memberships:
         username = membership["user"]["username"]
@@ -386,6 +391,7 @@ def test_db(users, users_by_name, memberships):
                 id=membership["user"]["id"],
                 org=membership["organization"],
                 membership_id=membership["id"],
+                has_analytics_access=users_by_name[username]["has_analytics_access"],
             )
 
     return data

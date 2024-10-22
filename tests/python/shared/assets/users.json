@@ -274,7 +274,7 @@
       "groups": [
         "user"
       ],
-      "has_analytics_access": false,
+      "has_analytics_access": true,
       "id": 5,
       "is_active": true,
       "is_staff": false,
