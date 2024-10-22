@@ -5,40 +5,51 @@
 import React from 'react';
 import { Row, Col } from 'antd/es/grid';
 import Text from 'antd/lib/typography/Text';
+
 import AnalyticsCard from 'components/analytics-page/views/analytics-card';
 
 export interface Props {
+    mode: 'gt' | 'gt_pool'
     excludedCount: number;
     totalCount: number;
     activeCount: number;
 }
 
 export default function SummaryComponent(props: Readonly<Props>): JSX.Element {
-    const { excludedCount, totalCount, activeCount } = props;
+    const {
+        excludedCount, totalCount, activeCount, mode,
+    } = props;
 
     const reportInfo = (
         <Row>
             <Col span={10} className='cvat-allocation-summary'>
                 <Row>
-                    <Col span={12} className='cvat-allocation-summary-excluded'>
+                    <Col span={12} className='cvat-allocation-summary-mode'>
                         <Text>
-                            Excluded count:
+                            Validation mode:
                             {' '}
-                            <Text strong>{excludedCount}</Text>
+                            <Text strong>{mode === 'gt' ? 'Ground Truth' : 'Honeypots'}</Text>
                         </Text>
                     </Col>
                     <Col span={12} className='cvat-allocation-summary-total'>
                         <Text>
-                            Total count:
+                            Total validation frames:
                             {' '}
                             <Text strong>{totalCount}</Text>
                         </Text>
                     </Col>
                 </Row>
                 <Row>
+                    <Col span={12} className='cvat-allocation-summary-excluded'>
+                        <Text>
+                            Excluded validation frames:
+                            {' '}
+                            <Text strong>{excludedCount}</Text>
+                        </Text>
+                    </Col>
                     <Col span={12} className='cvat-allocation-summary-active'>
                         <Text>
-                            Active count:
+                            Active validation frames:
                             {' '}
                             <Text strong>{activeCount}</Text>
                         </Text>

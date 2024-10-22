@@ -60,8 +60,9 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          ports:
-          - containerPort: 8080
+          {{- $probeArgs := list "notifications" "cleaning" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           volumeMounts:
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache

@@ -252,9 +252,7 @@ class MediaCache:
         self, db_segment: models.Segment, chunk_number: str, *, quality: str
     ) -> None:
         self._delete_cache_item(
-            self._make_segment_chunk_key(
-                db_segment=db_segment, chunk_number=chunk_number, quality=quality
-            )
+            self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
@@ -473,22 +471,35 @@ class MediaCache:
 
         # Optimize frame access if all the required frames are already cached
         # Otherwise we might need to download files.
-        # This is not needed for video tasks, as it will reduce performance
-        from cvat.apps.engine.frame_provider import FrameOutputType, TaskFrameProvider
+        # This is not needed for video tasks, as it will reduce performance,
+        # because of reading multiple files (chunks)
+        from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
 
-        task_frame_provider = TaskFrameProvider(db_task)
+        task_frame_provider = make_frame_provider(db_task)
 
         use_cached_data = False
         if db_task.mode != "interpolation":
             required_frame_set = set(frame_ids)
-            available_chunks = [
-                self._has_key(self._make_chunk_key(db_segment, chunk_number, quality=quality))
-                for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all()
-                for chunk_number, _ in groupby(
+            available_chunks = []
+            for db_segment in db_task.segment_set.filter(type=models.SegmentType.RANGE).all():
+                segment_frame_provider = make_frame_provider(db_segment)
+
+                for i, chunk_frames in groupby(
                     sorted(required_frame_set.intersection(db_segment.frame_set)),
-                    key=lambda frame: frame // db_data.chunk_size,
-                )
-            ]
+                    key=lambda abs_frame: (
+                        segment_frame_provider.validate_frame_number(
+                            task_frame_provider.get_rel_frame_number(abs_frame)
+                        )[1]
+                    ),
+                ):
+                    if not list(chunk_frames):
+                        continue
+
+                    chunk_available = self._has_key(
+                        self._make_chunk_key(db_segment, i, quality=quality)
+                    )
+                    available_chunks.append(chunk_available)
+
             use_cached_data = bool(available_chunks) and all(available_chunks)
 
         if hasattr(db_data, "video"):
@@ -504,8 +515,7 @@ class MediaCache:
                     frame_range = (
                         (
                             db_data.start_frame
-                            + chunk_number * db_data.chunk_size
-                            + chunk_frame_idx * frame_step
+                            + (chunk_number * db_data.chunk_size + chunk_frame_idx) * frame_step
                         )
                         for chunk_frame_idx in range(db_data.chunk_size)
                     )

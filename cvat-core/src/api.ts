@@ -26,6 +26,7 @@ import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
 import * as enums from './enums';
@@ -426,6 +427,8 @@ function build(): CVATCore {
             QualityReport,
             Request,
             FramesMetaData,
+            JobValidationLayout,
+            TaskValidationLayout,
         },
         utils: {
             mask2Rle,

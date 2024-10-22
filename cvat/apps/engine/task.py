@@ -1157,19 +1157,6 @@ def _create_thread(
         assert job_file_mapping[-1] == validation_params['frames']
         job_file_mapping.pop(-1)
 
-        # Update manifest
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        manifest.link(
-            sources=[extractor.get_path(image.frame) for image in images],
-            meta={
-                k: {'related_images': related_images[k] }
-                for k in related_images
-            },
-            data_dir=upload_dir,
-            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-        )
-        manifest.create()
-
         db_data.update_validation_layout(models.ValidationLayout(
             mode=models.ValidationMode.GT_POOL,
             frames=list(frame_idx_map.values()),
@@ -1324,24 +1311,15 @@ def _create_thread(
             assert image.is_placeholder
             image.real_frame = frame_id_map[image.real_frame]
 
+        # Update manifest
+        manifest.reorder([images[frame_idx_map[image.frame]].path for image in new_db_images])
+
         images = new_db_images
         db_data.size = len(images)
         db_data.start_frame = 0
         db_data.stop_frame = 0
         db_data.frame_filter = ''
 
-        # Update manifest
-        manifest = ImageManifestManager(db_data.get_manifest_path())
-        manifest.link(
-            sources=[extractor.get_path(frame_idx_map[image.frame]) for image in images],
-            meta={
-                k: {'related_images': related_images[k] }
-                for k in related_images
-            },
-            data_dir=upload_dir,
-            DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
-        )
-        manifest.create()
 
         db_data.update_validation_layout(models.ValidationLayout(
             mode=models.ValidationMode.GT_POOL,
@@ -1398,6 +1376,9 @@ def _create_thread(
         seed = validation_params.get("random_seed")
         rng = random.Generator(random.MT19937(seed=seed))
 
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // db_data.get_frame_step()
+
         match validation_params["frame_selection_method"]:
             case models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 all_frames = range(db_data.size)
@@ -1431,7 +1412,7 @@ def _create_thread(
                 validation_frames: list[int] = []
                 overlap = db_task.overlap
                 for segment in db_task.segment_set.all():
-                    segment_frames = set(segment.frame_set)
+                    segment_frames = set(map(_to_rel_frame, segment.frame_set))
                     selected_frames = segment_frames.intersection(validation_frames)
                     selected_count = len(selected_frames)
 
@@ -1440,7 +1421,7 @@ def _create_thread(
                         continue
 
                     selectable_segment_frames = set(
-                        sorted(segment.frame_set)[overlap * (segment.start_frame != 0) : ]
+                        sorted(segment_frames)[overlap * (segment.start_frame != 0) : ]
                     ).difference(selected_frames)
 
                     validation_frames.extend(rng.choice(
@@ -1457,7 +1438,7 @@ def _create_thread(
                     )
 
                 validation_frames: list[int] = []
-                known_frame_names = {frame.path: frame.frame for frame in images}
+                known_frame_names = {frame.path: _to_rel_frame(frame.frame) for frame in images}
                 unknown_requested_frames = []
                 for frame_filename in validation_params['frames']:
                     frame_id = known_frame_names.get(frame_filename)
@@ -1484,11 +1465,14 @@ def _create_thread(
     # TODO: refactor
     if hasattr(db_data, 'validation_layout'):
         if db_data.validation_layout.mode == models.ValidationMode.GT:
+            def _to_abs_frame(rel_frame: int) -> int:
+                return rel_frame * db_data.get_frame_step() + db_data.start_frame
+
             db_gt_segment = models.Segment(
                 task=db_task,
                 start_frame=0,
                 stop_frame=db_data.size - 1,
-                frames=db_data.validation_layout.frames,
+                frames=list(map(_to_abs_frame, db_data.validation_layout.frames)),
                 type=models.SegmentType.SPECIFIC_FRAMES,
             )
         elif db_data.validation_layout.mode == models.ValidationMode.GT_POOL:
@@ -1653,7 +1637,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                             (abs_frame_id - media_extractor.start) // media_extractor.step
                             for abs_frame_id in (
                                 frame_map.get(frame, frame)
-                                for frame in db_segment.frame_set
+                                for frame in sorted(db_segment.frame_set)
                             )
                         ),
                         lambda _: next(frame_counter) // db_data.chunk_size

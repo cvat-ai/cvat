@@ -59,6 +59,25 @@ spec:
           {{- with .Values.cvat.kvrocks.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          #https://github.com/apache/kvrocks/blob/unstable/Dockerfile
+          {{- if .Values.cvat.kvrocks.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)'
+            {{- toYaml (omit .Values.cvat.kvrocks.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cvat.kvrocks.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)'
+            {{- toYaml (omit .Values.cvat.kvrocks.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
           volumeMounts:
           - name: {{ .Release.Name }}-kvrocks-data
             mountPath: /var/lib/kvrocks/data

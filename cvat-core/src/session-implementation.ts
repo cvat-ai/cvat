@@ -27,7 +27,10 @@ import {
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { SerializedLabel, SerializedTask } from './server-response-types';
+import {
+    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
+    SerializedTaskValidationLayout,
+} from './server-response-types';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -37,6 +40,7 @@ import AnnotationGuide from './guide';
 import requestsManager from './requests-manager';
 import { Request } from './request';
 import User from './user';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -164,6 +168,19 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.validationLayout> {
+            const result = await serverProxy.jobs.validationLayout(this.id);
+            if (Object.keys(result).length) {
+                return new JobValidationLayout(result as SerializedJobValidationLayout);
+            }
+
+            return null;
+        },
+    });
+
     Object.defineProperty(Job.prototype.frames.get, 'implementation', {
         value: function getFrameImplementation(
             this: JobClass,
@@ -186,7 +203,6 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 this.mode,
                 frame,
                 this.startFrame,
-                this.stopFrame,
                 isPlaying,
                 step,
                 this.dimension,
@@ -624,6 +640,19 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.validationLayout> {
+            const result = await serverProxy.tasks.validationLayout(this.id) as SerializedTaskValidationLayout;
+            if (result.mode !== null) {
+                return new TaskValidationLayout(result);
+            }
+
+            return null;
+        },
+    });
+
     Object.defineProperty(Task.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: TaskClass,
@@ -833,7 +862,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 this.mode,
                 frame,
                 job.startFrame,
-                job.stopFrame,
                 isPlaying,
                 step,
                 this.dimension,

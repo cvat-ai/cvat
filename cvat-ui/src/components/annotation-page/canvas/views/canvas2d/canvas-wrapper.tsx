@@ -22,7 +22,7 @@ import { EventScope } from 'cvat-logger';
 import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, FramesMetaData, ObjectState, QualityConflict, getCore,
+    AnnotationConflict, ObjectState, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -117,7 +117,6 @@ interface StateToProps {
     conflicts: QualityConflict[];
     showGroundTruth: boolean;
     highlightedConflict: QualityConflict | null;
-    groundTruthJobFramesMeta: FramesMetaData | null;
     imageFilters: ImageFilter[];
     activeControl: ActiveControl;
 }
@@ -154,7 +153,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { activeControl, instance: canvasInstance, ready: canvasIsReady },
             drawing: { activeLabelID, activeObjectType },
-            job: { instance: jobInstance, groundTruthJobFramesMeta },
+            job: { instance: jobInstance },
             player: {
                 frame: { data: frameData, number: frame },
                 frameAngles,
@@ -255,7 +254,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         conflicts,
         showGroundTruth,
         highlightedConflict,
-        groundTruthJobFramesMeta,
         imageFilters,
     };
 }
@@ -940,15 +938,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateCanvas(): void {
         const {
             curZLayer, annotations, frameData,
-            workspace, groundTruthJobFramesMeta,
-            frame, imageFilters,
+            workspace, frame, imageFilters,
         } = this.props;
 
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = filterAnnotations(annotations, {
                 frame,
-                groundTruthJobFramesMeta,
                 workspace,
                 exclude: [ObjectType.TAG],
             });

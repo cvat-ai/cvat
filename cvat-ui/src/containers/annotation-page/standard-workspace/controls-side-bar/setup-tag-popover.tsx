@@ -154,7 +154,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             <SetupTagPopoverComponent
                 labels={this.satisfiedLabels}
                 selectedLabelID={selectedLabelID}
-                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
                 onChangeLabel={this.onChangeLabel}
                 onSetup={this.onSetup}
             />

@@ -253,3 +253,23 @@ allow if {
     organizations.has_perm(organizations.WORKER)
     is_task_staff
 }
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    utils.is_sandbox
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.MAINTAINER)
+    utils.has_perm(utils.USER)
+}

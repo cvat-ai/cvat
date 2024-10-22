@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.21.0
+  version: 2.22.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1916,6 +1916,50 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JobWriteRequest'
+            examples:
+              CreateGtJobWithRandom10Frames:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_uniform
+                  frame_count: 10
+                  random_seed: 1
+                summary: create gt job with random 10 frames
+              CreateGtJobWithRandom15%Frames:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_uniform
+                  frame_share: 0.15
+                  random_seed: 1
+                summary: create gt job with random 15% frames
+              CreateGtJobWith3RandomFramesInEachJob:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_per_job
+                  frames_per_job_count: 3
+                  random_seed: 1
+                summary: create gt job with 3 random frames in each job
+              CreateGtJobWith20%RandomFramesInEachJob:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: random_per_job
+                  frames_per_job_share: 0.2
+                  random_seed: 1
+                summary: create gt job with 20% random frames in each job
+              CreateGtJobWithManualFrameSelection:
+                value:
+                  type: ground_truth
+                  task_id: 42
+                  frame_selection_method: manual
+                  frames:
+                  - 1
+                  - 5
+                  - 10
+                  - 18
+                summary: create gt job with manual frame selection
         required: true
       security:
       - sessionAuth: []
@@ -2594,6 +2638,75 @@ paths:
       responses:
         '200':
           description: Job image preview
+  /api/jobs/{id}/validation_layout:
+    get:
+      operationId: jobs_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: jobs_partial_update_validation_layout
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this job.
+        required: true
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobValidationLayoutWriteRequest'
+            examples:
+              SetHoneypotsToRandomValidationFrames:
+                value:
+                  frame_selection_method: random_uniform
+                summary: set honeypots to random validation frames
+              SetHoneypotsManually:
+                value:
+                  frame_selection_method: manual
+                  honeypot_real_frames:
+                  - 10
+                  - 20
+                  - 22
+                summary: set honeypots manually
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/JobValidationLayoutRead'
+          description: ''
   /api/labels:
     get:
       operationId: labels_list
@@ -4953,7 +5066,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
 
           There are few examples for complex filtering tasks:
 
@@ -5015,7 +5128,7 @@ paths:
         in: query
         description: 'A search term. Available search_fields: (''project_name'', ''name'',
           ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'')'
+          ''tracker_link'', ''validation_mode'')'
         schema:
           type: string
       - name: sort
@@ -5023,7 +5136,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''id'', ''project_id'', ''updated_date'']'
+          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
+          ''project_id'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -5045,6 +5159,14 @@ paths:
         description: A simple equality filter for the tracker_link field
         schema:
           type: string
+      - name: validation_mode
+        in: query
+        description: A simple equality filter for the validation_mode field
+        schema:
+          type: string
+          enum:
+          - gt
+          - gt_pool
       tags:
       - tasks
       security:
@@ -5621,6 +5743,16 @@ paths:
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           description: Data of a specific type
     post:
       operationId: tasks_create_data
@@ -5988,6 +6120,86 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqStatus'
+          description: ''
+  /api/tasks/{id}/validation_layout:
+    get:
+      operationId: tasks_retrieve_validation_layout
+      summary: Allows getting current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
+          description: ''
+    patch:
+      operationId: tasks_partial_update_validation_layout
+      summary: Allows updating current validation configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskValidationLayoutWriteRequest'
+            examples:
+              SetHoneypotsToRandomValidationFrames:
+                value:
+                  frame_selection_method: random_uniform
+                summary: set honeypots to random validation frames
+              SetHoneypotsManually:
+                value:
+                  frame_selection_method: manual
+                  honeypot_real_frames:
+                  - 10
+                  - 20
+                  - 22
+                summary: set honeypots manually
+              DisableValidationFrames:
+                value:
+                  disabled_frames:
+                  - 4
+                  - 5
+                  - 8
+                summary: disable validation frames
+              RestoreAllValidationFrames:
+                value:
+                  disabled_frames: []
+                summary: restore all validation frames
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/TaskValidationLayoutRead'
           description: ''
   /api/tasks/backup/:
     post:
@@ -7246,6 +7458,9 @@ components:
     DataMetaRead:
       type: object
       properties:
+        chunks_updated_date:
+          type: string
+          format: date-time
         chunk_size:
           type: integer
           readOnly: true
@@ -7287,6 +7502,7 @@ components:
           description: |
             A list of valid frame ids. The None value means all frames are included.
       required:
+      - chunks_updated_date
       - deleted_frames
       - frames
       - image_quality
@@ -8155,6 +8371,26 @@ components:
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
+    JobValidationLayoutRead:
+      type: object
+      properties:
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids for honeypots in the job
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
       type: object
       properties:
@@ -9251,6 +9487,26 @@ components:
           items:
             type: integer
             minimum: 0
+    PatchedJobValidationLayoutWriteRequest:
+      type: object
+      properties:
+        frame_selection_method:
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the job
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedJobWriteRequest:
       type: object
       properties:
@@ -9454,6 +9710,33 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+    PatchedTaskValidationLayoutWriteRequest:
+      type: object
+      properties:
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be excluded from validation
+        frame_selection_method:
+          allOf:
+          - $ref: '#/components/schemas/FrameSelectionMethod'
+          description: |-
+            The method to use for frame selection of new real frames for honeypots in the task
+
+
+            * `random_uniform` - RANDOM_UNIFORM
+            * `random_per_job` - RANDOM_PER_JOB
+            * `manual` - MANUAL
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
     PatchedTaskWriteRequest:
       type: object
       properties:
@@ -9758,8 +10041,6 @@ components:
         task_id:
           type: integer
           writeOnly: true
-      required:
-      - task_id
     QualityReportSummary:
       type: object
       properties:
@@ -10569,6 +10850,50 @@ components:
       required:
       - jobs
       - labels
+    TaskValidationLayoutRead:
+      type: object
+      properties:
+        mode:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ValidationMode'
+          - $ref: '#/components/schemas/NullEnum'
+        frames_per_job_count:
+          type: integer
+          readOnly: true
+          nullable: true
+        validation_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids to be used for validation
+        disabled_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids excluded from validation
+        honeypot_count:
+          type: integer
+          minimum: 0
+        honeypot_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids for all honeypots in the task
+        honeypot_real_frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of real (validation) frame ids for all honeypots in the task
     TaskWriteRequest:
       type: object
       properties:

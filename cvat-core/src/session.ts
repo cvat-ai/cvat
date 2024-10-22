@@ -28,6 +28,7 @@ import { Request } from './request';
 import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -685,6 +686,11 @@ export class Job extends Session {
         return result;
     }
 
+    async validationLayout(): Promise<JobValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.validationLayout);
+        return result;
+    }
+
     async openIssue(issue: Issue, message: string): Promise<Issue> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
@@ -1177,6 +1183,11 @@ export class Task extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<TaskValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.validationLayout);
         return result;
     }
 }

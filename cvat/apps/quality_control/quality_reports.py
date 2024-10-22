@@ -11,17 +11,21 @@ from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
-from uuid import uuid4
 
 import datumaro as dm
 import datumaro.util.mask_tools
 import django_rq
 import numpy as np
+import rq
 from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django_rq.queues import DjangoRQ as RqQueue
+from rest_framework.request import Request
+from rq.job import Job as RqJob
+from rq_scheduler import Scheduler as RqScheduler
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -48,6 +52,7 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -2115,7 +2120,8 @@ class DatasetComparator:
 
 
 class QualityReportUpdateManager:
-    _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
+    _QUEUE_AUTOUPDATE_JOB_PREFIX = "update-quality-metrics-"
+    _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
 
@@ -2123,17 +2129,21 @@ class QualityReportUpdateManager:
     def _get_quality_check_job_delay(cls) -> timedelta:
         return timedelta(seconds=settings.QUALITY_CHECK_JOB_DELAY)
 
-    def _get_scheduler(self):
+    def _get_scheduler(self) -> RqScheduler:
         return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _get_queue(self):
+    def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
     def _make_queue_job_id_base(self, task: Task) -> str:
-        return f"{self._QUEUE_JOB_PREFIX}{task.id}"
+        return f"{self._QUEUE_AUTOUPDATE_JOB_PREFIX}task-{task.id}"
 
-    def _make_custom_quality_check_job_id(self) -> str:
-        return uuid4().hex
+    def _make_custom_quality_check_job_id(self, task_id: int, user_id: int) -> str:
+        # FUTURE-TODO: it looks like job ID template should not include user_id because:
+        # 1. There is no need to compute quality reports several times for different users
+        # 2. Each user (not only rq job owner) that has permission to access a task should
+        # be able to check the status of the computation process
+        return f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}-user-{user_id}"
 
     @classmethod
     def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
@@ -2186,28 +2196,52 @@ class QualityReportUpdateManager:
             task_id=task.id,
         )
 
-    def schedule_quality_check_job(self, task: Task, *, user_id: int) -> str:
+    class JobAlreadyExists(QualityReportsNotAvailable):
+        def __str__(self):
+            return "Quality computation job for this task already enqueued"
+
+    def schedule_custom_quality_check_job(
+        self, request: Request, task: Task, *, user_id: int
+    ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
         """
 
         self._check_quality_reporting_available(task)
 
-        rq_id = self._make_custom_quality_check_job_id()
-
         queue = self._get_queue()
-        queue.enqueue(
-            self._check_task_quality,
-            task_id=task.id,
-            job_id=rq_id,
-            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE},
-            result_ttl=self._JOB_RESULT_TTL,
-            failure_ttl=self._JOB_RESULT_TTL,
-        )
+
+        with get_rq_lock_by_user(queue, user_id=user_id):
+            rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
+            rq_job = queue.fetch_job(rq_id)
+            if rq_job:
+                if rq_job.get_status(refresh=False) in (
+                    rq.job.JobStatus.QUEUED,
+                    rq.job.JobStatus.STARTED,
+                    rq.job.JobStatus.SCHEDULED,
+                    rq.job.JobStatus.DEFERRED,
+                ):
+                    raise self.JobAlreadyExists()
+
+                rq_job.delete()
+
+            dependency = define_dependent_job(
+                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+            )
+
+            queue.enqueue(
+                self._check_task_quality,
+                task_id=task.id,
+                job_id=rq_id,
+                meta=get_rq_job_meta(request=request, db_obj=task),
+                result_ttl=self._JOB_RESULT_TTL,
+                failure_ttl=self._JOB_RESULT_TTL,
+                depends_on=dependency,
+            )
 
         return rq_id
 
-    def get_quality_check_job(self, rq_id: str):
+    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
 
@@ -2216,8 +2250,8 @@ class QualityReportUpdateManager:
 
         return rq_job
 
-    def is_custom_quality_check_job(self, rq_job) -> bool:
-        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
+    def is_custom_quality_check_job(self, rq_job: RqJob) -> bool:
+        return isinstance(rq_job.id, str) and rq_job.id.startswith(self._QUEUE_CUSTOM_JOB_PREFIX)
 
     @classmethod
     @silk_profile()
@@ -2269,13 +2303,14 @@ class QualityReportUpdateManager:
             if validation_layout.mode == ValidationMode.GT_POOL:
                 task_frame_provider = TaskFrameProvider(task)
                 active_validation_frames = set(
-                    task_frame_provider.get_rel_frame_number(frame)
-                    for frame, real_frame in (
+                    task_frame_provider.get_rel_frame_number(abs_frame)
+                    for abs_frame, abs_real_frame in (
                         Image.objects.filter(data=task.data, is_placeholder=True)
                         .values_list("frame", "real_frame")
                         .iterator(chunk_size=10000)
                     )
-                    if real_frame in active_validation_frames
+                    if task_frame_provider.get_rel_frame_number(abs_real_frame)
+                    in active_validation_frames
                 )
 
             jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
@@ -2283,7 +2318,7 @@ class QualityReportUpdateManager:
                 job.id: JobDataProvider(
                     job.id,
                     queryset=job_queryset,
-                    included_frames=set(job.segment.frame_set) & active_validation_frames,
+                    included_frames=active_validation_frames,
                 )
                 for job in jobs
             }
