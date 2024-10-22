@@ -329,6 +329,7 @@ services:
 
   cvat_grafana:
     image: grafana/grafana-oss:10.1.2
+    restart: always
     container_name: cvat_grafana
     environment:
       <<: *clickhouse-env
