@@ -14,7 +14,9 @@ import { Key } from 'antd/lib/table/interface';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
 
 import { RestoreIcon } from 'icons';
-import { Task, FramesMetaData, TaskValidationLayout } from 'cvat-core-wrapper';
+import {
+    Task, FramesMetaData, TaskValidationLayout, QualitySettings,
+} from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { sorter } from 'utils/quality';
 
@@ -23,6 +25,7 @@ interface Props {
     gtJobId: number;
     gtJobMeta: FramesMetaData;
     validationLayout: TaskValidationLayout;
+    qualitySettings: QualitySettings;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }

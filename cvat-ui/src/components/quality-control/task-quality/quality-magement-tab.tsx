@@ -4,9 +4,11 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/es/grid';
-import Spin from 'antd/lib/spin';
 
-import { FramesMetaData, Task, TaskValidationLayout } from 'cvat-core-wrapper';
+import {
+    FramesMetaData, QualitySettings,
+    Task, TaskValidationLayout,
+} from 'cvat-core-wrapper';
 import AllocationTable from './allocation-table';
 import SummaryComponent from './summary';
 
@@ -15,14 +17,15 @@ interface Props {
     gtJobId: number;
     gtJobMeta: FramesMetaData;
     validationLayout: TaskValidationLayout;
-    fetching: boolean;
+    qualitySettings: QualitySettings;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
 
 function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     const {
-        task, gtJobId, gtJobMeta, fetching, validationLayout,
+        task, gtJobId, gtJobMeta,
+        validationLayout, qualitySettings,
         onDeleteFrames, onRestoreFrames,
     } = props;
 
@@ -32,13 +35,6 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
 
     return (
         <div className='cvat-quality-control-management-tab'>
-            {
-                fetching && (
-                    <div className='cvat-spinner-container'>
-                        <Spin className='cvat-spinner' />
-                    </div>
-                )
-            }
             <Row>
                 <Col span={24}>
                     <SummaryComponent
@@ -56,6 +52,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                         gtJobId={gtJobId}
                         gtJobMeta={gtJobMeta}
                         validationLayout={validationLayout}
+                        qualitySettings={qualitySettings}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
                     />

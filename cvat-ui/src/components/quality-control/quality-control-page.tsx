@@ -17,7 +17,7 @@ import Result from 'antd/lib/result';
 
 import {
     Job, JobType, QualityReport, QualitySettings, Task,
-    TargetMetric, TaskValidationLayout, getCore, FramesMetaData,
+    TaskValidationLayout, getCore, FramesMetaData,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
@@ -43,7 +43,6 @@ interface State {
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
-        targetMetric: TargetMetric | null;
     };
 }
 
@@ -107,7 +106,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             qualitySettings: {
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
-                targetMetric: action.payload.qualitySettings.targetMetric,
             },
         };
     }
@@ -172,7 +170,6 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: null,
             fetching: false,
-            targetMetric: null,
         },
     });
 
@@ -331,7 +328,6 @@ function QualityControlPage(): JSX.Element {
         qualitySettings: {
             settings: qualitySettings,
             fetching: qualitySettingsFetching,
-            targetMetric,
         },
     } = state;
 
@@ -372,18 +368,18 @@ function QualityControlPage(): JSX.Element {
 
         const tabsItems: NonNullable<TabsProps['items']>[0][] = [];
 
-        if (targetMetric) {
+        if (qualitySettings) {
             tabsItems.push({
                 key: 'overview',
                 label: 'Overview',
                 children: (
-                    <QualityOverviewTab task={instance} targetMetric={targetMetric} />
+                    <QualityOverviewTab task={instance} qualitySettings={qualitySettings} />
                 ),
             });
         }
 
         if (gtJobInstance && gtJobMeta) {
-            if (validationLayout) {
+            if (validationLayout && qualitySettings) {
                 tabsItems.push({
                     key: 'management',
                     label: 'Management',
@@ -393,9 +389,9 @@ function QualityControlPage(): JSX.Element {
                             gtJobId={gtJobInstance.id}
                             gtJobMeta={gtJobMeta}
                             validationLayout={validationLayout}
+                            qualitySettings={qualitySettings}
                             onDeleteFrames={onDeleteFrames}
                             onRestoreFrames={onRestoreFrames}
-                            fetching={fetching}
                         />
                     ),
                 });
