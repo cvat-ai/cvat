@@ -60,7 +60,7 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
     angleDiff = ((angleDiff + 180) % 360) - 180;
     if (Math.abs(angleDiff) >= 180) {
         // if the main arc is bigger than 180, go another arc
-        // to find it, just substract absolute value from 360 and inverse sign
+        // to find it, just subtract absolute value from 360 and inverse sign
         angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
     }
     return angleDiff;

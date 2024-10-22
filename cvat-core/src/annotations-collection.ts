@@ -1295,7 +1295,7 @@ export default class Collection {
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
 
-        // if not looking for an emty frame nor frame with annotations, return the next frame
+        // if not looking for an empty frame nor frame with annotations, return the next frame
         // check if deleted frames are allowed additionally
         if (!annotationsFilters) {
             let frame = frameFrom;
