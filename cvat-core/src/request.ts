@@ -16,12 +16,6 @@ export type RequestOperation = {
     functionID: string | null;
 };
 
-export type RequestInitialData = {
-    operation: RequestOperation;
-    createdDate: string;
-    owner: any;
-};
-
 export class Request {
     #id: string;
     #status: RQStatus;
