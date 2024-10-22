@@ -1098,9 +1098,9 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     has_analytics_access = models.BooleanField(
-        _("has /analytics access"),
+        _("has access to analytics"),
         default=False,
-        help_text=_("Designates whether the user can access /analytics."),
+        help_text=_("Designates whether the user can access analytics."),
     )
 
 
