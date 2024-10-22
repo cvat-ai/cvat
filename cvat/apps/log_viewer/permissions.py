@@ -52,13 +52,3 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         return {
             'visibility': 'public' if settings.RESTRICTIONS['analytics_visibility'] else 'private',
         }
-
-    @classmethod
-    def create_scope_list(cls, request, iam_context=None):
-        if not iam_context and request:
-            iam_context = super().create_scope_list(request, iam_context=iam_context)
-        return cls(
-            **iam_context,
-            scope='list',
-            has_analytics_access=request.user.profile.has_analytics_access,
-        )
