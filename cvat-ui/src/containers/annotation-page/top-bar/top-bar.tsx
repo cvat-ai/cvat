@@ -676,6 +676,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSearchAnnotations={this.searchAnnotations}
                 setNavigationType={setNavigationType}
                 onSliderChange={this.onChangePlayerSliderValue}
+                f
                 onInputChange={this.onChangePlayerInputValue}
                 onURLIconClick={this.onURLIconClick}
                 onDeleteFrame={this.onDeleteFrame}
@@ -697,7 +698,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 redoAction={redoAction}
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
-                drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
                 switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                 playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                 deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}
