@@ -676,7 +676,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSearchAnnotations={this.searchAnnotations}
                 setNavigationType={setNavigationType}
                 onSliderChange={this.onChangePlayerSliderValue}
-                f
                 onInputChange={this.onChangePlayerInputValue}
                 onURLIconClick={this.onURLIconClick}
                 onDeleteFrame={this.onDeleteFrame}
