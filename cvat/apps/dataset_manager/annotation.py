@@ -951,9 +951,11 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
-                if curr_frame == prev_shape["frame"]:
-                    if dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None):
-                        continue
+                if (
+                    curr_frame == prev_shape["frame"]
+                    and dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None)
+                ):
+                    continue
                 assert curr_frame > prev_shape["frame"], f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}" # Catch invalid tracks
 
                 # Propagate attributes
