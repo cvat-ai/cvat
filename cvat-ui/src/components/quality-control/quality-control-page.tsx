@@ -13,10 +13,11 @@ import { Row, Col } from 'antd/lib/grid';
 import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
-import { useIsMounted } from 'utils/hooks';
+import Result from 'antd/lib/result';
+
 import {
-    Job, JobType, QualityReport, QualitySettings, Task, getCore, FramesMetaData,
-    TargetMetric,
+    Job, JobType, QualityReport, QualitySettings, Task,
+    TaskValidationLayout, getCore, FramesMetaData,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
@@ -32,20 +33,17 @@ function getTabFromHash(supportedTabs: string[]): string {
     return supportedTabs.includes(tab) ? tab : supportedTabs[0];
 }
 
-type InstanceType = 'task';
-
 interface State {
     fetching: boolean;
     reportRefreshingStatus: string | null;
-    gtJob: {
-        instance: Job | null,
-        meta: FramesMetaData | null,
-    },
+    validationLayout: TaskValidationLayout | null;
+    gtJobInstance: Job | null;
+    gtJobMeta: FramesMetaData | null;
+    error: Error | null;
     qualitySettings: {
         settings: QualitySettings | null;
         fetching: boolean;
-        targetMetric: TargetMetric | null;
-    },
+    };
 }
 
 enum ReducerActionType {
@@ -57,6 +55,8 @@ enum ReducerActionType {
     SET_REPORT_REFRESHING_STATUS = 'SET_REPORT_REFRESHING_STATUS',
     SET_GT_JOB = 'SET_GT_JOB',
     SET_GT_JOB_META = 'SET_GT_JOB_META',
+    SET_VALIDATION_LAYOUT = 'SET_VALIDATION_LAYOUT',
+    SET_ERROR = 'SET_ERROR',
 }
 
 export const reducerActions = {
@@ -78,11 +78,17 @@ export const reducerActions = {
     setReportRefreshingStatus: (status: string | null) => (
         createAction(ReducerActionType.SET_REPORT_REFRESHING_STATUS, { status })
     ),
-    setGtJob: (job: Job | null) => (
-        createAction(ReducerActionType.SET_GT_JOB, { job })
+    setGtJob: (gtJobInstance: Job | null) => (
+        createAction(ReducerActionType.SET_GT_JOB, { gtJobInstance })
     ),
-    setGtJobMeta: (meta: FramesMetaData | null) => (
-        createAction(ReducerActionType.SET_GT_JOB_META, { meta })
+    setGtJobMeta: (gtJobMeta: FramesMetaData | null) => (
+        createAction(ReducerActionType.SET_GT_JOB_META, { gtJobMeta })
+    ),
+    setValidationLayout: (validationLayout: TaskValidationLayout | null) => (
+        createAction(ReducerActionType.SET_VALIDATION_LAYOUT, { validationLayout })
+    ),
+    setError: (error: Error) => (
+        createAction(ReducerActionType.SET_ERROR, { error })
     ),
 };
 
@@ -100,7 +106,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             qualitySettings: {
                 ...state.qualitySettings,
                 settings: action.payload.qualitySettings,
-                targetMetric: action.payload.qualitySettings.targetMetric,
             },
         };
     }
@@ -125,20 +130,28 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     if (action.type === ReducerActionType.SET_GT_JOB) {
         return {
             ...state,
-            gtJob: {
-                ...state.gtJob,
-                instance: action.payload.job,
-            },
+            gtJobInstance: action.payload.gtJobInstance,
         };
     }
 
     if (action.type === ReducerActionType.SET_GT_JOB_META) {
         return {
             ...state,
-            gtJob: {
-                ...state.gtJob,
-                meta: action.payload.meta,
-            },
+            gtJobMeta: action.payload.gtJobMeta,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_VALIDATION_LAYOUT) {
+        return {
+            ...state,
+            validationLayout: action.payload.validationLayout,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_ERROR) {
+        return {
+            ...state,
+            error: action.payload.error,
         };
     }
 
@@ -146,86 +159,57 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 };
 
 function QualityControlPage(): JSX.Element {
+    const supportedTabs = ['overview', 'settings', 'management'];
     const [state, dispatch] = useReducer(reducer, {
         fetching: true,
         reportRefreshingStatus: null,
-        gtJob: {
-            instance: null,
-            meta: null,
-        },
+        gtJobInstance: null,
+        gtJobMeta: null,
+        validationLayout: null,
+        error: null,
         qualitySettings: {
             settings: null,
-            fetching: true,
-            targetMetric: null,
+            fetching: false,
         },
     });
 
-    const requestedInstanceType: InstanceType = 'task';
     const requestedInstanceID = +useParams<{ tid: string }>().tid;
 
-    const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
-    const [instance, setInstance] = useState<Task | null>(null);
-    const isMounted = useIsMounted();
-
-    const supportedTabs = ['overview', 'settings', 'management'];
     const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
-    const receiveInstance = async (type: InstanceType, id: number): Promise<Task | null> => {
-        let receivedInstance: Task | null = null;
-        let gtJob: Job | null = null;
-        let gtJobMeta: FramesMetaData | null = null;
+    const [instance, setInstance] = useState<Task | null>(null);
 
+    const initializeData = async (id: number): Promise<void> => {
         try {
-            if (type === 'task') {
-                [receivedInstance] = await core.tasks.get({ id });
-                gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
-                if (gtJob) {
-                    gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
-                }
-            } else {
-                return null;
+            let taskInstance = null;
+            try {
+                [taskInstance] = await core.tasks.get({ id });
+            } catch (error: unknown) {
+                throw new Error('The task was not found on the server');
             }
 
-            if (isMounted()) {
+            setInstance(taskInstance);
+            try {
+                dispatch(reducerActions.setQualitySettingsFetching(true));
+                const settings = await core.analytics.quality.settings.get({ taskID: taskInstance.id });
+                dispatch(reducerActions.setQualitySettings(settings));
+            } finally {
+                dispatch(reducerActions.setQualitySettingsFetching(false));
+            }
+
+            const gtJob = taskInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
+            if (gtJob) {
+                const validationLayout: TaskValidationLayout | null = await taskInstance.validationLayout();
+                const gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
                 dispatch(reducerActions.setGtJob(gtJob));
                 dispatch(reducerActions.setGtJobMeta(gtJobMeta));
-                setInstance(receivedInstance);
-                setInstanceType(type);
+                dispatch(reducerActions.setValidationLayout(validationLayout));
             }
-            return receivedInstance;
         } catch (error: unknown) {
-            notification.error({
-                message: `Could not receive requested ${type}`,
-                description: `${error instanceof Error ? error.message : ''}`,
-            });
-            return null;
+            dispatch(reducerActions.setError(error instanceof Error ? error : new Error('Unknown error')));
+        } finally {
+            dispatch(reducerActions.setFetching(false));
         }
     };
-
-    const receiveSettings = useCallback(async (taskInstance: Task) => {
-        dispatch(reducerActions.setQualitySettingsFetching(true));
-
-        function handleError(error: Error): void {
-            if (isMounted()) {
-                notification.error({
-                    description: error.toString(),
-                    message: 'Could not initialize quality control page',
-                });
-            }
-        }
-
-        try {
-            const settingsRequest = core.analytics.quality.settings.get({ taskID: taskInstance.id });
-
-            await Promise.all([settingsRequest]).then(([settings]) => {
-                dispatch(reducerActions.setQualitySettings(settings));
-            }).catch(handleError).finally(() => {
-                dispatch(reducerActions.setQualitySettingsFetching(false));
-                dispatch(reducerActions.setFetching(false));
-            });
-        } catch (error: unknown) {
-            handleError(error as Error);
-        }
-    }, [instance]);
 
     const onSaveQualitySettings = useCallback(async (values) => {
         try {
@@ -274,48 +258,41 @@ function QualityControlPage(): JSX.Element {
         }
     }, [state.qualitySettings.settings]);
 
-    const updateMeta = (action: (frameID: number) => void) => async (frameIDs: number[]): Promise<void> => {
-        const { instance: gtJob } = state.gtJob;
-        if (gtJob) {
-            dispatch(reducerActions.setFetching(true));
-            await Promise.all(frameIDs.map((frameID: number): void => action(frameID)));
-            const [newMeta] = await gtJob.frames.save();
+    const updateMeta = async (): Promise<void> => {
+        dispatch(reducerActions.setFetching(true));
+        try {
+            const [newMeta] = await (state.gtJobInstance as Job).frames.save();
+            const validationLayout: TaskValidationLayout | null = await (instance as Task).validationLayout();
             dispatch(reducerActions.setGtJobMeta(newMeta));
+            dispatch(reducerActions.setValidationLayout(validationLayout));
+        } finally {
             dispatch(reducerActions.setFetching(false));
         }
     };
 
-    const onDeleteFrames = useCallback(
-        updateMeta((frameID: number) => (state.gtJob.instance?.frames.delete(frameID))),
-        [state.gtJob.instance],
-    );
+    const onDeleteFrames = useCallback((frameIDs: number[]): void => {
+        if (state.gtJobInstance && instance) {
+            for (const frameID of frameIDs) {
+                state.gtJobInstance.frames.delete(frameID);
+            }
 
-    const onRestoreFrames = useCallback(
-        updateMeta((frameID: number) => (state.gtJob.instance?.frames.restore(frameID))),
-        [state.gtJob.instance],
-    );
+            updateMeta();
+        }
+    }, [state.gtJobInstance]);
+
+    const onRestoreFrames = useCallback((frameIDs: number[]): void => {
+        if (state.gtJobInstance && instance) {
+            for (const frameID of frameIDs) {
+                state.gtJobInstance.frames.restore(frameID);
+            }
+
+            updateMeta();
+        }
+    }, [state.gtJobInstance]);
 
     useEffect(() => {
-        if (Number.isInteger(requestedInstanceID) && ['task'].includes(requestedInstanceType)) {
-            dispatch(reducerActions.setFetching(true));
-            receiveInstance(requestedInstanceType, requestedInstanceID).then((task) => {
-                if (task) {
-                    receiveSettings(task);
-                }
-            });
-        } else {
-            notification.error({
-                message: 'Could not load this page',
-                description: `Not valid resource ${requestedInstanceType} #${requestedInstanceID}`,
-            });
-        }
-
-        return () => {
-            if (isMounted()) {
-                setInstance(null);
-            }
-        };
-    }, [requestedInstanceType, requestedInstanceID]);
+        initializeData(requestedInstanceID);
+    }, [requestedInstanceID]);
 
     useEffect(() => {
         window.addEventListener('hashchange', () => {
@@ -332,70 +309,95 @@ function QualityControlPage(): JSX.Element {
         setActiveTab(key);
     }, []);
 
-    let backNavigation: JSX.Element | null = null;
+    const backNavigation: JSX.Element | null = (
+        <Row justify='center'>
+            <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
+                <GoBackButton />
+            </Col>
+        </Row>
+    );
     let title: JSX.Element | null = null;
     let tabs: JSX.Element | null = null;
 
     const {
         fetching,
-        gtJob: {
-            instance: gtJobInstance,
-            meta: gtJobMeta,
-        },
+        gtJobInstance,
+        gtJobMeta,
+        validationLayout,
+        error,
         qualitySettings: {
             settings: qualitySettings,
             fetching: qualitySettingsFetching,
-            targetMetric,
         },
     } = state;
 
-    const settingsInitialized = qualitySettings && targetMetric;
-    if (instanceType && instance && settingsInitialized) {
-        backNavigation = (
-            <Row justify='center'>
-                <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                    <GoBackButton />
-                </Col>
-            </Row>
+    if (error) {
+        return (
+            <div className='cvat-quality-control-page'>
+                <div className='cvat-quality-control-page-error'>
+                    <Result
+                        status='error'
+                        title='Could not open the page'
+                        subTitle={error.message}
+                        extra={backNavigation}
+                    />
+                </div>
+            </div>
         );
+    }
 
-        const qualityControlFor = <Link to={`/tasks/${instance.id}`}>{`Task #${instance.id}`}</Link>;
+    if (fetching || qualitySettingsFetching) {
+        return (
+            <div className='cvat-quality-control-page'>
+                <div className='cvat-quality-control-loading'>
+                    <CVATLoadingSpinner />
+                </div>
+            </div>
+        );
+    }
+
+    if (instance) {
         title = (
             <Col>
                 <Title level={4} className='cvat-text-color'>
                     Quality control for
-                    {' '}
-                    {qualityControlFor}
+                    <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
                 </Title>
             </Col>
         );
 
-        const tabsItems: [NonNullable<TabsProps['items']>[0], number][] = [];
-        tabsItems.push([{
-            key: 'overview',
-            label: 'Overview',
-            children: (
-                <QualityOverviewTab task={instance} targetMetric={targetMetric} />
-            ),
-        }, 10]);
+        const tabsItems: NonNullable<TabsProps['items']>[0][] = [];
+
+        if (qualitySettings) {
+            tabsItems.push({
+                key: 'overview',
+                label: 'Overview',
+                children: (
+                    <QualityOverviewTab task={instance} qualitySettings={qualitySettings} />
+                ),
+            });
+        }
 
         if (gtJobInstance && gtJobMeta) {
-            tabsItems.push([{
-                key: 'management',
-                label: 'Management',
-                children: (
-                    <QualityManagementTab
-                        task={instance}
-                        gtJob={gtJobInstance}
-                        gtJobMeta={gtJobMeta}
-                        onDeleteFrames={onDeleteFrames}
-                        onRestoreFrames={onRestoreFrames}
-                        fetching={fetching}
-                    />
-                ),
-            }, 20]);
+            if (validationLayout && qualitySettings) {
+                tabsItems.push({
+                    key: 'management',
+                    label: 'Management',
+                    children: (
+                        <QualityManagementTab
+                            task={instance}
+                            gtJobId={gtJobInstance.id}
+                            gtJobMeta={gtJobMeta}
+                            validationLayout={validationLayout}
+                            qualitySettings={qualitySettings}
+                            onDeleteFrames={onDeleteFrames}
+                            onRestoreFrames={onRestoreFrames}
+                        />
+                    ),
+                });
+            }
 
-            tabsItems.push([{
+            tabsItems.push({
                 key: 'settings',
                 label: 'Settings',
                 children: (
@@ -405,10 +407,8 @@ function QualityControlPage(): JSX.Element {
                         setQualitySettings={onSaveQualitySettings}
                     />
                 ),
-            }, 30]);
+            });
         }
-
-        tabsItems.sort((item1, item2) => item1[1] - item2[1]);
 
         tabs = (
             <Tabs
@@ -417,30 +417,24 @@ function QualityControlPage(): JSX.Element {
                 defaultActiveKey='Overview'
                 onChange={onTabKeyChange}
                 className='cvat-task-control-tabs'
-                items={tabsItems.map((item) => item[0])}
+                items={tabsItems}
             />
         );
     }
 
     return (
         <div className='cvat-quality-control-page'>
-            {fetching && qualitySettingsFetching ? (
-                <div className='cvat-quality-control-loading'>
-                    <CVATLoadingSpinner />
-                </div>
-            ) : (
-                <Row className='cvat-quality-control-wrapper'>
-                    <Col span={24}>
-                        {backNavigation}
-                        <Row justify='center'>
-                            <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
-                                {title}
-                                {tabs}
-                            </Col>
-                        </Row>
-                    </Col>
-                </Row>
-            )}
+            <Row className='cvat-quality-control-wrapper'>
+                <Col span={24}>
+                    {backNavigation}
+                    <Row justify='center'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
+                            {title}
+                            {tabs}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
         </div>
     );
 }

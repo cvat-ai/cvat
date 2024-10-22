@@ -36,7 +36,7 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
-import ValidationLayout from 'cvat-core/src/validation-layout';
+import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
@@ -108,7 +108,8 @@ export {
     FrameSelectionType,
     Request,
     fieldsToSnakeCase,
-    ValidationLayout,
+    JobValidationLayout,
+    TaskValidationLayout,
 };
 
 export type {
