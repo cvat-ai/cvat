@@ -40,6 +40,7 @@ class TestGetAnalytics:
             (dict(privilege="admin"), True),
             (dict(privilege="business"), True),
             (dict(privilege="worker", has_analytics_access=False), False),
+            (dict(privilege="worker", has_analytics_access=True), False),
             (dict(privilege="user", has_analytics_access=False), False),
             (dict(privilege="user", has_analytics_access=True), True),
         ],

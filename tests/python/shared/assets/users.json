@@ -206,7 +206,7 @@
       "groups": [
         "worker"
       ],
-      "has_analytics_access": false,
+      "has_analytics_access": true,
       "id": 9,
       "is_active": true,
       "is_staff": false,
