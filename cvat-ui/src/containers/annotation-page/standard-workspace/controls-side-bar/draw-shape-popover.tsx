@@ -204,7 +204,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 numberOfPoints={numberOfPoints}
                 rectDrawingMethod={rectDrawingMethod}
                 cuboidDrawingMethod={cuboidDrawingMethod}
-                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
                 onChangeLabel={this.onChangeLabel}
                 onChangePoints={this.onChangePoints}
                 onChangeRectDrawingMethod={this.onChangeRectDrawingMethod}
