@@ -6181,54 +6181,6 @@
   }
 },
 {
-  "model": "engine.segment",
-  "pk": 38,
-  "fields": {
-    "task": 29,
-    "start_frame": 0,
-    "stop_frame": 7,
-    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
-    "type": "range",
-    "frames": "[]"
-  }
-},
-{
-  "model": "engine.segment",
-  "pk": 39,
-  "fields": {
-    "task": 29,
-    "start_frame": 8,
-    "stop_frame": 15,
-    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
-    "type": "range",
-    "frames": "[]"
-  }
-},
-{
-  "model": "engine.segment",
-  "pk": 40,
-  "fields": {
-    "task": 29,
-    "start_frame": 16,
-    "stop_frame": 22,
-    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
-    "type": "range",
-    "frames": "[]"
-  }
-},
-{
-  "model": "engine.segment",
-  "pk": 41,
-  "fields": {
-    "task": 29,
-    "start_frame": 23,
-    "stop_frame": 28,
-    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
-    "type": "range",
-    "frames": "[]"
-  }
-},
-{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -12711,7 +12663,7 @@
       "admin1"
     ],
     "rating": 0.0,
-    "has_analytics_access": false
+    "has_analytics_access": true
   }
 },
 {
@@ -12898,7 +12850,7 @@
       "admin2"
     ],
     "rating": 0.0,
-    "has_analytics_access": false
+    "has_analytics_access": true
   }
 },
 {

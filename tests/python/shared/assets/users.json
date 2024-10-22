@@ -61,7 +61,7 @@
       "groups": [
         "admin"
       ],
-      "has_analytics_access": false,
+      "has_analytics_access": true,
       "id": 18,
       "is_active": true,
       "is_staff": true,
@@ -342,7 +342,7 @@
       "groups": [
         "admin"
       ],
-      "has_analytics_access": false,
+      "has_analytics_access": true,
       "id": 1,
       "is_active": true,
       "is_staff": true,
