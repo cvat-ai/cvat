@@ -1,0 +1,70 @@
+{
+    "name": "cvat-local",
+    "initializeCommand": "${localWorkspaceFolder}/.devcontainer/init.sh",
+    "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/postcreate.sh",
+    "dockerComposeFile": [
+        "${localWorkspaceFolder}/.devcontainer/docker-compose.rendered.yml"
+    ],
+    "service": "cvat_server",
+    "overrideCommand": false,
+    "runServices": [
+        "cvat_db",
+        "cvat_opa",
+        "cvat_redis_inmem",
+        "cvat_redis_ondisk"
+    ],
+    "workspaceFolder": "/home/devcontainer/workspaces",
+    "remoteUser": "devcontainer",
+    "containerUser": "devcontainer",
+    "remoteEnv": {"HOME": "/home/devcontainer", "USER": "devcontainer"},
+    "containerEnv": {"HOME": "/home/devcontainer", "USER": "devcontainer"},
+    "shutdownAction": "stopCompose",
+    "forwardPorts": [
+        8070
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": true,
+            "installOhMyZshConfig": true,
+            "upgradePackages": true,
+            "username": "devcontainer",
+            "userUid": "automatic",
+            "userGid": "automatic"
+        },
+        "ghcr.io/devcontainers/features/node:1": {
+            "nodeGypDependencies": true,
+            "version": "16.20.2",
+            "nvmVersion": "latest"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.js-debug",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "dbaeumer.vscode-eslint",
+                "stylelint.vscode-stylelint",
+                "esbenp.prettier-vscode",
+                "ymotongpoo.licenser",
+                "shardulm94.trailing-spaces",
+                "streetsidesoftware.code-spell-checker",
+                "mtxr.sqltools",
+                "mtxr.sqltools-driver-pg"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/venv/bin/python",
+                // Ideally venvPath should be an array, tracking this issue here
+                // https://github.com/microsoft/vscode-python/issues/1479
+                "python.venvPath": "/opt/venv-test/bin",
+                "terminal.integrated.automationProfile.linux": {
+                    "path": "/bin/bash"
+                },
+                "terminal.integrated.defaultProfile.linux": "zsh (2)"
+            }
+        }
+    }
+}

@@ -64,5 +64,10 @@ cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 
+# produced by devcontainer
+.devcontainer/docker-compose.rendered.yml
+.devcontainer/.env
+cvat-db.session.sql
+
 # produced by cvat/apps/iam/rules/tests/generate_tests.py
 /cvat/apps/*/rules/*_test.gen.rego

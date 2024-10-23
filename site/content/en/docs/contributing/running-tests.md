@@ -45,7 +45,6 @@ yarn run cypress:run:chrome:canvas3d
 # REST API, SDK and CLI tests
 
 **Initial steps**
-
 1. Follow {{< ilink "/docs/api_sdk/sdk/developer-guide" "this guide" >}} to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
@@ -54,8 +53,10 @@ yarn run cypress:run:chrome:canvas3d
    pip install -e ./cvat-sdk
    pip install -e ./cvat-cli
    ```
+   Note: For remote development environment, activate `test-venv` python virtual environment
+   located at `/opt/venv-test/` and execute the above code. On VS Code this can be done via the command `Python: Select Interpreter` from the command palette.
 1. Stop any other CVAT containers which you run previously. They keep ports
-which are used by containers for the testing system.
+which are used by containers for the testing system. (Not required for dev container)
 
 **Running tests**
 
@@ -143,22 +144,22 @@ Extra options:
    ```
    yarn --frozen-lockfile
    ```
-1. Build CVAT server image
+1. Build CVAT server image (Not required for dev container)
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml build cvat_server
    ```
-1. Run cvat_opa container
+1. Run cvat_opa container (Not required for dev container)
    ```
    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
    ```
 
 **Running tests**
 1. Python tests
+   In dev container use python from the virtual environment located at `/opt/venv`
    ```
    python manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
-
-If you want to get a code coverage report, run the next command:
+   If you want to get a code coverage report, run the next command:
    ```
    coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
@@ -170,7 +171,7 @@ If you want to get a code coverage report, run the next command:
    ```
 
 **Debug python unit tests**
-1. Run `server: tests` debug task in VSCode
+1. Run `server: tests` debug task in VSCode or run `devcontainer: server: unit tests` when using dev container
 1. If you want to debug particular tests then change the configuration
 of the corresponding task in `./vscode/launch.json`, for example:
    ```json
@@ -196,7 +197,6 @@ of the corresponding task in `./vscode/launch.json`, for example:
        "console": "internalConsole"
    }
    ```
-
 
 <a id="opa-tests"></a>
 ## IAM and Open Policy Agent tests
