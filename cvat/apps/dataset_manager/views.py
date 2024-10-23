@@ -85,7 +85,6 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
                 **current_rq_job.kwargs,
                 job_id=current_rq_job.id,
                 meta=current_rq_job.meta,
-                depends_on=current_rq_job.dependency_ids,
                 job_ttl=current_rq_job.ttl,
                 job_result_ttl=current_rq_job.result_ttl,
                 job_description=current_rq_job.description,

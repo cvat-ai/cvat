@@ -74,7 +74,7 @@ class RequestsManager {
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = async (): Promise<void> => {
                 // We make sure that no more than REQUESTS_COUNT requests are sent simultaneously
-                // If thats the case, we re-schedule the timeout
+                // If that's the case, we re-schedule the timeout
                 const timestamp = Date.now();
                 if (this.requestStack.length >= REQUESTS_COUNT) {
                     const timestampToCheck = this.requestStack[this.requestStack.length - 1];

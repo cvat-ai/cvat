@@ -102,7 +102,7 @@ function fetchAll(url, filter = {}): Promise<any> {
                     }
                 });
 
-                // removing possible dublicates
+                // removing possible duplicates
                 const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
                     acc[item.id] = item;
                     return acc;
