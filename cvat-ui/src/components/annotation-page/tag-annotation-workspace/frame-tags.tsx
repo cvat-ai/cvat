@@ -1,64 +1,31 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Tag from 'antd/lib/tag';
-import { connect } from 'react-redux';
-import { Action } from 'redux';
-import { ThunkDispatch } from 'redux-thunk';
+import { useDispatch, useSelector } from 'react-redux';
 
 import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType, Workspace } from 'reducers';
-import {
-    QualityConflict, ObjectState, AnnotationConflict, getCore,
-} from 'cvat-core-wrapper';
+import { CombinedState, ObjectType } from 'reducers';
+import { ObjectState, AnnotationConflict } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 
-const core = getCore();
+function FrameTags(): JSX.Element {
+    const dispatch = useDispatch();
 
-interface StateToProps {
-    highlightedConflict: QualityConflict | null;
-    states: ObjectState[];
-    workspace: Workspace;
-}
+    const { highlightedConflict, states } = useSelector((state: CombinedState) => state.annotation.annotations);
+    const { workspace } = useSelector((state: CombinedState) => state.annotation);
 
-interface DispatchToProps {
-    removeObject(objectState: any): void;
-}
-
-function mapStateToProps(state: CombinedState): StateToProps {
-    const {
-        annotation: {
-            annotations: { highlightedConflict, states },
-            workspace,
-        },
-    } = state;
-
-    return { highlightedConflict, states, workspace };
-}
-
-function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
-    return {
-        removeObject(objectState: ObjectState): void {
-            dispatch(removeObjectAction(objectState, false));
-        },
-    };
-}
-
-function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
-    const {
-        highlightedConflict, states, workspace, removeObject,
-    } = props;
-
-    const [frameTags, setFrameTags] = useState([] as ObjectState[]);
+    const [frameTags, setFrameTags] = useState<ObjectState[]>([]);
 
     const onRemoveState = (objectState: ObjectState): void => {
-        removeObject(objectState);
+        dispatch(removeObjectAction(objectState, false));
     };
 
     useEffect(() => {
@@ -67,16 +34,20 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
         );
     }, [states]);
 
+    const tagClassName = useCallback((tag: ObjectState) => {
+        const tagHighlighted = (highlightedConflict?.annotationConflicts || [])
+            .find((conflict: AnnotationConflict) => conflict.serverID === tag.serverID);
+        return tagHighlighted ? 'cvat-frame-tag-highlighted' : 'cvat-frame-tag';
+    }, [highlightedConflict]);
+
     return (
         <>
             <div>
                 {frameTags
-                    .filter((tag: any) => tag.source !== core.enums.Source.GT)
-                    .map((tag: any) => (
+                    .filter((tag: ObjectState) => !tag.isGroundTruth)
+                    .map((tag: ObjectState) => (
                         <Tag
-                            className={
-                                (highlightedConflict?.annotationConflicts || []).filter((conflict: AnnotationConflict) => conflict.serverID === tag.serverID).length !== 0 ? 'cvat-frame-tag-highlighted' : 'cvat-frame-tag'
-                            }
+                            className={tagClassName(tag)}
                             color={tag.label.color}
                             onClose={() => {
                                 onRemoveState(tag);
@@ -90,12 +61,10 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
             </div>
             <div>
                 {frameTags
-                    .filter((tag: any) => tag.source === core.enums.Source.GT)
-                    .map((tag: any) => (
+                    .filter((tag: ObjectState) => tag.isGroundTruth)
+                    .map((tag: ObjectState) => (
                         <Tag
-                            className={
-                                (highlightedConflict?.annotationConflicts || []).filter((conflict: AnnotationConflict) => conflict.serverID === tag.serverID).length !== 0 ? 'cvat-frame-tag-highlighted' : 'cvat-frame-tag'
-                            }
+                            className={tagClassName(tag)}
                             color={tag.label.color}
                             onClose={() => {
                                 onRemoveState(tag);
@@ -112,4 +81,4 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(FrameTags);
+export default React.memo(FrameTags);
