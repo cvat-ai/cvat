@@ -37,7 +37,8 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datumaro.util.test_utils import current_function_name, TestDir
+from cvat.apps.dataset_manager.tests.utils import TestDir
+from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
