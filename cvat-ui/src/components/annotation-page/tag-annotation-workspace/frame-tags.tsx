@@ -42,7 +42,7 @@ function FrameTags(): JSX.Element {
 
     return (
         <>
-            <div>
+            <div className='cvat-canvas-annotation-frame-tags'>
                 {frameTags
                     .filter((tag: ObjectState) => !tag.isGroundTruth)
                     .map((tag: ObjectState) => (
@@ -59,7 +59,7 @@ function FrameTags(): JSX.Element {
                         </Tag>
                     ))}
             </div>
-            <div>
+            <div className='cvat-canvas-ground-truth-frame-tags'>
                 {frameTags
                     .filter((tag: ObjectState) => tag.isGroundTruth)
                     .map((tag: ObjectState) => (
