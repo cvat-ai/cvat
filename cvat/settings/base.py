@@ -177,7 +177,9 @@ REST_AUTH = {
     'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
-if to_bool(os.getenv('CVAT_ANALYTICS', False)):
+ANALYTICS_ENABLED = to_bool(os.getenv('CVAT_ANALYTICS', False))
+
+if ANALYTICS_ENABLED:
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [

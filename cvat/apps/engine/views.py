@@ -226,7 +226,7 @@ class ServerViewSet(viewsets.ViewSet):
     def plugins(request):
         data = {
             'GIT_INTEGRATION': False, # kept for backwards compatibility
-            'ANALYTICS': to_bool(os.environ.get("CVAT_ANALYTICS", False)),
+            'ANALYTICS': settings.ANALYTICS_ENABLED,
             'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
         }
