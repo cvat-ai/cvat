@@ -31,6 +31,7 @@ for paths in \
     "cvat/apps/engine/field_validation.py" \
     "cvat/apps/engine/model_utils.py" \
     "cvat/apps/dataset_manager/tests/test_annotation.py" \
+    "cvat/apps/dataset_manager/tests/utils.py" \
     ; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}
