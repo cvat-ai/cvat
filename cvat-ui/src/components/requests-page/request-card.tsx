@@ -100,11 +100,15 @@ function constructTimestamps(request: Request): JSX.Element {
             );
         }
         case RQStatus.FAILED: {
-            return (
+            return (request.startedDate ? (
                 <Row>
                     <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
                 </Row>
-            );
+            ) : (
+                <Row>
+                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                </Row>
+            ));
         }
         case RQStatus.STARTED: {
             return (

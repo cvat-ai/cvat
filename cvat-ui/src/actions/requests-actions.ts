@@ -2,13 +2,22 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { Store } from 'redux';
 import { ActionUnion, createAction } from 'utils/redux';
-import { RequestsQuery, RequestsState } from 'reducers';
+import { CombinedState, RequestsQuery, RequestsState } from 'reducers';
 import {
-    Request, ProjectOrTaskOrJob, getCore, RQStatus,
+    Request, ProjectOrTaskOrJob, getCore, RQStatus, RequestOperation, fieldsToSnakeCase,
 } from 'cvat-core-wrapper';
+import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
+let store: null | Store<CombinedState> = null;
+function getStore(): Store<CombinedState> {
+    if (store === null) {
+        store = getCVATStore();
+    }
+    return store;
+}
 
 export enum RequestsActionsTypes {
     GET_REQUESTS = 'GET_REQUESTS',
@@ -79,23 +88,52 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
     );
 }
 
-export function shouldListenForProgress(rqID: string | undefined, state: RequestsState): boolean {
+export function shouldListenForProgress(rqID: string | void, state: RequestsState): boolean {
     return (
         typeof rqID === 'string' &&
         (!state.requests[rqID] || [RQStatus.FINISHED, RQStatus.FAILED].includes(state.requests[rqID]?.status))
     );
 }
 
+export function generateInitialRequest(
+    initialData: Partial<RequestOperation> &
+    Pick<RequestOperation, 'target' | 'type'> &
+    { instance?: ProjectOrTaskOrJob | RequestInstanceType },
+): Request {
+    const {
+        target, type, format, instance,
+    } = initialData;
+    const { user } = getStore().getState().auth;
+    const requestOperation = {
+        target,
+        type,
+        format: format ?? null,
+        jobID: instance && target === 'job' ? instance.id : null,
+        taskID: instance && target === 'task' ? instance.id : null,
+        projectID: instance && target === 'project' ? instance.id : null,
+        functionID: null,
+    };
+    return new Request({
+        status: RQStatus.QUEUED,
+        operation: fieldsToSnakeCase(requestOperation) as any,
+        created_date: new Date().toISOString(),
+        message: 'Status request sent',
+        owner: user,
+    });
+}
+
 export function listen(
     requestID: string,
     dispatch: (action: RequestsActions) => void,
-    initialRequest?: Request,
+    options: {
+        initialRequest: Request,
+    },
 ) : Promise<Request> {
     return core.requests
         .listen(requestID, {
             callback: (updatedRequest) => {
                 updateRequestProgress(updatedRequest, dispatch);
             },
-            initialRequest,
+            ...options,
         });
 }

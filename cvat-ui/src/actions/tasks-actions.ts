@@ -13,7 +13,7 @@ import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
 import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
-import { updateRequestProgress } from './requests-actions';
+import { generateInitialRequest, updateRequestProgress } from './requests-actions';
 
 const cvat = getCore();
 
@@ -292,6 +292,13 @@ ThunkAction {
                     }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                     if (request.id) updateRequestProgress(request, dispatch);
+                },
+                getInitialRequest(taskID) {
+                    return generateInitialRequest({
+                        target: 'task',
+                        type: 'create:task',
+                        instance: { id: taskID, type: 'task' },
+                    });
                 },
             });
 

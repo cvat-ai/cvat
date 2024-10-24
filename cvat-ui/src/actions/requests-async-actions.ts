@@ -8,7 +8,9 @@ import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
 import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
-import { RequestInstanceType, listen, requestsActions } from './requests-actions';
+import {
+    RequestInstanceType, generateInitialRequest, listen, requestsActions,
+} from './requests-actions';
 import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
@@ -76,7 +78,12 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         }
                     } else if (operationType === 'create') {
                         if (operationTarget === 'task') {
-                            listen(rqID, dispatch);
+                            listen(rqID, dispatch, {
+                                initialRequest: generateInitialRequest({
+                                    target: operationTarget,
+                                    type: 'create:task',
+                                }),
+                            });
                         }
                     }
                 });

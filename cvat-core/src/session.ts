@@ -1141,7 +1141,10 @@ export class Task extends Session {
 
     async save(
         fields: Record<string, any> = {},
-        options?: { requestStatusCallback?: (request: Request) => void },
+        options?: {
+            requestStatusCallback?: (request: Request) => void,
+            getInitialRequest?: (taskID: number) => Request,
+        },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;
