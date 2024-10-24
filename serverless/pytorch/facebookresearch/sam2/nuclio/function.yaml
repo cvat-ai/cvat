@@ -1,0 +1,60 @@
+# Copyright (C) 2023-2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+metadata:
+  name: pth-facebookresearch-sam2-vit-h
+  namespace: cvat
+  annotations:
+    name: Segment Anything 2.0
+    version: 2
+    type: interactor
+    spec:
+    min_pos_points: 1
+    min_neg_points: 0
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
+    help_message: The interactor allows to get a mask of an object using at least one positive, and any negative points inside it
+
+spec:
+  description: Interactive object segmentation with Segment-Anything 2.0
+  runtime: 'python:3.8'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.pth.facebookresearch.sam2.vit_h
+    baseImage: ubuntu:22.04
+    directives:
+      preCopy:
+      # disable interactive frontend
+        - kind: ENV
+          value: DEBIAN_FRONTEND=noninteractive
+      # set workdir
+        - kind: WORKDIR
+          value: /opt/nuclio/sam2
+      # install basic deps
+        - kind: RUN
+          value: apt-get update && apt-get -y install build-essential curl git python3 python3-pip ffmpeg libsm6 libxext6
+      # install sam2 code
+        - kind: RUN
+          value: SAM2_BUILD_CUDA=0 pip install git+https://github.com/facebookresearch/segment-anything-2.git@main
+      # download sam2 weights
+        - kind: RUN
+          value: curl -O https://dl.fbaipublicfiles.com/segment_anything_2/072824/sam2_hiera_large.pt
+        # map pip3 and python3 to pip and python
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
