@@ -18,6 +18,10 @@ and enhance user satisfaction.
 
 CVAT analytics are available from the top menu.
 
+Superusers and users with administrator role have access to analytics.
+Permission to access analytics can also be granted when editing a user
+on admin page by `Has access to analytics` checkbox.
+
 ![CVAT Analytics](/images/analytics_menu.jpg)
 
 > Note: CVAT analytics and monitoring are available only for on-prem solution.
