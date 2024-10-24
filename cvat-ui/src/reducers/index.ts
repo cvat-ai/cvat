@@ -726,6 +726,7 @@ export interface AnnotationState {
         requestedId: number | null;
         meta: FramesMetaData | null;
         instance: Job | null | undefined;
+        frameNumbers: number[];
         queryParameters: {
             initialOpenGuide: boolean;
             defaultLabel: string | null;

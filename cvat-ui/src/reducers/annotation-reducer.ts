@@ -66,6 +66,7 @@ const defaultState: AnnotationState = {
             groundTruthJobFramesMeta: null,
             groundTruthInstance: null,
         },
+        frameNumbers: [],
         instance: null,
         meta: null,
         attributes: {},
@@ -161,6 +162,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 job,
                 jobMeta,
                 openTime,
+                frameNumbers,
                 frameNumber: number,
                 frameFilename: filename,
                 relatedFiles,
@@ -205,6 +207,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 job: {
                     ...state.job,
                     openTime,
+                    frameNumbers,
                     fetching: false,
                     instance: job,
                     meta: jobMeta,
