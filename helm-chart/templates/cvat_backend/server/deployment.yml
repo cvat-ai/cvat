@@ -58,6 +58,8 @@ spec:
           env:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
+          - name: IAM_REGISTRATION_ENABLED
+            value: {{ $localValues.envs.IAM_REGISTRATION_ENABLED | squote}}
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
