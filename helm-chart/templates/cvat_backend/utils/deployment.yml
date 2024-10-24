@@ -84,37 +84,7 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
       initContainers:
-        {{- if .Values.cvat.backend.permissionFix.enabled }}
-        - name: user-data-permission-fix
-          image: busybox
-          command: ["/bin/chmod", "-R", "777", "/home/django"]
-          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
-          resources:
-          {{- toYaml . | nindent 12 }}
-          {{- end }}
-          volumeMounts:
-          {{- if .Values.cvat.backend.defaultStorage.enabled }}
-          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-          - mountPath: /home/django/data/cache
-            name: cvat-backend-per-service-cache
-          {{- end }}
-          - mountPath: /home/django/data
-            name: cvat-backend-data
-            subPath: data
-          - mountPath: /home/django/keys
-            name: cvat-backend-data
-            subPath: keys
-          - mountPath: /home/django/logs
-            name: cvat-backend-data
-            subPath: logs
-          - mountPath: /home/django/models
-            name: cvat-backend-data
-            subPath: models
-          {{- end }}
-          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
-        {{- end }}
+        {{- include "cvat.backend.initContainers" . | nindent 8 }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
