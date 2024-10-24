@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { range } from 'lodash';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import { useSelector } from 'react-redux';
@@ -15,14 +14,18 @@ import { Key } from 'antd/lib/table/interface';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
 
 import { RestoreIcon } from 'icons';
-import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
+import {
+    Task, FramesMetaData, TaskValidationLayout, QualitySettings,
+} from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { sorter } from 'utils/quality';
 
 interface Props {
     task: Task;
-    gtJob: Job;
+    gtJobId: number;
     gtJobMeta: FramesMetaData;
+    validationLayout: TaskValidationLayout;
+    qualitySettings: QualitySettings;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
@@ -33,52 +36,9 @@ interface RowData {
     active: boolean;
 }
 
-interface TableRowData extends RowData {
-    key: Key;
-}
-
-// Temporary solution: this function is necessary in one of plugins which imports it directly from CVAT code
-// Further this solution should be re-designed
-// Until then, *DO NOT RENAME/REMOVE* this exported function
-export function getAllocationTableContents(gtJobMeta: FramesMetaData, gtJob: Job): TableRowData[] {
-    // A workaround for meta "includedFrames" using source data numbers
-    // TODO: remove once meta is migrated to relative frame numbers
-
-    const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameNumber: number) => (
-        gtJobMeta.getJobRelativeFrameNumber(dataFrameNumber) + gtJob.startFrame
-    ));
-
-    const jobDataSegmentFrameNumbers = range(
-        gtJobMeta.startFrame, gtJobMeta.stopFrame + 1, gtJobMeta.frameStep,
-    );
-
-    let includedIndex = 0;
-    const result: TableRowData[] = [];
-    for (let index = 0; index < jobDataSegmentFrameNumbers.length; ++index) {
-        const dataFrameID = jobDataSegmentFrameNumbers[index];
-
-        if (gtJobMeta.includedFrames && !gtJobMeta.includedFrames.includes(dataFrameID)) {
-            continue;
-        }
-
-        const frameID = jobFrameNumbers[includedIndex];
-
-        result.push({
-            key: frameID,
-            frame: frameID,
-            name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
-            active: !(frameID in gtJobMeta.deletedFrames),
-        });
-
-        ++includedIndex;
-    }
-
-    return result;
-}
-
 function AllocationTable(props: Readonly<Props>): JSX.Element {
     const {
-        task, gtJob, gtJobMeta,
+        task, gtJobId, gtJobMeta, validationLayout,
         onDeleteFrames, onRestoreFrames,
     } = props;
 
@@ -88,7 +48,13 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         selectedRows: [],
     });
 
-    const data = getAllocationTableContents(gtJobMeta, gtJob);
+    const { disabledFrames } = validationLayout;
+    const data = validationLayout.validationFrames.map((frame: number, index: number) => ({
+        key: frame,
+        frame,
+        name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
+        active: !disabledFrames.includes(frame),
+    }));
 
     const columns = [
         {
@@ -104,7 +70,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${frame}`);
+                            history.push(`/tasks/${task.id}/jobs/${gtJobId}?frame=${frame}`);
                         }}
                     >
                         {`#${frame}`}
@@ -125,7 +91,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${record.frame}`);
+                            history.push(`/tasks/${task.id}/jobs/${gtJobId}?frame=${record.frame}`);
                         }}
                     >
                         {name}

@@ -54,6 +54,7 @@ export interface SerializedUser {
     last_login?: string;
     date_joined?: string;
     email_verification_required: boolean;
+    has_analytics_access: boolean;
 }
 
 interface SerializedStorage {
@@ -524,8 +525,14 @@ export interface SerializedRequest {
     owner?: any;
 }
 
-export interface SerializedValidationLayout {
+export interface SerializedJobValidationLayout {
     honeypot_count?: number;
     honeypot_frames?: number[];
     honeypot_real_frames?: number[];
+}
+
+export interface SerializedTaskValidationLayout extends SerializedJobValidationLayout {
+    mode: 'gt' | 'gt_pool' | null;
+    validation_frames?: number[];
+    disabled_frames?: number[];
 }

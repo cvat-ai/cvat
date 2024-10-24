@@ -27,7 +27,10 @@ import {
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { SerializedLabel, SerializedTask, SerializedValidationLayout } from './server-response-types';
+import {
+    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
+    SerializedTaskValidationLayout,
+} from './server-response-types';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -37,7 +40,7 @@ import AnnotationGuide from './guide';
 import requestsManager from './requests-manager';
 import { Request } from './request';
 import User from './user';
-import ValidationLayout from './validation-layout';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -171,7 +174,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         ): ReturnType<typeof JobClass.prototype.validationLayout> {
             const result = await serverProxy.jobs.validationLayout(this.id);
             if (Object.keys(result).length) {
-                return new ValidationLayout(result as Required<SerializedValidationLayout>);
+                return new JobValidationLayout(result as SerializedJobValidationLayout);
             }
 
             return null;
@@ -374,7 +377,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             }
 
             if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+                throw new ArgumentError('Both annotations filters and general filters could not be used together');
             }
 
             if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -641,9 +644,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function validationLayoutImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.validationLayout> {
-            const result = await serverProxy.tasks.validationLayout(this.id);
-            if (Object.keys(result).length) {
-                return new ValidationLayout(result as Required<SerializedValidationLayout>);
+            const result = await serverProxy.tasks.validationLayout(this.id) as SerializedTaskValidationLayout;
+            if (result.mode !== null) {
+                return new TaskValidationLayout(result);
             }
 
             return null;
@@ -1043,7 +1046,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+                throw new ArgumentError('Both annotations filters and general filters could not be used together');
             }
 
             if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {

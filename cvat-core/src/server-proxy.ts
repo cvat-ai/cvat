@@ -19,7 +19,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
-    SerializedRequest, SerializedValidationLayout,
+    SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Request } from './request';
@@ -102,7 +102,7 @@ function fetchAll(url, filter = {}): Promise<any> {
                     }
                 });
 
-                // removing possible dublicates
+                // removing possible duplicates
                 const obj = result.results.reduce((acc: Record<string, any>, item: any) => {
                     acc[item.id] = item;
                     return acc;
@@ -1384,7 +1384,7 @@ async function deleteJob(jobID: number): Promise<void> {
 
 const validationLayout = (instance: 'tasks' | 'jobs') => async (
     id: number,
-): Promise<SerializedValidationLayout | null> => {
+): Promise<SerializedJobValidationLayout | SerializedTaskValidationLayout> => {
     const { backendAPI } = config;
 
     try {

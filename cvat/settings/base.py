@@ -177,7 +177,9 @@ REST_AUTH = {
     'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
-if to_bool(os.getenv('CVAT_ANALYTICS', False)):
+ANALYTICS_ENABLED = to_bool(os.getenv('CVAT_ANALYTICS', False))
+
+if ANALYTICS_ENABLED:
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -337,6 +339,15 @@ RQ_SHOW_ADMIN_LINK = True
 RQ_EXCEPTION_HANDLERS = [
     'cvat.apps.engine.views.rq_exception_handler',
     'cvat.apps.events.handlers.handle_rq_exception',
+]
+
+PERIODIC_RQ_JOBS = [
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'clean_up_sessions',
+        'func': 'cvat.apps.iam.utils.clean_up_sessions',
+        'cron_string': '0 0 * * *',
+    },
 ]
 
 # JavaScript and CSS compression
