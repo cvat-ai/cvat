@@ -472,7 +472,7 @@ export class EditHandlerImpl implements EditHandler {
 
             const paintHandler = this.editLine.remember('_paintHandler');
 
-            for (const point of (paintHandler as any).set.members) {
+            for (const point of paintHandler.set.members) {
                 point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
                 point.attr('r', `${this.controlPointsSize / geometry.scale}`);
             }

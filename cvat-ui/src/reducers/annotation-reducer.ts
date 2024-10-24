@@ -94,6 +94,11 @@ const defaultState: AnnotationState = {
         activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
     },
+    editing: {
+        shapeType: null,
+        editedStateInstance: null,
+        editedStateHidden: false,
+    },
     annotations: {
         activatedStateID: null,
         activatedElementID: null,
@@ -619,6 +624,39 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID,
                     activatedElementID,
                     activatedAttributeID,
+                },
+            };
+        }
+        case AnnotationActionTypes.RESET_EDITED_STATE: {
+            return {
+                ...state,
+                editing: {
+                    ...state.editing,
+                    shapeType: null,
+                    editedStateInstance: null,
+                    editedStateHidden: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
+            const { shapeType, editedStateInstance } = action.payload;
+            return {
+                ...state,
+                ...state,
+                editing: {
+                    ...state.editing,
+                    shapeType: (shapeType ?? null),
+                    editedStateInstance: (editedStateInstance ?? null),
+                },
+            };
+        }
+        case AnnotationActionTypes.HIDE_EDITED_STATE: {
+            const { hide } = action.payload;
+            return {
+                ...state,
+                editing: {
+                    ...state.editing,
+                    editedStateHidden: hide,
                 },
             };
         }

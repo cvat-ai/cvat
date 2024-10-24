@@ -6,7 +6,7 @@ import { fabric } from 'fabric';
 import debounce from 'lodash/debounce';
 
 import {
-    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
+    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy, Position,
 } from './canvasModel';
 import consts from './consts';
 import { DrawHandler } from './drawHandler';
@@ -61,10 +61,11 @@ export class MasksHandlerImpl implements MasksHandler {
     private editData: MasksEditData | null;
 
     private colorBy: ColorBy;
-    private latestMousePos: { x: number; y: number; };
+    private latestMousePos: Position;
     private startTimestamp: number;
     private geometry: Geometry;
     private drawingOpacity: number;
+    private isHidden: boolean;
 
     private keepDrawnPolygon(): void {
         const canvasWrapper = this.canvas.getElement().parentElement;
@@ -217,10 +218,71 @@ export class MasksHandlerImpl implements MasksHandler {
     private imageDataFromCanvas(wrappingBBox: WrappingBBox): Uint8ClampedArray {
         const imageData = this.canvas.toCanvasElement()
             .getContext('2d').getImageData(
-                wrappingBBox.left, wrappingBBox.top,
-                wrappingBBox.right - wrappingBBox.left + 1, wrappingBBox.bottom - wrappingBBox.top + 1,
+                wrappingBBox.left,
+                wrappingBBox.top,
+                wrappingBBox.right - wrappingBBox.left + 1,
+                wrappingBBox.bottom - wrappingBBox.top + 1,
             ).data;
         return imageData;
+    }
+
+    private startPolygonDrawing() {
+        if (this.tool?.type?.startsWith('polygon-')) {
+            this.isPolygonDrawing = true;
+            this.vectorDrawHandler.draw({
+                enabled: true,
+                shapeType: 'polygon',
+                onDrawDone: (data: { points: number[] } | null) => {
+                    if (!data) return;
+                    const points = data.points.reduce((acc: fabric.Point[], _: number, idx: number) => {
+                        if (idx % 2) {
+                            acc.push(new fabric.Point(data.points[idx - 1], data.points[idx]));
+                        }
+
+                        return acc;
+                    }, []);
+
+                    const color = fabric.Color.fromHex(this.tool.color);
+                    color.setAlpha(this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity);
+                    const polygon = new fabric.Polygon(points, {
+                        fill: color.toRgba(),
+                        selectable: false,
+                        objectCaching: false,
+                        absolutePositioned: true,
+                        globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
+                    });
+
+                    this.canvas.add(polygon);
+                    this.drawnObjects.push(polygon);
+                    this.canvas.renderAll();
+                },
+            }, this.geometry);
+
+            const canvasWrapper = this.canvas.getElement().parentElement as HTMLDivElement;
+            canvasWrapper.style.pointerEvents = 'none';
+            canvasWrapper.style.zIndex = '0';
+        }
+    }
+
+    private updateHidden(value: boolean) {
+        this.isHidden = value;
+
+        if (value && this.isPolygonDrawing) {
+            this.vectorDrawHandler.cancel();
+        } else if (this.isPolygonDrawing) {
+            this.startPolygonDrawing();
+        }
+
+        // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
+        // https://github.com/fabricjs/fabric.js/issues/1456
+        const newOpacity = value ? '0' : '';
+        const newCursor = value ? 'inherit' : 'none';
+        this.canvas.getElement().parentElement.style.opacity = newOpacity;
+        const upperCanvas = this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement;
+        if (upperCanvas) {
+            upperCanvas.style.cursor = newCursor;
+        }
+        this.canvas.defaultCursor = newCursor;
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
@@ -259,41 +321,7 @@ export class MasksHandlerImpl implements MasksHandler {
             this.updateBlockedTools();
         }
 
-        if (this.tool?.type?.startsWith('polygon-')) {
-            this.isPolygonDrawing = true;
-            this.vectorDrawHandler.draw({
-                enabled: true,
-                shapeType: 'polygon',
-                onDrawDone: (data: { points: number[] } | null) => {
-                    if (!data) return;
-                    const points = data.points.reduce((acc: fabric.Point[], _: number, idx: number) => {
-                        if (idx % 2) {
-                            acc.push(new fabric.Point(data.points[idx - 1], data.points[idx]));
-                        }
-
-                        return acc;
-                    }, []);
-
-                    const color = fabric.Color.fromHex(this.tool.color);
-                    color.setAlpha(this.tool.type === 'polygon-minus' ? 1 : this.drawingOpacity);
-                    const polygon = new fabric.Polygon(points, {
-                        fill: color.toRgba(),
-                        selectable: false,
-                        objectCaching: false,
-                        absolutePositioned: true,
-                        globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
-                    });
-
-                    this.canvas.add(polygon);
-                    this.drawnObjects.push(polygon);
-                    this.canvas.renderAll();
-                },
-            }, this.geometry);
-
-            const canvasWrapper = this.canvas.getElement().parentElement as HTMLDivElement;
-            canvasWrapper.style.pointerEvents = 'none';
-            canvasWrapper.style.zIndex = '0';
-        }
+        this.startPolygonDrawing();
     }
 
     private updateBlockedTools(): void {
@@ -350,6 +378,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.editData = null;
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
+        this.isHidden = false;
         this.colorBy = ColorBy.LABEL;
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
@@ -452,7 +481,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.renderAll();
             }
 
-            if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
+            if (isMouseDown && !this.isHidden && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
                 const color = fabric.Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
 
@@ -530,6 +559,10 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public configurate(configuration: Configuration): void {
         this.colorBy = configuration.colorBy;
+
+        if (this.isHidden !== configuration.hideEditedObject) {
+            this.updateHidden(configuration.hideEditedObject);
+        }
     }
 
     public transform(geometry: Geometry): void {
@@ -563,7 +596,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = expandChannels(color[0], color[1], color[2], points);
-                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
                             try {
@@ -654,7 +690,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = expandChannels(color[0], color[1], color[2], points);
-                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
                             try {

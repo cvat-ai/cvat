@@ -1026,6 +1026,7 @@ export default class Collection {
                         label_id: state.label.id,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
+                        hidden: state.hidden || false,
                         points: state.shapeType === 'mask' ? (() => {
                             const { width, height } = this.frameMeta[state.frame];
                             return cropMask(state.points, width, height);
@@ -1045,6 +1046,7 @@ export default class Collection {
                             z_order: 0,
                             outside: element.outside || false,
                             occluded: element.occluded || false,
+                            hidden: state.hidden || false,
                         })) : undefined,
                     });
                 } else if (state.objectType === 'track') {
