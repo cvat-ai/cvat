@@ -8,10 +8,13 @@ from PIL import Image
 import io
 from model_handler import ModelHandler
 
+
 def init_context(context):
+    context.logger.info("Init context...  0%")
     model = ModelHandler()
     context.user_data.model = model
     context.logger.info("Init context...100%")
+
 
 def handler(context, event):
     try:
@@ -20,13 +23,11 @@ def handler(context, event):
         buf = io.BytesIO(base64.b64decode(data["image"]))
         image = Image.open(buf)
         image = image.convert("RGB")  # to make sure image comes in RGB
-        pos_points = data["pos_points"]
-        neg_points = data["neg_points"]
+        features = context.user_data.model.handle(image)
 
-        mask = context.user_data.model.handle(image, pos_points, neg_points)
-
-        return context.Response(
-            body=json.dumps({'mask': mask.tolist()}),
+        return context.Response(body=json.dumps({
+            'blob': base64.b64encode((features.cpu().numpy() if features.is_cuda else features.numpy())).decode(),
+        }),
             headers={},
             content_type='application/json',
             status_code=200
