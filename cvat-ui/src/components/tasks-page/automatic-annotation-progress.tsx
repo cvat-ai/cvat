@@ -63,7 +63,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                                 return (<>Unknown status received</>);
                             }
 
-                            return <>Automatic annotation accomplisted</>;
+                            return <>Automatic annotation accomplished</>;
                         })()}
                     </Text>
                 </div>
