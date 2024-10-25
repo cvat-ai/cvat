@@ -1,7 +1,7 @@
 # Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-
+import numpy as np
 import json
 import base64
 from PIL import Image
@@ -25,17 +25,22 @@ def handler(context, event):
         image = image.convert("RGB")  # to make sure image comes in RGB
         features = context.user_data.model.handle(image)
 
-        return context.Response(body=json.dumps({
-            'blob': base64.b64encode((features.cpu().numpy() if features.is_cuda else features.numpy())).decode(),
-        }),
+        if features.is_cuda:
+            features = features.cpu()
+        features_array = np.ascontiguousarray(features.numpy())
+        encoded_features = base64.b64encode(features_array).decode()
+
+        return context.Response(
+            body=json.dumps({'blob': encoded_features}),
             headers={},
             content_type='application/json',
             status_code=200
         )
+
     except Exception as e:
-        context.logger.error(f"Error in handler: {str(e)}")
+        context.logger.info.error(f"Error creating response: {str(e)}", exc_info=True)
         return context.Response(
-            body=json.dumps({'error': str(e)}),
+            body=json.dumps({'error': 'Internal server error'}),
             headers={},
             content_type='application/json',
             status_code=500
