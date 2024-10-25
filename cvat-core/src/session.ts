@@ -29,6 +29,7 @@ import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
+import { UpdateStatusData } from './core-types';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -1141,10 +1142,7 @@ export class Task extends Session {
 
     async save(
         fields: Record<string, any> = {},
-        options?: {
-            requestStatusCallback?: (request: Request) => void,
-            getInitialRequest?: (taskID: number) => Request,
-        },
+        options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;

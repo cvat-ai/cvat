@@ -6,14 +6,14 @@
 import { AnyAction } from 'redux';
 import { TasksQuery, StorageLocation } from 'reducers';
 import {
-    getCore, RQStatus, Storage, Task,
+    getCore, RQStatus, Storage, Task, UpdateStatusData, Request,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
 import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
-import { generateInitialRequest, updateRequestProgress } from './requests-actions';
+import { updateRequestProgress } from './requests-actions';
 
 const cvat = getCore();
 
@@ -274,10 +274,10 @@ ThunkAction {
         taskInstance.remoteFiles = data.files.remote;
         try {
             const savedTask = await taskInstance.save(extras, {
-                requestStatusCallback(request) {
-                    let { message } = request;
+                updateStatusCallback(updateData: Request | UpdateStatusData) {
+                    let { message } = updateData;
+                    const { status, progress } = updateData;
                     let helperMessage = '';
-                    const { status, progress } = request;
                     if (!message) {
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             message = 'CVAT queued the task to import';
@@ -291,14 +291,7 @@ ThunkAction {
                         }
                     }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                    if (request.id) updateRequestProgress(request, dispatch);
-                },
-                getInitialRequest(taskID) {
-                    return generateInitialRequest({
-                        target: 'task',
-                        type: 'create:task',
-                        instance: { id: taskID, type: 'task' },
-                    });
+                    if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
                 },
             });
 

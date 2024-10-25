@@ -5,10 +5,8 @@
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 import { Request } from './request';
-import { SerializedRequest } from './server-response-types';
 import { RequestError } from './exceptions';
 import { PaginatedResource } from './core-types';
-import { fieldsToSnakeCase } from './common';
 import config from './config';
 
 const REQUESTS_COUNT = 5;
@@ -58,14 +56,14 @@ class RequestsManager {
         requestID: string,
         options: {
             callback: (request: Request) => void,
-            initialRequest: Request,
+            initialRequest?: Request,
         },
     ): Promise<Request> {
         if (!requestID) {
             throw new Error('Request id is not provided');
         }
         const callback = options?.callback;
-        const { initialRequest } = options;
+        const initialRequest = options?.initialRequest;
 
         if (requestID in this.listening) {
             if (callback) {
@@ -124,19 +122,15 @@ class RequestsManager {
                     }
                 } catch (error) {
                     if (requestID in this.listening) {
-                        const { onUpdate } = this.listening[requestID];
-                        onUpdate
-                            .forEach((update) => update(new Request({
-                                id: requestID,
-                                status: RQStatus.FAILED,
-                                message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                                operation: fieldsToSnakeCase(initialRequest.operation) as SerializedRequest['operation'],
-                                created_date: initialRequest.createdDate,
-                                owner: {
-                                    id: initialRequest.owner.id,
-                                    username: initialRequest.owner.username,
-                                },
-                            })));
+                        const { onUpdate, request } = this.listening[requestID];
+                        if (request) {
+                            onUpdate
+                                .forEach((update) => update(new Request({
+                                    ...request.toJSON(),
+                                    status: RQStatus.FAILED,
+                                    message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                                })));
+                        }
                         reject(error);
                     }
                 }

@@ -503,7 +503,8 @@ export interface SerializedAPISchema {
 }
 
 export interface SerializedRequest {
-    id?: string;
+    id: string;
+    message: string;
     status: string;
     operation: {
         target: string;
@@ -515,14 +516,13 @@ export interface SerializedRequest {
         function_id: string | null;
     };
     progress?: number;
-    message: string;
     result_url?: string;
     result_id?: number;
-    created_date?: string;
+    created_date: string;
     started_date?: string;
     finished_date?: string;
     expiry_date?: string;
-    owner?: any;
+    owner: any;
 }
 
 export interface SerializedJobValidationLayout {

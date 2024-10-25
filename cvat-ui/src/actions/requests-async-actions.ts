@@ -9,7 +9,7 @@ import {
 } from 'cvat-core-wrapper';
 import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
 import {
-    RequestInstanceType, generateInitialRequest, listen, requestsActions,
+    RequestInstanceType, listen, requestsActions,
 } from './requests-actions';
 import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
@@ -30,6 +30,7 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
         try {
             const requests = await core.requests.list();
+            dispatch(requestsActions.getRequestsSuccess(requests));
 
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
@@ -78,16 +79,10 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         }
                     } else if (operationType === 'create') {
                         if (operationTarget === 'task') {
-                            listen(rqID, dispatch, {
-                                initialRequest: generateInitialRequest({
-                                    target: operationTarget,
-                                    type: 'create:task',
-                                }),
-                            });
+                            listen(rqID, dispatch);
                         }
                     }
                 });
-            dispatch(requestsActions.getRequestsSuccess(requests));
         } catch (error) {
             dispatch(requestsActions.getRequestsFailed(error));
         }

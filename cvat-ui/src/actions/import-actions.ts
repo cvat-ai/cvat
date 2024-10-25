@@ -12,7 +12,7 @@ import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
     getInstanceType, listen, RequestInstanceType, RequestsActions,
-    shouldListenForProgress, generateInitialRequest,
+    shouldListenForProgress,
 } from './requests-actions';
 
 const core = getCore();
@@ -81,13 +81,7 @@ export async function listenImportDatasetAsync(
     const instanceType = getInstanceType(instance);
     const resource = instanceType === 'project' ? 'dataset' : 'annotation';
     try {
-        await listen(rqID, dispatch, {
-            initialRequest: generateInitialRequest({
-                target: instanceType,
-                type: `import:${resource}`,
-                instance,
-            }),
-        });
+        await listen(rqID, dispatch);
         dispatch(importActions.importDatasetSuccess(instance, resource));
     } catch (error) {
         dispatch(importActions.importDatasetFailed(instance, resource, error));
@@ -108,13 +102,6 @@ export const importDatasetAsync = (
 
         try {
             const state: CombinedState = getState();
-            const listenForImport = (rqID: string) => listen(rqID, dispatch, {
-                initialRequest: generateInitialRequest({
-                    target: instanceType,
-                    type: `import:${resource}`,
-                    instance,
-                }),
-            });
 
             if (instanceType === 'project') {
                 dispatch(importActions.importDataset(instance, format));
@@ -128,7 +115,7 @@ export const importDatasetAsync = (
                         ),
                     });
                 if (shouldListenForProgress(rqID, state.requests)) {
-                    await listenForImport(rqID);
+                    await listen(rqID, dispatch);
                 }
             } else if (instanceType === 'task') {
                 dispatch(importActions.importDataset(instance, format));
@@ -137,7 +124,7 @@ export const importDatasetAsync = (
                         convMaskToPoly,
                     });
                 if (shouldListenForProgress(rqID, state.requests)) {
-                    await listenForImport(rqID);
+                    await listen(rqID, dispatch);
                 }
             } else { // job
                 dispatch(importActions.importDataset(instance, format));
@@ -146,7 +133,7 @@ export const importDatasetAsync = (
                         convMaskToPoly,
                     });
                 if (shouldListenForProgress(rqID, state.requests)) {
-                    await listenForImport(rqID);
+                    await listen(rqID, dispatch);
 
                     await (instance as Job).annotations.clear({ reload: true });
                     await (instance as Job).actions.clear();
@@ -186,12 +173,7 @@ export async function listenImportBackupAsync(
     const { instanceType } = params;
 
     try {
-        const result = await listen(rqID, dispatch, {
-            initialRequest: generateInitialRequest({
-                target: instanceType,
-                type: 'import:backup',
-            }),
-        });
+        const result = await listen(rqID, dispatch);
 
         dispatch(importActions.importBackupSuccess(result?.resultID, instanceType));
     } catch (error) {

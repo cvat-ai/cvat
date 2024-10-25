@@ -17,6 +17,7 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema, SerializedRequest,
 } from 'cvat-core/src/server-response-types';
+import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
@@ -124,4 +125,5 @@ export type {
     ProjectOrTaskOrJob,
     RequestOperation,
     SerializedRequest,
+    UpdateStatusData,
 };

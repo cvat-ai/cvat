@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Store } from 'redux';
 import { ActionUnion, createAction } from 'utils/redux';
 import { CombinedState, RequestsQuery, RequestsState } from 'reducers';
 import {
-    Request, ProjectOrTaskOrJob, getCore, RQStatus, RequestOperation, fieldsToSnakeCase,
+    Request, ProjectOrTaskOrJob, getCore, RQStatus,
 } from 'cvat-core-wrapper';
+import { Store } from 'redux';
 import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
@@ -95,45 +95,16 @@ export function shouldListenForProgress(rqID: string | void, state: RequestsStat
     );
 }
 
-export function generateInitialRequest(
-    initialData: Partial<RequestOperation> &
-    Pick<RequestOperation, 'target' | 'type'> &
-    { instance?: ProjectOrTaskOrJob | RequestInstanceType },
-): Request {
-    const {
-        target, type, format, instance,
-    } = initialData;
-    const { user } = getStore().getState().auth;
-    const requestOperation = {
-        target,
-        type,
-        format: format ?? null,
-        jobID: instance && target === 'job' ? instance.id : null,
-        taskID: instance && target === 'task' ? instance.id : null,
-        projectID: instance && target === 'project' ? instance.id : null,
-        functionID: null,
-    };
-    return new Request({
-        status: RQStatus.QUEUED,
-        operation: fieldsToSnakeCase(requestOperation) as any,
-        created_date: new Date().toISOString(),
-        message: 'Status request sent',
-        owner: user,
-    });
-}
-
 export function listen(
     requestID: string,
     dispatch: (action: RequestsActions) => void,
-    options: {
-        initialRequest: Request,
-    },
 ) : Promise<Request> {
+    const { requests } = getStore().getState().requests;
     return core.requests
         .listen(requestID, {
             callback: (updatedRequest) => {
                 updateRequestProgress(updatedRequest, dispatch);
             },
-            ...options,
+            initialRequest: requests[requestID],
         });
 }

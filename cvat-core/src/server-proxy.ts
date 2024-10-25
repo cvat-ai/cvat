@@ -21,7 +21,7 @@ import {
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
-import { PaginatedResource } from './core-types';
+import { PaginatedResource, UpdateStatusData } from './core-types';
 import { Request } from './request';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
@@ -1069,7 +1069,7 @@ type LongProcessListener<R> = Record<number, {
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (request: Request) => void,
+    onUpdate: (request: Request | UpdateStatusData) => void,
 ): Promise<{ taskID: number, rqID: string }> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
@@ -1104,11 +1104,11 @@ async function createTask(
 
     let response = null;
 
-    onUpdate(new Request({
+    onUpdate({
         status: RQStatus.UNKNOWN,
         progress: 0,
         message: 'CVAT is creating your task',
-    }));
+    });
 
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
@@ -1118,11 +1118,11 @@ async function createTask(
         throw generateError(errorData);
     }
 
-    onUpdate(new Request({
+    onUpdate({
         status: RQStatus.UNKNOWN,
         progress: 0,
         message: 'CVAT is uploading task data to the server',
-    }));
+    });
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1142,11 +1142,11 @@ async function createTask(
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate(new Request({
+            onUpdate({
                 status: RQStatus.UNKNOWN,
                 progress: percentage,
                 message: 'CVAT is uploading task data to the server',
-            }));
+            });
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1170,11 +1170,11 @@ async function createTask(
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate(new Request({
+                onUpdate({
                     status: RQStatus.UNKNOWN,
                     progress: percentage,
                     message: 'CVAT is uploading task data to the server',
-                }));
+                });
             },
             chunkSize,
             totalSize,
@@ -2250,16 +2250,32 @@ async function getRequestsList(): Promise<PaginatedResource<SerializedRequest>> 
     }
 }
 
+// Temporary solution for server availability problems
+const retryTimeouts = [5000, 10000, 15000];
 async function getRequestStatus(rqID: string): Promise<SerializedRequest> {
     const { backendAPI } = config;
+    let retryCount = 0;
+    let lastError = null;
 
-    try {
-        const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
+    while (retryCount < 3) {
+        try {
+            const response = await Axios.get(`${backendAPI}/requests/${rqID}`);
 
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
+            return response.data;
+        } catch (errorData) {
+            lastError = generateError(errorData);
+            const { response } = errorData;
+            if (response && [502, 503, 504].includes(response.status)) {
+                const timeout = retryTimeouts[retryCount];
+                await new Promise((resolve) => { setTimeout(resolve, timeout); });
+                retryCount++;
+            } else {
+                throw generateError(errorData);
+            }
+        }
     }
+
+    throw lastError;
 }
 
 async function cancelRequest(requestID): Promise<void> {

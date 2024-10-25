@@ -756,17 +756,16 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             const { taskID, rqID } = await serverProxy.tasks.create(
                 taskSpec,
                 taskDataSpec,
-                options?.requestStatusCallback || (() => {}),
+                options?.updateStatusCallback || (() => {}),
             );
 
             await requestsManager.listen(rqID, {
                 callback: (request: Request) => {
-                    options?.requestStatusCallback(request);
+                    options?.updateStatusCallback(request);
                     if (request.status === RQStatus.FAILED) {
                         serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
                     }
                 },
-                initialRequest: options?.getInitialRequest(taskID),
             });
 
             const [task] = await serverProxy.tasks.get({ id: taskID });
