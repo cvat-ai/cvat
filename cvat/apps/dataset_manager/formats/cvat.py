@@ -1384,8 +1384,8 @@ def dump_media_files(instance_data: CommonData, img_dir: str, project_data: Proj
         out_type=FrameOutputType.BUFFER,
     )
     for frame_id, frame in zip(instance_data.rel_range, frames):
-        if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
-            or frame_id in instance_data.deleted_frames:
+        # exclude deleted frames and honeypots
+        if frame_id in instance_data.deleted_frames or frame_id in instance_data._excluded_frames:
             continue
         frame_name = instance_data.frame_info[frame_id]['path'] if project_data is None \
             else project_data.frame_info[(instance_data.db_instance.id, frame_id)]['path']
