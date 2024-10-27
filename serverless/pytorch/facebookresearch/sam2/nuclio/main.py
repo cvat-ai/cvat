@@ -23,22 +23,38 @@ def handler(context, event):
         buf = io.BytesIO(base64.b64decode(data["image"]))
         image = Image.open(buf)
         image = image.convert("RGB")  # to make sure image comes in RGB
-        features = context.user_data.model.handle(image)
 
-        if features.is_cuda:
-            features = features.cpu()
-        features_array = np.ascontiguousarray(features.numpy())
-        encoded_features = base64.b64encode(features_array).decode()
+        context.logger.info("IMAGE: {}".format(image.size))
+        high_res_feats_0, high_res_feats_1, image_embed, image_ = context.user_data.model.handle(image)
+        context.logger.info("IMAGE_: {}".format(image_.shape))
+
+        def process_features(features):
+            if features.is_cuda:
+                features = features.cpu()
+            features_array = np.ascontiguousarray(features.numpy())
+            encoded_features = base64.b64encode(features_array).decode()
+            return encoded_features
+
+        encoded_feat_0 = process_features(high_res_feats_0)
+        context.logger.info("high_res_feats_0: {}".format(high_res_feats_0.shape))
+        encoded_feat_1 = process_features(high_res_feats_1)
+        context.logger.info("high_res_feats_1: {}".format(high_res_feats_1.shape))
+        encoded_image_embed = process_features(image_embed)
+        context.logger.info("image_embed: {}".format(image_embed.shape))
 
         return context.Response(
-            body=json.dumps({'blob': encoded_features}),
+            body=json.dumps({
+                'high_res_feats_0': encoded_feat_0,
+                'high_res_feats_1': encoded_feat_1,
+                'image_embed': encoded_image_embed
+            }),
             headers={},
             content_type='application/json',
             status_code=200
         )
 
     except Exception as e:
-        context.logger.info.error(f"Error creating response: {str(e)}", exc_info=True)
+        context.logger.error(f"Error creating response: {str(e)}", exc_info=True)
         return context.Response(
             body=json.dumps({'error': 'Internal server error'}),
             headers={},
