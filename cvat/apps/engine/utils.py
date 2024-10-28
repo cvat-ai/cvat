@@ -11,7 +11,7 @@ import importlib
 import sys
 import traceback
 from contextlib import suppress, nullcontext
-from typing import Any, Dict, Optional, Callable, Sequence, Union, Iterable
+from typing import Any, Dict, Optional, Callable, Sequence, Union
 import subprocess
 import os
 import urllib.parse
@@ -363,13 +363,10 @@ def sendfile(
 
     return _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)
 
-def preload_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
+def load_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
     pil_img = Image.open(image[0])
     pil_img.load()
     return pil_img, image[1], image[2]
-
-def preload_images(images: Iterable[tuple[str, str, str]]) -> list[tuple[Image.Image, str, str]]:
-    return list(map(preload_image, images))
 
 def build_backup_file_name(
     *,
