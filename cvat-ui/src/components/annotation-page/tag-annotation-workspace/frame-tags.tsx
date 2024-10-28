@@ -7,7 +7,7 @@ import './styles.scss';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Tag from 'antd/lib/tag';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 
 import {
     removeObject as removeObjectAction,
@@ -23,7 +23,7 @@ function FrameTags(): JSX.Element {
         highlightedConflict: state.annotation.annotations.highlightedConflict,
         states: state.annotation.annotations.states,
         workspace: state.annotation.workspace,
-    }));
+    }), shallowEqual);
 
     const [frameTags, setFrameTags] = useState<ObjectState[]>([]);
 
