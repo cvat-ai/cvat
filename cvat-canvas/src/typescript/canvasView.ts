@@ -1076,6 +1076,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state) {
             let start = Date.now();
             let aborted = false;
+            let initialCenterX = 0;
+            let initialCenterY = 0;
             let skeletonSVGTemplate: SVG.G = null;
             shape.addClass('cvat_canvas_shape_draggable');
             (draggableInstance as any).draggable({
@@ -1085,6 +1087,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
+                initialCenterX = shape.cx();
+                initialCenterY = shape.cy();
                 start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
@@ -1114,6 +1118,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }).on('dragend', (e: CustomEvent): void => {
                 if (aborted) {
+                    // restore initial position if aborted
+                    if (state.shapeType === 'cuboid') {
+                        // as cuboids implemented in a custom way, simple center will not work
+                        const translatedPoints: number[] = this.translateToCanvas(state.points);
+                        const stringified = stringifyPoints(translatedPoints);
+                        shape.attr('points', stringified);
+                    } else {
+                        shape.center(initialCenterX, initialCenterY);
+                    }
                     return;
                 }
 
@@ -1171,7 +1184,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 onDragEnd();
                 this.draggableShape = null;
                 aborted = true;
-                // disable internal drag events of SVG.js
+                // disable internal drag events of SVG.js (mouseup -> SVG.handler.end -> SVG.handler.drag -> dragend)
                 window.dispatchEvent(new MouseEvent('mouseup'));
             });
         } else {
