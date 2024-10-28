@@ -131,7 +131,8 @@ class AnnotationIR:
                 if last_key >= stop and scoped_shapes[-1]['points'] != segment_shapes[-1]['points']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif scoped_shapes[-1]['keyframe'] and \
-                        scoped_shapes[-1]['outside']:
+                        scoped_shapes[-1]['outside'] and \
+                        (len(segment_shapes) == 0 or scoped_shapes[-1]['frame'] > segment_shapes[-1]['frame']):
                     segment_shapes.append(scoped_shapes[-1])
                 elif stop + 1 < len(interpolated_shapes) and \
                         interpolated_shapes[stop + 1]['outside']:
@@ -950,6 +951,11 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
+                if (
+                    curr_frame == prev_shape["frame"]
+                    and dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None)
+                ):
+                    continue
                 assert curr_frame > prev_shape["frame"], f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}" # Catch invalid tracks
 
                 # Propagate attributes
