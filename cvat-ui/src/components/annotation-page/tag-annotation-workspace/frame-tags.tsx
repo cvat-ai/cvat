@@ -19,8 +19,11 @@ import { filterAnnotations } from 'utils/filter-annotations';
 function FrameTags(): JSX.Element {
     const dispatch = useDispatch();
 
-    const { highlightedConflict, states } = useSelector((state: CombinedState) => state.annotation.annotations);
-    const { workspace } = useSelector((state: CombinedState) => state.annotation);
+    const { highlightedConflict, states, workspace } = useSelector((state: CombinedState) => ({
+        highlightedConflict: state.annotation.annotations.highlightedConflict,
+        states: state.annotation.annotations.states,
+        workspace: state.annotation.workspace,
+    }));
 
     const [frameTags, setFrameTags] = useState<ObjectState[]>([]);
 
