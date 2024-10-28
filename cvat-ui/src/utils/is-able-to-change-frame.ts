@@ -17,15 +17,15 @@ export default function isAbleToChangeFrame(frame?: number): boolean {
         return false;
     }
 
-    const frameInTheJob = true;
+    let frameInTheJob = true;
     if (typeof frame === 'number') {
         if (meta.includedFrames) {
             // frame argument comes in job coordinates
             // hovewer includedFrames contains absolute data values
-            return meta.includedFrames.includes(meta.getDataFrameNumber(frame - job.startFrame));
+            frameInTheJob = meta.includedFrames.includes(meta.getDataFrameNumber(frame - job.startFrame));
         }
 
-        return frame >= job.startFrame && frame <= job.stopFrame;
+        frameInTheJob = frame >= job.startFrame && frame <= job.stopFrame;
     }
 
     return canvas.isAbleToChangeFrame() && frameInTheJob && !state.annotation.player.navigationBlocked;

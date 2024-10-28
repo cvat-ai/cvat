@@ -245,6 +245,53 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.dispatchEvent(event);
     }
 
+    private resetViewPosition(clientID: number): void {
+        const drawnState = this.drawnStates[clientID];
+        const drawnShape = this.svgShapes[clientID];
+
+        if (drawnState && drawnShape) {
+            const { shapeType, points } = drawnState;
+            const translatedPoints: number[] = this.translateToCanvas(points);
+            const stringified = stringifyPoints(translatedPoints);
+            if (shapeType === 'cuboid') {
+                drawnShape.attr('points', stringified);
+            } else if (['polygon', 'polyline', 'points'].includes(shapeType)) {
+                (drawnShape as SVG.PolyLine | SVG.Polygon).plot(stringified);
+                if (shapeType === 'points') {
+                    this.selectize(false, drawnShape);
+                    this.setupPoints(drawnShape as SVG.PolyLine, drawnState);
+                }
+            } else if (shapeType === 'rectangle') {
+                const [xtl, ytl, xbr, ybr] = translatedPoints;
+                drawnShape.rotate(0);
+                drawnShape.size(xbr - xtl, ybr - ytl).move(xtl, ytl);
+                drawnShape.rotate(drawnState.rotation);
+            } else if (shapeType === 'ellipse') {
+                const [cx, cy, rightX, topY] = translatedPoints;
+                const [rx, ry] = [rightX - cx, cy - topY];
+                drawnShape.rotate(0);
+                drawnShape.size(rx * 2, ry * 2).center(cx, cy);
+                drawnShape.rotate(drawnState.rotation);
+            } else if (shapeType === 'skeleton') {
+                drawnShape.rotate(0);
+                for (const child of (drawnShape as SVG.G).children()) {
+                    if (child.type === 'circle') {
+                        const childClientID = child.attr('data-client-id');
+                        const element = drawnState.elements.find((el: any) => el.clientID === childClientID);
+                        const [x, y] = this.translateToCanvas(element.points);
+                        child.center(x, y);
+                    }
+                }
+                drawnShape.rotate(drawnState.rotation);
+            } else if (shapeType === 'mask') {
+                const [left, top] = points.slice(-4);
+                drawnShape.move(this.geometry.offset + left, this.geometry.offset + top);
+            } else {
+                throw new Error('Not implemented');
+            }
+        }
+    }
+
     private onInteraction = (
         shapes: InteractionResult[] | null,
         shapesUpdated = true,
@@ -1076,8 +1123,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state) {
             let start = Date.now();
             let aborted = false;
-            let initialCenterX = 0;
-            let initialCenterY = 0;
             let skeletonSVGTemplate: SVG.G = null;
             shape.addClass('cvat_canvas_shape_draggable');
             (draggableInstance as any).draggable({
@@ -1087,8 +1132,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
-                initialCenterX = shape.cx();
-                initialCenterY = shape.cy();
                 start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
@@ -1118,15 +1161,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }).on('dragend', (e: CustomEvent): void => {
                 if (aborted) {
-                    // restore initial position if aborted
-                    if (state.shapeType === 'cuboid') {
-                        // as cuboids implemented in a custom way, simple center will not work
-                        const translatedPoints: number[] = this.translateToCanvas(state.points);
-                        const stringified = stringifyPoints(translatedPoints);
-                        shape.attr('points', stringified);
-                    } else {
-                        shape.center(initialCenterX, initialCenterY);
-                    }
+                    this.resetViewPosition(state.clientID);
                     return;
                 }
 
@@ -1184,7 +1219,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 onDragEnd();
                 this.draggableShape = null;
                 aborted = true;
-                // disable internal drag events of SVG.js (mouseup -> SVG.handler.end -> SVG.handler.drag -> dragend)
+                // disable internal drag events of SVG.js
+                // call chain is (mouseup -> SVG.handler.end -> SVG.handler.drag -> dragend)
                 window.dispatchEvent(new MouseEvent('mouseup'));
             });
         } else {
@@ -1316,44 +1352,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 })
                 .on('resizedone', (): void => {
                     if (aborted) {
-                        const { shapeType } = state;
-                        // restore initial position if aborted
-                        const translatedPoints: number[] = this.translateToCanvas(state.points);
-                        const stringified = stringifyPoints(translatedPoints);
-                        if (shapeType === 'cuboid') {
-                            shape.attr('points', stringified);
-                        } else if (['polygon', 'polyline', 'points'].includes(shapeType)) {
-                            (shape as SVG.PolyLine | SVG.Polygon).plot(stringified);
-                            if (shapeType === 'points') {
-                                this.selectize(false, shape);
-                                this.setupPoints(shape as SVG.PolyLine, state);
-                            }
-                        } else if (shapeType === 'rectangle') {
-                            const [xtl, ytl, xbr, ybr] = translatedPoints;
-                            shape.rotate(0);
-                            shape.size(xbr - xtl, ybr - ytl).move(xtl, ytl);
-                            shape.rotate(state.rotation);
-                        } else if (shapeType === 'ellipse') {
-                            const [cx, cy, rightX, topY] = translatedPoints;
-                            const [rx, ry] = [rightX - cx, cy - topY];
-                            shape.rotate(0);
-                            shape.size(rx * 2, ry * 2).center(cx, cy);
-                            shape.rotate(state.rotation);
-                        } else if (shapeType === 'skeleton') {
-                            shape.rotate(0);
-                            for (const child of (shape as SVG.G).children()) {
-                                if (child.type === 'circle') {
-                                    const childClientID = child.attr('data-client-id');
-                                    const element = state.elements.find((el: any) => el.clientID === childClientID);
-                                    const [x, y] = this.translateToCanvas(element.points);
-                                    child.center(x, y);
-                                }
-                            }
-                            shape.rotate(state.rotation);
-                        } else {
-                            throw new Error('Not implemented');
-                        }
-
+                        this.resetViewPosition(state.clientID);
                         return;
                     }
 
@@ -1410,7 +1409,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     onResizeEnd();
                     aborted = true;
                     this.resizableShape = null;
-                    // disable internal drag events of SVG.js
+                    // disable internal resize events of SVG.js
+                    // call chain is (mouseup -> SVG.handler.end -> SVG.handler.drag -> dragend)
                     window.dispatchEvent(new MouseEvent('mouseup'));
                 });
         } else {
@@ -3452,7 +3452,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return skeleton;
     }
 
-    private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {
+    private setupPoints(basicPolyline: SVG.PolyLine, state: any | DrawnState): any {
         this.selectize(true, basicPolyline);
 
         const group: SVG.G = basicPolyline
