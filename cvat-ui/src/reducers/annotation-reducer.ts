@@ -51,6 +51,7 @@ const defaultState: AnnotationState = {
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
+        activeObjectHidden: false,
     },
     job: {
         openTime: null,
@@ -95,9 +96,7 @@ const defaultState: AnnotationState = {
         activeObjectType: ObjectType.SHAPE,
     },
     editing: {
-        shapeType: null,
         editedStateInstance: null,
-        editedStateHidden: false,
     },
     annotations: {
         activatedStateID: null,
@@ -627,47 +626,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.RESET_EDITED_STATE: {
-            return {
-                ...state,
-                editing: {
-                    ...state.editing,
-                    shapeType: null,
-                    editedStateInstance: null,
-                    editedStateHidden: false,
-                },
-            };
-        }
         case AnnotationActionTypes.UPDATE_EDITED_STATE: {
-            const { shapeType, editedStateInstance } = action.payload;
+            const { editedStateInstance } = action.payload;
             return {
-                ...state,
                 ...state,
                 editing: {
                     ...state.editing,
-                    shapeType: (shapeType ?? null),
-                    editedStateInstance: (editedStateInstance ?? null),
+                    editedStateInstance,
                 },
             };
         }
-        case AnnotationActionTypes.HIDE_EDITED_STATE: {
+        case AnnotationActionTypes.HIDE_ACTIVE_OBJECT: {
             const { hide } = action.payload;
             return {
                 ...state,
-                editing: {
-                    ...state.editing,
-                    editedStateHidden: hide,
-                },
-            };
-        }
-        case AnnotationActionTypes.REMOVE_OBJECT: {
-            const { objectState, force } = action.payload;
-            return {
-                ...state,
-                remove: {
-                    ...state.remove,
-                    objectState,
-                    force,
+                canvas: {
+                    ...state.canvas,
+                    activeObjectHidden: hide,
                 },
             };
         }

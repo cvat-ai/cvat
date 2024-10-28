@@ -9,8 +9,8 @@ import { connect } from 'react-redux';
 import { ObjectState, Job } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
-import { updateAnnotationsAsync, changeFrameAsync, changeHideEditedStateAsync } from 'actions/annotation-actions';
-import { CombinedState, EditingState } from 'reducers';
+import { updateAnnotationsAsync, changeFrameAsync, changeHideActiveObjectAsync } from 'actions/annotation-actions';
+import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
 interface OwnProps {
@@ -29,7 +29,7 @@ interface StateToProps {
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
-    editedState: EditingState,
+    editedState: ObjectState | null,
 }
 
 interface DispatchToProps {
@@ -46,7 +46,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            editing: editedState,
+            editing: { editedStateInstance: editedState },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -81,7 +81,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
             dispatch(changeFrameAsync(frame));
         },
         changeHideEditedState(value: boolean): void {
-            dispatch(changeHideEditedStateAsync(value));
+            dispatch(changeHideActiveObjectAsync(value));
         },
     };
 }
@@ -153,7 +153,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private show = (): void => {
         const { objectState, editedState, changeHideEditedState } = this.props;
-        if (objectState.clientID === editedState.editedStateInstance?.clientID) {
+        if (objectState.clientID === editedState?.clientID) {
             changeHideEditedState(false);
         } else {
             objectState.hidden = false;
@@ -163,7 +163,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private hide = (): void => {
         const { objectState, editedState, changeHideEditedState } = this.props;
-        if (objectState.clientID === editedState.editedStateInstance?.clientID) {
+        if (objectState.clientID === editedState?.clientID) {
             changeHideEditedState(true);
         } else {
             objectState.hidden = true;

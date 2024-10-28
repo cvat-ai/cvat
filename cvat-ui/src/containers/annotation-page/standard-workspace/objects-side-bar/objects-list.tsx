@@ -19,14 +19,15 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
-    changeHideEditedStateAsync,
+    changeHideActiveObjectAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace, EditingState,
+    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
+    ActiveControl,
 } from 'reducers';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
@@ -57,7 +58,9 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
     workspace: Workspace;
-    editedState: EditingState,
+    editedState: ObjectState | null,
+    activeControl: ActiveControl,
+    activeObjectHidden: boolean,
 }
 
 interface DispatchToProps {
@@ -189,7 +192,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            editing: editedState,
+            canvas: {
+                activeControl, activeObjectHidden,
+            },
+            editing: { editedStateInstance: editedState },
             colors,
             workspace,
         },
@@ -238,6 +244,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showGroundTruth,
         workspace,
         editedState,
+        activeControl,
+        activeObjectHidden,
     };
 }
 
@@ -269,7 +277,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(fetchAnnotationsAsync());
         },
         changeHideEditedState(value: boolean): void {
-            dispatch(changeHideEditedStateAsync(value));
+            dispatch(changeHideActiveObjectAsync(value));
         },
     };
 }
@@ -399,7 +407,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const { updateAnnotations, editedState, changeHideEditedState } = this.props;
         const { filteredStates } = this.state;
 
-        if (editedState.shapeType === ShapeType.MASK) {
+        if (editedState?.shapeType === ShapeType.MASK) {
             changeHideEditedState(hidden);
         }
 
@@ -487,9 +495,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                const { editedState, changeHideEditedState } = this.props;
-                if (editedState.shapeType === ShapeType.MASK) {
-                    changeHideEditedState(!editedState.editedStateHidden);
+                const {
+                    editedState, changeHideEditedState, activeControl, activeObjectHidden,
+                } = this.props;
+                if (editedState?.shapeType === ShapeType.MASK || activeControl === ActiveControl.DRAW_MASK) {
+                    const hide = editedState ? !editedState.hidden : !activeObjectHidden;
+                    changeHideEditedState(hide);
                 }
                 if (state) {
                     state.hidden = !state.hidden;

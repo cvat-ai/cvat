@@ -695,9 +695,7 @@ export enum NavigationType {
 }
 
 export interface EditingState {
-    shapeType: ShapeType | null;
     editedStateInstance: ObjectState | null;
-    editedStateHidden: boolean;
 }
 
 export interface AnnotationState {
@@ -725,6 +723,7 @@ export interface AnnotationState {
         instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
+        activeObjectHidden: boolean;
     };
     job: {
         openTime: null | number;

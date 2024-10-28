@@ -1046,7 +1046,7 @@ export default class Collection {
                             z_order: 0,
                             outside: element.outside || false,
                             occluded: element.occluded || false,
-                            hidden: state.hidden || false,
+                            hidden: element.hidden || false,
                         })) : undefined,
                     });
                 } else if (state.objectType === 'track') {

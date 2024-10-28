@@ -27,7 +27,7 @@ import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, setNavigationType,
     removeObjectAsync, finishCurrentJobAsync,
-    changeHideEditedStateAsync,
+    changeHideActiveObjectAsync,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -190,7 +190,7 @@ const componentShortcuts = {
     },
     HIDE_MASK_SINGLE_SHAPE: {
         name: 'Hide mask',
-        description: 'Hide edited mask',
+        description: 'Hide currently edited mask',
         sequences: ['h'],
         scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
     },
@@ -403,7 +403,7 @@ function SingleShapeSidebar(): JSX.Element {
             event?.preventDefault();
             const { shapeType, editedStateHidden } = editedState;
             if (shapeType === ShapeType.MASK) {
-                appDispatch(changeHideEditedStateAsync(!editedStateHidden));
+                appDispatch(changeHideActiveObjectAsync(!editedStateHidden));
             }
         },
     };
