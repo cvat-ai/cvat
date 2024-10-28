@@ -1285,13 +1285,13 @@ class ProjectData(InstanceLabelData):
                 if (task_id, frame) not in self._deleted_frames and frame in task_included_frames:
                     get_frame(task_id, frame)
 
-        for t_data in self.task_data:
-            task: Task = t_data.db_instance
+        for task_data in self.task_data:
+            task: Task = task_data.db_instance
 
             anno_manager = AnnotationManager(
                 self._annotation_irs[task.id], dimension=self._annotation_irs[task.id].dimension
             )
-            task_included_frames = t_data.get_included_frames()
+            task_included_frames = task_data.get_included_frames()
 
             for shape in sorted(
                 anno_manager.to_shapes(
@@ -1302,7 +1302,7 @@ class ProjectData(InstanceLabelData):
                 ),
                 key=lambda shape: shape.get("z_order", 0)
             ):
-                if shape['frame'] in t_data.deleted_frames:
+                if shape['frame'] in task_data.deleted_frames:
                     continue
 
                 assert (task.id, shape['frame']) in self._frame_info
