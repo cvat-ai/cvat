@@ -1316,6 +1316,44 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 })
                 .on('resizedone', (): void => {
                     if (aborted) {
+                        const { shapeType } = state;
+                        // restore initial position if aborted
+                        const translatedPoints: number[] = this.translateToCanvas(state.points);
+                        const stringified = stringifyPoints(translatedPoints);
+                        if (shapeType === 'cuboid') {
+                            shape.attr('points', stringified);
+                        } else if (['polygon', 'polyline', 'points'].includes(shapeType)) {
+                            (shape as SVG.PolyLine | SVG.Polygon).plot(stringified);
+                            if (shapeType === 'points') {
+                                this.selectize(false, shape);
+                                this.setupPoints(shape as SVG.PolyLine, state);
+                            }
+                        } else if (shapeType === 'rectangle') {
+                            const [xtl, ytl, xbr, ybr] = translatedPoints;
+                            shape.rotate(0);
+                            shape.size(xbr - xtl, ybr - ytl).move(xtl, ytl);
+                            shape.rotate(state.rotation);
+                        } else if (shapeType === 'ellipse') {
+                            const [cx, cy, rightX, topY] = translatedPoints;
+                            const [rx, ry] = [rightX - cx, cy - topY];
+                            shape.rotate(0);
+                            shape.size(rx * 2, ry * 2).center(cx, cy);
+                            shape.rotate(state.rotation);
+                        } else if (shapeType === 'skeleton') {
+                            shape.rotate(0);
+                            for (const child of (shape as SVG.G).children()) {
+                                if (child.type === 'circle') {
+                                    const childClientID = child.attr('data-client-id');
+                                    const element = state.elements.find((el: any) => el.clientID === childClientID);
+                                    const [x, y] = this.translateToCanvas(element.points);
+                                    child.center(x, y);
+                                }
+                            }
+                            shape.rotate(state.rotation);
+                        } else {
+                            throw new Error('Not implemented');
+                        }
+
                         return;
                     }
 
