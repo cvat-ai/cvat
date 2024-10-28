@@ -201,7 +201,7 @@ export class OpenCVWrapper {
                     cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
-                        // substract offset we created when copied source image
+                        // subtract offset we created when copied source image
                         jsContours.push(Array.from(contour.data32S as number[]).map((el) => el - 1));
                         contour.delete();
                     }

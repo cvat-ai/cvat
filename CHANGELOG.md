@@ -16,6 +16,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.21.2'></a>
+## \[2.21.2\] - 2024-10-24
+
+### Added
+
+- Access to /analytics can now be granted
+  (<https://github.com/cvat-ai/cvat/pull/8509>)
+
+### Fixed
+
+- Expired sessions are now cleared from the database daily
+  (<https://github.com/cvat-ai/cvat/pull/8552>)
+
+- Fixed export/import errors for tracks with duplicated shapes.
+  Fixed a bug which caused shape duplication on track import.
+  (<https://github.com/cvat-ai/cvat/pull/8553>)
+
+- Fix Grafana container restart policy
+  (<https://github.com/cvat-ai/cvat/pull/8577>)
+
+- Fixed some interface tooltips having 'undefined' shortcuts
+  (<https://github.com/cvat-ai/cvat/pull/8578>)
+
+- Memory consumption during preparation of image chunks
+  (<https://github.com/cvat-ai/cvat/pull/8581>)
+
+- Fixed a bug where an export RQ job being retried may break scheduling
+  of new jobs
+  (<https://github.com/cvat-ai/cvat/pull/8584>)
+
+- UI now allows the user to start automatic annotation again
+  if the previous request fails
+  (<https://github.com/cvat-ai/cvat/pull/8587>)
+
 <a id='changelog-2.21.1'></a>
 ## \[2.21.1\] - 2024-10-18
 

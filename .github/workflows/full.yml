@@ -55,7 +55,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
-          tags: cvat/server
+          tags: cvat/server:${{ env.CVAT_VERSION }}
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
@@ -64,7 +64,7 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
-          tags: cvat/ui
+          tags: cvat/ui:${{ env.CVAT_VERSION }}
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
       - name: CVAT SDK. Build
@@ -126,8 +126,6 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Verify API schema
@@ -203,7 +201,6 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running OPA tests
@@ -280,8 +277,6 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Run CVAT instance

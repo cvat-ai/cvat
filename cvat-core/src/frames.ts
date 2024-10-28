@@ -683,7 +683,7 @@ export function getContextImage(jobID: number, frame: number): Promise<Record<st
                         // it might raise multiple server requests for context images
                         // if the promise was pending before and several requests came for the same frame
                         // all these requests will stuck on "finally"
-                        // and when the promise fullfilled, it will run all the microtasks
+                        // and when the promise is fulfilled, it will run all the microtasks
                         // since they all have the same request id, all they will perform in executor()
                         frameData.activeContextRequest.finally(() => setTimeout(checkAndExecute));
                     } else {
@@ -775,7 +775,7 @@ export async function getFrame(
     // - getContextImage
     // - getCachedChunks
     // And from this idea we should call refreshJobCacheIfOutdated from each one
-    // Hovewer, following from the order, these methods are usually called
+    // However, following from the order, these methods are usually called
     // it may lead to even more confusing behaviour
     //
     // Usually user first receives frame, then user receives ranges and finally user receives context images

@@ -25,7 +25,7 @@ export function customWaViewHit(pageName?: string, queryString?: string, hashInf
             waHitFunction(pageName, queryString, hashInfo);
         } catch (error: any) {
             // eslint-disable-next-line
-            console.error(`Web analitycs hit function has failed. ${error.toString()}`);
+            console.error(`Web analytics hit function has failed. ${error.toString()}`);
         }
     }
 }
