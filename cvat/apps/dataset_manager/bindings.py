@@ -1282,7 +1282,7 @@ class ProjectData(InstanceLabelData):
                     self.init_task_data(task_id)
 
                 task_included_frames = self._tasks_data[task_id].get_included_frames()
-                if (task_id, frame) not in self._deleted_frames and frame in task_included_frames:
+                if frame in task_included_frames:
                     get_frame(task_id, frame)
 
         for task_data in self.task_data:
