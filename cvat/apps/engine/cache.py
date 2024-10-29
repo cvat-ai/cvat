@@ -54,7 +54,7 @@ from cvat.apps.engine.media_extractors import (
     ZipChunkWriter,
     ZipCompressedChunkWriter,
 )
-from cvat.apps.engine.utils import md5_hash, load_image
+from cvat.apps.engine.utils import load_image, md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)

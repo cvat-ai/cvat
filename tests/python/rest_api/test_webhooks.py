@@ -1029,9 +1029,7 @@ class TestPatchWebhooks:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteWebhooks:
-    @pytest.mark.parametrize(
-        "privilege, allow", [("user", False), ("admin", True)]
-    )
+    @pytest.mark.parametrize("privilege, allow", [("user", False), ("admin", True)])
     def test_user_can_delete_project_webhook(
         self, privilege, allow, find_users, webhooks, projects
     ):
