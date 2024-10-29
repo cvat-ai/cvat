@@ -1410,7 +1410,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     aborted = true;
                     this.resizableShape = null;
                     // disable internal resize events of SVG.js
-                    // call chain is (mouseup -> SVG.handler.end -> SVG.handler.drag -> dragend)
+                    // call chain is (mouseup -> SVG.handler.end -> SVG.handler.resize-> resizeend)
                     window.dispatchEvent(new MouseEvent('mouseup'));
                 });
         } else {
