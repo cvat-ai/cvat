@@ -1049,7 +1049,7 @@ class TestImportExportDatasetProject:
         admin_user: str,
     ):
         project_spec = {
-            "name": f"Project with honeypots",
+            "name": "Project with honeypots",
             "labels": [{"name": "cat"}],
         }
 

@@ -29,6 +29,7 @@ from .utils import (
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.timeout(30)
 class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
