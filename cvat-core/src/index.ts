@@ -23,7 +23,7 @@ import ObjectState from './object-state';
 import MLModel from './ml-model';
 import Issue from './issue';
 import Comment from './comment';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
@@ -32,6 +32,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
@@ -209,6 +210,14 @@ export default interface CVATCore {
         Webhook: typeof Webhook;
         AnnotationGuide: typeof AnnotationGuide;
         BaseSingleFrameAction: typeof BaseSingleFrameAction;
+        QualityReport: typeof QualityReport;
+        QualityConflict: typeof QualityConflict;
+        QualitySettings: typeof QualitySettings;
+        AnalyticsReport: typeof AnalyticsReport;
+        Request: typeof Request;
+        FramesMetaData: typeof FramesMetaData;
+        JobValidationLayout: typeof JobValidationLayout;
+        TaskValidationLayout: typeof TaskValidationLayout;
     };
     utils: {
         mask2Rle: typeof mask2Rle;

@@ -17,9 +17,11 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.quality_control import quality_reports as qc
@@ -272,8 +274,8 @@ class QualityReportViewSet(
                 raise NotFound(f"Task {task_id} does not exist") from ex
 
             try:
-                rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
-                    task, user_id=request.user.id
+                rq_id = qc.QualityReportUpdateManager().schedule_custom_quality_check_job(
+                    request=request, task=task, user_id=request.user.id
                 )
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -287,10 +289,12 @@ class QualityReportViewSet(
 
             report_manager = qc.QualityReportUpdateManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
+            # FUTURE-TODO: move into permissions
+            # and allow not only rq job owner to check the status
             if (
                 not rq_job
                 or not QualityReportPermission.create_scope_check_status(
-                    request, job_owner_id=rq_job.meta["user_id"]
+                    request, job_owner_id=rq_job.meta[RQJobMetaField.USER]["id"]
                 )
                 .check_access()
                 .allow
@@ -298,13 +302,15 @@ class QualityReportViewSet(
                 # We should not provide job existence information to unauthorized users
                 raise NotFound("Unknown request id")
 
-            if rq_job.is_failed:
+            rq_job_status = rq_job.get_status(refresh=False)
+
+            if rq_job_status == RQJobStatus.FAILED:
                 message = str(rq_job.exc_info)
                 rq_job.delete()
                 raise ValidationError(message)
-            elif rq_job.is_queued or rq_job.is_started:
-                return Response(status=status.HTTP_202_ACCEPTED)
-            elif rq_job.is_finished:
+            elif rq_job_status in {RQJobStatus.QUEUED, RQJobStatus.STARTED, RQJobStatus.DEFERRED}:
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            elif rq_job_status == RQJobStatus.FINISHED:
                 return_value = rq_job.return_value()
                 rq_job.delete()
                 if not return_value:
@@ -319,6 +325,11 @@ class QualityReportViewSet(
                     status=status.HTTP_201_CREATED,
                     headers=self.get_success_headers(report_serializer.data),
                 )
+            # e.g. scheduled or None
+            return Response(
+                f"Unexpected job status: {rq_job_status}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @extend_schema(
         operation_id="quality_retrieve_report_data",
@@ -329,7 +340,7 @@ class QualityReportViewSet(
     def data(self, request, pk):
         report = self.get_object()  # check permissions
         json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode())
+        return HttpResponse(json_report.encode(), content_type="application/json")
 
 
 @extend_schema(tags=["quality"])

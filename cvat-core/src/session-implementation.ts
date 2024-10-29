@@ -18,6 +18,7 @@ import {
     deleteFrame,
     restoreFrame,
     getCachedChunks,
+    getJobFrameNumbers,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -26,7 +27,10 @@ import {
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { SerializedLabel, SerializedTask } from './server-response-types';
+import {
+    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
+    SerializedTaskValidationLayout,
+} from './server-response-types';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -36,6 +40,7 @@ import AnnotationGuide from './guide';
 import requestsManager from './requests-manager';
 import { Request } from './request';
 import User from './user';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -64,7 +69,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: JobClass,
-            fields: any,
+            fields: Parameters<typeof JobClass.prototype.save>[0],
         ): ReturnType<typeof JobClass.prototype.save> {
             if (this.id) {
                 const jobData = {
@@ -163,6 +168,19 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.validationLayout> {
+            const result = await serverProxy.jobs.validationLayout(this.id);
+            if (Object.keys(result).length) {
+                return new JobValidationLayout(result as SerializedJobValidationLayout);
+            }
+
+            return null;
+        },
+    });
+
     Object.defineProperty(Job.prototype.frames.get, 'implementation', {
         value: function getFrameImplementation(
             this: JobClass,
@@ -185,11 +203,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 this.mode,
                 frame,
                 this.startFrame,
-                this.stopFrame,
                 isPlaying,
                 step,
                 this.dimension,
-                (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
+                (chunkIndex, quality) => this.frames.chunk(chunkIndex, quality),
             );
         },
     });
@@ -232,7 +249,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function saveFramesImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.save> {
-            return patchMeta(this.id);
+            return patchMeta(this.id).then((meta) => [meta]);
         },
     });
 
@@ -241,6 +258,14 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.cachedChunks> {
             return Promise.resolve(getCachedChunks(this.id));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.frames.frameNumbers, 'implementation', {
+        value: function includedFramesImplementation(
+            this: JobClass,
+        ): ReturnType<typeof JobClass.prototype.frames.frameNumbers> {
+            return Promise.resolve(getJobFrameNumbers(this.id));
         },
     });
 
@@ -273,10 +298,10 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     Object.defineProperty(Job.prototype.frames.chunk, 'implementation', {
         value: function chunkImplementation(
             this: JobClass,
-            chunkNumber: Parameters<typeof JobClass.prototype.frames.chunk>[0],
+            chunkIndex: Parameters<typeof JobClass.prototype.frames.chunk>[0],
             quality: Parameters<typeof JobClass.prototype.frames.chunk>[1],
         ): ReturnType<typeof JobClass.prototype.frames.chunk> {
-            return serverProxy.frames.getData(this.id, chunkNumber, quality);
+            return serverProxy.frames.getData(this.id, chunkIndex, quality);
         },
     });
 
@@ -352,7 +377,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             }
 
             if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+                throw new ArgumentError('Both annotations filters and general filters could not be used together');
             }
 
             if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -615,18 +640,34 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.validationLayout, 'implementation', {
+        value: async function validationLayoutImplementation(
+            this: TaskClass,
+        ): ReturnType<typeof TaskClass.prototype.validationLayout> {
+            const result = await serverProxy.tasks.validationLayout(this.id) as SerializedTaskValidationLayout;
+            if (result.mode !== null) {
+                return new TaskValidationLayout(result);
+            }
+
+            return null;
+        },
+    });
+
     Object.defineProperty(Task.prototype.save, 'implementation', {
         value: async function saveImplementation(
             this: TaskClass,
-            options: Parameters<typeof TaskClass.prototype.save>[0],
+            fields: Parameters<typeof TaskClass.prototype.save>[0],
+            options: Parameters<typeof TaskClass.prototype.save>[1],
         ): ReturnType<typeof TaskClass.prototype.save> {
             if (typeof this.id !== 'undefined') {
                 // If the task has been already created, we update it
-                const taskData = this._updateTrigger.getUpdated(this, {
-                    bugTracker: 'bug_tracker',
-                    projectId: 'project_id',
-                    assignee: 'assignee_id',
-                });
+                const taskData = {
+                    ...this._updateTrigger.getUpdated(this, {
+                        bugTracker: 'bug_tracker',
+                        projectId: 'project_id',
+                        assignee: 'assignee_id',
+                    }),
+                };
 
                 if (taskData.assignee_id) {
                     taskData.assignee_id = taskData.assignee_id.id;
@@ -709,17 +750,18 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
+                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(
                 taskSpec,
                 taskDataSpec,
-                options?.requestStatusCallback || (() => {}),
+                options?.updateStatusCallback || (() => {}),
             );
 
             await requestsManager.listen(rqID, {
                 callback: (request: Request) => {
-                    options?.requestStatusCallback(request);
+                    options?.updateStatusCallback(request);
                     if (request.status === RQStatus.FAILED) {
                         serverProxy.tasks.delete(taskID, config.organization.organizationSlug || null);
                     }
@@ -820,11 +862,10 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 this.mode,
                 frame,
                 job.startFrame,
-                job.stopFrame,
                 isPlaying,
                 step,
                 this.dimension,
-                (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
+                (chunkIndex, quality) => job.frames.chunk(chunkIndex, quality),
             );
             return result;
         },
@@ -899,8 +940,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: async function saveFramesImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.save> {
-            return Promise.all(this.jobs.map((job) => patchMeta(job.id)))
-                .then(() => Promise.resolve());
+            return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
         },
     });
 
@@ -1006,7 +1046,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
-                throw new ArgumentError('Both annotations filters and general fiters could not be used together');
+                throw new ArgumentError('Both annotations filters and general filters could not be used together');
             }
 
             if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {

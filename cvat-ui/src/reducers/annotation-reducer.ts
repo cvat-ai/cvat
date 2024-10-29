@@ -56,14 +56,18 @@ const defaultState: AnnotationState = {
         openTime: null,
         labels: [],
         requestedId: null,
-        groundTruthJobFramesMeta: null,
-        groundTruthInstance: null,
         queryParameters: {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
         },
+        groundTruthInfo: {
+            validationLayout: null,
+            groundTruthJobFramesMeta: null,
+            groundTruthInstance: null,
+        },
         instance: null,
+        meta: null,
         attributes: {},
         fetching: false,
         saving: false,
@@ -155,6 +159,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 job,
+                jobMeta,
                 openTime,
                 frameNumber: number,
                 frameFilename: filename,
@@ -165,6 +170,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
+                validationLayout,
             } = action.payload;
 
             const defaultLabel = job.labels.length ? job.labels[0] : null;
@@ -201,14 +207,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     openTime,
                     fetching: false,
                     instance: job,
+                    meta: jobMeta,
                     labels: job.labels,
                     attributes: job.labels
                         .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    groundTruthInstance,
-                    groundTruthJobFramesMeta,
+                    groundTruthInfo: {
+                        validationLayout,
+                        groundTruthInstance,
+                        groundTruthJobFramesMeta,
+                    },
                     queryParameters: {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,
@@ -468,21 +478,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
-            if ('activeObjectType' in payload && payload.activeObjectType === ObjectType.TAG) {
-                activeControl = ActiveControl.CURSOR;
-            } else if ('activeShapeType' in payload) {
-                const controlMapping = {
-                    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
-                    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
-                    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
-                    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
-                    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
-                    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
-                    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
-                    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
-                };
+            if (payload.updateCurrentControl) {
+                if ('activeObjectType' in payload && payload.activeObjectType === ObjectType.TAG) {
+                    activeControl = ActiveControl.CURSOR;
+                } else if ('activeShapeType' in payload) {
+                    const controlMapping = {
+                        [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+                        [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+                        [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+                        [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+                        [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+                        [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+                        [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+                        [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+                    };
 
-                activeControl = controlMapping[payload.activeShapeType as ShapeType];
+                    activeControl = controlMapping[payload.activeShapeType as ShapeType];
+                }
             }
 
             return {

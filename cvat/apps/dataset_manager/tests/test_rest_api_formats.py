@@ -25,10 +25,8 @@ from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
 
 from attr import define, field
-from datumaro import AnnotationType, Points
 from datumaro.components.dataset import Dataset
 from datumaro.components.operations import ExactComparator
-from datumaro.util.test_utils import TestDir
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -36,6 +34,7 @@ from rest_framework import status
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
 from cvat.apps.engine.models import Task
@@ -52,6 +51,22 @@ with open(tasks_path) as file:
 annotation_path = osp.join(osp.dirname(__file__), 'assets', 'annotations.json')
 with open(annotation_path) as file:
     annotations = json.load(file)
+
+DEFAULT_ATTRIBUTES_FORMATS = [
+    "VGGFace2 1.0",
+    "WiderFace 1.0",
+    "YOLOv8 Classification 1.0",
+    "YOLO 1.1",
+    "YOLOv8 Detection 1.0",
+    "YOLOv8 Segmentation 1.0",
+    "YOLOv8 Oriented Bounding Boxes 1.0",
+    "YOLOv8 Pose 1.0",
+    "PASCAL VOC 1.1",
+    "Segmentation mask 1.1",
+    "ImageNet 1.0",
+    "Cityscapes 1.0",
+    "MOTS PNG 1.0",
+]
 
 
 def generate_image_file(filename, size=(100, 50)):
@@ -100,8 +115,8 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 
 def compare_datasets(expected: Dataset, actual: Dataset):
-    # we need this function to allow for a bit of variation in a rotation attribute and in skeleton elements order
-    comparator = ExactComparator(ignored_fields=["elements"], ignored_attrs=["rotation"])
+    # we need this function to allow for a bit of variation in the rotation attribute
+    comparator = ExactComparator(ignored_attrs=["rotation"])
     _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
         expected, actual
     )
@@ -116,10 +131,6 @@ def compare_datasets(expected: Dataset, actual: Dataset):
                 abs(ann_a.attributes.get("rotation", 0) - ann_b.attributes.get("rotation", 0))
                 < 0.01
             )
-            if ann_a.type == AnnotationType.skeleton:
-                elements_a = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_a.elements), key=lambda s: s.label)
-                elements_b = sorted(filter(lambda p: p.visibility[0] != Points.Visibility.absent, ann_b.elements), key=lambda s: s.label)
-                assert elements_a == elements_b
 
 
 class _DbTestBase(ApiTestBase):
@@ -176,6 +187,11 @@ class _DbTestBase(ApiTestBase):
             response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get("/api/tasks/%s" % tid)
 
@@ -201,6 +217,13 @@ class _DbTestBase(ApiTestBase):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(lambda page:
                 self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+            )
+        return values
+
+    def _get_tasks(self, project_id):
+        with ForceLogin(self.admin, self.client):
+            values = get_paginated_collection(lambda page:
+                self.client.get("/api/tasks", data={"project_id": project_id, "page": page})
             )
         return values
 
@@ -236,109 +259,65 @@ class _DbTestBase(ApiTestBase):
             response = self.client.delete(path)
         return response
 
-    def _create_annotations(self, task, name_ann, key_get_values):
+    @staticmethod
+    def _make_attribute_value(key_get_values, attribute):
+        assert key_get_values in ["default", "random"]
+        if key_get_values == "random":
+            if attribute["input_type"] == "number":
+                start = int(attribute["values"][0])
+                stop = int(attribute["values"][1]) + 1
+                step = int(attribute["values"][2])
+                return str(random.randrange(start, stop, step))  # nosec B311 NOSONAR
+            return random.choice(attribute["values"])  # nosec B311 NOSONAR
+        assert key_get_values == "default"
+        return attribute["default_value"]
+
+    @staticmethod
+    def _make_annotations_for_task(task, name_ann, key_get_values):
+        def fill_one_attribute_in_element(is_item_tracks, element, attribute):
+            spec_id = attribute["id"]
+            value = _DbTestBase._make_attribute_value(key_get_values, attribute)
+
+            if is_item_tracks and attribute["mutable"]:
+                for index_shape, _ in enumerate(element["shapes"]):
+                    element["shapes"][index_shape]["attributes"].append({
+                        "spec_id": spec_id,
+                        "value": value,
+                    })
+            else:
+                element["attributes"].append({
+                    "spec_id": spec_id,
+                    "value": value,
+                })
+
+        def fill_all_attributes_in_element(is_item_tracks, element, label):
+            element["label_id"] = label["id"]
+
+            for attribute in label["attributes"]:
+                fill_one_attribute_in_element(is_item_tracks, element, attribute)
+
+            sub_elements = element.get("elements", [])
+            sub_labels = label.get("sublabels", [])
+            for sub_element, sub_label in zip(sub_elements, sub_labels):
+                fill_all_attributes_in_element(is_item_tracks, sub_element, sub_label)
+
         tmp_annotations = copy.deepcopy(annotations[name_ann])
 
-        # change attributes in all annotations
-        for item in tmp_annotations:
-            if item in ["tags", "shapes", "tracks"]:
-                for index_elem, _ in enumerate(tmp_annotations[item]):
-                    tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
+        for item in ["tags", "shapes", "tracks"]:
+            for _element in tmp_annotations.get(item, []):
+                fill_all_attributes_in_element(item == "tracks", _element, task["labels"][0])
 
-                    for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
-                        spec_id = task["labels"][0]["attributes"][index_attribute]["id"]
+        return tmp_annotations
 
-                        if key_get_values == "random":
-                            if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
-                            else:
-                                value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
-                        elif key_get_values == "default":
-                            value = attribute["default_value"]
-
-                        if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
-                    elements = tmp_annotations[item][index_elem].get("elements", [])
-                    labels = task["labels"][0].get("sublabels", [])
-                    for element, label in zip(elements, labels):
-                        element["label_id"] = label["id"]
-
-                        for index_attribute, attribute in enumerate(label["attributes"]):
-                            spec_id = label["attributes"][index_attribute]["id"]
-
-                            if key_get_values == "random":
-                                if attribute["input_type"] == "number":
-                                    start = int(attribute["values"][0])
-                                    stop = int(attribute["values"][1]) + 1
-                                    step = int(attribute["values"][2])
-                                    value = str(random.randrange(start, stop, step))
-                                else:
-                                    value = random.choice(label["attributes"][index_attribute]["values"])
-                            elif key_get_values == "default":
-                                value = attribute["default_value"]
-
-                            if item == "tracks" and attribute["mutable"]:
-                                for index_shape, _ in enumerate(element["shapes"]):
-                                    element["shapes"][index_shape]["attributes"].append({
-                                        "spec_id": spec_id,
-                                        "value": value,
-                                    })
-                            else:
-                                element["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
+    def _create_annotations(self, task, name_ann, key_get_values):
+        tmp_annotations = self._make_annotations_for_task(task, name_ann, key_get_values)
         response = self._put_api_v2_task_id_annotations(task["id"], tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def _create_annotations_in_job(self, task, job_id,  name_ann, key_get_values):
-        tmp_annotations = copy.deepcopy(annotations[name_ann])
-
-        # change attributes in all annotations
-        for item in tmp_annotations:
-            if item in ["tags", "shapes", "tracks"]:
-                for index_elem, _ in enumerate(tmp_annotations[item]):
-                    tmp_annotations[item][index_elem]["label_id"] = task["labels"][0]["id"]
-
-                    for index_attribute, attribute in enumerate(task["labels"][0]["attributes"]):
-                        spec_id = task["labels"][0]["attributes"][index_attribute]["id"]
-
-                        if key_get_values == "random":
-                            if attribute["input_type"] == "number":
-                                start = int(attribute["values"][0])
-                                stop = int(attribute["values"][1]) + 1
-                                step = int(attribute["values"][2])
-                                value = str(random.randrange(start, stop, step))
-                            else:
-                                value = random.choice(task["labels"][0]["attributes"][index_attribute]["values"])
-                        elif key_get_values == "default":
-                            value = attribute["default_value"]
-
-                        if item == "tracks" and attribute["mutable"]:
-                            for index_shape, _ in enumerate(tmp_annotations[item][index_elem]["shapes"]):
-                                tmp_annotations[item][index_elem]["shapes"][index_shape]["attributes"].append({
-                                    "spec_id": spec_id,
-                                    "value": value,
-                                })
-                        else:
-                            tmp_annotations[item][index_elem]["attributes"].append({
-                                "spec_id": spec_id,
-                                "value": value,
-                            })
+        tmp_annotations = self._make_annotations_for_task(task, name_ann, key_get_values)
         response = self._put_api_v2_job_id_annotations(job_id, tmp_annotations)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.json())
 
     def _download_file(self, url, data, user, file_name):
         response = self._get_request_with_data(url, data, user)
@@ -394,6 +373,13 @@ class _DbTestBase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
+    @staticmethod
+    def _save_file_from_response(response, file_name):
+        if response.status_code == status.HTTP_200_OK:
+            content = b"".join(response.streaming_content)
+            with open(file_name, "wb") as f:
+                f.write(content)
+
 
 class TaskDumpUploadTest(_DbTestBase):
     def test_api_v2_dump_and_upload_annotations_with_objects_type_is_shape(self):
@@ -431,14 +417,8 @@ class TaskDumpUploadTest(_DbTestBase):
                     else:
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
-                    if dump_format_name in [
-                        "Cityscapes 1.0", "Datumaro 1.0",
-                        "ImageNet 1.0", "MOTS PNG 1.0",
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "VGGFace2 1.0",
-                        "WiderFace 1.0", "YOLO 1.1",
-                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                        "Datumaro 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -447,7 +427,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
 
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -464,10 +444,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
             # Upload annotations with objects type is shape
@@ -543,14 +520,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], video)
                     task_id = task["id"]
 
-                    if dump_format_name in [
-                            "Cityscapes 1.0", "ImageNet 1.0",
-                            "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                            "Segmentation mask 1.1",
-                            "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1",
-                            "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                            "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
-                    ]:
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
                         self._create_annotations(task, dump_format_name, "random")
@@ -558,7 +528,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_dump_tasks_annotations(task_id)
 
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -575,10 +545,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
             # Upload annotations with objects type is track
             for upload_format in upload_formats:
@@ -646,7 +613,7 @@ class TaskDumpUploadTest(_DbTestBase):
             for user, edata in list(expected.items()):
                 with self.subTest(format=f"{edata['name']}"):
                     with TestDir() as test_dir:
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         url = self._generate_url_dump_tasks_annotations(task_id)
@@ -665,10 +632,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata['code'])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
     def test_api_v2_dump_and_upload_annotations_with_objects_are_different_images(self):
@@ -891,7 +855,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     # dump annotations
                     url = self._generate_url_dump_task_dataset(task_id)
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
@@ -908,10 +872,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         }
                         response = self._get_request_with_data(url, data, user)
                         self.assertEqual(response.status_code, edata["code"])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -993,13 +954,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
 
-                    if dump_format_name in [
-                        "MOT 1.1", "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "YOLO 1.1", "ImageNet 1.0",
-                        "WiderFace 1.0", "VGGFace2 1.0",
-                        "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0",
-                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                        "MOT 1.1", "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1109,14 +1065,9 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
 
                     # create annotations
-                    if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0",
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "YOLO 1.1", "ImageNet 1.0",
-                        "WiderFace 1.0", "VGGFace2 1.0", "LFW 1.0",
+                    if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                        "MOT 1.1", "LFW 1.0",
                         "Open Images V6 1.0", "Datumaro 1.0", "KITTI 1.0",
-                        "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0",
-                        "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0",
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1289,6 +1240,49 @@ class TaskDumpUploadTest(_DbTestBase):
                     # equals annotations
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(data_from_task_before_upload, data_from_task_after_upload)
+
+    def test_api_v2_check_skeleton_tracks_with_missing_shapes(self):
+        test_name = self._testMethodName
+        format_name = "COCO Keypoints 1.0"
+
+        # create task with annotations
+        for whole_task in (False, True):
+            for name_ann in [
+                "many jobs skeleton tracks with missing shapes",
+                "many jobs skeleton tracks with missing shapes - skeleton is outside",
+                "many jobs skeleton tracks with missing shapes - some points present",
+            ]:
+                with self.subTest():
+                    images = self._generate_task_images(25)
+                    task = self._create_task(tasks['many jobs skeleton'], images)
+                    task_id = task["id"]
+
+                    if whole_task:
+                        self._create_annotations(task, name_ann, "default")
+                    else:
+                        job_id = next(
+                            job["id"]
+                            for job in self._get_jobs(task_id)
+                            if job["start_frame"] == annotations[name_ann]["tracks"][0]["frame"]
+                        )
+                        self._create_annotations_in_job(task, job_id, name_ann, "default")
+
+                    # dump annotations
+                    url = self._generate_url_dump_tasks_annotations(task_id)
+                    data = {"format": format_name}
+                    with TestDir() as test_dir:
+                        file_zip_name = osp.join(test_dir, f'{test_name}_{format_name}.zip')
+                        self._download_file(url, data, self.admin, file_zip_name)
+                        self._check_downloaded_file(file_zip_name)
+
+                        # remove annotations
+                        self._remove_annotations(url, self.admin)
+
+                        # upload annotations
+                        url = self._generate_url_upload_tasks_annotations(task_id, format_name)
+                        with open(file_zip_name, 'rb') as binary_file:
+                            self._upload_file(url, binary_file, self.admin)
+
 
 class ExportBehaviorTest(_DbTestBase):
     @define
@@ -1691,9 +1685,7 @@ class ExportBehaviorTest(_DbTestBase):
                 response = self._get_request_with_data(download_url, download_params, self.admin)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-                content = BytesIO(b"".join(response.streaming_content))
-                with open(osp.join(temp_dir, "export.zip"), "wb") as f:
-                    f.write(content.getvalue())
+                self._save_file_from_response(response, osp.join(temp_dir, "export.zip"))
 
                 mock_osp_exists.assert_called()
 
@@ -2052,6 +2044,22 @@ class ExportBehaviorTest(_DbTestBase):
 
 
 class ProjectDumpUpload(_DbTestBase):
+    def _get_download_project_dataset_response(self, url, user, dump_format_name, edata):
+        data = {
+            "format": dump_format_name,
+        }
+        response = self._get_request_with_data(url, data, user)
+        self.assertEqual(response.status_code, edata["accept code"])
+
+        response = self._get_request_with_data(url, data, user)
+        self.assertEqual(response.status_code, edata["create code"])
+
+        data = {
+            "format": dump_format_name,
+            "action": "download",
+        }
+        return self._get_request_with_data(url, data, user)
+
     def test_api_v2_export_import_dataset(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
@@ -2086,43 +2094,21 @@ class ProjectDumpUpload(_DbTestBase):
 
                 url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
 
-                if dump_format_name in [
-                    "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
-                    "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                    "Segmentation mask 1.1", "VGGFace2 1.0",
-                    "WiderFace 1.0", "YOLO 1.1", "YOLOv8 Detection 1.0",
+                if dump_format_name in DEFAULT_ATTRIBUTES_FORMATS + [
+                    "Datumaro 1.0", "MOT 1.1",
                 ]:
                     self._create_annotations(task, dump_format_name, "default")
                 else:
                     self._create_annotations(task, dump_format_name, "random")
 
                 for user, edata in list(expected.items()):
-                    self._clear_rq_jobs() # clean up from previous tests and iterations
+                    self._clear_temp_data() # clean up from previous tests and iterations
 
                     user_name = edata['name']
                     file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                    data = {
-                        "format": dump_format_name,
-                    }
-
-                    response = self._get_request_with_data(url, data, user)
-                    self.assertEqual(response.status_code, edata["accept code"])
-
-                    response = self._get_request_with_data(url, data, user)
-                    self.assertEqual(response.status_code, edata["create code"])
-
-                    data = {
-                        "format": dump_format_name,
-                        "action": "download",
-                    }
-                    response = self._get_request_with_data(url, data, user)
+                    response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
                     self.assertEqual(response.status_code, edata["code"])
-
-                    if response.status_code == status.HTTP_200_OK:
-                        content = BytesIO(b"".join(response.streaming_content))
-                        with open(file_zip_name, "wb") as f:
-                            f.write(content.getvalue())
-
+                    self._save_file_from_response(response, file_zip_name)
                     self.assertEqual(response.status_code, edata['code'])
                     self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
@@ -2179,26 +2165,67 @@ class ProjectDumpUpload(_DbTestBase):
                     url = self._generate_url_dump_project_annotations(project['id'], dump_format_name)
 
                     for user, edata in list(expected.items()):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         user_name = edata['name']
                         file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
-                        data = {
-                            "format": dump_format_name,
-                        }
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["accept code"])
-                        response = self._get_request_with_data(url, data, user)
-                        self.assertEqual(response.status_code, edata["create code"])
-                        data = {
-                            "format": dump_format_name,
-                            "action": "download",
-                        }
-                        response = self._get_request_with_data(url, data, user)
+                        response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
                         self.assertEqual(response.status_code, edata["code"])
-                        if response.status_code == status.HTTP_200_OK:
-                            content = BytesIO(b"".join(response.streaming_content))
-                            with open(file_zip_name, "wb") as f:
-                                f.write(content.getvalue())
+                        self._save_file_from_response(response, file_zip_name)
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
+
+    def test_api_v2_dump_upload_annotations_with_objects_type_is_track(self):
+        test_name = self._testMethodName
+        upload_format_name = dump_format_name = "COCO Keypoints 1.0"
+        user = self.admin
+        edata = {'name': 'admin', 'code': status.HTTP_200_OK, 'create code': status.HTTP_201_CREATED,
+                         'accept code': status.HTTP_202_ACCEPTED, 'file_exists': True, 'annotation_loaded': True}
+
+        with TestDir() as test_dir:
+            # Dump annotations with objects type is track
+            # create task with annotations
+            project_dict = copy.deepcopy(projects['main'])
+            task_dict = copy.deepcopy(tasks[dump_format_name])
+            project_dict["labels"] = task_dict["labels"]
+            del task_dict["labels"]
+            for label in project_dict["labels"]:
+                label["attributes"] = [{
+                    "name": "is_crowd",
+                    "mutable": False,
+                    "input_type": "checkbox",
+                    "default_value": "false",
+                    "values": ["false", "true"]
+                }]
+            project = self._create_project(project_dict)
+            pid = project['id']
+            video = self._generate_task_videos(1)
+            task_dict['project_id'] = pid
+            task = self._create_task(task_dict, video)
+            task_id = task["id"]
+            self._create_annotations(task, "skeleton track", "default")
+            # dump annotations
+            url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
+
+            self._clear_rq_jobs()  # clean up from previous tests and iterations
+
+            file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')
+            response = self._get_download_project_dataset_response(url, user, dump_format_name, edata)
+            self.assertEqual(response.status_code, edata['code'])
+            self._save_file_from_response(response, file_zip_name)
+            self.assertEqual(osp.exists(file_zip_name), True)
+
+            data_from_task_before_upload = self._get_data_from_task(task_id, True)
+
+            # Upload annotations with objects type is track
+            project = self._create_project(project_dict)
+            url = self._generate_url_upload_project_dataset(project["id"], upload_format_name)
+
+            with open(file_zip_name, 'rb') as binary_file:
+                response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+            # equals annotations
+            new_task = self._get_tasks(project["id"])[0]
+            data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
+            compare_datasets(data_from_task_before_upload, data_from_task_after_upload)

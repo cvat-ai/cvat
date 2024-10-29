@@ -17,11 +17,12 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
 } from 'cvat-core/src/server-response-types';
+import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings from 'cvat-core/src/quality-settings';
+import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
@@ -35,12 +36,13 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
+import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
-import { Request } from 'cvat-core/src/request';
+import { Request, RequestOperation } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
 
@@ -91,6 +93,7 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
+    TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
@@ -104,6 +107,8 @@ export {
     ActionParameterType,
     FrameSelectionType,
     Request,
+    JobValidationLayout,
+    TaskValidationLayout,
 };
 
 export type {
@@ -116,4 +121,6 @@ export type {
     CVATCore,
     SerializedAPISchema,
     ProjectOrTaskOrJob,
+    RequestOperation,
+    UpdateStatusData,
 };

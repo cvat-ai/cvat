@@ -5,27 +5,31 @@
 
 from __future__ import annotations
 
+import datetime
 import os
 import re
 import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, ClassVar, Collection, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
-from django.db.models.fields import FloatField
 from django.db.models import Q, TextChoices
+from django.db.models.fields import FloatField
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
-from cvat.apps.engine.lazy_list import LazyList
 
-from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
+from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.model_utils import MaybeUndefined
+from cvat.apps.engine.utils import chunked_list, parse_specific_attributes
 from cvat.apps.events.utils import cache_deleted
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -173,6 +177,7 @@ class JobType(str, Enum):
 
 class JobFrameSelectionMethod(str, Enum):
     RANDOM_UNIFORM = 'random_uniform'
+    RANDOM_PER_JOB = 'random_per_job'
     MANUAL = 'manual'
 
     @classmethod
@@ -219,7 +224,61 @@ class FloatArrayField(AbstractArrayField):
 class IntArrayField(AbstractArrayField):
     converter = int
 
+class ValidationMode(str, Enum):
+    GT = "gt"
+    GT_POOL = "gt_pool"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class ValidationParams(models.Model):
+    task_data = models.OneToOneField(
+        'Data', on_delete=models.CASCADE, related_name="validation_params"
+    )
+
+    mode = models.CharField(max_length=32, choices=ValidationMode.choices())
+
+    frame_selection_method = models.CharField(
+        max_length=32, choices=JobFrameSelectionMethod.choices()
+    )
+    random_seed = models.IntegerField(null=True)
+
+    frames: models.manager.RelatedManager[ValidationFrame]
+    frame_count = models.IntegerField(null=True)
+    frame_share = models.FloatField(null=True)
+    frames_per_job_count = models.IntegerField(null=True)
+    frames_per_job_share = models.FloatField(null=True)
+
+class ValidationFrame(models.Model):
+    validation_params = models.ForeignKey(
+        ValidationParams, on_delete=models.CASCADE, related_name="frames"
+    )
+    path = models.CharField(max_length=1024, default='')
+
+class ValidationLayout(models.Model):
+    "Represents validation configuration in a task"
+
+    task_data = models.OneToOneField(
+        'Data', on_delete=models.CASCADE, related_name="validation_layout"
+    )
+
+    mode = models.CharField(max_length=32, choices=ValidationMode.choices())
+
+    frames_per_job_count = models.IntegerField(null=True)
+
+    frames = IntArrayField(store_sorted=True, unique_values=True)
+    "Stores task frame numbers of the validation frames"
+
+    disabled_frames = IntArrayField(store_sorted=True, unique_values=True)
+    "Stores task frame numbers of the disabled (deleted) validation frames"
+
 class Data(models.Model):
+    MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
+
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
     image_quality = models.PositiveSmallIntegerField(default=50)
@@ -235,6 +294,20 @@ class Data(models.Model):
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
+
+    images: models.manager.RelatedManager[Image]
+    video: MaybeUndefined[Video]
+    related_files: models.manager.RelatedManager[RelatedFile]
+    validation_layout: MaybeUndefined[ValidationLayout]
+
+    client_files: models.manager.RelatedManager[ClientFile]
+    server_files: models.manager.RelatedManager[ServerFile]
+    remote_files: models.manager.RelatedManager[RemoteFile]
+    validation_params: MaybeUndefined[ValidationParams]
+    """
+    Represents user-requested validation params before task is created.
+    After the task creation, 'validation_layout' is used instead.
+    """
 
     class Meta:
         default_permissions = ()
@@ -252,6 +325,13 @@ class Data(models.Model):
     def get_upload_dirname(self):
         return os.path.join(self.get_data_dirname(), "raw")
 
+    def get_raw_data_dirname(self) -> str:
+        return {
+            StorageChoice.LOCAL: self.get_upload_dirname(),
+            StorageChoice.SHARE: settings.SHARE_ROOT,
+            StorageChoice.CLOUD_STORAGE: self.get_upload_dirname(),
+        }[self.storage]
+
     def get_compressed_cache_dirname(self):
         return os.path.join(self.get_data_dirname(), "compressed")
 
@@ -259,7 +339,7 @@ class Data(models.Model):
         return os.path.join(self.get_data_dirname(), "original")
 
     @staticmethod
-    def _get_chunk_name(chunk_number, chunk_type):
+    def _get_chunk_name(segment_id: int, chunk_number: int, chunk_type: DataChoice | str) -> str:
         if chunk_type == DataChoice.VIDEO:
             ext = 'mp4'
         elif chunk_type == DataChoice.IMAGESET:
@@ -267,27 +347,24 @@ class Data(models.Model):
         else:
             ext = 'list'
 
-        return '{}.{}'.format(chunk_number, ext)
+        return 'segment_{}-{}.{}'.format(segment_id, chunk_number, ext)
 
-    def _get_compressed_chunk_name(self, chunk_number):
-        return self._get_chunk_name(chunk_number, self.compressed_chunk_type)
+    def _get_compressed_chunk_name(self, segment_id: int, chunk_number: int) -> str:
+        return self._get_chunk_name(segment_id, chunk_number, self.compressed_chunk_type)
 
-    def _get_original_chunk_name(self, chunk_number):
-        return self._get_chunk_name(chunk_number, self.original_chunk_type)
+    def _get_original_chunk_name(self, segment_id: int, chunk_number: int) -> str:
+        return self._get_chunk_name(segment_id, chunk_number, self.original_chunk_type)
 
-    def get_original_chunk_path(self, chunk_number):
+    def get_original_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
         return os.path.join(self.get_original_cache_dirname(),
-            self._get_original_chunk_name(chunk_number))
+            self._get_original_chunk_name(segment_id, chunk_number))
 
-    def get_compressed_chunk_path(self, chunk_number):
+    def get_compressed_segment_chunk_path(self, chunk_number: int, segment_id: int) -> str:
         return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_compressed_chunk_name(chunk_number))
+            self._get_compressed_chunk_name(segment_id, chunk_number))
 
-    def get_manifest_path(self):
-        return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
-
-    def get_index_path(self):
-        return os.path.join(self.get_upload_dirname(), 'index.json')
+    def get_manifest_path(self) -> str:
+        return os.path.join(self.get_upload_dirname(), self.MANIFEST_FILENAME)
 
     def make_dirs(self):
         data_path = self.get_data_dirname()
@@ -296,6 +373,22 @@ class Data(models.Model):
         os.makedirs(self.get_compressed_cache_dirname())
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
+
+    @transaction.atomic
+    def update_validation_layout(
+        self, validation_layout: Optional[ValidationLayout]
+    ) -> Optional[ValidationLayout]:
+        if validation_layout:
+            validation_layout.task_data = self
+            validation_layout.save()
+
+        ValidationParams.objects.filter(task_data_id=self.id).delete()
+
+        return validation_layout
+
+    @property
+    def validation_mode(self) -> Optional[ValidationMode]:
+        return getattr(getattr(self, 'validation_layout', None), 'mode', None)
 
 
 class Video(models.Model):
@@ -314,6 +407,9 @@ class Image(models.Model):
     frame = models.PositiveIntegerField()
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
+    is_placeholder = models.BooleanField(default=False)
+    real_frame = models.PositiveIntegerField(default=0)
+    related_files: models.manager.RelatedManager[RelatedFile]
 
     class Meta:
         default_permissions = ()
@@ -448,6 +544,8 @@ class Task(TimestampedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    segment_set: models.manager.RelatedManager[Segment]
+
     # Extend default permission model
     class Meta:
         default_permissions = ()
@@ -515,6 +613,11 @@ class Task(TimestampedModel):
             clear_annotations_in_jobs(job_ids)
         super().delete(using, keep_parents)
 
+    def get_chunks_updated_date(self) -> datetime.datetime:
+        return self.segment_set.aggregate(
+            chunks_updated_date=models.Max('chunks_updated_date')
+        )['chunks_updated_date']
+
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
 class MyFileSystemStorage(FileSystemStorage):
@@ -575,7 +678,7 @@ class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
     path = models.FileField(upload_to=upload_path_handler,
                             max_length=1024, storage=MyFileSystemStorage())
-    primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
+    images = models.ManyToManyField(Image, related_name="related_files")
 
     class Meta:
         default_permissions = ()
@@ -600,14 +703,16 @@ class SegmentType(str, Enum):
 
 class Segment(models.Model):
     # Common fields
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE) # TODO: add related name
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
+    chunks_updated_date = models.DateTimeField(null=False, auto_now_add=True)
     type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
 
-    # TODO: try to reuse this field for custom task segments (aka job_file_mapping)
     # SegmentType.SPECIFIC_FRAMES fields
     frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
+
+    job_set: models.manager.RelatedManager[Job]
 
     def contains_frame(self, idx: int) -> bool:
         return idx in self.frame_set
@@ -617,7 +722,7 @@ class Segment(models.Model):
         return len(self.frame_set)
 
     @property
-    def frame_set(self) -> Sequence[int]:
+    def frame_set(self) -> Collection[int]:
         data = self.task.data
         data_start_frame = data.start_frame
         data_stop_frame = data.stop_frame
@@ -774,21 +879,6 @@ class Job(TimestampedModel):
 
     class Meta:
         default_permissions = ()
-
-    @transaction.atomic
-    def save(self, *args, **kwargs) -> None:
-        self.full_clean()
-        return super().save(*args, **kwargs)
-
-    def clean(self) -> None:
-        if not (self.type == JobType.GROUND_TRUTH) ^ (self.segment.type == SegmentType.RANGE):
-            raise ValidationError(
-                f"job type == {JobType.GROUND_TRUTH} and "
-                f"segment type == {SegmentType.SPECIFIC_FRAMES} "
-                "can only be used together"
-            )
-
-        return super().clean()
 
     @cache_deleted
     @transaction.atomic(savepoint=False)
@@ -1003,9 +1093,16 @@ class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
+    has_analytics_access = models.BooleanField(
+        _("has access to analytics"),
+        default=False,
+        help_text=_("Designates whether the user can access analytics."),
+    )
+
 
 class Issue(TimestampedModel):
     frame = models.PositiveIntegerField()

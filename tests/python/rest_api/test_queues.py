@@ -18,7 +18,7 @@ from .utils import create_task
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestRQQueueWorking:
     _USER_1 = "admin1"
@@ -54,19 +54,18 @@ class TestRQQueueWorking:
             task_id, _ = create_task(username, task_spec, task_data)
             return task_id
 
-        s3_client = s3.make_client()
         cs_name = cloud_storages[cloud_storage_id]["resource"]
+        s3_client = s3.make_client(bucket=cs_name)
         dataset_size = 100
 
         img_content = generate_image_file(size=(1920, 1080)).getvalue()
 
         for i in range(dataset_size):
             filename = f"dataset/image_{i}.jpeg"
-            s3_client.create_file(bucket=cs_name, filename=filename, data=img_content)
+            s3_client.create_file(filename=filename, data=img_content)
             request.addfinalizer(
                 partial(
                     s3_client.remove_file,
-                    bucket=cs_name,
                     filename=filename,
                 )
             )

@@ -96,12 +96,20 @@ def pytest_addoption(parser):
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
     try:
+        logger.debug(f"Executing a command: {_command}")
+
         stdout, stderr = "", ""
         if capture_output:
             proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
             proc = run(_command)  # nosec
+
+        if stdout:
+            logger.debug(f"Output (stdout): {stdout}")
+        if stderr:
+            logger.debug(f"Output (stderr): {stderr}")
+
         return stdout, stderr
     except CalledProcessError as exc:
         message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
@@ -231,21 +239,41 @@ def kube_restore_clickhouse_db():
     )
 
 
+def _get_redis_inmem_keys_to_keep():
+    return ("rq:worker:", "rq:workers", "rq:scheduler_instance:", "rq:queues:")
+
+
 def docker_restore_redis_inmem():
-    docker_exec_redis_inmem(["redis-cli", "flushall"])
+    docker_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            'redis-cli -e --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            "xargs -r redis-cli -e del",
+        ]
+    )
 
 
 def kube_restore_redis_inmem():
-    kube_exec_redis_inmem(["redis-cli", "flushall"])
+    kube_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            'redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del',
+        ]
+    )
 
 
 def docker_restore_redis_ondisk():
-    docker_exec_redis_ondisk(["redis-cli", "-p", "6666", "flushall"])
+    docker_exec_redis_ondisk(["redis-cli", "-e", "-p", "6666", "flushall"])
 
 
 def kube_restore_redis_ondisk():
     kube_exec_redis_ondisk(
-        ["redis-cli", "-p", "6666", "-a", "${CVAT_REDIS_ONDISK_PASSWORD}", "flushall"]
+        ["sh", "-c", 'redis-cli -e -p 6666 -a "${CVAT_REDIS_ONDISK_PASSWORD}" flushall']
     )
 
 
@@ -551,7 +579,16 @@ def restore_db_per_class(request):
 
 
 @pytest.fixture(scope="function")
-def restore_cvat_data(request):
+def restore_cvat_data_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_data_volumes()
+    else:
+        kube_restore_data_volumes()
+
+
+@pytest.fixture(scope="class")
+def restore_cvat_data_per_class(request):
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_data_volumes()
@@ -592,8 +629,37 @@ def restore_redis_inmem_per_function(request):
         kube_restore_redis_inmem()
 
 
+@pytest.fixture(scope="class")
+def restore_redis_inmem_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_inmem()
+    else:
+        kube_restore_redis_inmem()
+
+
 @pytest.fixture(scope="function")
 def restore_redis_ondisk_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_after_class(request):
+    yield
+
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()

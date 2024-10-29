@@ -55,7 +55,7 @@ const componentShortcuts = {
         name: 'Cancel skeleton drawing',
         description: 'Interrupts drawing a new skeleton edge',
         sequences: ['esc'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.LABELS_EDITOR,
     },
 };
 

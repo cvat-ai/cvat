@@ -17,10 +17,12 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { RQStatus } from 'cvat-core-wrapper';
 
 interface OwnProps {
     taskInstance: any;
     onViewAnalytics: () => void;
+    onViewQualityControl: () => void;
 }
 
 interface StateToProps {
@@ -45,9 +47,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         formats: { annotationFormats },
     } = state;
 
+    const inference = state.models.inferences[tid];
+
     return {
         annotationFormats,
-        inferenceIsActive: tid in state.models.inferences,
+        inferenceIsActive: inference &&
+            ![RQStatus.FAILED, RQStatus.FINISHED].includes(inference.status),
     };
 }
 
@@ -86,6 +91,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         openRunModelWindow,
         openMoveTaskToProjectWindow,
         onViewAnalytics,
+        onViewQualityControl,
     } = props;
     const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
@@ -105,6 +111,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             showImportModal(taskInstance);
         } else if (action === Actions.VIEW_ANALYTICS) {
             onViewAnalytics();
+        } else if (action === Actions.QUALITY_CONTROL) {
+            onViewQualityControl();
         }
     };
 

@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APITestCase
 import av
 import django_rq
 import numpy as np
@@ -92,14 +92,7 @@ def clear_rq_jobs():
 
 
 class ApiTestBase(APITestCase):
-    def _clear_rq_jobs(self):
-        clear_rq_jobs()
-
-    def setUp(self):
-        super().setUp()
-        self.client = APIClient()
-
-    def tearDown(self):
+    def _clear_temp_data(self):
         # Clear server frame/chunk cache.
         # The parent class clears DB changes, and it can lead to under-cleaned task data,
         # which can affect other tests.
@@ -112,7 +105,14 @@ class ApiTestBase(APITestCase):
         # Clear any remaining RQ jobs produced by the tests executed
         self._clear_rq_jobs()
 
-        return super().tearDown()
+    def _clear_rq_jobs(self):
+        clear_rq_jobs()
+
+    def setUp(self):
+        self._clear_temp_data()
+
+        super().setUp()
+        self.client = self.client_class()
 
 
 def generate_image_file(filename, size=(100, 100)):

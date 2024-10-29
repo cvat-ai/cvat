@@ -31,7 +31,6 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
-    deleteFrameAvailable: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<HTMLInputElement>;
@@ -50,14 +49,14 @@ const componentShortcuts = {
         name: 'Delete frame',
         description: 'Delete frame',
         sequences: ['alt+del'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
     FOCUS_INPUT_FRAME: {
         name: 'Focus input frame',
         description: 'Focus on the element to change the current frame',
         sequences: ['`'],
         displayedSequences: ['~'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
 
@@ -77,7 +76,6 @@ function PlayerNavigation(props: Props): JSX.Element {
         ranges,
         keyMap,
         workspace,
-        deleteFrameAvailable,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -169,17 +167,14 @@ function PlayerNavigation(props: Props): JSX.Element {
                         {!!ranges && (
                             <svg className='cvat-player-slider-progress' viewBox='0 0 1000 16' xmlns='http://www.w3.org/2000/svg'>
                                 {ranges.split(';').map((range) => {
-                                    const [start, end] = range.split(':').map((num) => +num);
-                                    const adjustedStart = Math.max(0, start - 1);
-                                    let totalSegments = stopFrame - startFrame;
-                                    if (totalSegments === 0) {
-                                        // corner case for jobs with one image
-                                        totalSegments = 1;
-                                    }
+                                    const [rangeStart, rangeStop] = range.split(':').map((num) => +num);
+                                    const totalSegments = stopFrame - startFrame + 1;
                                     const segmentWidth = 1000 / totalSegments;
-                                    const width = Math.max((end - adjustedStart), 1) * segmentWidth;
-                                    const offset = (Math.max((adjustedStart - startFrame), 0) / totalSegments) * 1000;
-                                    return (<rect rx={10} key={start} x={offset} y={0} height={16} width={width} />);
+                                    const width = (rangeStop - rangeStart + 1) * segmentWidth;
+                                    const offset = (Math.max((rangeStart - startFrame), 0) / totalSegments) * 1000;
+                                    return (
+                                        <rect rx={10} key={rangeStart} x={offset} y={0} height={16} width={width} />
+                                    );
                                 })}
                             </svg>
                         )}
@@ -195,9 +190,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
-                        {
-                            deleteFrameAvailable && deleteFrameIcon
-                        }
+                        { deleteFrameIcon }
                     </Col>
                 </Row>
             </Col>

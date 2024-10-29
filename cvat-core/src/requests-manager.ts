@@ -74,7 +74,7 @@ class RequestsManager {
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = async (): Promise<void> => {
                 // We make sure that no more than REQUESTS_COUNT requests are sent simultaneously
-                // If thats the case, we re-schedule the timeout
+                // If that's the case, we re-schedule the timeout
                 const timestamp = Date.now();
                 if (this.requestStack.length >= REQUESTS_COUNT) {
                     const timestampToCheck = this.requestStack[this.requestStack.length - 1];
@@ -122,14 +122,15 @@ class RequestsManager {
                     }
                 } catch (error) {
                     if (requestID in this.listening) {
-                        const { onUpdate } = this.listening[requestID];
-
-                        onUpdate
-                            .forEach((update) => update(new Request({
-                                id: requestID,
-                                status: RQStatus.FAILED,
-                                message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                            })));
+                        const { onUpdate, request } = this.listening[requestID];
+                        if (request) {
+                            onUpdate
+                                .forEach((update) => update(new Request({
+                                    ...request.toJSON(),
+                                    status: RQStatus.FAILED,
+                                    message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                                })));
+                        }
                         reject(error);
                     }
                 }

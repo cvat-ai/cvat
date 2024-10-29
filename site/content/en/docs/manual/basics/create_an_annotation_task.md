@@ -37,6 +37,7 @@ And specify the following parameters:
 2. (Optional) From the **Projects** drop-down, select a project for the new task.
    <br>Leave this field empty if you do not want to assign the task to any project.
 
+   <!-- TODO: replace the image with '/images/select_project.png' after updating screenshots -->
    ![Select project](/images/image193.jpg)
 
    > **Note:** Following steps are valid if the task does not belong to a project.

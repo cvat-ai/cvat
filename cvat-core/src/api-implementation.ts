@@ -37,9 +37,10 @@ import {
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
-import { FramesMetaData } from './frames';
+import { getFramesMeta } from './frames';
 import AnalyticsReport from './analytics-report';
 import { listActions, registerAction, runActions } from './annotations-actions';
+import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
@@ -142,7 +143,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return result;
     });
 
-    implementationMixin(cvat.server.apiSchema, serverProxy.server.apiSchema);
+    implementationMixin(cvat.server.apiSchema, async () => {
+        const result = await getServerAPISchema();
+        return result;
+    });
 
     implementationMixin(cvat.assets.create, async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
@@ -514,7 +518,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(filter);
 
         const settings = await serverProxy.analytics.quality.settings.get(params);
-        return new QualitySettings({ ...settings });
+        const schema = await getServerAPISchema();
+        const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+
+        return new QualitySettings({ ...settings, descriptions });
     });
     implementationMixin(cvat.analytics.performance.reports, async (filter: AnalyticsReportFilter) => {
         checkFilter(filter, {
@@ -549,12 +556,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(body);
         await serverProxy.analytics.performance.calculate(params, onUpdate);
     });
-    implementationMixin(cvat.frames.getMeta, async (type, id) => {
-        const result = await serverProxy.frames.getMeta(type, id);
-        return new FramesMetaData({
-            ...result,
-            deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
-        });
+    implementationMixin(cvat.frames.getMeta, async (type: 'job' | 'task', id: number) => {
+        const result = await getFramesMeta(type, id);
+        return result;
     });
 
     return cvat;

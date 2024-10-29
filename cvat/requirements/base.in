@@ -1,12 +1,18 @@
 -r ../../utils/dataset_manifest/requirements.in
 
 attrs==21.4.0
+
+# This is the last version of av that supports ffmpeg we depend on.
+# Changing ffmpeg is undesirable, as there might be video decoding differences
+# between versions.
+# TODO: try to move to the newer version
 av==9.2.0
+
 azure-storage-blob==12.13.0
 boto3==1.17.61
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@125840fc6b28875cce4c85626a5c36bb9e0d2a83
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@e612d1bfb76a3c3d3d545187338c841a246619fb
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)

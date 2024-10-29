@@ -16,12 +16,17 @@ import Project from './project';
 import implementProject from './project-implementation';
 import { Attribute, Label } from './labels';
 import MLModel from './ml-model';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction from './annotations-actions';
+import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
+import AnalyticsReport from './analytics-report';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 
 import * as enums from './enums';
@@ -416,6 +421,14 @@ function build(): CVATCore {
             Webhook,
             AnnotationGuide,
             BaseSingleFrameAction,
+            QualitySettings,
+            AnalyticsReport,
+            QualityConflict,
+            QualityReport,
+            Request,
+            FramesMetaData,
+            JobValidationLayout,
+            TaskValidationLayout,
         },
         utils: {
             mask2Rle,

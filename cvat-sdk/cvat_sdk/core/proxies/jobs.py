@@ -12,12 +12,12 @@ from typing import TYPE_CHECKING, List, Optional, Sequence
 from PIL import Image
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.issues import Issue
 from cvat_sdk.core.proxies.model_proxy import (
+    ExportDatasetMixin,
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
@@ -38,6 +38,7 @@ class Job(
     _JobEntityBase,
     ModelUpdateMixin[models.IPatchedJobWriteRequest],
     AnnotationCrudMixin,
+    ExportDatasetMixin,
 ):
     _model_partial_update_arg = "patched_job_write_request"
     _put_annotations_data_param = "job_annotations_update_request"
@@ -66,37 +67,6 @@ class Job(
         )
 
         self._client.logger.info(f"Annotation file '{filename}' for job #{self.id} uploaded")
-
-    def export_dataset(
-        self,
-        format_name: str,
-        filename: StrPath,
-        *,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
-        include_images: bool = True,
-    ) -> None:
-        """
-        Download annotations for a job in the specified format (e.g. 'YOLO ZIP 1.0').
-        """
-
-        filename = Path(filename)
-
-        if include_images:
-            endpoint = self.api.retrieve_dataset_endpoint
-        else:
-            endpoint = self.api.retrieve_annotations_endpoint
-
-        Downloader(self._client).prepare_and_download_file_from_endpoint(
-            endpoint=endpoint,
-            filename=filename,
-            url_params={"id": self.id},
-            query_params={"format": format_name},
-            pbar=pbar,
-            status_check_period=status_check_period,
-        )
-
-        self._client.logger.info(f"Dataset for job {self.id} has been downloaded to {filename}")
 
     def get_frame(
         self,
@@ -164,9 +134,11 @@ class Job(
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
-        self._client.api_client.tasks_api.jobs_partial_update_data_meta(
+        self.api.partial_update_data_meta(
             self.id,
-            patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
+            patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                deleted_frames=ids
+            ),
         )
 
     def get_issues(self) -> List[Issue]:

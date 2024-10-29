@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import cast
-
 from django.conf import settings
 
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
@@ -42,7 +40,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
             'destroy': Scopes.DELETE,
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
         if self.obj:
@@ -109,7 +107,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
             'accept': Scopes.ACCEPT,
             'decline': Scopes.DECLINE,
             'resend': Scopes.RESEND,
-        }.get(view.action)]
+        }[view.action]]
 
     def get_resource(self):
         data = None
@@ -172,12 +170,13 @@ class MembershipPermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.UPDATE,
             'retrieve': Scopes.VIEW,
             'destroy': Scopes.DELETE,
-        }.get(view.action)
+        }[view.action]
 
         if scope == Scopes.UPDATE:
-            if request.data.get('role') != cast(Membership, obj).role:
-                scopes.append(Scopes.UPDATE_ROLE)
-        elif scope:
+            scopes.extend(__class__.get_per_field_update_scopes(request, {
+                'role': Scopes.UPDATE_ROLE,
+            }))
+        else:
             scopes.append(scope)
 
         return scopes

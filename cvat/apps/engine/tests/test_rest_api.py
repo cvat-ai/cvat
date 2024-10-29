@@ -37,7 +37,8 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datumaro.util.test_utils import current_function_name, TestDir
+from cvat.apps.dataset_manager.tests.utils import TestDir
+from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
@@ -86,6 +87,12 @@ def create_db_task(data):
     }
 
     db_data = Data.objects.create(**data_settings)
+
+    if db_data.stop_frame == 0:
+        frame_step = int((db_data.frame_filter or 'step=1').split('=')[-1])
+        db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * frame_step
+        db_data.save()
+
     shutil.rmtree(db_data.get_data_dirname(), ignore_errors=True)
     os.makedirs(db_data.get_data_dirname())
     os.makedirs(db_data.get_upload_dirname())
@@ -378,9 +385,14 @@ class JobPartialUpdateAPITestCase(ApiTestBase):
         self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
     def test_api_v2_jobs_id_admin_partial(self):
-        data = {"assignee_id": self.user.id}
-        response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
+        data = {"assignee": self.user.id}
+        response = self._run_api_v2_jobs_id(self.job.id, self.admin, data)
         self._check_request(response, data)
+
+    def test_api_v2_jobs_id_unknown_field(self):
+        data = {"foo": "bar"}
+        response = self._run_api_v2_jobs_id(self.job.id, self.admin, data)
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class JobUpdateAPITestCase(ApiTestBase):
     def setUp(self):
@@ -435,16 +447,24 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
 
     def _check_api_v1_jobs_data_meta_id(self, user, data):
         response = self._run_api_v1_jobs_data_meta_id(self.job.id, user, data)
+
         if user is None:
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        elif user == self.job.segment.task.owner or user == self.job.segment.task.assignee or user == self.job.assignee or user.is_superuser:
+        elif (
+            user == self.job.segment.task.owner or
+            user == self.job.segment.task.assignee or
+            user == self.job.assignee or
+            user.is_superuser
+        ):
             self._check_response(response, self.job.segment.task.data, data)
         else:
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_api_v1_jobss_data_meta(self):
+    def test_api_v1_jobs_data_meta(self):
         data = {
-            "deleted_frames": [1,2,3]
+            "deleted_frames": list(
+                range(self.job.segment.start_frame, self.job.segment.stop_frame + 1)
+            )
         }
         self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
@@ -618,6 +638,8 @@ class UserAPITestCase(ApiTestBase):
         extra_check("is_active", data)
         extra_check("last_login", data)
         extra_check("date_joined", data)
+        extra_check("has_analytics_access", data)
+
 
 class UserListAPITestCase(UserAPITestCase):
     def _run_api_v2_users(self, user):
@@ -652,6 +674,7 @@ class UserListAPITestCase(UserAPITestCase):
         response = self._run_api_v2_users(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
 class UserSelfAPITestCase(UserAPITestCase):
     def _run_api_v2_users_self(self, user):
         with ForceLogin(user, self.client):
@@ -678,6 +701,7 @@ class UserSelfAPITestCase(UserAPITestCase):
     def test_api_v2_users_self_no_auth(self):
         response = self._run_api_v2_users_self(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
@@ -720,6 +744,7 @@ class UserGetAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_no_auth(self):
         response = self._run_api_v2_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id, data):
@@ -766,6 +791,7 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
         data = {"username": "user12"}
         response = self._run_api_v2_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserDeleteAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
@@ -1128,6 +1154,11 @@ class ProjectPartialUpdateAPITestCase(ApiTestBase):
         }
         self._check_api_v2_projects_id(None, data)
 
+    def test_api_v2_projects_id_unknown_field(self):
+        data = {"foo": "bar"}
+        response = self._run_api_v2_projects_id(self.projects[0].id, self.admin, data)
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
+
 class UpdateLabelsAPITestCase(ApiTestBase):
     def assertLabelsEqual(self, label1, label2):
         self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
@@ -1422,7 +1453,13 @@ class ProjectBackupAPITestCase(ApiTestBase):
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
             response = cls.client.post("/api/tasks/{}/data".format(tid), data=media_data)
-            assert response.status_code == status.HTTP_202_ACCEPTED
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = cls.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
+
             response = cls.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             cls.tasks.append({
@@ -1766,6 +1803,12 @@ class ProjectImportExportAPITestCase(ApiTestBase):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
+
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             self.tasks.append({
@@ -2212,6 +2255,11 @@ class TaskPartialUpdateAPITestCase(ApiTestBase):
             }]
         }
         self._check_api_v2_tasks_id(None, data)
+
+    def test_api_v2_tasks_id_unknown_field(self):
+        data = {"foo": "bar"}
+        response = self._run_api_v2_tasks_id(self.tasks[0].id, self.admin, data)
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class TaskDataMetaPartialUpdateAPITestCase(ApiTestBase):
     @classmethod
@@ -2882,6 +2930,12 @@ class TaskImportExportAPITestCase(ApiTestBase):
                     media.seek(0)
             response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
+
             response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             self.tasks.append({
@@ -3433,7 +3487,7 @@ class TaskDataAPITestCase(ApiTestBase):
                                         expected_compressed_type,
                                         expected_original_type,
                                         expected_image_sizes,
-                                        expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
+                                        expected_storage_method=None,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
                                         dimension=DimensionType.DIM_2D,
                                         expected_task_creation_status_state='Finished',
@@ -3447,6 +3501,12 @@ class TaskDataAPITestCase(ApiTestBase):
 
         if get_status_callback is None:
             get_status_callback = self._get_task_creation_status
+
+        if expected_storage_method is None:
+            if settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
+                expected_storage_method = StorageMethodChoice.FILE_SYSTEM
+            else:
+                expected_storage_method = StorageMethodChoice.CACHE
 
         # create task
         response = self._create_task(user, spec)
@@ -4007,7 +4067,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         image_sizes = self._share_image_sizes['test_rotated_90_video.mp4']
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
-            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.FILE_SYSTEM)
+            self.ChunkType.VIDEO, image_sizes, StorageMethodChoice.CACHE)
 
     def _test_api_v2_tasks_id_data_create_can_use_chunked_cached_local_video(self, user):
         task_spec = {
@@ -4104,7 +4164,6 @@ class TaskDataAPITestCase(ApiTestBase):
 
         task_data = {
             "image_quality": 70,
-            "use_cache": True
         }
 
         manifest_name = "images_manifest_sorted.jsonl"
@@ -4115,79 +4174,34 @@ class TaskDataAPITestCase(ApiTestBase):
             for i, fn in enumerate(images + [manifest_name])
         })
 
-        for copy_data in [True, False]:
-            with self.subTest(current_function_name(), copy=copy_data):
+        for use_cache in [True, False]:
+            task_data['use_cache'] = use_cache
+
+            for copy_data in [True, False]:
+                with self.subTest(current_function_name(), copy=copy_data, use_cache=use_cache):
+                    task_spec = task_spec_common.copy()
+                    task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
+                    task_data_copy = task_data.copy()
+                    task_data_copy['copy_data'] = copy_data
+                    self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
+                        self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                        image_sizes,
+                        expected_uploaded_data_location=(
+                            StorageChoice.LOCAL if copy_data else StorageChoice.SHARE
+                        )
+                    )
+
+            with self.subTest(current_function_name() + ' file order mismatch', use_cache=use_cache):
                 task_spec = task_spec_common.copy()
-                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
-                task_data['copy_data'] = copy_data
-                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                task_spec['name'] = task_spec['name'] + f' mismatching file order'
+                task_data_copy = task_data.copy()
+                task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.CACHE,
-                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
-
-        with self.subTest(current_function_name() + ' file order mismatch'):
-            task_spec = task_spec_common.copy()
-            task_spec['name'] = task_spec['name'] + f' mismatching file order'
-            task_data_copy = task_data.copy()
-            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
-                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                expected_task_creation_status_state='Failed',
-                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
-
-        for copy_data in [True, False]:
-            with self.subTest(current_function_name(), copy=copy_data):
-                task_spec = task_spec_common.copy()
-                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
-                task_data['copy_data'] = copy_data
-                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
-                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.CACHE,
-                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
-
-        with self.subTest(current_function_name() + ' file order mismatch'):
-            task_spec = task_spec_common.copy()
-            task_spec['name'] = task_spec['name'] + f' mismatching file order'
-            task_data_copy = task_data.copy()
-            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
-                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                expected_task_creation_status_state='Failed',
-                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
-
-        for copy_data in [True, False]:
-            with self.subTest(current_function_name(), copy=copy_data):
-                task_spec = task_spec_common.copy()
-                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
-                task_data['copy_data'] = copy_data
-                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
-                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.CACHE,
-                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
-
-        with self.subTest(current_function_name() + ' file order mismatch'):
-            task_spec = task_spec_common.copy()
-            task_spec['name'] = task_spec['name'] + f' mismatching file order'
-            task_data_copy = task_data.copy()
-            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
-                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                expected_task_creation_status_state='Failed',
-                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
-
-        with self.subTest(current_function_name() + ' without use cache'):
-            task_spec = task_spec_common.copy()
-            task_spec['name'] = task_spec['name'] + f' manifest without cache'
-            task_data_copy = task_data.copy()
-            task_data_copy['use_cache'] = False
-            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
-                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                expected_task_creation_status_state='Failed',
-                expected_task_creation_status_reason="A manifest file can only be used with the 'use cache' option")
+                    image_sizes,
+                    expected_uploaded_data_location=StorageChoice.SHARE,
+                    expected_task_creation_status_state='Failed',
+                    expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         task_spec = {
@@ -4219,7 +4233,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 task_data = task_data_common.copy()
 
                 task_data["use_cache"] = caching_enabled
-                if caching_enabled:
+                if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                     storage_method = StorageMethodChoice.CACHE
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4278,7 +4292,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     sorting_method=SortingMethod.PREDEFINED)
 
                 task_data_common["use_cache"] = caching_enabled
-                if caching_enabled:
+                if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                     storage_method = StorageMethodChoice.CACHE
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4339,7 +4353,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 task_data = task_data_common.copy()
 
                 task_data["use_cache"] = caching_enabled
-                if caching_enabled:
+                if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                     storage_method = StorageMethodChoice.CACHE
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4412,7 +4426,7 @@ class TaskDataAPITestCase(ApiTestBase):
                         sorting_method=SortingMethod.PREDEFINED)
 
                     task_data["use_cache"] = caching_enabled
-                    if caching_enabled:
+                    if caching_enabled or not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
                         storage_method = StorageMethodChoice.CACHE
                     else:
                         storage_method = StorageMethodChoice.FILE_SYSTEM
@@ -4590,7 +4604,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL,
                     send_data_callback=_send_data)
 
         with self.subTest(current_function_name() + ' mismatching file sets - extra files'):
@@ -4604,7 +4618,7 @@ class TaskDataAPITestCase(ApiTestBase):
             with self.assertRaisesMessage(Exception, "(extra)"):
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL,
                     send_data_callback=_send_data_and_fail)
 
         with self.subTest(current_function_name() + ' mismatching file sets - missing files'):
@@ -4618,7 +4632,7 @@ class TaskDataAPITestCase(ApiTestBase):
             with self.assertRaisesMessage(Exception, "(missing)"):
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    image_sizes, expected_uploaded_data_location=StorageChoice.LOCAL,
                     send_data_callback=_send_data_and_fail)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_rar(self, user):

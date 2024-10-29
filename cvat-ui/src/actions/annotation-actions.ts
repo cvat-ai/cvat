@@ -11,8 +11,8 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job,
-    QualityConflict, ObjectState, JobState,
+    getCore, MLModel, JobType, Job, QualityConflict,
+    ObjectState, JobState, JobValidationLayout,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -38,6 +38,7 @@ interface AnnotationsParameters {
     showGroundTruth: boolean;
     jobInstance: Job;
     groundTruthInstance: Job | null;
+    validationLayout: JobValidationLayout | null;
 }
 
 const cvat = getCore();
@@ -58,7 +59,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
             player: {
                 frame: { number: frame },
             },
-            job: { instance: jobInstance, groundTruthInstance },
+            job: { instance: jobInstance, groundTruthInfo: { groundTruthInstance, validationLayout } },
         },
         settings: {
             workspace: { showAllInterpolationTracks },
@@ -71,6 +72,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
         frame,
         jobInstance: jobInstance as Job,
         groundTruthInstance,
+        validationLayout,
         showAllInterpolationTracks,
         showGroundTruth,
     };
@@ -261,8 +263,8 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     maxZ: number;
 }> {
     const {
-        filters, frame, showAllInterpolationTracks,
-        jobInstance, showGroundTruth, groundTruthInstance,
+        filters, frame, showAllInterpolationTracks, jobInstance,
+        showGroundTruth, groundTruthInstance, validationLayout,
     } = receiveAnnotationsParameters();
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
@@ -272,8 +274,16 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     if (jobInstance.type === JobType.GROUND_TRUTH) {
         states = wrapAnnotationsInGTJob(states);
     } else if (showGroundTruth && groundTruthInstance) {
-        const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
-        states.push(...gtStates);
+        let gtFrame: number | null = fetchFrame;
+
+        if (validationLayout) {
+            gtFrame = await validationLayout.getRealFrame(gtFrame);
+        }
+
+        if (gtFrame !== null) {
+            const gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, filters);
+            states.push(...gtStates);
+        }
     }
 
     const history = await jobInstance.actions.get();
@@ -364,7 +374,7 @@ export function removeAnnotationsAsync(
             dispatch(fetchAnnotationsAsync());
 
             const state = getState();
-            if (!state.annotation.job.groundTruthInstance) {
+            if (!state.annotation.job.groundTruthInfo.groundTruthInstance) {
                 getCore().config.globalObjectsCounter = 0;
             }
 
@@ -587,12 +597,13 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             const { instance: job } = state.annotation.job;
             const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
-            const { startFrame, stopFrame, dataChunkSize } = job;
+            const includedFrames = await job.frames.frameNumbers() as number[];
+            const { frameCount, dataChunkSize } = job;
 
             const ranges = chunks.map((chunk) => (
                 [
-                    Math.max(startFrame, chunk * dataChunkSize),
-                    Math.min(stopFrame, (chunk + 1) * dataChunkSize - 1),
+                    includedFrames[chunk * dataChunkSize],
+                    includedFrames[Math.min(frameCount - 1, (chunk + 1) * dataChunkSize - 1)],
                 ]
             )).reduce<Array<[number, number]>>((acc, val) => {
                 if (acc.length && acc[acc.length - 1][1] + 1 === val[0]) {
@@ -640,7 +651,7 @@ export function changeFrameAsync(
                 return;
             }
 
-            if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
+            if (!isAbleToChangeFrame(toFrame) || statisticsVisible || propagateVisible) {
                 return;
             }
 
@@ -903,9 +914,11 @@ export function getJobAsync({
                 }
             }
 
+            const jobMeta = await cvat.frames.getMeta('job', job.id);
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
-                initialFrame as number : (await job.frames.search(
+                initialFrame as number :
+                (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
 
@@ -924,9 +937,11 @@ export function getJobAsync({
             const colors = [...cvat.enums.colors];
 
             let groundTruthJobFramesMeta = null;
+            let validationLayout = null;
             if (gtJob) {
                 await gtJob.annotations.clear({ reload: true }); // fetch gt annotations from the server
                 groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
+                validationLayout = await job.validationLayout();
             }
 
             let conflicts: QualityConflict[] = [];
@@ -945,9 +960,11 @@ export function getJobAsync({
                 payload: {
                     openTime,
                     job,
+                    jobMeta,
                     queryParameters,
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
+                    validationLayout,
                     issues,
                     conflicts,
                     frameNumber,
@@ -1010,7 +1027,7 @@ export function saveAnnotationsAsync(): ThunkAction {
             dispatch(saveLogsAsync());
 
             if (jobInstance instanceof cvat.classes.Job && jobInstance.state === cvat.enums.JobState.NEW) {
-                dispatch(updateCurrentJobAsync({ state: JobState.IN_PROGRESS }));
+                await dispatch(updateCurrentJobAsync({ state: JobState.IN_PROGRESS }));
             }
 
             dispatch({
@@ -1058,10 +1075,10 @@ export function rememberObject(createParams: {
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
     activeCuboidDrawingMethod?: CuboidDrawingMethod;
-}): AnyAction {
+}, updateCurrentControl = true): AnyAction {
     return {
         type: AnnotationActionTypes.REMEMBER_OBJECT,
-        payload: createParams,
+        payload: { ...createParams, updateCurrentControl },
     };
 }
 

@@ -81,12 +81,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 const componentShortcuts = {
-    SWITCH_DRAW_MODE: {
+    SWITCH_DRAW_MODE_TAG_ANNOTATION: {
         name: 'Draw mode',
-        description:
-            'Repeat the latest procedure of drawing with the same parameters (shift to redraw an existing shape)',
-        sequences: ['shift+n', 'n'],
-        scope: ShortcutScope.ALL,
+        description: 'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+    },
+    SWITCH_REDRAW_MODE_TAG_ANNOTATION: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope.TAG_ANNOTATION_WORKSPACE,
     },
 };
 
@@ -201,7 +206,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             frameNumber + 1,
             jobInstance.stopFrame,
         );
-        if (frame !== null && isAbleToChangeFrame()) {
+        if (frame !== null && isAbleToChangeFrame(frame)) {
             changeFrame(frame);
         }
     };
@@ -230,10 +235,16 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             if (selectedLabelID !== null) {
-                onShortcutPress(event, selectedLabelID);
+                onAddTag(selectedLabelID);
+            }
+        },
+        SWITCH_REDRAW_MODE_TAG_ANNOTATION: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            if (selectedLabelID !== null) {
+                onRemoveState(selectedLabelID);
             }
         },
     };
