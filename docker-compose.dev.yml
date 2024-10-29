@@ -91,8 +91,6 @@ services:
       - '9091:9091'
 
   cvat_ui:
-#    environment:
-#      CLIENT_PLUGINS: '${CLIENT_PLUGINS}'
     build:
       context: .
       args:
