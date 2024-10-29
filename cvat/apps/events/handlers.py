@@ -376,11 +376,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
     def filter_data(data):
         filtered_data = {
             "id": data["id"],
-            "frame": data["frame"],
-            "attributes": data["attributes"],
         }
-        if label_id := data.get("label_id"):
-            filtered_data["label_id"] = label_id
 
         return filtered_data
 
