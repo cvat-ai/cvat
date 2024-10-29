@@ -22,8 +22,6 @@ def handler(context, event):
     image = image.convert("RGB")  #  to make sure image comes in RGB
     features = context.user_data.model.handle(image)
 
-    context.logger.info("Features: {}".format(features))
-
     return context.Response(body=json.dumps({
             'blob': base64.b64encode((features.cpu().numpy() if features.is_cuda else features.numpy())).decode(),
         }),
