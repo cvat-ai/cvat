@@ -3,9 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+import textwrap
 import types
 from collections.abc import Mapping
 from typing import Callable, Protocol
+
+from cvat_sdk import Client
 
 
 class Command(Protocol):
@@ -51,3 +54,25 @@ class CommandGroup:
         # It should be impossible for a command group to be executed,
         # because configure_parser requires that a subcommand is specified.
         assert False, "unreachable code"
+
+
+class DeprecatedAlias:
+    def __init__(self, command: Command, replacement: str) -> None:
+        self._command = command
+        self._replacement = replacement
+
+    @property
+    def description(self) -> str:
+        return textwrap.dedent(
+            f"""\
+            {self._command.description}
+            (Deprecated; use "{self._replacement}" instead.)
+            """
+        )
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        self._command.configure_parser(parser)
+
+    def execute(self, client: Client, **kwargs) -> None:
+        client.logger.warning('This command is deprecated. Use "%s" instead.', self._replacement)
+        self._command.execute(client, **kwargs)

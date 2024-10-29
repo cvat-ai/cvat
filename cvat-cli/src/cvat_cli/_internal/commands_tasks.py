@@ -28,7 +28,7 @@ from .parsers import (
     parse_threshold,
 )
 
-COMMANDS = CommandGroup(description="Perform common operations related to CVAT tasks.")
+COMMANDS = CommandGroup(description="Perform operations on CVAT tasks.")
 
 
 @COMMANDS.command_class("ls")
@@ -291,11 +291,11 @@ class TaskFrames:
         )
 
 
-@COMMANDS.command_class("dump")
-class TaskDump:
+@COMMANDS.command_class("export-dataset")
+class TaskExportDataset:
     description = textwrap.dedent(
         """\
-        Download annotations for a task in the specified format (e.g. 'YOLO 1.1').
+        Export a task as a dataset in the specified format (e.g. 'YOLO 1.1').
         """
     )
 
@@ -343,11 +343,11 @@ class TaskDump:
         )
 
 
-@COMMANDS.command_class("upload")
-class TaskUpload:
+@COMMANDS.command_class("import-dataset")
+class TaskImportDataset:
     description = textwrap.dedent(
         """\
-        Upload annotations for a task in the specified format
+        Import annotations into a task from a dataset in the specified format
         (e.g. 'YOLO 1.1').
         """
     )
@@ -378,8 +378,8 @@ class TaskUpload:
         )
 
 
-@COMMANDS.command_class("export")
-class TaskExport:
+@COMMANDS.command_class("backup")
+class TaskBackup:
     description = """Download a task backup."""
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
@@ -403,9 +403,9 @@ class TaskExport:
         )
 
 
-@COMMANDS.command_class("import")
-class TaskImport:
-    description = """Import a task from a backup file."""
+@COMMANDS.command_class("create-from-backup")
+class TaskCreateFromBackup:
+    description = """Create a task from a backup file."""
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("filename", type=str, help="upload file")
