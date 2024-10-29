@@ -47,3 +47,6 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         return [{
             'list': Scopes.VIEW,
         }[view.action]]
+
+    def get_resource(self):
+        return None
