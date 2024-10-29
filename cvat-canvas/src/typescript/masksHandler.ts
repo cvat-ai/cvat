@@ -267,12 +267,6 @@ export class MasksHandlerImpl implements MasksHandler {
     private updateHidden(value: boolean) {
         this.isHidden = value;
 
-        if (value && this.isPolygonDrawing) {
-            this.vectorDrawHandler.cancel();
-        } else if (this.isPolygonDrawing) {
-            this.startPolygonDrawing();
-        }
-
         // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
         // https://github.com/fabricjs/fabric.js/issues/1456
         const newOpacity = value ? '0' : '';
