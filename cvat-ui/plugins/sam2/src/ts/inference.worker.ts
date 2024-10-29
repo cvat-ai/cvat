@@ -18,7 +18,9 @@ export interface InitBody {
 }
 
 export interface DecodeBody {
-    image_embeddings: Tensor;
+    image_embed: Tensor;
+    high_res_feats_0: Tensor;
+    high_res_feats_1: Tensor;
     point_coords: Tensor;
     point_labels: Tensor;
     orig_im_size: Tensor;
