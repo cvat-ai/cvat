@@ -334,6 +334,10 @@ def make_client(
     host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[str, str]] = None
 ) -> Client:
     url = host.rstrip("/")
+
+    if not port and url == "localhost":
+        port = 8080 # the default port for local deployment
+
     if port:
         url = f"{url}:{port}"
 
