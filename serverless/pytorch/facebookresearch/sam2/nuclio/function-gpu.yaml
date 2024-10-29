@@ -48,7 +48,7 @@ spec:
           value: pip3 install torch torchvision torchaudio pycocotools matplotlib onnxruntime onnx
       # install sam2 code
         - kind: RUN
-          value: pip install git+https://github.com/facebookresearch/sam2.git@@c2ec8e14a185632b0a5d8b161928ceb50197eddc
+          value: pip install git+https://github.com/facebookresearch/sam2.git@c2ec8e14a185632b0a5d8b161928ceb50197eddc
       # download sam2 weights
         - kind: RUN
           value: curl -O https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt
