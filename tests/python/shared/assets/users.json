@@ -177,7 +177,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2022-03-17T07:22:55Z",
+      "last_login": "2022-03-17T07:22:55.930000Z",
       "last_name": "Eighth",
       "url": "http://localhost:8080/api/users/11",
       "username": "user8"
@@ -194,7 +194,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2022-09-28T12:17:51Z",
+      "last_login": "2022-09-28T12:17:51.373000Z",
       "last_name": "Seventh",
       "url": "http://localhost:8080/api/users/10",
       "username": "user7"

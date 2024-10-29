@@ -418,7 +418,7 @@ class TestGetWebhooks:
                 (user["username"], webhook["id"])
                 for user in users
                 for webhook in proj_webhooks
-                if privilege not in user["groups"]
+                if privilege in user["groups"]
                 and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
