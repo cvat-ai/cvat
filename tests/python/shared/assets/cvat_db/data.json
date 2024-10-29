@@ -9,7 +9,7 @@
 },
 {
   "model": "auth.group",
-  "pk": 3,
+  "pk": 2,
   "fields": {
     "name": "user",
     "permissions": []
@@ -17,7 +17,7 @@
 },
 {
   "model": "auth.group",
-  "pk": 4,
+  "pk": 3,
   "fields": {
     "name": "worker",
     "permissions": []
