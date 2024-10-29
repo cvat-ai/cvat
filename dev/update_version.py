@@ -34,7 +34,7 @@ class Version:
         return f"{self.major}.{self.minor}.{self.patch}-{self.prerelease}.{self.prerelease_number}"
 
     def cvat_repr(self):
-        return f"({self.major}, {self.minor}, {self.patch}, '{self.prerelease}', {self.prerelease_number})"
+        return f'({self.major}, {self.minor}, {self.patch}, "{self.prerelease}", {self.prerelease_number})'
 
     def compose_repr(self):
         if self.prerelease != "final":
