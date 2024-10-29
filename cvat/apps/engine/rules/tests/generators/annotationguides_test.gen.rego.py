@@ -46,7 +46,7 @@ OWNERSHIPS = [
     "job:assignee",
     "none",
 ]
-GROUPS = ["admin", "business", "user", "worker"]
+GROUPS = ["admin", "user", "worker"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 SAME_ORG = [True, False]
 
