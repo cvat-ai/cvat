@@ -47,12 +47,6 @@ HAS_ANALYTICS_ACCESS = [True, False]
 
 
 def RESOURCES(scope):
-    if scope == "view":
-        return [
-            {"visibility": "public"},
-            {"visibility": "private"},
-        ]
-
     return [None]
 
 

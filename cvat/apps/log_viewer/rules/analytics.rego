@@ -23,7 +23,6 @@ import data.utils
 #         } or null,
 #     },
 #     "resource": {
-#         "visibility": <"public"|"private"> or null,
 #     }
 # }
 
