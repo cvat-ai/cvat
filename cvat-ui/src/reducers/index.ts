@@ -695,7 +695,7 @@ export enum NavigationType {
 }
 
 export interface EditingState {
-    editedStateInstance: ObjectState | null;
+    objectState: ObjectState | null;
 }
 
 export interface AnnotationState {

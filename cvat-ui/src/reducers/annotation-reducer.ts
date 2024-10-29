@@ -96,7 +96,7 @@ const defaultState: AnnotationState = {
         activeObjectType: ObjectType.SHAPE,
     },
     editing: {
-        editedStateInstance: null,
+        objectState: null,
     },
     annotations: {
         activatedStateID: null,
@@ -626,13 +626,24 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.REMOVE_OBJECT: {
+            const { objectState, force } = action.payload;
+            return {
+                ...state,
+                remove: {
+                    ...state.remove,
+                    objectState,
+                    force,
+                },
+            };
+        }
         case AnnotationActionTypes.UPDATE_EDITED_STATE: {
-            const { editedStateInstance } = action.payload;
+            const { objectState } = action.payload;
             return {
                 ...state,
                 editing: {
                     ...state.editing,
-                    editedStateInstance,
+                    objectState,
                 },
             };
         }

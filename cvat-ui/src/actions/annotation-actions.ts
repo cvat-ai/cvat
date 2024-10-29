@@ -1620,10 +1620,10 @@ export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
                 hideEditedObject: hide,
             });
 
-            const { editedStateInstance } = state.annotation.editing;
-            if (editedStateInstance) {
-                editedStateInstance.hidden = hide;
-                await dispatch(updateAnnotationsAsync([editedStateInstance]));
+            const { objectState } = state.annotation.editing;
+            if (objectState) {
+                objectState.hidden = hide;
+                await dispatch(updateAnnotationsAsync([objectState]));
             }
 
             dispatch({
@@ -1636,17 +1636,17 @@ export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
     };
 }
 
-export function updateEditedStateAsync(editedStateInstance: ObjectState | null): ThunkAction {
+export function updateEditedStateAsync(objectState: ObjectState | null): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         let newActiveObjectHidden = false;
-        if (editedStateInstance) {
-            newActiveObjectHidden = editedStateInstance.hidden;
+        if (objectState) {
+            newActiveObjectHidden = objectState.hidden;
         }
 
         dispatch({
             type: AnnotationActionTypes.UPDATE_EDITED_STATE,
             payload: {
-                editedStateInstance,
+                objectState,
             },
         });
 

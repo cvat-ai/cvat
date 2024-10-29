@@ -46,7 +46,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            editing: { editedStateInstance: editedState },
+            editing: { objectState: editedState },
         },
         shortcuts: { normalizedKeyMap },
     } = state;

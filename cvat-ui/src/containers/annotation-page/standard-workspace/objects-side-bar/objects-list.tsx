@@ -195,7 +195,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             canvas: {
                 activeControl, activeObjectHidden,
             },
-            editing: { editedStateInstance: editedState },
+            editing: { objectState: editedState },
             colors,
             workspace,
         },
