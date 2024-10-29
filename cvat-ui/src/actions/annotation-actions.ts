@@ -1637,10 +1637,10 @@ export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
 }
 
 export function updateEditedStateAsync(editedStateInstance: ObjectState | null): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        let activeObjectHidden = false;
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        let newActiveObjectHidden = false;
         if (editedStateInstance) {
-            activeObjectHidden = editedStateInstance.hidden;
+            newActiveObjectHidden = editedStateInstance.hidden;
         }
 
         dispatch({
@@ -1650,6 +1650,10 @@ export function updateEditedStateAsync(editedStateInstance: ObjectState | null):
             },
         });
 
-        dispatch(changeHideActiveObjectAsync(activeObjectHidden));
+        const state = getState();
+        const { activeObjectHidden } = state.annotation.canvas;
+        if (activeObjectHidden !== newActiveObjectHidden) {
+            dispatch(changeHideActiveObjectAsync(activeObjectHidden));
+        }
     };
 }
