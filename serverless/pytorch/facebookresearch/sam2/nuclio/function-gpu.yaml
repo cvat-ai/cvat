@@ -34,7 +34,6 @@ spec:
       # set NVIDIA container runtime settings
         - kind: ENV
           value: NVIDIA_VISIBLE_DEVICES=all
-        - kind: ENV
       # disable interactive frontend
         - kind: ENV
           value: DEBIAN_FRONTEND=noninteractive
