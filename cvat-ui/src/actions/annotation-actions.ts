@@ -128,7 +128,6 @@ export enum AnnotationActionTypes {
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
     UPDATE_EDITED_STATE = 'UPDATE_EDITED_STATE',
     HIDE_ACTIVE_OBJECT = 'HIDE_ACTIVE_OBJECT',
-    RESET_EDITED_STATE = 'RESET_EDITED_STATE',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
@@ -1612,38 +1611,6 @@ export function restoreFrameAsync(frame: number): ThunkAction {
     };
 }
 
-export function updateEditedStateAsync(editedStateInstance: ObjectState | null): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        let activeObjectHidden = false;
-
-        if (editedStateInstance) {
-            const state = getState();
-            const { instance: canvas } = state.annotation.canvas;
-            activeObjectHidden = editedStateInstance.hidden;
-
-            if (canvas) {
-                (canvas as Canvas).configure({
-                    hideEditedObject: activeObjectHidden,
-                });
-            }
-        }
-
-        dispatch({
-            type: AnnotationActionTypes.HIDE_ACTIVE_OBJECT,
-            payload: {
-                hide: activeObjectHidden,
-            },
-        });
-
-        dispatch({
-            type: AnnotationActionTypes.UPDATE_EDITED_STATE,
-            payload: {
-                editedStateInstance,
-            },
-        });
-    };
-}
-
 export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
@@ -1653,18 +1620,36 @@ export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
                 hideEditedObject: hide,
             });
 
+            const { editedStateInstance } = state.annotation.editing;
+            if (editedStateInstance) {
+                editedStateInstance.hidden = hide;
+                await dispatch(updateAnnotationsAsync([editedStateInstance]));
+            }
+
             dispatch({
                 type: AnnotationActionTypes.HIDE_ACTIVE_OBJECT,
                 payload: {
                     hide,
                 },
             });
-
-            const { editedStateInstance } = state.annotation.editing;
-            if (editedStateInstance) {
-                editedStateInstance.hidden = hide;
-                await dispatch(updateAnnotationsAsync([editedStateInstance]));
-            }
         }
+    };
+}
+
+export function updateEditedStateAsync(editedStateInstance: ObjectState | null): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        let activeObjectHidden = false;
+        if (editedStateInstance) {
+            activeObjectHidden = editedStateInstance.hidden;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_EDITED_STATE,
+            payload: {
+                editedStateInstance,
+            },
+        });
+
+        dispatch(changeHideActiveObjectAsync(activeObjectHidden));
     };
 }
