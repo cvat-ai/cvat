@@ -24,9 +24,7 @@ def handler(context, event):
         image = Image.open(buf)
         image = image.convert("RGB")  # to make sure image comes in RGB
 
-        context.logger.info("IMAGE: {}".format(image.size))
         high_res_feats_0, high_res_feats_1, image_embed, image_ = context.user_data.model.handle(image)
-        context.logger.info("IMAGE_: {}".format(image_.shape))
 
         def process_features(features):
             if features.is_cuda:
@@ -36,11 +34,8 @@ def handler(context, event):
             return encoded_features
 
         encoded_feat_0 = process_features(high_res_feats_0)
-        context.logger.info("high_res_feats_0: {}".format(high_res_feats_0.shape))
         encoded_feat_1 = process_features(high_res_feats_1)
-        context.logger.info("high_res_feats_1: {}".format(high_res_feats_1.shape))
         encoded_image_embed = process_features(image_embed)
-        context.logger.info("image_embed: {}".format(image_embed.shape))
 
         return context.Response(
             body=json.dumps({

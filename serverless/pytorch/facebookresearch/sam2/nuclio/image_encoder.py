@@ -23,7 +23,6 @@ class SAM2Encoder(torch.nn.Module):
 
         feat_sizes = [(x.shape[-2], x.shape[-1]) for x in vision_pos_embeds]
 
-        # flatten NxCxHxW to HWxNxC
         vision_feats = [x.flatten(2).permute(2, 0, 1) for x in feature_maps]
         vision_feats[-1] = vision_feats[-1] + self.no_mem_embed
 
