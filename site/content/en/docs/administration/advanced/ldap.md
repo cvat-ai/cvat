@@ -100,9 +100,6 @@ AUTHENTICATION_BACKENDS += ['django_auth_ldap.backend.LDAPBackend']
 AUTH_LDAP_ADMIN_GROUPS = [
     'CN=CVAT Admins,%s' % _BASE_DN,
 ]
-AUTH_LDAP_BUSINESS_GROUPS = [
-    'CN=CVAT Managers,%s' % _BASE_DN,
-]
 AUTH_LDAP_WORKER_GROUPS = [
     'CN=CVAT Workers,%s' % _BASE_DN,
 ]
@@ -179,9 +176,6 @@ AUTHENTICATION_BACKENDS += ['django_auth_ldap.backend.LDAPBackend']
 # Map FreeIPA groups to Django/CVAT groups.
 AUTH_LDAP_ADMIN_GROUPS = [
     'CN=cvat_admins,CN=Groups,%s' % _BASE_DN,
-]
-AUTH_LDAP_BUSINESS_GROUPS = [
-    'CN=cvat_managers,CN=Groups,%s' % _BASE_DN,
 ]
 AUTH_LDAP_WORKER_GROUPS = [
     'CN=cvat_workers,CN=Groups,%s' % _BASE_DN,
