@@ -1,0 +1,96 @@
+{{- $localValues := .Values.cvat.backend.worker.chunks -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend-worker-chunks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: worker-chunks
+    {{- include "cvat.labels" . | nindent 4 }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $localValues.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app: cvat-app
+      tier: backend
+      component: worker-chunks
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: backend
+        component: worker-chunks
+        {{- include "cvat.labels" . | nindent 8 }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
+      containers:
+        - name: cvat-backend
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args: ["run", "worker.chunks"]
+          env:
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- $probeArgs := list "chunks" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
+          volumeMounts:
+          - mountPath: /home/django/data
+            name: cvat-backend-data
+            subPath: data
+          - mountPath: /home/django/logs
+            name: cvat-backend-data
+            subPath: logs
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if .Values.cvat.backend.defaultStorage.enabled }}
+        - name: cvat-backend-data
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-backend-data"
+        {{- end }}
+        {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

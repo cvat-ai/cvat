@@ -3792,6 +3792,7 @@ class TestPatchTaskLabel:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 

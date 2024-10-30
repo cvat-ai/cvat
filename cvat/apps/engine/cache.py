@@ -129,8 +129,9 @@ class MediaCache:
             if job_status in ("finished",):
                 return True
             elif job_status in ("failed",):
-                exc_type = rq_job.meta.get(RQJobMetaField.EXCEPTION_TYPE, Exception)
-                exc_args = rq_job.meta.get(RQJobMetaField.EXCEPTION_ARGS, ["Cannot create chunk",])
+                job_meta = rq_job.get_meta()
+                exc_type = job_meta.get(RQJobMetaField.EXCEPTION_TYPE, Exception)
+                exc_args = job_meta.get(RQJobMetaField.EXCEPTION_ARGS, ("Cannot create chunk",))
                 raise exc_type(*exc_args)
 
             time.sleep(self._SLEEP_TIMEOUT)
