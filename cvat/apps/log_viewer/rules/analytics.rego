@@ -22,8 +22,6 @@ import data.utils
 #             }
 #         } or null,
 #     },
-#     "resource": {
-#     }
 # }
 
 default allow := false
