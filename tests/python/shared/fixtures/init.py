@@ -300,9 +300,10 @@ def dump_db():
 
 def create_compose_files(container_name_files):
     for filename in container_name_files:
-        with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
-            filename, "w"
-        ) as ndcf:
+        with (
+            open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf,
+            open(filename, "w") as ndcf,
+        ):
             dc_config = yaml.safe_load(dcf)
 
             for service_name, service_config in dc_config["services"].items():
