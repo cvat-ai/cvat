@@ -1,3 +1,7 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 const { defineConfig } = require('cypress');
 const baseConfig = require('./cypress.base.config');
 
