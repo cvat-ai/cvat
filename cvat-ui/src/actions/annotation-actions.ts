@@ -1322,7 +1322,7 @@ export function searchAnnotationsAsync(
     };
 }
 
-const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
+export const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
     [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
     [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
     [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
