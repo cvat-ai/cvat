@@ -9,6 +9,7 @@ from http.client import HTTPConnection
 from types import SimpleNamespace
 from typing import List
 
+import urllib3.exceptions
 from cvat_sdk import exceptions
 from cvat_sdk.core.client import Client, Config
 
@@ -70,7 +71,7 @@ def main(args: List[str] = None):
         try:
             cli = CLI(client=client, credentials=parsed_args.auth)
             actions[parsed_args.action](cli, **vars(action_args))
-        except exceptions.ApiException as e:
+        except (exceptions.ApiException, urllib3.exceptions.HTTPError) as e:
             logger.critical(e)
             return 1
 
