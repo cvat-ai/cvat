@@ -317,8 +317,8 @@ class TaskFrameProvider(IFrameProvider):
             quality=quality,
             set_callback=self._get_chunk_create_callback,
             set_callback_args=(
-                cache._get_callback_object_arg(self._db_task),
-                [cache._get_callback_object_arg(s) for s in matching_segments],
+                cache._get_callback_db_object_arg(self._db_task),
+                [cache._get_callback_db_object_arg(s) for s in matching_segments],
                 {f: self.get_rel_frame_number(f) for f in task_chunk_frame_set},
                 quality,
             )
@@ -686,7 +686,7 @@ class JobFrameProvider(SegmentFrameProvider):
             chunk_number,
             quality=quality,
             set_callback=self._get_chunk_create_callback,
-            set_callback_args=(cache._get_callback_object_arg(self._db_segment), segment_chunk_frame_ids, chunk_number, quality),
+            set_callback_args=(cache._get_callback_db_object_arg(self._db_segment), segment_chunk_frame_ids, chunk_number, quality),
         )
 
         return return_type(data=buffer, mime=mime_type)

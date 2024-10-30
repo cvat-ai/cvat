@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "REST API tests: Attach to server",
             "type": "debugpy",
@@ -168,7 +169,8 @@
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
                 "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282"
+                "DJANGO_LOG_SERVER_PORT": "8282",
+                "CVAT_ANALYTICS": "0",
             },
             "args": [
                 "runserver",
@@ -178,7 +180,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole"
+            "console": "internalConsole",
         },
         {
             "name": "server: chrome",
@@ -349,6 +351,28 @@
             "args": [
                 "rqworker",
                 "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - chunks",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "rqworker",
+                "chunks",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker"
             ],
@@ -553,7 +577,8 @@
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
                 "server: RQ - analytics reports",
-                "server: RQ - cleaning"
+                "server: RQ - cleaning",
+                "server: RQ - chunks",
             ]
         }
     ]

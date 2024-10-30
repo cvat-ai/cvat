@@ -3261,6 +3261,9 @@ class AnnotationGuidesViewSet(
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(
         traceback.format_exception_only(exc_type, exc_value))
+    if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
+        rq_job.meta[RQJobMetaField.EXCEPTION_TYPE] = exc_type
+        rq_job.meta[RQJobMetaField.EXCEPTION_ARGS] = exc_value.args
     rq_job.save_meta()
 
     return True

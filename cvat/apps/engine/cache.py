@@ -59,6 +59,7 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
 )
 from cvat.apps.engine.utils import md5_hash, load_image
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -75,6 +76,7 @@ class MediaCache:
     _CHUNK_CREATE_TIMEOUT = 50
     _CACHE_NAME = "media"
     _RQ_JOB_RESULT_TTL = 60
+    _RQ_JOB_FAILURE_TTL = 3600 * 24 * 14 # 2 weeks
 
     @staticmethod
     def _cache():
@@ -87,8 +89,8 @@ class MediaCache:
     def _get_or_set_cache_item(
         self, key: str,
         create_callback: Callable[..., DataWithMime],
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ) -> _CacheItem:
         item = self._get_cache_item(key)
         if item:
@@ -103,7 +105,14 @@ class MediaCache:
         return f"{self._QUEUE_JOB_PREFIX_TASK}{key}"
 
     @classmethod
-    def _create_and_set_cache_item(cls, key, create_callback, return_item, *args, **kwargs) -> DataWithMime:
+    def _create_and_set_cache_item(
+        cls,
+        key: str,
+        create_callback: Callable[..., DataWithMime],
+        return_item: bool,
+        *args: Any,
+        **kwargs: Any,
+    ) -> DataWithMime:
         item_data = create_callback(*args, **kwargs)
         item_data_bytes = item_data[0].getvalue()
         item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes))
@@ -113,14 +122,16 @@ class MediaCache:
         if return_item:
             return item
 
-    def _wait_for_rq_job(self, rq_job) -> bool:
+    def _wait_for_rq_job(self, rq_job: rq.job.Job) -> bool:
         retries = self._CHUNK_CREATE_TIMEOUT // self._SLEEP_TIMEOUT or 1
         while retries > 0:
             job_status = rq_job.get_status()
             if job_status in ("finished",):
                 return True
             elif job_status in ("failed",):
-                raise Exception("Cannot create chunk")
+                exc_type = rq_job.meta.get(RQJobMetaField.EXCEPTION_TYPE, Exception)
+                exc_args = rq_job.meta.get(RQJobMetaField.EXCEPTION_ARGS, ["Cannot create chunk",])
+                raise exc_type(*exc_args)
 
             time.sleep(self._SLEEP_TIMEOUT)
             retries -= 1
@@ -130,9 +141,9 @@ class MediaCache:
     def _create_cache_item(
             self,
             key: str,
-            create_callback: Callable[[], DataWithMime],
-            *args,
-            **kwargs,
+            create_callback: Callable[..., DataWithMime],
+            *args: Any,
+            **kwargs: Any,
         ) -> _CacheItem:
 
         slogger.glob.info(f"Starting to prepare chunk: key {key}")
@@ -159,6 +170,7 @@ class MediaCache:
                     **kwargs,
                     job_id=rq_id,
                     result_ttl=self._RQ_JOB_RESULT_TTL,
+                    failure_ttl=self._RQ_JOB_FAILURE_TTL,
                 )
 
             if self._wait_for_rq_job(rq_job):
@@ -179,13 +191,11 @@ class MediaCache:
             slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
 
     def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
-        slogger.glob.info(f"Starting to get chunk from cache: key {key}")
         try:
             item = self._cache().get(key)
         except pickle.UnpicklingError:
             slogger.glob.error(f"Unable to get item from cache: key {key}", exc_info=True)
             item = None
-        slogger.glob.info(f"Ending to get chunk from cache: key {key}, is_cached {bool(item)}")
 
         if not item:
             return None
@@ -285,24 +295,20 @@ class MediaCache:
         quality: FrameQuality,
         set_callback: Callable[..., DataWithMime],
         set_callback_args: Union[list[Any], None]=None,
-        set_callback_kwargs: Union[dict[str, Any], None] = None,
+        set_callback_kwargs: Union[dict[str, Any], None]=None,
     ) -> DataWithMime:
         if set_callback_args is None:
             set_callback_args = []
         if set_callback_kwargs is None:
             set_callback_kwargs = {}
 
-        t = self._get_or_set_cache_item(
+        return self._to_data_with_mime(
+            self._get_or_set_cache_item(
                 self._make_chunk_key(db_task, chunk_number, quality=quality),
                 set_callback,
                 *set_callback_args,
                 **set_callback_kwargs,
             )
-
-        slogger.glob.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: {t}")
-
-        return self._to_data_with_mime(
-            t
         )
 
     def get_segment_task_chunk(
@@ -345,7 +351,7 @@ class MediaCache:
             self._get_or_set_cache_item(
                 self._make_chunk_key(db_job, chunk_number, quality=quality),
                 self.prepare_masked_range_segment_chunk,
-                self._get_callback_object_arg(db_job.segment),
+                self._get_callback_db_object_arg(db_job.segment),
                 chunk_number,
                 quality=quality,
             )
@@ -356,7 +362,7 @@ class MediaCache:
             self._get_or_set_cache_item(
                 self._make_preview_key(db_segment),
                 self._prepare_segment_preview,
-                self._get_callback_object_arg(db_segment),
+                self._get_callback_db_object_arg(db_segment),
             )
         )
 
@@ -367,7 +373,9 @@ class MediaCache:
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
-    def _get_callback_object_arg(self, db_obj):
+    def _get_callback_db_object_arg(self,
+            db_obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
+        ) -> Union[models.Task, models.Segment, models.Job, models.CloudStorage, int]:
         return db_obj if self._is_run_inside_rq() else db_obj.id
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
@@ -378,7 +386,7 @@ class MediaCache:
             self._get_or_set_cache_item(
                 self._make_preview_key(db_storage),
                 self._prepare_cloud_preview,
-                self._get_callback_object_arg(db_storage),
+                self._get_callback_db_object_arg(db_storage),
             )
         )
 
@@ -389,7 +397,7 @@ class MediaCache:
             self._get_or_set_cache_item(
                 self._make_context_image_preview_key(db_data, frame_number),
                 self.prepare_context_images_chunk,
-                self._get_callback_object_arg(db_data),
+                self._get_callback_db_object_arg(db_data),
                 frame_number,
             )
         )
@@ -481,7 +489,7 @@ class MediaCache:
 
     @staticmethod
     def _read_raw_frames(
-        db_task: models.Task | int, frame_ids: Sequence[int]
+        db_task: Union[models.Task, int], frame_ids: Sequence[int]
     ) -> Generator[Tuple[Union[av.VideoFrame, PIL.Image.Image], str, str], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
@@ -574,7 +582,7 @@ class MediaCache:
     @classmethod
     def prepare_custom_masked_range_segment_chunk(
         cls,
-        db_task: models.Task | int,
+        db_task: Union[models.Task, int],
         frame_ids: Collection[int],
         chunk_number: int,
         *,
@@ -696,7 +704,7 @@ class MediaCache:
         buff.seek(0)
         return buff, get_chunk_mime_type_for_writer(writer)
 
-    def _prepare_segment_preview(self, db_segment: models.Segment|int) -> DataWithMime:
+    def _prepare_segment_preview(self, db_segment: Union[models.Segment, int]) -> DataWithMime:
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)
 
@@ -721,7 +729,7 @@ class MediaCache:
 
         return prepare_preview_image(preview)
 
-    def _prepare_cloud_preview(self, db_storage: models.CloudStorage | int) -> DataWithMime:
+    def _prepare_cloud_preview(self, db_storage: Union[models.CloudStorage, int]) -> DataWithMime:
         if isinstance(db_storage, int):
             db_storage = models.CloudStorage.objects.get(pk=db_storage)
 
