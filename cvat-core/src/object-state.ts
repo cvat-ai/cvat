@@ -164,7 +164,7 @@ export default class ObjectState {
             zOrder: 0,
             lock: serialized.lock || false,
             color: '#000000',
-            hidden: serialized.hidden || false,
+            hidden: false,
             pinned: false,
             source: serialized.source || Source.MANUAL,
             keyframes: serialized.keyframes || null,
