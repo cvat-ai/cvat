@@ -58,8 +58,15 @@ class Downloader:
             except ValueError:
                 file_size = None
 
-            with atomic_writer(output_path, "wb") as fd, pbar.task(
-                total=file_size, desc="Downloading", unit_scale=True, unit="B", unit_divisor=1024
+            with (
+                atomic_writer(output_path, "wb") as fd,
+                pbar.task(
+                    total=file_size,
+                    desc="Downloading",
+                    unit_scale=True,
+                    unit="B",
+                    unit_divisor=1024,
+                ),
             ):
                 while True:
                     chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
