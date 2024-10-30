@@ -1407,7 +1407,7 @@ class ProjectData(InstanceLabelData):
 
     @property
     def task_data(self):
-        for task_id, _ in self._db_tasks.items():
+        for task_id in self._db_tasks.keys():
             if task_id in self._tasks_data:
                 yield self._tasks_data[task_id]
             else:
