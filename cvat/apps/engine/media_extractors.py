@@ -539,7 +539,9 @@ class ZipReader(ImageListReader):
 
 class _AvVideoReading:
     @contextmanager
-    def read_av_container(self, source: Union[str, io.BytesIO]) -> av.container.InputContainer:
+    def read_av_container(
+        self, source: Union[str, io.BytesIO]
+    ) -> Generator[av.container.InputContainer, None, None]:
         if isinstance(source, io.BytesIO):
             source.seek(0) # required for re-reading
 
