@@ -13,7 +13,7 @@ from typing import (
     BinaryIO,
     ContextManager,
     Dict,
-    Iterator,
+    Generator,
     Literal,
     Sequence,
     TextIO,
@@ -43,7 +43,7 @@ def atomic_writer(
 @contextlib.contextmanager
 def atomic_writer(
     path: Union[os.PathLike, str], mode: Literal["w", "wb"], encoding: str = "UTF-8"
-) -> Iterator[IO]:
+) -> Generator[IO, None, None]:
     """
     Returns a context manager that, when entered, returns a handle to a temporary
     file opened with the specified `mode` and `encoding`. If the context manager

@@ -9,7 +9,7 @@ import ssl
 import threading
 import unittest
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Generator, List, Union
 
 import requests
 
@@ -39,7 +39,7 @@ def generate_images(dst_dir: Path, count: int) -> List[Path]:
 
 
 @contextlib.contextmanager
-def https_reverse_proxy() -> Iterator[str]:
+def https_reverse_proxy() -> Generator[str, None, None]:
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
     cert_dir = Path(__file__).parent
