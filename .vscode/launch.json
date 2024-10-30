@@ -170,7 +170,6 @@
                 "ALLOWED_HOSTS": "*",
                 "DJANGO_LOG_SERVER_HOST": "localhost",
                 "DJANGO_LOG_SERVER_PORT": "8282",
-                "CVAT_ANALYTICS": "0",
             },
             "args": [
                 "runserver",
