@@ -29,9 +29,7 @@ context('Regression tests', () => {
     };
 
     const rectanglePayload = {
-        objectType: 'shape',
         shapeType: 'rectangle',
-        points: [250, 64, 491, 228],
         occluded: false,
         labelName: taskPayload.labels[0].name,
     };
@@ -45,8 +43,12 @@ context('Regression tests', () => {
             [jobID] = response.jobIDs;
 
             cy.headlessCreateObjects([
-                { ...rectanglePayload, frame: 0 },
-                { ...rectanglePayload, frame: 99 },
+                {
+                    ...rectanglePayload, frame: 99, points: [250, 64, 491, 228], objectType: 'shape',
+                },
+                {
+                    ...rectanglePayload, frame: 0, points: [10, 10, 30, 30], objectType: 'track',
+                },
             ], jobID);
         });
     });
@@ -67,20 +69,20 @@ context('Regression tests', () => {
 
             cy.get('.cvat-player-last-button').click();
 
-            cy.get('#cvat-objects-sidebar-state-item-2').trigger('mousemove');
-            cy.get('#cvat-objects-sidebar-state-item-2').should('not.have.class', 'cvat-objects-sidebar-state-active-item');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove');
+            cy.get('#cvat-objects-sidebar-state-item-1').should('not.have.class', 'cvat-objects-sidebar-state-active-item');
 
             cy.wait('@delayedRequest');
-            cy.get('#cvat_canvas_shape_2').trigger('mousemove');
-            cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
 
         it('UI does not crash if to navigate during an element resizing (issue 1922)', { scrollBehavior: false }, () => {
-            cy.get('#cvat_canvas_shape_1').then(([el]) => {
+            cy.get('#cvat_canvas_shape_2').then(([el]) => {
                 const rect = el.getBoundingClientRect();
 
                 cy.get('body').trigger('mousemove', rect.x + rect.width / 2, rect.y + rect.height / 2);
-                cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+                cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
 
                 cy.get('body').trigger('mousedown', rect.right, rect.bottom, { button: 0 });
                 cy.get('body').trigger('mousemove', rect.right + 100, rect.bottom + 100);
