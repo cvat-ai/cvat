@@ -723,6 +723,8 @@ class _DataGetter(metaclass=ABCMeta):
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
+        except TimeoutError:
+            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': 30})
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -806,20 +808,23 @@ class _JobDataGetter(_DataGetter):
             # Reproduce the task chunk indexing
             frame_provider = self._get_frame_provider()
 
-            if self.index is not None:
-                data = frame_provider.get_chunk(
-                    self.index, quality=self.quality, is_task_chunk=False
-                )
-            else:
-                data = frame_provider.get_chunk(
-                    self.number, quality=self.quality, is_task_chunk=True
-                )
+            try:
+                if self.index is not None:
+                    data = frame_provider.get_chunk(
+                        self.index, quality=self.quality, is_task_chunk=False
+                    )
+                else:
+                    data = frame_provider.get_chunk(
+                        self.number, quality=self.quality, is_task_chunk=True
+                    )
 
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+                return HttpResponse(
+                    data.data.getvalue(),
+                    content_type=data.mime,
+                    headers=self._get_chunk_response_headers(data),
+                )
+            except TimeoutError:
+                return Response(status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': 30})
         else:
             return super().__call__()
 
@@ -2968,6 +2973,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 '\n'.join([str(d) for d in ex.detail])
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=ex.status_code)
+        except TimeoutError as ex:
+            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': 30})
         except Exception as ex:
             slogger.glob.error(str(ex))
             return Response("An internal error has occurred",

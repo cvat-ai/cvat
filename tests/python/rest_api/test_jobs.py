@@ -691,6 +691,7 @@ class TestGetJobs:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
 class TestGetGtJobData:
     def _delete_gt_job(self, user, gt_job_id):
         with make_api_client(user) as api_client:

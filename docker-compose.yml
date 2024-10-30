@@ -231,7 +231,7 @@ services:
     depends_on: *backend-deps
     environment:
       <<: *backend-env
-      NUMPROCS: 10
+      NUMPROCS: 2
     command: run worker.chunks
     volumes:
       - cvat_data:/home/django/data

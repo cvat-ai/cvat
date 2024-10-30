@@ -5,3 +5,6 @@ services:
   cvat_server:
     volumes:
       - ./tests/mounted_file_share:/home/django/share:rw
+  cvat_worker_chunks:
+    volumes:
+      - ./tests/mounted_file_share:/home/django/share:rw
