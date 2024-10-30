@@ -29,6 +29,11 @@ The following subcommands are supported:
   - `backup` - back up a task
   - `auto-annotate` - automatically annotate a task using a local function
 
+- Functions (Enterprise/Cloud only):
+  - `create-native` - create a function that can be powered by an agent
+  - `delete` - delete a function
+  - `run-agent` - process requests for a native function
+
 ## Installation
 
 To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/), use this command:
@@ -315,4 +320,26 @@ see that command's examples for more information.
 - Save list of all projects into file "list_of_projects.json":
   ```bash
   cvat-cli project ls --json > list_of_projects.json
+  ```
+
+## Examples - functions
+
+**Note**: The functionality described in this section can only be used
+with the CVAT Enterprise or CVAT Cloud.
+
+- Create a function that uses a detection model from torchvision
+  and run an agent for it:
+
+  ```
+  cvat-cli function create-native "Faster R-CNN" \
+      --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+      -p model_name=str:fasterrcnn_resnet50_fpn_v2
+  cvat-cli function run-agent <ID printed by previous command> \
+      --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+      -p model_name=str:fasterrcnn_resnet50_fpn_v2
+  ```
+
+- Delete functions with IDs 100 and 101:
+  ```
+  cvat-cli function delete 100 101
   ```
