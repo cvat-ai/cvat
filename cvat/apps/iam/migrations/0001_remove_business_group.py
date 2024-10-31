@@ -9,13 +9,10 @@ USER_GROUP_NAME = "user"
 
 def delete_business_group(apps, schema_editor):
     Group = apps.get_model('auth', 'Group')
-    User = apps.get_model('auth', 'User')
+    User = apps.get_model(settings.AUTH_USER_MODEL)
 
-    if Group.objects.filter(name=USER_GROUP_NAME).exists():
-        user_group = Group.objects.get(name=USER_GROUP_NAME)
-        for user in User.objects.all():
-            if user.groups.filter(name=BUSINESS_GROUP_NAME).exists():
-                user_group.user_set.add(user)
+    if user_group := Group.objects.filter(name=USER_GROUP_NAME).first():
+        user_group.user_set.add(*User.objects.filter(groups__name=BUSINESS_GROUP_NAME))
 
     Group.objects.filter(name=BUSINESS_GROUP_NAME).delete()
 
