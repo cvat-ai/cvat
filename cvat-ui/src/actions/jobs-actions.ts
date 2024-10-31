@@ -96,10 +96,20 @@ export const getJobPreviewAsync = (job: Job): ThunkAction => async (dispatch) =>
     }
 };
 
-export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) => {
-    const jobInstance = new cvat.classes.Job(data);
+export const createJobAsync = (data: JobData): ThunkAction<Promise<Job>> => async (dispatch) => {
+    const initialData = {
+        type: data.type,
+        task_id: data.taskID,
+    };
+    const jobInstance = new cvat.classes.Job(initialData);
     try {
-        const savedJob = await jobInstance.save(data);
+        const extras = {
+            frame_selection_method: data.frameSelectionMethod,
+            seed: data.seed,
+            frame_count: data.frameCount,
+            frames_per_job_count: data.framesPerJobCount,
+        };
+        const savedJob = await jobInstance.save(extras);
         return savedJob;
     } catch (error) {
         dispatch(jobsActions.createJobFailed(error));
