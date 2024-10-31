@@ -1272,7 +1272,7 @@ Cypress.Commands.add('exportTask', ({
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
-    cy.contains('button', 'OK').click();
+    cy.contains('.cvat-modal-export-task button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
 });
