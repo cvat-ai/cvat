@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC
+from collections.abc import Sequence
 from enum import Enum
-from typing import Optional, Sequence
+from typing import Optional
 
 from cvat_sdk import models
 from cvat_sdk.core.proxies.model_proxy import _EntityT
