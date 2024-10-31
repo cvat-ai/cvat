@@ -118,7 +118,7 @@ cvat:
         additionalVolumes: []
         additionalVolumeMounts: []
       chunks:
-        replicas: 4
+        replicas: 2
         labels: {}
         annotations: {}
         resources: {}
