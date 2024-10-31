@@ -11,7 +11,7 @@ The user you register by default does not have full permissions on the instance,
 so you must create a superuser.
 The superuser can use [Django administration panel](http://localhost:8080/admin)
 to assign groups (roles) to other users.
-<br>Available roles are: user (default), admin, business, worker.
+<br>Available roles are: user (default), admin, worker.
 
 ### Prerequisites
 

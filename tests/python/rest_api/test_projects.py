@@ -447,7 +447,7 @@ class TestPostProjects:
         spec = {"name": f"test {username} tries to create a project"}
         self._test_create_project_403(username, spec)
 
-    @pytest.mark.parametrize("privilege", ("admin", "business", "user"))
+    @pytest.mark.parametrize("privilege", ("admin", "user"))
     def test_if_user_can_create_project(self, find_users, privilege):
         privileged_users = find_users(privilege=privilege)
         assert len(privileged_users)
