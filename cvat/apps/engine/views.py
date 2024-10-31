@@ -118,6 +118,7 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
+_RETRY_AFTER_TIMEOUT = 10
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -724,7 +725,10 @@ class _DataGetter(metaclass=ABCMeta):
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
         except TimeoutError:
-            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': 30})
+            return Response(
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -824,7 +828,10 @@ class _JobDataGetter(_DataGetter):
                     headers=self._get_chunk_response_headers(data),
                 )
             except TimeoutError:
-                return Response(status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': 30})
+                return Response(
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                    headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+                )
         else:
             return super().__call__()
 
@@ -2973,8 +2980,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 '\n'.join([str(d) for d in ex.detail])
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=ex.status_code)
-        except TimeoutError as ex:
-            return Response(status=status.HTTP_429_TOO_MANY_REQUESTS, headers={'Retry-After': 30})
+        except TimeoutError:
+            return Response(
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+            )
         except Exception as ex:
             slogger.glob.error(str(ex))
             return Response("An internal error has occurred",
