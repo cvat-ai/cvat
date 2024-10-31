@@ -49,6 +49,4 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         }[view.action]]
 
     def get_resource(self):
-        return {
-            'visibility': 'public' if settings.RESTRICTIONS['analytics_visibility'] else 'private',
-        }
+        return None
