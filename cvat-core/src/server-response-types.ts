@@ -504,25 +504,26 @@ export interface SerializedAPISchema {
 }
 
 export interface SerializedRequest {
-    id?: string;
+    id: string;
+    message: string;
     status: string;
-    operation?: {
+    operation: {
         target: string;
         type: string;
-        format: string;
+        format: string | null;
         job_id: number | null;
         task_id: number | null;
         project_id: number | null;
+        function_id: string | null;
     };
     progress?: number;
-    message: string;
     result_url?: string;
     result_id?: number;
-    created_date?: string;
+    created_date: string;
     started_date?: string;
     finished_date?: string;
     expiry_date?: string;
-    owner?: any;
+    owner: any;
 }
 
 export interface SerializedJobValidationLayout {
