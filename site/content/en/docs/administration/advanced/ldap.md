@@ -100,9 +100,6 @@ AUTHENTICATION_BACKENDS += ['django_auth_ldap.backend.LDAPBackend']
 AUTH_LDAP_ADMIN_GROUPS = [
     'CN=CVAT Admins,%s' % _BASE_DN,
 ]
-AUTH_LDAP_BUSINESS_GROUPS = [
-    'CN=CVAT Managers,%s' % _BASE_DN,
-]
 AUTH_LDAP_WORKER_GROUPS = [
     'CN=CVAT Workers,%s' % _BASE_DN,
 ]
@@ -112,7 +109,6 @@ AUTH_LDAP_USER_GROUPS = [
 
 DJANGO_AUTH_LDAP_GROUPS = {
     "admin": AUTH_LDAP_ADMIN_GROUPS,
-    "business": AUTH_LDAP_BUSINESS_GROUPS,
     "user": AUTH_LDAP_USER_GROUPS,
     "worker": AUTH_LDAP_WORKER_GROUPS,
 }
@@ -181,9 +177,6 @@ AUTHENTICATION_BACKENDS += ['django_auth_ldap.backend.LDAPBackend']
 AUTH_LDAP_ADMIN_GROUPS = [
     'CN=cvat_admins,CN=Groups,%s' % _BASE_DN,
 ]
-AUTH_LDAP_BUSINESS_GROUPS = [
-    'CN=cvat_managers,CN=Groups,%s' % _BASE_DN,
-]
 AUTH_LDAP_WORKER_GROUPS = [
     'CN=cvat_workers,CN=Groups,%s' % _BASE_DN,
 ]
@@ -193,7 +186,6 @@ AUTH_LDAP_USER_GROUPS = [
 
 DJANGO_AUTH_LDAP_GROUPS = {
     "admin": AUTH_LDAP_ADMIN_GROUPS,
-    "business": AUTH_LDAP_BUSINESS_GROUPS,
     "user": AUTH_LDAP_USER_GROUPS,
     "worker": AUTH_LDAP_WORKER_GROUPS,
 }

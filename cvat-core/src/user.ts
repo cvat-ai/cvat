@@ -11,7 +11,7 @@ export default class User {
     public readonly email: string;
     public readonly firstName: string;
     public readonly lastName: string;
-    public readonly groups: ('user' | 'business' | 'admin')[];
+    public readonly groups: ('user' | 'admin')[];
     public readonly lastLogin: string;
     public readonly dateJoined: string;
     public readonly isStaff: boolean;

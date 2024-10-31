@@ -11,7 +11,7 @@ import data.organizations
 #     "auth": {
 #         "user": {
 #             "id": <num>
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         }
 #         "organization": {
 #             "id": <num>,

@@ -32,18 +32,25 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
     job_ids = self.get_expired_job_ids(score)
 
     if job_ids:
-        failed_job_registry = rq.registry.FailedJobRegistry(self.name, self.connection, serializer=self.serializer)
+        failed_job_registry = rq.registry.FailedJobRegistry(
+            self.name, self.connection, serializer=self.serializer
+        )
         queue = self.get_queue()
 
         with self.connection.pipeline() as pipeline:
             for job_id in job_ids:
                 try:
-                    job = self.job_class.fetch(job_id, connection=self.connection, serializer=self.serializer)
+                    job = self.job_class.fetch(
+                        job_id, connection=self.connection, serializer=self.serializer
+                    )
                 except NoSuchJobError:
                     continue
 
                 job.execute_failure_callback(
-                    self.death_penalty_class, AbandonedJobError, AbandonedJobError(), traceback.extract_stack()
+                    self.death_penalty_class,
+                    AbandonedJobError,
+                    AbandonedJobError(),
+                    traceback.extract_stack(),
                 )
 
                 retry = job.retries_left and job.retries_left > 0
@@ -54,8 +61,8 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
                 else:
                     exc_string = f"due to {AbandonedJobError.__name__}"
                     rq.registry.logger.warning(
-                        f'{self.__class__.__name__} cleanup: Moving job to {rq.registry.FailedJobRegistry.__name__} '
-                        f'({exc_string})'
+                        f"{self.__class__.__name__} cleanup: Moving job to {rq.registry.FailedJobRegistry.__name__} "
+                        f"({exc_string})"
                     )
                     job.set_status(JobStatus.FAILED)
                     job._exc_info = f"Moved to {rq.registry.FailedJobRegistry.__name__}, {exc_string}, at {datetime.now()}"
@@ -69,7 +76,8 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
 
     return job_ids
 
+
 def update_started_job_registry_cleanup() -> None:
     # don't forget to check if the issue https://github.com/rq/rq/issues/2006 has been resolved in upstream
-    assert VERSION == '1.16.0'
+    assert VERSION == "1.16.0"
     rq.registry.StartedJobRegistry.cleanup = custom_started_job_registry_cleanup

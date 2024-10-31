@@ -5,7 +5,7 @@
 
 import * as SVG from 'svg.js';
 import 'svg.draw.js';
-import './svg.patch';
+import { CIRCLE_STROKE } from './svg.patch';
 
 import { AutoborderHandler } from './autoborderHandler';
 import {
@@ -104,6 +104,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private controlPointsSize: number;
     private selectedShapeOpacity: number;
     private outlinedBorders: string;
+    private isHidden: boolean;
 
     // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
     // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
@@ -1276,6 +1277,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';
         this.autobordersEnabled = false;
+        this.isHidden = false;
         this.startTimestamp = Date.now();
         this.onDrawDoneDefault = onDrawDone;
         this.canvas = canvas;
@@ -1301,10 +1303,28 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
+    private strokePoint(point: SVG.Element): void {
+        point.attr('stroke', this.isHidden ? 'none' : CIRCLE_STROKE);
+        point.fill({ opacity: this.isHidden ? 0 : 1 });
+    }
+
+    private updateHidden(value: boolean) {
+        this.isHidden = value;
+
+        if (value) {
+            this.canvas.attr('pointer-events', 'none');
+        } else {
+            this.canvas.attr('pointer-events', 'all');
+        }
+    }
+
     public configurate(configuration: Configuration): void {
         this.controlPointsSize = configuration.controlPointsSize;
         this.selectedShapeOpacity = configuration.selectedShapeOpacity;
         this.outlinedBorders = configuration.outlinedBorders || 'black';
+        if (this.isHidden !== configuration.hideEditedObject) {
+            this.updateHidden(configuration.hideEditedObject);
+        }
 
         const isFillableRect = this.drawData &&
             this.drawData.shapeType === 'rectangle' &&
@@ -1315,15 +1335,26 @@ export class DrawHandlerImpl implements DrawHandler {
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {
-            this.drawInstance.fill({ opacity: configuration.selectedShapeOpacity });
+            this.drawInstance.fill({
+                opacity: configuration.hideEditedObject ? 0 : configuration.selectedShapeOpacity,
+            });
+        }
+
+        if (this.drawInstance && (isFilalblePolygon)) {
+            const paintHandler = this.drawInstance.remember('_paintHandler');
+            if (paintHandler) {
+                for (const point of (paintHandler as any).set.members) {
+                    this.strokePoint(point);
+                }
+            }
         }
 
         if (this.drawInstance && this.drawInstance.attr('stroke')) {
-            this.drawInstance.attr('stroke', this.outlinedBorders);
+            this.drawInstance.attr('stroke', configuration.hideEditedObject ? 'none' : this.outlinedBorders);
         }
 
         if (this.pointsGroup && this.pointsGroup.attr('stroke')) {
-            this.pointsGroup.attr('stroke', this.outlinedBorders);
+            this.pointsGroup.attr('stroke', configuration.hideEditedObject ? 'none' : this.outlinedBorders);
         }
 
         this.autobordersEnabled = configuration.autoborders;
@@ -1369,6 +1400,7 @@ export class DrawHandlerImpl implements DrawHandler {
             const paintHandler = this.drawInstance.remember('_paintHandler');
 
             for (const point of (paintHandler as any).set.members) {
+                this.strokePoint(point);
                 point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
                 point.attr('r', `${this.controlPointsSize / geometry.scale}`);
             }

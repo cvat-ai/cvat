@@ -40,7 +40,7 @@ class TestGetMemberships:
         )
 
     def test_non_admin_can_see_only_self_memberships(self, memberships):
-        non_admins = ["business1", "user1", "dummy1", "worker2"]
+        non_admins = ["user1", "dummy1", "worker2"]
         for username in non_admins:
             data = [obj for obj in memberships if obj["user"]["username"] == username]
             self._test_can_see_memberships(username, data)
