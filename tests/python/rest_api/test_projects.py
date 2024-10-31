@@ -34,8 +34,14 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
+from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, export_project_backup, export_project_dataset
+from .utils import (
+    CollectionSimpleFilterTestBase,
+    create_task,
+    export_project_backup,
+    export_project_dataset,
+)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -611,6 +617,7 @@ def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestImportExportDatasetProject:
 
     @pytest.fixture(autouse=True)
@@ -1037,6 +1044,61 @@ class TestImportExportDatasetProject:
                 assert (
                     len([f for f in zip_file.namelist() if f.startswith(folder_prefix)]) > 0
                 ), f"No {folder_prefix} in {zip_file.namelist()}"
+
+    def test_export_project_with_honeypots(
+        self,
+        admin_user: str,
+    ):
+        project_spec = {
+            "name": "Project with honeypots",
+            "labels": [{"name": "cat"}],
+        }
+
+        with make_api_client(admin_user) as api_client:
+            project, _ = api_client.projects_api.create(project_spec)
+
+        image_files = generate_image_files(3)
+        image_names = [i.name for i in image_files]
+
+        task_params = {
+            "name": "Task with honeypots",
+            "segment_size": 1,
+            "project_id": project.id,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "sorting_method": "random",
+            "validation_params": {
+                "mode": "gt_pool",
+                "frame_selection_method": "manual",
+                "frames_per_job_count": 1,
+                "frames": [image_files[-1].name],
+            },
+        }
+
+        create_task(admin_user, spec=task_params, data=data_params)
+
+        dataset = export_project_dataset(
+            admin_user, api_version=2, save_images=True, id=project.id, format="COCO 1.0"
+        )
+
+        with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
+            subset_path = "images/default"
+            assert (
+                sorted(
+                    [
+                        f[len(subset_path) + 1 :]
+                        for f in zip_file.namelist()
+                        if f.startswith(subset_path)
+                    ]
+                )
+                == image_names
+            )
+            with zip_file.open("annotations/instances_default.json") as anno_file:
+                annotations = json.load(anno_file)
+                assert sorted([a["file_name"] for a in annotations["images"]]) == image_names
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
