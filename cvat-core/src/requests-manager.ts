@@ -122,14 +122,15 @@ class RequestsManager {
                     }
                 } catch (error) {
                     if (requestID in this.listening) {
-                        const { onUpdate } = this.listening[requestID];
-
-                        onUpdate
-                            .forEach((update) => update(new Request({
-                                id: requestID,
-                                status: RQStatus.FAILED,
-                                message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                            })));
+                        const { onUpdate, request } = this.listening[requestID];
+                        if (request) {
+                            onUpdate
+                                .forEach((update) => update(new Request({
+                                    ...request.toJSON(),
+                                    status: RQStatus.FAILED,
+                                    message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                                })));
+                        }
                         reject(error);
                     }
                 }

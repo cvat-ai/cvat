@@ -10,7 +10,7 @@ import urllib.parse
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Dict, Generator, Optional, Sequence, Tuple, TypeVar
 
 import attrs
 import packaging.specifiers as specifiers
@@ -121,7 +121,7 @@ class Client:
             self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
 
     @contextmanager
-    def organization_context(self, slug: str) -> Iterator[None]:
+    def organization_context(self, slug: str) -> Generator[None, None, None]:
         prev_slug = self.organization_slug
         self.organization_slug = slug
         try:

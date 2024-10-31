@@ -10,7 +10,6 @@ from typing import Optional
 
 import packaging.version as pv
 import pytest
-from cvat_cli.cli import CLI
 from cvat_sdk import Client, make_client
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
@@ -20,7 +19,7 @@ from sdk.util import generate_coco_json
 from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
 
-from .util import generate_images, run_cli
+from .util import generate_images, https_reverse_proxy, run_cli
 
 
 class TestCLI:
@@ -243,23 +242,26 @@ class TestCLI:
         assert "Server version '0' is not compatible with SDK version" in caplog.text
 
     @pytest.mark.parametrize("verify", [True, False])
-    def test_can_control_ssl_verification_with_arg(self, monkeypatch, verify: bool):
-        # TODO: Very hacky implementation, improve it, if possible
-        class MyException(Exception):
-            pass
+    def test_can_control_ssl_verification_with_arg(self, verify: bool):
+        with https_reverse_proxy() as proxy_url:
+            if verify:
+                insecure_args = []
+            else:
+                insecure_args = ["--insecure"]
 
-        normal_init = CLI.__init__
+            run_cli(
+                self,
+                f"--auth={self.user}:{self.password}",
+                f"--server-host={proxy_url}",
+                *insecure_args,
+                "ls",
+                expected_code=1 if verify else 0,
+            )
+            stdout = self.stdout.getvalue()
 
-        def my_init(self, *args, **kwargs):
-            normal_init(self, *args, **kwargs)
-            raise MyException(self.client.api_client.configuration.verify_ssl)
-
-        monkeypatch.setattr(CLI, "__init__", my_init)
-
-        with pytest.raises(MyException) as capture:
-            self.run_cli(*(["--insecure"] if not verify else []), "ls")
-
-        assert capture.value.args[0] == verify
+        if not verify:
+            for line in stdout.splitlines():
+                int(line)
 
     def test_can_control_organization_context(self):
         org = "cli-test-org"
