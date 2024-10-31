@@ -19,11 +19,12 @@ PROXIES_FOR_UNTRUSTED_URLS = None
 
 if settings.SMOKESCREEN_ENABLED:
     PROXIES_FOR_UNTRUSTED_URLS = {
-        'http': 'http://localhost:4750',
-        'https': 'http://localhost:4750',
+        "http": "http://localhost:4750",
+        "https": "http://localhost:4750",
     }
+
 
 def make_requests_session() -> requests.Session:
     session = requests.Session()
-    session.headers['User-Agent'] = _CVAT_USER_AGENT
+    session.headers["User-Agent"] = _CVAT_USER_AGENT
     return session
