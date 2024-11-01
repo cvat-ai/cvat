@@ -9661,6 +9661,13 @@ components:
             The percent of the bbox area, used as the radius of the circle around the GT point,
             where the checked point is expected to be.
             Read more: https://cocodataset.org/#keypoints-eval
+        use_image_space_for_point_group_comparisons:
+          type: boolean
+          default: false
+          description: |
+            Compare point groups in the image space, instead of using the point group bbox.
+            Useful if point groups may not represent a single object or grouped boxes
+            do not represent object boundaries.
         line_thickness:
           type: number
           format: double
@@ -10141,6 +10148,13 @@ components:
             The percent of the bbox area, used as the radius of the circle around the GT point,
             where the checked point is expected to be.
             Read more: https://cocodataset.org/#keypoints-eval
+        use_image_space_for_point_group_comparisons:
+          type: boolean
+          default: false
+          description: |
+            Compare point groups in the image space, instead of using the point group bbox.
+            Useful if point groups may not represent a single object or grouped boxes
+            do not represent object boundaries.
         line_thickness:
           type: number
           format: double
