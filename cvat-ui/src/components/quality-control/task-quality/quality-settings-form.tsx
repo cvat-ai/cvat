@@ -35,6 +35,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         compareAttributes: settings.compareAttributes,
 
         oksSigma: settings.oksSigma * 100,
+        useImageSpaceForPointGroupComparisons: settings.useImageSpaceForPointGroupComparisons,
 
         lineThickness: settings.lineThickness * 100,
         lineOrientationThreshold: settings.lineOrientationThreshold * 100,
@@ -87,6 +88,10 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
     const keypointTooltip = makeTooltip(
         makeTooltipFragment('Object Keypoint Similarity (OKS)', settings.descriptions.oksSigma),
+    );
+
+    const pointTooltip = makeTooltip(
+        makeTooltipFragment('Use image space', settings.descriptions.useImageSpaceForPointGroupComparisons),
     );
 
     const linesTooltip = makeTooltip(
@@ -245,6 +250,30 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Point Comparison
+                </Text>
+                <CVATTooltip title={pointTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='useImageSpaceForPointGroupComparisons'
+                        valuePropName='checked'
+                        rules={[{ required: true }]}
+                    >
+                        <Checkbox>
+                            <Text className='cvat-text-color'>Use image space</Text>
+                        </Checkbox>
                     </Form.Item>
                 </Col>
             </Row>
