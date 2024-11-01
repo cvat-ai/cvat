@@ -24,6 +24,7 @@ application = get_asgi_application()
 
 
 if debug.is_debugging_enabled():
+
     class DebuggerApp(ASGIHandler):
         """
         Support for VS code debugger

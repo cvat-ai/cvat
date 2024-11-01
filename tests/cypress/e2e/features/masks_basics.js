@@ -156,6 +156,12 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Edit');
             cy.drawMask(editingActions);
+
+            // Check issue fixed in https://github.com/cvat-ai/cvat/pull/8598
+            // Frames navigation should not work during editing
+            cy.get('.cvat-player-next-button').click();
+            cy.checkFrameNum(0);
+
             cy.finishMaskDrawing();
         });
 

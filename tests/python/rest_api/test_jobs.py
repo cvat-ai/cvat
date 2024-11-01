@@ -568,7 +568,7 @@ class TestGetJobs:
         job = next(job for job in jobs if tasks[job["task_id"]]["organization"] is not None)
         self._test_get_job_200(admin_user, job["id"], expected_data=job)
 
-    @pytest.mark.parametrize("groups", [["business"], ["user"]])
+    @pytest.mark.parametrize("groups", [["user"]])
     def test_non_admin_org_staff_can_get_job(
         self, groups, users, organizations, org_staff, jobs_by_org
     ):
@@ -581,7 +581,7 @@ class TestGetJobs:
         job = jobs_by_org[org_id][0]
         self._test_get_job_200(user["username"], job["id"], expected_data=job)
 
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_job_staff_can_get_job(self, groups, users, jobs, is_job_staff):
         user, job = next(
             (user, job)
@@ -591,7 +591,7 @@ class TestGetJobs:
         )
         self._test_get_job_200(user["username"], job["id"], expected_data=job)
 
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(
         self, groups, users, organizations, org_staff, jobs, is_job_staff
     ):
@@ -955,7 +955,7 @@ class TestListJobs:
         self._test_list_jobs_200("admin1", jobs, **kwargs)
 
     @pytest.mark.parametrize("org_id", ["", None, 1, 2])
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
+    @pytest.mark.parametrize("groups", [["user"], ["worker"], []])
     def test_non_admin_list_jobs(
         self, org_id, groups, users, jobs, tasks, projects, org_staff, is_org_member
     ):
@@ -1024,8 +1024,6 @@ class TestGetAnnotations:
         [
             (["admin"], True, True),
             (["admin"], False, True),
-            (["business"], True, True),
-            (["business"], False, False),
             (["worker"], True, True),
             (["worker"], False, False),
             (["user"], True, True),
@@ -1093,7 +1091,7 @@ class TestGetAnnotations:
     @pytest.mark.parametrize("org", [1])
     @pytest.mark.parametrize(
         "privilege, expect_success",
-        [("admin", True), ("business", False), ("worker", False), ("user", False)],
+        [("admin", True), ("worker", False), ("user", False)],
     )
     def test_non_member_get_job_annotations(
         self,
@@ -1191,7 +1189,7 @@ class TestPatchJobAnnotations:
     @pytest.mark.parametrize("org", [2])
     @pytest.mark.parametrize(
         "privilege, expect_success",
-        [("admin", True), ("business", False), ("worker", False), ("user", False)],
+        [("admin", True), ("worker", False), ("user", False)],
     )
     def test_non_member_update_job_annotations(
         self,
@@ -1218,8 +1216,6 @@ class TestPatchJobAnnotations:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
@@ -1651,15 +1647,6 @@ class TestGetJobPreview:
         job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"])
         self._test_get_job_preview_200("admin2", job_id)
 
-    def test_business_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
-        username, job_id = next(
-            (user["username"], job["id"])
-            for user in find_users(privilege="business")
-            for job in jobs
-            if is_job_staff(user["id"], job["id"])
-        )
-        self._test_get_job_preview_200(username, job_id)
-
     def test_user_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
@@ -1668,15 +1655,6 @@ class TestGetJobPreview:
             if is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_200(username, job_id)
-
-    def test_business_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
-        username, job_id = next(
-            (user["username"], job["id"])
-            for user in find_users(privilege="business")
-            for job in jobs
-            if not is_job_staff(user["id"], job["id"])
-        )
-        self._test_get_job_preview_403(username, job_id)
 
     def test_user_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(

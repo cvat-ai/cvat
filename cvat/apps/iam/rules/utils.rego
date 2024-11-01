@@ -4,7 +4,6 @@ import rego.v1
 
 # Groups
 ADMIN := "admin"
-BUSINESS := "business"
 USER := "user"
 WORKER := "worker"
 
@@ -65,7 +64,6 @@ UPDATE_VALIDATION_LAYOUT := "update:validation_layout"
 
 get_priority(privilege) := {
     ADMIN: 0,
-    BUSINESS: 50,
     USER: 75,
     WORKER: 100,
     null: 1000
@@ -77,10 +75,6 @@ has_perm(group) if {
 
 is_admin if {
     input.auth.user.privilege == ADMIN
-}
-
-is_business if {
-    input.auth.user.privilege == BUSINESS
 }
 
 is_user if {

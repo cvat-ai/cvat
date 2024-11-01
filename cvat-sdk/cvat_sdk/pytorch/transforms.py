@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import FrozenSet, TypedDict
+from typing import TypedDict
 
 import attrs
 import attrs.validators
@@ -63,7 +63,7 @@ class ExtractBoundingBoxes:
     * Rotated shapes are not supported.
     """
 
-    include_shape_types: FrozenSet[str] = attrs.field(
+    include_shape_types: frozenset[str] = attrs.field(
         converter=frozenset,
         validator=attrs.validators.deep_iterable(attrs.validators.in_(_SUPPORTED_SHAPE_TYPES)),
         kw_only=True,

@@ -1565,6 +1565,7 @@ Cypress.Commands.add('startMaskDrawing', () => {
 Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-brush').click();
     cy.get('.cvat-brush-tools-finish').click();
+    cy.hideTooltips();
 });
 
 Cypress.Commands.add('sliceShape', (

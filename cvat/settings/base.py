@@ -236,7 +236,7 @@ IAM_DEFAULT_ROLE = 'user'
 
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
-IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+IAM_ROLES = [IAM_ADMIN_ROLE, 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
@@ -531,12 +531,6 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
-
-RESTRICTIONS = {
-    # allow access to analytics component to users with business role
-    # otherwise, only the administrator has access
-    'analytics_visibility': True,
-}
 
 redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 # The default port is not Redis's default port (6379).

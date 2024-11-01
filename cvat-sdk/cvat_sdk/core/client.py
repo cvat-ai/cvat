@@ -7,10 +7,11 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Optional, TypeVar
 
 import attrs
 import packaging.specifiers as specifiers
@@ -95,7 +96,7 @@ class Client:
         if check_server_version:
             self.check_server_version()
 
-        self._repos: Dict[str, Repo] = {}
+        self._repos: dict[str, Repo] = {}
         """A cache for created Repository instances"""
 
     _ORG_SLUG_HEADER = "X-Organization"
@@ -121,7 +122,7 @@ class Client:
             self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
 
     @contextmanager
-    def organization_context(self, slug: str) -> Iterator[None]:
+    def organization_context(self, slug: str) -> Generator[None, None, None]:
         prev_slug = self.organization_slug
         self.organization_slug = slug
         try:
@@ -183,7 +184,7 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: Tuple[str, str]) -> None:
+    def login(self, credentials: tuple[str, str]) -> None:
         (auth, _) = self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
@@ -211,7 +212,7 @@ class Client:
         rq_id: str,
         *,
         status_check_period: Optional[int] = None,
-    ) -> Tuple[models.Request, urllib3.HTTPResponse]:
+    ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
 
@@ -319,8 +320,8 @@ class CVAT_API_V2:
         path: str,
         *,
         psub: Optional[Sequence[Any]] = None,
-        kwsub: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
+        kwsub: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
     ) -> str:
         url = self.host + path
         if psub or kwsub:
@@ -331,7 +332,7 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[str, str]] = None
+    host: str, *, port: Optional[int] = None, credentials: Optional[tuple[str, str]] = None
 ) -> Client:
     url = host.rstrip("/")
     if port:

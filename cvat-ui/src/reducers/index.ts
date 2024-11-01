@@ -8,7 +8,7 @@ import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrap
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
-    Request, JobValidationLayout, QualitySettings, TaskValidationLayout,
+    Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -694,6 +694,10 @@ export enum NavigationType {
     EMPTY = 'empty',
 }
 
+export interface EditingState {
+    objectState: ObjectState | null;
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -719,6 +723,7 @@ export interface AnnotationState {
         instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
+        activeObjectHidden: boolean;
     };
     job: {
         openTime: null | number;
@@ -769,6 +774,7 @@ export interface AnnotationState {
         activeObjectType: ObjectType;
         activeInitialState?: any;
     };
+    editing: EditingState;
     annotations: {
         activatedStateID: number | null;
         activatedElementID: number | null;

@@ -51,6 +51,7 @@ const defaultState: AnnotationState = {
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
+        activeObjectHidden: false,
     },
     job: {
         openTime: null,
@@ -94,6 +95,9 @@ const defaultState: AnnotationState = {
         activeShapeType: ShapeType.RECTANGLE,
         activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
+    },
+    editing: {
+        objectState: null,
     },
     annotations: {
         activatedStateID: null,
@@ -636,6 +640,26 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
+            const { objectState } = action.payload;
+            return {
+                ...state,
+                editing: {
+                    ...state.editing,
+                    objectState,
+                },
+            };
+        }
+        case AnnotationActionTypes.HIDE_ACTIVE_OBJECT: {
+            const { hide } = action.payload;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeObjectHidden: hide,
+                },
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT_SUCCESS: {
             const { objectState, history } = action.payload;
             const contextMenuClientID = state.canvas.contextMenu.clientID;
@@ -983,7 +1007,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_WORKSPACE: {
             const { workspace } = action.payload;
-            if (state.canvas.activeControl !== ActiveControl.CURSOR) {
+            if (state.canvas.activeControl !== ActiveControl.CURSOR && state.workspace !== Workspace.SINGLE_SHAPE) {
                 return state;
             }
 
@@ -995,6 +1019,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     states: state.annotations.states.filter((_state) => !_state.isGroundTruth),
                     activatedStateID: null,
                     activatedAttributeID: null,
+
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl: ActiveControl.CURSOR,
                 },
             };
         }

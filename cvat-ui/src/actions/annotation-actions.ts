@@ -126,6 +126,8 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    UPDATE_EDITED_STATE = 'UPDATE_EDITED_STATE',
+    HIDE_ACTIVE_OBJECT = 'HIDE_ACTIVE_OBJECT',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
     REMOVE_OBJECT_SUCCESS = 'REMOVE_OBJECT_SUCCESS',
     REMOVE_OBJECT_FAILED = 'REMOVE_OBJECT_FAILED',
@@ -1328,7 +1330,7 @@ export function searchAnnotationsAsync(
     };
 }
 
-const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
+export const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
     [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
     [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
     [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
@@ -1613,6 +1615,53 @@ export function restoreFrameAsync(frame: number): ThunkAction {
                 type: AnnotationActionTypes.RESTORE_FRAME_FAILED,
                 payload: { error },
             });
+        }
+    };
+}
+
+export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const { instance: canvas } = state.annotation.canvas;
+        if (canvas) {
+            (canvas as Canvas).configure({
+                hideEditedObject: hide,
+            });
+
+            const { objectState } = state.annotation.editing;
+            if (objectState) {
+                objectState.hidden = hide;
+                await dispatch(updateAnnotationsAsync([objectState]));
+            }
+
+            dispatch({
+                type: AnnotationActionTypes.HIDE_ACTIVE_OBJECT,
+                payload: {
+                    hide,
+                },
+            });
+        }
+    };
+}
+
+export function updateEditedStateAsync(objectState: ObjectState | null): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        let newActiveObjectHidden = false;
+        if (objectState) {
+            newActiveObjectHidden = objectState.hidden;
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.UPDATE_EDITED_STATE,
+            payload: {
+                objectState,
+            },
+        });
+
+        const state = getState();
+        const { activeObjectHidden } = state.annotation.canvas;
+        if (activeObjectHidden !== newActiveObjectHidden) {
+            dispatch(changeHideActiveObjectAsync(newActiveObjectHidden));
         }
     };
 }
