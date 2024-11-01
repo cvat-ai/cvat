@@ -67,7 +67,7 @@ def run_uv_commands():
     ]
 
     for cmd in commands:
-        subprocess.run(cmd, check=True)  # noseq: B603  # commands are hardcoded
+        subprocess.run(cmd, check=True)  # nosec: B603  # commands are hardcoded
 
 
 def parse_requirements(file_path: Path) -> dict[str, list[str]]:
