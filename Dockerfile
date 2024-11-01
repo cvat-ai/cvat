@@ -1,7 +1,10 @@
 ARG PIP_VERSION=24.0
 ARG BASE_IMAGE=ubuntu:22.04
 
-FROM ${BASE_IMAGE} AS build-image-base
+FROM ${BASE_IMAGE} AS env
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+
+FROM env AS build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
@@ -25,12 +28,10 @@ RUN apt-get update && \
 
 ARG PIP_VERSION
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
-RUN --mount=type=cache,target=/root/.cache/pip/http \
-    python3 -m pip install -U pip==${PIP_VERSION}
 
 # We build OpenH264, FFmpeg and PyAV in a separate build stage,
 # because this way Docker can do it in parallel to all the other packages.
-FROM build-image-base AS build-image-av
+FROM build-image-base AS build-image
 
 # Compile Openh264 and FFmpeg
 ARG PREFIX=/opt/ffmpeg
@@ -51,45 +52,30 @@ RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --outpu
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
 
-COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
+WORKDIR /tmp/venv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Since we're using pip-compile-multi, each dependency can only be listed in
-# one requirements file. In the case of PyAV, that should be
-# `dataset_manifest/requirements.txt`. Make sure it's actually there,
-# and then remove everything else.
-RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
-RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
-
-# Work around https://github.com/PyAV-Org/PyAV/issues/1140
-RUN pip install setuptools wheel 'cython<3'
-
-RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    python3 -m pip wheel --no-binary=av --no-build-isolation \
-    -r /tmp/utils/dataset_manifest/requirements.txt \
-    -w /tmp/wheelhouse
-
-# This stage builds wheels for all dependencies (except PyAV)
-FROM build-image-base AS build-image
-
-COPY cvat/requirements/ /tmp/cvat/requirements/
-COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
-
-# Exclude av from the requirements file
-RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
+COPY pyproject.toml uv.lock ./
 
 ARG CVAT_CONFIGURATION="production"
-
-RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps --no-binary lxml,xmlsec \
-    -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
-    -w /tmp/wheelhouse
+ENV UV_LINK_MODE=copy
+RUN uv venv
+RUN --mount=type=cache,target=/root/.cache/uv \
+    DATUMARO_HEADLESS=1 \
+    uv sync  \
+    --frozen  \
+    --no-install-project \
+    --extra ${CVAT_CONFIGURATION} \
+    $(if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then echo "--extra debug"; fi) \
+    --no-binary-package lxml \
+    --no-binary-package xmlsec
 
 FROM golang:1.23.0 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
 
-FROM ${BASE_IMAGE}
+FROM env
 
 ARG http_proxy
 ARG https_proxy
@@ -159,34 +145,15 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
         rm -rf /var/lib/apt/lists/*; \
     fi
 
-# Install wheels from the build image
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
+ENV PATH$="${UV_PROJECT_ENVIRONMENT}:${PATH}"
 # setuptools should be uninstalled after updating google-cloud-storage
 # https://github.com/googleapis/python-storage/issues/740
-RUN python -m pip install --upgrade setuptools
 ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN python -m pip install -U pip==${PIP_VERSION}
-RUN --mount=type=bind,from=build-image,source=/tmp/wheelhouse,target=/mnt/wheelhouse \
-    --mount=type=bind,from=build-image-av,source=/tmp/wheelhouse,target=/mnt/wheelhouse-av \
-    python -m pip install --no-index /mnt/wheelhouse/*.whl /mnt/wheelhouse-av/*.whl
-
 ENV NUMPROCS=1
-COPY --from=build-image-av /opt/ffmpeg/lib /usr/lib
-
-# These variables are required for supervisord substitutions in files
-# This library allows remote python debugging with VS Code
-ARG CVAT_DEBUG_ENABLED
-RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
-        python3 -m pip install --no-cache-dir debugpy; \
-    fi
-
-# Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
-# The vulnerability is dubious and we don't use pip at runtime, but some vulnerability scanners mark it as a high vulnerability,
-# and it was decided to remove pip from the final image
-RUN python -m pip uninstall -y pip
+COPY --from=build-image /opt/ffmpeg/lib /usr/lib
+COPY --from=build-image ${UV_PROJECT_ENVIRONMENT} ${UV_PROJECT_ENVIRONMENT}
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf

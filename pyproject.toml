@@ -1,3 +1,94 @@
+[project.urls]
+Homepage = "https://cvat.ai"
+Documentation = "https://docs.cvat.ai/"
+Repository = "https://github.com/cvat-ai/cvat"
+
+
+[project]
+name = "cvat"
+version = "0.1.0"
+description = "Computer Vision Annotation Tool"
+requires-python = ">=3.8"
+authors = []
+
+dependencies = [
+    "attrs==21.4.0",
+    "av==9.2.0",
+    "azure-storage-blob==12.13.0",
+    "boto3==1.17.61",
+    "clickhouse-connect==0.6.8",
+    "coreapi==2.3.3",
+    "datumaro @ git+https://github.com/cvat-ai/datumaro.git@e612d1bfb76a3c3d3d545187338c841a246619fb",
+    "dj-pagination==2.5.0",
+    "dj-rest-auth[with_social]==5.0.2",
+    "django-allauth[saml]==0.57.2",
+    "django-auth-ldap==2.2.0",
+    "django-compressor==4.3.1",
+    "django-cors-headers==3.5.0",
+    "django-crum==0.7.9",
+    "django-filter==2.4.0",
+    "django-health-check>=3.18.1,<4",
+    "django-rq==2.8.1",
+    "django-sendfile2==0.7.0",
+    "Django~=4.2.7",
+    "djangorestframework~=3.14.0",
+    "drf-spectacular==0.26.2",
+    "furl==2.1.0",
+    "google-cloud-storage==1.42.0",
+    "lxml>=5.2.1,<6",
+    "natsort==8.0.0",
+    "numpy~=1.23.2",
+    "opencv-python-headless~=4.8",
+    "patool==1.12",
+    "pdf2image==1.14.0",
+    "Pillow>=10.3.0",
+    "pottery~=3.0",
+    "psutil==5.9.4",
+    "psycopg2-binary==2.9.5",
+    "python-ldap==3.4.3",
+    "python-logstash-async==2.5.0",
+    "pyunpack==0.2.1",
+    "redis==4.6.0",
+    "requests~=2.26",
+    "rq-scheduler==0.13.1",
+    "rq==1.16.0",
+    "rules>=3.3",
+    "Shapely==1.7.1",
+    "xmlsec>=1.3.14,<2",
+    "tqdm>=4.58.0",
+]
+
+[project.optional-dependencies]
+production = [
+    "coverage==7.2.3",
+    "uvicorn[standard]==0.22.0",
+]
+development = [
+    "black>=24.1",
+    "django-extensions==3.0.8",
+    "django-silk==5.*",
+    "pylint-django==2.5.3",
+    "pylint-plugin-utils==0.7",
+    "pylint==2.14.5",
+    "rope==0.17.0",
+    "snakeviz==2.1.0",
+]
+testing = [
+    "cvat[development]",
+    "coverage==7.2.3",
+    "fakeredis[lua]==2.10.3",
+]
+debug = ["debugpy"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+# allows referencing "cvat[development]" in testing extra
+allow-direct-references = true
+
+
 [tool.isort]
 profile = "black"
 forced_separate = ["tests"]

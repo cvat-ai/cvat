@@ -25,7 +25,7 @@ description: 'Installing a development environment for different operating syste
   MacOS 10.15
 
   ```bash
-  brew install git python pyenv redis curl openssl node sqlite3 geos
+  brew install git python pyenv redis curl openssl node sqlite3 geos uv
   ```
 
   Arch Linux
@@ -77,24 +77,15 @@ description: 'Installing a development environment for different operating syste
   ```bash
   git clone https://github.com/cvat-ai/cvat
   cd cvat && mkdir logs keys
-  python3 -m venv .env
-  . .env/bin/activate
-  pip install -U pip wheel setuptools
-  pip install -r cvat/requirements/development.txt
+  uv venv
+  . .venv/bin/activate
+  uv sync --no-install-project --extra development
   ```
-
-  Note that the `.txt` files in the `cvat/requirements` directory
-  have pinned dependencies intended for the main target OS/Python version
-  (the one used in the main Dockerfile).
-  If you're unable to install those dependency versions,
-  you can substitute the corresponding `.in` files instead.
-  That way, you're more likely to be able to install the dependencies,
-  but their versions might not correspond to those used in production.
 
   > Note for Mac users
   >
-  > If you have any problems with installing dependencies from
-  > `cvat/requirements/*.txt`, you may need to reinstall your system python
+  > If you have any problems with installing dependencies
+  > you may need to reinstall your system python.
   > In some cases after system update it can be configured incorrectly and cannot compile
   > some native modules
   >
@@ -143,7 +134,7 @@ description: 'Installing a development environment for different operating syste
   >
   > Because PyAV as of version 10.0.0 already [works](https://github.com/PyAV-Org/PyAV/pull/910)
   > with FFMPEG5, you may consider changing the `av` version requirement
-  > in `/cvat/cvat/requirements/base.txt` to 10.0.0 or higher.
+  > in `pyproject.toml` to 10.0.0 or higher, then running `uv lock --no-upgrade` and `uv sync` from above.
   >
   > Perform this action before installing cvat requirements from the list mentioned above.
 
