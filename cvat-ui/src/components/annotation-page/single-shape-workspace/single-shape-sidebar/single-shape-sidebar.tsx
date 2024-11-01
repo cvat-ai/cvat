@@ -511,7 +511,7 @@ function SingleShapeSidebar(): JSX.Element {
                                                 Press
                                                 <Text strong>
                                                     {` ${
-                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS
+                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE
                                                     } `}
                                                 </Text>
                                                 to finish drawing process
