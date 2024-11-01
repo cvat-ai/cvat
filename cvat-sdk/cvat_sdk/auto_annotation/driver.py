@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from typing import List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import attrs
 
@@ -119,7 +120,7 @@ class _AnnotationMapper:
                 fun_label, ds_labels_by_name
             )
 
-    def validate_and_remap(self, shapes: List[models.LabeledShapeRequest], ds_frame: int) -> None:
+    def validate_and_remap(self, shapes: list[models.LabeledShapeRequest], ds_frame: int) -> None:
         new_shapes = []
 
         for shape in shapes:
