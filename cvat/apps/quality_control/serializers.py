@@ -81,6 +81,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "max_validations_per_job",
             "iou_threshold",
             "oks_sigma",
+            "use_image_space_for_point_group_comparisons",
             "line_thickness",
             "low_overlap_threshold",
             "compare_line_orientation",
@@ -98,6 +99,9 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         )
 
         extra_kwargs = {k: {"required": False} for k in fields}
+        extra_kwargs.setdefault("use_image_space_for_point_group_comparisons", {}).setdefault(
+            "default", False
+        )
 
         for field_name, help_text in {
             "target_metric": "The primary metric used for quality estimation",
@@ -118,6 +122,11 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 The percent of the bbox area, used as the radius of the circle around the GT point,
                 where the checked point is expected to be.
                 Read more: https://cocodataset.org/#keypoints-eval
+            """,
+            "use_image_space_for_point_group_comparisons": """
+                Compare point groups in the image space, instead of using the point group bbox.
+                Useful if point groups may not represent a single object or grouped boxes
+                do not represent object boundaries.
             """,
             "line_thickness": """
                 Thickness of polylines, relatively to the (image area) ^ 0.5.

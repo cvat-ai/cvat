@@ -205,6 +205,8 @@ class QualitySettings(models.Model):
 
     low_overlap_threshold = models.FloatField()
 
+    use_image_space_for_point_group_comparisons = models.BooleanField(default=False)
+
     compare_line_orientation = models.BooleanField()
     line_orientation_threshold = models.FloatField()
 
