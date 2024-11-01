@@ -160,7 +160,7 @@ class LambdaManager {
                             onUpdate.forEach((update) => update(
                                 status,
                                 response.progress ?? 0,
-                                `The process has ${RQStatus.FAILED}. ${response.exc_info}`,
+                                `The process has failed. ${response.exc_info}`,
                             ));
                         } else {
                             onUpdate.forEach((update) => update(
