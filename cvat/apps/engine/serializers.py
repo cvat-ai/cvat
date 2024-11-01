@@ -29,7 +29,7 @@ from numpy import random
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import TaskFrameProvider
-from cvat.apps.engine.utils import format_list, parse_exception_message
+from cvat.apps.engine.utils import format_list
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
