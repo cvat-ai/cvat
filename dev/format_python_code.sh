@@ -20,6 +20,7 @@ fi
 for paths in \
     "cvat-sdk" \
     "cvat-cli" \
+    "dev" \
     "tests/python/" \
     "cvat/apps/quality_control" \
     "cvat/apps/analytics_report" \
