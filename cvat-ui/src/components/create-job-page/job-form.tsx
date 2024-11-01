@@ -90,12 +90,12 @@ function JobForm(props: Props): JSX.Element {
         }
     };
 
-    const sizeBase = useCallback(() => {
+    const sizeBase = (): number => {
         if (frameSelectionMethod === FrameSelectionMethod.RANDOM) {
             return taskSize;
         }
         return segmentSize;
-    }, [frameSelectionMethod, segmentSize, taskSize]);
+    };
 
     const quantityFromFrameCount = (value: number): number => Math.floor((value / sizeBase()) * 100);
     const frameCountFromQuantity = (value: number): number => Math.round((value * sizeBase()) / 100);
@@ -123,7 +123,7 @@ function JobForm(props: Props): JSX.Element {
         onQuantityChange(currentQuantity);
     }, [form, frameSelectionMethod]);
 
-    const setDescription = 'A representative set, 5-15% of randomly chosen frames is recommended';
+    const description = 'A representative set, 5-15% of randomly chosen frames is recommended';
 
     return (
         <Row className='cvat-create-job-form-wrapper'>
@@ -181,7 +181,7 @@ function JobForm(props: Props): JSX.Element {
                                         <Space>
                                             {frameSelectionMethod === FrameSelectionMethod.RANDOM ?
                                                 'Quantity' : 'Quantity per job'}
-                                            <CVATTooltip title={setDescription}>
+                                            <CVATTooltip title={description}>
                                                 <QuestionCircleOutlined
                                                     style={{ opacity: 0.5 }}
                                                 />
@@ -208,7 +208,7 @@ function JobForm(props: Props): JSX.Element {
                                             label={(
                                                 <Space>
                                                     Frame count
-                                                    <CVATTooltip title={setDescription}>
+                                                    <CVATTooltip title={description}>
                                                         <QuestionCircleOutlined
                                                             style={{ opacity: 0.5 }}
                                                         />

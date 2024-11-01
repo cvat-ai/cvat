@@ -5,7 +5,6 @@
 
 import React, { useEffect } from 'react';
 import Layout from 'antd/lib/layout';
-import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
@@ -19,6 +18,7 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
+import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
@@ -139,14 +139,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     }
 
     if (typeof job === 'undefined') {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='Sorry, but this job was not found'
-                subTitle='Please, be sure information you tried to get exist and you have access'
-            />
-        );
+        return <JobNotFoundComponent />;
     }
 
     return (
