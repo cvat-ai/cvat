@@ -57,9 +57,9 @@ class Replacer:
         return underscore(name)
 
     def make_type_annotation(self, type_repr: str) -> str:
-        type_repr = type_repr.replace("[", "typing.List[")
+        type_repr = type_repr.replace("[", "list[")
         type_repr = type_repr.replace("(", "typing.Union[").replace(")", "]")
-        type_repr = type_repr.replace("{", "typing.Dict[").replace(":", ",").replace("}", "]")
+        type_repr = type_repr.replace("{", "dict[").replace(":", ",").replace("}", "]")
 
         ANY_pattern = "bool, date, datetime, dict, float, int, list, str"
         type_repr = type_repr.replace(ANY_pattern, "typing.Any")
