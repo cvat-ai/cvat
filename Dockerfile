@@ -113,6 +113,7 @@ RUN apt-get update && \
         libxml2 \
         libxmlsec1 \
         libxmlsec1-openssl \
+        libglib2.0-0 \
         nginx \
         p7zip-full \
         poppler-utils \
@@ -125,6 +126,7 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
+
 
 # Install smokescreen
 COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
