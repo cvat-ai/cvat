@@ -621,14 +621,14 @@ class LambdaJob:
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
-            "exc_info": self.job.exc_info
+            "exc_info": None
         }
 
         if dict_['status'] == rq.job.JobStatus.DEFERRED:
             dict_['status'] = rq.job.JobStatus.QUEUED.value
 
         if dict_['status'] == rq.job.JobStatus.FAILED:
-            dict_['exc_info'] = self.job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, dict_['exc_info'])
+            dict_['exc_info'] = self.job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, 'Unknown error')
 
         return dict_
 
