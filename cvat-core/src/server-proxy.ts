@@ -175,10 +175,7 @@ function filterPythonTraceback(data: string): string {
     if (typeof data === 'string' && data.trim().startsWith('Traceback')) {
         const lastRow = data.split('\n').findLastIndex((str) => str.trim().length);
         let errorText = `${data.split('\n').slice(lastRow, lastRow + 1)[0]}`;
-        if (errorText.includes('CvatDatasetNotFoundError')) {
-            errorText = errorText.replace(/.*CvatDatasetNotFoundError: /, '');
-        }
-        return errorText;
+        return errorText.split(':').slice(1).join(':').trim();
     }
 
     return data;
@@ -1695,6 +1692,9 @@ async function getLambdaRequestStatus(requestID) {
 
     try {
         const response = await Axios.get(`${backendAPI}/lambda/requests/${requestID}`);
+        if (response.data.status === RQStatus.FAILED) {
+            response.data.exc_info = filterPythonTraceback(response.data.exc_info ?? '');
+        }
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
