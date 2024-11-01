@@ -3,6 +3,7 @@ ARG BASE_IMAGE=ubuntu:22.04
 
 FROM ${BASE_IMAGE} AS env
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+ENV PATH$="${UV_PROJECT_ENVIRONMENT}:${PATH}"
 
 FROM env AS build-image-base
 
@@ -145,7 +146,6 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
         rm -rf /var/lib/apt/lists/*; \
     fi
 
-ENV PATH$="${UV_PROJECT_ENVIRONMENT}:${PATH}"
 # setuptools should be uninstalled after updating google-cloud-storage
 # https://github.com/googleapis/python-storage/issues/740
 ARG PIP_VERSION
