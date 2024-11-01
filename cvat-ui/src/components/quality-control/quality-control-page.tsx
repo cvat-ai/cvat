@@ -225,7 +225,7 @@ function QualityControlPage(): JSX.Element {
                 settings.compareAttributes = values.compareAttributes;
 
                 settings.oksSigma = values.oksSigma / 100;
-                settings.useImageSpaceForPointGroupComparisons = values.useImageSpaceForPointGroupComparisons;
+                settings.useBboxSizeForPoints = values.useBboxSizeForPoints;
 
                 settings.lineThickness = values.lineThickness / 100;
                 settings.lineOrientationThreshold = values.lineOrientationThreshold / 100;

@@ -22,7 +22,7 @@ export default class QualitySettings {
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
-    #useImageSpaceForPointGroupComparisons: boolean;
+    #useBboxSizeForPoints: boolean;
     #lineThickness: number;
     #lowOverlapThreshold: number;
     #orientedLines: boolean;
@@ -43,7 +43,7 @@ export default class QualitySettings {
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
-        this.#useImageSpaceForPointGroupComparisons = initialData.use_image_space_for_point_group_comparisons;
+        this.#useBboxSizeForPoints = initialData.use_bbox_size_for_points;
         this.#lineThickness = initialData.line_thickness;
         this.#lowOverlapThreshold = initialData.low_overlap_threshold;
         this.#orientedLines = initialData.compare_line_orientation;
@@ -81,12 +81,12 @@ export default class QualitySettings {
         this.#oksSigma = newVal;
     }
 
-    get useImageSpaceForPointGroupComparisons(): boolean {
-        return this.#useImageSpaceForPointGroupComparisons;
+    get useBboxSizeForPoints(): boolean {
+        return this.#useBboxSizeForPoints;
     }
 
-    set useImageSpaceForPointGroupComparisons(newVal: boolean) {
-        this.#useImageSpaceForPointGroupComparisons = newVal;
+    set useBboxSizeForPoints(newVal: boolean) {
+        this.#useBboxSizeForPoints = newVal;
     }
 
     get lineThickness(): number {
@@ -207,7 +207,7 @@ export default class QualitySettings {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
             oks_sigma: this.#oksSigma,
-            use_image_space_for_point_group_comparisons: this.#useImageSpaceForPointGroupComparisons,
+            use_bbox_size_for_points: this.#useBboxSizeForPoints,
             line_thickness: this.#lineThickness,
             low_overlap_threshold: this.#lowOverlapThreshold,
             compare_line_orientation: this.#orientedLines,

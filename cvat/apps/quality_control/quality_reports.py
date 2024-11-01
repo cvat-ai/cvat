@@ -187,8 +187,8 @@ class ComparisonParameters(_Serializable):
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
 
-    use_image_space_for_point_group_comparisons: bool = False
-    "Compare points in the image space, instead of using the point group bbox"
+    use_bbox_size_for_points: bool = True
+    "Compare point groups using the group bbox size instead of the image size"
 
     line_thickness: float = 0.01
     "Thickness of polylines, relatively to the (image area) ^ 0.5"
@@ -958,7 +958,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
-        use_image_space_for_point_group_comparisons: bool = False,
+        use_bbox_size_for_points: bool = True,
         compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
@@ -972,10 +972,8 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.oks_sigma = oks_sigma
         "% of the shape area"
 
-        self.use_image_space_for_point_group_comparisons = (
-            use_image_space_for_point_group_comparisons
-        )
-        "Do not infer bbox for point group comparison, use the image space"
+        self.use_bbox_size_for_points = use_bbox_size_for_points
+        "Compare point groups using the group bbox size instead of the image size"
 
         self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
@@ -1303,7 +1301,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 # Complex case: multiple points, grouped points, points with a bbox
                 # Try to align points and then return the metric
 
-                if self.use_image_space_for_point_group_comparisons:
+                if not self.use_bbox_size_for_points:
                     scale = img_h * img_w
                 else:
                     # match points in their bbox space
@@ -1539,9 +1537,7 @@ class _Comparator:
             panoptic_comparison=settings.panoptic_comparison,
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
-            use_image_space_for_point_group_comparisons=(
-                settings.use_image_space_for_point_group_comparisons
-            ),
+            use_bbox_size_for_points=settings.use_bbox_size_for_points,
             line_torso_radius=settings.line_thickness,
             compare_line_orientation=False,  # should not be taken from outside, handled differently
         )

@@ -9661,12 +9661,13 @@ components:
             The percent of the bbox area, used as the radius of the circle around the GT point,
             where the checked point is expected to be.
             Read more: https://cocodataset.org/#keypoints-eval
-        use_image_space_for_point_group_comparisons:
+        use_bbox_size_for_points:
           type: boolean
-          default: false
           description: |
-            Compare point groups in the image space, instead of using the point group bbox.
-            Useful if point groups may not represent a single object or grouped boxes
+            When comparing point groups, OKS sigma defines the matching area for a GT point.
+            If enabled, the area size is based on the point group bbox size.
+            If disabled, the image size is used.
+            Useful if point groups do not represent a single object or boxes attached to points
             do not represent object boundaries.
         line_thickness:
           type: number
@@ -10148,12 +10149,13 @@ components:
             The percent of the bbox area, used as the radius of the circle around the GT point,
             where the checked point is expected to be.
             Read more: https://cocodataset.org/#keypoints-eval
-        use_image_space_for_point_group_comparisons:
+        use_bbox_size_for_points:
           type: boolean
-          default: false
           description: |
-            Compare point groups in the image space, instead of using the point group bbox.
-            Useful if point groups may not represent a single object or grouped boxes
+            When comparing point groups, OKS sigma defines the matching area for a GT point.
+            If enabled, the area size is based on the point group bbox size.
+            If disabled, the image size is used.
+            Useful if point groups do not represent a single object or boxes attached to points
             do not represent object boundaries.
         line_thickness:
           type: number

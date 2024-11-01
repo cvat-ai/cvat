@@ -35,7 +35,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         compareAttributes: settings.compareAttributes,
 
         oksSigma: settings.oksSigma * 100,
-        useImageSpaceForPointGroupComparisons: settings.useImageSpaceForPointGroupComparisons,
+        useBboxSizeForPoints: settings.useBboxSizeForPoints,
 
         lineThickness: settings.lineThickness * 100,
         lineOrientationThreshold: settings.lineOrientationThreshold * 100,
@@ -91,7 +91,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     );
 
     const pointTooltip = makeTooltip(
-        makeTooltipFragment('Use image space', settings.descriptions.useImageSpaceForPointGroupComparisons),
+        makeTooltipFragment('Use image space', settings.descriptions.useBboxSizeForPoints),
     );
 
     const linesTooltip = makeTooltip(
@@ -267,12 +267,12 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             <Row>
                 <Col span={12}>
                     <Form.Item
-                        name='useImageSpaceForPointGroupComparisons'
+                        name='useBboxSizeForPoints'
                         valuePropName='checked'
                         rules={[{ required: true }]}
                     >
                         <Checkbox>
-                            <Text className='cvat-text-color'>Use image space</Text>
+                            <Text className='cvat-text-color'>Use bbox size</Text>
                         </Checkbox>
                     </Form.Item>
                 </Col>
