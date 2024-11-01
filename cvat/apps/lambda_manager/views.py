@@ -38,6 +38,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.utils import parse_exception_message
 from cvat.apps.lambda_manager.models import FunctionKind
 from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
@@ -621,10 +622,14 @@ class LambdaJob:
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
-            "exc_info": self.job.exc_info
+            "exc_info": self.job.exc_info,
         }
+
         if dict_['status'] == rq.job.JobStatus.DEFERRED:
             dict_['status'] = rq.job.JobStatus.QUEUED.value
+
+        if dict_['status'] == rq.job.JobStatus.FAILED:
+            dict_['exc_info'] = self.job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, dict_['exc_info'])
 
         return dict_
 
@@ -1203,7 +1208,6 @@ class RequestViewSet(viewsets.ViewSet):
         self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)
-
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data
 
