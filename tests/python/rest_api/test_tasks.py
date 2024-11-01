@@ -141,7 +141,6 @@ class TestGetTasks:
         "groups, is_staff, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
         ],
     )
     def test_project_tasks_visibility(
@@ -350,7 +349,6 @@ class TestPostTasks:
         "groups, is_staff, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
             ("user", True, True),
         ],
     )
@@ -511,8 +509,6 @@ class TestPatchTaskAnnotations:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
