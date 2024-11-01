@@ -55,8 +55,6 @@ class TestPostIssues:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
@@ -185,8 +183,6 @@ class TestPatchIssues:
         [
             ("admin", True, None, True),
             ("admin", False, None, True),
-            ("business", True, None, True),
-            ("business", False, None, False),
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
@@ -275,8 +271,6 @@ class TestDeleteIssues:
         [
             ("admin", True, None, True),
             ("admin", False, None, True),
-            ("business", True, None, True),
-            ("business", False, None, False),
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
