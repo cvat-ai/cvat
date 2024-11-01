@@ -3,14 +3,8 @@
 
 astroid==2.11.7
     # via pylint
-async-timeout==5.0.0
-    # via redis
 autopep8==2.3.1
     # via django-silk
-azure-core==1.32.0
-    # via
-    #   azure-storage-blob
-    #   msrest
 black==24.10.0
     # via cvat (pyproject.toml)
 dill==0.3.9
@@ -19,10 +13,6 @@ django-extensions==3.0.8
     # via cvat (pyproject.toml)
 django-silk==5.2.0
     # via cvat (pyproject.toml)
-google-api-core==2.22.0
-    # via
-    #   google-cloud-core
-    #   google-cloud-storage
 gprof2dot==2024.6.6
     # via django-silk
 isort==5.13.2
@@ -54,8 +44,6 @@ pylint-plugin-utils==0.7
     #   pylint-django
 rope==0.17.0
     # via cvat (pyproject.toml)
-setuptools==75.2.0
-    # via astroid
 snakeviz==2.1.0
     # via cvat (pyproject.toml)
 tomli==2.0.2

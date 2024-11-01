@@ -7,7 +7,5 @@ fakeredis==2.10.3
     # via cvat (pyproject.toml)
 lupa==1.14.1
     # via fakeredis
-setuptools==75.3.0
-    # via astroid
 sortedcontainers==2.4.0
     # via fakeredis
