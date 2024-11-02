@@ -12,13 +12,9 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
     Literal,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -96,15 +92,15 @@ class Repo(ModelProxy[ModelType, ApiType]):
     Implements group and management operations for entities.
     """
 
-    _entity_type: Type[Entity[ModelType, ApiType]]
+    _entity_type: type[Entity[ModelType, ApiType]]
 
 
 ### Utilities
 
 
 def build_model_bases(
-    mt: Type[ModelType], at: Type[ApiType], *, api_member_name: Optional[str] = None
-) -> Tuple[Type[Entity[ModelType, ApiType]], Type[Repo[ModelType, ApiType]]]:
+    mt: type[ModelType], at: type[ApiType], *, api_member_name: Optional[str] = None
+) -> tuple[type[Entity[ModelType, ApiType]], type[Repo[ModelType, ApiType]]]:
     """
     Helps to remove code duplication in declarations of derived classes
     """
@@ -128,7 +124,7 @@ _EntityT = TypeVar("_EntityT", bound=Entity)
 
 
 class ModelCreateMixin(Generic[_EntityT, IModel]):
-    def create(self: Repo, spec: Union[Dict[str, Any], IModel]) -> _EntityT:
+    def create(self: Repo, spec: Union[dict[str, Any], IModel]) -> _EntityT:
         """
         Creates a new object on the server and returns the corresponding local object
         """
@@ -149,12 +145,12 @@ class ModelRetrieveMixin(Generic[_EntityT]):
 
 class ModelListMixin(Generic[_EntityT]):
     @overload
-    def list(self: Repo, *, return_json: Literal[False] = False) -> List[_EntityT]: ...
+    def list(self: Repo, *, return_json: Literal[False] = False) -> list[_EntityT]: ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]: ...
+    def list(self: Repo, *, return_json: Literal[True] = False) -> list[Any]: ...
 
-    def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Any]]:
+    def list(self: Repo, *, return_json: bool = False) -> list[Union[_EntityT, Any]]:
         """
         Retrieves all objects from the server and returns them in basic or JSON format.
         """
@@ -174,8 +170,8 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
     def _model_partial_update_arg(self: Entity) -> str: ...
 
     def _export_update_fields(
-        self: Entity, overrides: Optional[Union[Dict[str, Any], IModel]] = None
-    ) -> Dict[str, Any]:
+        self: Entity, overrides: Optional[Union[dict[str, Any], IModel]] = None
+    ) -> dict[str, Any]:
         # TODO: support field conversion and assignment updating
         # fields = to_json(self._model)
 
@@ -194,7 +190,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
         (self._model, _) = self.api.retrieve(id=getattr(self, self._model_id_field))
         return self
 
-    def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> Self:
+    def update(self: Entity, values: Union[dict[str, Any], IModel]) -> Self:
         """
         Commits model changes to the server
 
