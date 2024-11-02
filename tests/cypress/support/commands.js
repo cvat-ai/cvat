@@ -378,6 +378,42 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
     });
 });
 
+Cypress.Commands.add('headlessCreateTaskWithGT', (files, taskParams, gtJobParams = { frameCount: 3, seed: null }) => {
+    const { labelName, taskName } = taskParams;
+    let taskID = null;
+    let jobID = null;
+    let groundTruthJobID = null;
+    cy.headlessCreateTask({
+        labels: [{ name: labelName, attributes: [], type: 'any' }],
+        name: taskName,
+        project_id: null,
+        source_storage: { location: 'local' },
+        target_storage: { location: 'local' },
+    }, {
+        server_files: files,
+        image_quality: 70,
+        use_zip_chunks: true,
+        use_cache: true,
+        sorting_method: 'lexicographical',
+    }).then((taskResponse) => {
+        taskID = taskResponse.taskID;
+        [jobID] = taskResponse.jobIDs;
+    }).then(() => (
+        cy.headlessCreateJob({
+            task_id: taskID,
+            frame_count: gtJobParams.frameCount,
+            type: 'ground_truth',
+            frame_selection_method: 'random_uniform',
+            ...(gtJobParams.seed ? {
+                seed: gtJobParams.seed,
+            } : {}),
+        })
+    )).then((jobResponse) => {
+        groundTruthJobID = jobResponse.jobID;
+        return { taskID, jobID, groundTruthJobID };
+    });
+});
+
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
     cy.contains('strong', new RegExp(`^${taskName}$`))
         .parents('.cvat-tasks-list-item')

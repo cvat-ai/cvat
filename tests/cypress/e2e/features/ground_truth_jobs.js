@@ -8,8 +8,6 @@ context('Ground truth jobs', () => {
     const caseId = 'Ground truth jobs';
     const labelName = 'car';
     const taskName = `Annotation task for Case ${caseId}`;
-    const attrName = `Attr for Case ${caseId}`;
-    const textDefaultValue = 'Some default value for type Text';
 
     const jobOptions = {
         jobType: 'Ground truth',
@@ -64,8 +62,8 @@ context('Ground truth jobs', () => {
     let jobID = null;
     let taskID = null;
 
-    // With seed = 1, frameCount = 4, totalFrames = 10 - predifined ground truth frames are:
-    const groundTruthFrames = [0, 1, 5, 6];
+    // With seed = 1, frameCount = 4, totalFrames = 100 - predifined ground truth frames are:
+    const groundTruthFrames = [10, 23, 71, 87];
 
     function checkRectangleAndObjectMenu(rectangle, isGroundTruthJob = false) {
         if (isGroundTruthJob) {
@@ -103,29 +101,29 @@ context('Ground truth jobs', () => {
     });
 
     describe('Testing ground truth basics', () => {
-        const imagesCount = 10;
-        const imageFileName = 'ground_truth_1';
-        const width = 800;
-        const height = 800;
-        const posX = 10;
-        const posY = 10;
-        const color = 'gray';
-        const archiveName = `${imageFileName}.zip`;
-        const archivePath = `cypress/fixtures/${archiveName}`;
-        const imagesFolder = `cypress/fixtures/${imageFileName}`;
-        const directoryToArchive = imagesFolder;
+        const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            cy.visit('/tasks');
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
-            cy.openTask(taskName);
-            cy.url().then((url) => {
-                taskID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-            });
-            cy.get('.cvat-job-item').first().invoke('attr', 'data-row-id').then((val) => {
-                jobID = val;
+            cy.headlessCreateTask({
+                labels: [
+                    { name: labelName, attributes: [], type: 'any' },
+                ],
+                name: taskName,
+                project_id: null,
+                source_storage: { location: 'local' },
+                target_storage: { location: 'local' },
+            }, {
+                server_files: serverFiles,
+                image_quality: 70,
+                use_zip_chunks: true,
+                use_cache: true,
+                sorting_method: 'lexicographical',
+            }).then((response) => {
+                taskID = response.taskID;
+                [jobID] = response.jobIDs;
+            }).then(() => {
+                cy.visit(`/tasks/${taskID}`);
+                cy.get('.cvat-task-details').should('exist').and('be.visible');
             });
         });
 
@@ -200,31 +198,13 @@ context('Ground truth jobs', () => {
         const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
         before(() => {
-            cy.headlessCreateTask({
-                labels: [{ name: labelName, attributes: [], type: 'any' }],
-                name: taskName,
-                project_id: null,
-                source_storage: { location: 'local' },
-                target_storage: { location: 'local' },
+            cy.headlessCreateTaskWithGT(serverFiles, {
+                taskName,
+                labelName,
             }, {
-                server_files: serverFiles,
-                image_quality: 70,
-                use_zip_chunks: true,
-                use_cache: true,
-                sorting_method: 'lexicographical',
-            }).then((taskResponse) => {
-                taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobIDs;
-            }).then(() => (
-                cy.headlessCreateJob({
-                    task_id: taskID,
-                    frame_count: 3,
-                    type: 'ground_truth',
-                    frame_selection_method: 'random_uniform',
-                })
-            )).then((jobResponse) => {
-                groundTruthJobID = jobResponse.jobID;
-            }).then(() => {
+                frameCount: 3,
+            }).then((data) => {
+                ({ taskID, jobID, groundTruthJobID } = data);
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
@@ -312,34 +292,29 @@ context('Ground truth jobs', () => {
     });
 
     describe('Regression tests', () => {
-        const imagesCount = 20;
-        const imageFileName = 'ground_truth_2';
-        const width = 100;
-        const height = 100;
-        const posX = 10;
-        const posY = 10;
-        const color = 'gray';
-        const archiveName = `${imageFileName}.zip`;
-        const archivePath = `cypress/fixtures/${archiveName}`;
-        const imagesFolder = `cypress/fixtures/${imageFileName}`;
-        const directoryToArchive = imagesFolder;
+        const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            cy.visit('/tasks');
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                archiveName,
-                false,
-                { multiJobs: true, segmentSize: 1 },
-            );
-            cy.openTask(taskName);
-            cy.url().then((url) => {
-                taskID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+            cy.headlessCreateTask({
+                labels: [
+                    { name: labelName, attributes: [], type: 'any' },
+                ],
+                name: taskName,
+                project_id: null,
+                source_storage: { location: 'local' },
+                target_storage: { location: 'local' },
+            }, {
+                server_files: serverFiles,
+                image_quality: 70,
+                use_zip_chunks: true,
+                use_cache: true,
+                sorting_method: 'lexicographical',
+            }).then((response) => {
+                taskID = response.taskID;
+                [jobID] = response.jobIDs;
+            }).then(() => {
+                cy.visit(`/tasks/${taskID}`);
+                cy.get('.cvat-task-details').should('exist').and('be.visible');
             });
         });
 
