@@ -254,6 +254,7 @@ def get_serializer_without_url(instance):
         serializer.fields.pop("url", None)
     return serializer
 
+
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -287,6 +288,7 @@ def handle_create(scope, instance, **kwargs):
         user_email=uemail,
         payload=payload,
     )
+
 
 def handle_update(scope, instance, old_instance, **kwargs):
     oid = organization_id(instance)
@@ -322,12 +324,14 @@ def handle_update(scope, instance, old_instance, **kwargs):
             payload={"old_value": change["old_value"]},
         )
 
+
 def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     deletion_cache = get_cache()
+    instance_id = getattr(instance, "id", None)
     if store_in_deletion_cache:
         deletion_cache.set(
             instance.__class__,
-            instance.id,
+            instance_id,
             {
                 "oid": organization_id(instance),
                 "oslug": organization_slug(instance),
@@ -338,7 +342,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         )
         return
 
-    instance_meta_info = deletion_cache.pop(instance.__class__, instance.id)
+    instance_meta_info = deletion_cache.pop(instance.__class__, instance_id)
     if instance_meta_info:
         oid = instance_meta_info["oid"]
         oslug = instance_meta_info["oslug"]
@@ -360,7 +364,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         scope=scope,
         request_id=request_id(),
         on_commit=True,
-        obj_id=getattr(instance, 'id', None),
+        obj_id=instance_id,
         obj_name=_get_object_name(instance),
         org_id=oid,
         org_slug=oslug,
@@ -371,6 +375,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         user_name=uname,
         user_email=uemail,
     )
+
 
 def handle_annotations_change(instance, annotations, action, **kwargs):
     def filter_data(data):
