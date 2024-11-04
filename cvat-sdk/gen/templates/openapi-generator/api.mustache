@@ -240,10 +240,10 @@ class {{classname}}(object):
         _spec_property_naming: bool = False,
         _content_type: typing.Optional[str] = None,
         _host_index: typing.Optional[int] = None,
-        _request_auths: typing.Optional[typing.List] = None,
+        _request_auths: typing.Optional[list] = None,
         _async_call: bool = False,
         **kwargs,
-    ) -> typing.Tuple[typing.Optional[{{>return_type}}], urllib3.HTTPResponse]:
+    ) -> tuple[typing.Optional[{{>return_type}}], urllib3.HTTPResponse]:
         """{{{summary}}}{{^summary}}{{>operation_name}}{{/summary}}  # noqa: E501
 
 {{#notes}}

@@ -169,8 +169,8 @@ class Configuration:
 
     def __init__(self,
         host: typing.Optional[str] = None,
-        api_key: typing.Optional[typing.Dict[str, str]] = None,
-        api_key_prefix: typing.Optional[typing.Dict[str, str]] = None,
+        api_key: typing.Optional[dict[str, str]] = None,
+        api_key_prefix: typing.Optional[dict[str, str]] = None,
         username: typing.Optional[str] = None,
         password: typing.Optional[str]=None,
         discard_unknown_keys: bool = False,
@@ -179,9 +179,9 @@ class Configuration:
         signing_info=None,
 {{/hasHttpSignatureMethods}}
         server_index: typing.Optional[int] = None,
-        server_variables: typing.Optional[typing.Dict[str, str]] = None,
+        server_variables: typing.Optional[dict[str, str]] = None,
         server_operation_index: typing.Optional[int] = None,
-        server_operation_variables: typing.Optional[typing.Dict[str, str]] = None,
+        server_operation_variables: typing.Optional[dict[str, str]] = None,
         ssl_ca_cert: typing.Optional[str] = None,
         verify_ssl: typing.Optional[bool] = None,
     ) -> None:
