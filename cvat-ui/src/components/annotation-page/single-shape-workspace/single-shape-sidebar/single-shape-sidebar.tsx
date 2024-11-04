@@ -237,8 +237,8 @@ function SingleShapeSidebar(): JSX.Element {
         autoNextFrame: true,
         nextFrame: null,
         saveOnFinish: true,
-        pointsCountIsPredefined: true,
-        pointsCount: defaultPointsCount || 1,
+        pointsCountIsPredefined: defaultPointsCount !== null,
+        pointsCount: defaultPointsCount ?? 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
         labelType: LabelType.ANY,
@@ -511,7 +511,7 @@ function SingleShapeSidebar(): JSX.Element {
                                                 Press
                                                 <Text strong>
                                                     {` ${
-                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE_CONTROLS
+                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE
                                                     } `}
                                                 </Text>
                                                 to finish drawing process

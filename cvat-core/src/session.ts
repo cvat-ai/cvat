@@ -373,8 +373,8 @@ export class Session {
     };
 
     public actions: {
-        undo: (count: number) => Promise<number[]>;
-        redo: (count: number) => Promise<number[]>;
+        undo: (count?: number) => Promise<number[]>;
+        redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
@@ -403,8 +403,8 @@ export class Session {
     public logger: {
         log: (
             scope: Parameters<typeof logger.log>[0],
-            payload: Parameters<typeof logger.log>[1],
-            wait: Parameters<typeof logger.log>[2],
+            payload?: Parameters<typeof logger.log>[1],
+            wait?: Parameters<typeof logger.log>[2],
         ) => ReturnType<typeof logger.log>;
     };
 
@@ -463,7 +463,7 @@ export class Session {
     }
 }
 
-type InitializerType = Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>;
+type InitializerType = Readonly<Partial<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>>;
 
 export class Job extends Session {
     #data: {
