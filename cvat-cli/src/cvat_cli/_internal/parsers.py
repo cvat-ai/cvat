@@ -6,7 +6,7 @@
 import argparse
 import json
 import os.path
-from typing import Any, Tuple
+from typing import Any
 
 from attr.converters import to_bool
 from cvat_sdk.core.proxies.tasks import ResourceType
@@ -28,7 +28,7 @@ def parse_label_arg(s):
         return json.loads(s)
 
 
-def parse_function_parameter(s: str) -> Tuple[str, Any]:
+def parse_function_parameter(s: str) -> tuple[str, Any]:
     key, sep, type_and_value = s.partition("=")
 
     if not sep:

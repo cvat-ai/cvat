@@ -4,7 +4,8 @@
 
 import argparse
 import types
-from typing import Callable, Dict, Mapping, Protocol
+from collections.abc import Mapping
+from typing import Callable, Protocol
 
 
 class Command(Protocol):
@@ -21,7 +22,7 @@ class Command(Protocol):
 
 class CommandGroup:
     def __init__(self, *, description: str) -> None:
-        self._commands: Dict[str, Command] = {}
+        self._commands: dict[str, Command] = {}
         self.description = description
 
     def command_class(self, name: str):

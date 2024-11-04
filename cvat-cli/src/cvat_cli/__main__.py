@@ -6,7 +6,6 @@
 import argparse
 import logging
 import sys
-from typing import List
 
 import urllib3.exceptions
 from cvat_sdk import exceptions
@@ -18,7 +17,7 @@ from ._internal.utils import popattr
 logger = logging.getLogger(__name__)
 
 
-def main(args: List[str] = None):
+def main(args: list[str] = None):
     parser = argparse.ArgumentParser(description=COMMANDS.description)
     configure_common_arguments(parser)
     COMMANDS.configure_parser(parser)
