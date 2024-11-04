@@ -30,8 +30,8 @@ def collect_operations(schema):
 
 
 class Replacer:
-    REPLACEMENT_TOKEN = r"%%%"
-    ARGS_TOKEN = r"!!!"
+    REPLACEMENT_TOKEN = r"%%%"  # nosec: hardcoded_password_string
+    ARGS_TOKEN = r"!!!"  # nosec: hardcoded_password_string
 
     def __init__(self, schema):
         self._schema = schema
