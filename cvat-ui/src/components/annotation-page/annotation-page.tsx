@@ -4,14 +4,13 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
-import { useHistory } from 'react-router';
 import Layout from 'antd/lib/layout';
-import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 
 import './styles.scss';
+import { Job } from 'cvat-core-wrapper';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SingleShapeWorkspace from 'components/annotation-page/single-shape-workspace/single-shape-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -19,14 +18,17 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
+import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
+import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
+import { EventScope } from 'cvat-core/src/enums';
 
 interface Props {
-    job: any | null | undefined;
+    job: Job | null | undefined;
     fetching: boolean;
     annotationsInitialized: boolean;
     frameNumber: number;
@@ -39,12 +41,12 @@ interface Props {
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
-        job, fetching, annotationsInitialized, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
+        job, fetching, annotationsInitialized, workspace, frameNumber,
+        getJob, closeJob, saveLogs, changeFrame,
     } = props;
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
 
-    const history = useHistory();
     useEffect(() => {
         saveLogs();
         const root = window.document.getElementById('root');
@@ -54,12 +56,11 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
         return () => {
             saveLogs();
+            closeJob();
+            EventRecorder.logger = null;
+
             if (root) {
                 root.style.minHeight = '';
-            }
-
-            if (!history.location.pathname.includes('/jobs')) {
-                closeJob();
             }
         };
     }, []);
@@ -91,7 +92,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                                 type='link'
                                 onClick={() => {
                                     changeFrame(latestFrame);
-                                    notification.close(notificationKey);
+                                    notification.destroy(notificationKey);
                                 }}
                             >
                                 here
@@ -103,6 +104,8 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                     className: 'cvat-notification-continue-job',
                 });
             }
+
+            EventRecorder.logger = job.logger;
 
             if (!job.labels.length) {
                 notification.warning({
@@ -125,19 +128,18 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, fetching, prevJob, prevFetching]);
 
+    useEffect(() => {
+        if (job) {
+            job.logger.log(EventScope.loadWorkspace, { obj_name: workspace });
+        }
+    }, [job, workspace]);
+
     if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
     if (typeof job === 'undefined') {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='Sorry, but this job was not found'
-                subTitle='Please, be sure information you tried to get exist and you have access'
-            />
-        );
+        return <JobNotFoundComponent />;
     }
 
     return (

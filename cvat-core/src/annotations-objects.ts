@@ -35,6 +35,21 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
+function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
+    return {
+        serverID: shape.id,
+        occluded: shape.occluded,
+        zOrder: shape.z_order,
+        points: shape.points,
+        outside: shape.outside,
+        rotation: shape.rotation || 0,
+        attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
+            attributeAccumulator[attr.spec_id] = attr.value;
+            return attributeAccumulator;
+        }, {}),
+    };
+}
+
 function computeNewSource(currentSource: Source): Source {
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
@@ -330,7 +345,7 @@ class Annotation {
         this.serverID = undefined;
     }
 
-    public updateServerID(body: any): void {
+    public updateFromServerResponse(body: SerializedShape | SerializedTag | SerializedTrack): void {
         this.serverID = body.id;
     }
 
@@ -817,21 +832,9 @@ export class Track extends Drawn {
         injection: AnnotationInjection,
     ) {
         super(data, clientID, color, injection);
-        this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
-            shapeAccumulator[value.frame] = {
-                serverID: value.id,
-                occluded: value.occluded,
-                zOrder: value.z_order,
-                points: value.points,
-                outside: value.outside,
-                rotation: value.rotation || 0,
-                attributes: value.attributes.reduce((attributeAccumulator, attr) => {
-                    attributeAccumulator[attr.spec_id] = attr.value;
-                    return attributeAccumulator;
-                }, {}),
-            };
-
-            return shapeAccumulator;
+        this.shapes = data.shapes.reduce((acc, shape) => {
+            acc[shape.frame] = convertTrackedShape(shape);
+            return acc;
         }, {});
     }
 
@@ -998,11 +1001,14 @@ export class Track extends Drawn {
         return result;
     }
 
-    public updateServerID(body: SerializedTrack): void {
+    public updateFromServerResponse(body: SerializedTrack): void {
         this.serverID = body.id;
+        this.frame = body.frame;
+        const updatedShapes = {};
         for (const shape of body.shapes) {
-            this.shapes[shape.frame].serverID = shape.id;
+            updatedShapes[shape.frame] = convertTrackedShape(shape);
         }
+        this.shapes = updatedShapes;
     }
 
     public clearServerID(): void {
@@ -1671,7 +1677,16 @@ export class PolylineShape extends PolyShape {
             const y2 = points[i + 3];
 
             // Find the shortest distance from point to an edge
-            if ((x - x1) * (x2 - x) >= 0 && (y - y1) * (y2 - y) >= 0) {
+            // using perpendicular or by the distance to the nearest point
+
+            // Get coordinate vectors
+            const AB = [x2 - x1, y2 - y1];
+            const BM = [x - x2, y - y2];
+            const AM = [x - x1, y - y1];
+
+            // scalar products have different signs for two pairs of vectors
+            // it means that perpendicular projection lies on the edge
+            if (Math.sign(AB[0] * BM[0] + AB[1] * BM[1]) !== Math.sign(AB[0] * AM[0] + AB[1] * AM[1])) {
                 // Find the length of a perpendicular
                 // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
                 distances.push(
@@ -1927,8 +1942,7 @@ export class SkeletonShape extends Shape {
             return null;
         }
 
-        // The shortest distance from point to an edge
-        return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+        return Math.min.apply(null, distances);
     }
 
     // Method is used to export data to the server
@@ -2012,11 +2026,11 @@ export class SkeletonShape extends Shape {
         };
     }
 
-    public updateServerID(body: SerializedShape): void {
-        Shape.prototype.updateServerID.call(this, body);
+    public updateFromServerResponse(body: SerializedShape): void {
+        Shape.prototype.updateFromServerResponse.call(this, body);
         for (const element of body.elements) {
-            const thisElement = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
-            thisElement.updateServerID(element);
+            const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
+            context.updateFromServerResponse(element);
         }
     }
 
@@ -2173,6 +2187,11 @@ export class MaskShape extends Shape {
 
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
+        const [left, top, right, bottom] = this.points.slice(-4);
+        const { width, height } = this.frameMeta[this.frame];
+        if (left >= width || top >= height || right >= width || bottom >= height) {
+            this.points = cropMask(this.points, width, height);
+        }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
         this.getMasksOnFrame = injection.getMasksOnFrame;
         this.pinned = true;
@@ -2330,12 +2349,16 @@ export class MaskShape extends Shape {
                     redoWithUnderlyingPixels();
                     redo();
                 },
-                [this.clientID, ...clientIDs], frame,
+                [this.clientID, ...clientIDs],
+                frame,
             );
         } else {
             this.history.do(
                 HistoryActions.CHANGED_POINTS,
-                undo, redo, [this.clientID], frame,
+                undo,
+                redo,
+                [this.clientID],
+                frame,
             );
         }
     }
@@ -2895,14 +2918,14 @@ export class SkeletonTrack extends Track {
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             });
-        }).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
+        }).filter(Boolean).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
     }
 
-    public updateServerID(body: SerializedTrack): void {
-        Track.prototype.updateServerID.call(this, body);
+    public updateFromServerResponse(body: SerializedTrack): void {
+        Track.prototype.updateFromServerResponse.call(this, body);
         for (const element of body.elements) {
-            const thisElement = this.elements.find((_element: Track) => _element.label.id === element.label_id);
-            thisElement.updateServerID(element);
+            const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
+            context.updateFromServerResponse(element);
         }
     }
 
@@ -2980,6 +3003,12 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): SerializedTrack {
         const result: SerializedTrack = Track.prototype.toJSON.call(this);
+
+        result.shapes = result.shapes.map((shape) => ({
+            ...shape,
+            points: [],
+        }));
+
         result.elements = this.elements.map((el) => ({
             ...el.toJSON(),
             source: this.source,
@@ -3001,7 +3030,7 @@ export class SkeletonTrack extends Track {
         return result;
     }
 
-    public get(frame: number): Omit<Required<SerializedData>, 'parentID'> {
+    public get(frame: number): Required<SerializedData> {
         const { prev, next } = this.boundedKeyframes(frame);
         const position = this.getPosition(frame, prev, next);
         const elements = this.elements.map((element) => ({
@@ -3014,6 +3043,7 @@ export class SkeletonTrack extends Track {
 
         return {
             ...position,
+            parentID: null,
             keyframe: position.keyframe || elements.some((el) => el.keyframe),
             attributes: this.getAttributes(frame),
             descriptions: [...this.descriptions],
@@ -3189,7 +3219,7 @@ export class SkeletonTrack extends Track {
 
     protected getPosition(
         targetFrame: number, leftKeyframe: number | null, rightKeyframe: number | null,
-    ): Omit<InterpolatedPosition, 'points'> & { keyframe: boolean } {
+    ): InterpolatedPosition & { keyframe: boolean } {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
         const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
@@ -3201,6 +3231,7 @@ export class SkeletonTrack extends Track {
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
                 keyframe: targetFrame in this.shapes,
+                points: [],
             };
         }
 
@@ -3212,6 +3243,7 @@ export class SkeletonTrack extends Track {
                 zOrder: singlePosition.zOrder,
                 keyframe: targetFrame in this.shapes,
                 outside: singlePosition === rightPosition ? true : singlePosition.outside,
+                points: [],
             };
         }
 

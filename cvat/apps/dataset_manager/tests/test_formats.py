@@ -1,6 +1,6 @@
 
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,10 +14,8 @@ import datumaro
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.annotation import Mask
 from django.contrib.auth.models import Group, User
-from PIL import Image
 
 from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
@@ -26,36 +24,13 @@ from cvat.apps.dataset_manager.bindings import (CvatTaskOrJobDataExtractor,
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.tests.utils import get_paginated_collection
+from cvat.apps.engine.tests.utils import (
+    get_paginated_collection, ForceLogin, generate_image_file, ApiTestBase
+)
 
-
-def generate_image_file(filename, size=(100, 100)):
-    f = BytesIO()
-    image = Image.new('RGB', size=size)
-    image.save(f, 'jpeg')
-    f.name = filename
-    f.seek(0)
-    return f
-
-class ForceLogin:
-    def __init__(self, user, client):
-        self.user = user
-        self.client = client
-
-    def __enter__(self):
-        if self.user:
-            self.client.force_login(self.user,
-                backend='django.contrib.auth.backends.ModelBackend')
-
-        return self
-
-    def __exit__(self, exception_type, exception_value, traceback):
-        if self.user:
-            self.client.logout()
-
-class _DbTestBase(APITestCase):
+class _DbTestBase(ApiTestBase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
 
     @classmethod
     def setUpTestData(cls):
@@ -94,6 +69,11 @@ class _DbTestBase(APITestCase):
             response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get("/api/tasks/%s" % tid)
 
@@ -309,7 +289,12 @@ class TaskExportTest(_DbTestBase):
             'KITTI 1.0',
             'LFW 1.0',
             'Cityscapes 1.0',
-            'Open Images V6 1.0'
+            'Open Images V6 1.0',
+            'YOLOv8 Classification 1.0',
+            'YOLOv8 Oriented Bounding Boxes 1.0',
+            'YOLOv8 Detection 1.0',
+            'YOLOv8 Pose 1.0',
+            'YOLOv8 Segmentation 1.0',
         })
 
     def test_import_formats_query(self):
@@ -342,6 +327,11 @@ class TaskExportTest(_DbTestBase):
             'Open Images V6 1.0',
             'Datumaro 1.0',
             'Datumaro 3D 1.0',
+            'YOLOv8 Classification 1.0',
+            'YOLOv8 Oriented Bounding Boxes 1.0',
+            'YOLOv8 Detection 1.0',
+            'YOLOv8 Pose 1.0',
+            'YOLOv8 Segmentation 1.0',
         })
 
     def test_exports(self):
@@ -391,6 +381,11 @@ class TaskExportTest(_DbTestBase):
             # ('KITTI 1.0', 'kitti') format does not support empty annotations
             ('LFW 1.0', 'lfw'),
             # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
+            ('YOLOv8 Classification 1.0', 'yolov8_classification'),
+            ('YOLOv8 Oriented Bounding Boxes 1.0', 'yolov8_oriented_boxes'),
+            ('YOLOv8 Detection 1.0', 'yolov8_detection'),
+            ('YOLOv8 Pose 1.0', 'yolov8_pose'),
+            ('YOLOv8 Segmentation 1.0', 'yolov8_segmentation'),
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:

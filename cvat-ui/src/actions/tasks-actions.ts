@@ -1,16 +1,19 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction, Dispatch, ActionCreator } from 'redux';
-import { ThunkAction } from 'redux-thunk';
+import { AnyAction } from 'redux';
 import { TasksQuery, StorageLocation } from 'reducers';
 import {
-    getCore, RQStatus, Storage, Task,
+    getCore, RQStatus, Storage, Task, UpdateStatusData, Request,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
+import { ThunkDispatch, ThunkAction } from 'utils/redux';
+
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
+import { updateRequestProgress } from './requests-actions';
 
 const cvat = getCore();
 
@@ -65,8 +68,8 @@ function getTasksFailed(error: any): AnyAction {
 export function getTasksAsync(
     query: Partial<TasksQuery>,
     updateQuery = true,
-): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(getTasks(query, updateQuery));
 
         const filteredQuery = filterNull(query);
@@ -120,8 +123,8 @@ function deleteTaskFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
-export function deleteTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+export function deleteTaskAsync(taskInstance: any): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(deleteTask(taskInstance.id));
             await taskInstance.delete();
@@ -180,8 +183,8 @@ function getTaskPreviewFailed(taskID: number, error: any): AnyAction {
     return action;
 }
 
-export function getTaskPreviewAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+export function getTaskPreviewAsync(taskInstance: any): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(getTaskPreview(taskInstance.id));
             const result = await taskInstance.frames.preview();
@@ -202,7 +205,7 @@ export function updateTaskInState(task: Task): AnyAction {
 }
 
 export function createTaskAsync(data: any, onProgress?: (status: string) => void):
-ThunkAction<Promise<void>, {}, {}, AnyAction> {
+ThunkAction {
     return async (dispatch): Promise<any> => {
         const description: any = {
             name: data.basic.name,
@@ -211,8 +214,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {
@@ -252,22 +255,46 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
+        let extras = {};
+
+        if (data.quality.validationMode !== ValidationMode.NONE) {
+            extras = {
+                validation_params: {
+                    mode: data.quality.validationMode,
+                    frame_selection_method: data.quality.frameSelectionMethod,
+                    frame_share: data.quality.validationFramesPercent,
+                    frames_per_job_share: data.quality.validationFramesPerJobPercent,
+                },
+            };
+        }
+
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
-            const savedTask = await taskInstance.save((status: RQStatus, progress: number, message: string): void => {
-                if (status === RQStatus.UNKNOWN) {
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
-                } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                    const helperMessage = 'You may close the window.';
+            const savedTask = await taskInstance.save(extras, {
+                updateStatusCallback(updateData: Request | UpdateStatusData) {
+                    let { message } = updateData;
+                    const { status, progress } = updateData;
+                    let helperMessage = '';
+                    if (!message) {
+                        if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                            message = 'CVAT queued the task to import';
+                            helperMessage = 'You may close the window.';
+                        } else if (status === RQStatus.FAILED) {
+                            message = 'Images processing failed';
+                        } else if (status === RQStatus.FINISHED) {
+                            message = 'Task creation finished';
+                        } else {
+                            message = 'Unknown status received';
+                        }
+                    }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                } else {
-                    onProgress?.(`${status}: ${message}`);
-                }
+                    if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
+                },
             });
+
             dispatch(updateTaskInState(savedTask));
             dispatch(getTaskPreviewAsync(savedTask));
             return savedTask;

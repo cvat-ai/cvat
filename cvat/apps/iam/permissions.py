@@ -9,26 +9,32 @@ import importlib
 import operator
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
 from django.conf import settings
-from django.db.models import Q, Model
+from django.db.models import Model, Q
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.utils.http import make_requests_session
+
+from .utils import add_opa_rules_path
 
 
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
 @define
 class PermissionResult:
     allow: bool
     reasons: List[str] = field(factory=list)
+
 
 def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
@@ -47,11 +53,12 @@ def get_organization(request, obj):
             raise exc
 
         try:
-            return Organization.objects.get(id=organization_id)
+            return Organization.objects.select_related('owner').get(id=organization_id)
         except Organization.DoesNotExist:
             return None
 
     return request.iam_context['organization']
+
 
 def get_membership(request, organization):
     if organization is None:
@@ -62,6 +69,7 @@ def get_membership(request, organization):
         user=request.user,
         is_active=True
     ).first()
+
 
 def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]):
     return {
@@ -123,7 +131,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                 'auth': {
                     'user': {
                         'id': self.user_id,
-                        'privilege': self.group_name
+                        'privilege': self.group_name,
                     },
                     'organization': {
                         'id': self.org_id,
@@ -195,10 +203,34 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         # That’s when you’d use distinct().
         return queryset.filter(q_objects[0]).distinct()
 
+    @classmethod
+    def get_per_field_update_scopes(cls, request, scopes_per_field):
+        """
+        Returns the list of required scopes for a PATCH endpoint where different
+        request body fields are associated with different scopes.
+        """
+
+        assert request.method == 'PATCH'
+
+        # Even if no fields are modified, a PATCH request typically returns the
+        # new state of the object, so we need to make sure the user has permissions
+        # to view it.
+        scopes = [cls.Scopes.VIEW]
+
+        try:
+            scopes.extend({scopes_per_field[field_name] for field_name in request.data})
+        except KeyError as ex:
+            raise PermissionDenied("Attempted to update an unknown field") from ex
+
+        return scopes
+
+
 T = TypeVar('T', bound=Model)
+
 
 def is_public_obj(obj: T) -> bool:
     return getattr(obj, "is_public", False)
+
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
@@ -234,16 +266,18 @@ class PolicyEnforcer(BasePermission):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
 
+
 class IsAuthenticatedOrReadPublicResource(BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
         return bool(
-            request.user and request.user.is_authenticated or
-            request.method == 'GET' and is_public_obj(obj)
+            (request.user and request.user.is_authenticated) or
+            (request.method == 'GET' and is_public_obj(obj))
         )
+
 
 def load_app_permissions(config: AppConfig) -> None:
     """
-    Ensures that permissions from the given app are loaded.
+    Ensures that permissions and OPA rules from the given app are loaded.
 
     This function should be called from the AppConfig.ready() method of every
     app that defines a permissions module.
@@ -254,3 +288,5 @@ def load_app_permissions(config: AppConfig) -> None:
         isinstance(attr, type) and issubclass(attr, OpenPolicyAgentPermission)
         for attr in vars(permissions_module).values()
     )
+
+    add_opa_rules_path(Path(config.path, "rules"))

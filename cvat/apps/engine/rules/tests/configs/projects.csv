@@ -1,0 +1,51 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+create,Project,Sandbox,N/A,,POST,/projects,User,N/A
+create,Project,Organization,N/A,,POST,/projects,User,Supervisor
+import:backup,Project,Sandbox,N/A,,POST,/projects/backup,User,N/A
+import:backup,Project,Organization,N/A,,POST,/projects/backup,User,Supervisor
+list,N/A,Sandbox,N/A,,GET,/projects,None,N/A
+list,N/A,Organization,N/A,,GET,/projects,None,Worker
+view,Project,Sandbox,None,,GET,"/projects/{id}, /projects/{id}/tasks",Admin,N/A
+view,Project,Sandbox,"Owner, Assignee",,GET,"/projects/{id}, /projects/{id}/tasks",None,N/A
+view,Project,Organization,None,,GET,"/projects/{id}, /projects/{id}/tasks",User,Maintainer
+view,Project,Organization,"Owner, Assignee",,GET,"/projects/{id}, /projects/{id}/tasks",None,Worker
+delete,Project,Sandbox,"None, Assignee",,DELETE,/projects/{id},Admin,N/A
+delete,Project,Sandbox,Owner,,DELETE,/projects/{id},Worker,N/A
+delete,Project,Organization,Owner,,DELETE,/projects/{id},Worker,Worker
+delete,Project,Organization,"None, Assignee",,DELETE,/projects/{id},User,Maintainer
+update:desc,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
+update:desc,Project,Sandbox,"Owner, Assignee",,PATCH,/projects/{id},Worker,N/A
+update:desc,Project,Organization,"Owner, Assignee",,PATCH,/projects/{id},Worker,Worker
+update:desc,Project,Organization,None,,PATCH,/projects/{id},User,Maintainer
+update:assignee,"Project, User",Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
+update:assignee,"Project, User",Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:assignee,"Project, User",Organization,Owner,,PATCH,/projects/{id},Worker,Worker
+update:assignee,"Project, User",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,"Project, User",Sandbox,"None, Assignee, Owner",,PATCH,/projects/{id},Admin,N/A
+update:owner,"Project, User",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,"Project, User",Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer
+export:annotations,Project,Sandbox,None,,GET,/projects/{id}/annotations,Admin,N/A
+export:annotations,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/annotations,None,N/A
+export:annotations,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/annotations,None,Worker
+export:annotations,Project,Organization,None,,GET,/projects/{id}/annotations,User,Maintainer
+export:dataset,Project,Sandbox,None,,GET,/projects/{id}/dataset,Admin,N/A
+export:dataset,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/dataset,None,N/A
+export:dataset,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/dataset,None,Worker
+export:dataset,Project,Organization,None,,GET,/projects/{id}/dataset,User,Maintainer
+import:dataset,Project,Sandbox,None,,POST,/projects/{id}/dataset,Admin,N/A
+import:dataset,Project,Sandbox,"Owner, Assignee",,POST,/projects/{id}/dataset,Worker,N/A
+import:dataset,Project,Organization,"Owner, Assignee",,POST,/projects/{id}/dataset,Worker,Worker
+import:dataset,Project,Organization,None,,POST,/projects/{id}/dataset,User,Maintainer
+export:backup,Project,Sandbox,None,,GET,/projects/{id}/backup,Admin,N/A
+export:backup,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/backup,None,N/A
+export:backup,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/backup,None,Worker
+export:backup,Project,Organization,None,,GET,/projects/{id}/backup,User,Maintainer
+update:organization,"Project, Organization",Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
+update:organization,"Project, Organization",Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:organization,"Project, Organization",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:organization,"Project, Organization",Organization,Owner,,PATCH,/projects/{id},Worker,Worker
+update:associated_storage,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
+update:associated_storage,Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:associated_storage,Project,Organization,None,,PATCH,/projects/{id},Admin,N/A
+update:associated_storage,Project,Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:associated_storage,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Worker

@@ -26,7 +26,7 @@ export interface SerializedAnnotationFormats {
     exporters: SerializedAnnotationExporter[];
 }
 
-export interface ApiCommonFilterParams {
+export interface APICommonFilterParams {
     page?: number;
     page_size?: number | 'all';
     filter?: string;
@@ -36,7 +36,7 @@ export interface ApiCommonFilterParams {
     search?: string;
 }
 
-export interface ProjectsFilter extends ApiCommonFilterParams {
+export interface ProjectsFilter extends APICommonFilterParams {
     id?: number;
 }
 
@@ -47,13 +47,14 @@ export interface SerializedUser {
     first_name: string;
     last_name: string;
     email?: string;
-    groups?: ('user' | 'business' | 'admin')[];
+    groups?: ('user' | 'admin')[];
     is_staff?: boolean;
     is_superuser?: boolean;
     is_active?: boolean;
     last_login?: string;
     date_joined?: string;
     email_verification_required: boolean;
+    has_analytics_access: boolean;
 }
 
 interface SerializedStorage {
@@ -233,14 +234,17 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact,
 }
 
-export interface ApiQualitySettingsFilter extends ApiCommonFilterParams {
+export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
-export type QualitySettingsFilter = Camelized<ApiQualitySettingsFilter>;
+export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
     task?: number;
+    target_metric?: string;
+    target_metric_threshold?: number;
+    max_validations_per_job?: number;
     iou_threshold?: number;
     oks_sigma?: number;
     line_thickness?: number;
@@ -253,12 +257,13 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+    descriptions?: Record<string, string>;
 }
 
-export interface ApiQualityConflictsFilter extends ApiCommonFilterParams {
+export interface APIQualityConflictsFilter extends APICommonFilterParams {
     report_id?: number;
 }
-export type QualityConflictsFilter = Camelized<ApiQualityConflictsFilter>;
+export type QualityConflictsFilter = Camelized<APIQualityConflictsFilter>;
 
 export interface SerializedAnnotationConflictData {
     job_id?: number;
@@ -279,14 +284,14 @@ export interface SerializedQualityConflictData {
     description?: string;
 }
 
-export interface ApiQualityReportsFilter extends ApiCommonFilterParams {
+export interface APIQualityReportsFilter extends APICommonFilterParams {
     parent_id?: number;
     peoject_id?: number;
     task_id?: number;
     job_id?: number;
     target?: string;
 }
-export type QualityReportsFilter = Camelized<ApiQualityReportsFilter>;
+export type QualityReportsFilter = Camelized<APIQualityReportsFilter>;
 
 export interface SerializedQualityReportData {
     id?: number;
@@ -296,6 +301,7 @@ export interface SerializedQualityReportData {
     target: string;
     created_date?: string;
     gt_last_updated?: string;
+    assignee?: SerializedUser | null;
     summary?: {
         frame_count: number;
         frame_share: number;
@@ -345,17 +351,19 @@ export interface SerializedAnalyticsEntry {
     transformations?: SerializedTransformationEntry[];
 }
 
-export interface ApiAnalyticsReportFilter extends ApiCommonFilterParams {
+export interface APIAnalyticsReportFilter {
     project_id?: number;
     task_id?: number;
     job_id?: number;
     start_date?: string;
     end_date?: string;
 }
-export type AnalyticsReportFilter = Camelized<ApiAnalyticsReportFilter>;
+export type AnalyticsReportFilter = Camelized<APIAnalyticsReportFilter>;
 
 export interface SerializedAnalyticsReport {
-    id?: number;
+    job_id?: number;
+    task_id?: number;
+    project_id?: number;
     target?: string;
     created_date?: string;
     statistics?: SerializedAnalyticsEntry[];
@@ -452,6 +460,7 @@ export interface SerializedFramesMetaData {
     deleted_frames: number[];
     included_frames: number[];
     frame_filter: string;
+    chunks_updated_date: string;
     frames: {
         width: number;
         height: number;
@@ -492,4 +501,39 @@ export interface SerializedAPISchema {
         description: string;
         url: string;
     };
+}
+
+export interface SerializedRequest {
+    id: string;
+    message: string;
+    status: string;
+    operation: {
+        target: string;
+        type: string;
+        format: string | null;
+        job_id: number | null;
+        task_id: number | null;
+        project_id: number | null;
+        function_id: string | null;
+    };
+    progress?: number;
+    result_url?: string;
+    result_id?: number;
+    created_date: string;
+    started_date?: string;
+    finished_date?: string;
+    expiry_date?: string;
+    owner: any;
+}
+
+export interface SerializedJobValidationLayout {
+    honeypot_count?: number;
+    honeypot_frames?: number[];
+    honeypot_real_frames?: number[];
+}
+
+export interface SerializedTaskValidationLayout extends SerializedJobValidationLayout {
+    mode: 'gt' | 'gt_pool' | null;
+    validation_frames?: number[];
+    disabled_frames?: number[];
 }

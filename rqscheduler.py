@@ -9,5 +9,5 @@ from cvat.asgi import application  # pylint: disable=unused-import
 
 from rq_scheduler.scripts import rqscheduler
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     rqscheduler.main()

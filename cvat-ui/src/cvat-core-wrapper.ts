@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,14 +14,17 @@ import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
     Label, Attribute,
 } from 'cvat-core/src/labels';
-import { SerializedAttribute, SerializedLabel, SerializedAPISchema } from 'cvat-core/src/server-response-types';
+import {
+    SerializedAttribute, SerializedLabel, SerializedAPISchema,
+} from 'cvat-core/src/server-response-types';
+import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings from 'cvat-core/src/quality-settings';
+import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
-import { ServerError } from 'cvat-core/src/exceptions';
+import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders,
     ModelReturnType, DimensionType, JobType,
@@ -33,11 +36,13 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
+import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
-import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
+import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
+import { Request, RequestOperation } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
 
@@ -51,6 +56,8 @@ cvat.config.uploadChunkSize = 2;
 function getCore(): typeof cvat {
     return cvat;
 }
+
+type ProjectOrTaskOrJob = Project | Task | Job;
 
 export {
     getCore,
@@ -86,6 +93,7 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
+    TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
@@ -93,9 +101,14 @@ export {
     AnalyticsEntry,
     AnalyticsEntryViewType,
     ServerError,
+    RequestError,
     Event,
     FrameData,
     ActionParameterType,
+    FrameSelectionType,
+    Request,
+    JobValidationLayout,
+    TaskValidationLayout,
 };
 
 export type {
@@ -107,4 +120,7 @@ export type {
     QualitySummary,
     CVATCore,
     SerializedAPISchema,
+    ProjectOrTaskOrJob,
+    RequestOperation,
+    UpdateStatusData,
 };

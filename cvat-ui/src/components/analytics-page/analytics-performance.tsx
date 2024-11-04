@@ -8,8 +8,13 @@ import RGL, { WidthProvider } from 'react-grid-layout';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Notification from 'antd/lib/notification';
-import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
 import { Col, Row } from 'antd/lib/grid';
+import Button from 'antd/lib/button';
+import Card from 'antd/lib/card';
+import { ReloadOutlined, LoadingOutlined } from '@ant-design/icons';
+
+import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import HistogramView from './views/histogram-view';
 import AnalyticsCard from './views/analytics-card';
 
@@ -25,7 +30,9 @@ export enum DateIntervals {
 interface Props {
     report: AnalyticsReport | null;
     timePeriod: DateIntervals;
+    reportRefreshingStatus: string | null;
     onTimePeriodChange: (val: DateIntervals) => void;
+    onCreateReport: () => void;
 }
 
 const colors = [
@@ -37,12 +44,44 @@ const colors = [
 ];
 
 function AnalyticsOverview(props: Props): JSX.Element | null {
-    const { report, timePeriod, onTimePeriodChange } = props;
+    const {
+        report, timePeriod, reportRefreshingStatus,
+        onTimePeriodChange, onCreateReport,
+    } = props;
 
-    if (!report) return null;
     const layout: any = [];
     let histogramCount = 0;
     let numericCount = 0;
+
+    if (report === null) {
+        return null;
+    }
+
+    if (!report.id) {
+        return (
+            <div className='cvat-analytics-overview'>
+                <Row>
+                    <Col span={24}>
+                        <Card>
+                            <div className='cvat-empty-performance-analytics-item'>
+                                {reportRefreshingStatus ? <Text>{reportRefreshingStatus}</Text> :
+                                    <Text>{`A performance report for the ${report.target} was not computed`}</Text>}
+                                <Button
+                                    onClick={onCreateReport}
+                                    loading={reportRefreshingStatus !== null}
+                                    disabled={reportRefreshingStatus !== null}
+                                    type='primary'
+                                >
+                                    Request
+                                </Button>
+                            </div>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
+        );
+    }
+
     const views: { view: React.JSX.Element, key: string }[] = [];
     report.statistics.forEach((entry) => {
         const tooltip = (
@@ -138,12 +177,21 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
             }
         }
     });
+
     return (
         <div className='cvat-analytics-overview'>
             <Row justify='space-between'>
                 <Col>
+                    <CVATTooltip title='Request calculating a new report'>
+                        <Button
+                            className='cvat-analytics-refresh-button'
+                            onClick={onCreateReport}
+                            icon={reportRefreshingStatus !== null ? <LoadingOutlined /> : <ReloadOutlined />}
+                            disabled={reportRefreshingStatus !== null}
+                        />
+                    </CVATTooltip>
                     <Text type='secondary'>
-                        {`Created ${report?.createdDate ? moment(report?.createdDate).fromNow() : ''}`}
+                        { reportRefreshingStatus || `Created ${report?.id ? moment(report.createdDate).fromNow() : ''}`}
                     </Text>
                 </Col>
                 <Col>
@@ -151,24 +199,19 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                         placeholder='Select time period'
                         value={timePeriod}
                         onChange={onTimePeriodChange}
-                        options={[
-                            {
-                                value: DateIntervals.LAST_WEEK,
-                                label: DateIntervals.LAST_WEEK,
-                            },
-                            {
-                                value: DateIntervals.LAST_MONTH,
-                                label: DateIntervals.LAST_MONTH,
-                            },
-                            {
-                                value: DateIntervals.LAST_QUARTER,
-                                label: DateIntervals.LAST_QUARTER,
-                            },
-                            {
-                                value: DateIntervals.LAST_YEAR,
-                                label: DateIntervals.LAST_YEAR,
-                            },
-                        ]}
+                        options={[{
+                            value: DateIntervals.LAST_WEEK,
+                            label: DateIntervals.LAST_WEEK,
+                        }, {
+                            value: DateIntervals.LAST_MONTH,
+                            label: DateIntervals.LAST_MONTH,
+                        }, {
+                            value: DateIntervals.LAST_QUARTER,
+                            label: DateIntervals.LAST_QUARTER,
+                        }, {
+                            value: DateIntervals.LAST_YEAR,
+                            label: DateIntervals.LAST_YEAR,
+                        }]}
                     />
                 </Col>
             </Row>

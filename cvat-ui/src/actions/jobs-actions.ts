@@ -1,9 +1,11 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import {
+    ActionUnion, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import { getCore, Job } from 'cvat-core-wrapper';
 import { JobsQuery } from 'reducers';
 import { filterNull } from 'utils/filter-null';
@@ -94,10 +96,20 @@ export const getJobPreviewAsync = (job: Job): ThunkAction => async (dispatch) =>
     }
 };
 
-export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) => {
-    const jobInstance = new cvat.classes.Job(data);
+export const createJobAsync = (data: JobData): ThunkAction<Promise<Job>> => async (dispatch) => {
+    const initialData = {
+        type: data.type,
+        task_id: data.taskID,
+    };
+    const jobInstance = new cvat.classes.Job(initialData);
     try {
-        const savedJob = await jobInstance.save(data);
+        const extras = {
+            frame_selection_method: data.frameSelectionMethod,
+            seed: data.seed,
+            frame_count: data.frameCount,
+            frames_per_job_count: data.framesPerJobCount,
+        };
+        const savedJob = await jobInstance.save(extras);
         return savedJob;
     } catch (error) {
         dispatch(jobsActions.createJobFailed(error));
@@ -105,18 +117,19 @@ export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) =
     }
 };
 
-export function updateJobAsync(jobInstance: Job): ThunkAction<Promise<boolean>> {
-    return async (dispatch): Promise<boolean> => {
+export function updateJobAsync(
+    jobInstance: Job,
+    fields: Parameters<Job['save']>[0],
+): ThunkAction<Promise<void>> {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(jobsActions.updateJob());
-            const updated = await jobInstance.save();
+            const updated = await jobInstance.save(fields);
             dispatch(jobsActions.updateJobSuccess(updated));
         } catch (error) {
             dispatch(jobsActions.updateJobFailed(jobInstance.id, error));
-            return false;
+            throw error;
         }
-
-        return true;
     };
 }
 

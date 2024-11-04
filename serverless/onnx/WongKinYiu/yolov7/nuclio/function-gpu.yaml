@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: YOLO v7
     type: detector
-    framework: onnx
     spec: |
       [
         { "id": 0, "name": "person", "type": "rectangle" },

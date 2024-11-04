@@ -7,10 +7,11 @@ from __future__ import annotations
 
 import logging
 import urllib.parse
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, TypeVar
+from typing import Any, Optional, TypeVar
 
 import attrs
 import packaging.specifiers as specifiers
@@ -21,7 +22,6 @@ import urllib3.exceptions
 
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
-from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
 from cvat_sdk.core.proxies.model_proxy import Repo
@@ -96,7 +96,7 @@ class Client:
         if check_server_version:
             self.check_server_version()
 
-        self._repos: Dict[str, Repo] = {}
+        self._repos: dict[str, Repo] = {}
         """A cache for created Repository instances"""
 
     _ORG_SLUG_HEADER = "X-Organization"
@@ -122,7 +122,7 @@ class Client:
             self.api_client.default_headers[self._ORG_SLUG_HEADER] = org_slug
 
     @contextmanager
-    def organization_context(self, slug: str) -> Iterator[None]:
+    def organization_context(self, slug: str) -> Generator[None, None, None]:
         prev_slug = self.organization_slug
         self.organization_slug = slug
         try:
@@ -184,7 +184,7 @@ class Client:
     def close(self) -> None:
         return self.__exit__(None, None, None)
 
-    def login(self, credentials: Tuple[str, str]) -> None:
+    def login(self, credentials: tuple[str, str]) -> None:
         (auth, _) = self.api_client.auth_api.create_login(
             models.LoginSerializerExRequest(username=credentials[0], password=credentials[1])
         )
@@ -209,37 +209,26 @@ class Client:
 
     def wait_for_completion(
         self: Client,
-        url: str,
+        rq_id: str,
         *,
-        success_status: int,
         status_check_period: Optional[int] = None,
-        query_params: Optional[Dict[str, Any]] = None,
-        post_params: Optional[Dict[str, Any]] = None,
-        method: str = "POST",
-        positive_statuses: Optional[Sequence[int]] = None,
-    ) -> urllib3.HTTPResponse:
+    ) -> tuple[models.Request, urllib3.HTTPResponse]:
         if status_check_period is None:
             status_check_period = self.config.status_check_period
-
-        positive_statuses = set(positive_statuses) | {success_status}
 
         while True:
             sleep(status_check_period)
 
-            response = self.api_client.rest_client.request(
-                method=method,
-                url=url,
-                headers=self.api_client.get_common_headers(),
-                query_params=query_params,
-                post_params=post_params,
-            )
+            request, response = self.api_client.requests_api.retrieve(rq_id)
 
-            self.logger.debug("STATUS %s", response.status)
-            expect_status(positive_statuses, response)
-            if response.status == success_status:
+            if request.status.value == models.RequestStatus.allowed_values[("value",)]["FINISHED"]:
                 break
+            elif request.status.value == models.RequestStatus.allowed_values[("value",)]["FAILED"]:
+                raise exceptions.ApiException(
+                    status=request.status, reason=request.message, http_resp=response
+                )
 
-        return response
+        return request, response
 
     def check_server_version(self, fail_if_unsupported: Optional[bool] = None) -> None:
         if fail_if_unsupported is None:
@@ -331,8 +320,8 @@ class CVAT_API_V2:
         path: str,
         *,
         psub: Optional[Sequence[Any]] = None,
-        kwsub: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
+        kwsub: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
     ) -> str:
         url = self.host + path
         if psub or kwsub:
@@ -343,7 +332,7 @@ class CVAT_API_V2:
 
 
 def make_client(
-    host: str, *, port: Optional[int] = None, credentials: Optional[Tuple[str, str]] = None
+    host: str, *, port: Optional[int] = None, credentials: Optional[tuple[str, str]] = None
 ) -> Client:
     url = host.rstrip("/")
     if port:

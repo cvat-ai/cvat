@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
+import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     SettingOutlined,
     InfoCircleOutlined,
@@ -25,7 +26,6 @@ import Icon, {
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
-import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
@@ -39,10 +39,12 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { shortcutsActions } from 'actions/shortcuts-actions';
+import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
 import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import SettingsModal from './settings-modal/settings-modal';
 import OrganizationsSearch from './organizations-search';
 
@@ -71,6 +73,23 @@ interface DispatchToProps {
 }
 
 const core = getCore();
+
+const componentShortcuts = {
+    SWITCH_SHORTCUTS: {
+        name: 'Show shortcuts',
+        description: 'Open/hide the list of available shortcuts',
+        sequences: ['f1'],
+        scope: ShortcutScope.GENERAL,
+    },
+    SWITCH_SETTINGS: {
+        name: 'Show settings',
+        description: 'Open/hide settings dialog',
+        sequences: ['f2'],
+        scope: ShortcutScope.GENERAL,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -187,19 +206,14 @@ function HeaderComponent(props: Props): JSX.Element {
     const history = useHistory();
     const location = useLocation();
 
-    const subKeyMap = {
-        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
-    };
-
-    const handlers = {
-        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!settingsModalVisible) {
                 switchShortcutsModalVisible(!shortcutsModalVisible);
             }
         },
-        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+        SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             if (!shortcutsModalVisible) {
                 switchSettingsModalVisible(!settingsModalVisible);
@@ -210,26 +224,27 @@ function HeaderComponent(props: Props): JSX.Element {
     const aboutPlugins = usePlugins((state: CombinedState) => state.plugins.components.about.links.items, props);
     const aboutLinks: [JSX.Element, number][] = [];
     aboutLinks.push([(
-        <Col>
+        <Col key='changelog'>
             <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
                 What&apos;s new?
             </a>
         </Col>
     ), 0]);
     aboutLinks.push([(
-        <Col>
+        <Col key='license'>
             <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
                 MIT License
             </a>
         </Col>
     ), 10]);
     aboutLinks.push([(
-        <Col>
+        <Col key='discord'>
             <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
                 Find us on Discord
             </a>
         </Col>
     ), 20]);
+
     aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
         [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
     )));
@@ -298,165 +313,130 @@ function HeaderComponent(props: Props): JSX.Element {
 
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.header.userMenu.items, props);
 
-    const menuItems: [JSX.Element, number][] = [];
+    const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     if (user.isStaff) {
-        menuItems.push([(
-            <Menu.Item
-                icon={<ControlOutlined />}
-                key='admin_page'
-                onClick={(): void => {
-                    window.open('/admin', '_blank');
-                }}
-            >
-                Admin page
-            </Menu.Item>
-        ), 0]);
+        menuItems.push([{
+            key: 'admin_page',
+            icon: <ControlOutlined />,
+            onClick: (): void => {
+                window.open('/admin', '_blank');
+            },
+            label: 'Admin page',
+        }, 0]);
     }
 
     const viewType: 'menu' | 'list' = (organizationsList?.length || 0) > 5 ? 'list' : 'menu';
-    menuItems.push([(
-        <Menu.SubMenu
-            disabled={organizationFetching || listFetching}
-            key='organization'
-            title='Organization'
-            icon={organizationFetching || listFetching ? <LoadingOutlined /> : <TeamOutlined />}
-        >
-            {currentOrganization ? (
-                <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')} className='cvat-header-menu-open-organization'>
-                    Settings
-                </Menu.Item>
-            ) : null}
-            <Menu.Item
-                icon={<MailOutlined />}
-                className='cvat-header-menu-organization-invitations-item'
-                key='invitations'
-                onClick={() => {
-                    history.push('/invitations');
-                }}
-            >
-                Invitations
-            </Menu.Item>
-            <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
-            { !!organizationsList && viewType === 'list' && (
-                <Menu.Item
-                    key='switch_organization'
-                    onClick={() => {
-                        Modal.confirm({
-                            icon: undefined,
-                            title: 'Select an organization',
-                            okButtonProps: {
-                                style: { display: 'none' },
-                            },
-                            content: (
-                                <OrganizationsSearch
-                                    defaultOrganizationList={organizationsList}
-                                    resetOrganization={resetOrganization}
-                                    searchOrganizations={searchCallback}
-                                    setNewOrganization={setNewOrganization}
-                                />
-                            ),
-                        });
-                    }}
-                >
-                    Switch organization
-                </Menu.Item>
-            )}
-            { !!organizationsList && viewType === 'menu' && (
-                <>
-                    <Menu.Divider />
-                    <Menu.ItemGroup>
-                        <Menu.Item
-                            className={!currentOrganization ?
-                                'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item'}
-                            key='$personal'
-                            onClick={resetOrganization}
-                        >
-                            Personal workspace
-                        </Menu.Item>
-                        {organizationsList.map((organization: any): JSX.Element => (
-                            <Menu.Item
-                                className={currentOrganization?.slug === organization.slug ?
-                                    'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item'}
-                                key={organization.slug}
-                                onClick={() => setNewOrganization(organization)}
-                            >
-                                {organization.slug}
-                            </Menu.Item>
-                        ))}
-                    </Menu.ItemGroup>
-                </>
-            )}
-        </Menu.SubMenu>
-    ), 10]);
 
-    menuItems.push([(
-        <Menu.Item
-            icon={<SettingOutlined />}
-            key='settings'
-            title={`Press ${switchSettingsShortcut} to switch`}
-            onClick={() => switchSettingsModalVisible(true)}
-        >
-            Settings
-        </Menu.Item>
-    ), 20]);
+    menuItems.push([{
+        key: 'organization',
+        icon: organizationFetching || listFetching ? <LoadingOutlined /> : <TeamOutlined />,
+        label: 'Organization',
+        disabled: organizationFetching || listFetching,
+        children: [
+            ...(currentOrganization ? [{
+                key: 'open_organization',
+                icon: <SettingOutlined />,
+                label: 'Settings',
+                className: 'cvat-header-menu-open-organization',
+                onClick: () => history.push('/organization'),
+            }] : []), {
+                key: 'invitations',
+                icon: <MailOutlined />,
+                label: 'Invitations',
+                className: 'cvat-header-menu-organization-invitations-item',
+                onClick: () => history.push('/invitations'),
+            }, {
+                key: 'create_organization',
+                icon: <PlusOutlined />,
+                label: 'Create',
+                className: 'cvat-header-menu-create-organization',
+                onClick: () => history.push('/organizations/create'),
+            },
+            ...(!!organizationsList && viewType === 'list' ? [{
+                key: 'switch_organization',
+                label: 'Switch organization',
+                onClick: () => {
+                    Modal.confirm({
+                        title: 'Select an organization',
+                        okButtonProps: {
+                            style: { display: 'none' },
+                        },
+                        content: (
+                            <OrganizationsSearch
+                                defaultOrganizationList={organizationsList}
+                                resetOrganization={resetOrganization}
+                                searchOrganizations={searchCallback}
+                                setNewOrganization={setNewOrganization}
+                            />
+                        ),
+                    });
+                },
+            }] : []),
+            ...(!!organizationsList && viewType === 'menu' ? [{
+                type: 'divider' as const,
+            }, {
+                key: '$personal',
+                label: 'Personal workspace',
+                className: !currentOrganization ? 'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item',
+                onClick: resetOrganization,
+            }, ...organizationsList.map((organization: Organization) => ({
+                key: organization.slug,
+                onClick: () => setNewOrganization(organization),
+                className: currentOrganization?.slug === organization.slug ? 'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item',
+                label: organization.slug,
+            }))] : []),
+        ],
+    }, 10]);
 
-    menuItems.push([(
-        <Menu.Item icon={<InfoCircleOutlined />} key='about' onClick={() => showAboutModal()}>
-            About
-        </Menu.Item>
-    ), 30]);
+    menuItems.push([{
+        key: 'settings',
+        icon: <SettingOutlined />,
+        onClick: () => switchSettingsModalVisible(true),
+        title: `Press ${switchSettingsShortcut} to switch`,
+        label: 'Settings',
+    }, 20]);
+
+    menuItems.push([{
+        key: 'about',
+        icon: <InfoCircleOutlined />,
+        onClick: () => showAboutModal(),
+        label: 'About',
+    }, 30]);
 
     if (renderChangePasswordItem) {
-        menuItems.push([(
-            <Menu.Item
-                key='change_password'
-                icon={changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
-                className='cvat-header-menu-change-password'
-                onClick={(): void => switchChangePasswordModalVisible(true)}
-                disabled={changePasswordFetching}
-            >
-                Change password
-            </Menu.Item>
-        ), 40]);
+        menuItems.push([{
+            key: 'change_password',
+            icon: changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />,
+            className: 'cvat-header-menu-change-password',
+            onClick: () => switchChangePasswordModalVisible(true),
+            label: 'Change password',
+            disabled: changePasswordFetching,
+        }, 40]);
     }
 
-    menuItems.push([(
-        <Menu.Item
-            key='logout'
-            icon={logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
-            onClick={() => {
-                history.push('/auth/logout');
-            }}
-            disabled={logoutFetching}
-        >
-            Logout
-        </Menu.Item>
-    ), 50]);
+    menuItems.push([{
+        key: 'logout',
+        icon: logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />,
+        onClick: () => history.push('/auth/logout'),
+        label: 'Logout',
+        disabled: logoutFetching,
+    }, 50]);
 
-    menuItems.push(
-        ...plugins.map(({ component: Component, weight }, index) => (
-            [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
-        )),
+    menuItems.push(...plugins
+        .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
     );
 
-    const userMenu = (
-        <Menu triggerSubMenuAction='click' className='cvat-header-menu'>
-            { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
-                .map((menuItem) => menuItem[0]) }
-        </Menu>
-    );
-
-    const getButtonClassName = (value: string): string => {
+    const getButtonClassName = (value: string, highlightable = true): string => {
         // eslint-disable-next-line security/detect-non-literal-regexp
         const regex = new RegExp(`${value}$`);
         const baseClass = `cvat-header-${value}-button cvat-header-button`;
-        return location.pathname.match(regex) ?
+        return highlightable && location.pathname.match(regex) ?
             `${baseClass} cvat-active-header-button` : baseClass;
     };
 
     return (
         <Layout.Header className='cvat-header'>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button
@@ -507,6 +487,18 @@ function HeaderComponent(props: Props): JSX.Element {
                 >
                     Cloud Storages
                 </Button>
+                <Button
+                    className={getButtonClassName('requests')}
+                    type='link'
+                    value='requests'
+                    href='/requests?page=1'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/requests');
+                    }}
+                >
+                    Requests
+                </Button>
                 {isModelsPluginActive ? (
                     <Button
                         className={getButtonClassName('models')}
@@ -521,9 +513,9 @@ function HeaderComponent(props: Props): JSX.Element {
                         Models
                     </Button>
                 ) : null}
-                {isAnalyticsPluginActive && user.isSuperuser ? (
+                {isAnalyticsPluginActive && user.hasAnalyticsAccess ? (
                     <Button
-                        className={getButtonClassName('analytics')}
+                        className={getButtonClassName('analytics', false)}
                         type='link'
                         href='/analytics'
                         onClick={(event: React.MouseEvent): void => {
@@ -566,7 +558,12 @@ function HeaderComponent(props: Props): JSX.Element {
                     trigger={['click']}
                     destroyPopupOnHide
                     placement='bottomRight'
-                    overlay={userMenu}
+                    menu={{
+                        items: menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
+                            .map((menuItem) => menuItem[0]),
+                        triggerSubMenuAction: 'click',
+                        className: 'cvat-header-menu',
+                    }}
                     className='cvat-header-menu-user-dropdown'
                 >
                     <span>

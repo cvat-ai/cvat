@@ -9,7 +9,7 @@ import zipfile
 from collections import OrderedDict
 from glob import glob
 from io import BufferedWriter
-from typing import Callable
+from typing import Callable, Union
 
 from datumaro.components.annotation import (AnnotationType, Bbox, Label,
                                             LabelCategories, Points, Polygon,
@@ -17,15 +17,17 @@ from datumaro.components.annotation import (AnnotationType, Bbox, Label,
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
                                            Importer)
+from datumaro.plugins.cvat_format.extractor import CvatImporter as _CvatImporter
+
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData,
+from cvat.apps.dataset_manager.bindings import (ProjectData, TaskData, JobData, detect_dataset,
                                                 get_defaulted_subset,
                                                 import_dm_annotations,
                                                 match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.frame_provider import FrameQuality, FrameOutputType, make_frame_provider
 
 from .registry import dm_env, exporter, importer
 
@@ -1221,33 +1223,33 @@ def load_anno(file_object, annotations):
                 shape_element['elements'] = []
 
                 if el.tag == 'box':
-                    shape_element['points'].append(el.attrib['xtl'])
-                    shape_element['points'].append(el.attrib['ytl'])
-                    shape_element['points'].append(el.attrib['xbr'])
-                    shape_element['points'].append(el.attrib['ybr'])
+                    shape_element['points'].append(float(el.attrib['xtl']))
+                    shape_element['points'].append(float(el.attrib['ytl']))
+                    shape_element['points'].append(float(el.attrib['xbr']))
+                    shape_element['points'].append(float(el.attrib['ybr']))
                 elif el.tag == 'ellipse':
-                    shape_element['points'].append(el.attrib['cx'])
-                    shape_element['points'].append(el.attrib['cy'])
-                    shape_element['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
-                    shape_element['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
+                    shape_element['points'].append(float(el.attrib['cx']))
+                    shape_element['points'].append(float(el.attrib['cy']))
+                    shape_element['points'].append(float("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx']))))
+                    shape_element['points'].append(float("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry']))))
                 elif el.tag == 'cuboid':
-                    shape_element['points'].append(el.attrib['xtl1'])
-                    shape_element['points'].append(el.attrib['ytl1'])
-                    shape_element['points'].append(el.attrib['xbl1'])
-                    shape_element['points'].append(el.attrib['ybl1'])
-                    shape_element['points'].append(el.attrib['xtr1'])
-                    shape_element['points'].append(el.attrib['ytr1'])
-                    shape_element['points'].append(el.attrib['xbr1'])
-                    shape_element['points'].append(el.attrib['ybr1'])
+                    shape_element['points'].append(float(el.attrib['xtl1']))
+                    shape_element['points'].append(float(el.attrib['ytl1']))
+                    shape_element['points'].append(float(el.attrib['xbl1']))
+                    shape_element['points'].append(float(el.attrib['ybl1']))
+                    shape_element['points'].append(float(el.attrib['xtr1']))
+                    shape_element['points'].append(float(el.attrib['ytr1']))
+                    shape_element['points'].append(float(el.attrib['xbr1']))
+                    shape_element['points'].append(float(el.attrib['ybr1']))
 
-                    shape_element['points'].append(el.attrib['xtl2'])
-                    shape_element['points'].append(el.attrib['ytl2'])
-                    shape_element['points'].append(el.attrib['xbl2'])
-                    shape_element['points'].append(el.attrib['ybl2'])
-                    shape_element['points'].append(el.attrib['xtr2'])
-                    shape_element['points'].append(el.attrib['ytr2'])
-                    shape_element['points'].append(el.attrib['xbr2'])
-                    shape_element['points'].append(el.attrib['ybr2'])
+                    shape_element['points'].append(float(el.attrib['xtl2']))
+                    shape_element['points'].append(float(el.attrib['ytl2']))
+                    shape_element['points'].append(float(el.attrib['xbl2']))
+                    shape_element['points'].append(float(el.attrib['ybl2']))
+                    shape_element['points'].append(float(el.attrib['xtr2']))
+                    shape_element['points'].append(float(el.attrib['ytr2']))
+                    shape_element['points'].append(float(el.attrib['xbr2']))
+                    shape_element['points'].append(float(el.attrib['ybr2']))
                 else:
                     for pair in el.attrib['points'].split(';'):
                         shape_element['points'].extend(map(float, pair.split(',')))
@@ -1280,39 +1282,39 @@ def load_anno(file_object, annotations):
                 shape['rotation'] = float(el.attrib.get('rotation', 0))
 
                 if el.tag == 'box':
-                    shape['points'].append(el.attrib['xtl'])
-                    shape['points'].append(el.attrib['ytl'])
-                    shape['points'].append(el.attrib['xbr'])
-                    shape['points'].append(el.attrib['ybr'])
+                    shape['points'].append(float(el.attrib['xtl']))
+                    shape['points'].append(float(el.attrib['ytl']))
+                    shape['points'].append(float(el.attrib['xbr']))
+                    shape['points'].append(float(el.attrib['ybr']))
                 elif el.tag == 'ellipse':
-                    shape['points'].append(el.attrib['cx'])
-                    shape['points'].append(el.attrib['cy'])
-                    shape['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
-                    shape['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
+                    shape['points'].append(float(el.attrib['cx']))
+                    shape['points'].append(float(el.attrib['cy']))
+                    shape['points'].append(float("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx']))))
+                    shape['points'].append(float("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry']))))
                 elif el.tag == 'mask':
-                    shape['points'] = el.attrib['rle'].split(',')
-                    shape['points'].append(el.attrib['left'])
-                    shape['points'].append(el.attrib['top'])
-                    shape['points'].append("{}".format(int(el.attrib['left']) + int(el.attrib['width']) - 1))
-                    shape['points'].append("{}".format(int(el.attrib['top']) + int(el.attrib['height']) - 1))
+                    shape['points'] = list(map(int, el.attrib['rle'].split(',')))
+                    shape['points'].append(int(el.attrib['left']))
+                    shape['points'].append(int(el.attrib['top']))
+                    shape['points'].append(int(el.attrib['left']) + int(el.attrib['width']) - 1)
+                    shape['points'].append(int(el.attrib['top']) + int(el.attrib['height']) - 1)
                 elif el.tag == 'cuboid':
-                    shape['points'].append(el.attrib['xtl1'])
-                    shape['points'].append(el.attrib['ytl1'])
-                    shape['points'].append(el.attrib['xbl1'])
-                    shape['points'].append(el.attrib['ybl1'])
-                    shape['points'].append(el.attrib['xtr1'])
-                    shape['points'].append(el.attrib['ytr1'])
-                    shape['points'].append(el.attrib['xbr1'])
-                    shape['points'].append(el.attrib['ybr1'])
+                    shape['points'].append(float(el.attrib['xtl1']))
+                    shape['points'].append(float(el.attrib['ytl1']))
+                    shape['points'].append(float(el.attrib['xbl1']))
+                    shape['points'].append(float(el.attrib['ybl1']))
+                    shape['points'].append(float(el.attrib['xtr1']))
+                    shape['points'].append(float(el.attrib['ytr1']))
+                    shape['points'].append(float(el.attrib['xbr1']))
+                    shape['points'].append(float(el.attrib['ybr1']))
 
-                    shape['points'].append(el.attrib['xtl2'])
-                    shape['points'].append(el.attrib['ytl2'])
-                    shape['points'].append(el.attrib['xbl2'])
-                    shape['points'].append(el.attrib['ybl2'])
-                    shape['points'].append(el.attrib['xtr2'])
-                    shape['points'].append(el.attrib['ytr2'])
-                    shape['points'].append(el.attrib['xbr2'])
-                    shape['points'].append(el.attrib['ybr2'])
+                    shape['points'].append(float(el.attrib['xtl2']))
+                    shape['points'].append(float(el.attrib['ytl2']))
+                    shape['points'].append(float(el.attrib['xbl2']))
+                    shape['points'].append(float(el.attrib['ybl2']))
+                    shape['points'].append(float(el.attrib['xtr2']))
+                    shape['points'].append(float(el.attrib['ytr2']))
+                    shape['points'].append(float(el.attrib['xbr2']))
+                    shape['points'].append(float(el.attrib['ybr2']))
                 elif el.tag == 'skeleton':
                     pass
                 else:
@@ -1368,26 +1370,31 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
     callback(dumper, project_data)
     dumper.close_document()
 
-def dump_media_files(instance_data: CommonData, img_dir: str, project_data: ProjectData = None):
+def dump_media_files(instance_data: Union[TaskData, JobData], img_dir: str, project_data: ProjectData = None):
+    frame_provider = make_frame_provider(instance_data.db_instance)
+
     ext = ''
     if instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation':
-        ext = FrameProvider.VIDEO_FRAME_EXT
+        ext = frame_provider.VIDEO_FRAME_EXT
 
-    frame_provider = FrameProvider(instance_data.db_data)
-    frames = frame_provider.get_frames(
-        instance_data.start, instance_data.stop,
-        frame_provider.Quality.ORIGINAL,
-        frame_provider.Type.BUFFER)
-    for frame_id, (frame_data, _) in zip(instance_data.rel_range, frames):
-        if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
-            or frame_id in instance_data.deleted_frames:
+    frames = frame_provider.iterate_frames(
+        start_frame=instance_data.start,
+        stop_frame=instance_data.stop,
+        quality=FrameQuality.ORIGINAL,
+        out_type=FrameOutputType.BUFFER,
+    )
+    included_frames = instance_data.get_included_frames()
+
+    for frame_id, frame in zip(instance_data.rel_range, frames):
+        # exclude deleted frames and honeypots
+        if frame_id not in included_frames:
             continue
         frame_name = instance_data.frame_info[frame_id]['path'] if project_data is None \
             else project_data.frame_info[(instance_data.db_instance.id, frame_id)]['path']
         img_path = osp.join(img_dir, frame_name + ext)
         os.makedirs(osp.dirname(img_path), exist_ok=True)
         with open(img_path, 'wb') as f:
-            f.write(frame_data.getvalue())
+            f.write(frame.data.getvalue())
 
 def _export_task_or_job(dst_file, temp_dir, instance_data, anno_callback, save_images=False):
     with open(osp.join(temp_dir, 'annotations.xml'), 'wb') as f:
@@ -1439,6 +1446,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
         if isinstance(instance_data, ProjectData):
+            detect_dataset(temp_dir, format_name='cvat', importer=_CvatImporter)
             dataset = Dataset.import_from(temp_dir, 'cvat', env=dm_env)
             if load_data_callback is not None:
                 load_data_callback(dataset, instance_data)

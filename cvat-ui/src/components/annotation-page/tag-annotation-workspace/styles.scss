@@ -86,3 +86,17 @@
     width: $grid-unit-size * 4;
     height: $grid-unit-size * 4;
 }
+
+.cvat-frame-tag {
+    transform-origin: left;
+}
+
+.cvat-frame-tag-highlighted {
+    @extend .cvat-frame-tag;
+
+    transform: scale(1.1);
+}
+
+.cvat-canvas-annotation-frame-tags {
+    margin-bottom: $grid-unit-size;
+}

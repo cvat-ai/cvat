@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,9 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
+import Tag from 'antd/lib/tag';
 import notification from 'antd/lib/notification';
+import { ArrowRightOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
@@ -76,15 +78,10 @@ function DetectorRunner(props: Props): JSX.Element {
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
-    const isClassifier = model?.kind === ModelKind.CLASSIFIER;
     const convertMasks2PolygonVisible = isDetector &&
         (!model.returnType || model.returnType === ModelReturnType.MASK);
-    const labelsMappingVisible = isDetector || isClassifier;
 
-    const buttonEnabled =
-        model && (model.kind === ModelKind.REID ||
-            (model.kind === ModelKind.DETECTOR && mapping.length) ||
-            (model.kind === ModelKind.CLASSIFIER && mapping.length));
+    const buttonEnabled = model && (isReId || (isDetector && mapping.length));
 
     useEffect(() => {
         const converted = labels.map((label) => ({
@@ -142,18 +139,28 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {labelsMappingVisible && (
-                <Row justify='start' align='middle'>
+            {isDetector && (
+                <div>
+                    <div className='cvat-detector-runner-mapping-header'>
+                        <div>
+                            <Text strong>Setup mapping between labels and attributes</Text>
+                        </div>
+                        <div>
+                            <Tag>Model Spec</Tag>
+                            <ArrowRightOutlined />
+                            <Tag>CVAT Spec</Tag>
+                        </div>
+                    </div>
                     <LabelsMapperComponent
                         key={modelID} // rerender when model switched
                         onUpdateMapping={(_mapping: FullMapping) => setMapping(_mapping)}
                         modelLabels={modelLabels}
                         taskLabels={taskLabels}
                     />
-                </Row>
+                </div>
             )}
             {convertMasks2PolygonVisible && (
-                <div className='detector-runner-convert-masks-to-polygons-wrapper'>
+                <div className='cvat-detector-runner-convert-masks-to-polygons-wrapper'>
                     <Switch
                         checked={convertMasksToPolygons}
                         onChange={(checked: boolean) => {
@@ -164,7 +171,7 @@ function DetectorRunner(props: Props): JSX.Element {
                 </div>
             )}
             {isDetector && withCleanup && (
-                <div className='detector-runner-clean-previous-annotations-wrapper'>
+                <div className='cvat-detector-runner-clean-previous-annotations-wrapper'>
                     <Switch
                         checked={cleanup}
                         onChange={(checked: boolean): void => setCleanup(checked)}
@@ -232,8 +239,6 @@ function DetectorRunner(props: Props): JSX.Element {
                                 });
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
-                            } else if (model.kind === ModelKind.CLASSIFIER) {
-                                runInference(model, { cleanup, mapping: serverMapping });
                             }
                         }}
                     >

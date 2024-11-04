@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,8 +33,8 @@ interface Props {
     activate(activeElementID?: number): void;
     copy(): void;
     propagate(): void;
-    createURL(): void;
     switchOrientation(): void;
+    createURL(): void;
     toBackground(): void;
     toForeground(): void;
     remove(): void;
@@ -93,7 +93,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
-            <div className='cvat-objects-sidebar-state-item-color' style={{ background: `${color}` }} />
             <div
                 onMouseEnter={activateState}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
@@ -119,7 +118,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
-                    removeShortcut={normalizedKeyMap.DELETE_OBJECT}
+                    removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
                     changeLabel={changeLabel}
@@ -144,17 +143,12 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     />
                 )}
                 {!!elements.length && (
-                    <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
-                        <Collapse.Panel
-                            header={(
-                                <>
-                                    <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
-                                    <br />
-                                </>
-                            )}
-                            key='elements'
-                        >
-                            {elements.map((element: number) => (
+                    <Collapse
+                        className='cvat-objects-sidebar-state-item-elements-collapse'
+                        items={[{
+                            key: 'elements',
+                            label: <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>,
+                            children: elements.map((element: number) => (
                                 <ObjectItemElementComponent
                                     key={element}
                                     readonly={readonly}
@@ -162,9 +156,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                     clientID={element}
                                     onMouseLeave={activateState}
                                 />
-                            ))}
-                        </Collapse.Panel>
-                    </Collapse>
+                            )),
+                        }]}
+                    />
                 )}
             </div>
         </div>

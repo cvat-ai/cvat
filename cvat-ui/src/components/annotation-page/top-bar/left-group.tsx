@@ -9,14 +9,16 @@ import Icon, { StopOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-d
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import Dropdown from 'antd/lib/dropdown';
 
-import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
-import { MainMenuIcon, UndoIcon, RedoIcon } from 'icons';
+import { UndoIcon, RedoIcon } from 'icons';
 import { ActiveControl, ToolsBlockerState } from 'reducers';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import AnnotationMenuComponent from 'components/annotation-page/top-bar/annotation-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import customizableComponents from 'components/customizable-components';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import SaveAnnotationsButton from './save-annotations-button';
 
 interface Props {
     saving: boolean;
@@ -29,12 +31,34 @@ interface Props {
     toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
     keyMap: KeyMap;
-    onSaveAnnotation(): void;
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
     onSwitchToolsBlockerState(): void;
 }
+
+const componentShortcuts = {
+    UNDO: {
+        name: 'Undo action',
+        description: 'Cancel the latest action related with objects',
+        sequences: ['ctrl+z'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    REDO: {
+        name: 'Redo action',
+        description: 'Cancel undo action',
+        sequences: ['ctrl+shift+z', 'ctrl+y'],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
+    SWITCH_TOOLS_BLOCKER_STATE: {
+        name: 'Switch algorithm blocker',
+        description: 'Postpone running the algorithm for interaction tools',
+        sequences: ['tab'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function LeftGroup(props: Props): JSX.Element {
     const {
@@ -48,7 +72,6 @@ function LeftGroup(props: Props): JSX.Element {
         switchToolsBlockerShortcut,
         activeControl,
         toolsBlockerState,
-        onSaveAnnotation,
         onUndoClick,
         onRedoClick,
         onFinishDraw,
@@ -66,15 +89,7 @@ function LeftGroup(props: Props): JSX.Element {
     const includesToolsBlockerButton =
         [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;
 
-    const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
-    const SaveButtonComponent = customizableComponents.SAVE_ANNOTATION_BUTTON;
-
-    const subKeyMap = {
-        UNDO: keyMap.UNDO,
-        REDO: keyMap.REDO,
-    };
-
-    const handlers = {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             if (undoAction) {
@@ -87,33 +102,30 @@ function LeftGroup(props: Props): JSX.Element {
                 onRedoClick();
             }
         },
+        SWITCH_TOOLS_BLOCKER_STATE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onSwitchToolsBlockerState();
+        },
     };
 
     return (
         <>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-            <Modal className='cvat-saving-job-modal' title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
-                <Text>CVAT is saving your annotations, please wait </Text>
-                <LoadingOutlined />
-            </Modal>
-            <Col className='cvat-annotation-header-left-group'>
-                <Dropdown
-                    trigger={['click']}
-                    destroyPopupOnHide
-                    overlay={<AnnotationMenuContainer />}
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+            { saving && (
+                <Modal
+                    open
+                    destroyOnClose
+                    className='cvat-saving-job-modal'
+                    closable={false}
+                    footer={[]}
                 >
-                    <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
-                        <Icon component={MainMenuIcon} />
-                        Menu
-                    </Button>
-                </Dropdown>
-                <SaveButtonComponent
-                    isSaving={saving}
-                    onClick={saving ? undefined : onSaveAnnotation}
-                    type='link'
-                    className={saving ? 'cvat-annotation-header-save-button cvat-annotation-disabled-header-button' :
-                        'cvat-annotation-header-save-button cvat-annotation-header-button'}
-                />
+                    <Text>CVAT is saving your annotations, please wait </Text>
+                    <LoadingOutlined />
+                </Modal>
+            )}
+            <Col className='cvat-annotation-header-left-group'>
+                <AnnotationMenuComponent />
+                <SaveAnnotationsButton />
                 <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
                     <Button
                         style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
@@ -151,7 +163,7 @@ function LeftGroup(props: Props): JSX.Element {
                             className={`cvat-annotation-header-block-tool-button cvat-annotation-header-button ${
                                 toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''
                             }`}
-                            onClick={shouldEnableToolsBlockerOnClick ? onSwitchToolsBlockerState : undefined}
+                            onClick={onSwitchToolsBlockerState}
                         >
                             <StopOutlined />
                             Block

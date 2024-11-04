@@ -1,4 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +8,19 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.utils.translation import gettext_lazy as _
 
+from cvat.apps.engine.models import Profile
+
+
+class ProfileInline(admin.StackedInline):
+    model = Profile
+
+    fieldsets = (
+        (None, {'fields': ('has_analytics_access', )}),
+    )
+
+
 class CustomUserAdmin(UserAdmin):
+    inlines = (ProfileInline,)
     list_display = ("username", "email", "first_name", "last_name", "is_active", "is_staff")
     fieldsets = (
         (None, {'fields': ('username', 'password')}),

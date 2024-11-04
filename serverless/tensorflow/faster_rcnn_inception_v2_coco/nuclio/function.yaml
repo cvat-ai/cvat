@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Faster RCNN via Tensorflow
     type: detector
-    framework: tensorflow
     spec: |
       [
         { "id": 1, "name": "person", "type": "rectangle" },
@@ -91,13 +90,13 @@ metadata:
 
 spec:
   description: Faster RCNN from Tensorflow Object Detection API
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
 
   build:
     image: cvat.tf.faster_rcnn_inception_v2_coco
-    baseImage: tensorflow/tensorflow:2.1.1
+    baseImage: tensorflow/tensorflow:2.16.1
 
     directives:
       preCopy:

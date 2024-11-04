@@ -1,14 +1,15 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { EventScope } from 'cvat-logger';
+import { ObjectState, Job } from 'cvat-core-wrapper';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
-import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
+import { updateAnnotationsAsync, changeFrameAsync, changeHideActiveObjectAsync } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
@@ -21,18 +22,20 @@ interface OwnProps {
 }
 
 interface StateToProps {
-    objectState: any;
-    jobInstance: any;
+    objectState: ObjectState;
+    jobInstance: Job;
     frameNumber: number;
     normalizedKeyMap: Record<string, string>;
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
+    editedState: ObjectState | null,
 }
 
 interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     changeFrame(frame: number): void;
+    changeHideEditedState(value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -43,6 +46,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
+            editing: { objectState: editedState },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -60,7 +64,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         objectState,
         normalizedKeyMap,
         frameNumber,
-        jobInstance,
+        editedState,
+        jobInstance: jobInstance as Job,
         outsideDisabled: typeof outsideDisabled === 'undefined' ? false : outsideDisabled,
         hiddenDisabled: typeof hiddenDisabled === 'undefined' ? false : hiddenDisabled,
         keyframeDisabled: typeof keyframeDisabled === 'undefined' ? false : keyframeDisabled,
@@ -75,21 +80,24 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
         },
+        changeHideEditedState(value: boolean): void {
+            dispatch(changeHideActiveObjectAsync(value));
+        },
     };
 }
 
 class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToProps & OwnProps> {
     private navigateFirstKeyframe = (): void => {
         const { objectState, frameNumber } = this.props;
-        const { first } = objectState.keyframes;
-        if (first !== frameNumber) {
+        const { first } = objectState.keyframes as NonNullable<typeof objectState.keyframes>;
+        if (first !== null && first !== frameNumber) {
             this.changeFrame(first);
         }
     };
 
     private navigatePrevKeyframe = (): void => {
         const { objectState, frameNumber } = this.props;
-        const { prev } = objectState.keyframes;
+        const { prev } = objectState.keyframes as NonNullable<typeof objectState.keyframes>;
         if (prev !== null && prev !== frameNumber) {
             this.changeFrame(prev);
         }
@@ -97,7 +105,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private navigateNextKeyframe = (): void => {
         const { objectState, frameNumber } = this.props;
-        const { next } = objectState.keyframes;
+        const { next } = objectState.keyframes as NonNullable<typeof objectState.keyframes>;
         if (next !== null && next !== frameNumber) {
             this.changeFrame(next);
         }
@@ -105,25 +113,23 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private navigateLastKeyframe = (): void => {
         const { objectState, frameNumber } = this.props;
-        const { last } = objectState.keyframes;
-        if (last !== frameNumber) {
+        const { last } = objectState.keyframes as NonNullable<typeof objectState.keyframes>;
+        if (last !== null && last !== frameNumber) {
             this.changeFrame(last);
         }
     };
 
     private lock = (): void => {
-        const { objectState, jobInstance, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.lockObject, { locked: true });
             objectState.lock = true;
             this.commit();
         }
     };
 
     private unlock = (): void => {
-        const { objectState, jobInstance, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.lockObject, { locked: false });
             objectState.lock = false;
             this.commit();
         }
@@ -146,15 +152,23 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private show = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = false;
-        this.commit();
+        const { objectState, editedState, changeHideEditedState } = this.props;
+        if (objectState.clientID === editedState?.clientID) {
+            changeHideEditedState(false);
+        } else {
+            objectState.hidden = false;
+            this.commit();
+        }
     };
 
     private hide = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = true;
-        this.commit();
+        const { objectState, editedState, changeHideEditedState } = this.props;
+        if (objectState.clientID === editedState?.clientID) {
+            changeHideEditedState(true);
+        } else {
+            objectState.hidden = true;
+            this.commit();
+        }
     };
 
     private setOccluded = (): void => {
@@ -212,7 +226,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private changeFrame(frame: number): void {
         const { changeFrame } = this.props;
-        if (isAbleToChangeFrame()) {
+        if (isAbleToChangeFrame(frame)) {
             changeFrame(frame);
         }
     }
@@ -237,18 +251,23 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
             last: null,
         };
 
+        const {
+            parentID, objectType, shapeType,
+            occluded, outside, lock, pinned, hidden, keyframe,
+        } = objectState;
+
         return (
             <ItemButtonsComponent
                 readonly={readonly}
-                parentID={objectState.parentID}
-                objectType={objectState.objectType}
-                shapeType={objectState.shapeType}
-                occluded={objectState.occluded}
-                outside={objectState.outside}
-                locked={objectState.lock}
-                pinned={objectState.pinned}
-                hidden={objectState.hidden}
-                keyframe={objectState.keyframe}
+                parentID={parentID}
+                objectType={objectType}
+                shapeType={shapeType}
+                occluded={occluded}
+                outside={outside}
+                locked={lock}
+                pinned={pinned}
+                hidden={hidden}
+                keyframe={keyframe}
                 switchOccludedShortcut={normalizedKeyMap.SWITCH_OCCLUDED}
                 switchPinnedShortcut={normalizedKeyMap.SWITCH_PINNED}
                 switchOutsideShortcut={normalizedKeyMap.SWITCH_OUTSIDE}
@@ -259,11 +278,11 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
                 prevKeyFrameShortcut={normalizedKeyMap.PREV_KEY_FRAME}
                 outsideDisabled={outsideDisabled}
                 hiddenDisabled={hiddenDisabled}
-                keyframeDisabled={keyframeDisabled}
-                navigateFirstKeyframe={first >= frameNumber || first === null ? null : this.navigateFirstKeyframe}
-                navigatePrevKeyframe={prev === frameNumber || prev === null ? null : this.navigatePrevKeyframe}
-                navigateNextKeyframe={next === frameNumber || next === null ? null : this.navigateNextKeyframe}
-                navigateLastKeyframe={last <= frameNumber || last === null ? null : this.navigateLastKeyframe}
+                keyframeDisabled={keyframeDisabled || (first === last && keyframe)}
+                navigateFirstKeyframe={first === null || first >= frameNumber ? null : this.navigateFirstKeyframe}
+                navigatePrevKeyframe={prev === null || prev === frameNumber ? null : this.navigatePrevKeyframe}
+                navigateNextKeyframe={next === null || next === frameNumber ? null : this.navigateNextKeyframe}
+                navigateLastKeyframe={last === null || last <= frameNumber ? null : this.navigateLastKeyframe}
                 setOccluded={this.setOccluded}
                 unsetOccluded={this.unsetOccluded}
                 setOutside={this.setOutside}

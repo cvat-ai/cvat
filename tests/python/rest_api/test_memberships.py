@@ -8,6 +8,7 @@ from typing import ClassVar, List
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.exceptions import ForbiddenException
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, make_api_client, patch_method
@@ -39,7 +40,7 @@ class TestGetMemberships:
         )
 
     def test_non_admin_can_see_only_self_memberships(self, memberships):
-        non_admins = ["business1", "user1", "dummy1", "worker2"]
+        non_admins = ["user1", "dummy1", "worker2"]
         for username in non_admins:
             data = [obj for obj in memberships if obj["user"]["username"] == username]
             self._test_can_see_memberships(username, data)
@@ -73,7 +74,7 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
         ("role", "user"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -136,6 +137,24 @@ class TestPatchMemberships:
         self._test_cannot_change_membership(
             user["username"], user["membership_id"], self.ROLES[abs(self.ROLES.index(who) - 1)]
         )
+
+    def test_malefactor_cannot_obtain_membership_details_via_empty_partial_update_request(
+        self, regular_lonely_user, memberships
+    ):
+        membership = next(iter(memberships))
+
+        with make_api_client(regular_lonely_user) as api_client:
+            with pytest.raises(ForbiddenException):
+                api_client.memberships_api.partial_update(membership["id"])
+
+    def test_user_cannot_update_unknown_field(self, admin_user, memberships):
+        membership = next(iter(memberships))
+
+        response = patch_method(
+            admin_user, f"memberships/{membership['id']}", {"foo": "bar"}, org_id=self._ORG
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

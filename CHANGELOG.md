@@ -16,6 +16,808 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.21.3'></a>
+## \[2.21.3\] - 2024-10-31
+
+### Changed
+
+- CLI no longer prints the stack trace in case of HTTP errors
+  (<https://github.com/cvat-ai/cvat/pull/8601>)
+
+### Removed
+
+- Dropped support for Python 3.8 since its EOL was on 2024-10-07
+  (<https://github.com/cvat-ai/cvat/pull/8360>)
+
+### Fixed
+
+- Requests page crush with `Cannot read property 'target' of undefined` error
+  (<https://github.com/cvat-ai/cvat/pull/8575>)
+
+- Tags in ground truth job were displayed as `tag (GT)`
+  (<https://github.com/cvat-ai/cvat/pull/8586>)
+
+- Tags in ground truth job couldn't be deleted via `x` button
+ (<https://github.com/cvat-ai/cvat/pull/8586>)
+
+- Exception 'Canvas is busy' when change frame during drag/resize a track
+  (<https://github.com/cvat-ai/cvat/pull/8598>)
+
+- A shape gets shifted if auto save triggered during dragging
+  (<https://github.com/cvat-ai/cvat/pull/8598>)
+
+<a id='changelog-2.21.2'></a>
+## \[2.21.2\] - 2024-10-24
+
+### Added
+
+- Access to /analytics can now be granted
+  (<https://github.com/cvat-ai/cvat/pull/8509>)
+
+### Fixed
+
+- Expired sessions are now cleared from the database daily
+  (<https://github.com/cvat-ai/cvat/pull/8552>)
+
+- Fixed export/import errors for tracks with duplicated shapes.
+  Fixed a bug which caused shape duplication on track import.
+  (<https://github.com/cvat-ai/cvat/pull/8553>)
+
+- Fix Grafana container restart policy
+  (<https://github.com/cvat-ai/cvat/pull/8577>)
+
+- Fixed some interface tooltips having 'undefined' shortcuts
+  (<https://github.com/cvat-ai/cvat/pull/8578>)
+
+- Memory consumption during preparation of image chunks
+  (<https://github.com/cvat-ai/cvat/pull/8581>)
+
+- Fixed a bug where an export RQ job being retried may break scheduling
+  of new jobs
+  (<https://github.com/cvat-ai/cvat/pull/8584>)
+
+- UI now allows the user to start automatic annotation again
+  if the previous request fails
+  (<https://github.com/cvat-ai/cvat/pull/8587>)
+
+<a id='changelog-2.21.1'></a>
+## \[2.21.1\] - 2024-10-18
+
+### Added
+
+- Keyboard shortcuts for **brush**, **eraser**, **polygon** and **polygon remove** tools on masks drawing toolbox
+  (<https://github.com/cvat-ai/cvat/pull/8519>)
+
+### Fixed
+
+- Ground truth tracks are displayed not only on GT frames in review mode
+  (<https://github.com/cvat-ai/cvat/pull/8531>)
+
+- Incorrect navigation by keyframes when annotation job ends earlier than track in a ground truth job
+  (<https://github.com/cvat-ai/cvat/pull/8533>)
+- Tracks from a ground truth job displayed on wrong frames in review mode when frame step is not equal to 1
+  (<https://github.com/cvat-ai/cvat/pull/8533>)
+
+- Task creation with cloud storage data and GT_POOL validation mode
+  (<https://github.com/cvat-ai/cvat/pull/8539>)
+
+- Incorrect quality reports and immediate feedback with non default start frame or frame step
+  (<https://github.com/cvat-ai/cvat/pull/8551>)
+
+- av context closing issue when using AUTO thread_type
+  (<https://github.com/cvat-ai/cvat/pull/8555>)
+
+<a id='changelog-2.21.0'></a>
+## \[2.21.0\] - 2024-10-10
+
+### Added
+
+- New task mode: Honeypots (GT pool)
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+- New task creation options for quality control: Honeypots (GT pool), GT job
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+- New GT job frame selection method: `random_per_job`,
+  which guarantees each job will have GT overlap
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+- \[Server API\] POST `/jobs/`: new frame selection parameters,
+  which accept percentages, instead of absolute values
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+- \[Server API\] GET `/api/tasks/{id}/` got a new `validation_mode` field,
+  reflecting the current validation configuration (immutable)
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+- \[Server API\] POST `/api/tasks/{id}/data` got a new `validation_params` field,
+  which allows to enable `GT` and `GT_POOL` validation for a task on its creation
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+
+- Added custom certificates documentation
+  (<https://github.com/cvat-ai/cvat/pull/7508>)
+
+- Support for YOLOv8 Classification format
+  (<https://github.com/cvat-ai/cvat/pull/8475>)
+
+- \[Server API\] An option to change real frames for honeypot frames in tasks with honeypots
+  (<https://github.com/cvat-ai/cvat/pull/8471>)
+- \[Server API\] New endpoints for validation configuration management in tasks and jobs
+  `/api/tasks/{id}/validation_layout`, `/api/jobs/{id}/validation_layout`
+  (<https://github.com/cvat-ai/cvat/pull/8471>)
+
+- \[Helm\] Readiness and liveness probes
+  (<https://github.com/cvat-ai/cvat/pull/8488>)
+
+### Changed
+
+- \[Server API\] POST `/jobs/` `.frames` field now expects relative frame numbers
+  instead of absolute (source data) ones
+  (<https://github.com/cvat-ai/cvat/pull/8348>)
+
+- \[Server API\] Now chunks in tasks can be changed.
+  There are new API elements to check chunk relevancy, if they are cached:
+  `/api/tasks/{id}/data/meta` got a new field `chunks_updated_date`,
+  `/api/tasks/{id}/data/?type=chunk` got 2 new headers: `X-Updated-Date`, `X-Checksum`
+  (<https://github.com/cvat-ai/cvat/pull/8471>)
+
+- Made the `PATCH` endpoints for projects, tasks, jobs and memberships check
+  the input more strictly
+  (<https://github.com/cvat-ai/cvat/pull/8493>):
+
+  - unknown fields are rejected;
+  - updating a field now requires the same level of permissions regardless of
+    whether the new value is the same as the old value.
+
+- \[Server API\] Quality report computation is now allowed to regular users
+  (<https://github.com/cvat-ai/cvat/pull/8511>)
+
+### Fixed
+
+- Invalid chunks for GT jobs when `?number` is used in the request and task frame step > 1
+  (<https://github.com/cvat-ai/cvat/pull/8510>)
+- Invalid output of frames for specific GT frame requests with `api/jobs/{id}/data/?type=frame`
+  (<https://github.com/cvat-ai/cvat/pull/8510>)
+
+<a id='changelog-2.20.0'></a>
+## \[2.20.0\] - 2024-10-01
+
+### Added
+
+- A server setting to enable or disable storage of permanent media chunks on the server filesystem
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+- \[Server API\] `GET /api/jobs/{id}/data/?type=chunk&index=x` parameter combination.
+  The new `index` parameter allows to retrieve job chunks using 0-based index in each job,
+  instead of the `number` parameter, which used task chunk ids.
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+### Changed
+
+- Job assignees will not receive frames from adjacent jobs in chunks
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+### Deprecated
+
+- \[Server API\] `GET /api/jobs/{id}/data/?type=chunk&number=x` parameter combination
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+### Removed
+
+- Removed the non-functional `task_subsets` parameter from the project create
+  and update endpoints
+  (<https://github.com/cvat-ai/cvat/pull/8492>)
+
+### Fixed
+
+- Various memory leaks in video reading on the server
+  (<https://github.com/cvat-ai/cvat/pull/8272>)
+
+<a id='changelog-2.19.1'></a>
+## \[2.19.1\] - 2024-09-26
+
+### Security
+
+- Fixed a security issue that occurred in PATCH requests to projects|tasks|jobs|memberships
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-gxhm-hg65-5gh2>)
+
+<a id='changelog-2.19.0'></a>
+## \[2.19.0\] - 2024-09-20
+
+### Added
+
+- Quality management tab on `quality control` allows to enabling/disabling GT frames
+  (<https://github.com/cvat-ai/cvat/pull/8329>)
+
+### Changed
+
+- Moved quality control from `analytics` page to `quality control` page
+  (<https://github.com/cvat-ai/cvat/pull/8329>)
+
+### Removed
+
+- Quality report no longer available in CVAT community version
+  (<https://github.com/cvat-ai/cvat/pull/8329>)
+
+### Fixed
+
+- Fixing a problem when project export does not export skeleton tracks
+  (<https://github.com/cvat-ai/cvat/pull/8423>)
+
+### Security
+
+- Fixed an XSS vulnerability in request-related endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-hp6c-f34j-qjj7>)
+
+- Fixed an XSS vulnerability in the quality report data endpoint
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-2c85-39cc-2px9>)
+
+<a id='changelog-2.18.0'></a>
+## \[2.18.0\] - 2024-09-10
+
+### Added
+
+- New quality settings `Target metric`, `Target metric threshold`, `Max validations per job`
+  (<https://github.com/cvat-ai/cvat/pull/8347>)
+
+- Ability to specify location when exporting datasets and backups using SDK
+  (<https://github.com/cvat-ai/cvat/pull/8255>)
+
+- Shortcuts in user interface now may be customized depends on a user requirements
+  (<https://github.com/cvat-ai/cvat/pull/8186>)
+
+- Added analytics events for function calls
+  (<https://github.com/cvat-ai/cvat/pull/8395>)
+
+### Changed
+
+- `Mean annotaion quality` card on quality page now displays a value depending on `Target metric` setting
+  (<https://github.com/cvat-ai/cvat/pull/8347>)
+
+- When cancelling a request, a user is no longer required to have
+  permissions to perform the original action
+  (<https://github.com/cvat-ai/cvat/pull/8369>)
+
+- Lambda function endpoints now return 500 instead of 404
+  if a function's metadata is invalid
+  (<https://github.com/cvat-ai/cvat/pull/8406>)
+
+- An unknown lambda function type is now treated as invalid metadata
+  and the function is no longer included in the list endpoint output
+  (<https://github.com/cvat-ai/cvat/pull/8406>)
+
+### Removed
+
+- Legacy component to setup shortcuts to switch a label
+  (<https://github.com/cvat-ai/cvat/pull/8416>)
+
+### Fixed
+
+- An issue that occurred when exporting the same dataset or backup twice in a row using SDK
+  (<https://github.com/cvat-ai/cvat/pull/8255>)
+- An issue that occurred when exporting a dataset or backup using SDK
+  when the default project or task location refers to cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/8255>)
+
+- Export crashed on skeleton track with missing shapes
+  (<https://github.com/cvat-ai/cvat/pull/8377>)
+
+- One lambda function with invalid metadata will no longer
+  break function listing
+  (<https://github.com/cvat-ai/cvat/pull/8406>)
+
+### Security
+
+- Fixed a missing authorization vulnerability in webhook delivery endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-p3c9-m7jr-jxxj>)
+
+<a id='changelog-2.17.0'></a>
+## \[2.17.0\] - 2024-08-27
+
+### Added
+
+- Added support for YOLOv8 formats
+  (<https://github.com/cvat-ai/cvat/pull/8240>)
+
+- Last assignee update date in quality reports, new options in quality settings
+  (<https://github.com/cvat-ai/cvat/pull/8321>)
+
+### Changed
+
+- User sessions now expire after two weeks of inactivity
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+- A user changing their password will now invalidate all of their sessions
+  except for the current one
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+### Deprecated
+
+- Client events `upload:annotations`, `lock:object`, `change:attribute`, `change:label`
+ (<https://github.com/cvat-ai/cvat/pull/8304>)
+
+### Removed
+
+- Client event `restore:job` (<https://github.com/cvat-ai/cvat/pull/8304>)
+
+- Removed the `/auth/login-with-token` page
+  (<https://github.com/cvat-ai/cvat/pull/8336>)
+
+### Fixed
+
+- Go back button behavior on analytics page
+  (<https://github.com/cvat-ai/cvat/pull/8277>)
+
+- Logging out of one session will no longer log the user out of all their
+  other sessions
+  (<https://github.com/cvat-ai/cvat/pull/8289>)
+
+- Prevent export process from restarting when downloading a result file,
+  that resulted in downloading a file with new request ID
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+- Race condition occurred while handling parallel export requests
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+- Requests filtering using format and target filters
+  (<https://github.com/cvat-ai/cvat/pull/8216>)
+
+- Sometimes it is not possible to switch workspace because active control broken after
+trying to create a tag with a shortcut (<https://github.com/cvat-ai/cvat/pull/8334>)
+
+<a id='changelog-2.16.3'></a>
+## \[2.16.3\] - 2024-08-13
+
+### Added
+
+- Labels mapper on UI now supports attributes for skeleton points
+  (<https://github.com/cvat-ai/cvat/pull/8251>)
+
+- Segment Anything now supports bounding box input
+  (<https://github.com/cvat-ai/cvat/pull/8270>)
+
+### Changed
+
+- Player navigation not blocked anymore if a frame is being loaded from the server
+  (<https://github.com/cvat-ai/cvat/pull/8284>)
+
+- Accelerated implementation of IntelligentScissors from OpenCV
+  (<https://github.com/cvat-ai/cvat/pull/8293>)
+
+### Fixed
+
+- Issue tool was not reset after creating new issue
+  (<https://github.com/cvat-ai/cvat/pull/8236>)
+
+- Fixed issue with slices handling in `LazyList` which caused problems with exporting masks
+  in `CVAT for images 1.1` format.
+  (<https://github.com/cvat-ai/cvat/pull/8299>)
+
+<a id='changelog-2.16.2'></a>
+## \[2.16.2\] - 2024-08-06
+
+### Changed
+
+- Following the link in notification no longer reloads the page
+  (<https://github.com/cvat-ai/cvat/pull/8197>)
+
+### Fixed
+
+- Copy/paste annotation guide with assets did not work, showing the message
+**Asset is already related to another guide** (<https://github.com/cvat-ai/cvat/pull/7989>)
+
+- Undo can't be done when a shape is rotated
+  (<https://github.com/cvat-ai/cvat/pull/8129>)
+
+- Exporting a skeleton track in a format defined for shapes raises error
+`operands could not be broadcast together with shapes (X, ) (Y, )`
+  (<https://github.com/cvat-ai/cvat/pull/8179>)
+
+- Delete label modal window does not have cancellation button
+  (<https://github.com/cvat-ai/cvat/pull/8196>)
+
+- Export and export cache clean rq job retries' hangs
+  (<https://github.com/cvat-ai/cvat/pull/8198>)
+
+- The automatic annotation process failed for tasks from cloud data
+  (<https://github.com/cvat-ai/cvat/pull/8199>)
+
+- Request card was not disabed properly after downloading
+  (<https://github.com/cvat-ai/cvat/pull/8197>)
+
+- Annotations in a ground truth jobs marked as GT annotations after modifying
+  (<https://github.com/cvat-ai/cvat/pull/8206>)
+
+- API call to run automatic annotations fails on a model with attributes
+ when mapping not provided in the request (<https://github.com/cvat-ai/cvat/pull/8250>)
+
+- Fixed a label collision issue where labels with similar prefixes
+and numeric suffixes could conflict, causing error on export.
+  (<https://github.com/cvat-ai/cvat/pull/8262>)
+
+<a id='changelog-2.16.1'></a>
+## \[2.16.1\] - 2024-07-18
+
+### Added
+
+- Datumaro format now supports skeletons
+  (<https://github.com/cvat-ai/cvat/pull/8165>)
+
+### Changed
+
+- Quality analytics page will now report job assignees from quality reports
+  instead of current job assignees
+  (<https://github.com/cvat-ai/cvat/pull/8123>)
+
+- When exporting projects in COCO format, images in different subsets are now stored in different subfolders
+  (<https://github.com/cvat-ai/cvat/pull/8171>)
+
+- On task export, put images to folders depending on subset
+  (<https://github.com/cvat-ai/cvat/pull/8176>)
+
+### Fixed
+
+- User interface crashed if there are active creating task requests on a project page
+  (<https://github.com/cvat-ai/cvat/pull/8187>)
+
+- Permission error: organization owner cannot export dataset and backup
+  (<https://github.com/cvat-ai/cvat/pull/8185>)
+
+<a id='changelog-2.16.0'></a>
+## \[2.16.0\] - 2024-07-15
+
+### Added
+
+- Set of features to track background activities: importing/exporting datasets, annotations or backups, creating tasks.
+Now you may find these processes on Requests page, it allows a user to understand current status of these activities
+and enhances user experience, not losing progress when the browser tab is closed
+(<https://github.com/cvat-ai/cvat/pull/7537>)
+
+- User now may update a job state from the corresponding task page
+  (<https://github.com/cvat-ai/cvat/pull/8102>)
+
+- The server will now record and report last assignee update time
+  (<https://github.com/cvat-ai/cvat/pull/8119>)
+
+### Changed
+
+- "Finish the job" button on annotation view now only sets state to 'completed'.
+ The job stage keeps unchanged (<https://github.com/cvat-ai/cvat/pull/8102>)
+
+- Log files for individual backend processes are now stored in ephemeral
+  storage of each backend container rather than in the `cvat_logs` volume
+  (<https://github.com/cvat-ai/cvat/pull/8121>)
+
+- Do not reset opacity level each time frame switched if there are masks on the frame
+  (<https://github.com/cvat-ai/cvat/pull/8149>)
+
+### Removed
+
+- Renew the job button in annotation menu was removed
+ (<https://github.com/cvat-ai/cvat/pull/8102>)
+
+### Fixed
+
+- A possible crash in quality computation for tasks with skeletons and normal labels
+  (<https://github.com/cvat-ai/cvat/pull/8100>)
+
+- Quality report button and timestamp alignments on quality page
+  (<https://github.com/cvat-ai/cvat/pull/8106>)
+
+- Fixed display of working time in Grafana management dashboard
+  (<https://github.com/cvat-ai/cvat/pull/8112>)
+
+- Fixed unexpected deletion of log files of other processes that led to OSError:
+  \[Errno 116\] Stale file handle error on NFS volumes
+  (<https://github.com/cvat-ai/cvat/pull/8121>)
+
+- Attribute values with ":" may be displayed incorrectly on canvas
+  (<https://github.com/cvat-ai/cvat/pull/8137>)
+
+- Fixed broken server Docker image build
+  (<https://github.com/cvat-ai/cvat/pull/8160>)
+
+- DOMException: Failed to execute 'atob' on 'Window': The string to be decoded is not correctly encoded
+  (<https://github.com/cvat-ai/cvat/pull/8166>)
+
+<a id='changelog-2.15.0'></a>
+## \[2.15.0\] - 2024-07-02
+
+### Added
+
+- `Propagate shapes` action to create copies of visible shapes on multiple frames forward or backward
+  (<https://github.com/cvat-ai/cvat/pull/8044>)
+
+- \[Helm\] Ability to use an external ClickHouse instance
+  (<https://github.com/cvat-ai/cvat/pull/8048>)
+
+### Changed
+
+- Improved performance for mask import and export
+  (<https://github.com/cvat-ai/cvat/pull/8049>)
+
+### Fixed
+
+- Failing dataset export cleanup attempts for exports before #7864
+  (<https://github.com/cvat-ai/cvat/pull/8039>)
+
+- Exception 'this.el.node.getScreenCTM() is null' occuring in Firefox when
+a user resizes window during skeleton dragging/resizing (<https://github.com/cvat-ai/cvat/pull/8067>)
+
+- Exception 'Edge's nodeFrom M or nodeTo N do not to refer to any node'
+occuring when a user resizes window during skeleton dragging/resizing (<https://github.com/cvat-ai/cvat/pull/8067>)
+
+- Slightly broken layout when running attributed face detection model
+  (<https://github.com/cvat-ai/cvat/pull/8072>)
+
+- Exception 'this.el.node.getScreenCTM() is null' when cancel drawing shape for any tracker
+  (<https://github.com/cvat-ai/cvat/pull/8080>)
+
+- The switcher to block an active tool on annotation header is not highligted properly
+  (<https://github.com/cvat-ai/cvat/pull/8081>)
+
+- Points shape color wasn't changed on changing label
+  (<https://github.com/cvat-ai/cvat/pull/8082>)
+
+- Incorrect counting of tracked shapes when computing analytics report
+  (<https://github.com/cvat-ai/cvat/pull/8088>)
+
+- Ordering of `frame intersection` column on task quality page
+  (<https://github.com/cvat-ai/cvat/pull/8089>)
+
+- The property "outside" not propagated correctly on skeleton elements
+  (<https://github.com/cvat-ai/cvat/pull/8105>)
+
+<a id='changelog-2.14.4'></a>
+## \[2.14.4\] - 2024-06-20
+
+### Added
+
+- Polyline editing may be finished using corresponding shortcut
+  (<https://github.com/cvat-ai/cvat/pull/7922>)
+
+### Changed
+
+- Single shape annotation mode allows to modify/delete objects
+  (<https://github.com/cvat-ai/cvat/pull/8017>)
+
+### Fixed
+
+- Invalid server cache cleanup for backups and events (after #7864)
+  (<https://github.com/cvat-ai/cvat/pull/8040>)
+
+- Filters by created date, updated date do not work on different pages (e.g. list of tasks or jobs)
+  (<https://github.com/cvat-ai/cvat/pull/8055>)
+
+<a id='changelog-2.14.3'></a>
+## \[2.14.3\] - 2024-06-13
+
+### Changed
+
+- Increased server healthcheck timeout 5 -> 15 seconds
+  (<https://github.com/cvat-ai/cvat/pull/7993>)
+
+### Fixed
+
+- Cannot read properties of null (reading 'draw') happens when use shortcut N in a task where first label has type "tag"
+  (<https://github.com/cvat-ai/cvat/pull/7997>)
+
+- When use route `/auth/login-with-token/<token>` without `next` query parameter
+the page reloads infinitely (<https://github.com/cvat-ai/cvat/pull/7999>)
+
+- Fixed kvrocks port naming for istio
+  (<https://github.com/cvat-ai/cvat/pull/8010>)
+
+- Exception: State cannot be updated during editing, need to finish current editing first
+  (<https://github.com/cvat-ai/cvat/pull/8019>)
+
+### Security
+
+- Mitigated a CSRF vulnerability in backup and export-related endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-jpf9-646h-4px7>)
+
+- Fixed an SSRF vulnerability with custom cloud storage endpoints
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-q684-4jjh-83g6>)
+
+<a id='changelog-2.14.2'></a>
+## \[2.14.2\] - 2024-06-07
+
+### Fixed
+
+- Queued jobs are not considered in deferring logic
+  (<https://github.com/cvat-ai/cvat/pull/7907>)
+
+- Significant memory leak related to the frames, which did not memory after become unused
+  (<https://github.com/cvat-ai/cvat/pull/7995>)
+
+<a id='changelog-2.14.1'></a>
+## \[2.14.1\] - 2024-06-05
+
+### Added
+
+- Improved message of DatasetNotFoundError
+  (<https://github.com/cvat-ai/cvat/pull/7923>)
+
+### Changed
+
+- Upgraded React and Antd dependencies, it leads to stylistic changes in the user interface
+  (<https://github.com/cvat-ai/cvat/pull/7466>)
+
+- CVAT now stores users' working time in events of a dedicated type
+  (<https://github.com/cvat-ai/cvat/pull/7958>)
+
+### Fixed
+
+- The 500 / "The result file does not exist in export cache" error
+  on dataset export request
+  (<https://github.com/cvat-ai/cvat/pull/7864>)
+
+- Fix missing serviceName field in kvrocks (issue #7741)
+  (<https://github.com/cvat-ai/cvat/pull/7924>)
+
+- UI crash on hovering conflict related to hidden objects
+  (<https://github.com/cvat-ai/cvat/pull/7917>)
+
+- Login when the domain of a user email contains capital symbols and a user was created after being invited to an org
+  (<https://github.com/cvat-ai/cvat/pull/7906>)
+
+- Exception **"Cannot set properties of undefined (setting 'serverID')"** occurs when attempting
+  to save a job after removing the first keyframe of a track (<https://github.com/cvat-ai/cvat/pull/7949>)
+
+- Spent working time for a user may not be counted in analytics
+  (<https://github.com/cvat-ai/cvat/pull/7942>)
+
+- A classifier model can not be used on annotation view (unknown object shape error)
+  (<https://github.com/cvat-ai/cvat/pull/7839>)
+
+- Optimized memory usage by not keeping all downloaded images/part of images in memory while creating a manifest file
+  (<https://github.com/cvat-ai/cvat/pull/7969>)
+- Optimized the number of requests to CS providers by downloading only images from a specified range
+  (`use_cache==False`) (<https://github.com/cvat-ai/cvat/pull/7969>)
+- Task creation with random sorting and cloud data
+  (<https://github.com/cvat-ai/cvat/pull/7969>)
+
+<a id='changelog-2.14.0'></a>
+## \[2.14.0\] - 2024-05-21
+
+### Added
+
+- Added security headers enforcing strict `Referrer-Policy` for cross origins and disabling MIME type sniffing via `X-Content-Type-Options`.
+  (<https://github.com/opencv/cvat/pull/7752>)
+
+- \[Helm\] Ability to specify ServiceAccount for backend pods
+  (<https://github.com/cvat-ai/cvat/pull/7894>)
+
+### Changed
+
+- Working time rounding to a minimal value of 1 hour is not applied to the annotation speed metric any more
+  (<https://github.com/cvat-ai/cvat/pull/7898>)
+
+- Total annotation speed metric renamed to Average annotation speed
+  (<https://github.com/cvat-ai/cvat/pull/7898>)
+
+- Ground truth jobs are not considered when computing analytics report for a task/project
+  (<https://github.com/cvat-ai/cvat/pull/7919>)
+
+### Fixed
+
+- Fixed calculation of annotation speed metrics for analytics reports
+  (<https://github.com/opencv/cvat/pull/7144>)
+
+- \[Helm\] Prevented spurious 200 OK responses from API endpoints
+  before the backend is ready
+  (<https://github.com/cvat-ai/cvat/pull/7859>)
+
+- Analytic reports incorrect count of objects for a skeleton track/shape
+  (<https://github.com/cvat-ai/cvat/pull/7883>)
+
+- Analytic reports incorrect number of objects for a track (always less by 1)
+  (<https://github.com/cvat-ai/cvat/pull/7883>)
+
+- REST API allowed to create several attributes with the same name within one label
+  (<https://github.com/cvat-ai/cvat/pull/7890>)
+
+- Job's/task's status are not updated when job's state updated to completed and stage is already acceptance
+  (<https://github.com/cvat-ai/cvat/pull/7901>)
+
+- Exception: Cannot read properties of undefined (reading 'onBlockUpdated')
+  (<https://github.com/cvat-ai/cvat/pull/7913>)
+
+- One more found way to create an empty mask
+  (<https://github.com/cvat-ai/cvat/pull/7915>)
+
+- Slice function may not work in Google Chrome < 110
+  (<https://github.com/cvat-ai/cvat/pull/7916>)
+
+- Selecting a skeleton by cursor does not work correctly when there are some hidden points
+  (<https://github.com/cvat-ai/cvat/pull/7921>)
+
+<a id='changelog-2.13.0'></a>
+## \[2.13.0\] - 2024-05-09
+
+### Added
+
+- Quality Report calculation will now also include annotation of type Tag.
+  (<https://github.com/opencv/cvat/pull/7582>)
+
+- Added feature to show tags of GT and manual job in separate row. Tags of GT job have '(GT)' in their name.
+  (<https://github.com/cvat-ai/cvat/pull/7774>)
+
+### Changed
+
+- Analytics reports calculation may be initiated manually instead of automatic scheduling
+  (<https://github.com/cvat-ai/cvat/pull/7805>)
+
+- Update the Nuclio version and related packages/libraries
+  (<https://github.com/cvat-ai/cvat/pull/7787>)
+
+- Remove keyframe button is disabled when there is only one keyframe element
+  (<https://github.com/cvat-ai/cvat/pull/7844>)
+
+### Removed
+
+- The `mask_rcnn` function has been removed because it was using python3.6.
+  In new version of Nuclio python3.6 is no longer supported. Nuclio officially recommends using python3.9.
+  Running `mask_rcnn` on python3.9 causes errors within the function and package conflicts. (<https://github.com/cvat-ai/cvat/pull/7787>)
+
+### Fixed
+
+- Analytics report calculation fails with timeout because of redundant number of requests to ClickHouse
+  (<https://github.com/cvat-ai/cvat/pull/7804>)
+
+- Incorrect duration of `change:frame` event
+  (<https://github.com/cvat-ai/cvat/pull/7817>)
+
+- Infinite loading cloud storage update page when a lot of cloud storages are available for a user
+  (<https://github.com/cvat-ai/cvat/pull/7823>)
+
+- Opening update CS page sends infinite requests when CS id does not exist
+  (<https://github.com/cvat-ai/cvat/pull/7828>)
+
+Uploading files with TUS immediately failed when one of the requests failed
+  (<https://github.com/cvat-ai/cvat/pull/7830>)
+
+- Longer analytics report calculation because of inefficient requests to analytics db
+  (<https://github.com/cvat-ai/cvat/pull/7833>)
+
+- Cannot read properties of undefined (reading 'addClass')
+  (<https://github.com/cvat-ai/cvat/pull/7834>)
+
+- Fixed exception 'Could not read property length of undefined' when copy/paste a skeleton point
+  (<https://github.com/cvat-ai/cvat/pull/7843>)
+
+- Task creation from a video file without keyframes allowing for random iteration
+  (<https://github.com/cvat-ai/cvat/pull/7838>)
+
+- Cannot read property 'annotations' of null when uploading annotations into a job
+  (<https://github.com/cvat-ai/cvat/pull/7857>)
+
+- Vertical polyline of two points is difficult to select
+  (<https://github.com/cvat-ai/cvat/pull/7860>)
+
+- Tracked attribute values are lost when moving a task to a project
+  (<https://github.com/cvat-ai/cvat/pull/7863>)
+
+### Security
+
+- Disable the nginx server signature by default to make it slightly harder for attackers to find known vulnerabilities.
+  (<https://github.com/cvat-ai/cvat/pull/7814>)
+
+<a id='changelog-2.12.1'></a>
+## \[2.12.1\] - 2024-04-26
+
+### Fixed
+
+- Formats with the custom `track_id` attribute should import `outside` track shapes properly (e.g. `COCO`, `COCO Keypoints`, `Datumaro`, `PASCAL VOC`)
+  (<https://github.com/opencv/cvat/pull/7669>)
+
+- Inefficient resources fetching in admin panel leading to 504 Gateway Timeout
+  (<https://github.com/cvat-ai/cvat/pull/7767>)
+
+- Optimized memory usage when retrieving annotations by disabling internal Django QuerySet caching
+  (<https://github.com/cvat-ai/cvat/pull/7748>)
+
+- Annotations are not shown on the `0` frame sometimes
+  (<https://github.com/cvat-ai/cvat/pull/7796>)
+
+- Extra requests in PolicyEnforcer when at least one policy is rejected, others are not checked
+  (<https://github.com/cvat-ai/cvat/pull/7803>)
+
+- Project's `updated_date` was not updated after changing annotations in jobs
+  (<https://github.com/cvat-ai/cvat/pull/7808>)
+
 <a id='changelog-2.12.0'></a>
 ## \[2.12.0\] - 2024-04-15
 

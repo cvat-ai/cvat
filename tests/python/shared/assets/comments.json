@@ -37,11 +37,11 @@
       "issue": 3,
       "message": "Another one issue",
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 11,
-        "last_name": "Second",
+        "last_name": "Eighth",
         "url": "http://localhost:8080/api/users/11",
-        "username": "business2"
+        "username": "user8"
       },
       "updated_date": "2022-03-16T11:08:18.370000Z"
     },
@@ -51,11 +51,11 @@
       "issue": 2,
       "message": "Something should be here",
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 11,
-        "last_name": "Second",
+        "last_name": "Eighth",
         "url": "http://localhost:8080/api/users/11",
-        "username": "business2"
+        "username": "user8"
       },
       "updated_date": "2022-03-16T11:07:22.173000Z"
     },

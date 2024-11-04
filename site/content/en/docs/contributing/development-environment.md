@@ -168,6 +168,7 @@ description: 'Installing a development environment for different operating syste
   ```bash
   python manage.py migrate
   python manage.py collectstatic
+  python manage.py syncperiodicjobs
   python manage.py createsuperuser
   ```
 
@@ -234,7 +235,8 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
   ```powershell
   wsl -d Ubuntu-18.04
   ```
-
+- Install the VS Code extension for WSL, which helps you to open VS Code correctly inside WSL.
+  You can find the extension [here](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl).
 - Run all commands from this installation guide in WSL Ubuntu shell.
 - You might have to manually start the redis server in wsl before you can start the configuration inside
   Visual Studio Code. You can do this with `sudo service redis-server start`. Alternatively you can also

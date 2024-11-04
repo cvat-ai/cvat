@@ -96,6 +96,7 @@ export interface Configuration {
     controlPointsSize?: number;
     outlinedBorders?: string | false;
     resetZoom?: boolean;
+    hideEditedObject?: boolean;
 }
 
 export interface BrushTool {
@@ -129,14 +130,12 @@ export interface InteractionData {
     minPosVertices?: number;
     minNegVertices?: number;
     startWithBox?: boolean;
-    enableThreshold?: boolean;
     enableSliding?: boolean;
     allowRemoveOnlyLast?: boolean;
     intermediateShape?: {
         shapeType: string;
         points: number[];
     };
-    onChangeToolsBlockerState?: (event: string) => void;
 }
 
 export interface InteractionResult {
@@ -147,8 +146,8 @@ export interface InteractionResult {
 
 export interface PolyEditData {
     enabled: boolean;
-    state: any;
-    pointID: number;
+    state?: any;
+    pointID?: number;
 }
 
 export interface MasksEditData {
@@ -249,7 +248,7 @@ export interface CanvasModel {
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
-    readonly editData: MasksEditData;
+    readonly editData: MasksEditData | PolyEditData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
@@ -275,7 +274,7 @@ export interface CanvasModel {
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
-    edit(editData: MasksEditData): void;
+    edit(editData: MasksEditData | PolyEditData): void;
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
     slice(sliceData: SliceData): void;
@@ -369,7 +368,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         fittedScale: number;
         zLayer: number | null;
         drawData: DrawData;
-        editData: MasksEditData;
+        editData: MasksEditData | PolyEditData;
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
@@ -418,6 +417,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 textPosition: consts.DEFAULT_SHAPE_TEXT_POSITION,
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
+                hideEditedObject: false,
             },
             imageBitmap: false,
             image: null,
@@ -549,19 +549,24 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         ) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
-            this.notify(UpdateReasons.OBJECTS_UPDATED);
+            if (this.data.image) {
+                // display objects only if there is a drawn image
+                // if there is not, UpdateReasons.OBJECTS_UPDATED will be triggered after image is set
+                // it covers cases when annotations are changed while image is being received from the server
+                // e.g. with UI buttons (lock, unlock), shortcuts, delete/restore frames,
+                // and anytime when a list of objects updated in cvat-ui
+                this.notify(UpdateReasons.OBJECTS_UPDATED);
+            }
             return;
         }
 
         this.data.imageID = frameData.number;
+        this.data.imageIsDeleted = frameData.deleted;
+        if (this.data.imageIsDeleted) {
+            this.data.angle = 0;
+        }
 
-        // We set objects immideately to avoid outdated data in case if setup() is called
-        // multiple times before the frameData.data() promise is resolved.
-        // If promise is rejected we restore previous objects
-        const prevZLayer = this.data.zLayer;
-        const prevObjects = this.data.objects;
-        this.data.zLayer = zLayer;
-        this.data.objects = objectStates;
+        const { zLayer: prevZLayer, objects: prevObjects } = this.data;
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -569,7 +574,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             })
             .then((data: Image): void => {
                 if (frameData.number !== this.data.imageID) {
-                    // already another image
+                    // check that request is still relevant after async image data fetching
                     return;
                 }
 
@@ -585,11 +590,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 };
 
                 this.data.image = data;
-                this.data.imageIsDeleted = frameData.deleted;
-                if (this.data.imageIsDeleted) {
-                    this.data.angle = 0;
-                }
-
                 this.fit();
 
                 // restore correct image position after switching to a new frame
@@ -604,6 +604,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 }
 
                 this.notify(UpdateReasons.IMAGE_CHANGED);
+
+                if (prevZLayer === this.data.zLayer && prevObjects === this.data.objects) {
+                    // check the request is relevant, other setup() may have been called while promise resolving
+                    this.data.zLayer = zLayer;
+                    this.data.objects = objectStates;
+                }
+
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
             .catch((exception: unknown): void => {
@@ -613,11 +620,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                         this.data.exception = exception;
                     } else {
                         this.data.exception = new Error('Unknown error occured when fetching image data');
-                    }
-                    // Restore only relevant data in case if setup() is called multiple times
-                    if (this.data.objects === objectStates && this.data.zLayer === zLayer) {
-                        this.data.objects = prevObjects;
-                        this.data.zLayer = prevZLayer;
                     }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
@@ -654,8 +656,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public highlight(clientIDs: number[], severity: HighlightSeverity | null): void {
+        const elementsIDs = clientIDs.filter((id: number): boolean => (
+            this.objects.find((_state: any): boolean => _state.clientID === id)
+        ));
+
         this.data.highlightedElements = {
-            elementsIDs: clientIDs,
+            elementsIDs,
             severity,
         };
 
@@ -715,6 +721,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
+        const supportedShapes = [
+            'rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton', 'mask',
+        ];
         if (![Mode.IDLE, Mode.DRAW].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
@@ -726,7 +735,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
             if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
-            } else if (typeof drawData.numberOfPoints !== 'undefined') {
+            }
+
+            if (drawData.shapeType && !supportedShapes.includes(drawData.shapeType)) {
+                throw new Error(`Drawing method for type "${drawData.shapeType}" is not implemented`);
+            }
+
+            if (typeof drawData.numberOfPoints !== 'undefined') {
                 if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
                     throw new Error('A polygon consists of at least 3 points');
                 } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
@@ -770,7 +785,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.DRAW);
     }
 
-    public edit(editData: MasksEditData): void {
+    public edit(editData: MasksEditData | PolyEditData): void {
         if (![Mode.IDLE, Mode.EDIT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
@@ -801,11 +816,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
-        const thresholdChanged = this.data.interactionData.enableThreshold !== interactionData.enableThreshold;
-        if (interactionData.enabled && !interactionData.intermediateShape && !thresholdChanged) {
-            if (this.data.interactionData.enabled) {
-                throw new Error('Interaction has been already started');
-            } else if (!interactionData.shapeType) {
+        if (interactionData.enabled) {
+            if (!this.data.interactionData.enabled && !interactionData.shapeType) {
                 throw new Error('A shape type was not specified');
             }
         }
@@ -971,6 +983,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.CSSImageFilter = configuration.CSSImageFilter;
         }
 
+        if (typeof configuration.hideEditedObject === 'boolean') {
+            this.data.configuration.hideEditedObject = configuration.hideEditedObject;
+        }
+
         this.notify(UpdateReasons.CONFIG_UPDATED);
     }
 
@@ -1073,7 +1089,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return { ...this.data.drawData };
     }
 
-    public get editData(): MasksEditData {
+    public get editData(): MasksEditData | PolyEditData {
         return { ...this.data.editData };
     }
 

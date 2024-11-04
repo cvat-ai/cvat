@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from functools import cached_property
-from typing import List
 
 import PIL.Image
 import torchvision.models
@@ -36,7 +35,7 @@ class _TorchvisionKeypointDetectionFunction:
             ]
         )
 
-    def detect(self, context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+    def detect(self, context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
         results = self._model([self._transforms(image)])
 
         return [

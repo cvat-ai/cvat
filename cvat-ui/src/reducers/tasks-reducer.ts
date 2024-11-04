@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
-import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { ProjectsActionTypes } from 'actions/projects-actions';
 import { TasksState } from '.';
 
 const defaultState: TasksState = {
@@ -78,6 +78,13 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 initialized: true,
                 fetching: false,
             };
+        case ProjectsActionTypes.DELETE_PROJECT_SUCCESS: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                current: state.current.filter((_task) => _task.projectId !== projectId),
+            };
+        }
         case TasksActionTypes.DELETE_TASK: {
             const { taskID } = action.payload;
             const { deletes } = state.activities;
@@ -134,11 +141,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     modalVisible: action.payload.visible,
                     taskId: action.payload.taskId,
                 },
-            };
-        }
-        case AnnotationActionTypes.CLOSE_JOB: {
-            return {
-                ...state,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

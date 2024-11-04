@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,10 @@ export enum PluginsActionTypes {
     ADD_PLUGIN = 'ADD_PLUGIN',
     ADD_UI_COMPONENT = 'ADD_UI_COMPONENT',
     REMOVE_UI_COMPONENT = 'REMOVE_UI_COMPONENT',
+    ADD_UI_CALLBACK = 'ADD_UI_CALLBACK',
+    REMOVE_UI_CALLBACK = 'REMOVE_UI_CALLBACK',
+    UPDATE_UI_COMPONENT = 'UPDATE_UI_COMPONENT',
+    REVOKE_UI_COMPONENT = 'REVOKE_UI_COMPONENT',
 }
 
 export const pluginActions = {
@@ -39,6 +43,22 @@ export const pluginActions = {
     removeUIComponent: (path: string, component: React.Component) => createAction(
         PluginsActionTypes.REMOVE_UI_COMPONENT, { path, component },
     ),
+    addUICallback: (
+        path: string,
+        callback: CallableFunction,
+    ) => createAction(PluginsActionTypes.ADD_UI_CALLBACK, { path, callback }),
+    removeUICallback: (
+        path: string,
+        callback: CallableFunction,
+    ) => createAction(PluginsActionTypes.REMOVE_UI_CALLBACK, { path, callback }),
+    updateUIComponent: (
+        path: string,
+        component: CallableFunction,
+    ) => createAction(PluginsActionTypes.UPDATE_UI_COMPONENT, { path, component }),
+    revokeUIComponent: (
+        path: string,
+        component: CallableFunction,
+    ) => createAction(PluginsActionTypes.REVOKE_UI_COMPONENT, { path, component }),
 };
 
 export type PluginActions = ActionUnion<typeof pluginActions>;

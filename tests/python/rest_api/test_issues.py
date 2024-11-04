@@ -55,8 +55,6 @@ class TestPostIssues:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
@@ -185,8 +183,6 @@ class TestPatchIssues:
         [
             ("admin", True, None, True),
             ("admin", False, None, True),
-            ("business", True, None, True),
-            ("business", False, None, False),
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
@@ -275,8 +271,6 @@ class TestDeleteIssues:
         [
             ("admin", True, None, True),
             ("admin", False, None, True),
-            ("business", True, None, True),
-            ("business", False, None, False),
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
@@ -355,7 +349,7 @@ class TestIssuesListFilters(CollectionSimpleFilterTestBase):
         ("owner", "assignee", "job_id", "resolved", "frame_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 class TestCommentsListFilters(CollectionSimpleFilterTestBase):
@@ -393,7 +387,7 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
         ("owner", "issue_id", "job_id", "frame_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

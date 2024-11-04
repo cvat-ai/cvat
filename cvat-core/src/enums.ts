@@ -94,11 +94,9 @@ export enum EventScope {
     loadTool = 'load:cvat',
 
     loadJob = 'load:job',
+    loadWorkspace = 'load:workspace',
     saveJob = 'save:job',
-    restoreJob = 'restore:job',
-    uploadAnnotations = 'upload:annotations',
     exception = 'send:exception',
-    sendTaskInfo = 'send:task_info',
 
     drawObject = 'draw:object',
     pasteObject = 'paste:object',
@@ -107,14 +105,11 @@ export enum EventScope {
     dragObject = 'drag:object',
     resizeObject = 'resize:object',
     deleteObject = 'delete:object',
-    lockObject = 'lock:object',
     mergeObjects = 'merge:objects',
     splitObjects = 'split:objects',
     groupObjects = 'group:objects',
     sliceObject = 'slice:object',
     joinObjects = 'join:objects',
-    changeAttribute = 'change:attribute',
-    changeLabel = 'change:label',
 
     changeFrame = 'change:frame',
     zoomImage = 'zoom:image',
@@ -124,8 +119,7 @@ export enum EventScope {
     undoAction = 'action:undo',
     redoAction = 'action:redo',
 
-    pressShortcut = 'press:shortcut',
-    debugInfo = 'send:debug_info',
+    debugInfo = 'debug:info',
 
     annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
@@ -160,7 +154,6 @@ export enum ModelKind {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
     TRACKER = 'tracker',
-    CLASSIFIER = 'classifier',
     REID = 'reid',
 }
 

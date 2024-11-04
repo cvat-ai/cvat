@@ -2,37 +2,35 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-analytics-inner {
     background: $background-color-1;
     min-height: $grid-unit-size * 95;
     padding: $grid-unit-size * 4;
     padding-bottom: $grid-unit-size;
+    padding-top: 0;
+    border-radius: $border-radius-base;
 
     .ant-tabs {
         height: 100%;
     }
 }
 
-.cvat-task-quality-page,
-.cvat-project-quality-page {
+.cvat-analytics-overview {
     >.ant-row {
         margin-top: $grid-unit-size;
     }
 }
 
-.cvat-task-mean-annotation-quality {
-    .ant-statistic {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
+.cvat-empty-performance-analytics-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-    .ant-card-body {
-        padding: $grid-unit-size * 2 $grid-unit-size * 3;
-    }
+.cvat-analytics-refresh-button {
+    margin-right: $grid-unit-size;
 }
 
 .cvat-analytics-card-title {
@@ -57,8 +55,8 @@
 .cvat-analytics-settings-tooltip-inner {
     @extend .cvat-analytics-tooltip-inner;
 
-    span:not(:last-child) {
-        margin-bottom: $grid-unit-size;
+    div:not(:last-child) {
+        margin-bottom: $grid-unit-size * 2;
     }
 }
 
@@ -74,19 +72,11 @@
 
     a {
         color: white;
-        margin-left: $grid-unit-size;
 
         &:hover {
             color: white;
         }
     }
-}
-
-.cvat-analytics-time-hint {
-    font-size: 10px;
-    position: absolute;
-    bottom: -$grid-unit-size * 3;
-    right: $grid-unit-size * 4;
 }
 
 .cvat-analytics-page {
@@ -97,55 +87,4 @@
     overflow-y: auto;
     width: 100%;
     height: 100%;
-    padding-bottom: $grid-unit-size * 2;
-}
-
-.cvat-task-quality-reports-hint {
-    margin-bottom: $grid-unit-size * 3;
-}
-
-.cvat-job-empty-ground-truth-item {
-    .ant-card-body {
-        padding: $grid-unit-size * 3;
-    }
-
-    .ant-btn {
-        padding-left: $grid-unit-size * 3;
-        padding-right: $grid-unit-size * 3;
-    }
-}
-
-.cvat-quality-settings-switch {
-    padding: 6px 8px;
-    border: 1px solid lightgray;
-    margin-left: 8px;
-    border-radius: 2px;
-}
-
-.cvat-quality-settings-title {
-    margin-bottom: $grid-unit-size * 2;
-    align-items: center;
-}
-
-.cvat-modal-quality-settings {
-    top: $grid-unit-size * 3;
-
-    .ant-divider {
-        margin: $grid-unit-size 0;
-    }
-
-    .ant-form-item-control-input {
-        min-height: 0;
-    }
-}
-
-.cvat-job-list-item-conflicts {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.cvat-quality-summary-controls {
-    display: flex;
-    align-items: center;
 }

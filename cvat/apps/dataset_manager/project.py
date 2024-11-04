@@ -16,10 +16,11 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.dataset_manager.task import TaskAnnotation
 
 from .annotation import AnnotationIR
-from .bindings import ProjectData, load_dataset_data, CvatImportError
+from .bindings import CvatDatasetNotFoundError, ProjectData, load_dataset_data, CvatImportError
 from .formats.registry import make_exporter, make_importer
 
 dlogger = DatasetLogManager()
@@ -101,7 +102,7 @@ class ProjectAnnotationAndData:
         data['stop_frame'] = None
         data['server_files'] = list(map(split_name, data['server_files']))
 
-        create_task(db_task, data, isDatasetImport=True)
+        create_task(db_task, data, is_dataset_import=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).exclude(data=None).order_by('id')
         self.init_from_db()
         if project_data is not None:
@@ -157,8 +158,8 @@ class ProjectAnnotationAndData:
         os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
-                importer(dataset_file, temp_dir, project_data, self.load_dataset_data, **options)
-            except DatasetNotFoundError as not_found:
+                importer(dataset_file, temp_dir, project_data, load_data_callback=self.load_dataset_data, **options)
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="project",
@@ -179,8 +180,8 @@ class ProjectAnnotationAndData:
 @transaction.atomic
 def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_poly):
     rq_job = rq.get_current_job()
-    rq_job.meta['status'] = 'Dataset import has been started...'
-    rq_job.meta['progress'] = 0.
+    rq_job.meta[RQJobMetaField.STATUS] = 'Dataset import has been started...'
+    rq_job.meta[RQJobMetaField.PROGRESS] = 0.
     rq_job.save_meta()
 
     project = ProjectAnnotationAndData(project_id)
