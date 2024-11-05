@@ -89,8 +89,53 @@ const dummyAWSBucket = {
     ],
 };
 
+function dummyTaskSpec({
+    labelName,
+    taskName,
+    serverFiles,
+}) {
+    const taskSpec = {
+        labels: [
+            { name: labelName, attributes: [], type: 'any' },
+        ],
+        name: taskName,
+        project_id: null,
+        source_storage: { location: 'local' },
+        target_storage: { location: 'local' },
+    };
+
+    const dataSpec = {
+        server_files: serverFiles,
+        image_quality: 70,
+        use_zip_chunks: true,
+        use_cache: true,
+        sorting_method: 'lexicographical',
+    };
+
+    return {
+        taskSpec,
+        dataSpec,
+    };
+}
+
+function dummyGTJobSpec({
+    frameCount = 3,
+    seed = null,
+}) {
+    return {
+        frame_count: frameCount,
+        type: 'ground_truth',
+        frame_selection_method: 'random_uniform',
+        ...(seed ? {
+            seed,
+        } : {}),
+    };
+}
+
 module.exports = {
     dummyGoogleStorage,
     dummyAzureContainer,
     dummyAWSBucket,
+    dummyTaskSpec,
+    dummyGTJobSpec,
 };

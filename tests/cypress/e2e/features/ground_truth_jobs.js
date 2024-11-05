@@ -4,6 +4,8 @@
 
 /// <reference types="cypress" />
 
+import { dummyGTJobSpec } from '../../support/dummy-data';
+
 context('Ground truth jobs', () => {
     const caseId = 'Ground truth jobs';
     const labelName = 'car';
@@ -95,6 +97,17 @@ context('Ground truth jobs', () => {
         cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
     }
 
+    function createTask(serverFiles, gtJobSpec = null) {
+        return cy.headlessCreateDummyTask({
+            taskName, serverFiles, labelName,
+        }, gtJobSpec).then((response) => {
+            ({ taskID, jobID, groundTruthJobID } = response);
+        }).then(() => {
+            cy.visit(`/tasks/${taskID}`);
+            cy.get('.cvat-task-details').should('exist').and('be.visible');
+        });
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -104,27 +117,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            cy.headlessCreateTask({
-                labels: [
-                    { name: labelName, attributes: [], type: 'any' },
-                ],
-                name: taskName,
-                project_id: null,
-                source_storage: { location: 'local' },
-                target_storage: { location: 'local' },
-            }, {
-                server_files: serverFiles,
-                image_quality: 70,
-                use_zip_chunks: true,
-                use_cache: true,
-                sorting_method: 'lexicographical',
-            }).then((response) => {
-                taskID = response.taskID;
-                [jobID] = response.jobIDs;
-            }).then(() => {
-                cy.visit(`/tasks/${taskID}`);
-                cy.get('.cvat-task-details').should('exist').and('be.visible');
-            });
+            createTask(serverFiles);
         });
 
         after(() => {
@@ -198,13 +191,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
         before(() => {
-            cy.headlessCreateTaskWithGT(serverFiles, {
-                taskName,
-                labelName,
-            }, {
-                frameCount: 3,
-            }).then((data) => {
-                ({ taskID, jobID, groundTruthJobID } = data);
+            createTask(serverFiles, dummyGTJobSpec({ frameCount: 3 })).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
@@ -295,27 +282,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            cy.headlessCreateTask({
-                labels: [
-                    { name: labelName, attributes: [], type: 'any' },
-                ],
-                name: taskName,
-                project_id: null,
-                source_storage: { location: 'local' },
-                target_storage: { location: 'local' },
-            }, {
-                server_files: serverFiles,
-                image_quality: 70,
-                use_zip_chunks: true,
-                use_cache: true,
-                sorting_method: 'lexicographical',
-            }).then((response) => {
-                taskID = response.taskID;
-                [jobID] = response.jobIDs;
-            }).then(() => {
-                cy.visit(`/tasks/${taskID}`);
-                cy.get('.cvat-task-details').should('exist').and('be.visible');
-            });
+            createTask(serverFiles);
         });
 
         afterEach(() => {
