@@ -66,6 +66,7 @@ class AssigneeConsensusReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AssigneeConsensusReport
         fields = (
+            "id",
             "task_id",
             "assignee",
             "consensus_score",
