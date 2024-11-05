@@ -4531,6 +4531,8 @@ class TestWorkWithHoneypotTasks:
     def test_can_change_honeypot_frames_in_annotation_jobs(
         self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
     ):
+        _MAX_RANDOM_ATTEMPTS = 20  # This test can have random outcomes, it's expected
+
         assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
 
         with make_api_client(admin_user) as api_client:
@@ -4552,16 +4554,34 @@ class TestWorkWithHoneypotTasks:
 
                     params["honeypot_real_frames"] = requested_honeypot_real_frames
 
-                new_validation_layout = json.loads(
-                    api_client.jobs_api.partial_update_validation_layout(
-                        annotation_job["id"],
-                        patched_job_validation_layout_write_request=(
-                            models.PatchedJobValidationLayoutWriteRequest(**params)
-                        ),
-                    )[1].data
-                )
+                attempt = 0
+                while attempt < _MAX_RANDOM_ATTEMPTS:
+                    new_validation_layout = json.loads(
+                        api_client.jobs_api.partial_update_validation_layout(
+                            annotation_job["id"],
+                            patched_job_validation_layout_write_request=(
+                                models.PatchedJobValidationLayoutWriteRequest(**params)
+                            ),
+                        )[1].data
+                    )
 
-                new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+                    new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+                    if (
+                        frame_selection_method == "random_uniform"
+                        and new_honeypot_real_frames
+                        == old_validation_layout["honeypot_real_frames"]
+                    ):
+                        attempt += 1
+                        # The test is fully random, it's possible to get no changes in the updated
+                        # honeypots. Passing a random seed has little sense in this endpoint,
+                        # so we retry several times in such a case instead.
+                    else:
+                        break
+
+                if attempt >= _MAX_RANDOM_ATTEMPTS and frame_selection_method == "random_uniform":
+                    # The situation is unlikely if everything works, so we consider it a fail
+                    pytest.fail(f"too many attempts ({attempt}) with random honeypot updating")
 
                 assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
                 assert all(f in gt_frame_set for f in new_honeypot_real_frames)
