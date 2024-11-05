@@ -550,6 +550,12 @@ redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6666)
 redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
 
+# Sets the timeout for the expiration of data chunk in redis_ondisk
+CVAT_CHUNK_CACHE_TTL = 3600 * 24  # 1 day
+
+# Sets the timeout for the expiration of preview image in redis_ondisk
+CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -557,11 +563,17 @@ CACHES = {
     'media': {
         'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
         "LOCATION": f'redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}',
-        'TIMEOUT' : 3600 * 24, # 1 day
+        'TIMEOUT' : CVAT_CHUNK_CACHE_TTL,
     }
 }
 
 USE_CACHE = True
+
+# Sets the chunk preparation timeout after which the backend will respond with 429 code.
+CVAT_CHUNK_CREATE_TIMEOUT = 50
+
+# Sets the frequency of checking the readiness of the chunk
+CVAT_CHUNK_CREATE_CHECK_INTERVAL = 0.2
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     # tus upload protocol headers

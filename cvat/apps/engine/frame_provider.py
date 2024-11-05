@@ -321,13 +321,15 @@ class TaskFrameProvider(IFrameProvider):
                 [cache._make_callback_db_object_arg(s) for s in matching_segments],
                 {f: self.get_rel_frame_number(f) for f in task_chunk_frame_set},
                 quality,
-            )
+            ),
         )
 
         return return_type(data=buffer, mime=mime_type)
 
     @staticmethod
-    def _get_chunk_create_callback(db_task: models.Task | int, matching_segments, task_chunk_frames_with_rel_numbers, quality) -> DataWithMime:
+    def _get_chunk_create_callback(
+        db_task: models.Task | int, matching_segments, task_chunk_frames_with_rel_numbers, quality
+    ) -> DataWithMime:
         # Create and return a joined / cleaned chunk
         task_chunk_frames = OrderedDict()
         for db_segment in matching_segments:
@@ -678,21 +680,28 @@ class JobFrameProvider(SegmentFrameProvider):
             return self.get_chunk(matching_chunk, quality=quality)
 
         segment_chunk_frame_ids = sorted(
-                task_chunk_frame_set.intersection(self._db_segment.frame_set)
-            )
+            task_chunk_frame_set.intersection(self._db_segment.frame_set)
+        )
 
         buffer, mime_type = cache.get_or_set_segment_task_chunk(
             self._db_segment,
             chunk_number,
             quality=quality,
             set_callback=self._get_chunk_create_callback,
-            set_callback_args=(cache._make_callback_db_object_arg(self._db_segment), segment_chunk_frame_ids, chunk_number, quality),
+            set_callback_args=(
+                cache._make_callback_db_object_arg(self._db_segment),
+                segment_chunk_frame_ids,
+                chunk_number,
+                quality,
+            ),
         )
 
         return return_type(data=buffer, mime=mime_type)
 
     @staticmethod
-    def _get_chunk_create_callback(db_segment: models.Segment | int, segment_chunk_frame_ids, chunk_number, quality) -> DataWithMime:
+    def _get_chunk_create_callback(
+        db_segment: models.Segment | int, segment_chunk_frame_ids, chunk_number, quality
+    ) -> DataWithMime:
         # Create and return a joined / cleaned chunk
         if isinstance(db_segment, int):
             db_segment = models.Segment.objects.get(pk=db_segment)

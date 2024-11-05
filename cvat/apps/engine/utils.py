@@ -198,14 +198,22 @@ def define_dependent_job(
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
 
-def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontext]:
+def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int] = 30, blocking_timeout: Optional[int] = None) -> Union[Lock, nullcontext]:
     if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
-        return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
+        return queue.connection.lock(
+            name=f'{queue.name}-lock-{user_id}',
+            timeout=timeout,
+            blocking_timeout=blocking_timeout,
+        )
     return nullcontext()
 
-def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str) -> Lock:
+def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: Optional[int] = 60, blocking_timeout: Optional[int] = None) -> Lock:
     # lock timeout corresponds to the nginx request timeout (proxy_read_timeout)
-    return queue.connection.lock(f'lock-for-job-{rq_id}'.lower(), timeout=60)
+    return queue.connection.lock(
+        name=f'lock-for-job-{rq_id}'.lower(),
+        timeout=timeout,
+        blocking_timeout=blocking_timeout,
+    )
 
 def get_rq_job_meta(
     request: HttpRequest,

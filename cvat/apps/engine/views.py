@@ -106,7 +106,7 @@ from . import models, task
 from .log import ServerLogManager
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import PolicyEnforcer, IsAuthenticatedOrReadPublicResource
-from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.cache import MediaCache, CvatCacheTimestampMismatchError, LockError
 from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
@@ -724,7 +724,7 @@ class _DataGetter(metaclass=ABCMeta):
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
-        except TimeoutError:
+        except (TimeoutError, CvatCacheTimestampMismatchError, LockError):
             return Response(
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
                 headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
@@ -827,7 +827,7 @@ class _JobDataGetter(_DataGetter):
                     content_type=data.mime,
                     headers=self._get_chunk_response_headers(data),
                 )
-            except TimeoutError:
+            except (TimeoutError, CvatCacheTimestampMismatchError, LockError):
                 return Response(
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                     headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
@@ -2980,7 +2980,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 '\n'.join([str(d) for d in ex.detail])
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=ex.status_code)
-        except TimeoutError:
+        except (TimeoutError, CvatCacheTimestampMismatchError, LockError):
             return Response(
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
                 headers={'Retry-After': _RETRY_AFTER_TIMEOUT},

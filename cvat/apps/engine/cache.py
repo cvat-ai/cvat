@@ -10,12 +10,12 @@ import os
 import os.path
 import pickle  # nosec
 import tempfile
+import time
 import zipfile
 import zlib
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-import time
 from typing import (
     Any,
     Callable,
@@ -38,6 +38,8 @@ import PIL.ImageOps
 import rq
 from django.conf import settings
 from django.core.cache import caches
+from django.utils import timezone as django_tz
+from redis.exceptions import LockError
 from rest_framework.exceptions import NotFound, ValidationError
 
 from cvat.apps.engine import models
@@ -58,26 +60,31 @@ from cvat.apps.engine.media_extractors import (
     ZipChunkWriter,
     ZipCompressedChunkWriter,
 )
-from cvat.apps.engine.utils import md5_hash, load_image
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.utils import get_rq_lock_for_job, load_image, md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
 
 
 DataWithMime = Tuple[io.BytesIO, str]
-_CacheItem = Tuple[io.BytesIO, str, int]
+_CacheItem = Tuple[io.BytesIO, str, int, Union[datetime, None]]
+
+
+class CvatCacheTimestampMismatchError(Exception):
+    pass
 
 
 class MediaCache:
     _QUEUE_NAME = settings.CVAT_QUEUES.CHUNKS.value
     _QUEUE_JOB_PREFIX_TASK = "chunks:prepare-item-"
-    _SLEEP_TIMEOUT = 0.2
-    _CHUNK_CREATE_TIMEOUT = 50
+    _SLEEP_TIMEOUT = settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL
+    _CHUNK_CREATE_TIMEOUT = settings.CVAT_CHUNK_CREATE_TIMEOUT
     _CACHE_NAME = "media"
+    _LOCK_TIMEOUT = 5
     _RQ_JOB_RESULT_TTL = 60
-    _RQ_JOB_FAILURE_TTL = 3600 * 24 * 14 # 2 weeks
-    _PREVIEW_TTL = 3600 * 24 * 7
+    _RQ_JOB_FAILURE_TTL = 3600 * 24 * 14  # 2 weeks
+    _PREVIEW_TTL = settings.CVAT_PREVIEW_CACHE_TTL
 
     @staticmethod
     def _cache():
@@ -88,10 +95,11 @@ class MediaCache:
         return zlib.crc32(value)
 
     def _get_or_set_cache_item(
-        self, key: str,
+        self,
+        key: str,
         create_callback: Callable[..., DataWithMime],
         *args: Any,
-        cache_item_ttl: int = None,
+        cache_item_ttl: Optional[int] = None,
         **kwargs: Any,
     ) -> _CacheItem:
         item = self._get_cache_item(key)
@@ -109,7 +117,7 @@ class MediaCache:
     def _get_queue(self) -> rq.Queue:
         return django_rq.get_queue(self._QUEUE_NAME)
 
-    def _make_queue_job_id_base(self, key: str) -> str:
+    def _make_queue_job_id(self, key: str) -> str:
         return f"{self._QUEUE_JOB_PREFIX_TASK}{key}"
 
     @staticmethod
@@ -122,12 +130,13 @@ class MediaCache:
         key: str,
         create_callback: Callable[..., DataWithMime],
         *args: Any,
-        cache_item_ttl: int = None,
+        cache_item_ttl: Optional[int] = None,
         **kwargs: Any,
     ) -> DataWithMime:
+        timestamp = django_tz.now()
         item_data = create_callback(*args, **kwargs)
         item_data_bytes = item_data[0].getvalue()
-        item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes))
+        item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes), timestamp)
         if item_data_bytes:
             cache = cls._cache()
             cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
@@ -152,45 +161,50 @@ class MediaCache:
         return False
 
     def _create_cache_item(
-            self,
-            key: str,
-            create_callback: Callable[..., DataWithMime],
-            *args: Any,
-            cache_item_ttl: int = None,
-            **kwargs: Any,
-        ) -> _CacheItem:
+        self,
+        key: str,
+        create_callback: Callable[..., DataWithMime],
+        *args: Any,
+        cache_item_ttl: Optional[int] = None,
+        **kwargs: Any,
+    ) -> _CacheItem:
+
+        queue = self._get_queue()
+        rq_id = self._make_queue_job_id(key)
 
         slogger.glob.info(f"Starting to prepare chunk: key {key}")
         if self._is_run_inside_rq():
-            item = self._create_and_set_cache_item(
-                key,
-                create_callback,
-                *args,
-                cache_item_ttl=cache_item_ttl,
-                **kwargs,
-            )
-        else:
-            queue = self._get_queue()
-            rq_id = self._make_queue_job_id_base(key)
-            rq_job = queue.fetch_job(rq_id)
-
-            if not rq_job:
-                rq_job = queue.enqueue(
-                    self._drop_return_value,
-                    self._create_and_set_cache_item,
+            with get_rq_lock_for_job(queue, rq_id, timeout=None, blocking_timeout=None):
+                item = self._create_and_set_cache_item(
                     key,
                     create_callback,
                     *args,
                     cache_item_ttl=cache_item_ttl,
                     **kwargs,
-                    job_id=rq_id,
-                    result_ttl=self._RQ_JOB_RESULT_TTL,
-                    failure_ttl=self._RQ_JOB_FAILURE_TTL,
                 )
+        else:
+            try:
+                with get_rq_lock_for_job(queue, rq_id, blocking_timeout=self._LOCK_TIMEOUT):
+                    rq_job = queue.fetch_job(rq_id)
+
+                    if not rq_job:
+                        rq_job = queue.enqueue(
+                            self._drop_return_value,
+                            self._create_and_set_cache_item,
+                            key,
+                            create_callback,
+                            *args,
+                            cache_item_ttl=cache_item_ttl,
+                            **kwargs,
+                            job_id=rq_id,
+                            result_ttl=self._RQ_JOB_RESULT_TTL,
+                            failure_ttl=self._RQ_JOB_FAILURE_TTL,
+                        )
+            except LockError:
+                raise TimeoutError(f"Cannot acquire lock for {key}")
 
             if self._wait_for_rq_job(rq_job):
                 item = self._get_cache_item(key)
-                assert item is not None
             else:
                 raise TimeoutError(f"Chunk processing takes too long {key}")
 
@@ -216,10 +230,19 @@ class MediaCache:
             return None
 
         item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
-        item_checksum = item[2] if len(item) == 3 else None
+        item_checksum = item[2] if len(item) == 4 else None
         if item_checksum != self._get_checksum(item_data):
             slogger.glob.info(f"Cache item {key} checksum mismatch")
             return None
+
+        return item
+
+    def _validate_cache_item_timestamp(self, item: _CacheItem, expected_timestamp: datetime):
+        if item:
+            if item[3] < expected_timestamp:
+                raise CvatCacheTimestampMismatchError(
+                    f"Cache timestamp mismatch. Item_ts: {item[3]}, expected_ts: {expected_timestamp}"
+                )
 
         return item
 
@@ -285,21 +308,26 @@ class MediaCache:
     def get_or_set_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
+        item = self._get_or_set_cache_item(
+            self._make_chunk_key(db_segment, chunk_number, quality=quality),
+            self.prepare_segment_chunk,
+            db_segment,
+            chunk_number,
+            quality=quality,
+        )
+        db_segment.refresh_from_db(fields=["chunks_updated_date"])
+
         return self._to_data_with_mime(
-            self._get_or_set_cache_item(
-                self._make_chunk_key(db_segment, chunk_number, quality=quality),
-                self.prepare_segment_chunk,
-                db_segment,
-                chunk_number,
-                quality=quality,
-            ),
+            self._validate_cache_item_timestamp(item, db_segment.chunks_updated_date)
         )
 
     def get_task_chunk(
         self, db_task: models.Task, chunk_number: int, *, quality: FrameQuality
     ) -> Optional[DataWithMime]:
         return self._to_data_with_mime(
-            self._get_cache_item(key=self._make_chunk_key(db_task, chunk_number, quality=quality))
+            self._get_cache_item(
+                key=self._make_chunk_key(db_task, chunk_number, quality=quality),
+            )
         )
 
     def get_or_set_task_chunk(
@@ -309,21 +337,24 @@ class MediaCache:
         *,
         quality: FrameQuality,
         set_callback: Callable[..., DataWithMime],
-        set_callback_args: Union[list[Any], None]=None,
-        set_callback_kwargs: Union[dict[str, Any], None]=None,
+        set_callback_args: Union[list[Any], None] = None,
+        set_callback_kwargs: Union[dict[str, Any], None] = None,
     ) -> DataWithMime:
         if set_callback_args is None:
             set_callback_args = []
         if set_callback_kwargs is None:
             set_callback_kwargs = {}
 
+        item = self._get_or_set_cache_item(
+            self._make_chunk_key(db_task, chunk_number, quality=quality),
+            set_callback,
+            *set_callback_args,
+            **set_callback_kwargs,
+        )
+        db_task.refresh_from_db(fields=["segment_set"])
+
         return self._to_data_with_mime(
-            self._get_or_set_cache_item(
-                self._make_chunk_key(db_task, chunk_number, quality=quality),
-                set_callback,
-                *set_callback_args,
-                **set_callback_kwargs,
-            )
+            self._validate_cache_item_timestamp(item, db_task.get_chunks_updated_date())
         )
 
     def get_segment_task_chunk(
@@ -331,7 +362,7 @@ class MediaCache:
     ) -> Optional[DataWithMime]:
         return self._to_data_with_mime(
             self._get_cache_item(
-                key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality)
+                key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
             )
         )
 
@@ -342,21 +373,24 @@ class MediaCache:
         *,
         quality: FrameQuality,
         set_callback: Callable[..., DataWithMime],
-        set_callback_args: Union[list[Any], None]=None,
-        set_callback_kwargs: Union[dict[str, Any], None]=None,
+        set_callback_args: Union[list[Any], None] = None,
+        set_callback_kwargs: Union[dict[str, Any], None] = None,
     ) -> DataWithMime:
         if set_callback_args is None:
             set_callback_args = []
         if set_callback_kwargs is None:
             set_callback_kwargs = {}
 
+        item = self._get_or_set_cache_item(
+            self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
+            set_callback,
+            *set_callback_args,
+            **set_callback_kwargs,
+        )
+        db_segment.refresh_from_db(fields=["chunks_updated_date"])
+
         return self._to_data_with_mime(
-            self._get_or_set_cache_item(
-                self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
-                set_callback,
-                *set_callback_args,
-                **set_callback_kwargs,
-            )
+            self._validate_cache_item_timestamp(item, db_segment.chunks_updated_date),
         )
 
     def get_or_set_selective_job_chunk(
@@ -389,9 +423,10 @@ class MediaCache:
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
-    def _make_callback_db_object_arg(self,
-            db_obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
-        ) -> Union[models.Task, models.Segment, models.Job, models.CloudStorage, int]:
+    def _make_callback_db_object_arg(
+        self,
+        db_obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
+    ) -> Union[models.Task, models.Segment, models.Job, models.CloudStorage, int]:
         return db_obj if self._is_run_inside_rq() else db_obj.id
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
@@ -789,7 +824,9 @@ class MediaCache:
         image = PIL.Image.open(buff)
         return prepare_preview_image(image)
 
-    def prepare_context_images_chunk(self, db_data: Union[models.Data, int], frame_number: int) -> DataWithMime:
+    def prepare_context_images_chunk(
+        self, db_data: Union[models.Data, int], frame_number: int
+    ) -> DataWithMime:
         if isinstance(db_data, int):
             db_data = models.Data.objects.get(pk=db_data)
 
