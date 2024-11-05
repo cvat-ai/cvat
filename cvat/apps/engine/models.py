@@ -177,7 +177,6 @@ class JobType(str, Enum):
 
 class JobFrameSelectionMethod(str, Enum):
     RANDOM_UNIFORM = 'random_uniform'
-    RANDOM_PER_JOB = 'random_per_job'
     MANUAL = 'manual'
 
     @classmethod
