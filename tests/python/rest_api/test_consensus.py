@@ -1037,20 +1037,23 @@ class TestPatchSettings(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestConsensusReportMetrics(_PermissionTestBase):
-    demo_task_id = 26  # this task reproduces all the checkable cases
+    demo_task_id = 30  # this task reproduces all the checkable cases
 
     @pytest.mark.parametrize("task_id", [demo_task_id])
     def test_report_summary(self, task_id, tasks, jobs, consensus_reports):
-        consensus_job = next(
-            j for j in jobs if j["task_id"] == task_id and j["type"] == "consensus"
-        )
+        consensus_jobs = (j for j in jobs if j["task_id"] == task_id and j["type"] == "consensus")
+        task = next(t for t in tasks if t["id"] == task_id)
         report = next(r for r in consensus_reports if r["task_id"] == task_id)
 
         summary = report["summary"]
         assert 0 < summary["conflict_count"]
         assert all(summary["conflicts_by_type"].values())
         assert summary["conflict_count"] == sum(summary["conflicts_by_type"].values())
-        assert summary["frame_count"] == consensus_job["frame_count"]
+        assert (
+            summary["frame_count"]
+            == sum(consensus_job["frame_count"] for consensus_job in consensus_jobs)
+            / task["consensus_jobs_per_regular_job"]
+        )
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, consensus_reports):
         old_report = min(
@@ -1156,7 +1159,7 @@ class TestConsensusReportMetrics(_PermissionTestBase):
         new_report = self.create_consensus_report(admin_user, task_id)
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
 
-    @pytest.mark.parametrize("task_id", [26])
+    @pytest.mark.parametrize("task_id", [29])
     def test_can_merge_if_non_skeleton_label_follows_skeleton_label(
         self, admin_user, labels, task_id
     ):
