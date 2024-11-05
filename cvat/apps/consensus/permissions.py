@@ -131,7 +131,7 @@ class ConsensusConflictPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "conflicts":
+        if view.basename == "consensus_conflicts":
             for scope in cls.get_scopes(request, view, obj):
                 if scope == cls.Scopes.LIST and isinstance(obj, ConsensusReport):
                     permissions.append(
@@ -148,7 +148,7 @@ class ConsensusConflictPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + "/conflicts/allow"
+        self.url = settings.IAM_OPA_DATA_URL + "/consensus_conflicts/allow"
 
     @staticmethod
     def get_scopes(request, view, obj):
@@ -307,8 +307,6 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
                     permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
-
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
