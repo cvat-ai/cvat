@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from types import SimpleNamespace as namespace
-from typing import List
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.models as models
@@ -24,7 +23,7 @@ def create(s: str, i: int, f: float, b: bool) -> cvataa.DetectionFunction:
 
     def detect(
         context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
-    ) -> List[models.LabeledShapeRequest]:
+    ) -> list[models.LabeledShapeRequest]:
         return [
             cvataa.rectangle(0, [1, 2, 3, 4]),
         ]

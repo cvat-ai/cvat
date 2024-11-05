@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
+from collections.abc import Container
 from pathlib import Path
-from typing import Container, Tuple
 from urllib.parse import urlparse
 
 import pytest
@@ -16,7 +16,7 @@ def make_pbar(file, **kwargs):
     return DeferredTqdmProgressReporter({"file": file, "mininterval": 0, **kwargs})
 
 
-def generate_coco_json(filename: Path, img_info: Tuple[Path, int, int]):
+def generate_coco_json(filename: Path, img_info: tuple[Path, int, int]):
     image_filename, image_width, image_height = img_info
 
     content = generate_coco_anno(

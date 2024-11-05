@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
-from typing import ClassVar, List
+from typing import ClassVar
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -80,7 +80,7 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchMemberships:
     _ORG: ClassVar[int] = 1
-    ROLES: ClassVar[List[str]] = ["worker", "supervisor", "maintainer", "owner"]
+    ROLES: ClassVar[list[str]] = ["worker", "supervisor", "maintainer", "owner"]
 
     def _test_can_change_membership(self, user, membership_id, new_role):
         response = patch_method(

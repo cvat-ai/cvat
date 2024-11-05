@@ -14,6 +14,7 @@ import re
 import zipfile
 from abc import ABCMeta, abstractmethod
 from collections import Counter
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime
@@ -26,20 +27,7 @@ from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, ClassVar, Optional, Union
 
 import attrs
 import numpy as np
@@ -742,7 +730,7 @@ class TestGetTaskDataset:
         username: str,
         task_id: int,
         *,
-        api_version: Union[int, Tuple[int]],
+        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
@@ -764,7 +752,7 @@ class TestGetTaskDataset:
         admin_user,
         tasks_with_shapes,
         filter_tasks,
-        api_version: Tuple[int],
+        api_version: tuple[int],
         local_download: bool,
     ):
         filter_ = "target_storage__location"
@@ -1523,17 +1511,17 @@ class TestPostTaskData:
         request,
         cloud_storage: Any,
         use_manifest: bool,
-        server_files: List[str],
+        server_files: list[str],
         use_cache: bool = True,
         sorting_method: str = "lexicographical",
         data_type: str = "image",
         video_frame_count: int = 10,
-        server_files_exclude: Optional[List[str]] = None,
+        server_files_exclude: Optional[list[str]] = None,
         org: str = "",
-        filenames: Optional[List[str]] = None,
-        task_spec_kwargs: Optional[Dict[str, Any]] = None,
-        data_spec_kwargs: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[int, Any]:
+        filenames: Optional[list[str]] = None,
+        task_spec_kwargs: Optional[dict[str, Any]] = None,
+        data_spec_kwargs: Optional[dict[str, Any]] = None,
+    ) -> tuple[int, Any]:
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
         if data_type == "video":
             video = generate_video_file(video_frame_count)
@@ -1639,8 +1627,8 @@ class TestPostTaskData:
         cloud_storage_id: int,
         use_cache: bool,
         use_manifest: bool,
-        server_files: List[str],
-        server_files_exclude: Optional[List[str]],
+        server_files: list[str],
+        server_files_exclude: Optional[list[str]],
         task_size: int,
         org: str,
         cloud_storages,
@@ -1686,8 +1674,8 @@ class TestPostTaskData:
         self,
         cloud_storage_id: int,
         use_manifest: bool,
-        server_files: List[str],
-        expected_result: List[str],
+        server_files: list[str],
+        expected_result: list[str],
         org: str,
         cloud_storages,
         request,
@@ -1929,7 +1917,7 @@ class TestPostTaskData:
     )
     def test_create_task_with_cloud_storage_and_check_data_sorting(
         self,
-        filenames: List[str],
+        filenames: list[str],
         sorting_method: str,
         cloud_storage_id: int,
         org: str,
@@ -2020,7 +2008,7 @@ class TestPostTaskData:
         )
 
         with make_api_client(self._USERNAME) as api_client:
-            jobs: List[models.JobRead] = get_paginated_collection(
+            jobs: list[models.JobRead] = get_paginated_collection(
                 api_client.jobs_api.list_endpoint, task_id=task_id, sort="id"
             )
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(id=task_id)
@@ -2084,7 +2072,7 @@ class TestPostTaskData:
         self,
         cloud_storage_id: int,
         use_manifest: bool,
-        server_files: List[str],
+        server_files: list[str],
         default_prefix: str,
         expected_task_size: int,
         org: str,
@@ -2128,7 +2116,7 @@ class TestPostTaskData:
         self,
         fxt_test_name,
         frame_selection_method: str,
-        method_params: Set[str],
+        method_params: set[str],
         per_job_count_param: str,
     ):
         base_segment_size = 4
@@ -2312,7 +2300,7 @@ class TestPostTaskData:
         self,
         request: pytest.FixtureRequest,
         frame_selection_method: str,
-        method_params: Set[str],
+        method_params: set[str],
     ):
         segment_size = 4
         total_frame_count = 15
@@ -2445,7 +2433,7 @@ class TestPostTaskData:
         self,
         request: pytest.FixtureRequest,
         frame_selection_method: str,
-        method_params: Set[str],
+        method_params: set[str],
     ):
         segment_size = 4
         total_frame_count = 15
@@ -2646,8 +2634,8 @@ class _TaskSpec(models.ITaskWriteRequest, models.IDataRequest, metaclass=ABCMeta
 
 @attrs.define
 class _TaskSpecBase(_TaskSpec):
-    _params: Union[Dict, models.TaskWriteRequest]
-    _data_params: Union[Dict, models.DataRequest]
+    _params: Union[dict, models.TaskWriteRequest]
+    _data_params: Union[dict, models.DataRequest]
     size: int = attrs.field(kw_only=True)
 
     @property
@@ -2711,7 +2699,7 @@ class TestTaskData:
         step: Optional[int] = None,
         segment_size: Optional[int] = None,
         **data_kwargs,
-    ) -> Generator[Tuple[_ImagesTaskSpec, int], None, None]:
+    ) -> Generator[tuple[_ImagesTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
@@ -2764,13 +2752,13 @@ class TestTaskData:
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task(
         self, request: pytest.FixtureRequest
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(request=request, segment_size=4)
 
     @fixture(scope="class")
@@ -2779,7 +2767,7 @@ class TestTaskData:
     @parametrize("start_frame", [3, 7])
     def fxt_uploaded_images_task_with_segments_start_stop_step(
         self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_fxt_base(
             request=request,
             frame_count=30,
@@ -2796,7 +2784,7 @@ class TestTaskData:
         start_frame: Optional[int] = None,
         step: Optional[int] = None,
         random_seed: int = 42,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
             mode="gt_pool",
             frame_selection_method="random_uniform",
@@ -2858,14 +2846,14 @@ class TestTaskData:
     @fixture(scope="class")
     def fxt_uploaded_images_task_with_honeypots_and_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_with_honeypots_and_segments_base(request)
 
     @fixture(scope="class")
     @parametrize("start_frame, step", [(2, 3)])
     def fxt_uploaded_images_task_with_honeypots_and_segments_start_step(
         self, request: pytest.FixtureRequest, start_frame: Optional[int], step: Optional[int]
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_with_honeypots_and_segments_base(
             request, start_frame=start_frame, step=step
         )
@@ -2874,7 +2862,7 @@ class TestTaskData:
     @parametrize("random_seed", [1, 2, 5])
     def fxt_uploaded_images_task_with_honeypots_and_changed_real_frames(
         self, request: pytest.FixtureRequest, random_seed: int
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         with closing(
             self._uploaded_images_task_with_honeypots_and_segments_base(
                 request, start_frame=2, step=3, random_seed=random_seed
@@ -2915,7 +2903,7 @@ class TestTaskData:
         start_frame: Optional[int] = None,
         step: Optional[int] = None,
         frame_selection_method: str = "random_uniform",
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         used_frames_count = 16
         total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
         segment_size = 5
@@ -2975,7 +2963,7 @@ class TestTaskData:
         start_frame: Optional[int],
         step: Optional[int],
         frame_selection_method: str,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_with_gt_and_segments_base(
             request,
             start_frame=start_frame,
@@ -2992,7 +2980,7 @@ class TestTaskData:
         start_frame: Optional[int] = None,
         stop_frame: Optional[int] = None,
         step: Optional[int] = None,
-    ) -> Generator[Tuple[_VideoTaskSpec, int], None, None]:
+    ) -> Generator[tuple[_VideoTaskSpec, int], None, None]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
@@ -3036,13 +3024,13 @@ class TestTaskData:
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task_with_segments(
         self, request: pytest.FixtureRequest
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(request=request, segment_size=4)
 
     @fixture(scope="class")
@@ -3051,7 +3039,7 @@ class TestTaskData:
     @parametrize("start_frame", [3, 7])
     def fxt_uploaded_video_task_with_segments_start_stop_step(
         self, request: pytest.FixtureRequest, start_frame: int, stop_frame: Optional[int], step: int
-    ) -> Generator[Tuple[_TaskSpec, int], None, None]:
+    ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_video_task_fxt_base(
             request=request,
             frame_count=30,
@@ -3061,7 +3049,7 @@ class TestTaskData:
             step=step,
         )
 
-    def _compute_annotation_segment_params(self, task_spec: _TaskSpec) -> List[Tuple[int, int]]:
+    def _compute_annotation_segment_params(self, task_spec: _TaskSpec) -> list[tuple[int, int]]:
         segment_params = []
         frame_step = task_spec.frame_step
         segment_size = getattr(task_spec, "segment_size", 0) or task_spec.size * frame_step
@@ -3585,7 +3573,7 @@ class TestTaskData:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
-    def _get_task_labels(self, pid, user, **kwargs) -> List[models.Label]:
+    def _get_task_labels(self, pid, user, **kwargs) -> list[models.Label]:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
@@ -3859,7 +3847,7 @@ class TestTaskBackups:
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
     def test_can_export_backup_with_both_api_versions(
-        self, filter_tasks, api_version: Tuple[int], local_download: bool
+        self, filter_tasks, api_version: tuple[int], local_download: bool
     ):
         task = filter_tasks(
             **{("exclude_" if local_download else "") + "target_storage__location": "cloud_storage"}
@@ -4042,7 +4030,7 @@ class TestWorkWithSimpleGtJobTasks:
     @fixture
     def fxt_task_with_gt_job(
         self, tasks, jobs, job_has_annotations
-    ) -> Generator[Dict[str, Any], None, None]:
+    ) -> Generator[dict[str, Any], None, None]:
         gt_job = next(
             j
             for j in jobs
@@ -4164,7 +4152,7 @@ class TestWorkWithHoneypotTasks:
     @fixture
     def fxt_task_with_honeypots(
         self, tasks, jobs, job_has_annotations
-    ) -> Generator[Dict[str, Any], None, None]:
+    ) -> Generator[dict[str, Any], None, None]:
         gt_job = next(
             j
             for j in jobs
@@ -5247,7 +5235,7 @@ class TestImportWithComplexFilenames:
         cls._init_tasks()
 
     @classmethod
-    def _create_task_with_annotations(cls, filenames: List[str]):
+    def _create_task_with_annotations(cls, filenames: list[str]):
         images = generate_image_files(len(filenames), filenames=filenames)
 
         source_archive_path = cls.tmp_dir / "source_data.zip"

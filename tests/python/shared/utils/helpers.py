@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import subprocess
+from collections.abc import Generator
 from contextlib import closing
 from io import BytesIO
-from typing import Generator, List, Optional, Tuple
+from typing import Optional
 
 import av
 import av.video.reformatter
@@ -27,10 +28,10 @@ def generate_image_file(filename="image.png", size=(100, 50), color=(0, 0, 0)):
 def generate_image_files(
     count: int,
     *,
-    prefixes: Optional[List[str]] = None,
-    filenames: Optional[List[str]] = None,
-    sizes: Optional[List[Tuple[int, int]]] = None,
-) -> List[BytesIO]:
+    prefixes: Optional[list[str]] = None,
+    filenames: Optional[list[str]] = None,
+    sizes: Optional[list[tuple[int, int]]] = None,
+) -> list[BytesIO]:
     assert not (prefixes and filenames), "prefixes cannot be used together with filenames"
     assert not prefixes or len(prefixes) == count
     assert not filenames or len(filenames) == count

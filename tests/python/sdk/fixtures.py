@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path
-from typing import Tuple
 from zipfile import ZipFile
 
 import pytest
@@ -72,7 +71,7 @@ def fxt_coco_dataset(tmp_path: Path, fxt_image_file: Path, fxt_coco_file: Path):
 
 
 @pytest.fixture
-def fxt_new_task(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
+def fxt_new_task(fxt_image_file: Path, fxt_login: tuple[Client, str]):
     client, _ = fxt_login
     task = client.tasks.create_from_data(
         spec={
@@ -87,7 +86,7 @@ def fxt_new_task(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
 
 
 @pytest.fixture
-def fxt_new_task_with_target_storage(fxt_image_file: Path, fxt_login: Tuple[Client, str]):
+def fxt_new_task_with_target_storage(fxt_image_file: Path, fxt_login: tuple[Client, str]):
     client, _ = fxt_login
     task = client.tasks.create_from_data(
         spec={

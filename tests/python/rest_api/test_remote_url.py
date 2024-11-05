@@ -5,7 +5,7 @@
 
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -21,7 +21,7 @@ def _post_task_remote_data(username, task_id, resources):
     return post_method(username, f"tasks/{task_id}/data", data)
 
 
-def _wait_until_task_is_created(username: str, rq_id: str) -> Dict[str, Any]:
+def _wait_until_task_is_created(username: str, rq_id: str) -> dict[str, Any]:
     url = f"requests/{rq_id}"
 
     for _ in range(100):
