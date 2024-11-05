@@ -463,7 +463,7 @@ export class Session {
     }
 }
 
-type InitializerType = Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>;
+type InitializerType = Readonly<Partial<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>>;
 
 export class Job extends Session {
     #data: {
