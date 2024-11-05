@@ -9,8 +9,9 @@ import importlib
 import importlib.util
 import json
 import textwrap
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Optional
 
 import cvat_sdk.auto_annotation as cvataa
 from attr.converters import to_bool
@@ -203,7 +204,7 @@ class TaskCreate:
         client,
         *,
         name: str,
-        labels: List[Dict[str, str]],
+        labels: list[dict[str, str]],
         resources: Sequence[str],
         resource_type: ResourceType,
         annotation_path: str,
@@ -469,7 +470,7 @@ class TaskAutoAnnotate:
         task_id: int,
         function_module: Optional[str] = None,
         function_file: Optional[Path] = None,
-        function_parameters: Dict[str, Any],
+        function_parameters: dict[str, Any],
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
     ) -> None:
