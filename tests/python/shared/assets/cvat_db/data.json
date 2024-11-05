@@ -36,7 +36,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-04-03T09:51:04.664Z",
+    "last_login": "2024-11-04T22:42:47.942Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -80,7 +80,7 @@
   "pk": 3,
   "fields": {
     "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
-    "last_login": "2022-09-28T12:19:33.698Z",
+    "last_login": "2024-11-04T22:40:33.954Z",
     "is_superuser": false,
     "username": "user2",
     "first_name": "User",
@@ -479,6 +479,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "3ibifpwt06gp1afx0jzyetl8bylt5fuu",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBwgIJL9z0DGZipVA0kpV0Z765NutDtf-_9l4i4rSVunZc4k7gILU6_W8L84LoDumO9NZlbXZc5yV2RB-1ybMTP6-H-HRTs5VubzCqjxsEBBBuIPDvngazXLoELgUkphDOQscp7nDKRC8YSpMkM6MX7A9lUN7Y:1t85mZ:lJJfebIL-fiaqHCxUD4mIjicI3bidygKbgfbidKoBb4",
+    "expire_date": "2024-11-18T22:42:47.950Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
   "fields": {
     "session_data": ".eJxVjDEOAiEQAP9CbQiwgGBp7xsIC6ycGkiOu8r4d0NyhbYzk3mzEPethn2UNSyZXZhkp1-GMT1LmyI_Yrt3nnrb1gX5TPhhB7_1XF7Xo_0b1Djq3AoglJTJACKS9zGB0eAdopNkz6TIWq2LLQ611gkEgjFJCTIChFPs8wX0UDee:1p26BE:nXJF4Fl6fGAvhi1ZZfLr4WJSgvc53poHLXXAM5V6NdU",
@@ -721,16 +729,6 @@
 },
 {
   "model": "authtoken.token",
-  "pk": "2dcf8d2ff5032c3cf7d276549af3a50edb4f11c8",
-  "fields": {
-    "user": [
-      "admin1"
-    ],
-    "created": "2022-12-05T07:46:24.792Z"
-  }
-},
-{
-  "model": "authtoken.token",
   "pk": "53da3ff9e514d84b56b5170059ff0f595c34157b",
   "fields": {
     "user": [
@@ -747,6 +745,16 @@
       "lonely_user"
     ],
     "created": "2023-03-30T09:37:31.700Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "7de3771f3363fde1d6b6d0803d968fc7352404a1",
+  "fields": {
+    "user": [
+      "admin1"
+    ],
+    "created": "2024-11-04T22:42:47.925Z"
   }
 },
 {
@@ -1596,6 +1604,44 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 0,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 28,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 29,
+  "fields": {
+    "chunk_size": 72,
+    "size": 3,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 2,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -3178,6 +3224,61 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 494,
+  "fields": {
+    "data": 28,
+    "path": "0.png",
+    "frame": 0,
+    "width": 774,
+    "height": 220
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 495,
+  "fields": {
+    "data": 28,
+    "path": "1.png",
+    "frame": 1,
+    "width": 198,
+    "height": 186
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 496,
+  "fields": {
+    "data": 29,
+    "path": "0.png",
+    "frame": 0,
+    "width": 679,
+    "height": 530
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 497,
+  "fields": {
+    "data": 29,
+    "path": "1.png",
+    "frame": 1,
+    "width": 994,
+    "height": 440
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 498,
+  "fields": {
+    "data": 29,
+    "path": "2.png",
+    "frame": 2,
+    "width": 431,
+    "height": 148
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3503,7 +3604,8 @@
     "subset": "",
     "organization": 1,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3531,7 +3633,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3557,7 +3660,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3585,7 +3689,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3613,7 +3718,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3641,7 +3747,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3669,7 +3776,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": 4,
-    "target_storage": 2
+    "target_storage": 2,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3695,7 +3803,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3723,7 +3832,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3749,7 +3859,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 7,
-    "target_storage": 8
+    "target_storage": 8,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3775,7 +3886,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 15,
-    "target_storage": 16
+    "target_storage": 16,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3803,7 +3915,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3829,7 +3942,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 23,
-    "target_storage": 24
+    "target_storage": 24,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3855,7 +3969,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 25,
-    "target_storage": 26
+    "target_storage": 26,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3881,7 +3996,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 29,
-    "target_storage": 30
+    "target_storage": 30,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3907,7 +4023,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 33,
-    "target_storage": 34
+    "target_storage": 34,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3933,7 +4050,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3959,7 +4077,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -3985,7 +4104,8 @@
     "subset": "Train",
     "organization": null,
     "source_storage": 37,
-    "target_storage": 38
+    "target_storage": 38,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4011,7 +4131,8 @@
     "subset": "Validation",
     "organization": null,
     "source_storage": 39,
-    "target_storage": 40
+    "target_storage": 40,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4039,7 +4160,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 45,
-    "target_storage": 46
+    "target_storage": 46,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4067,7 +4189,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 47,
-    "target_storage": 48
+    "target_storage": 48,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4093,7 +4216,62 @@
     "subset": "",
     "organization": 2,
     "source_storage": 49,
-    "target_storage": 50
+    "target_storage": 50,
+    "consensus_jobs_per_regular_job": 0
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 29,
+  "fields": {
+    "created_date": "2024-11-04T22:39:15.967Z",
+    "updated_date": "2024-11-04T22:40:08.217Z",
+    "project": null,
+    "name": "task with consensus jobs",
+    "mode": "annotation",
+    "owner": [
+      "admin1"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "completed",
+    "data": 28,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 2
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 30,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.104Z",
+    "updated_date": "2024-11-04T22:42:53.107Z",
+    "project": null,
+    "name": "task with consensus jobs",
+    "mode": "annotation",
+    "owner": [
+      "user2"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 29,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 3
   }
 },
 {
@@ -5364,6 +5542,39 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 38,
+  "fields": {
+    "task": 29,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 39,
+  "fields": {
+    "task": 30,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 40,
+  "fields": {
+    "task": 30,
+    "start_frame": 2,
+    "stop_frame": 2,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -5377,7 +5588,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5394,7 +5606,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5409,7 +5622,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5424,7 +5638,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5441,7 +5656,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5458,7 +5674,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5473,7 +5690,8 @@
     "status": "validation",
     "stage": "validation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5488,7 +5706,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5503,7 +5722,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5520,7 +5740,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5535,7 +5756,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5550,7 +5772,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5565,7 +5788,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5580,7 +5804,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5595,7 +5820,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5610,7 +5836,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5625,7 +5852,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5640,7 +5868,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5655,7 +5884,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5670,7 +5900,8 @@
     "status": "validation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5685,7 +5916,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -5700,7 +5932,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5715,7 +5948,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5730,7 +5964,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5745,7 +5980,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -5760,7 +5996,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5775,7 +6012,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5790,7 +6028,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5805,7 +6044,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -5820,7 +6060,200 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 38,
+  "fields": {
+    "created_date": "2024-11-04T22:39:16.089Z",
+    "updated_date": "2024-11-04T22:40:08.216Z",
+    "segment": 38,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "completed",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 39,
+  "fields": {
+    "created_date": "2024-11-04T22:39:16.095Z",
+    "updated_date": "2024-11-04T22:40:00.678Z",
+    "segment": 38,
+    "assignee": [
+      "dummy2"
+    ],
+    "assignee_updated_date": "2024-11-04T22:40:00.663Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 38
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 40,
+  "fields": {
+    "created_date": "2024-11-04T22:39:16.099Z",
+    "updated_date": "2024-11-04T22:40:02.933Z",
+    "segment": 38,
+    "assignee": [
+      "dummy1"
+    ],
+    "assignee_updated_date": "2024-11-04T22:40:02.920Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 38
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 41,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.214Z",
+    "updated_date": "2024-11-04T22:42:53.105Z",
+    "segment": 39,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 42,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.221Z",
+    "updated_date": "2024-11-04T22:42:00.438Z",
+    "segment": 39,
+    "assignee": [
+      "worker3"
+    ],
+    "assignee_updated_date": "2024-11-04T22:41:21.453Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 41
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 43,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.225Z",
+    "updated_date": "2024-11-04T22:42:02.566Z",
+    "segment": 39,
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": "2024-11-04T22:41:24.769Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 41
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 44,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.230Z",
+    "updated_date": "2024-11-04T22:42:04.885Z",
+    "segment": 39,
+    "assignee": [
+      "user3"
+    ],
+    "assignee_updated_date": "2024-11-04T22:41:27.581Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 41
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 45,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.235Z",
+    "updated_date": "2024-11-04T22:42:53.009Z",
+    "segment": 40,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 46,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.239Z",
+    "updated_date": "2024-11-04T22:41:38.856Z",
+    "segment": 40,
+    "assignee": [
+      "user5"
+    ],
+    "assignee_updated_date": "2024-11-04T22:41:10.805Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 45
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 47,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.243Z",
+    "updated_date": "2024-11-04T22:41:40.791Z",
+    "segment": 40,
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": "2024-11-04T22:41:14.393Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 45
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 48,
+  "fields": {
+    "created_date": "2024-11-04T22:40:51.247Z",
+    "updated_date": "2024-11-04T22:41:42.888Z",
+    "segment": 40,
+    "assignee": [
+      "worker3"
+    ],
+    "assignee_updated_date": "2024-11-04T22:41:17.206Z",
+    "status": "completed",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 45
   }
 },
 {
@@ -6652,6 +7085,150 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 77,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "human",
+    "color": "#c080e0",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 78,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "1",
+    "color": "#d12345",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 79,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "2",
+    "color": "#350dea",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 80,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "3",
+    "color": "#479ffe",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 81,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "4",
+    "color": "#4a649f",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 82,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "5",
+    "color": "#478144",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 83,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "6",
+    "color": "#57236b",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 84,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "7",
+    "color": "#1cdda5",
+    "type": "points",
+    "parent": 77
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 85,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 86,
+  "fields": {
+    "task": 29,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 87,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 88,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -6705,6 +7282,14 @@
   "fields": {
     "root": 68,
     "svg": "<line x1=\"45.96969985961914\" y1=\"28.54729652404785\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"45.96969985961914\" y2=\"28.54729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"2\"></line>\n<circle r=\"0.75\" cx=\"31.7805118560791\" cy=\"16.04729652404785\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"69\"></circle>\n<circle r=\"0.75\" cx=\"45.96969985961914\" cy=\"28.54729652404785\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"70\"></circle>\n<circle r=\"0.75\" cx=\"32.11834716796875\" cy=\"28.716217041015625\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"71\"></circle>\n<circle r=\"0.75\" cx=\"32.62510681152344\" cy=\"40.202701568603516\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"72\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 8,
+  "fields": {
+    "root": 77,
+    "svg": "<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"28.118427276611328\" y2=\"34.79792022705078\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"2\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"41.1402587890625\" y2=\"24.113340377807617\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"1\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"59.003536224365234\" y2=\"34.464027404785156\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"3\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"42.97666931152344\" y2=\"35.29875946044922\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"6\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"57.000179290771484\" y2=\"55.16539764404297\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"33.460716247558594\" y1=\"54.998451232910156\" x2=\"43.14361572265625\" y2=\"44.64776611328125\" data-type=\"edge\" data-node-from=\"4\" data-node-to=\"7\"></line>\n<circle r=\"0.75\" cx=\"41.1402587890625\" cy=\"24.113340377807617\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"78\"></circle>\n<circle r=\"0.75\" cx=\"28.118427276611328\" cy=\"34.79792022705078\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"59.003536224365234\" cy=\"34.464027404785156\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"33.460716247558594\" cy=\"54.998451232910156\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"57.000179290771484\" cy=\"55.16539764404297\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"82\"></circle>\n<circle r=\"0.75\" cx=\"42.97666931152344\" cy=\"35.29875946044922\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"83\"></circle>\n<circle r=\"0.75\" cx=\"43.14361572265625\" cy=\"44.64776611328125\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"84\"></circle>"
   }
 },
 {
@@ -9540,6 +10125,1158 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 191,
+  "fields": {
+    "job": 39,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.657046435881057,23.867087153861576,132.87821978533793,88.45460793262646",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 192,
+  "fields": {
+    "job": 39,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "605.1826171875,58.802734375,692.0869140625,24.93359375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 193,
+  "fields": {
+    "job": 39,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "584.5,118.90000000000146,653.8000000000011,125.20000000000073,653.3000000000011,151.40000000000146,626.0,167.20000000000073,566.1000000000004,162.5",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 194,
+  "fields": {
+    "job": 39,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 195,
+  "fields": {
+    "job": 39,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "154.5,117.90000000000146,117.60000000000036,134.5,201.70000000000073,143.10000000000036,155.0,160.3000000000011",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 196,
+  "fields": {
+    "job": 39,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.4950283371236,40.1455078125",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 197,
+  "fields": {
+    "job": 39,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91015625,90.73596507347065",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 198,
+  "fields": {
+    "job": 39,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.2588744731893,89.15501469517767",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 199,
+  "fields": {
+    "job": 39,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.0731772087074,186.38353520916098",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 200,
+  "fields": {
+    "job": 39,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.3227472805229,187.17401039830838",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 201,
+  "fields": {
+    "job": 39,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.769811597067,93.10739064091285",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 202,
+  "fields": {
+    "job": 39,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43115552979,137.37403735759472",
+    "rotation": 0.0,
+    "parent": 194
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 203,
+  "fields": {
+    "job": 40,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.66,23.87,132.88,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 204,
+  "fields": {
+    "job": 40,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "75.0,31.0,139.0,52.0,122.0,67.0,108.0,79.0,97.0,89.0,88.0,97.0,80.0,105.0,73.0,111.0,66.0,118.0,61.0,123.0,55.0,129.0,50.0,133.0,46.0,138.0,40.0,142.0,37.0,146.0,34.0,149.0,30.0,153.0,27.0,156.0,23.0,159.0,20.0,162.0,18.0,165.0,15.0,167.0,13.0,169.0,11.0,171.0,10.0,171.0,9.0,173.0,7.0,175.0,5.0,177.0,4.0,177.0,3.0,179.0,2.0,179.0,2.0,179.0,1.0,1267.0,1.0,179.0,2.0,179.0,2.0,179.0,3.0,177.0,5.0,175.0,6.0,175.0,7.0,173.0,9.0,171.0,10.0,171.0,11.0,169.0,13.0,167.0,15.0,165.0,17.0,162.0,21.0,159.0,23.0,157.0,26.0,153.0,30.0,149.0,33.0,146.0,37.0,142.0,42.0,138.0,45.0,133.0,50.0,129.0,55.0,123.0,60.0,118.0,67.0,111.0,73.0,105.0,80.0,97.0,88.0,89.0,97.0,79.0,108.0,67.0,121.0,52.0,140.0,31.0,75.0,514.0,25.0,694.0,95.0",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 205,
+  "fields": {
+    "job": 40,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 206,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 207,
+  "fields": {
+    "job": 40,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 208,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 209,
+  "fields": {
+    "job": 40,
+    "label": 85,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "143.08,46.81,109.55,46.81,74.54,50.82,74.54,85.61,56.41,95.95,80.45,110.71,98.37,106.28",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 210,
+  "fields": {
+    "job": 40,
+    "label": 86,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.37,27.18,67.67,27.6,94.24,48.9,82.43,64.29,70.83,87.7,36.03,78.63,13.26,71.46",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 211,
+  "fields": {
+    "job": 40,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.5,40.15",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 212,
+  "fields": {
+    "job": 40,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91,90.74",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 213,
+  "fields": {
+    "job": 40,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.26,89.16",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 214,
+  "fields": {
+    "job": 40,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.07,186.38",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 215,
+  "fields": {
+    "job": 40,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.32,187.17",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 216,
+  "fields": {
+    "job": 40,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.77,93.11",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 217,
+  "fields": {
+    "job": 40,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43,137.37",
+    "rotation": 0.0,
+    "parent": 206
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 218,
+  "fields": {
+    "job": 40,
+    "label": 79,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "0.52,135.44",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 219,
+  "fields": {
+    "job": 40,
+    "label": 84,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.91,157.85",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 220,
+  "fields": {
+    "job": 40,
+    "label": 82,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "60.87,181.78",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 221,
+  "fields": {
+    "job": 40,
+    "label": 80,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "65.05,134.68",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 222,
+  "fields": {
+    "job": 40,
+    "label": 83,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.57,136.58",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 223,
+  "fields": {
+    "job": 40,
+    "label": 81,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.68,181.4",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 224,
+  "fields": {
+    "job": 40,
+    "label": 78,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "27.73,111.13",
+    "rotation": 0.0,
+    "parent": 208
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 225,
+  "fields": {
+    "job": 38,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.66,23.87,132.88,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 226,
+  "fields": {
+    "job": 38,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 227,
+  "fields": {
+    "job": 38,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 228,
+  "fields": {
+    "job": 38,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 229,
+  "fields": {
+    "job": 38,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "75,31,139,52,122,67,108,79,97,89,88,97,80,105,73,111,66,118,61,123,55,129,50,133,46,138,40,142,37,146,34,149,30,153,27,156,23,159,20,162,18,165,15,167,13,169,11,171,10,171,9,173,7,175,5,177,4,177,3,179,2,179,2,179,1,1267,1,179,2,179,2,179,3,177,5,175,6,175,7,173,9,171,10,171,11,169,13,167,15,165,17,162,21,159,23,157,26,153,30,149,33,146,37,142,42,138,45,133,50,129,55,123,60,118,67,111,73,105,80,97,88,89,97,79,108,67,121,52,140,31,75,514,25,694,95",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 230,
+  "fields": {
+    "job": 38,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 231,
+  "fields": {
+    "job": 38,
+    "label": 85,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "143.08,46.81,109.55,46.81,74.54,50.82,74.54,85.61,56.41,95.95,80.45,110.71,98.37,106.28",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 232,
+  "fields": {
+    "job": 38,
+    "label": 86,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.37,27.18,67.67,27.6,94.24,48.9,82.43,64.29,70.83,87.7,36.03,78.63,13.26,71.46",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 233,
+  "fields": {
+    "job": 38,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.5,40.15",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 234,
+  "fields": {
+    "job": 38,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.26,89.16",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 235,
+  "fields": {
+    "job": 38,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43,137.37",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 236,
+  "fields": {
+    "job": 38,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91,90.74",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 237,
+  "fields": {
+    "job": 38,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.32,187.17",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 238,
+  "fields": {
+    "job": 38,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.07,186.38",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 239,
+  "fields": {
+    "job": 38,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.77,93.11",
+    "rotation": 0.0,
+    "parent": 228
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 240,
+  "fields": {
+    "job": 38,
+    "label": 84,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.91,157.85",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 241,
+  "fields": {
+    "job": 38,
+    "label": 79,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "0.52,135.44",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 242,
+  "fields": {
+    "job": 38,
+    "label": 81,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.68,181.4",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 243,
+  "fields": {
+    "job": 38,
+    "label": 80,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "65.05,134.68",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 244,
+  "fields": {
+    "job": 38,
+    "label": 83,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.57,136.58",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 245,
+  "fields": {
+    "job": 38,
+    "label": 82,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "60.87,181.78",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 246,
+  "fields": {
+    "job": 38,
+    "label": 78,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "27.73,111.13",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 251,
+  "fields": {
+    "job": 46,
+    "label": 87,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.1064453125,18.1533203125,38.59236982132461,18.73829921660399,51.45804149448668,36.282396952734416,65.20091805445554,53.24169143099425,74.26536855145605,24.586331795313527,84.79182719313394,40.37601975783036,98.5347037531028,16.10668455618361,102.62832655820057,21.66231550595876",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 252,
+  "fields": {
+    "job": 46,
+    "label": 88,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "189.4755859375,100.900390625,222.224609375,78.677734375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 253,
+  "fields": {
+    "job": 46,
+    "label": 88,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "167.541015625,46.5166015625,186.25519243375675,60.55173215438117,204.96889668562835,44.177240933991925,224.26740419537236,57.6277158650264,240.3494937868254,36.5747985816688,259.063198038697,51.48728165738066,273.0984762276021,34.235585550184624,280.7009185799252,45.63924907867113",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 254,
+  "fields": {
+    "job": 46,
+    "label": 87,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "317.2509765625,63.18359375,299.1222212028624,74.58701034328624,299.707024460733,89.49949341899628,322.5143515177024,92.71591133728725,327.48517920960694,79.55783803518898",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 255,
+  "fields": {
+    "job": 47,
+    "label": 87,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "180.4072265625,50.3173828125,196.78165107543464,61.13653541225176,208.4777162328537,45.34684744973492,234.79386283705026,61.13653541225176,241.51910030256659,45.05444582079872,269.8820583093111,52.65688817312184,276.02249251695685,43.592437676121335,295.61340165563524,47.3936588522829",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 256,
+  "fields": {
+    "job": 47,
+    "label": 87,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "192.5458984375,106.017578125,231.8740234375,81.89453125",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 257,
+  "fields": {
+    "job": 47,
+    "label": 88,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "330.1171875,47.978515625,313.15749939176567,59.674527267574376,319.5903352283476,72.54019894073645,351.1697111533831,79.85023966412518,351.1697111533831,57.6277158650264",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 258,
+  "fields": {
+    "job": 47,
+    "label": 88,
+    "frame": 2,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.1064453125,16.984375,35.66835353196984,17.276291071926607,41.20000000000073,46.20000000000073,57.0,72.80000000000109,72.5,33.900000000001455,90.10000000000036,50.600000000000364,102.92072818713677,15.814282927249224,107.89155587903952,19.90790573234517",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -10863,6 +12600,66 @@
   }
 },
 {
+  "model": "engine.labeledtrack",
+  "pk": 18,
+  "fields": {
+    "job": 42,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 19,
+  "fields": {
+    "job": 42,
+    "label": 88,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 20,
+  "fields": {
+    "job": 43,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 21,
+  "fields": {
+    "job": 43,
+    "label": 88,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledtrack",
+  "pk": 22,
+  "fields": {
+    "job": 41,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledtrackattributeval",
   "pk": 3,
   "fields": {
@@ -11158,6 +12955,76 @@
     "rotation": 0.0,
     "track": 15,
     "frame": 6
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 23,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "24.645527629965727,46.27817962033987,177.87681256178075,160.45050956953492",
+    "rotation": 0.0,
+    "track": 18,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 24,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "147.23055557541738,206.11944154921366,266.21014152247335,308.2736315037564",
+    "rotation": 0.0,
+    "track": 19,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 25,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "15.631922633976501,29.452783627826648,148.4323695748826,140.019671578626",
+    "rotation": 0.0,
+    "track": 20,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 26,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "96.75436759787954,179.6795335609786,226.55027954012257,292.0491425109758",
+    "rotation": 0.0,
+    "track": 21,
+    "frame": 0
+  }
+},
+{
+  "model": "engine.trackedshape",
+  "pk": 27,
+  "fields": {
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "24.65,46.28,177.88,160.45",
+    "rotation": 0.0,
+    "track": 22,
+    "frame": 0
   }
 },
 {
@@ -17151,6 +19018,846 @@
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 24,
+  "fields": {
+    "task": 29,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 25,
+  "fields": {
+    "task": 30,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 1,
+  "fields": {
+    "task": 2,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 2,
+  "fields": {
+    "task": 5,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 3,
+  "fields": {
+    "task": 6,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 4,
+  "fields": {
+    "task": 7,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 5,
+  "fields": {
+    "task": 8,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 6,
+  "fields": {
+    "task": 9,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 7,
+  "fields": {
+    "task": 11,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 8,
+  "fields": {
+    "task": 12,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 9,
+  "fields": {
+    "task": 13,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 10,
+  "fields": {
+    "task": 14,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 11,
+  "fields": {
+    "task": 15,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 12,
+  "fields": {
+    "task": 17,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 13,
+  "fields": {
+    "task": 18,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 14,
+  "fields": {
+    "task": 19,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 15,
+  "fields": {
+    "task": 20,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 16,
+  "fields": {
+    "task": 21,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 17,
+  "fields": {
+    "task": 22,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 18,
+  "fields": {
+    "task": 23,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 19,
+  "fields": {
+    "task": 24,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 20,
+  "fields": {
+    "task": 25,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 21,
+  "fields": {
+    "task": 26,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 22,
+  "fields": {
+    "task": 27,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 23,
+  "fields": {
+    "task": 28,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 24,
+  "fields": {
+    "task": 29,
+    "agreement_score_threshold": 0.0,
+    "quorum": 1,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 25,
+  "fields": {
+    "task": 30,
+    "agreement_score_threshold": 0.0,
+    "quorum": 2,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 1,
+  "fields": {
+    "task": 29,
+    "job": null,
+    "created_date": "2024-11-04T22:40:08.222Z",
+    "target_last_updated": "2024-11-04T22:40:08.217Z",
+    "consensus_score": 73,
+    "assignee": null,
+    "parent": null,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":1,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":0,\"conflicts_by_type\":{},\"frame_count\":2,\"mean_conflict_count\":0.0},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[],\"consensus_score\":0.5,\"conflict_count\":0,\"conflicts_by_type\":{}}},\"consensus_score\":73.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 2,
+  "fields": {
+    "task": 29,
+    "job": 38,
+    "created_date": "2024-11-04T22:40:08.224Z",
+    "target_last_updated": "2024-11-04T22:39:16.198Z",
+    "consensus_score": 73,
+    "assignee": null,
+    "parent": 1,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":1,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":0,\"conflicts_by_type\":{},\"frame_count\":2,\"mean_conflict_count\":0.0},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[],\"consensus_score\":0.5,\"conflict_count\":0,\"conflicts_by_type\":{}}},\"consensus_score\":73.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 3,
+  "fields": {
+    "task": 30,
+    "job": null,
+    "created_date": "2024-11-04T22:42:53.113Z",
+    "target_last_updated": "2024-11-04T22:42:53.107Z",
+    "consensus_score": 26,
+    "assignee": null,
+    "parent": null,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1,2],\"conflict_count\":24,\"conflicts_by_type\":{\"no_matching_annotation\":12,\"failed_label_voting\":12},\"frame_count\":3,\"mean_conflict_count\":8.0},\"frame_results\":{\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":255,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":253,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":258,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":251,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":256,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":252,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":257,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":254,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":8,\"failed_label_voting\":8}},\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}}},\"consensus_score\":35.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 4,
+  "fields": {
+    "task": 30,
+    "job": 45,
+    "created_date": "2024-11-04T22:42:53.115Z",
+    "target_last_updated": "2024-11-04T22:40:51.447Z",
+    "consensus_score": 0,
+    "assignee": null,
+    "parent": 3,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[2],\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":8,\"failed_label_voting\":8},\"frame_count\":1,\"mean_conflict_count\":16.0},\"frame_results\":{\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":255,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":253,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":258,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":251,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":256,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":252,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":257,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":254,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":8,\"failed_label_voting\":8}}},\"consensus_score\":0.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 5,
+  "fields": {
+    "task": 30,
+    "job": 41,
+    "created_date": "2024-11-04T22:42:53.115Z",
+    "target_last_updated": "2024-11-04T22:40:51.376Z",
+    "consensus_score": 52,
+    "assignee": null,
+    "parent": 3,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":12,\"conflicts_by_type\":{\"no_matching_annotation\":4,\"failed_label_voting\":4},\"frame_count\":2,\"mean_conflict_count\":6.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}}},\"consensus_score\":52.0}"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 1,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 2,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 3,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 4,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 5,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 6,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 7,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 8,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 9,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 10,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 11,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 12,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 13,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 14,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 15,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 16,
+  "fields": {
+    "report": 4,
+    "frame": 2,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 17,
+  "fields": {
+    "report": 5,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 18,
+  "fields": {
+    "report": 5,
+    "frame": 0,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 19,
+  "fields": {
+    "report": 5,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 20,
+  "fields": {
+    "report": 5,
+    "frame": 0,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 21,
+  "fields": {
+    "report": 5,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 22,
+  "fields": {
+    "report": 5,
+    "frame": 1,
+    "type": "no_matching_annotation"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 23,
+  "fields": {
+    "report": 5,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 24,
+  "fields": {
+    "report": 5,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 1,
+  "fields": {
+    "conflict": 1,
+    "obj_id": 255,
+    "job_id": 47,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 2,
+  "fields": {
+    "conflict": 2,
+    "obj_id": 253,
+    "job_id": 46,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 3,
+  "fields": {
+    "conflict": 5,
+    "obj_id": 258,
+    "job_id": 47,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 4,
+  "fields": {
+    "conflict": 6,
+    "obj_id": 251,
+    "job_id": 46,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 5,
+  "fields": {
+    "conflict": 9,
+    "obj_id": 256,
+    "job_id": 47,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 6,
+  "fields": {
+    "conflict": 10,
+    "obj_id": 252,
+    "job_id": 46,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 7,
+  "fields": {
+    "conflict": 13,
+    "obj_id": 257,
+    "job_id": 47,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 8,
+  "fields": {
+    "conflict": 14,
+    "obj_id": 254,
+    "job_id": 46,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 9,
+  "fields": {
+    "conflict": 17,
+    "obj_id": 21,
+    "job_id": 43,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 10,
+  "fields": {
+    "conflict": 18,
+    "obj_id": 19,
+    "job_id": 42,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 11,
+  "fields": {
+    "conflict": 21,
+    "obj_id": 21,
+    "job_id": 43,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.annotationid",
+  "pk": 12,
+  "fields": {
+    "conflict": 22,
+    "obj_id": 19,
+    "job_id": 42,
+    "type": "track",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 1,
+  "fields": {
+    "task": 29,
+    "assignee": [
+      "dummy2"
+    ],
+    "consensus_score": 89,
+    "conflict_count": 0,
+    "consensus_report_id": 1
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 2,
+  "fields": {
+    "task": 29,
+    "assignee": [
+      "dummy1"
+    ],
+    "consensus_score": 100,
+    "conflict_count": 0,
+    "consensus_report_id": 1
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 3,
+  "fields": {
+    "task": 30,
+    "assignee": [
+      "worker3"
+    ],
+    "consensus_score": 50,
+    "conflict_count": 2,
+    "consensus_report_id": 3
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 4,
+  "fields": {
+    "task": 30,
+    "assignee": [
+      "worker2"
+    ],
+    "consensus_score": 28,
+    "conflict_count": 6,
+    "consensus_report_id": 3
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 5,
+  "fields": {
+    "task": 30,
+    "assignee": [
+      "user5"
+    ],
+    "consensus_score": 0,
+    "conflict_count": 4,
+    "consensus_report_id": 3
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 6,
+  "fields": {
+    "task": 30,
+    "assignee": [
+      "user3"
+    ],
+    "consensus_score": 0,
+    "conflict_count": 0,
+    "consensus_report_id": 3
   }
 },
 {

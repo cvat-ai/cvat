@@ -1,5 +1,5 @@
 {
-  "count": 46,
+  "count": 48,
   "next": null,
   "previous": null,
   "results": [
@@ -831,10 +831,10 @@
     },
     {
       "attributes": [],
-      "color": "#406040",
+      "color": "#6080c0",
       "has_parent": false,
       "id": 75,
-      "name": "dog",
+      "name": "cat",
       "parent_id": null,
       "sublabels": [],
       "task_id": 26,
@@ -848,7 +848,7 @@
       "name": "cat",
       "parent_id": null,
       "sublabels": [],
-      "task_id": 26,
+      "task_id": 27,
       "type": "any"
     },
     {
@@ -917,29 +917,51 @@
         }
       ],
       "svg": "<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"28.118427276611328\" y2=\"34.79792022705078\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"2\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"41.1402587890625\" y2=\"24.113340377807617\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"1\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"59.003536224365234\" y2=\"34.464027404785156\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"3\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"42.97666931152344\" y2=\"35.29875946044922\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"6\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"57.000179290771484\" y2=\"55.16539764404297\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"33.460716247558594\" y1=\"54.998451232910156\" x2=\"43.14361572265625\" y2=\"44.64776611328125\" data-type=\"edge\" data-node-from=\"4\" data-node-to=\"7\"></line>\n<circle r=\"0.75\" cx=\"41.1402587890625\" cy=\"24.113340377807617\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"78\"></circle>\n<circle r=\"0.75\" cx=\"28.118427276611328\" cy=\"34.79792022705078\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"59.003536224365234\" cy=\"34.464027404785156\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"33.460716247558594\" cy=\"54.998451232910156\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"57.000179290771484\" cy=\"55.16539764404297\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"82\"></circle>\n<circle r=\"0.75\" cx=\"42.97666931152344\" cy=\"35.29875946044922\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"83\"></circle>\n<circle r=\"0.75\" cx=\"43.14361572265625\" cy=\"44.64776611328125\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"84\"></circle>",
-      "task_id": 26,
+      "task_id": 29,
       "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 85,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 29,
+      "type": "any"
     },
     {
       "attributes": [],
       "color": "#406040",
       "has_parent": false,
-      "id": 85,
+      "id": 86,
       "name": "dog",
       "parent_id": null,
       "sublabels": [],
-      "task_id": 27,
+      "task_id": 29,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 87,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 30,
       "type": "any"
     },
     {
       "attributes": [],
       "color": "#6080c0",
       "has_parent": false,
-      "id": 86,
+      "id": 88,
       "name": "cat",
       "parent_id": null,
       "sublabels": [],
-      "task_id": 27,
+      "task_id": 30,
       "type": "any"
     }
   ]

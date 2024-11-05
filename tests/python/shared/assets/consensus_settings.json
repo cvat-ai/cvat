@@ -1,5 +1,5 @@
 {
-  "count": 24,
+  "count": 25,
   "next": null,
   "previous": null,
   "results": [
@@ -188,7 +188,7 @@
       "id": 21,
       "iou_threshold": 0.5,
       "line_thickness": 0.01,
-      "quorum": 1,
+      "quorum": 0,
       "sigma": 0.1,
       "task_id": 26
     },
@@ -197,7 +197,7 @@
       "id": 22,
       "iou_threshold": 0.5,
       "line_thickness": 0.01,
-      "quorum": 2,
+      "quorum": 0,
       "sigma": 0.1,
       "task_id": 27
     },
@@ -212,12 +212,21 @@
     },
     {
       "agreement_score_threshold": 0.0,
+      "id": 24,
+      "iou_threshold": 0.5,
+      "line_thickness": 0.01,
+      "quorum": 1,
+      "sigma": 0.1,
+      "task_id": 29
+    },
+    {
+      "agreement_score_threshold": 0.0,
       "id": 25,
       "iou_threshold": 0.5,
       "line_thickness": 0.01,
       "quorum": 2,
       "sigma": 0.1,
-      "task_id": 27
+      "task_id": 30
     }
   ]
 }
