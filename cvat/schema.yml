@@ -9718,6 +9718,13 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+        match_empty:
+          type: boolean
+          default: false
+          description: |
+            Count empty frames as matching. This affects target metrics like accuracy in cases
+            there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -10206,6 +10213,13 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+        match_empty:
+          type: boolean
+          default: false
+          description: |
+            Count empty frames as matching. This affects target metrics like accuracy in cases
+            there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
     RegisterSerializerEx:
       type: object
       properties:

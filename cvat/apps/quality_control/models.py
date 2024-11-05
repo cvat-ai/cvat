@@ -220,6 +220,8 @@ class QualitySettings(models.Model):
 
     compare_attributes = models.BooleanField()
 
+    match_empty = models.BooleanField(default=False)
+
     target_metric = models.CharField(
         max_length=32,
         choices=QualityTargetMetricType.choices(),

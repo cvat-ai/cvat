@@ -217,6 +217,12 @@ class ComparisonParameters(_Serializable):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
+    match_empty: bool = False
+    """
+    Consider unannotated (empty) frames as matching. If disabled, quality metrics, such as accuracy,
+    will be 0 if both GT and DS frames have no annotations. When enabled, they will be 1 instead.
+    """
+
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
             return str(v.name)
@@ -232,11 +238,11 @@ class ComparisonParameters(_Serializable):
 @define(kw_only=True)
 class ConfusionMatrix(_Serializable):
     labels: List[str]
-    rows: np.array
-    precision: np.array
-    recall: np.array
-    accuracy: np.array
-    jaccard_index: Optional[np.array]
+    rows: np.ndarray
+    precision: np.ndarray
+    recall: np.ndarray
+    accuracy: np.ndarray
+    jaccard_index: Optional[np.ndarray]
 
     @property
     def axes(self):
@@ -1970,6 +1976,11 @@ class DatasetComparator:
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
+        if self.settings.match_empty and not gt_item.annotations and not ds_item.annotations:
+            # Add virtual annotations. Here we expect logic like r = v / (x or 1)
+            valid_labels_count = 1
+            valid_shapes_count = 1
+
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
             annotations=self._generate_annotations_summary(
                 confusion_matrix, confusion_matrix_labels
@@ -2013,9 +2024,8 @@ class DatasetComparator:
 
         return label_names, confusion_matrix, label_id_idx_map
 
-    @classmethod
     def _generate_annotations_summary(
-        cls, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
     ) -> ComparisonReportAnnotationsSummary:
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
@@ -2035,10 +2045,22 @@ class DatasetComparator:
         ) / (total_annotations_count or 1)
 
         valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[cls._UNMATCHED_IDX, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, cls._UNMATCHED_IDX])
-        ds_annotations_count = np.sum(ds_ann_counts[: cls._UNMATCHED_IDX])
-        gt_annotations_count = np.sum(gt_ann_counts[: cls._UNMATCHED_IDX])
+        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
+        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
+        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
+        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
+
+        if self.settings.match_empty:
+            empty_labels = (ds_ann_counts == 0) & (gt_ann_counts == 0)
+            if np.any(empty_labels):
+                label_jaccard_indices[empty_labels] = 1
+                label_precisions[empty_labels] = 1
+                label_recalls[empty_labels] = 1
+                label_accuracies[empty_labels] = 1
+
+            if total_annotations_count == 0:
+                # Add virtual annotations. Here we expect logic like r = v / (x or 1)
+                valid_annotations_count = 1
 
         return ComparisonReportAnnotationsSummary(
             valid_count=valid_annotations_count,
