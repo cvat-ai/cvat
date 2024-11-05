@@ -33,6 +33,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
         compareAttributes: settings.compareAttributes,
+        matchEmpty: settings.matchEmpty,
 
         oksSigma: settings.oksSigma * 100,
         useBboxSizeForPoints: settings.useBboxSizeForPoints,
@@ -72,6 +73,8 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         <>
             {makeTooltipFragment('Target metric', targetMetricDescription)}
             {makeTooltipFragment('Target metric threshold', settings.descriptions.targetMetricThreshold)}
+            {makeTooltipFragment('Compare attributes', settings.descriptions.compareAttributes)}
+            {makeTooltipFragment('Match empty frames', settings.descriptions.matchEmpty)}
         </>,
     );
 
@@ -171,6 +174,30 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='compareAttributes'
+                        valuePropName='checked'
+                        rules={[{ required: true }]}
+                    >
+                        <Checkbox>
+                            <Text className='cvat-text-color'>Compare attributes</Text>
+                        </Checkbox>
+                    </Form.Item>
+                </Col>
+                <Col span={12}>
+                    <Form.Item
+                        name='matchEmpty'
+                        valuePropName='checked'
+                        rules={[{ required: true }]}
+                    >
+                        <Checkbox>
+                            <Text className='cvat-text-color'>Match empty frames</Text>
+                        </Checkbox>
                     </Form.Item>
                 </Col>
             </Row>

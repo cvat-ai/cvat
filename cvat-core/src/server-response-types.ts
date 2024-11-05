@@ -258,6 +258,7 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+    match_empty?: boolean;
     descriptions?: Record<string, string>;
 }
 
