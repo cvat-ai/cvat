@@ -19,7 +19,7 @@ class Command(BaseCommand):
 
   def handle(self, *args, **options):
 
-    logger.debug('%s: handle(args=%s, options=%s)' % (__name__, str(args), str({k:v if k != 'password' else hide_passwd(v) for k,v in options.items()})))
+    logger.info('%s: handle(args=%s, options=%s)' % (__name__, str(args), str({k:v if k != 'password' else hide_passwd(v) for k,v in options.items()})))
 
     if options['no_input']:
       options['username'] = os.environ['DJANGO_SUPERUSER_USERNAME']
@@ -29,24 +29,24 @@ class Command(BaseCommand):
     User = get_user_model()
 
     if User.objects.filter(username=options['username']).exists():
-        logger.debug('user already exists: %s' % options['username'])
+        logger.info('user already exists: %s' % options['username'])
         u = User.objects.get(username=options['username'])
-        logger.debug('selected existing user: %s' % str(u))
+        logger.info('selected existing user: %s' % str(u))
         if options['password']:
-            logger.debug('updating password for user %s' % options['username'])
+            logger.info('updating password for user %s' % options['username'])
             u.set_password(options['password'])
         if options['email']:
-            logger.debug('updating email for user %s (%s -> %s)' % (options['username'], u.email, options['email']))
+            logger.info('updating email for user %s (%s -> %s)' % (options['username'], u.email, options['email']))
             u.email = options['email']
-        logger.debug('saving user: %s' % str(u))
+        logger.info('saving user: %s' % str(u))
         u.save()
         u = User.objects.get(username=options['username'])
-        logger.debug('user saved: %s' % str(u))
+        logger.info('user saved: %s' % str(u))
     else:
-      logger.debug('creating superuser: username=%s, email=%s, password=%s' % (options['username']))
+      logger.info('creating superuser: username=%s, email=%s, password=%s' % (options['username'], options['email'], hide_passwd(options['password'])))
       su = User.objects.create_superuser(
         username=options['username'],
         email=options['email'],
         password=options['password']
       )
-      logger.debug('superuser created: %s' % str(su))
+      logger.info('superuser created: %s' % str(su))
