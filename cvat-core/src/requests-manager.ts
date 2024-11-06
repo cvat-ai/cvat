@@ -139,17 +139,20 @@ class RequestsManager {
                 }
             };
 
-            if (initialRequest?.status === RQStatus.FAILED) {
-                reject(new RequestError(initialRequest?.message));
-            } else {
-                this.listening[requestID] = {
-                    onUpdate: callback ? [callback] : [],
-                    timeout: window.setTimeout(timeoutCallback),
-                    request: initialRequest,
-                    requestDelayIdx: 0,
-                    promise,
-                };
-            }
+            Promise.resolve().then(() => {
+                // running as microtask to make sure "promise" was initialized
+                if (initialRequest?.status === RQStatus.FAILED) {
+                    reject(new RequestError(initialRequest?.message));
+                } else {
+                    this.listening[requestID] = {
+                        onUpdate: callback ? [callback] : [],
+                        timeout: window.setTimeout(timeoutCallback),
+                        request: initialRequest,
+                        requestDelayIdx: 0,
+                        promise,
+                    };
+                }
+            });
         });
 
         return promise;
