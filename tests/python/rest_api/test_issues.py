@@ -6,7 +6,7 @@
 import json
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 from cvat_sdk import models
@@ -367,7 +367,7 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.comments_api.list_endpoint
 
-    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
         if field == "job_id":
             issue_id, issue_comments = super()._get_field_samples("issue_id")
             issue = next((s for s in self.sample_issues if s["id"] == issue_id))

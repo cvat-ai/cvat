@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pytest
@@ -71,7 +71,7 @@ def filter_jobs(jobs, tasks, org):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostJobs:
-    def _test_create_job_ok(self, user: str, data: Dict[str, Any], **kwargs):
+    def _test_create_job_ok(self, user: str, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)), **kwargs
@@ -80,7 +80,7 @@ class TestPostJobs:
         return response
 
     def _test_create_job_fails(
-        self, user: str, data: Dict[str, Any], *, expected_status: int, **kwargs
+        self, user: str, data: dict[str, Any], *, expected_status: int, **kwargs
     ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.create(
@@ -110,7 +110,7 @@ class TestPostJobs:
         tasks,
         task_mode: str,
         frame_selection_method: str,
-        method_params: Set[str],
+        method_params: set[str],
     ):
         required_task_size = 15
 
@@ -544,7 +544,7 @@ class TestDeleteJobs:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(
-        self, user, jid, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user, jid, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve(jid, **kwargs)
@@ -1442,7 +1442,7 @@ class TestJobDataset:
         username: str,
         jid: int,
         *,
-        api_version: Union[int, Tuple[int]],
+        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
@@ -1473,9 +1473,9 @@ class TestJobDataset:
     def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
         self,
         admin_user: str,
-        jobs_with_shapes: List,
+        jobs_with_shapes: list,
         filter_tasks,
-        api_version: Tuple[int],
+        api_version: tuple[int],
         local_download: bool,
     ):
         filter_ = "target_storage__location"

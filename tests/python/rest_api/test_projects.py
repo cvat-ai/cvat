@@ -16,7 +16,7 @@ from io import BytesIO
 from itertools import product
 from operator import itemgetter
 from time import sleep
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, models
@@ -504,7 +504,7 @@ class TestPostProjects:
         return json.loads(response.data)
 
     @classmethod
-    def _create_org(cls, api_client: ApiClient, members: Optional[Dict[str, str]] = None) -> str:
+    def _create_org(cls, api_client: ApiClient, members: Optional[dict[str, str]] = None) -> str:
         with api_client:
             (_, response) = api_client.organizations_api.create(
                 models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
@@ -629,7 +629,7 @@ class TestImportExportDatasetProject:
         username: str,
         pid: int,
         *,
-        api_version: Union[int, Tuple[int]],
+        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
@@ -778,7 +778,7 @@ class TestImportExportDatasetProject:
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
     def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
-        self, admin_user: str, filter_projects, api_version: Tuple[int], local_download: bool
+        self, admin_user: str, filter_projects, api_version: tuple[int], local_download: bool
     ):
         filter_ = "target_storage__location"
         if local_download:
@@ -1103,7 +1103,7 @@ class TestImportExportDatasetProject:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
-    def _get_project_labels(self, pid, user, **kwargs) -> List[models.Label]:
+    def _get_project_labels(self, pid, user, **kwargs) -> list[models.Label]:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
