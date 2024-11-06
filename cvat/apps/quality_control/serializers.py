@@ -161,6 +161,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 Count empty frames as matching. This affects target metrics like accuracy in cases
                 there are no annotations. If disabled, frames without annotations
                 are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+                This will also add virtual annotations to empty frames in the comparison results.
             """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
