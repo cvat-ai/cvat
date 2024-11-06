@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import io
 import mimetypes
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, Optional
 
 from PIL import Image
 
@@ -93,7 +94,7 @@ class Job(
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[List[Image.Image]]:
+    ) -> Optional[list[Image.Image]]:
         """
         Download the requested frame numbers for a job and save images as outdir/filename_pattern
         """
@@ -125,12 +126,12 @@ class Job(
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, job_id=self.id
         )
 
-    def get_frames_info(self) -> List[models.IFrameMeta]:
+    def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
@@ -141,7 +142,7 @@ class Job(
             ),
         )
 
-    def get_issues(self) -> List[Issue]:
+    def get_issues(self) -> list[Issue]:
         return [
             Issue(self._client, m)
             for m in get_paginated_collection(

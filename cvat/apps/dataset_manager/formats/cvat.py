@@ -9,7 +9,7 @@ import zipfile
 from collections import OrderedDict
 from glob import glob
 from io import BufferedWriter
-from typing import Callable
+from typing import Callable, Union
 
 from datumaro.components.annotation import (AnnotationType, Bbox, Label,
                                             LabelCategories, Points, Polygon,
@@ -22,7 +22,7 @@ from datumaro.plugins.cvat_format.extractor import CvatImporter as _CvatImporter
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData, detect_dataset,
+from cvat.apps.dataset_manager.bindings import (ProjectData, TaskData, JobData, detect_dataset,
                                                 get_defaulted_subset,
                                                 import_dm_annotations,
                                                 match_dm_item)
@@ -1370,7 +1370,7 @@ def dump_project_anno(dst_file: BufferedWriter, project_data: ProjectData, callb
     callback(dumper, project_data)
     dumper.close_document()
 
-def dump_media_files(instance_data: CommonData, img_dir: str, project_data: ProjectData = None):
+def dump_media_files(instance_data: Union[TaskData, JobData], img_dir: str, project_data: ProjectData = None):
     frame_provider = make_frame_provider(instance_data.db_instance)
 
     ext = ''
@@ -1383,9 +1383,11 @@ def dump_media_files(instance_data: CommonData, img_dir: str, project_data: Proj
         quality=FrameQuality.ORIGINAL,
         out_type=FrameOutputType.BUFFER,
     )
+    included_frames = instance_data.get_included_frames()
+
     for frame_id, frame in zip(instance_data.rel_range, frames):
-        if (project_data is not None and (instance_data.db_instance.id, frame_id) in project_data.deleted_frames) \
-            or frame_id in instance_data.deleted_frames:
+        # exclude deleted frames and honeypots
+        if frame_id not in included_frames:
             continue
         frame_name = instance_data.frame_info[frame_id]['path'] if project_data is None \
             else project_data.frame_info[(instance_data.db_instance.id, frame_id)]['path']

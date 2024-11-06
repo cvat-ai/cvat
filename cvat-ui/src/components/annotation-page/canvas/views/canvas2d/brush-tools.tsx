@@ -6,9 +6,9 @@ import './brush-toolbox-styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
-import Icon, { VerticalAlignBottomOutlined } from '@ant-design/icons';
+import Icon, { EyeInvisibleFilled, EyeOutlined, VerticalAlignBottomOutlined } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
@@ -23,7 +23,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, ObjectType, ShapeType } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
-import { rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
+import { changeHideActiveObjectAsync, rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
 import { ShortcutScope } from 'utils/enums';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { subKeyMap } from 'utils/component-subkeymap';
@@ -71,12 +71,17 @@ registerComponentShortcuts(componentShortcuts);
 const MIN_BRUSH_SIZE = 1;
 function BrushTools(): React.ReactPortal | null {
     const dispatch = useDispatch();
-    const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
-    const config = useSelector((state: CombinedState) => state.annotation.canvas.brushTools);
-    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
-    const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
-    const { visible } = config;
+    const {
+        defaultLabelID, visible, canvasInstance, labels, activeObjectHidden, keyMap, normalizedKeyMap,
+    } = useSelector((state: CombinedState) => ({
+        defaultLabelID: state.annotation.drawing.activeLabelID,
+        visible: state.annotation.canvas.brushTools.visible,
+        canvasInstance: state.annotation.canvas.instance,
+        labels: state.annotation.job.labels,
+        activeObjectHidden: state.annotation.canvas.activeObjectHidden,
+        keyMap: state.shortcuts.keyMap,
+        normalizedKeyMap: state.shortcuts.normalizedKeyMap,
+    }), shallowEqual);
 
     const [editableState, setEditableState] = useState<any | null>(null);
     const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'polygon-plus' | 'polygon-minus'>('brush');
@@ -102,6 +107,10 @@ function BrushTools(): React.ReactPortal | null {
             setCurrentTool('polygon-minus');
         }
     }, [setCurrentTool, blockedTools['polygon-minus']]);
+
+    const hideMask = useCallback((hide: boolean) => {
+        dispatch(changeHideActiveObjectAsync(hide));
+    }, []);
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         ACTIVATE_BRUSH_TOOL_STANDARD_CONTROLS: setBrushTool,
@@ -365,6 +374,14 @@ function BrushTools(): React.ReactPortal | null {
                 icon={<VerticalAlignBottomOutlined />}
                 onClick={() => setRemoveUnderlyingPixels(!removeUnderlyingPixels)}
             />
+            <CVATTooltip title={`Hide mask ${normalizedKeyMap.SWITCH_HIDDEN}`}>
+                <Button
+                    type='text'
+                    className={['cvat-brush-tools-hide', ...(activeObjectHidden ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                    icon={activeObjectHidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
+                    onClick={() => hideMask(!activeObjectHidden)}
+                />
+            </CVATTooltip>
             { !editableState && !!applicableLabels.length && (
                 <LabelSelector
                     labels={applicableLabels}

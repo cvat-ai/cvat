@@ -47,7 +47,7 @@ export interface SerializedUser {
     first_name: string;
     last_name: string;
     email?: string;
-    groups?: ('user' | 'business' | 'admin')[];
+    groups?: ('user' | 'admin')[];
     is_staff?: boolean;
     is_superuser?: boolean;
     is_active?: boolean;

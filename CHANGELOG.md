@@ -16,6 +16,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.21.3'></a>
+## \[2.21.3\] - 2024-10-31
+
+### Changed
+
+- CLI no longer prints the stack trace in case of HTTP errors
+  (<https://github.com/cvat-ai/cvat/pull/8601>)
+
+### Removed
+
+- Dropped support for Python 3.8 since its EOL was on 2024-10-07
+  (<https://github.com/cvat-ai/cvat/pull/8360>)
+
+### Fixed
+
+- Requests page crush with `Cannot read property 'target' of undefined` error
+  (<https://github.com/cvat-ai/cvat/pull/8575>)
+
+- Tags in ground truth job were displayed as `tag (GT)`
+  (<https://github.com/cvat-ai/cvat/pull/8586>)
+
+- Tags in ground truth job couldn't be deleted via `x` button
+ (<https://github.com/cvat-ai/cvat/pull/8586>)
+
+- Exception 'Canvas is busy' when change frame during drag/resize a track
+  (<https://github.com/cvat-ai/cvat/pull/8598>)
+
+- A shape gets shifted if auto save triggered during dragging
+  (<https://github.com/cvat-ai/cvat/pull/8598>)
+
 <a id='changelog-2.21.2'></a>
 ## \[2.21.2\] - 2024-10-24
 

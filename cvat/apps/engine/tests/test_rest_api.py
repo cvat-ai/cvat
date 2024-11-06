@@ -54,7 +54,6 @@ logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
-    (group_business, _) = Group.objects.get_or_create(name="business")
     (group_user, _) = Group.objects.get_or_create(name="user")
     (group_annotator, _) = Group.objects.get_or_create(name="worker")
     (group_somebody, _) = Group.objects.get_or_create(name="somebody")
@@ -63,7 +62,7 @@ def create_db_users(cls):
         password="admin")
     user_admin.groups.add(group_admin)
     user_owner = User.objects.create_user(username="user1", password="user1")
-    user_owner.groups.add(group_business)
+    user_owner.groups.add(group_user)
     user_assignee = User.objects.create_user(username="user2", password="user2")
     user_assignee.groups.add(group_annotator)
     user_annotator = User.objects.create_user(username="user3", password="user3")

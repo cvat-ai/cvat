@@ -68,8 +68,8 @@ class ApiClient(object):
 
     def __init__(self,
             configuration: typing.Optional[Configuration] = None,
-            headers: typing.Optional[typing.Dict[str, str]] = None,
-            cookies: typing.Optional[typing.Dict[str, str]] = None,
+            headers: typing.Optional[dict[str, str]] = None,
+            cookies: typing.Optional[dict[str, str]] = None,
             pool_threads: int = 1):
         """
         :param configuration: configuration object for this client
@@ -85,7 +85,7 @@ class ApiClient(object):
         self.pool_threads = pool_threads
 
         self.rest_client = rest.RESTClientObject(configuration)
-        self.default_headers: typing.Dict[str, str] = headers or {}
+        self.default_headers: dict[str, str] = headers or {}
         self.cookies = SimpleCookie()
         if cookies:
             self.cookies.update(cookies)
@@ -161,22 +161,22 @@ class ApiClient(object):
         self,
         resource_path: str,
         method: str,
-        path_params: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        query_params: typing.Optional[typing.List[typing.Tuple[str, typing.Any]]] = None,
-        header_params: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        path_params: typing.Optional[dict[str, typing.Any]] = None,
+        query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        header_params: typing.Optional[dict[str, typing.Any]] = None,
         body: typing.Optional[typing.Any] = None,
-        post_params: typing.Optional[typing.List[typing.Tuple[str, typing.Any]]] = None,
-        files: typing.Optional[typing.Dict[str, typing.List[io.IOBase]]] = None,
-        response_schema: typing.Optional[typing.Tuple[typing.Any]] = None,
-        auth_settings: typing.Optional[typing.List[str]] = None,
-        collection_formats: typing.Optional[typing.Dict[str, str]] = None,
+        post_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        files: typing.Optional[dict[str, list[io.IOBase]]] = None,
+        response_schema: typing.Optional[tuple[typing.Any]] = None,
+        auth_settings: typing.Optional[list[str]] = None,
+        collection_formats: typing.Optional[dict[str, str]] = None,
         *,
         _parse_response: bool = True,
-        _request_timeout: typing.Optional[typing.Union[int, float, typing.Tuple]] = None,
+        _request_timeout: typing.Optional[typing.Union[int, float, tuple]] = None,
         _host: typing.Optional[str] = None,
         _check_type: typing.Optional[bool] = None,
         _check_status: bool = True,
-        _request_auths: typing.Optional[typing.List[typing.Dict[str, typing.Any]]] = None
+        _request_auths: typing.Optional[list[dict[str, typing.Any]]] = None
     ):
 
         config = self.configuration
@@ -271,7 +271,7 @@ class ApiClient(object):
         return (return_data, response)
 {{/tornado}}
 
-    def get_common_headers(self) -> typing.Dict[str, str]:
+    def get_common_headers(self) -> dict[str, str]:
         """
         Returns a headers dict with all the required headers for requests
         """
@@ -324,7 +324,7 @@ class ApiClient(object):
         """
         return to_json(obj, read_files=read_files)
 
-    def deserialize(self, response: HTTPResponse, response_schema: typing.Tuple, *, _check_type: bool):
+    def deserialize(self, response: HTTPResponse, response_schema: tuple, *, _check_type: bool):
         """Deserializes response into an object.
 
         :param response (urllib3.HTTPResponse): object to be deserialized.
@@ -384,22 +384,22 @@ class ApiClient(object):
         self,
         resource_path: str,
         method: str,
-        path_params: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        query_params: typing.Optional[typing.List[typing.Tuple[str, typing.Any]]] = None,
-        header_params: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        path_params: typing.Optional[dict[str, typing.Any]] = None,
+        query_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        header_params: typing.Optional[dict[str, typing.Any]] = None,
         body: typing.Optional[typing.Any] = None,
-        post_params: typing.Optional[typing.List[typing.Tuple[str, typing.Any]]] = None,
-        files: typing.Optional[typing.Dict[str, typing.List[io.IOBase]]] = None,
-        response_schema: typing.Optional[typing.Tuple[typing.Any]] = None,
-        auth_settings: typing.Optional[typing.List[str]] = None,
-        collection_formats: typing.Optional[typing.Dict[str, str]] = None,
+        post_params: typing.Optional[list[tuple[str, typing.Any]]] = None,
+        files: typing.Optional[dict[str, list[io.IOBase]]] = None,
+        response_schema: typing.Optional[tuple[typing.Any]] = None,
+        auth_settings: typing.Optional[list[str]] = None,
+        collection_formats: typing.Optional[dict[str, str]] = None,
         *,
         _async_call: typing.Optional[bool] = None,
         _parse_response: bool = True,
-        _request_timeout: typing.Optional[typing.Union[int, float, typing.Tuple]] = None,
+        _request_timeout: typing.Optional[typing.Union[int, float, tuple]] = None,
         _host: typing.Optional[str] = None,
         _check_type: typing.Optional[bool] = None,
-        _request_auths: typing.Optional[typing.List[typing.Dict[str, typing.Any]]] = None,
+        _request_auths: typing.Optional[list[dict[str, typing.Any]]] = None,
         _check_status: bool = True,
     ):
         """Makes the HTTP request (synchronous) and returns deserialized data.
@@ -580,7 +580,7 @@ class ApiClient(object):
                 new_params.append((k, v))
         return new_params
 
-    def _serialize_file(self, file_instance: io.IOBase) -> typing.Tuple[str, typing.Union[str, bytes], str]:
+    def _serialize_file(self, file_instance: io.IOBase) -> tuple[str, typing.Union[str, bytes], str]:
         if file_instance.closed is True:
             raise ApiValueError("Cannot read a closed file.")
         filename = os.path.basename(file_instance.name)
@@ -592,8 +592,7 @@ class ApiClient(object):
         return filename, filedata, mimetype
 
     def files_parameters(self,
-                         files: typing.Optional[typing.Dict[str,
-                                                            typing.List[io.IOBase]]] = None):
+                         files: typing.Optional[dict[str, list[io.IOBase]]] = None):
         """Builds form parameters.
 
         :param files: None or a dict with key=param_name and
@@ -714,7 +713,7 @@ class ApiClient(object):
 {{#apiInfo}}{{#apis}}
     {{>api_name}}: '{{classname}}'{{/apis}}{{/apiInfo}}
 
-    _apis: typing.Dict[str, object] = { {{#apiInfo}}{{#apis}}
+    _apis: dict[str, object] = { {{#apiInfo}}{{#apis}}
         '{{>api_name}}': [None, '{{classname}}'],{{/apis}}{{/apiInfo}}
     }
 
@@ -739,10 +738,10 @@ class ApiClient(object):
 
 class Endpoint(object):
     def __init__(self,
-            settings: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            params_map: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            root_map: typing.Optional[typing.Dict[str, typing.Any]] = None,
-            headers_map: typing.Optional[typing.Dict[str, typing.Any]] = None,
+            settings: typing.Optional[dict[str, typing.Any]] = None,
+            params_map: typing.Optional[dict[str, typing.Any]] = None,
+            root_map: typing.Optional[dict[str, typing.Any]] = None,
+            headers_map: typing.Optional[dict[str, typing.Any]] = None,
             api_client: typing.Optional[ApiClient] = None
     ):
         """Creates an endpoint
@@ -897,9 +896,9 @@ class Endpoint(object):
             _spec_property_naming: bool = False,
             _content_type: typing.Optional[str] = None,
             _host_index: typing.Optional[int] = None,
-            _request_auths: typing.Optional[typing.List] = None,
+            _request_auths: typing.Optional[list] = None,
             _async_call: bool = False,
-            **kwargs) -> typing.Tuple[typing.Optional[typing.Any], HTTPResponse]:
+            **kwargs) -> tuple[typing.Optional[typing.Any], HTTPResponse]:
         """
         Keyword Args:
             endpoint args

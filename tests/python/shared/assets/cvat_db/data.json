@@ -11,21 +11,13 @@
   "model": "auth.group",
   "pk": 2,
   "fields": {
-    "name": "business",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "pk": 3,
-  "fields": {
     "name": "user",
     "permissions": []
   }
 },
 {
   "model": "auth.group",
-  "pk": 4,
+  "pk": 3,
   "fields": {
     "name": "worker",
     "permissions": []
@@ -236,16 +228,16 @@
     "password": "md5$6TyZJsUJ2hAbICwZHKp4p0$961841748b31d28bcaf3094e549d2bd5",
     "last_login": "2022-09-28T12:17:51.373Z",
     "is_superuser": false,
-    "username": "business1",
-    "first_name": "Business",
-    "last_name": "First",
-    "email": "business1@cvat.org",
+    "username": "user7",
+    "first_name": "User",
+    "last_name": "Seventh",
+    "email": "user7@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:33:06Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -258,16 +250,16 @@
     "password": "md5$oLNLFFMdjViRqnAw1th3Zl$d816d16307053866451da43fb4443b66",
     "last_login": "2022-03-17T07:22:55.930Z",
     "is_superuser": false,
-    "username": "business2",
-    "first_name": "Business",
-    "last_name": "Second",
-    "email": "business2@cvat.org",
+    "username": "user8",
+    "first_name": "User",
+    "last_name": "Eighth",
+    "email": "user8@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:34:01Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -280,16 +272,16 @@
     "password": "md5$7ETBhORLrHl45WPL9CkxnN$af77496152b60ffc73ef877c99807385",
     "last_login": null,
     "is_superuser": false,
-    "username": "business3",
-    "first_name": "Business",
-    "last_name": "Third",
-    "email": "business3@cvat.org",
+    "username": "user9",
+    "first_name": "User",
+    "last_name": "Nineth",
+    "email": "user9@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:34:34Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -302,16 +294,16 @@
     "password": "md5$9huaZ72ncQGfmxUqU3Hwnz$6b010216eea87409f0aca7126bd80bbd",
     "last_login": null,
     "is_superuser": false,
-    "username": "business4",
-    "first_name": "Business",
-    "last_name": "Fourth",
-    "email": "business4@cvat.org",
+    "username": "user10",
+    "first_name": "User",
+    "last_name": "Tenth",
+    "email": "user10@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:35:15Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -734,7 +726,7 @@
   "pk": "53da3ff9e514d84b56b5170059ff0f595c34157b",
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "created": "2022-03-17T07:22:55.921Z"
   }
@@ -754,7 +746,7 @@
   "pk": "c051fe19df24a0ac4c6bec5e635034271c9549dc",
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "created": "2023-05-01T08:42:48.127Z"
   }
@@ -833,7 +825,7 @@
       "email": "org2@cvat.org"
     },
     "owner": [
-      "business1"
+      "user7"
     ]
   }
 },
@@ -881,7 +873,7 @@
   "pk": 4,
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "organization": 1,
     "is_active": true,
@@ -894,7 +886,7 @@
   "pk": 5,
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "organization": 2,
     "is_active": true,
@@ -907,7 +899,7 @@
   "pk": 6,
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "organization": 2,
     "is_active": true,
@@ -1024,7 +1016,7 @@
   "pk": 15,
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "organization": 1,
     "is_active": true,
@@ -1039,7 +1031,7 @@
     "created_date": "2022-01-19T13:54:42.005Z",
     "sent_date": "2022-01-19T13:54:42.005Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 10
   }
@@ -1051,7 +1043,7 @@
     "created_date": "2021-12-14T19:54:46.172Z",
     "sent_date": "2021-12-14T19:54:46.172Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 7
   }
@@ -1063,7 +1055,7 @@
     "created_date": "2022-01-19T13:54:42.015Z",
     "sent_date": "2022-01-19T13:54:42.015Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 11
   }
@@ -1099,7 +1091,7 @@
     "created_date": "2021-12-14T19:54:33.591Z",
     "sent_date": "2021-12-14T19:54:33.591Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 6
   }
@@ -1147,7 +1139,7 @@
     "created_date": "2021-12-14T19:55:13.745Z",
     "sent_date": "2021-12-14T19:55:13.745Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 9
   }
@@ -1171,7 +1163,7 @@
     "created_date": "2021-12-14T19:54:56.431Z",
     "sent_date": "2021-12-14T19:54:56.431Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 8
   }
@@ -3896,7 +3888,7 @@
     "updated_date": "2022-11-03T13:57:25.895Z",
     "name": "project1",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "user6"
@@ -3917,7 +3909,7 @@
     "updated_date": "2022-06-30T08:56:45.601Z",
     "name": "project2",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "user2"
@@ -4000,7 +3992,7 @@
       "user1"
     ],
     "assignee": [
-      "business4"
+      "user10"
     ],
     "assignee_updated_date": null,
     "bug_tracker": "",
@@ -4179,7 +4171,7 @@
       "admin1"
     ],
     "assignee": [
-      "business1"
+      "user7"
     ],
     "assignee_updated_date": "2024-09-23T08:09:45.461Z",
     "bug_tracker": "",
@@ -4281,7 +4273,7 @@
     "name": "task_2_org2",
     "mode": "annotation",
     "owner": [
-      "business2"
+      "user8"
     ],
     "assignee": [
       "worker2"
@@ -4337,7 +4329,7 @@
     "name": "task1_in_project1",
     "mode": "annotation",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "admin1"
@@ -4365,7 +4357,7 @@
     "name": "task1_in_project2",
     "mode": "annotation",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "user5"
@@ -4738,7 +4730,7 @@
       "user3"
     ],
     "assignee": [
-      "business1"
+      "user7"
     ],
     "assignee_updated_date": "2024-09-23T10:51:45.525Z",
     "bug_tracker": "",
@@ -12759,7 +12751,7 @@
   "pk": 10,
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "rating": 0.0,
     "has_analytics_access": false
@@ -12770,7 +12762,7 @@
   "pk": 11,
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "rating": 0.0,
     "has_analytics_access": false
@@ -12781,7 +12773,7 @@
   "pk": 12,
   "fields": {
     "user": [
-      "business3"
+      "user9"
     ],
     "rating": 0.0,
     "has_analytics_access": false
@@ -12792,7 +12784,7 @@
   "pk": 13,
   "fields": {
     "user": [
-      "business4"
+      "user10"
     ],
     "rating": 0.0,
     "has_analytics_access": false
@@ -12912,7 +12904,7 @@
     "position": "98.48046875, 696.72265625, 326.1220703125, 841.5859375",
     "job": 9,
     "owner": [
-      "business2"
+      "user8"
     ],
     "assignee": null,
     "resolved": false
@@ -12928,7 +12920,7 @@
     "position": "108.1845703125, 235.0, 720.0087890625, 703.3505859375",
     "job": 16,
     "owner": [
-      "business2"
+      "user8"
     ],
     "assignee": null,
     "resolved": false
@@ -13002,7 +12994,7 @@
     "updated_date": "2022-03-16T11:07:22.173Z",
     "issue": 2,
     "owner": [
-      "business2"
+      "user8"
     ],
     "message": "Something should be here"
   }
@@ -13015,7 +13007,7 @@
     "updated_date": "2022-03-16T11:08:18.370Z",
     "issue": 3,
     "owner": [
-      "business2"
+      "user8"
     ],
     "message": "Another one issue"
   }
@@ -13099,7 +13091,7 @@
     "resource": "private",
     "display_name": "Bucket 2",
     "owner": [
-      "business2"
+      "user8"
     ],
     "credentials": "minio_access_key minio_secret_key",
     "credentials_type": "KEY_SECRET_KEY_PAIR",
@@ -13563,7 +13555,7 @@
     "is_active": true,
     "enable_ssl": true,
     "owner": [
-      "business1"
+      "user7"
     ],
     "project": 1,
     "organization": null
@@ -13682,9 +13674,9 @@
         "user": {
           "id": 11,
           "url": "http://localhost:8080/api/users/11",
-          "username": "business2",
-          "last_name": "Second",
-          "first_name": "Business"
+          "username": "user8",
+          "last_name": "Eighth",
+          "first_name": "User"
         },
         "owner": {
           "id": 2,
@@ -13771,9 +13763,9 @@
         "user": {
           "id": 11,
           "url": "http://localhost:8080/api/users/11",
-          "username": "business2",
-          "last_name": "Second",
-          "first_name": "Business"
+          "username": "user8",
+          "last_name": "Eighth",
+          "first_name": "User"
         },
         "is_active": true,
         "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
@@ -19010,7 +19002,7 @@
       "user"
     ],
     "object_id": "10",
-    "object_repr": "business1",
+    "object_repr": "user7",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -19028,7 +19020,7 @@
       "user"
     ],
     "object_id": "10",
-    "object_repr": "business1",
+    "object_repr": "user7",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
   }
@@ -19046,7 +19038,7 @@
       "user"
     ],
     "object_id": "10",
-    "object_repr": "business1",
+    "object_repr": "user7",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"Last name\", \"Email address\", \"Groups\"]}}]"
   }
@@ -19064,7 +19056,7 @@
       "user"
     ],
     "object_id": "11",
-    "object_repr": "business2",
+    "object_repr": "user8",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -19082,7 +19074,7 @@
       "user"
     ],
     "object_id": "11",
-    "object_repr": "business2",
+    "object_repr": "user8",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
   }
@@ -19100,7 +19092,7 @@
       "user"
     ],
     "object_id": "12",
-    "object_repr": "business3",
+    "object_repr": "user9",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -19118,7 +19110,7 @@
       "user"
     ],
     "object_id": "12",
-    "object_repr": "business3",
+    "object_repr": "user9",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
   }
@@ -19136,7 +19128,7 @@
       "user"
     ],
     "object_id": "13",
-    "object_repr": "business4",
+    "object_repr": "user10",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -19154,7 +19146,7 @@
       "user"
     ],
     "object_id": "13",
-    "object_repr": "business4",
+    "object_repr": "user10",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
   }

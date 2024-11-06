@@ -8,10 +8,11 @@ import io
 import json
 import mimetypes
 import shutil
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from PIL import Image
 
@@ -72,7 +73,7 @@ class Task(
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
         pbar: Optional[ProgressReporter] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         wait_for_completion: bool = True,
         status_check_period: Optional[int] = None,
     ) -> None:
@@ -226,7 +227,7 @@ class Task(
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[List[Image.Image]]:
+    ) -> Optional[list[Image.Image]]:
         """
         Download the requested frame numbers for a task and save images as outdir/filename_pattern
         """
@@ -253,7 +254,7 @@ class Task(
             outfile = filename_pattern.format(frame_id=frame_id, frame_ext=im_ext)
             im.save(outdir / outfile)
 
-    def get_jobs(self) -> List[Job]:
+    def get_jobs(self) -> list[Job]:
         return [
             Job(self._client, model=m)
             for m in get_paginated_collection(
@@ -265,12 +266,12 @@ class Task(
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, task_id=self.id
         )
 
-    def get_frames_info(self) -> List[models.IFrameMeta]:
+    def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
@@ -295,7 +296,7 @@ class TasksRepo(
         resources: Sequence[StrPath],
         *,
         resource_type: ResourceType = ResourceType.LOCAL,
-        data_params: Optional[Dict[str, Any]] = None,
+        data_params: Optional[dict[str, Any]] = None,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
         status_check_period: int = None,

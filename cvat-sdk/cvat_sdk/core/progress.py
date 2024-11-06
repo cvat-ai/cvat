@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Generator, Iterable, Optional, TypeVar
+from collections.abc import Generator, Iterable
+from typing import Optional, TypeVar
 
 T = TypeVar("T")
 

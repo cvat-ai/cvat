@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
@@ -23,12 +23,19 @@ export enum PropagateDirection {
 
 function PropagateConfirmComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const visible = useSelector((state: CombinedState) => state.annotation.propagate.visible);
-    const frameNumber = useSelector((state: CombinedState) => state.annotation.player.frame.number);
-    const startFrame = useSelector((state: CombinedState) => state.annotation.job.instance.startFrame);
-    const stopFrame = useSelector((state: CombinedState) => state.annotation.job.instance.stopFrame);
-    const [targetFrame, setTargetFrame] = useState<number>(frameNumber);
+    const {
+        visible,
+        frameNumber,
+        frameNumbers,
+    } = useSelector((state: CombinedState) => ({
+        visible: state.annotation.propagate.visible,
+        frameNumber: state.annotation.player.frame.number,
+        frameNumbers: state.annotation.job.frameNumbers,
+    }), shallowEqual);
 
+    const [targetFrame, setTargetFrame] = useState<number>(frameNumber);
+    const startFrame = frameNumbers[0];
+    const stopFrame = frameNumbers[frameNumbers.length - 1];
     const propagateFrames = Math.abs(targetFrame - frameNumber);
     const propagateDirection = targetFrame >= frameNumber ? PropagateDirection.FORWARD : PropagateDirection.BACKWARD;
 
@@ -93,9 +100,9 @@ function PropagateConfirmComponent(): JSX.Element {
                             size='small'
                             min={0}
                             value={propagateFrames}
-                            onChange={(value: number) => {
-                                if (typeof value !== 'undefined') {
-                                    updateTargetFrame(propagateDirection, +value);
+                            onChange={(value: number | null) => {
+                                if (typeof value === 'number') {
+                                    updateTargetFrame(propagateDirection, value);
                                 }
                             }}
                         />
@@ -115,7 +122,7 @@ function PropagateConfirmComponent(): JSX.Element {
                                 [frameNumber]: 'FROM',
                                 [targetFrame]: 'TO',
                             } : undefined}
-                            onChange={([value1, value2]: [number, number]) => {
+                            onChange={([value1, value2]: number[]) => {
                                 const value = value1 === frameNumber || value1 === targetFrame ? value2 : value1;
                                 if (value < frameNumber) {
                                     setTargetFrame(clamp(value, startFrame, frameNumber));
@@ -133,8 +140,8 @@ function PropagateConfirmComponent(): JSX.Element {
                             min={startFrame}
                             max={stopFrame}
                             value={targetFrame}
-                            onChange={(value: number) => {
-                                if (typeof value !== 'undefined') {
+                            onChange={(value: number | null) => {
+                                if (typeof value === 'number') {
                                     if (value > frameNumber) {
                                         setTargetFrame(clamp(+value, frameNumber, stopFrame));
                                     } else if (value < frameNumber) {
