@@ -4,7 +4,6 @@
 
 import io
 from logging import Logger
-from typing import Tuple
 
 import pytest
 from cvat_sdk import Client, models
@@ -16,8 +15,8 @@ class TestOrganizationUsecases:
     @pytest.fixture(autouse=True)
     def setup(
         self,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
     ):
         logger, self.logger_stream = fxt_logger

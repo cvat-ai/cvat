@@ -5,7 +5,6 @@
 import io
 from contextlib import ExitStack
 from logging import Logger
-from typing import List, Tuple
 
 import packaging.version as pv
 import pytest
@@ -22,7 +21,7 @@ class TestClientUsecases:
     def setup(
         self,
         restore_db_per_function,  # force fixture call order to allow DB setup
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_client: Client,
         fxt_stdout: io.StringIO,
         admin_user: str,
@@ -95,7 +94,7 @@ def test_can_reject_invalid_server_schema():
 
 @pytest.mark.parametrize("raise_exception", (True, False))
 def test_can_warn_on_mismatching_server_version(
-    fxt_logger: Tuple[Logger, io.StringIO], monkeypatch, raise_exception: bool
+    fxt_logger: tuple[Logger, io.StringIO], monkeypatch, raise_exception: bool
 ):
     logger, logger_stream = fxt_logger
 
@@ -118,7 +117,7 @@ def test_can_warn_on_mismatching_server_version(
 
 @pytest.mark.parametrize("do_check", (True, False))
 def test_can_check_server_version_in_ctor(
-    fxt_logger: Tuple[Logger, io.StringIO], monkeypatch, do_check: bool
+    fxt_logger: tuple[Logger, io.StringIO], monkeypatch, do_check: bool
 ):
     logger, logger_stream = fxt_logger
 
@@ -141,7 +140,7 @@ def test_can_check_server_version_in_ctor(
     ) == do_check
 
 
-def test_can_check_server_version_in_method(fxt_logger: Tuple[Logger, io.StringIO], monkeypatch):
+def test_can_check_server_version_in_method(fxt_logger: tuple[Logger, io.StringIO], monkeypatch):
     logger, logger_stream = fxt_logger
 
     def mocked_version(_):
@@ -183,10 +182,10 @@ def test_can_check_server_version_in_method(fxt_logger: Tuple[Logger, io.StringI
     ],
 )
 def test_can_check_server_version_compatibility(
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_logger: tuple[Logger, io.StringIO],
     monkeypatch: pytest.MonkeyPatch,
     server_version: str,
-    supported_versions: List[str],
+    supported_versions: list[str],
     expect_supported: bool,
 ):
     logger, _ = fxt_logger

@@ -6,7 +6,6 @@ import io
 from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace as namespace
-from typing import List, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -27,8 +26,8 @@ except ModuleNotFoundError:
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,
-    fxt_login: Tuple[Client, str],
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_login: tuple[Client, str],
+    fxt_logger: tuple[Logger, io.StringIO],
     restore_redis_ondisk_per_function,
 ):
     logger = fxt_logger[0]
@@ -46,7 +45,7 @@ class TestTaskAutoAnnotation:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.images = [
@@ -114,7 +113,7 @@ class TestTaskAutoAnnotation:
 
         def detect(
             context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
-        ) -> List[models.LabeledShapeRequest]:
+        ) -> list[models.LabeledShapeRequest]:
             assert context.frame_name in {"1.png", "2.png"}
             assert image.width == image.height == 333
             return [
@@ -168,7 +167,7 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             assert image.width == image.height == 333
             return [
                 cvataa.skeleton(
@@ -241,7 +240,7 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             return [
                 cvataa.rectangle(
                     123,  # car
@@ -570,7 +569,7 @@ if torchvision_models is not None:
             super().__init__()
             self._label_id = label_id
 
-        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
             assert isinstance(images, list)
             assert all(isinstance(t, torch.Tensor) for t in images)
 
@@ -589,12 +588,12 @@ if torchvision_models is not None:
         return FakeTorchvisionDetector(label_id=car_label_id)
 
     class FakeTorchvisionKeypointDetector(nn.Module):
-        def __init__(self, label_id: int, keypoint_names: List[str]) -> None:
+        def __init__(self, label_id: int, keypoint_names: list[str]) -> None:
             super().__init__()
             self._label_id = label_id
             self._keypoint_names = keypoint_names
 
-        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
             assert isinstance(images, list)
             assert all(isinstance(t, torch.Tensor) for t in images)
 
@@ -628,7 +627,7 @@ class TestAutoAnnotationFunctions:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.image = generate_image_file("1.png", size=(100, 100))

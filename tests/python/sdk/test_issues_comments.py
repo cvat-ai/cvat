@@ -5,7 +5,6 @@
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
 
 import pytest
 from cvat_sdk import Client
@@ -18,8 +17,8 @@ class TestIssuesUsecases:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
     ):
         self.tmp_path = tmp_path
@@ -139,8 +138,8 @@ class TestCommentsUsecases:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
     ):
         self.tmp_path = tmp_path
