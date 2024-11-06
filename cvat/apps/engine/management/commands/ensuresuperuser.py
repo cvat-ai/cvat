@@ -60,10 +60,10 @@ class Command(BaseCommand):
             logger.info('user saved: %s' % str(u))
         else:
             logger.info('creating superuser: username=%s, email=%s, password=%s' % (
-                options['username'], options['email'], hide_passwd(options['password'])))
+                options['username'], options['email'] if 'email' in options else str(None), hide_passwd(options['password'])))
             su = User.objects.create_superuser(
                 username=options['username'],
-                email=options['email'],
-                password=options['password']
+                password=options['password'],
+                email=options['email'] if 'email' in options else None
             )
             logger.info('superuser created: %s' % str(su))
