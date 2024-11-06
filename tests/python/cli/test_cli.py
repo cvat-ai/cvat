@@ -27,6 +27,8 @@ class TestCLI:
     def setup(
         self,
         restore_db_per_function,  # force fixture call order to allow DB setup
+        restore_redis_inmem_per_function,
+        restore_redis_ondisk_per_function,
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
