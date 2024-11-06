@@ -11,8 +11,8 @@ import {
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
-    getInstanceType, listen, RequestInstanceType, RequestsActions,
-    shouldListenForProgress,
+    getInstanceType, listen, RequestInstanceType,
+    RequestsActions, shouldListenForProgress, updateRequestProgress,
 } from './requests-actions';
 
 const core = getCore();
@@ -69,25 +69,9 @@ export const importActions = {
     ),
 };
 
-export async function listenImportDatasetAsync(
-    rqID: string,
-    dispatch: (action: ImportActions | RequestsActions) => void,
-    params: {
-        instance: ProjectOrTaskOrJob | RequestInstanceType,
-    },
-): Promise<void> {
-    const { instance } = params;
-
-    const instanceType = getInstanceType(instance);
-    const resource = instanceType === 'project' ? 'dataset' : 'annotation';
-    try {
-        await listen(rqID, dispatch);
-        dispatch(importActions.importDatasetSuccess(instance, resource));
-    } catch (error) {
-        dispatch(importActions.importDatasetFailed(instance, resource, error));
-    }
-}
-
+/** *
+ * Function is supposed to be used when a new dataset import request initiated by a user
+** */
 export const importDatasetAsync = (
     instance: ProjectOrTaskOrJob,
     format: string,
@@ -100,40 +84,53 @@ export const importDatasetAsync = (
         const instanceType = getInstanceType(instance);
         const resource = instanceType === 'project' ? 'dataset' : 'annotation';
 
+        const listenForImport = (rqID: string) => core.requests.listen(rqID, {
+            callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
+        });
+
         try {
             const state: CombinedState = getState();
 
             if (instanceType === 'project') {
                 dispatch(importActions.importDataset(instance, format));
-                const rqID = await (instance as Project).annotations
-                    .importDataset(format, useDefaultSettings, sourceStorage, file, {
+                const rqID = await (instance as Project).annotations.importDataset(
+                    format,
+                    useDefaultSettings,
+                    sourceStorage,
+                    file,
+                    {
                         convMaskToPoly,
                         updateStatusCallback: (message: string, progress: number) => (
                             dispatch(importActions.importDatasetUpdateStatus(
                                 instance, Math.floor(progress * 100), message,
                             ))
                         ),
-                    });
-                if (shouldListenForProgress(rqID, state.requests)) {
-                    await listen(rqID, dispatch);
-                }
+                    },
+                );
+
+                await listenForImport(rqID);
             } else if (instanceType === 'task') {
                 dispatch(importActions.importDataset(instance, format));
-                const rqID = await (instance as Task).annotations
-                    .upload(format, useDefaultSettings, sourceStorage, file, {
-                        convMaskToPoly,
-                    });
-                if (shouldListenForProgress(rqID, state.requests)) {
-                    await listen(rqID, dispatch);
-                }
+                const rqID = await (instance as Task).annotations.upload(
+                    format,
+                    useDefaultSettings,
+                    sourceStorage,
+                    file,
+                    { convMaskToPoly },
+                );
+                await listenForImport(rqID);
             } else { // job
                 dispatch(importActions.importDataset(instance, format));
-                const rqID = await (instance as Job).annotations
-                    .upload(format, useDefaultSettings, sourceStorage, file, {
-                        convMaskToPoly,
-                    });
+                const rqID = await (instance as Job).annotations.upload(
+                    format,
+                    useDefaultSettings,
+                    sourceStorage,
+                    file,
+                    { convMaskToPoly },
+                );
+
                 if (shouldListenForProgress(rqID, state.requests)) {
-                    await listen(rqID, dispatch);
+                    await listenForImport(rqID);
 
                     await (instance as Job).annotations.clear({ reload: true });
                     await (instance as Job).actions.clear();
@@ -163,6 +160,28 @@ export const importDatasetAsync = (
     }
 );
 
+/** *
+ * Function is supposed to be used when a new backup import request initiated by a user
+** */
+export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
+    async (dispatch) => {
+        dispatch(importActions.importBackup());
+        try {
+            const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
+            const rqID = await instanceClass.restore(storage, file);
+            const result = await core.requests.listen(rqID, {
+                callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
+            });
+            dispatch(importActions.importBackupSuccess(result?.resultID as number, instanceType));
+        } catch (error) {
+            dispatch(importActions.importBackupFailed(instanceType, error));
+        }
+    }
+);
+
+/** *
+ * Function is supposed to be used when application starts listening to existing backup import request
+** */
 export async function listenImportBackupAsync(
     rqID: string,
     dispatch: (action: ImportActions | RequestsActions) => void,
@@ -171,32 +190,34 @@ export async function listenImportBackupAsync(
     },
 ): Promise<void> {
     const { instanceType } = params;
-
     try {
         const result = await listen(rqID, dispatch);
-
-        dispatch(importActions.importBackupSuccess(result?.resultID, instanceType));
+        dispatch(importActions.importBackupSuccess(result?.resultID as number, instanceType));
     } catch (error) {
         dispatch(importActions.importBackupFailed(instanceType, error));
     }
 }
 
-export const importBackupAsync = (instanceType: 'project' | 'task', storage: Storage, file: File | string): ThunkAction => (
-    async (dispatch, getState) => {
-        const state: CombinedState = getState();
+/** *
+ * Function is supposed to be used when application starts listening to existing dataset import request
+** */
+export async function listenImportDatasetAsync(
+    rqID: string,
+    dispatch: (action: ImportActions | RequestsActions) => void,
+    params: {
+        instance: ProjectOrTaskOrJob | RequestInstanceType,
+    },
+): Promise<void> {
+    const { instance } = params;
 
-        dispatch(importActions.importBackup());
-
-        try {
-            const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const rqID = await instanceClass.restore(storage, file);
-            if (shouldListenForProgress(rqID, state.requests)) {
-                await listenImportBackupAsync(rqID, dispatch, { instanceType });
-            }
-        } catch (error) {
-            dispatch(importActions.importBackupFailed(instanceType, error));
-        }
+    const instanceType = getInstanceType(instance);
+    const resource = instanceType === 'project' ? 'dataset' : 'annotation';
+    try {
+        await listen(rqID, dispatch);
+        dispatch(importActions.importDatasetSuccess(instance, resource));
+    } catch (error) {
+        dispatch(importActions.importDatasetFailed(instance, resource, error));
     }
-);
+}
 
 export type ImportActions = ActionUnion<typeof importActions>;

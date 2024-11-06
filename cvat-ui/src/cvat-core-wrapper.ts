@@ -28,7 +28,7 @@ import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders,
     ModelReturnType, DimensionType, JobType,
-    JobStage, JobState, RQStatus,
+    JobStage, JobState, RQStatus, StorageLocation,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -109,6 +109,7 @@ export {
     Request,
     JobValidationLayout,
     TaskValidationLayout,
+    StorageLocation,
 };
 
 export type {

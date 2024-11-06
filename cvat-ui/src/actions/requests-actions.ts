@@ -100,11 +100,10 @@ export function listen(
     dispatch: (action: RequestsActions) => void,
 ) : Promise<Request> {
     const { requests } = getStore().getState().requests;
-    return core.requests
-        .listen(requestID, {
-            callback: (updatedRequest) => {
-                updateRequestProgress(updatedRequest, dispatch);
-            },
-            initialRequest: requests[requestID],
-        });
+    return core.requests.listen(requestID, {
+        callback: (updatedRequest) => {
+            updateRequestProgress(updatedRequest, dispatch);
+        },
+        initialRequest: requests[requestID],
+    });
 }
