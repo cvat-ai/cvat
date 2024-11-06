@@ -34,7 +34,7 @@ class RequestsManager {
         requestDelayIdx: number | null,
         request: Request | null,
         timeout: number | null;
-        promise?: Promise<Request>;
+        promise: Promise<Request>;
     }>;
 
     private requestStack: number[];
@@ -71,6 +71,7 @@ class RequestsManager {
             }
             return this.listening[requestID].promise;
         }
+
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = async (): Promise<void> => {
                 // We make sure that no more than REQUESTS_COUNT requests are sent simultaneously
@@ -131,6 +132,8 @@ class RequestsManager {
                                     message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
                                 })));
                         }
+
+                        delete this.listening[requestID];
                         reject(error);
                     }
                 }
@@ -144,14 +147,11 @@ class RequestsManager {
                     timeout: window.setTimeout(timeoutCallback),
                     request: initialRequest,
                     requestDelayIdx: 0,
+                    promise,
                 };
             }
         });
 
-        this.listening[requestID] = {
-            ...this.listening[requestID],
-            promise,
-        };
         return promise;
     }
 
