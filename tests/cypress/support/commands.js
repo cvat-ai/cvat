@@ -179,6 +179,7 @@ Cypress.Commands.add(
         projectName = '',
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
+        qualityConfigurationParams = null,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -215,6 +216,9 @@ Cypress.Commands.add(
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
+            }
+            if (qualityConfigurationParams) {
+                cy.qualityConfiguration(qualityConfigurationParams);
             }
             cy.get('.cvat-submit-continue-task-button').scrollIntoView();
             cy.get('.cvat-submit-continue-task-button').click();
@@ -922,6 +926,15 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
             cy.get('.cvat-search-target-storage-cloud-storage-field').click();
             cy.get('.cvat-cloud-storage-select-provider').last().click();
         }
+    }
+});
+
+Cypress.Commands.add('qualityConfiguration', (qualityConfigurationParams) => {
+    cy.contains('Quality').click();
+    if (qualityConfigurationParams.validationMode) {
+        cy.get('#validationMode').within(() => {
+            cy.contains(qualityConfigurationParams.validationMode).click();
+        });
     }
 });
 

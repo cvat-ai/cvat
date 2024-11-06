@@ -7,9 +7,8 @@
 import { dummyGTJobSpec } from '../../support/dummy-data';
 
 context('Ground truth jobs', () => {
-    const caseId = 'Ground truth jobs';
     const labelName = 'car';
-    const taskName = `Annotation task for Case ${caseId}`;
+    const taskName = 'Annotation task for Ground truth jobs';
 
     const jobOptions = {
         jobType: 'Ground truth',
@@ -184,6 +183,75 @@ context('Ground truth jobs', () => {
         it('Delete ground truth job', () => {
             cy.interactMenu('Open the task');
             cy.deleteJob(groundTruthJobID);
+        });
+    });
+
+    describe('Testing creating task with quality params', () => {
+        const imagesCount = 3;
+        const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
+        const width = 800;
+        const height = 800;
+        const posX = 10;
+        const posY = 10;
+        const color = 'gray';
+        const archiveName = `${imageFileName}.zip`;
+        const archivePath = `cypress/fixtures/${archiveName}`;
+        const imagesFolder = `cypress/fixtures/${imageFileName}`;
+        const directoryToArchive = imagesFolder;
+        const attrName = 'gt_attr';
+        const defaultAttrValue = 'GT attr';
+        const multiAttrParams = false;
+        const forProject = false;
+        const attachToProject = false;
+        const projectName = null;
+        const expectedResult = 'success';
+        const projectSubsetFieldValue = null;
+        const advancedConfigurationParams = false;
+
+        before(() => {
+            cy.contains('.cvat-header-button', 'Tasks').should('be.visible').click();
+            cy.url().should('include', '/tasks');
+            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+            cy.createZipArchive(directoryToArchive, archivePath);
+        });
+
+        afterEach(() => {
+            cy.goToTaskList();
+            cy.deleteTask(taskName);
+        });
+
+        function createTaskWithQualityParams(qualityParams) {
+            cy.createAnnotationTask(
+                taskName,
+                labelName,
+                attrName,
+                defaultAttrValue,
+                archiveName,
+                multiAttrParams,
+                advancedConfigurationParams,
+                forProject,
+                attachToProject,
+                projectName,
+                expectedResult,
+                projectSubsetFieldValue,
+                qualityParams,
+            );
+            cy.openTask(taskName);
+            cy.get('.cvat-job-item').first()
+                .find('.ant-tag')
+                .should('have.text', 'Ground truth');
+        }
+
+        it('Create task with ground truth job', () => {
+            createTaskWithQualityParams({
+                validationMode: 'Ground Truth',
+            });
+        });
+
+        it('Create task with honeypots', () => {
+            createTaskWithQualityParams({
+                validationMode: 'Honeypots',
+            });
         });
     });
 
