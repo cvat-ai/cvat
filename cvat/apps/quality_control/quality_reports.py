@@ -217,7 +217,7 @@ class ComparisonParameters(_Serializable):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
-    match_empty: bool = False
+    match_empty_frames: bool = False
     """
     Consider unannotated (empty) frames as matching. If disabled, quality metrics, such as accuracy,
     will be 0 if both GT and DS frames have no annotations. When enabled, they will be 1 instead.

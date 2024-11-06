@@ -92,7 +92,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "object_visibility_threshold",
             "panoptic_comparison",
             "compare_attributes",
-            "match_empty",
+            "match_empty_frames",
         )
         read_only_fields = (
             "id",
@@ -100,7 +100,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         )
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("match_empty", {}).setdefault("default", False)
+        extra_kwargs.setdefault("match_empty_frames", {}).setdefault("default", False)
 
         for field_name, help_text in {
             "target_metric": "The primary metric used for quality estimation",
@@ -157,7 +157,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 Use only the visible part of the masks and polygons in comparisons
             """,
             "compare_attributes": "Enables or disables annotation attribute comparison",
-            "match_empty": """
+            "match_empty_frames": """
                 Count empty frames as matching. This affects target metrics like accuracy in cases
                 there are no annotations. If disabled, frames without annotations
                 are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.

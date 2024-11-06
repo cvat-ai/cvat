@@ -9718,7 +9718,7 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-        match_empty:
+        match_empty_frames:
           type: boolean
           default: false
           description: |
@@ -10213,7 +10213,7 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-        match_empty:
+        match_empty_frames:
           type: boolean
           default: false
           description: |

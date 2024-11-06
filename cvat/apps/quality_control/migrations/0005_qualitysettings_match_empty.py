@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="qualitysettings",
-            name="match_empty",
+            name="match_empty_frames",
             field=models.BooleanField(default=False),
         ),
     ]
