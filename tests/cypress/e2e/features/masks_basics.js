@@ -226,6 +226,59 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('body').type('n');
             cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
         });
+
+        it('Check hide mask feature', () => {
+            function checkHideFeature() {
+                cy.get('.cvat-brush-tools-hide').click();
+                cy.get('.cvat-brush-tools-hide').should('have.class', 'cvat-brush-tools-active-tool');
+                cy.get('.cvat_masks_canvas_wrapper').should('not.be.visible');
+                cy.get('.cvat-brush-tools-hide').click();
+                cy.get('.cvat_masks_canvas_wrapper').should('be.visible');
+            }
+
+            function checkHideShortcut() {
+                cy.get('body').type('h');
+                cy.get('.cvat-brush-tools-hide').should('have.class', 'cvat-brush-tools-active-tool');
+                cy.get('.cvat_masks_canvas_wrapper').should('not.be.visible');
+            }
+
+            function checkObjectIsHidden() {
+                cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+                    cy.get('.cvat-object-item-button-hidden-enabled').should('exist');
+                });
+            }
+
+            const mask = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400]],
+            }];
+            const drawPolygon = [{
+                method: 'polygon-plus',
+                coordinates: [[450, 210], [650, 400], [450, 600], [260, 400]],
+            }];
+            cy.startMaskDrawing();
+            cy.drawMask(mask);
+
+            checkHideFeature();
+            checkHideShortcut();
+
+            cy.finishMaskDrawing();
+            cy.get('#cvat_canvas_shape_1').should('be.visible');
+
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Edit');
+            checkHideFeature();
+
+            cy.drawMask(drawPolygon);
+            checkHideShortcut();
+            cy.get('.cvat_canvas_shape_drawing')
+                .invoke('attr', 'fill-opacity')
+                .then((opacity) => expect(+opacity).to.be.equal(0));
+            checkObjectIsHidden();
+            cy.get('.cvat-brush-tools-brush').click();
+            cy.get('.cvat-brush-tools-brush').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.finishMaskDrawing();
+            checkObjectIsHidden();
+        });
     });
 
     describe('Tests to make sure that empty masks cannot be created', () => {

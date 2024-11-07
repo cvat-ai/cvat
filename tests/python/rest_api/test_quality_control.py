@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections.abc import Iterable
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import groupby
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import pytest
 from cvat_sdk.api_client import exceptions, models
@@ -84,7 +85,7 @@ class _PermissionTestBase:
     def find_sandbox_task(self, tasks, jobs, users, is_task_staff):
         def _find(
             is_staff: bool, *, has_gt_jobs: Optional[bool] = None
-        ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
             task = next(
                 t
                 for t in tasks
@@ -116,7 +117,7 @@ class _PermissionTestBase:
     def find_org_task(self, tasks, jobs, users, is_org_member, is_task_staff):
         def _find(
             is_staff: bool, user_org_role: str, *, has_gt_jobs: Optional[bool] = None
-        ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
             for user in users:
                 if user["is_superuser"]:
                     continue
@@ -249,7 +250,7 @@ class TestListQualityReports(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReports(_PermissionTestBase):
     def _test_get_report_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.retrieve_report(obj_id, **kwargs)
@@ -308,7 +309,7 @@ class TestGetQualityReports(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetQualityReportData(_PermissionTestBase):
     def _test_get_report_data_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.retrieve_report_data(obj_id, **kwargs)
@@ -603,7 +604,7 @@ class TestPostQualityReports(_PermissionTestBase):
 
     def test_non_rq_job_owner_cannot_check_status_of_report_creation_in_sandbox(
         self,
-        find_sandbox_task_without_gt: Callable[[bool], Tuple[Dict[str, Any], Dict[str, Any]]],
+        find_sandbox_task_without_gt: Callable[[bool], tuple[dict[str, Any], dict[str, Any]]],
         admin_user: str,
         users: Iterable,
     ):
@@ -630,8 +631,8 @@ class TestPostQualityReports(_PermissionTestBase):
         self,
         role: str,
         admin_user: str,
-        find_org_task_without_gt: Callable[[bool, str], Tuple[Dict[str, Any], Dict[str, Any]]],
-        find_users: Callable[..., List[Dict[str, Any]]],
+        find_org_task_without_gt: Callable[[bool, str], tuple[dict[str, Any], dict[str, Any]]],
+        find_users: Callable[..., list[dict[str, Any]]],
     ):
         task, task_staff = find_org_task_without_gt(is_staff=True, user_org_role="supervisor")
 
@@ -657,8 +658,8 @@ class TestPostQualityReports(_PermissionTestBase):
         is_sandbox: bool,
         users: Iterable,
         admin_user: str,
-        find_org_task_without_gt: Callable[[bool, str], Tuple[Dict[str, Any], Dict[str, Any]]],
-        find_sandbox_task_without_gt: Callable[[bool], Tuple[Dict[str, Any], Dict[str, Any]]],
+        find_org_task_without_gt: Callable[[bool, str], tuple[dict[str, Any], dict[str, Any]]],
+        find_sandbox_task_without_gt: Callable[[bool], tuple[dict[str, Any], dict[str, Any]]],
     ):
         if is_sandbox:
             task, task_staff = find_sandbox_task_without_gt(is_staff=True)
@@ -696,7 +697,7 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.quality_api.list_reports_endpoint
 
-    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
         if field == "task_id":
             # This filter includes both the task and nested job reports
             task_id, task_reports = super()._get_field_samples(field)
@@ -819,7 +820,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.quality_api.list_conflicts_endpoint
 
-    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
         if field == "job_id":
             # This field is not included in the response
             job_id = self._find_valid_field_value(self.report_samples, field_path=["job_id"])
@@ -889,7 +890,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
-        self, user: str, task_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, task_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             actual = get_paginated_collection(
@@ -951,7 +952,7 @@ class TestListSettings(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetSettings(_PermissionTestBase):
     def _test_get_settings_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, obj_id: int, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
@@ -1016,9 +1017,9 @@ class TestPatchSettings(_PermissionTestBase):
         self,
         user: str,
         obj_id: int,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         *,
-        expected_data: Optional[Dict[str, Any]] = None,
+        expected_data: Optional[dict[str, Any]] = None,
         **kwargs,
     ):
         with make_api_client(user) as api_client:
@@ -1032,7 +1033,7 @@ class TestPatchSettings(_PermissionTestBase):
 
         return response
 
-    def _test_patch_settings_403(self, user: str, obj_id: int, data: Dict[str, Any], **kwargs):
+    def _test_patch_settings_403(self, user: str, obj_id: int, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.partial_update_settings(
                 obj_id,
@@ -1045,7 +1046,7 @@ class TestPatchSettings(_PermissionTestBase):
 
         return response
 
-    def _get_request_data(self, data: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def _get_request_data(self, data: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         patched_data = deepcopy(data)
 
         for field, value in data.items():
