@@ -1918,15 +1918,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.gridPattern.setAttribute('height', `${size.height}`);
         } else if (reason === UpdateReasons.SHAPE_FOCUSED) {
             const { padding, clientID } = this.controller.focusData;
+            const drawnState = this.drawnStates[clientID];
             const object = this.svgShapes[clientID];
-            if (object) {
-                const bbox: SVG.BBox = object.bbox();
-                this.onFocusRegion(
-                    bbox.x - padding,
-                    bbox.y - padding,
-                    bbox.width + padding * 2,
-                    bbox.height + padding * 2,
-                );
+            if (drawnState && object) {
+                const { offset } = this.geometry;
+                let [x, y, width, height] = [0, 0, 0, 0];
+
+                if (drawnState.shapeType === 'mask') {
+                    const [xtl, ytl, xbr, ybr] = drawnState.points.slice(-4);
+                    x = xtl + offset;
+                    y = ytl + offset;
+                    width = xbr - xtl + 1;
+                    height = ybr - ytl + 1;
+                } else {
+                    const bbox: SVG.BBox = object.bbox();
+                    ({
+                        x, y, width, height,
+                    } = bbox);
+                }
+
+                this.onFocusRegion(x - padding, y - padding, width + padding * 2, height + padding * 2);
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
