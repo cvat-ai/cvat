@@ -99,7 +99,7 @@ context('Ground truth jobs', () => {
     function createTask(serverFiles, gtJobSpec = null) {
         return cy.headlessCreateDummyTask({
             taskName, serverFiles, labelName,
-        }, gtJobSpec).then((response) => {
+        }, gtJobSpec ? dummyGTJobSpec(gtJobSpec) : null).then((response) => {
             ({ taskID, jobID, groundTruthJobID } = response);
         }).then(() => {
             cy.visit(`/tasks/${taskID}`);
@@ -259,7 +259,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
         before(() => {
-            createTask(serverFiles, dummyGTJobSpec({ frameCount: 3 })).then(() => {
+            createTask(serverFiles, { frameCount: 3 }).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
