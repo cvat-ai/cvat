@@ -14,6 +14,7 @@ import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
+import { PointSizeBase } from 'cvat-core/src/quality-settings';
 
 interface Props {
     form: FormInstance;
@@ -35,6 +36,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         compareAttributes: settings.compareAttributes,
 
         oksSigma: settings.oksSigma * 100,
+        pointSizeBase: settings.pointSizeBase,
 
         lineThickness: settings.lineThickness * 100,
         lineOrientationThreshold: settings.lineOrientationThreshold * 100,
@@ -50,7 +52,13 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
     const targetMetricDescription = `${settings.descriptions.targetMetric
         .replaceAll(/\* [a-z` -]+[A-Z]+/g, '')
-        .replaceAll(/\n/g, '')}.`;
+        .replaceAll(/\n/g, '')
+    }`;
+
+    const pointSizeBaseDescription = `${settings.descriptions.pointSizeBase
+        .substring(0, settings.descriptions.pointSizeBase.indexOf('\n\n\n'))
+        .replaceAll(/\n/g, ' ')
+    }`;
 
     const makeTooltipFragment = (metric: string, description: string): JSX.Element => (
         <div>
@@ -87,6 +95,10 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
     const keypointTooltip = makeTooltip(
         makeTooltipFragment('Object Keypoint Similarity (OKS)', settings.descriptions.oksSigma),
+    );
+
+    const pointTooltip = makeTooltip(
+        makeTooltipFragment('Point size base', pointSizeBaseDescription),
     );
 
     const linesTooltip = makeTooltip(
@@ -245,6 +257,38 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                         rules={[{ required: true }]}
                     >
                         <InputNumber min={0} max={100} precision={0} />
+                    </Form.Item>
+                </Col>
+            </Row>
+            <Divider />
+            <Row className='cvat-quality-settings-title'>
+                <Text strong>
+                    Point Comparison
+                </Text>
+                <CVATTooltip title={pointTooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                    <QuestionCircleOutlined
+                        style={{ opacity: 0.5 }}
+                    />
+                </CVATTooltip>
+            </Row>
+            <Row>
+                <Col span={12}>
+                    <Form.Item
+                        name='pointSizeBase'
+                        label='Point size base'
+                        rules={[{ required: true }]}
+                    >
+                        <Select
+                            style={{ width: '70%' }}
+                            virtual={false}
+                        >
+                            <Select.Option value={PointSizeBase.IMAGE_SIZE}>
+                                Image size
+                            </Select.Option>
+                            <Select.Option value={PointSizeBase.GROUP_BBOX_SIZE}>
+                                Group bbox size
+                            </Select.Option>
+                        </Select>
                     </Form.Item>
                 </Col>
             </Row>

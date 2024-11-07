@@ -225,6 +225,7 @@ function QualityControlPage(): JSX.Element {
                 settings.compareAttributes = values.compareAttributes;
 
                 settings.oksSigma = values.oksSigma / 100;
+                settings.pointSizeBase = values.pointSizeBase;
 
                 settings.lineThickness = values.lineThickness / 100;
                 settings.lineOrientationThreshold = values.lineOrientationThreshold / 100;

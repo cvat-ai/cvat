@@ -247,6 +247,7 @@ export interface SerializedQualitySettingsData {
     max_validations_per_job?: number;
     iou_threshold?: number;
     oks_sigma?: number;
+    point_size_base?: string;
     line_thickness?: number;
     low_overlap_threshold?: number;
     compare_line_orientation?: boolean;
