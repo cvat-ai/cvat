@@ -117,7 +117,8 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "oks_sigma": """
                 Like IoU threshold, but for points.
                 The percent of the bbox side, used as the radius of the circle around the GT point,
-                where the checked point is expected to be.
+                where the checked point is expected to be. For boxes with different width and
+                height, the "side" is computed as a geometric mean of the width and height.
                 Read more: https://cocodataset.org/#keypoints-eval
             """,
             "point_size_base": """
