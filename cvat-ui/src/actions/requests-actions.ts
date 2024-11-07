@@ -3,10 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction } from 'utils/redux';
-import { CombinedState, RequestsQuery, RequestsState } from 'reducers';
-import {
-    Request, ProjectOrTaskOrJob, getCore, RQStatus,
-} from 'cvat-core-wrapper';
+import { CombinedState, RequestsQuery } from 'reducers';
+import { Request, ProjectOrTaskOrJob, getCore } from 'cvat-core-wrapper';
 import { Store } from 'redux';
 import { getCVATStore } from 'cvat-store';
 
@@ -88,23 +86,15 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
     );
 }
 
-export function shouldListenForProgress(rqID: string | void, state: RequestsState): boolean {
-    return (
-        typeof rqID === 'string' &&
-        (!state.requests[rqID] || [RQStatus.FINISHED, RQStatus.FAILED].includes(state.requests[rqID]?.status))
-    );
-}
-
 export function listen(
     requestID: string,
     dispatch: (action: RequestsActions) => void,
 ) : Promise<Request> {
     const { requests } = getStore().getState().requests;
-    return core.requests
-        .listen(requestID, {
-            callback: (updatedRequest) => {
-                updateRequestProgress(updatedRequest, dispatch);
-            },
-            initialRequest: requests[requestID],
-        });
+    return core.requests.listen(requestID, {
+        callback: (updatedRequest) => {
+            updateRequestProgress(updatedRequest, dispatch);
+        },
+        initialRequest: requests[requestID],
+    });
 }
