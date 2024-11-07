@@ -12,6 +12,7 @@ import { ProjectsActionTypes } from 'actions/projects-actions';
 import { TasksState } from '.';
 
 const defaultState: TasksState = {
+    fetchingTimestamp: Date.now(),
     initialized: false,
     fetching: false,
     moveTask: {
@@ -43,6 +44,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     deletes: {},
                 },
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 initialized: false,
                 fetching: true,
                 count: 0,
