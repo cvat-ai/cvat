@@ -369,7 +369,7 @@ class TaskFrameProvider(IFrameProvider):
         quality: FrameQuality = FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
-        frame_range = itertools.count(start_frame, self._db_task.data.get_frame_step())
+        frame_range = itertools.count(start_frame)
         if stop_frame:
             frame_range = itertools.takewhile(lambda x: x <= stop_frame, frame_range)
 
