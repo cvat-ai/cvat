@@ -39,7 +39,7 @@ export const exportActions = {
         instanceType: 'project' | 'task' | 'job',
         format: string,
         resource: 'dataset' | 'annotations',
-        target?: 'local' | 'cloudstorage',
+        target?: StorageLocation,
     ) => (
         createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, {
             instance,
@@ -70,7 +70,7 @@ export const exportActions = {
     closeExportBackupModal: (instance: ProjectOrTaskOrJob) => (
         createAction(ExportActionTypes.CLOSE_EXPORT_BACKUP_MODAL, { instance })
     ),
-    exportBackupSuccess: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: 'local' | 'cloudstorage') => (
+    exportBackupSuccess: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', target?: StorageLocation) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, target })
     ),
     exportBackupFailed: (instance: Exclude<ProjectOrTaskOrJob, Job> | RequestInstanceType, instanceType: 'task' | 'project', error: any) => (
@@ -100,7 +100,7 @@ export const exportDatasetAsync = (
             await core.requests.listen(rqID, {
                 callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
             });
-            const target = targetStorage.location === StorageLocation.LOCAL ? 'local' : 'cloudstorage';
+            const target = targetStorage.location;
             dispatch(exportActions.exportDatasetSuccess(
                 instance, instanceType, format, resource, target,
             ));
@@ -130,7 +130,7 @@ export const exportBackupAsync = (
             await core.requests.listen(rqID, {
                 callback: (updatedRequest) => updateRequestProgress(updatedRequest, dispatch),
             });
-            const target = targetStorage.location === StorageLocation.LOCAL ? 'local' : 'cloudstorage';
+            const target = targetStorage.location;
             dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
         } else {
             dispatch(exportActions.exportBackupSuccess(instance, instanceType));
@@ -158,7 +158,7 @@ export async function listenExportDatasetAsync(
     const instanceType = getInstanceType(instance);
     try {
         const result = await listen(rqID, dispatch);
-        const target = !result?.url ? 'cloudstorage' : 'local';
+        const target = !result?.url ? StorageLocation.CLOUD_STORAGE : StorageLocation.LOCAL;
         dispatch(exportActions.exportDatasetSuccess(
             instance, instanceType, format, resource, target,
         ));
@@ -182,7 +182,7 @@ export async function listenExportBackupAsync(
 
     try {
         const result = await listen(rqID, dispatch);
-        const target = !result?.url ? 'cloudstorage' : 'local';
+        const target = !result?.url ? StorageLocation.CLOUD_STORAGE : StorageLocation.LOCAL;
         dispatch(exportActions.exportBackupSuccess(instance, instanceType, target));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));

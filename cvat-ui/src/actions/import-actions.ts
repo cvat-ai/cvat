@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
-import { CombinedState } from 'reducers';
 import {
     getCore, Storage, Job, Task, Project, ProjectOrTaskOrJob,
 } from 'cvat-core-wrapper';
@@ -12,7 +11,7 @@ import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
     getInstanceType, listen, RequestInstanceType,
-    RequestsActions, shouldListenForProgress, updateRequestProgress,
+    RequestsActions, updateRequestProgress,
 } from './requests-actions';
 
 const core = getCore();
@@ -89,8 +88,6 @@ export const importDatasetAsync = (
         });
 
         try {
-            const state: CombinedState = getState();
-
             if (instanceType === 'project') {
                 dispatch(importActions.importDataset(instance, format));
                 const rqID = await (instance as Project).annotations.importDataset(
@@ -129,23 +126,20 @@ export const importDatasetAsync = (
                     { convMaskToPoly },
                 );
 
-                if (shouldListenForProgress(rqID, state.requests)) {
-                    await listenForImport(rqID);
+                await listenForImport(rqID);
+                await (instance as Job).annotations.clear({ reload: true });
+                await (instance as Job).actions.clear();
 
-                    await (instance as Job).annotations.clear({ reload: true });
-                    await (instance as Job).actions.clear();
+                // first set empty objects list
+                // to escape some problems in canvas when shape with the same
+                // clientID has different type (polygon, rectangle) for example
+                dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
 
-                    // first set empty objects list
-                    // to escape some problems in canvas when shape with the same
-                    // clientID has different type (polygon, rectangle) for example
-                    dispatch({ type: AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS });
-
-                    const relevantInstance = getState().annotation.job.instance;
-                    if (relevantInstance && relevantInstance.id === instance.id) {
-                        setTimeout(() => {
-                            dispatch(fetchAnnotationsAsync());
-                        });
-                    }
+                const relevantInstance = getState().annotation.job.instance;
+                if (relevantInstance && relevantInstance.id === instance.id) {
+                    setTimeout(() => {
+                        dispatch(fetchAnnotationsAsync());
+                    });
                 }
             }
         } catch (error) {
