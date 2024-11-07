@@ -19,10 +19,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 2,
-      "use_bbox_size_for_points": true
+      "task_id": 2
     },
     {
       "check_covered_annotations": true,
@@ -40,10 +40,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 5,
-      "use_bbox_size_for_points": true
+      "task_id": 5
     },
     {
       "check_covered_annotations": true,
@@ -61,10 +61,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 6,
-      "use_bbox_size_for_points": true
+      "task_id": 6
     },
     {
       "check_covered_annotations": true,
@@ -82,10 +82,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 7,
-      "use_bbox_size_for_points": true
+      "task_id": 7
     },
     {
       "check_covered_annotations": true,
@@ -103,10 +103,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 8,
-      "use_bbox_size_for_points": true
+      "task_id": 8
     },
     {
       "check_covered_annotations": true,
@@ -124,10 +124,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 9,
-      "use_bbox_size_for_points": true
+      "task_id": 9
     },
     {
       "check_covered_annotations": true,
@@ -145,10 +145,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 11,
-      "use_bbox_size_for_points": true
+      "task_id": 11
     },
     {
       "check_covered_annotations": true,
@@ -166,10 +166,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 12,
-      "use_bbox_size_for_points": true
+      "task_id": 12
     },
     {
       "check_covered_annotations": true,
@@ -187,10 +187,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 13,
-      "use_bbox_size_for_points": true
+      "task_id": 13
     },
     {
       "check_covered_annotations": true,
@@ -208,10 +208,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 14,
-      "use_bbox_size_for_points": true
+      "task_id": 14
     },
     {
       "check_covered_annotations": true,
@@ -229,10 +229,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 15,
-      "use_bbox_size_for_points": true
+      "task_id": 15
     },
     {
       "check_covered_annotations": true,
@@ -250,10 +250,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 17,
-      "use_bbox_size_for_points": true
+      "task_id": 17
     },
     {
       "check_covered_annotations": true,
@@ -271,10 +271,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 18,
-      "use_bbox_size_for_points": true
+      "task_id": 18
     },
     {
       "check_covered_annotations": true,
@@ -292,10 +292,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 19,
-      "use_bbox_size_for_points": true
+      "task_id": 19
     },
     {
       "check_covered_annotations": true,
@@ -313,10 +313,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 20,
-      "use_bbox_size_for_points": true
+      "task_id": 20
     },
     {
       "check_covered_annotations": true,
@@ -334,10 +334,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 21,
-      "use_bbox_size_for_points": true
+      "task_id": 21
     },
     {
       "check_covered_annotations": true,
@@ -355,10 +355,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 22,
-      "use_bbox_size_for_points": true
+      "task_id": 22
     },
     {
       "check_covered_annotations": true,
@@ -376,10 +376,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 23,
-      "use_bbox_size_for_points": true
+      "task_id": 23
     },
     {
       "check_covered_annotations": true,
@@ -397,10 +397,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 24,
-      "use_bbox_size_for_points": true
+      "task_id": 24
     },
     {
       "check_covered_annotations": true,
@@ -418,10 +418,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 25,
-      "use_bbox_size_for_points": true
+      "task_id": 25
     },
     {
       "check_covered_annotations": true,
@@ -439,10 +439,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 26,
-      "use_bbox_size_for_points": true
+      "task_id": 26
     },
     {
       "check_covered_annotations": true,
@@ -460,10 +460,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 27,
-      "use_bbox_size_for_points": true
+      "task_id": 27
     },
     {
       "check_covered_annotations": true,
@@ -481,10 +481,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 28,
-      "use_bbox_size_for_points": true
+      "task_id": 28
     },
     {
       "check_covered_annotations": true,
@@ -502,10 +502,10 @@
       "object_visibility_threshold": 0.05,
       "oks_sigma": 0.09,
       "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
       "target_metric": "accuracy",
       "target_metric_threshold": 0.7,
-      "task_id": 29,
-      "use_bbox_size_for_points": true
+      "task_id": 29
     }
   ]
 }

@@ -81,7 +81,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "max_validations_per_job",
             "iou_threshold",
             "oks_sigma",
-            "use_bbox_size_for_points",
+            "point_size_base",
             "line_thickness",
             "low_overlap_threshold",
             "compare_line_orientation",
@@ -118,17 +118,26 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             """,
             "oks_sigma": """
                 Like IoU threshold, but for points.
-                The percent of the bbox area, used as the radius of the circle around the GT point,
-                where the checked point is expected to be.
+                The percent of the bbox side, used as the radius of the circle around the GT point,
+                where the checked point is expected to be. For boxes with different width and
+                height, the "side" is computed as a geometric mean of the width and height.
                 Read more: https://cocodataset.org/#keypoints-eval
             """,
-            "use_bbox_size_for_points": """
-                When comparing point groups, OKS sigma defines the matching area for a GT point.
-                If enabled, the area size is based on the point group bbox size.
-                If disabled, the image size is used.
-                Useful if point groups do not represent a single object or boxes attached to points
-                do not represent object boundaries.
-            """,
+            "point_size_base": """
+                When comparing point annotations (including both separate points and point groups),
+                the OKS sigma parameter defines matching area for each GT point based to the
+                object size. The point size base parameter allows to configure how to determine
+                the object size.
+                If {image_size}, the image size is used. Useful if each point
+                annotation represents a separate object or boxes grouped with points do not
+                represent object boundaries.
+                If {group_bbox_size}, the object size is based on
+                the point group bbox size. Useful if each point group represents an object
+                or there is a bbox grouped with points, representing the object size.
+            """.format(
+                image_size=models.PointSizeBase.IMAGE_SIZE,
+                group_bbox_size=models.PointSizeBase.GROUP_BBOX_SIZE,
+            ),
             "line_thickness": """
                 Thickness of polylines, relatively to the (image area) ^ 0.5.
                 The distance to the boundary around the GT line,

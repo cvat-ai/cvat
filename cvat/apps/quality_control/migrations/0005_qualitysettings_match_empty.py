@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("quality_control", "0004_qualitysettings_use_bbox_size_for_points"),
+        ("quality_control", "0004_qualitysettings_point_size_base"),
     ]
 
     operations = [

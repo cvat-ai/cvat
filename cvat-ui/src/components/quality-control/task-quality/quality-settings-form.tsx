@@ -14,6 +14,7 @@ import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualitySettings, TargetMetric } from 'cvat-core-wrapper';
+import { PointSizeBase } from 'cvat-core/src/quality-settings';
 
 interface Props {
     form: FormInstance;
@@ -36,7 +37,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         matchEmptyFrames: settings.matchEmptyFrames,
 
         oksSigma: settings.oksSigma * 100,
-        useBboxSizeForPoints: settings.useBboxSizeForPoints,
+        pointSizeBase: settings.pointSizeBase,
 
         lineThickness: settings.lineThickness * 100,
         lineOrientationThreshold: settings.lineOrientationThreshold * 100,
@@ -52,7 +53,13 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
 
     const targetMetricDescription = `${settings.descriptions.targetMetric
         .replaceAll(/\* [a-z` -]+[A-Z]+/g, '')
-        .replaceAll(/\n/g, '')}.`;
+        .replaceAll(/\n/g, '')
+    }`;
+
+    const pointSizeBaseDescription = `${settings.descriptions.pointSizeBase
+        .substring(0, settings.descriptions.pointSizeBase.indexOf('\n\n\n'))
+        .replaceAll(/\n/g, ' ')
+    }`;
 
     const makeTooltipFragment = (metric: string, description: string): JSX.Element => (
         <div>
@@ -94,7 +101,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
     );
 
     const pointTooltip = makeTooltip(
-        makeTooltipFragment('Use image space', settings.descriptions.useBboxSizeForPoints),
+        makeTooltipFragment('Point size base', pointSizeBaseDescription),
     );
 
     const linesTooltip = makeTooltip(
@@ -294,13 +301,21 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             <Row>
                 <Col span={12}>
                     <Form.Item
-                        name='useBboxSizeForPoints'
-                        valuePropName='checked'
+                        name='pointSizeBase'
+                        label='Point size base'
                         rules={[{ required: true }]}
                     >
-                        <Checkbox>
-                            <Text className='cvat-text-color'>Use bbox size</Text>
-                        </Checkbox>
+                        <Select
+                            style={{ width: '70%' }}
+                            virtual={false}
+                        >
+                            <Select.Option value={PointSizeBase.IMAGE_SIZE}>
+                                Image size
+                            </Select.Option>
+                            <Select.Option value={PointSizeBase.GROUP_BBOX_SIZE}>
+                                Group bbox size
+                            </Select.Option>
+                        </Select>
                     </Form.Item>
                 </Col>
             </Row>

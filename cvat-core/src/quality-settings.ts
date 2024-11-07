@@ -14,6 +14,11 @@ export enum TargetMetric {
     RECALL = 'recall',
 }
 
+export enum PointSizeBase {
+    IMAGE_SIZE = 'image_size',
+    GROUP_BBOX_SIZE = 'group_bbox_size',
+}
+
 export default class QualitySettings {
     #id: number;
     #targetMetric: TargetMetric;
@@ -22,7 +27,7 @@ export default class QualitySettings {
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
-    #useBboxSizeForPoints: boolean;
+    #pointSizeBase: PointSizeBase;
     #lineThickness: number;
     #lowOverlapThreshold: number;
     #orientedLines: boolean;
@@ -44,7 +49,7 @@ export default class QualitySettings {
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
-        this.#useBboxSizeForPoints = initialData.use_bbox_size_for_points;
+        this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
         this.#lowOverlapThreshold = initialData.low_overlap_threshold;
         this.#orientedLines = initialData.compare_line_orientation;
@@ -83,12 +88,12 @@ export default class QualitySettings {
         this.#oksSigma = newVal;
     }
 
-    get useBboxSizeForPoints(): boolean {
-        return this.#useBboxSizeForPoints;
+    get pointSizeBase(): PointSizeBase {
+        return this.#pointSizeBase;
     }
 
-    set useBboxSizeForPoints(newVal: boolean) {
-        this.#useBboxSizeForPoints = newVal;
+    set pointSizeBase(newVal: PointSizeBase) {
+        this.#pointSizeBase = newVal;
     }
 
     get lineThickness(): number {
@@ -217,7 +222,7 @@ export default class QualitySettings {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
             oks_sigma: this.#oksSigma,
-            use_bbox_size_for_points: this.#useBboxSizeForPoints,
+            point_size_base: this.#pointSizeBase,
             line_thickness: this.#lineThickness,
             low_overlap_threshold: this.#lowOverlapThreshold,
             compare_line_orientation: this.#orientedLines,

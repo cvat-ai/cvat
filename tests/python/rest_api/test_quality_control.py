@@ -1212,8 +1212,8 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "oks_sigma",
             "compare_line_orientation",
             "panoptic_comparison",
-            "use_bbox_size_for_points",
             "match_empty_frames",
+            "point_size_base",
         ],
     )
     def test_settings_affect_metrics(
@@ -1231,6 +1231,12 @@ class TestQualityReportMetrics(_PermissionTestBase):
             settings[parameter] = 1 - settings[parameter]
             if parameter == "group_match_threshold":
                 settings[parameter] = 0.9
+        elif parameter == "point_size_base":
+            settings[parameter] = next(
+                v
+                for v in models.PointSizeBaseEnum.allowed_values[("value",)].values()
+                if v != settings[parameter]
+            )
         else:
             assert False
 
