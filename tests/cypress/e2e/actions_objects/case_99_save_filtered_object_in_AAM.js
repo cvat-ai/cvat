@@ -40,7 +40,7 @@ context('Save filtered object in AAM.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it(`Set filter label == “${labelName}”.`, () => {
+        it(`Set filter label == "${labelName}".`, () => {
             cy.addFiltersRule(0);
             cy.setFilter({
                 groupIndex: 0,
