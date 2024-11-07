@@ -295,7 +295,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
         **shared_queue_settings,
-        'DEFAULT_TIMEOUT': '4h',
+        'DEFAULT_TIMEOUT': '8h',
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
         **shared_queue_settings,
