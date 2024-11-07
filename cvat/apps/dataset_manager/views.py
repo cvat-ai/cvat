@@ -122,8 +122,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         instance_update_time = timezone.localtime(db_instance.updated_date)
         if isinstance(db_instance, Project):
             tasks_update = list(map(
-                lambda updated_date: timezone.localtime(updated_date),
-                db_instance.tasks.values_list('updated_date', flat=True)
+                timezone.localtime, db_instance.tasks.values_list('updated_date', flat=True)
             ))
             instance_update_time = max(tasks_update + [instance_update_time])
 
