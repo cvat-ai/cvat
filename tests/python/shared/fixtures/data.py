@@ -5,8 +5,8 @@
 import json
 import operator
 from collections import defaultdict
+from collections.abc import Iterable
 from copy import deepcopy
-from typing import Iterable
 
 import pytest
 

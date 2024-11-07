@@ -8,8 +8,9 @@ import http.server
 import ssl
 import threading
 import unittest
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Union
 
 import requests
 
@@ -28,7 +29,7 @@ def run_cli(test: Union[unittest.TestCase, Any], *args: str, expected_code: int 
         assert expected_code == main(args)
 
 
-def generate_images(dst_dir: Path, count: int) -> List[Path]:
+def generate_images(dst_dir: Path, count: int) -> list[Path]:
     filenames = []
     dst_dir.mkdir(parents=True, exist_ok=True)
     for i in range(count):
@@ -70,7 +71,7 @@ class _ProxyHttpRequestHandler(http.server.BaseHTTPRequestHandler):
         response = requests.post(data=self.rfile.read(body_length), **self._shared_request_args())
         self._translate_response(response)
 
-    def _shared_request_args(self) -> Dict[str, Any]:
+    def _shared_request_args(self) -> dict[str, Any]:
         headers = {k.lower(): v for k, v in self.headers.items()}
         del headers["host"]
 
