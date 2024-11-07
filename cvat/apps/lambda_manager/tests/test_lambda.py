@@ -38,6 +38,13 @@ id_function_state_error = "test-model-has-state-error"
 expected_keys_in_response_all_functions = ["id", "kind", "labels_v2", "description", "name"]
 expected_keys_in_response_function_interactor = expected_keys_in_response_all_functions + ["min_pos_points", "startswith_box"]
 expected_keys_in_response_requests = ["id", "function", "status", "progress", "enqueued", "started", "ended", "exc_info"]
+expected_function_ids_in_response = {
+    "test-openvino-omz-public-yolo-v3-tf",
+    "test-openvino-omz-intel-person-reidentification-retail-0300",
+    "test-openvino-omz-intel-person-reidentification-retail-1234",
+    "test-openvino-dextr",
+    "test-pth-foolwood-siammask"
+}
 
 path = os.path.join(os.path.dirname(__file__), 'assets', 'tasks.json')
 with open(path) as f:
@@ -259,6 +266,25 @@ class LambdaTestCases(_LambdaTestCaseBase):
             self._check_expected_keys_in_response_function(data)
 
         response = self._get_request(LAMBDA_FUNCTIONS_PATH, None)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v2_lambda_functions_list_with_org(self):
+        org = "my-org"
+        response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.admin, org_id=org)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for data in response.data:
+            self._check_expected_keys_in_response_function(data)
+        ids = {data.id for data in response.data}
+        self.assertEqual(ids, expected_function_ids_in_response)
+
+        response = self._get_request(LAMBDA_FUNCTIONS_PATH, self.user, org_id=org)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for data in response.data:
+            self._check_expected_keys_in_response_function(data)
+        ids = {data.id for data in response.data}
+        self.assertEqual(ids, expected_function_ids_in_response)
+
+        response = self._get_request(LAMBDA_FUNCTIONS_PATH, None, org_id=org)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 

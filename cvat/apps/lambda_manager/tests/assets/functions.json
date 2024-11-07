@@ -26,7 +26,8 @@
           "name": "Person reidentification",
           "spec": "",
           "type": "reid"
-        }
+        },
+        "labels": {}
       },
       "spec": {
         "description": "Person reidentification model for a general scenario"
@@ -44,6 +45,9 @@
           "name": "Person reidentification",
           "spec": "",
           "type": "reid"
+        },
+        "labels": {
+          "test-label": "test-label-value"
         }
       },
       "spec": {
@@ -62,6 +66,9 @@
           "name": "DEXTR",
           "spec": "",
           "type": "interactor"
+        },
+        "labels": {
+          "organization": "my-org"
         }
       },
       "spec": {
@@ -80,6 +87,10 @@
           "name": "SiamMask",
           "spec": "",
           "type": "tracker"
+        },
+        "labels": {
+          "test-label": "test-label-value",
+          "organization": "my-org"
         }
       },
       "spec": {
@@ -98,6 +109,10 @@
           "name": "State is building",
           "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
           "type": "detector"
+        },
+        "labels": {
+          "test-label": "test-label-value",
+          "organization": "my-other-org"
         }
       },
       "spec": {
@@ -115,6 +130,9 @@
           "name": "State is error",
           "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
           "type": "detector"
+        },
+        "labels": {
+          "organization": "my-other-org"
         }
       },
       "spec": {

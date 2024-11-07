@@ -83,9 +83,12 @@ class LambdaGateway:
 
         return response
 
-    def list(self):
+    def list(self, org=None):
         data = self._http(url=self.NUCLIO_ROOT_URL)
         for item in data.values():
+            labels = item["metadata"].get("labels")
+            if org and labels and "organization" in labels and org != labels["organization"]:
+                continue
             try:
                 yield LambdaFunction(self, item)
             except InvalidFunctionMetadataError:
@@ -1037,7 +1040,8 @@ class FunctionViewSet(viewsets.ViewSet):
     @return_response()
     def list(self, request):
         gateway = LambdaGateway()
-        return [f.to_dict() for f in gateway.list()]
+        org = request.GET.get("org")
+        return [f.to_dict() for f in gateway.list(org)]
 
     @return_response()
     def retrieve(self, request, func_id):
