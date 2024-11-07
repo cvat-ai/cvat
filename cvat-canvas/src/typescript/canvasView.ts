@@ -1928,8 +1928,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const [xtl, ytl, xbr, ybr] = drawnState.points.slice(-4);
                     x = xtl + offset;
                     y = ytl + offset;
-                    width = xbr - xtl;
-                    height = ybr - ytl;
+                    width = xbr - xtl + 1;
+                    height = ybr - ytl + 1;
                 } else {
                     const bbox: SVG.BBox = object.bbox();
                     ({
