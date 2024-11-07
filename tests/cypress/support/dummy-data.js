@@ -94,6 +94,7 @@ function dummyTaskSpec({
     labelName,
     taskName,
     serverFiles,
+    validationParams,
 }) {
     const taskSpec = {
         labels: [
@@ -110,12 +111,26 @@ function dummyTaskSpec({
         image_quality: 70,
         use_zip_chunks: true,
         use_cache: true,
-        sorting_method: 'lexicographical',
+        sorting_method: (validationParams && validationParams.mode === 'gt_pool') ? 'random' : 'lexicographical',
     };
+
+    const extras = validationParams ? {
+        validation_params: {
+            frames: validationParams.frames,
+            frame_selection_method: validationParams.frameSelectionMethod,
+            frame_count: validationParams.frameCount,
+            frames_per_job_count: validationParams.framesPerJobCount,
+            mode: validationParams.mode,
+            ...(validationParams.randomSeed ? {
+                random_seed: validationParams.randomSeed,
+            } : {}),
+        },
+    } : {};
 
     return {
         taskSpec,
         dataSpec,
+        extras,
     };
 }
 

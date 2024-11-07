@@ -296,7 +296,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
+Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().then(async ($win) => {
         const task = new $win.cvat.classes.Task({
             ...taskSpec,
@@ -314,8 +314,8 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
         if (dataSpec.remote_files) {
             task.remoteFiles = dataSpec.remote_files;
         }
-
-        const result = await task.save();
+        cy.log(extras);
+        const result = await task.save(extras || {});
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
@@ -384,16 +384,22 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
 });
 
 Cypress.Commands.add('headlessCreateDummyTask', (taskParams, gtJobSpec = null) => {
-    const { labelName, taskName, serverFiles } = taskParams;
-    const { taskSpec, dataSpec } = dummyTaskSpec({
-        taskName, serverFiles, labelName,
+    const {
+        labelName, taskName, serverFiles, validationParams,
+    } = taskParams;
+    const { taskSpec, dataSpec, extras } = dummyTaskSpec({
+        taskName, serverFiles, labelName, validationParams,
     });
     let taskID = null;
     let jobID = null;
     let groundTruthJobID = null;
-    cy.headlessCreateTask(taskSpec, dataSpec).then((taskResponse) => {
+    cy.headlessCreateTask(taskSpec, dataSpec, extras).then((taskResponse) => {
         taskID = taskResponse.taskID;
-        [jobID] = taskResponse.jobIDs;
+        if (validationParams) {
+            [groundTruthJobID, jobID] = taskResponse.jobIDs;
+        } else {
+            [jobID] = taskResponse.jobIDs;
+        }
     }).then(() => {
         if (gtJobSpec) {
             return cy.headlessCreateJob({
