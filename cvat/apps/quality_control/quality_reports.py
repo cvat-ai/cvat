@@ -2136,6 +2136,9 @@ class DatasetComparator:
             annotation_summary.ds_count += empty_frame_count
             annotation_summary.gt_count += empty_frame_count
 
+        # Cannot be computed in accumulate()
+        annotation_components.shape.mean_iou = np.mean(mean_ious)
+
         return annotation_summary, annotation_components
 
     def generate_report(self) -> ComparisonReport:
