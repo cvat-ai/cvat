@@ -1212,8 +1212,8 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "oks_sigma",
             "compare_line_orientation",
             "panoptic_comparison",
-            "match_empty_frames",
             "point_size_base",
+            "match_empty_frames",
         ],
     )
     def test_settings_affect_metrics(
