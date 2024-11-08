@@ -1986,6 +1986,8 @@ class DatasetComparator:
 
             valid_shapes_count = 1
             total_shapes_count = 1
+            ds_shapes_count = 1
+            gt_shapes_count = 1
 
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
             annotations=self._generate_frame_annotations_summary(
@@ -2030,7 +2032,7 @@ class DatasetComparator:
 
         return label_names, confusion_matrix, label_id_idx_map
 
-    def _compute_annotation_summary(
+    def _compute_annotations_summary(
         self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
     ) -> ComparisonReportAnnotationsSummary:
         matched_ann_counts = np.diag(confusion_matrix)
@@ -2076,7 +2078,7 @@ class DatasetComparator:
     def _generate_frame_annotations_summary(
         self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
     ) -> ComparisonReportAnnotationsSummary:
-        summary = self._compute_annotation_summary(confusion_matrix, confusion_matrix_labels)
+        summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
 
         if self.settings.match_empty_frames and summary.total_count == 0:
             # Add virtual annotations for empty frames
@@ -2124,7 +2126,7 @@ class DatasetComparator:
 
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
-        annotation_summary = self._compute_annotation_summary(
+        annotation_summary = self._compute_annotations_summary(
             confusion_matrix, confusion_matrix_labels
         )
 
