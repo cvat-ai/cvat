@@ -893,6 +893,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states, history, minZ, maxZ,
             } = action.payload;
 
+            const curZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+
             return {
                 ...state,
                 annotations: {
@@ -904,7 +906,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
+                        cur: curZLayer,
                     },
                 },
             };
