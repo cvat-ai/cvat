@@ -24,9 +24,6 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     function = serializers.CharField(help_text="The name of the function to execute")
     task = serializers.IntegerField(help_text="The id of the task to be annotated")
     job = serializers.IntegerField(required=False, help_text="The id of the job to be annotated")
-    quality = serializers.ChoiceField(choices=['compressed', 'original'], default="original",
-        help_text="The quality of the images to use in the model run"
-    )
     max_distance = serializers.IntegerField(required=False)
     threshold = serializers.FloatField(required=False)
     cleanup = serializers.BooleanField(help_text="Whether existing annotations should be removed", default=False)
