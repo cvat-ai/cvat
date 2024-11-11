@@ -32,10 +32,11 @@ export enum TasksActionTypes {
     UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
 }
 
-function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
+function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
         payload: {
+            fetchingTimestamp,
             updateQuery,
             query,
         },
@@ -69,23 +70,30 @@ export function getTasksAsync(
     query: Partial<TasksQuery>,
     updateQuery = true,
 ): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        dispatch(getTasks(query, updateQuery));
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const requestedOn = Date.now();
+        const isRequestRelevant = (): boolean => (
+            getState().tasks.fetchingTimestamp === requestedOn
+        );
 
+        dispatch(getTasks(query, updateQuery, requestedOn));
         const filteredQuery = filterNull(query);
 
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
         } catch (error) {
-            dispatch(getTasksFailed(error));
+            if (isRequestRelevant()) {
+                dispatch(getTasksFailed(error));
+            }
             return;
         }
 
-        const array = Array.from(result);
-
-        dispatch(getInferenceStatusAsync());
-        dispatch(getTasksSuccess(array, result.count));
+        if (isRequestRelevant()) {
+            const array = Array.from(result);
+            dispatch(getInferenceStatusAsync());
+            dispatch(getTasksSuccess(array, result.count));
+        }
     };
 }
 

@@ -7,12 +7,9 @@ from datetime import datetime
 
 import django_rq
 
+
 def schedule_job_with_throttling(
-    queue_name: str,
-    job_id_base: str,
-    scheduled_time: datetime,
-    func: Callable,
-    **func_kwargs
+    queue_name: str, job_id_base: str, scheduled_time: datetime, func: Callable, **func_kwargs
 ) -> None:
     """
     This function schedules an RQ job to run at `scheduled_time`,

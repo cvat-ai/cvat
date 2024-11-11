@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Protocol
 
 import attrs
 import PIL.Image
@@ -79,7 +80,7 @@ class DetectionFunction(Protocol):
 
     def detect(
         self, context: DetectionFunctionContext, image: PIL.Image.Image
-    ) -> List[models.LabeledShapeRequest]:
+    ) -> list[models.LabeledShapeRequest]:
         """
         Detects objects on the supplied image and returns the results.
 

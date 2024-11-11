@@ -41,18 +41,12 @@ simple_rules = read_rules(NAME)
 SCOPES = {rule["scope"] for rule in simple_rules}
 CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["none"]
-GROUPS = ["admin", "business", "user", "worker", "none"]
+GROUPS = ["admin", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 HAS_ANALYTICS_ACCESS = [True, False]
 
 
 def RESOURCES(scope):
-    if scope == "view":
-        return [
-            {"visibility": "public"},
-            {"visibility": "private"},
-        ]
-
     return [None]
 
 

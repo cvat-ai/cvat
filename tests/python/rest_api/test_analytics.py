@@ -38,7 +38,6 @@ class TestGetAnalytics:
         "conditions, is_allow",
         [
             (dict(privilege="admin"), True),
-            (dict(privilege="business"), True),
             (dict(privilege="worker", has_analytics_access=False), False),
             (dict(privilege="worker", has_analytics_access=True), True),
             (dict(privilege="user", has_analytics_access=False), False),

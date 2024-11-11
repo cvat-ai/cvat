@@ -133,7 +133,7 @@ class _LambdaTestCaseBase(ApiTestBase):
     @classmethod
     def _create_db_users(cls):
         (group_admin, _) = Group.objects.get_or_create(name="admin")
-        (group_user, _) = Group.objects.get_or_create(name="business")
+        (group_user, _) = Group.objects.get_or_create(name="user")
 
         user_admin = User.objects.create_superuser(username="admin", email="",
             password="admin")

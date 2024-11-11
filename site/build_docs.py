@@ -157,9 +157,7 @@ def validate_env():
         try:
             subprocess.run([hugo, "version"], capture_output=True)  # nosec
         except (subprocess.CalledProcessError, FileNotFoundError) as ex:
-            raise Exception(
-                f"Failed to run '{hugo}', please make sure it exists."
-            ) from ex
+            raise Exception(f"Failed to run '{hugo}', please make sure it exists.") from ex
 
 
 if __name__ == "__main__":

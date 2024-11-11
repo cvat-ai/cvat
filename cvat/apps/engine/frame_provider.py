@@ -369,7 +369,7 @@ class TaskFrameProvider(IFrameProvider):
         quality: FrameQuality = FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
-        frame_range = itertools.count(start_frame, self._db_task.data.get_frame_step())
+        frame_range = itertools.count(start_frame)
         if stop_frame:
             frame_range = itertools.takewhile(lambda x: x <= stop_frame, frame_range)
 
@@ -377,7 +377,10 @@ class TaskFrameProvider(IFrameProvider):
         db_segment_frame_set = None
         db_segment_frame_provider = None
         for idx in frame_range:
-            if db_segment and idx not in db_segment_frame_set:
+            if (
+                db_segment
+                and self._get_abs_frame_number(self._db_task.data, idx) not in db_segment_frame_set
+            ):
                 db_segment = None
                 db_segment_frame_set = None
                 db_segment_frame_provider = None

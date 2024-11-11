@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.21.3
+  version: 2.22.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -9658,9 +9658,28 @@ components:
           format: double
           description: |
             Like IoU threshold, but for points.
-            The percent of the bbox area, used as the radius of the circle around the GT point,
-            where the checked point is expected to be.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          allOf:
+          - $ref: '#/components/schemas/PointSizeBaseEnum'
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the OKS sigma parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
         line_thickness:
           type: number
           format: double
@@ -9710,6 +9729,14 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+        match_empty_frames:
+          type: boolean
+          default: false
+          description: |
+            Count empty frames as matching. This affects target metrics like accuracy in cases
+            there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -9854,6 +9881,14 @@ components:
       - GIT_INTEGRATION
       - MODELS
       - PREDICT
+    PointSizeBaseEnum:
+      enum:
+      - image_size
+      - group_bbox_size
+      type: string
+      description: |-
+        * `image_size` - IMAGE_SIZE
+        * `group_bbox_size` - GROUP_BBOX_SIZE
     ProjectFileRequest:
       type: object
       properties:
@@ -10138,9 +10173,28 @@ components:
           format: double
           description: |
             Like IoU threshold, but for points.
-            The percent of the bbox area, used as the radius of the circle around the GT point,
-            where the checked point is expected to be.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
             Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          allOf:
+          - $ref: '#/components/schemas/PointSizeBaseEnum'
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the OKS sigma parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
         line_thickness:
           type: number
           format: double
@@ -10190,6 +10244,14 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+        match_empty_frames:
+          type: boolean
+          default: false
+          description: |
+            Count empty frames as matching. This affects target metrics like accuracy in cases
+            there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
     RegisterSerializerEx:
       type: object
       properties:

@@ -211,6 +211,11 @@ export class FramesMetaData {
         return Math.floor(this.getFrameIndex(dataFrameNumber) / this.chunkSize);
     }
 
+    getSegmentFrameNumbers(jobStartFrame: number): number[] {
+        const frames = this.getDataFrameNumbers();
+        return frames.map((frame) => this.getJobRelativeFrameNumber(frame) + jobStartFrame);
+    }
+
     getDataFrameNumbers(): number[] {
         if (this.includedFrames) {
             return [...this.includedFrames];
@@ -348,9 +353,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             const requestId = +_.uniqueId();
             const requestedDataFrameNumber = meta.getDataFrameNumber(this.number - jobStartFrame);
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
-            const segmentFrameNumbers = meta.getDataFrameNumbers().map((dataFrameNumber: number) => (
-                meta.getJobRelativeFrameNumber(dataFrameNumber) + jobStartFrame
-            ));
+            const segmentFrameNumbers = meta.getSegmentFrameNumbers(jobStartFrame);
             const frame = provider.frame(this.number);
 
             function findTheNextNotDecodedChunk(currentFrameIndex: number): number | null {
@@ -889,9 +892,7 @@ export function getJobFrameNumbers(jobID: number): number[] {
     }
 
     const { meta, jobStartFrame } = frameDataCache[jobID];
-    return meta.getDataFrameNumbers().map((dataFrameNumber: number): number => (
-        meta.getJobRelativeFrameNumber(dataFrameNumber) + jobStartFrame
-    ));
+    return meta.getSegmentFrameNumbers(jobStartFrame);
 }
 
 export function clear(jobID: number): void {

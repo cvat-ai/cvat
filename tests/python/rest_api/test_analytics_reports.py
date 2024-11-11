@@ -4,7 +4,7 @@
 
 import json
 from http import HTTPStatus
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pytest
 from cvat_sdk.api_client import models
@@ -67,7 +67,7 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         job_id: Optional[int] = None,
         task_id: Optional[int] = None,
         project_id: Optional[int] = None,
-        expected_data: Optional[Dict[str, Any]] = None,
+        expected_data: Optional[dict[str, Any]] = None,
         **kwargs,
     ):
         params = self._get_query_params(job_id=job_id, task_id=task_id, project_id=project_id)

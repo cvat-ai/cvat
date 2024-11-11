@@ -187,6 +187,9 @@ class ComparisonParameters(_Serializable):
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
 
+    point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE
+    "Determines how to obtain the object size for point comparisons"
+
     line_thickness: float = 0.01
     "Thickness of polylines, relatively to the (image area) ^ 0.5"
 
@@ -214,6 +217,13 @@ class ComparisonParameters(_Serializable):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
+    match_empty_frames: bool = False
+    """
+    Consider unannotated (empty) frames as matching. If disabled, quality metrics, such as accuracy,
+    will be 0 if both GT and DS frames have no annotations. When enabled, they will be 1 instead.
+    This will also add virtual annotations to empty frames in the comparison results.
+    """
+
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
             return str(v.name)
@@ -229,11 +239,11 @@ class ComparisonParameters(_Serializable):
 @define(kw_only=True)
 class ConfusionMatrix(_Serializable):
     labels: List[str]
-    rows: np.array
-    precision: np.array
-    recall: np.array
-    accuracy: np.array
-    jaccard_index: Optional[np.array]
+    rows: np.ndarray
+    precision: np.ndarray
+    recall: np.ndarray
+    accuracy: np.ndarray
+    jaccard_index: Optional[np.ndarray]
 
     @property
     def axes(self):
@@ -955,6 +965,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
+        point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE,
         compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
@@ -967,6 +978,9 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         self.oks_sigma = oks_sigma
         "% of the shape area"
+
+        self.point_size_base = point_size_base
+        "Compare point groups using the group bbox size or the image size"
 
         self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
@@ -1293,13 +1307,20 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
                 # Try to align points and then return the metric
-                # match them in their bbox space
 
-                if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
-                    return 0
+                if self.point_size_base == models.PointSizeBase.IMAGE_SIZE:
+                    scale = img_h * img_w
+                elif self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
+                    # match points in their bbox space
 
-                bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-                scale = bbox[2] * bbox[3]
+                    if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+                        # this early exit may not work for points forming an axis-aligned line
+                        return 0
+
+                    bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+                    scale = bbox[2] * bbox[3]
+                else:
+                    assert False, f"Unknown point size base {self.point_size_base}"
 
                 a_points = np.reshape(a.points, (-1, 2))
                 b_points = np.reshape(b.points, (-1, 2))
@@ -1525,6 +1546,7 @@ class _Comparator:
             panoptic_comparison=settings.panoptic_comparison,
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
+            point_size_base=settings.point_size_base,
             line_torso_radius=settings.line_thickness,
             compare_line_orientation=False,  # should not be taken from outside, handled differently
         )
@@ -1957,8 +1979,18 @@ class DatasetComparator:
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
+        if self.settings.match_empty_frames and not gt_item.annotations and not ds_item.annotations:
+            # Add virtual annotations for empty frames
+            valid_labels_count = 1
+            total_labels_count = 1
+
+            valid_shapes_count = 1
+            total_shapes_count = 1
+            ds_shapes_count = 1
+            gt_shapes_count = 1
+
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
-            annotations=self._generate_annotations_summary(
+            annotations=self._generate_frame_annotations_summary(
                 confusion_matrix, confusion_matrix_labels
             ),
             annotation_components=ComparisonReportAnnotationComponentsSummary(
@@ -2000,9 +2032,8 @@ class DatasetComparator:
 
         return label_names, confusion_matrix, label_id_idx_map
 
-    @classmethod
-    def _generate_annotations_summary(
-        cls, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+    def _compute_annotations_summary(
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
     ) -> ComparisonReportAnnotationsSummary:
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
@@ -2022,10 +2053,10 @@ class DatasetComparator:
         ) / (total_annotations_count or 1)
 
         valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[cls._UNMATCHED_IDX, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, cls._UNMATCHED_IDX])
-        ds_annotations_count = np.sum(ds_ann_counts[: cls._UNMATCHED_IDX])
-        gt_annotations_count = np.sum(gt_ann_counts[: cls._UNMATCHED_IDX])
+        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
+        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
+        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
+        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
 
         return ComparisonReportAnnotationsSummary(
             valid_count=valid_annotations_count,
@@ -2044,12 +2075,24 @@ class DatasetComparator:
             ),
         )
 
-    def generate_report(self) -> ComparisonReport:
-        self._find_gt_conflicts()
+    def _generate_frame_annotations_summary(
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+    ) -> ComparisonReportAnnotationsSummary:
+        summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
 
+        if self.settings.match_empty_frames and summary.total_count == 0:
+            # Add virtual annotations for empty frames
+            summary.valid_count = 1
+            summary.total_count = 1
+            summary.ds_count = 1
+            summary.gt_count = 1
+
+        return summary
+
+    def _generate_dataset_annotations_summary(
+        self, frame_summaries: Dict[int, ComparisonReportFrameSummary]
+    ) -> Tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
         # accumulate stats
-        intersection_frames = []
-        conflicts = []
         annotation_components = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=0,
@@ -2067,18 +2110,51 @@ class DatasetComparator:
             ),
         )
         mean_ious = []
+        empty_frame_count = 0
         confusion_matrix_labels, confusion_matrix, _ = self._make_zero_confusion_matrix()
 
-        for frame_id, frame_result in self._frame_results.items():
-            intersection_frames.append(frame_id)
-            conflicts += frame_result.conflicts
+        for frame_result in frame_summaries.values():
             confusion_matrix += frame_result.annotations.confusion_matrix.rows
+
+            if not np.any(frame_result.annotations.confusion_matrix.rows):
+                empty_frame_count += 1
 
             if annotation_components is None:
                 annotation_components = deepcopy(frame_result.annotation_components)
             else:
                 annotation_components.accumulate(frame_result.annotation_components)
+
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
+
+        annotation_summary = self._compute_annotations_summary(
+            confusion_matrix, confusion_matrix_labels
+        )
+
+        if self.settings.match_empty_frames and empty_frame_count:
+            # Add virtual annotations for empty frames,
+            # they are not included in the confusion matrix
+            annotation_summary.valid_count += empty_frame_count
+            annotation_summary.total_count += empty_frame_count
+            annotation_summary.ds_count += empty_frame_count
+            annotation_summary.gt_count += empty_frame_count
+
+        # Cannot be computed in accumulate()
+        annotation_components.shape.mean_iou = np.mean(mean_ious)
+
+        return annotation_summary, annotation_components
+
+    def generate_report(self) -> ComparisonReport:
+        self._find_gt_conflicts()
+
+        intersection_frames = []
+        conflicts = []
+        for frame_id, frame_result in self._frame_results.items():
+            intersection_frames.append(frame_id)
+            conflicts += frame_result.conflicts
+
+        annotation_summary, annotations_component_summary = (
+            self._generate_dataset_annotations_summary(self._frame_results)
+        )
 
         return ComparisonReport(
             parameters=self.settings,
@@ -2095,25 +2171,8 @@ class DatasetComparator:
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                annotations=self._generate_annotations_summary(
-                    confusion_matrix, confusion_matrix_labels
-                ),
-                annotation_components=ComparisonReportAnnotationComponentsSummary(
-                    shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=annotation_components.shape.valid_count,
-                        missing_count=annotation_components.shape.missing_count,
-                        extra_count=annotation_components.shape.extra_count,
-                        total_count=annotation_components.shape.total_count,
-                        ds_count=annotation_components.shape.ds_count,
-                        gt_count=annotation_components.shape.gt_count,
-                        mean_iou=np.mean(mean_ious),
-                    ),
-                    label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=annotation_components.label.valid_count,
-                        invalid_count=annotation_components.label.invalid_count,
-                        total_count=annotation_components.label.total_count,
-                    ),
-                ),
+                annotations=annotation_summary,
+                annotation_components=annotations_component_summary,
             ),
             frame_results=self._frame_results,
         )

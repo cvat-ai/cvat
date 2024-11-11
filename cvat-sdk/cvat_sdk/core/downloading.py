@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import expect_status
@@ -80,8 +80,8 @@ class Downloader:
         self,
         endpoint: Endpoint,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
+        url_params: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
         status_check_period: Optional[int] = None,
     ):
         client = self._client
@@ -118,8 +118,8 @@ class Downloader:
         endpoint: Endpoint,
         filename: Path,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
+        url_params: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
     ):

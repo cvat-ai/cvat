@@ -285,6 +285,7 @@ class CommonData(InstanceLabelData):
         self._db_data: models.Data = db_task.data
         self._use_server_track_ids = use_server_track_ids
         self._required_frames = included_frames
+        self._initialized_included_frames: Optional[Set[int]] = None
         self._db_subset = db_task.subset
 
         super().__init__(db_task)
@@ -536,12 +537,14 @@ class CommonData(InstanceLabelData):
                 yield self._export_labeled_shape(shape)
 
     def get_included_frames(self):
-        return set(
-            i for i in self.rel_range
-            if not self._is_frame_deleted(i)
-            and not self._is_frame_excluded(i)
-            and self._is_frame_required(i)
-        )
+        if self._initialized_included_frames is None:
+            self._initialized_included_frames = set(
+                i for i in self.rel_range
+                if not self._is_frame_deleted(i)
+                and not self._is_frame_excluded(i)
+                and self._is_frame_required(i)
+            )
+        return self._initialized_included_frames
 
     def _is_frame_deleted(self, frame):
         return frame in self._deleted_frames
@@ -1112,7 +1115,10 @@ class ProjectData(InstanceLabelData):
                 } for frame in range(task.data.size)})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
-                    "path": mangle_image_name(db_image.path, defaulted_subset, original_names),
+                    # do not modify honeypot names since they will be excluded from the dataset
+                    # and their quantity should not affect the validation frame name
+                    "path": mangle_image_name(db_image.path, defaulted_subset, original_names) \
+                        if not db_image.is_placeholder else db_image.path,
                     "id": db_image.id,
                     "width": db_image.width,
                     "height": db_image.height,
@@ -1271,24 +1277,35 @@ class ProjectData(InstanceLabelData):
             return frames[(frame_info["subset"], abs_frame)]
 
         if include_empty:
-            for ident in sorted(self._frame_info):
-                if ident not in self._deleted_frames:
-                    get_frame(*ident)
+            for task_id, frame in sorted(self._frame_info):
+                if not self._tasks_data.get(task_id):
+                    self.init_task_data(task_id)
 
-        for task in self._db_tasks.values():
+                task_included_frames = self._tasks_data[task_id].get_included_frames()
+                if frame in task_included_frames:
+                    get_frame(task_id, frame)
+
+        for task_data in self.task_data:
+            task: Task = task_data.db_instance
+
             anno_manager = AnnotationManager(
                 self._annotation_irs[task.id], dimension=self._annotation_irs[task.id].dimension
             )
+            task_included_frames = task_data.get_included_frames()
+
             for shape in sorted(
                 anno_manager.to_shapes(
                     task.data.size,
+                    included_frames=task_included_frames,
                     include_outside=False,
                     use_server_track_ids=self._use_server_track_ids
                 ),
                 key=lambda shape: shape.get("z_order", 0)
             ):
-                if (task.id, shape['frame']) not in self._frame_info or (task.id, shape['frame']) in self._deleted_frames:
+                if shape['frame'] in task_data.deleted_frames:
                     continue
+
+                assert (task.id, shape['frame']) in self._frame_info
 
                 if 'track_id' in shape:
                     if shape['outside']:
@@ -1368,23 +1385,33 @@ class ProjectData(InstanceLabelData):
         for task_data in self._tasks_data.values():
             task_data.soft_attribute_import = value
 
+
+    def init_task_data(self, task_id: int) -> TaskData:
+        try:
+            task = self._db_tasks[task_id]
+        except KeyError as ex:
+            raise Exception("There is no such task in the project") from ex
+
+        task_data = TaskData(
+            annotation_ir=self._annotation_irs[task_id],
+            db_task=task,
+            host=self._host,
+            create_callback=self._task_annotations[task_id].create \
+                if self._task_annotations is not None else None,
+        )
+        task_data._MAX_ANNO_SIZE //= len(self._db_tasks)
+        task_data.soft_attribute_import = self.soft_attribute_import
+        self._tasks_data[task_id] = task_data
+
+        return task_data
+
     @property
     def task_data(self):
-        for task_id, task in self._db_tasks.items():
+        for task_id in self._db_tasks.keys():
             if task_id in self._tasks_data:
                 yield self._tasks_data[task_id]
             else:
-                task_data = TaskData(
-                    annotation_ir=self._annotation_irs[task_id],
-                    db_task=task,
-                    host=self._host,
-                    create_callback=self._task_annotations[task_id].create \
-                        if self._task_annotations is not None else None,
-                )
-                task_data._MAX_ANNO_SIZE //= len(self._db_tasks)
-                task_data.soft_attribute_import = self.soft_attribute_import
-                self._tasks_data[task_id] = task_data
-                yield task_data
+                yield self.init_task_data(task_id)
 
     @staticmethod
     def _get_filename(path):

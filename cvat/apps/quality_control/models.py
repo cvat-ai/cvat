@@ -196,6 +196,18 @@ class AnnotationId(models.Model):
             raise ValidationError(f"Unexpected type value '{self.type}'")
 
 
+class PointSizeBase(str, Enum):
+    IMAGE_SIZE = "image_size"
+    GROUP_BBOX_SIZE = "group_bbox_size"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class QualitySettings(models.Model):
     task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
 
@@ -204,6 +216,10 @@ class QualitySettings(models.Model):
     line_thickness = models.FloatField()
 
     low_overlap_threshold = models.FloatField()
+
+    point_size_base = models.CharField(
+        max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
+    )
 
     compare_line_orientation = models.BooleanField()
     line_orientation_threshold = models.FloatField()
@@ -217,6 +233,8 @@ class QualitySettings(models.Model):
     panoptic_comparison = models.BooleanField()
 
     compare_attributes = models.BooleanField()
+
+    match_empty_frames = models.BooleanField(default=False)
 
     target_metric = models.CharField(
         max_length=32,
