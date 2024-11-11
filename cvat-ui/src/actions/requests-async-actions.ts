@@ -37,12 +37,14 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                 .forEach((request: Request): void => {
                     const {
                         id: rqID,
+                        status,
                         operation: {
                             type, target, format, taskID, projectID, jobID,
                         },
                     } = request;
 
-                    if (state.requests.requests[rqID]) {
+                    const isRequestFinished = [RQStatus.FINISHED, RQStatus.FAILED].includes(status);
+                    if (state.requests.requests[rqID] || isRequestFinished) {
                         return;
                     }
 

@@ -187,6 +187,9 @@ class ComparisonParameters(_Serializable):
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
 
+    point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE
+    "Determines how to obtain the object size for point comparisons"
+
     line_thickness: float = 0.01
     "Thickness of polylines, relatively to the (image area) ^ 0.5"
 
@@ -955,6 +958,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
+        point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE,
         compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
@@ -967,6 +971,9 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         self.oks_sigma = oks_sigma
         "% of the shape area"
+
+        self.point_size_base = point_size_base
+        "Compare point groups using the group bbox size or the image size"
 
         self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
@@ -1293,13 +1300,20 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
                 # Try to align points and then return the metric
-                # match them in their bbox space
 
-                if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
-                    return 0
+                if self.point_size_base == models.PointSizeBase.IMAGE_SIZE:
+                    scale = img_h * img_w
+                elif self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
+                    # match points in their bbox space
 
-                bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-                scale = bbox[2] * bbox[3]
+                    if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+                        # this early exit may not work for points forming an axis-aligned line
+                        return 0
+
+                    bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+                    scale = bbox[2] * bbox[3]
+                else:
+                    assert False, f"Unknown point size base {self.point_size_base}"
 
                 a_points = np.reshape(a.points, (-1, 2))
                 b_points = np.reshape(b.points, (-1, 2))
@@ -1525,6 +1539,7 @@ class _Comparator:
             panoptic_comparison=settings.panoptic_comparison,
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
+            point_size_base=settings.point_size_base,
             line_torso_radius=settings.line_thickness,
             compare_line_orientation=False,  # should not be taken from outside, handled differently
         )
