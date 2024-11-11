@@ -30,6 +30,7 @@ from typing import (
     overload,
 )
 
+import attrs
 import av
 import cv2
 import django_rq
@@ -75,13 +76,48 @@ class CvatCacheTimestampMismatchError(Exception):
     pass
 
 
+def _is_run_inside_rq() -> bool:
+    return rq.get_current_job() is not None
+
+
+def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
+    result = []
+    for func_arg in func_args:
+        if _is_run_inside_rq():
+            result.append(func_arg)
+        else:
+            if isinstance(
+                func_arg,
+                (models.Task, models.Segment, models.Job, models.CloudStorage, models.Data),
+            ):
+                result.append(func_arg.id)
+            elif isinstance(func_arg, list):
+                result.append(_convert_args_for_callback(func_arg))
+            else:
+                result.append(func_arg)
+
+    return result
+
+
+@attrs.define
+class Callback:
+    _callable: Callable[..., DataWithMime]
+    _args: list[Any] = attrs.field(converter=_convert_args_for_callback, factory=list)
+    _kwargs: dict[str, Any] = attrs.Factory(dict)
+
+    def __call__(
+        self,
+    ) -> Any:
+        return self._callable(*self._args, **self._kwargs)
+
+
 class MediaCache:
     _QUEUE_NAME = settings.CVAT_QUEUES.CHUNKS.value
     _QUEUE_JOB_PREFIX_TASK = "chunks:prepare-item-"
     _SLEEP_TIMEOUT = settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL
     _CHUNK_CREATE_TIMEOUT = settings.CVAT_CHUNK_CREATE_TIMEOUT
     _CACHE_NAME = "media"
-    _LOCK_TIMEOUT = 5
+    _LOCK_TIMEOUT = 50
     _RQ_JOB_RESULT_TTL = 60
     _RQ_JOB_FAILURE_TTL = 3600 * 24 * 14  # 2 weeks
     _PREVIEW_TTL = settings.CVAT_PREVIEW_CACHE_TTL
@@ -97,10 +133,9 @@ class MediaCache:
     def _get_or_set_cache_item(
         self,
         key: str,
-        create_callback: Callable[..., DataWithMime],
-        *args: Any,
+        create_callback: Callback,
+        *,
         cache_item_ttl: Optional[int] = None,
-        **kwargs: Any,
     ) -> _CacheItem:
         item = self._get_cache_item(key)
         if item:
@@ -109,9 +144,7 @@ class MediaCache:
         return self._create_cache_item(
             key,
             create_callback,
-            *args,
             cache_item_ttl=cache_item_ttl,
-            **kwargs,
         )
 
     def _get_queue(self) -> rq.Queue:
@@ -128,13 +161,11 @@ class MediaCache:
     def _create_and_set_cache_item(
         cls,
         key: str,
-        create_callback: Callable[..., DataWithMime],
-        *args: Any,
+        create_callback: Callback,
         cache_item_ttl: Optional[int] = None,
-        **kwargs: Any,
     ) -> DataWithMime:
         timestamp = django_tz.now()
-        item_data = create_callback(*args, **kwargs)
+        item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
         item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes), timestamp)
         if item_data_bytes:
@@ -163,24 +194,21 @@ class MediaCache:
     def _create_cache_item(
         self,
         key: str,
-        create_callback: Callable[..., DataWithMime],
-        *args: Any,
+        create_callback: Callback,
+        *,
         cache_item_ttl: Optional[int] = None,
-        **kwargs: Any,
     ) -> _CacheItem:
 
         queue = self._get_queue()
         rq_id = self._make_queue_job_id(key)
 
         slogger.glob.info(f"Starting to prepare chunk: key {key}")
-        if self._is_run_inside_rq():
+        if _is_run_inside_rq():
             with get_rq_lock_for_job(queue, rq_id, timeout=None, blocking_timeout=None):
                 item = self._create_and_set_cache_item(
                     key,
                     create_callback,
-                    *args,
                     cache_item_ttl=cache_item_ttl,
-                    **kwargs,
                 )
         else:
             try:
@@ -193,9 +221,7 @@ class MediaCache:
                             self._create_and_set_cache_item,
                             key,
                             create_callback,
-                            *args,
                             cache_item_ttl=cache_item_ttl,
-                            **kwargs,
                             job_id=rq_id,
                             result_ttl=self._RQ_JOB_RESULT_TTL,
                             failure_ttl=self._RQ_JOB_FAILURE_TTL,
@@ -237,12 +263,13 @@ class MediaCache:
 
         return item
 
-    def _validate_cache_item_timestamp(self, item: _CacheItem, expected_timestamp: datetime):
-        if item:
-            if item[3] < expected_timestamp:
-                raise CvatCacheTimestampMismatchError(
-                    f"Cache timestamp mismatch. Item_ts: {item[3]}, expected_ts: {expected_timestamp}"
-                )
+    def _validate_cache_item_timestamp(
+        self, item: _CacheItem, expected_timestamp: datetime
+    ) -> _CacheItem:
+        if item[3] < expected_timestamp:
+            raise CvatCacheTimestampMismatchError(
+                f"Cache timestamp mismatch. Item_ts: {item[3]}, expected_ts: {expected_timestamp}"
+            )
 
         return item
 
@@ -302,18 +329,17 @@ class MediaCache:
 
         return cache_item[:2]
 
-    def _is_run_inside_rq(self) -> bool:
-        return rq.get_current_job() is not None
-
     def get_or_set_segment_chunk(
         self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
+
         item = self._get_or_set_cache_item(
             self._make_chunk_key(db_segment, chunk_number, quality=quality),
-            self.prepare_segment_chunk,
-            db_segment,
-            chunk_number,
-            quality=quality,
+            Callback(
+                callable=self.prepare_segment_chunk,
+                args=[db_segment, chunk_number],
+                kwargs={"quality": quality},
+            ),
         )
         db_segment.refresh_from_db(fields=["chunks_updated_date"])
 
@@ -334,22 +360,14 @@ class MediaCache:
         self,
         db_task: models.Task,
         chunk_number: int,
+        set_callback: Callback,
         *,
         quality: FrameQuality,
-        set_callback: Callable[..., DataWithMime],
-        set_callback_args: Union[list[Any], None] = None,
-        set_callback_kwargs: Union[dict[str, Any], None] = None,
     ) -> DataWithMime:
-        if set_callback_args is None:
-            set_callback_args = []
-        if set_callback_kwargs is None:
-            set_callback_kwargs = {}
 
         item = self._get_or_set_cache_item(
             self._make_chunk_key(db_task, chunk_number, quality=quality),
             set_callback,
-            *set_callback_args,
-            **set_callback_kwargs,
         )
         db_task.refresh_from_db(fields=["segment_set"])
 
@@ -372,20 +390,12 @@ class MediaCache:
         chunk_number: int,
         *,
         quality: FrameQuality,
-        set_callback: Callable[..., DataWithMime],
-        set_callback_args: Union[list[Any], None] = None,
-        set_callback_kwargs: Union[dict[str, Any], None] = None,
+        set_callback: Callback,
     ) -> DataWithMime:
-        if set_callback_args is None:
-            set_callback_args = []
-        if set_callback_kwargs is None:
-            set_callback_kwargs = {}
 
         item = self._get_or_set_cache_item(
             self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
             set_callback,
-            *set_callback_args,
-            **set_callback_kwargs,
         )
         db_segment.refresh_from_db(fields=["chunks_updated_date"])
 
@@ -399,10 +409,13 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
                 self._make_chunk_key(db_job, chunk_number, quality=quality),
-                self.prepare_masked_range_segment_chunk,
-                self._make_callback_db_object_arg(db_job.segment),
-                chunk_number,
-                quality=quality,
+                Callback(
+                    callable=self.prepare_masked_range_segment_chunk,
+                    args=[db_job.segment, chunk_number],
+                    kwargs={
+                        "quality": quality,
+                    },
+                ),
             )
         )
 
@@ -410,8 +423,10 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
                 self._make_preview_key(db_segment),
-                self._prepare_segment_preview,
-                self._make_callback_db_object_arg(db_segment),
+                Callback(
+                    callable=self._prepare_segment_preview,
+                    args=[db_segment],
+                ),
                 cache_item_ttl=self._PREVIEW_TTL,
             )
         )
@@ -423,12 +438,6 @@ class MediaCache:
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
-    def _make_callback_db_object_arg(
-        self,
-        db_obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
-    ) -> Union[models.Task, models.Segment, models.Job, models.CloudStorage, int]:
-        return db_obj if self._is_run_inside_rq() else db_obj.id
-
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
         return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))
 
@@ -436,8 +445,10 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
                 self._make_preview_key(db_storage),
-                self._prepare_cloud_preview,
-                self._make_callback_db_object_arg(db_storage),
+                Callback(
+                    callable=self._prepare_cloud_preview,
+                    args=[db_storage],
+                ),
                 cache_item_ttl=self._PREVIEW_TTL,
             )
         )
@@ -448,9 +459,10 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
                 self._make_context_image_preview_key(db_data, frame_number),
-                self.prepare_context_images_chunk,
-                self._make_callback_db_object_arg(db_data),
-                frame_number,
+                Callback(
+                    callable=self.prepare_context_images_chunk,
+                    args=[db_data, frame_number],
+                ),
             )
         )
 
@@ -585,8 +597,11 @@ class MediaCache:
             yield from MediaCache._read_raw_images(db_task, frame_ids, manifest_path=manifest_path)
 
     def prepare_segment_chunk(
-        self, db_segment: models.Segment, chunk_number: int, *, quality: FrameQuality
+        self, db_segment: Union[models.Segment, int], chunk_number: int, *, quality: FrameQuality
     ) -> DataWithMime:
+        if isinstance(db_segment, int):
+            db_segment = models.Segment.objects.get(pk=db_segment)
+
         if db_segment.type == models.SegmentType.RANGE:
             return self.prepare_range_segment_chunk(db_segment, chunk_number, quality=quality)
         elif db_segment.type == models.SegmentType.SPECIFIC_FRAMES:

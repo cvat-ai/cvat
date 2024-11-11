@@ -324,7 +324,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.CHUNKS.value: {
         **shared_queue_settings,
-        'DEFAULT_TIMEOUT': '1m',
+        'DEFAULT_TIMEOUT': '5m',
     },
 }
 
@@ -563,7 +563,7 @@ CACHES = {
 
 USE_CACHE = True
 
-# Sets the chunk preparation timeout after which the backend will respond with 429 code.
+# Sets the chunk preparation timeout in seconds after which the backend will respond with 429 code.
 CVAT_CHUNK_CREATE_TIMEOUT = 50
 
 # Sets the frequency of checking the readiness of the chunk

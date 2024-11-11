@@ -37,7 +37,7 @@ from PIL import Image
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import DataWithMime, MediaCache, prepare_chunk
+from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_chunk
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
     IMediaReader,
@@ -315,12 +315,14 @@ class TaskFrameProvider(IFrameProvider):
             self._db_task,
             chunk_number,
             quality=quality,
-            set_callback=self._get_chunk_create_callback,
-            set_callback_args=(
-                cache._make_callback_db_object_arg(self._db_task),
-                [cache._make_callback_db_object_arg(s) for s in matching_segments],
-                {f: self.get_rel_frame_number(f) for f in task_chunk_frame_set},
-                quality,
+            set_callback=Callback(
+                callable=self._get_chunk_create_callback,
+                args=[
+                    self._db_task,
+                    matching_segments,
+                    {f: self.get_rel_frame_number(f) for f in task_chunk_frame_set},
+                    quality,
+                ],
             ),
         )
 
@@ -328,7 +330,10 @@ class TaskFrameProvider(IFrameProvider):
 
     @staticmethod
     def _get_chunk_create_callback(
-        db_task: models.Task | int, matching_segments, task_chunk_frames_with_rel_numbers, quality
+        db_task: Union[models.Task, int],
+        matching_segments: list[models.Segment],
+        task_chunk_frames_with_rel_numbers: dict[int, int],
+        quality: FrameQuality,
     ) -> DataWithMime:
         # Create and return a joined / cleaned chunk
         task_chunk_frames = OrderedDict()
@@ -687,12 +692,14 @@ class JobFrameProvider(SegmentFrameProvider):
             self._db_segment,
             chunk_number,
             quality=quality,
-            set_callback=self._get_chunk_create_callback,
-            set_callback_args=(
-                cache._make_callback_db_object_arg(self._db_segment),
-                segment_chunk_frame_ids,
-                chunk_number,
-                quality,
+            set_callback=Callback(
+                callable=self._get_chunk_create_callback,
+                args=[
+                    self._db_segment,
+                    segment_chunk_frame_ids,
+                    chunk_number,
+                    quality,
+                ],
             ),
         )
 
@@ -700,7 +707,10 @@ class JobFrameProvider(SegmentFrameProvider):
 
     @staticmethod
     def _get_chunk_create_callback(
-        db_segment: models.Segment | int, segment_chunk_frame_ids, chunk_number, quality
+        db_segment: Union[models.Segment, int],
+        segment_chunk_frame_ids: list[int],
+        chunk_number: int,
+        quality: FrameQuality,
     ) -> DataWithMime:
         # Create and return a joined / cleaned chunk
         if isinstance(db_segment, int):
