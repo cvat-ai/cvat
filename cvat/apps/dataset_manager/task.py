@@ -13,7 +13,7 @@ from typing import Optional, Union
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
-from django.db.models.query import Prefetch
+from django.db.models.query import Prefetch, QuerySet
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
@@ -81,9 +81,10 @@ def merge_table_rows(rows, keys_for_merge, field_id):
 
     return list(merged_rows.values())
 
+
 class JobAnnotation:
     @classmethod
-    def add_prefetch_info(cls, queryset):
+    def add_prefetch_info(cls, queryset: QuerySet, prefetch_images: bool):
         assert issubclass(queryset.model, models.Job)
 
         label_qs = add_prefetch_fields(models.Label.objects.all(), [
@@ -92,6 +93,12 @@ class JobAnnotation:
             'attributespec_set',
         ])
         label_qs = JobData.add_prefetch_info(label_qs)
+
+        task_data_queryset = models.Data.objects.select_related('video')
+        if prefetch_images:
+            task_data_queryset = task_data_queryset.prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.order_by('frame'))
+            )
 
         return queryset.select_related(
             'segment',
@@ -103,18 +110,15 @@ class JobAnnotation:
             'segment__task__project__owner',
             'segment__task__project__assignee',
 
-            Prefetch('segment__task__data',
-                queryset=models.Data.objects.select_related('video').prefetch_related(
-                    Prefetch('images', queryset=models.Image.objects.order_by('frame'))
-            )),
+            Prefetch('segment__task__data', queryset=task_data_queryset),
 
             Prefetch('segment__task__label_set', queryset=label_qs),
             Prefetch('segment__task__project__label_set', queryset=label_qs),
         )
 
-    def __init__(self, pk, *, is_prefetched=False, queryset=None):
+    def __init__(self, pk, *, is_prefetched: bool = False, queryset: QuerySet = None, prefetch_images: bool = True):
         if queryset is None:
-            queryset = self.add_prefetch_info(models.Job.objects)
+            queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
 
         if is_prefetched:
             self.db_job: models.Job = queryset.select_related(
@@ -1018,7 +1022,7 @@ def put_job_data(pk, data):
 @plugin_decorator
 @transaction.atomic
 def patch_job_data(pk, data, action):
-    annotation = JobAnnotation(pk)
+    annotation = JobAnnotation(pk, prefetch_images=False)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
@@ -1031,7 +1035,7 @@ def patch_job_data(pk, data, action):
 @silk_profile(name="DELETE job data")
 @transaction.atomic
 def delete_job_data(pk):
-    annotation = JobAnnotation(pk)
+    annotation = JobAnnotation(pk, prefetch_images=False)
     annotation.delete()
 
 def export_job(job_id, dst_file, format_name, server_url=None, save_images=False):
