@@ -347,3 +347,17 @@ class TestCLI:
 
         annotations = fxt_new_task.get_annotations()
         assert annotations.shapes
+
+    def test_auto_annotate_with_threshold(self, fxt_new_task: Task):
+        annotations = fxt_new_task.get_annotations()
+        assert not annotations.shapes
+
+        self.run_cli(
+            "auto-annotate",
+            str(fxt_new_task.id),
+            f"--function-module={__package__}.threshold_function",
+            "--threshold=0.75",
+        )
+
+        annotations = fxt_new_task.get_annotations()
+        assert annotations.shapes[0].points[0] == 0.75
