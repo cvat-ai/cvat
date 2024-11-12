@@ -5,6 +5,8 @@ description: |-
   Annotate and label your images with the [Computer Vision Annotation Tool (CVAT)](https://www.cvat.ai/).
   
   <img class='fit', src='https://raw.githubusercontent.com/ai4os/ai4os-cvat/refs/heads/v2.7.3-AI4OS/site/content/en/images/cvat-ai-screencast.gif'/>
+
+  **Important**: To use this tool you _must_ have at least one storage provider linked to your account.
 dates:
   created: '2024-07-01'
   updated: '2024-08-12'
