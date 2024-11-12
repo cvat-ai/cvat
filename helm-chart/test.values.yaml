@@ -28,7 +28,9 @@ cvat:
         - name: NUMPROCS
           value: '2'
     utils:
-      replicas: 0
+      additionalEnv:
+        - name: DJANGO_SETTINGS_MODULE
+          value: cvat.settings.testing_rest
     annotation:
       replicas: 0
     # Images are already present in the node
