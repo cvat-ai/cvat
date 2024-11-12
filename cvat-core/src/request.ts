@@ -55,6 +55,7 @@ export class Request {
         return this.#status.toLowerCase() as RQStatus;
     }
 
+    // The `progress` represents a value between 0 and 1
     get progress(): number | undefined {
         return this.#progress;
     }
