@@ -12,7 +12,7 @@ import textwrap
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -231,7 +231,7 @@ class LambdaFunction:
     def invoke(
         self,
         db_task: Task,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         *,
         db_job: Optional[Job] = None,
         is_interactive: Optional[bool] = False,
@@ -262,7 +262,7 @@ class LambdaFunction:
         model_labels = self.labels
         task_labels = db_task.get_labels(prefetch=True)
 
-        def labels_compatible(model_label: Dict, task_label: Label) -> bool:
+        def labels_compatible(model_label: dict, task_label: Label) -> bool:
             model_type = model_label['type']
             db_type = task_label.type
             compatible_types = [[ShapeType.MASK, ShapeType.POLYGON]]
@@ -654,9 +654,9 @@ class LambdaJob:
         cls,
         function: LambdaFunction,
         db_task: Task,
-        labels: Dict[str, Dict[str, Any]],
+        labels: dict[str, dict[str, Any]],
         threshold: float,
-        mapping: Optional[Dict[str, str]],
+        mapping: Optional[dict[str, str]],
         conv_mask_to_poly: bool,
         *,
         db_job: Optional[Job] = None
