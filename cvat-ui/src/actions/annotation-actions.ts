@@ -1081,7 +1081,7 @@ export function finishCurrentJobAsync(): ThunkAction {
 export function rememberObject(createParams: {
     activeObjectType?: ObjectType;
     activeLabelID?: number;
-    activeShapeType?: ShapeType;
+    activeShapeType?: ShapeType | null;
     activeNumOfPoints?: number;
     activeRectDrawingMethod?: RectDrawingMethod;
     activeCuboidDrawingMethod?: CuboidDrawingMethod;
