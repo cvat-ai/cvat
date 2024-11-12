@@ -545,6 +545,7 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
     segment_set: models.manager.RelatedManager[Segment]
+    project_id: int | None
 
     # Extend default permission model
     class Meta:

@@ -255,6 +255,9 @@ class MediaCache:
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
+    def bulk_delete(self, keys: Sequence[str]) -> None:
+        self._cache.delete_many(keys)
+
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
         return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))
 
