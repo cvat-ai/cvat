@@ -18173,6 +18173,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18196,6 +18197,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18219,6 +18221,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18242,6 +18245,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18265,6 +18269,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18288,6 +18293,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18311,6 +18317,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18334,6 +18341,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18357,6 +18365,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18380,6 +18389,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18403,6 +18413,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18426,6 +18437,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18449,6 +18461,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18472,6 +18485,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18495,6 +18509,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18518,6 +18533,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18541,6 +18557,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18564,6 +18581,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18587,6 +18605,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18610,6 +18629,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18633,6 +18653,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18656,6 +18677,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18679,6 +18701,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18702,6 +18725,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0

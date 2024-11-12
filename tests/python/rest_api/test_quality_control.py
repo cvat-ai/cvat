@@ -1213,6 +1213,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "compare_line_orientation",
             "panoptic_comparison",
             "point_size_base",
+            "match_empty_frames",
         ],
     )
     def test_settings_affect_metrics(
@@ -1245,7 +1246,12 @@ class TestQualityReportMetrics(_PermissionTestBase):
             )
 
         new_report = self.create_quality_report(admin_user, task_id)
-        assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
+        if parameter == "match_empty_frames":
+            assert new_report["summary"]["valid_count"] != old_report["summary"]["valid_count"]
+        else:
+            assert (
+                new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
+            )
 
     def test_old_report_can_be_loaded(self, admin_user, quality_reports):
         report = min((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])

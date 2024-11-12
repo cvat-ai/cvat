@@ -149,7 +149,7 @@ function RequestCard(props: Props): JSX.Element {
     const dispatch = useDispatch();
 
     const linkToEntity = constructLink(request);
-    const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
+    const percent = request.status === RQStatus.FINISHED ? 100 : (request.progress ?? 0) * 100;
     const timestamps = constructTimestamps(request);
 
     const name = constructName(operation);
