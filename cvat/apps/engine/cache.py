@@ -98,18 +98,14 @@ def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
 
     return result
 
-
 @attrs.define
 class Callback:
     _callable: Callable[..., DataWithMime]
     _args: list[Any] = attrs.field(converter=_convert_args_for_callback, factory=list)
     _kwargs: dict[str, Any] = attrs.Factory(dict)
 
-    def __call__(
-        self,
-    ) -> Any:
+    def __call__(self) -> DataWithMime:
         return self._callable(*self._args, **self._kwargs)
-
 
 class MediaCache:
     _QUEUE_NAME = settings.CVAT_QUEUES.CHUNKS.value
