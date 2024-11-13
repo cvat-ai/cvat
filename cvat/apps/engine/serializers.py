@@ -18,6 +18,8 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
+from rq.exceptions import InvalidJobOperation as RQInvalidJobOperation
+from contextlib import suppress
 from datetime import timedelta
 from decimal import Decimal
 
@@ -3226,8 +3228,11 @@ class RequestSerializer(serializers.Serializer):
 
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: RQJob) -> str:
-        rq_job_status = rq_job.get_status()
+        rq_job_status: RQJobStatus | None = None
         message = ''
+
+        with suppress(RQInvalidJobOperation):
+            rq_job_status = rq_job.get_status()
 
         if RQJobStatus.STARTED == rq_job_status:
             message = rq_job.meta.get(RQJobMetaField.STATUS, '')
