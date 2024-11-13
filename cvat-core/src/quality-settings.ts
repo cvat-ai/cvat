@@ -38,6 +38,7 @@ export default class QualitySettings {
     #objectVisibilityThreshold: number;
     #panopticComparison: boolean;
     #compareAttributes: boolean;
+    #matchEmptyFrames: boolean;
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
@@ -59,6 +60,7 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
+        this.#matchEmptyFrames = initialData.match_empty_frames;
         this.#descriptions = initialData.descriptions;
     }
 
@@ -198,6 +200,14 @@ export default class QualitySettings {
         this.#maxValidationsPerJob = newVal;
     }
 
+    get matchEmptyFrames(): boolean {
+        return this.#matchEmptyFrames;
+    }
+
+    set matchEmptyFrames(newVal: boolean) {
+        this.#matchEmptyFrames = newVal;
+    }
+
     get descriptions(): Record<string, string> {
         const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
             const camelCaseKey = _.camelCase(key);
@@ -226,6 +236,7 @@ export default class QualitySettings {
             target_metric: this.#targetMetric,
             target_metric_threshold: this.#targetMetricThreshold,
             max_validations_per_job: this.#maxValidationsPerJob,
+            match_empty_frames: this.#matchEmptyFrames,
         };
 
         return result;

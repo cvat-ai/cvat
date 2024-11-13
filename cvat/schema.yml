@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.22.0
+  version: 2.22.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -8049,15 +8049,6 @@ components:
         job:
           type: integer
           description: The id of the job to be annotated
-        quality:
-          allOf:
-          - $ref: '#/components/schemas/QualityEnum'
-          default: original
-          description: |-
-            The quality of the images to use in the model run
-
-            * `compressed` - compressed
-            * `original` - original
         max_distance:
           type: integer
         threshold:
@@ -9729,6 +9720,14 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+        match_empty_frames:
+          type: boolean
+          default: false
+          description: |
+            Count empty frames as matching. This affects target metrics like accuracy in cases
+            there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -10012,14 +10011,6 @@ components:
         * `AZURE_CONTAINER` - AZURE_CONTAINER
         * `GOOGLE_DRIVE` - GOOGLE_DRIVE
         * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
-    QualityEnum:
-      enum:
-      - compressed
-      - original
-      type: string
-      description: |-
-        * `compressed` - compressed
-        * `original` - original
     QualityReport:
       type: object
       properties:
@@ -10236,6 +10227,14 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
+        match_empty_frames:
+          type: boolean
+          default: false
+          description: |
+            Count empty frames as matching. This affects target metrics like accuracy in cases
+            there are no annotations. If disabled, frames without annotations
+            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+            This will also add virtual annotations to empty frames in the comparison results.
     RegisterSerializerEx:
       type: object
       properties:

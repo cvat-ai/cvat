@@ -235,6 +235,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        cur: Number.MAX_SAFE_INTEGER,
+                    },
                 },
                 player: {
                     ...state.player,
