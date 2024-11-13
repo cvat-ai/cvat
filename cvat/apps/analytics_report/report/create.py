@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
+from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.analytics_report.models import AnalyticsReport
 from cvat.apps.analytics_report.report.derived_metrics import (
@@ -86,7 +87,12 @@ class AnalyticsReportUpdateManager:
         existing_job = self.get_analytics_check_job(rq_id)
 
         if existing_job:
-            if existing_job.get_status() in ["queued", "started", "deferred", "scheduled"]:
+            if existing_job.get_status(refresh=False) in [
+                RQJobStatus.QUEUED,
+                RQJobStatus.STARTED,
+                RQJobStatus.DEFERRED,
+                RQJobStatus.SCHEDULED,
+            ]:
                 return rq_id
             existing_job.delete()
 

@@ -13,12 +13,14 @@ from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
 from typing import Any, Dict, Optional
+from contextlib import suppress
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
 import numpy as np
 import requests
 import rq
+import rq.exceptions
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from django.conf import settings
@@ -601,7 +603,7 @@ class LambdaQueue:
         return LambdaJob(rq_job)
 
 class LambdaJob:
-    def __init__(self, job):
+    def __init__(self, job: rq.job.Job):
         self.job = job
 
     def to_dict(self):
@@ -616,7 +618,7 @@ class LambdaJob:
                     "job": self.job.kwargs["job"],
                 } if self.job.kwargs.get("job") else {})
             },
-            "status": self.job.get_status(),
+            "status": self.job.get_status(refresh=False),
             "progress": self.job.meta.get('progress', 0),
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
@@ -631,8 +633,11 @@ class LambdaJob:
     def get_task(self):
         return self.job.kwargs.get("task")
 
-    def get_status(self):
-        return self.job.get_status()
+    def get_status(self) -> rq.job.JobStatus | None:
+        with suppress(rq.exceptions.InvalidJobOperation):
+            return self.job.get_status()
+
+        return None
 
     @property
     def is_finished(self):
