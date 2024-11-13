@@ -445,6 +445,10 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             return {
                 ...state,
                 imageFilters: filters,
+                shapes: {
+                    ...state.shapes,
+                    showGroundTruth: false,
+                },
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
@@ -459,7 +463,6 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case AnnotationActionTypes.CLOSE_JOB:
         case AnnotationActionTypes.CHANGE_WORKSPACE: {
             return {
                 ...state,
