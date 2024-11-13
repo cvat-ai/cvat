@@ -2,26 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.dispatch import receiver
-from django.db.models.signals import pre_save, post_save, post_delete
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.signals import post_delete, post_save, pre_save
+from django.dispatch import receiver
 
 from cvat.apps.engine.models import (
-    TimestampedModel,
+    CloudStorage,
+    Comment,
+    Issue,
+    Job,
+    Label,
     Project,
     Task,
-    Job,
+    TimestampedModel,
     User,
-    CloudStorage,
-    Issue,
-    Comment,
-    Label,
 )
-from cvat.apps.organizations.models import Organization, Membership, Invitation
+from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.webhooks.models import Webhook
 
-from .handlers import handle_update, handle_create, handle_delete
 from .event import EventScopeChoice, event_scope
+from .handlers import handle_create, handle_delete, handle_update
 
 
 @receiver(pre_save, sender=Webhook, dispatch_uid="webhook:update_receiver")
@@ -38,7 +38,8 @@ from .event import EventScopeChoice, event_scope
 def resource_update(sender, *, instance, update_fields, **kwargs):
     if (
         isinstance(instance, TimestampedModel)
-            and update_fields and list(update_fields) == ["updated_date"]
+        and update_fields
+        and list(update_fields) == ["updated_date"]
     ):
         # This is an optimization for the common case where only the date is bumped
         # (see `TimestampedModel.touch`). Since the actual update of the field will
