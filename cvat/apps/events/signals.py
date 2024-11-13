@@ -18,11 +18,13 @@ from cvat.apps.engine.models import (
     Label,
 )
 from cvat.apps.organizations.models import Organization, Membership, Invitation
+from cvat.apps.webhooks.models import Webhook
 
 from .handlers import handle_update, handle_create, handle_delete
 from .event import EventScopeChoice, event_scope
 
 
+@receiver(pre_save, sender=Webhook, dispatch_uid="webhook:update_receiver")
 @receiver(pre_save, sender=Membership, dispatch_uid="membership:update_receiver")
 @receiver(pre_save, sender=Organization, dispatch_uid="organization:update_receiver")
 @receiver(pre_save, sender=Project, dispatch_uid="project:update_receiver")
@@ -60,6 +62,7 @@ def resource_update(sender, *, instance, update_fields, **kwargs):
     handle_update(scope=scope, instance=instance, old_instance=old_instance, **kwargs)
 
 
+@receiver(post_save, sender=Webhook, dispatch_uid="webhook:create_receiver")
 @receiver(post_save, sender=Membership, dispatch_uid="membership:create_receiver")
 @receiver(post_save, sender=Invitation, dispatch_uid="invitation:create_receiver")
 @receiver(post_save, sender=Organization, dispatch_uid="organization:create_receiver")
@@ -84,6 +87,7 @@ def resource_create(sender, instance, created, **kwargs):
     handle_create(scope=scope, instance=instance, **kwargs)
 
 
+@receiver(post_delete, sender=Webhook, dispatch_uid="webhook:delete_receiver")
 @receiver(post_delete, sender=Membership, dispatch_uid="membership:delete_receiver")
 @receiver(post_delete, sender=Invitation, dispatch_uid="invitation:delete_receiver")
 @receiver(post_delete, sender=Organization, dispatch_uid="organization:delete_receiver")

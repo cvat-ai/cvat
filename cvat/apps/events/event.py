@@ -30,6 +30,7 @@ class EventScopes:
         "label": ["create", "update", "delete"],
         "dataset": ["export", "import"],
         "function": ["call"],
+        "webhook": ["create", "update", "delete"],
     }
 
     @classmethod

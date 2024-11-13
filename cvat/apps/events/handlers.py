@@ -29,6 +29,8 @@ from cvat.apps.engine.rq_job_handler import RQJobMetaField
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
+from ..webhooks.models import Webhook
+from ..webhooks.serializers import WebhookReadSerializer
 
 
 def project_id(instance):
@@ -245,6 +247,8 @@ def get_serializer(instance):
         serializer = MembershipReadSerializer(instance=instance, context=context)
     if isinstance(instance, Invitation):
         serializer = InvitationReadSerializer(instance=instance, context=context)
+    if isinstance(instance, Webhook):
+        serializer = WebhookReadSerializer(instance=instance, context=context)
 
     return serializer
 
