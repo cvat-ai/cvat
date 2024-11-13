@@ -235,6 +235,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        cur: Number.MAX_SAFE_INTEGER,
+                    },
                 },
                 player: {
                     ...state.player,
@@ -893,8 +897,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states, history, minZ, maxZ,
             } = action.payload;
 
-            const curZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
-
             return {
                 ...state,
                 annotations: {
@@ -906,7 +908,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: curZLayer,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                 },
             };
