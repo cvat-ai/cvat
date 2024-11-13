@@ -144,8 +144,7 @@ cvat:
     permissionFix:
       enabled: true
     service:
-      annotations:
-        traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+      annotations: {}
       spec:
         type: ClusterIP
         ports:
