@@ -368,7 +368,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "task": self.main_task["id"],
             "cleanup": True,
             "threshold": 55,
-            "quality": "original",
             "mapping": {
                 "car": { "name": "car" },
             },
@@ -447,7 +446,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "task": self.main_task["id"],
                 "cleanup": True,
                 "threshold": 55,
-                "quality": "original",
                 "mapping": {
                     "car": { "name": "car" },
                 },
@@ -456,7 +454,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "function": id_func,
                 "task": self.assigneed_to_user_task["id"],
                 "cleanup": False,
-                "quality": "compressed",
                 "max_distance": 70,
                 "mapping": {
                     "car": { "name": "car" },
@@ -769,7 +766,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11260), ('label_id', 8), ('occluded', False), ('points', [1076.0, 199.0, 1218.0, 593.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
                 OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11261), ('label_id', 8), ('occluded', False), ('points', [924.0, 177.0, 1090.0, 615.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
             ],
-            "quality": None,
             "threshold": 0.5,
             "max_distance": 55,
         }
@@ -785,7 +781,6 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 OrderedDict([('attributes', []), ('frame', 1), ('group', None), ('id', 11260), ('label_id', 8), ('occluded', False), ('points', [1076.0, 199.0, 1218.0, 593.0]), ('source', 'auto'), ('type', 'rectangle'), ('z_order', 0)]),
                 OrderedDict([('attributes', []), ('frame', 1), ('group', 0), ('id', 11398), ('label_id', 8), ('occluded', False), ('points', [184.3935546875, 211.5048828125, 331.64968722073354, 97.27792672028772, 445.87667560321825, 126.17873100983161, 454.13404825737416, 691.8087578194827, 180.26452189455085]), ('source', 'manual'), ('type', 'polygon'), ('z_order', 0)]),
             ],
-            "quality": None,
         }
 
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}", self.admin, data_main_task)
@@ -829,42 +824,11 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    def test_api_v2_lambda_functions_create_quality(self):
-        qualities = [None, "original", "compressed"]
-
-        for quality in qualities:
-            data = {
-                "task": self.main_task["id"],
-                "frame": 0,
-                "cleanup": True,
-                "quality": quality,
-                "mapping": {
-                    "car": { "name": "car" },
-                },
-            }
-
-            response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = {
-            "task": self.main_task["id"],
-            "frame": 0,
-            "cleanup": True,
-            "quality": "test-error-quality",
-            "mapping": {
-                "car": { "name": "car" },
-            },
-        }
-
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_api_v2_lambda_functions_convert_mask_to_rle(self):
         data_main_task = {
             "function": id_function_detector,
             "task": self.main_task["id"],
             "cleanup": True,
-            "quality": "original",
             "mapping": {
                 "car": { "name": "car" },
             },
