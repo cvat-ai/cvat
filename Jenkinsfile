@@ -21,6 +21,7 @@ pipeline {
         THIS_REPO = "${env.GIT_URL.endsWith(".git") ? env.GIT_URL[0..-5] : env.GIT_URL}"
         DEFAULT_BRANCH = "v2.7.3-AI4OS"
         METADATA_VERSION = "2.0.0"
+        AI4OS_REGISTRY_CREDENTIALS = credentials('AIOS-registry-credentials')
     }
     stages {
         stage("Variable initialization") {
@@ -119,7 +120,7 @@ pipeline {
                     dockerfile = "Dockerfile"
                     docker_repo = env.DOCKER_REGISTRY_ORG + "/" + "ai4-cvat-server:" + env.IMAGE_TAG
                     docker_repo = docker_repo.toLowerCase()
-                    println ("[DEBUG] Config for the Docker image build: $env.DOCKER_REPO, push to $env.DOCKER_REGISTRY")
+                    println ("[DEBUG] Config for the Docker image build: ${docker_repo}, push to $env.DOCKER_REGISTRY")
                     docker.withRegistry(env.DOCKER_REGISTRY, env.DOCKER_REGISTRY_CREDENTIALS){
                          def app_image = docker.build(docker_repo,
                                                       "--no-cache --force-rm -f ${dockerfile} .")
@@ -153,7 +154,7 @@ pipeline {
                     dockerfile = "Dockerfile.ui"
                     docker_repo = env.DOCKER_REGISTRY_ORG + "/" + "ai4-cvat-ui:" + env.IMAGE_TAG
                     docker_repo = docker_repo.toLowerCase()
-                    println ("[DEBUG] Config for the Docker image build: $env.DOCKER_REPO, push to $env.DOCKER_REGISTRY")
+                    println ("[DEBUG] Config for the Docker image build: ${docker_repo}, push to $env.DOCKER_REGISTRY")
                     docker.withRegistry(env.DOCKER_REGISTRY, env.DOCKER_REGISTRY_CREDENTIALS){
                          def app_image = docker.build(docker_repo,
                                                       "--no-cache --force-rm -f ${dockerfile} .")
