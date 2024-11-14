@@ -982,7 +982,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
-        from cvat.apps.engine.cache import MediaCache, Callback, enqueue_chunk_create_job
+        from cvat.apps.engine.cache import MediaCache, Callback, enqueue_create_chunk_job
         from cvat.apps.engine.frame_provider import JobFrameProvider
         from cvat.apps.dataset_manager.task import JobAnnotation, AnnotationManager
 
@@ -1149,7 +1149,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 for quality in FrameQuality.__members__.values():
                     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
                         rq_id = f"job_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
-                        enqueue_chunk_create_job(
+                        enqueue_create_chunk_job(
                             queue=queue,
                             rq_job_id=rq_id,
                             create_callback=Callback(
