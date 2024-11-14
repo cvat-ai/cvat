@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { dummyGTJobSpec } from '../../support/dummy-data';
+import { defaultGTJobSpec } from '../../support/default-specs';
 
 context('Ground truth jobs', () => {
     const labelName = 'car';
@@ -96,10 +96,10 @@ context('Ground truth jobs', () => {
         cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
     }
 
-    function createTask(serverFiles, gtJobSpec = null) {
+    function createAndOpenTask(serverFiles, gtJobSpec = null) {
         return cy.headlessCreateDummyTask({
             taskName, serverFiles, labelName,
-        }, gtJobSpec ? dummyGTJobSpec(gtJobSpec) : null).then((response) => {
+        }, gtJobSpec ? defaultGTJobSpec(gtJobSpec) : null).then((response) => {
             ({ taskID, jobID, groundTruthJobID } = response);
         }).then(() => {
             cy.visit(`/tasks/${taskID}`);
@@ -116,7 +116,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            createTask(serverFiles);
+            createAndOpenTask(serverFiles);
         });
 
         after(() => {
@@ -259,7 +259,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
         before(() => {
-            createTask(serverFiles, { frameCount: 3 }).then(() => {
+            createAndOpenTask(serverFiles, { frameCount: 3 }).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
@@ -350,7 +350,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            createTask(serverFiles);
+            createAndOpenTask(serverFiles);
         });
 
         afterEach(() => {

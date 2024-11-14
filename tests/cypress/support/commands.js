@@ -8,7 +8,7 @@
 /* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix } from './utils';
-import { dummyTaskSpec } from './dummy-data';
+import { defaultTaskSpec } from './default-specs';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -218,7 +218,7 @@ Cypress.Commands.add(
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
             if (qualityConfigurationParams) {
-                cy.qualityConfiguration(qualityConfigurationParams);
+                cy.configureTaskQualityMode(qualityConfigurationParams);
             }
             cy.get('.cvat-submit-continue-task-button').scrollIntoView();
             cy.get('.cvat-submit-continue-task-button').click();
@@ -314,7 +314,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
         if (dataSpec.remote_files) {
             task.remoteFiles = dataSpec.remote_files;
         }
-        cy.log(extras);
+
         const result = await task.save(extras || {});
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
@@ -387,7 +387,7 @@ Cypress.Commands.add('headlessCreateDummyTask', (taskParams, gtJobSpec = null) =
     const {
         labelName, taskName, serverFiles, validationParams,
     } = taskParams;
-    const { taskSpec, dataSpec, extras } = dummyTaskSpec({
+    const { taskSpec, dataSpec, extras } = defaultTaskSpec({
         taskName, serverFiles, labelName, validationParams,
     });
     let taskID = null;
@@ -935,7 +935,7 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     }
 });
 
-Cypress.Commands.add('qualityConfiguration', (qualityConfigurationParams) => {
+Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
     cy.contains('Quality').click();
     if (qualityConfigurationParams.validationMode) {
         cy.get('#validationMode').within(() => {
