@@ -470,7 +470,7 @@ class TaskAutoAnnotate:
         )
 
         parser.add_argument(
-            "--threshold",
+            "--conf-threshold",
             type=parse_threshold,
             help="Confidence threshold for filtering detections",
             default=None,
@@ -486,7 +486,7 @@ class TaskAutoAnnotate:
         function_parameters: dict[str, Any],
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
-        threshold: Optional[float],
+        conf_threshold: Optional[float],
     ) -> None:
         if function_module is not None:
             function = importlib.import_module(function_module)
@@ -511,5 +511,5 @@ class TaskAutoAnnotate:
             pbar=DeferredTqdmProgressReporter(),
             clear_existing=clear_existing,
             allow_unmatched_labels=allow_unmatched_labels,
-            threshold=threshold,
+            conf_threshold=conf_threshold,
         )

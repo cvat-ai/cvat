@@ -38,7 +38,7 @@ class _TorchvisionKeypointDetectionFunction:
     def detect(
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledShapeRequest]:
-        threshold = context.threshold or 0
+        conf_threshold = context.conf_threshold or 0
         results = self._model([self._transforms(image)])
 
         return [
@@ -57,7 +57,7 @@ class _TorchvisionKeypointDetectionFunction:
             for keypoints, label, score in zip(
                 result["keypoints"], result["labels"], result["scores"]
             )
-            if score >= threshold
+            if score >= conf_threshold
         ]
 
 

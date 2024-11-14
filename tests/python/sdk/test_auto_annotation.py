@@ -269,7 +269,7 @@ class TestTaskAutoAnnotation:
             assert shapes[i].points == [5, 6, 7, 8]
             assert shapes[i].rotation == 10
 
-    def test_threshold(self):
+    def test_conf_threshold(self):
         spec = cvataa.DetectionFunctionSpec(labels=[])
 
         received_threshold = None
@@ -278,14 +278,14 @@ class TestTaskAutoAnnotation:
             context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
         ) -> list[models.LabeledShapeRequest]:
             nonlocal received_threshold
-            received_threshold = context.threshold
+            received_threshold = context.conf_threshold
             return []
 
         cvataa.annotate_task(
             self.client,
             self.task.id,
             namespace(spec=spec, detect=detect),
-            threshold=0.75,
+            conf_threshold=0.75,
         )
 
         assert received_threshold == 0.75
@@ -304,7 +304,7 @@ class TestTaskAutoAnnotation:
                     self.client,
                     self.task.id,
                     namespace(spec=spec, detect=detect),
-                    threshold=bad_threshold,
+                    conf_threshold=bad_threshold,
                 )
 
     def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
@@ -713,7 +713,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             td.create("fasterrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
-            threshold=0.75,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()
@@ -733,7 +733,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             tkd.create("keypointrcnn_resnet50_fpn", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
-            threshold=0.75,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()

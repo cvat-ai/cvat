@@ -17,5 +17,5 @@ def detect(
     context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
 ) -> list[models.LabeledShapeRequest]:
     return [
-        cvataa.rectangle(0, [context.threshold, 1, 1, 1]),
+        cvataa.rectangle(0, [context.conf_threshold, 1, 1, 1]),
     ]

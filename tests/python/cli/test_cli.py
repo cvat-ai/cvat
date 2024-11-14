@@ -355,8 +355,8 @@ class TestCLI:
         self.run_cli(
             "auto-annotate",
             str(fxt_new_task.id),
-            f"--function-module={__package__}.threshold_function",
-            "--threshold=0.75",
+            f"--function-module={__package__}.conf_threshold_function",
+            "--conf-threshold=0.75",
         )
 
         annotations = fxt_new_task.get_annotations()

@@ -72,7 +72,7 @@ class TorchvisionDetectionFunction:
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledShapeRequest]:
         # determine the threshold for filtering results
-        threshold = context.threshold or 0
+        conf_threshold = context.conf_threshold or 0
 
         # convert the input into a form the model can understand
         transformed_image = [self._transforms(image)]
@@ -85,7 +85,7 @@ class TorchvisionDetectionFunction:
             cvataa.rectangle(label.item(), [x.item() for x in box])
             for result in results
             for box, label, score in zip(result["boxes"], result["labels"], result["scores"])
-            if score >= threshold
+            if score >= conf_threshold
         ]
 
 # log into the CVAT server
@@ -122,7 +122,7 @@ that these objects must follow.
   The following fields are available:
 
   - `frame_name` (`str`). The file name of the frame on the CVAT server.
-  - `threshold` (`float | None`). The confidence threshold that the function
+  - `conf_threshold` (`float | None`). The confidence threshold that the function
     should use to filter objects. If `None`, the function may apply a default
     threshold at its discretion.
 
@@ -206,7 +206,7 @@ and any shapes referring to them will be dropped.
 Same logic applies to sub-label IDs.
 
 It's possible to pass a custom confidence threshold to the function via the
-`threshold` parameter.
+`conf_threshold` parameter.
 
 `annotate_task` will raise a `BadFunctionError` exception
 if it detects that the function violated the AA function protocol.

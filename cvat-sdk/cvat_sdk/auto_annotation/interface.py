@@ -53,7 +53,7 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def threshold(self) -> Optional[float]:
+    def conf_threshold(self) -> Optional[float]:
         """
         The confidence threshold that the function should use for filtering
         detections.
