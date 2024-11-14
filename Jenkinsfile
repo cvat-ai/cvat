@@ -104,6 +104,7 @@ pipeline {
                 anyOf {
                     branch 'main'
                     branch env.DEFAULT_BRANCH
+                    branch "${env.DEFAULT_BRANCH}-cicd"
                     branch 'release/*'
                     buildingTag()
                 }
