@@ -290,7 +290,7 @@ def annotate_task(
             mapper.validate_and_remap(frame_shapes, sample.frame_index)
             shapes.extend(frame_shapes)
 
-    client.logger.info("Uploading annotations to task %d", task_id)
+    client.logger.info("Uploading annotations to task %d...", task_id)
 
     if clear_existing:
         client.tasks.api.update_annotations(
@@ -302,3 +302,5 @@ def annotate_task(
             task_id,
             patched_labeled_data_request=models.PatchedLabeledDataRequest(shapes=shapes),
         )
+
+    client.logger.info("Upload complete")
