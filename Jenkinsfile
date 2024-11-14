@@ -78,7 +78,11 @@ pipeline {
                 script {
                     // Check if only metadata files have been changed
                     // See https://github.com/ai4os/ai4os-hub-qa/issues/16
-                    changed_files = sh (returnStdout: true, script: "git diff --name-only HEAD ${env.GIT_PREVIOUS_SUCCESSFUL_COMMIT}").trim()
+                    if (env.GIT_PREVIOUS_SUCCESSFUL_COMMIT) {
+                        changed_files = sh (returnStdout: true, script: "git diff --name-only HEAD ${env.GIT_PREVIOUS_SUCCESSFUL_COMMIT}").trim()
+                    } else {
+                        changed_files = sh (returnStdout: true, script: "git diff --name-only HEAD^ HEAD").trim()
+                    }
                     need_build = true
 
                     // Check if metadata files are present in the list of changed files
