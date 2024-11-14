@@ -220,9 +220,10 @@ class _AnnotationMapper:
         shapes[:] = new_shapes
 
 
-@attrs.frozen
+@attrs.frozen(kw_only=True)
 class _DetectionFunctionContextImpl(DetectionFunctionContext):
     frame_name: str
+    conf_threshold: Optional[float] = None
 
 
 def annotate_task(
@@ -233,6 +234,7 @@ def annotate_task(
     pbar: Optional[ProgressReporter] = None,
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
+    conf_threshold: Optional[float] = None,
 ) -> None:
     """
     Downloads data for the task with the given ID, applies the given function to it
@@ -264,10 +266,16 @@ def annotate_task(
     function declares a label in its spec that has no corresponding label in the task.
     If it's set to true, then such labels are allowed, and any annotations returned by the
     function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
+
+    The conf_threshold parameter must be None or a number between 0 and 1. It will be passed
+    to the function as the conf_threshold attribute of the context object.
     """
 
     if pbar is None:
         pbar = NullProgressReporter()
+
+    if conf_threshold is not None and not 0 <= conf_threshold <= 1:
+        raise ValueError("conf_threshold must be None or a number between 0 and 1")
 
     dataset = TaskDataset(client, task_id, load_annotations=False)
 
@@ -285,7 +293,10 @@ def annotate_task(
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
             frame_shapes = function.detect(
-                _DetectionFunctionContextImpl(sample.frame_name), sample.media.load_image()
+                _DetectionFunctionContextImpl(
+                    frame_name=sample.frame_name, conf_threshold=conf_threshold
+                ),
+                sample.media.load_image(),
             )
             mapper.validate_and_remap(frame_shapes, sample.frame_index)
             shapes.extend(frame_shapes)
