@@ -39,6 +39,7 @@ import PIL.ImageOps
 import rq
 from django.conf import settings
 from django.core.cache import caches
+from django.db import models as django_models
 from django.utils import timezone as django_tz
 from redis.exceptions import LockError
 from rest_framework.exceptions import NotFound, ValidationError
@@ -76,6 +77,46 @@ class CvatCacheTimestampMismatchError(Exception):
     pass
 
 
+def enqueue_create_chunk_job(
+    queue: rq.Queue,
+    rq_job_id: str,
+    create_callback: Callback,
+    *,
+    blocking_timeout: int = 50,
+    rq_job_result_ttl: int = 60,
+    rq_job_failure_ttl: int = 3600 * 24 * 14,  # 2 weeks
+):
+    try:
+        with get_rq_lock_for_job(queue, rq_job_id, blocking_timeout=blocking_timeout):
+            rq_job = queue.fetch_job(rq_job_id)
+
+            if not rq_job:
+                rq_job = queue.enqueue(
+                    create_callback,
+                    job_id=rq_job_id,
+                    result_ttl=rq_job_result_ttl,
+                    failure_ttl=rq_job_failure_ttl,
+                )
+    except LockError:
+        raise TimeoutError(f"Cannot acquire lock for {rq_job_id}")
+
+    retries = settings.CVAT_CHUNK_CREATE_TIMEOUT // settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL or 1
+    while retries > 0:
+        job_status = rq_job.get_status()
+        if job_status in ("finished",):
+            return
+        elif job_status in ("failed",):
+            job_meta = rq_job.get_meta()
+            exc_type = job_meta.get(RQJobMetaField.EXCEPTION_TYPE, Exception)
+            exc_args = job_meta.get(RQJobMetaField.EXCEPTION_ARGS, ("Cannot create chunk",))
+            raise exc_type(*exc_args)
+
+        time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)
+        retries -= 1
+
+    raise TimeoutError(f"Chunk processing takes too long {rq_job_id}")
+
+
 def _is_run_inside_rq() -> bool:
     return rq.get_current_job() is not None
 
@@ -88,7 +129,7 @@ def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
         else:
             if isinstance(
                 func_arg,
-                (models.Task, models.Segment, models.Job, models.CloudStorage, models.Data),
+                django_models.Model,
             ):
                 result.append(func_arg.id)
             elif isinstance(func_arg, list):
@@ -98,24 +139,34 @@ def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
 
     return result
 
+
 @attrs.define
 class Callback:
-    _callable: Callable[..., DataWithMime]
-    _args: list[Any] = attrs.field(converter=_convert_args_for_callback, factory=list)
-    _kwargs: dict[str, Any] = attrs.Factory(dict)
+    _callable: Callable[..., DataWithMime] = attrs.field(
+        validator=attrs.validators.is_callable(),
+    )
+    _args: list[Any] = attrs.field(
+        factory=list,
+        validator=attrs.validators.instance_of(list),
+        converter=_convert_args_for_callback,
+    )
+    _kwargs: dict[str, Union[bool, int, float, str, None]] = attrs.field(
+        factory=dict,
+        validator=attrs.validators.deep_mapping(
+            key_validator=attrs.validators.instance_of(str),
+            value_validator=attrs.validators.instance_of((bool, int, float, str, type(None))),
+            mapping_validator=attrs.validators.instance_of(dict),
+        ),
+    )
 
     def __call__(self) -> DataWithMime:
         return self._callable(*self._args, **self._kwargs)
 
+
 class MediaCache:
     _QUEUE_NAME = settings.CVAT_QUEUES.CHUNKS.value
     _QUEUE_JOB_PREFIX_TASK = "chunks:prepare-item-"
-    _SLEEP_TIMEOUT = settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL
-    _CHUNK_CREATE_TIMEOUT = settings.CVAT_CHUNK_CREATE_TIMEOUT
     _CACHE_NAME = "media"
-    _LOCK_TIMEOUT = 50
-    _RQ_JOB_RESULT_TTL = 60
-    _RQ_JOB_FAILURE_TTL = 3600 * 24 * 14  # 2 weeks
     _PREVIEW_TTL = settings.CVAT_PREVIEW_CACHE_TTL
 
     @staticmethod
@@ -170,23 +221,6 @@ class MediaCache:
 
         return item
 
-    def _wait_for_rq_job(self, rq_job: rq.job.Job) -> bool:
-        retries = self._CHUNK_CREATE_TIMEOUT // self._SLEEP_TIMEOUT or 1
-        while retries > 0:
-            job_status = rq_job.get_status()
-            if job_status in ("finished",):
-                return True
-            elif job_status in ("failed",):
-                job_meta = rq_job.get_meta()
-                exc_type = job_meta.get(RQJobMetaField.EXCEPTION_TYPE, Exception)
-                exc_args = job_meta.get(RQJobMetaField.EXCEPTION_ARGS, ("Cannot create chunk",))
-                raise exc_type(*exc_args)
-
-            time.sleep(self._SLEEP_TIMEOUT)
-            retries -= 1
-
-        return False
-
     def _create_cache_item(
         self,
         key: str,
@@ -207,28 +241,22 @@ class MediaCache:
                     cache_item_ttl=cache_item_ttl,
                 )
         else:
-            try:
-                with get_rq_lock_for_job(queue, rq_id, blocking_timeout=self._LOCK_TIMEOUT):
-                    rq_job = queue.fetch_job(rq_id)
-
-                    if not rq_job:
-                        rq_job = queue.enqueue(
-                            self._drop_return_value,
-                            self._create_and_set_cache_item,
-                            key,
-                            create_callback,
-                            cache_item_ttl=cache_item_ttl,
-                            job_id=rq_id,
-                            result_ttl=self._RQ_JOB_RESULT_TTL,
-                            failure_ttl=self._RQ_JOB_FAILURE_TTL,
-                        )
-            except LockError:
-                raise TimeoutError(f"Cannot acquire lock for {key}")
-
-            if self._wait_for_rq_job(rq_job):
-                item = self._get_cache_item(key)
-            else:
-                raise TimeoutError(f"Chunk processing takes too long {key}")
+            enqueue_create_chunk_job(
+                queue=queue,
+                rq_job_id=rq_id,
+                create_callback=Callback(
+                    callable=self._drop_return_value,
+                    args=[
+                        self._create_and_set_cache_item,
+                        key,
+                        create_callback,
+                    ],
+                    kwargs={
+                        "cache_item_ttl": cache_item_ttl,
+                    },
+                ),
+            )
+            item = self._get_cache_item(key)
 
         slogger.glob.info(f"Ending to prepare chunk: key {key}")
 

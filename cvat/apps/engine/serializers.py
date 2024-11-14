@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import string
+import django_rq
 import rq.defaults as rq_defaults
 
 from tempfile import NamedTemporaryFile
@@ -22,13 +23,14 @@ from datetime import timedelta
 from decimal import Decimal
 
 from rest_framework import serializers, exceptions
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.utils import timezone
 from numpy import random
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality
 from cvat.apps.engine.utils import format_list, parse_exception_message
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
@@ -980,8 +982,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
-        from cvat.apps.engine.cache import MediaCache
-        from cvat.apps.engine.frame_provider import FrameQuality, JobFrameProvider, prepare_chunk
+        from cvat.apps.engine.cache import MediaCache, Callback, enqueue_chunk_create_job
+        from cvat.apps.engine.frame_provider import JobFrameProvider
         from cvat.apps.dataset_manager.task import JobAnnotation, AnnotationManager
 
         db_job = instance
@@ -1129,7 +1131,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             job_annotation.delete(job_annotation_manager.data)
 
             # Update chunks
-            task_frame_provider = TaskFrameProvider(db_task)
             job_frame_provider = JobFrameProvider(db_job)
             updated_segment_chunk_ids = set(
                 job_frame_provider.get_chunk_number(updated_segment_frame_id)
@@ -1138,7 +1139,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
 
-            media_cache = MediaCache()
+            queue = django_rq.get_queue(settings.CVAT_QUEUES.CHUNKS.value)
             for chunk_id in sorted(updated_segment_chunk_ids):
                 chunk_frames = segment_frames[
                     chunk_id * db_data.chunk_size :
@@ -1146,36 +1147,26 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 ]
 
                 for quality in FrameQuality.__members__.values():
-                    def _write_updated_static_chunk():
-                        def _iterate_chunk_frames():
-                            for chunk_frame in chunk_frames:
-                                db_frame = all_task_frames[chunk_frame]
-                                chunk_real_frame = segment_frame_map.get(chunk_frame, chunk_frame)
-                                yield (
-                                    task_frame_provider.get_frame(
-                                        chunk_real_frame, quality=quality
-                                    ).data,
-                                    os.path.basename(db_frame.path),
-                                    chunk_frame,
-                                )
-
-                        with closing(_iterate_chunk_frames()) as frame_iter:
-                            chunk, _ = prepare_chunk(
-                                frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
-                            )
-
-                            get_chunk_path = {
-                                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
-                                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
-                            }[quality]
-
-                            with open(get_chunk_path(chunk_id, db_segment.id), 'wb') as f:
-                                f.write(chunk.getvalue())
-
                     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
-                        _write_updated_static_chunk()
+                        rq_id = f"job_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
+                        enqueue_chunk_create_job(
+                            queue=queue,
+                            rq_job_id=rq_id,
+                            create_callback=Callback(
+                                callable=self._write_updated_static_chunk,
+                                args=[
+                                    db_task.id,
+                                    db_segment.id,
+                                    chunk_id,
+                                    chunk_frames,
+                                    quality,
+                                    {chunk_frame: all_task_frames[chunk_frame].path for chunk_frame in chunk_frames},
+                                    segment_frame_map,
+                                ],
+                            ),
+                        )
 
-                    media_cache.remove_segment_chunk(db_segment, chunk_id, quality=quality)
+                    MediaCache().remove_segment_chunk(db_segment, chunk_id, quality=quality)
 
             db_segment.chunks_updated_date = timezone.now()
             db_segment.save(update_fields=['chunks_updated_date'])
@@ -1198,6 +1189,47 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 db_task.project.touch()
 
         return instance
+
+    @staticmethod
+    def _write_updated_static_chunk(
+        db_task_id: int,
+        db_segment_id: int,
+        chunk_id: int,
+        chunk_frames: list[int],
+        quality: FrameQuality,
+        frame_path_map: dict[int, str],
+        segment_frame_map: dict[int,int]
+    ):
+        from cvat.apps.engine.frame_provider import prepare_chunk
+
+        db_task = models.Task.objects.get(pk=db_task_id)
+        task_frame_provider = TaskFrameProvider(db_task)
+        db_data = db_task.data
+
+        def _iterate_chunk_frames():
+            for chunk_frame in chunk_frames:
+                db_frame_path = frame_path_map[chunk_frame]
+                chunk_real_frame = segment_frame_map.get(chunk_frame, chunk_frame)
+                yield (
+                    task_frame_provider.get_frame(
+                        chunk_real_frame, quality=quality
+                    ).data,
+                    os.path.basename(db_frame_path),
+                    chunk_frame,
+                )
+
+        with closing(_iterate_chunk_frames()) as frame_iter:
+            chunk, _ = prepare_chunk(
+                frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
+            )
+
+            get_chunk_path = {
+                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
+                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
+            }[quality]
+
+            with open(get_chunk_path(chunk_id, db_segment_id), 'wb') as f:
+                f.write(chunk.getvalue())
 
 class JobValidationLayoutReadSerializer(serializers.Serializer):
     honeypot_count = serializers.IntegerField(min_value=0, required=False)
