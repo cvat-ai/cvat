@@ -105,7 +105,6 @@ pipeline {
                 anyOf {
                     branch 'main'
                     branch env.DEFAULT_BRANCH
-                    branch "${env.DEFAULT_BRANCH}-cicd"
                     branch 'release/*'
                     buildingTag()
                 }
@@ -118,8 +117,7 @@ pipeline {
                 script {
                     checkout scm
                     dockerfile = "Dockerfile"
-                    docker_repo = env.DOCKER_REGISTRY_ORG + "/" + "ai4-cvat-server:" + env.IMAGE_TAG
-                    docker_repo = docker_repo.toLowerCase()
+                    docker_repo = (env.DOCKER_REGISTRY_ORG + "/" + "ai4-cvat-server:" + env.IMAGE_TAG).toLowerCase()
                     println ("[DEBUG] Config for the Docker image build: ${docker_repo}, push to $env.DOCKER_REGISTRY")
                     docker.withRegistry(env.DOCKER_REGISTRY, env.DOCKER_REGISTRY_CREDENTIALS){
                          def app_image = docker.build(docker_repo,
@@ -152,8 +150,7 @@ pipeline {
                 script {
                     checkout scm
                     dockerfile = "Dockerfile.ui"
-                    docker_repo = env.DOCKER_REGISTRY_ORG + "/" + "ai4-cvat-ui:" + env.IMAGE_TAG
-                    docker_repo = docker_repo.toLowerCase()
+                    docker_repo = (env.DOCKER_REGISTRY_ORG + "/" + "ai4-cvat-ui:" + env.IMAGE_TAG).toLowerCase()
                     println ("[DEBUG] Config for the Docker image build: ${docker_repo}, push to $env.DOCKER_REGISTRY")
                     docker.withRegistry(env.DOCKER_REGISTRY, env.DOCKER_REGISTRY_CREDENTIALS){
                          def app_image = docker.build(docker_repo,
