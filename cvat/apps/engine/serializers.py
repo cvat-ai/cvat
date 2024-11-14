@@ -19,7 +19,7 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 
 from rq.job import Job as RQJob, JobStatus as RQJobStatus
-from datetime import timedelta
+from datetime import timedelta, datetime
 from decimal import Decimal
 
 from rest_framework import serializers, exceptions
@@ -31,7 +31,7 @@ from numpy import random
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality
-from cvat.apps.engine.utils import format_list, parse_exception_message
+from cvat.apps.engine.utils import format_list, parse_exception_message, CvatChunkTimestampMismatchError
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
@@ -982,7 +982,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
-        from cvat.apps.engine.cache import MediaCache, Callback, enqueue_create_chunk_job
+        from cvat.apps.engine.cache import MediaCache, Callback, enqueue_create_chunk_job, wait_for_rq_job
         from cvat.apps.engine.frame_provider import JobFrameProvider
         from cvat.apps.dataset_manager.task import JobAnnotation, AnnotationManager
 
@@ -1149,13 +1149,12 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 for quality in FrameQuality.__members__.values():
                     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
                         rq_id = f"job_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
-                        enqueue_create_chunk_job(
+                        rq_job = enqueue_create_chunk_job(
                             queue=queue,
                             rq_job_id=rq_id,
                             create_callback=Callback(
                                 callable=self._write_updated_static_chunk,
                                 args=[
-                                    db_task.id,
                                     db_segment.id,
                                     chunk_id,
                                     chunk_frames,
@@ -1165,6 +1164,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                                 ],
                             ),
                         )
+                        wait_for_rq_job(rq_job)
 
                     MediaCache().remove_segment_chunk(db_segment, chunk_id, quality=quality)
 
@@ -1192,17 +1192,18 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @staticmethod
     def _write_updated_static_chunk(
-        db_task_id: int,
         db_segment_id: int,
         chunk_id: int,
         chunk_frames: list[int],
         quality: FrameQuality,
         frame_path_map: dict[int, str],
-        segment_frame_map: dict[int,int]
+        segment_frame_map: dict[int,int],
     ):
         from cvat.apps.engine.frame_provider import prepare_chunk
 
-        db_task = models.Task.objects.get(pk=db_task_id)
+        db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
+        initial_chunks_updated_date = db_segment.chunks_updated_date
+        db_task = db_segment.task
         task_frame_provider = TaskFrameProvider(db_task)
         db_data = db_task.data
 
@@ -1228,6 +1229,12 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
             }[quality]
 
+            db_segment.refresh_from_db(fields=["chunks_updated_date"])
+            if db_segment.chunks_updated_date > initial_chunks_updated_date:
+                raise CvatChunkTimestampMismatchError(
+                    "Attempting to write an out of date static chunk, "
+                    f"segment.chunks_updated_date: {db_segment.chunks_updated_date}, expected_ts: {initial_chunks_updated_date}"
+            )
             with open(get_chunk_path(chunk_id, db_segment_id), 'wb') as f:
                 f.write(chunk.getvalue())
 

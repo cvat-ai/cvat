@@ -97,6 +97,9 @@ def execute_python_code(source_code, global_vars=None, local_vars=None):
         line_number = traceback.extract_tb(tb)[-1][1]
         raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))
 
+class CvatChunkTimestampMismatchError(Exception):
+    pass
+
 def av_scan_paths(*paths):
     if 'yes' == os.environ.get('CLAM_AV'):
         command = ['clamscan', '--no-summary', '-i', '-o']

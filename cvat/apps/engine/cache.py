@@ -63,7 +63,12 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
 )
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
-from cvat.apps.engine.utils import get_rq_lock_for_job, load_image, md5_hash
+from cvat.apps.engine.utils import (
+    CvatChunkTimestampMismatchError,
+    get_rq_lock_for_job,
+    load_image,
+    md5_hash,
+)
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -71,10 +76,6 @@ slogger = ServerLogManager(__name__)
 
 DataWithMime = Tuple[io.BytesIO, str]
 _CacheItem = Tuple[io.BytesIO, str, int, Union[datetime, None]]
-
-
-class CvatCacheTimestampMismatchError(Exception):
-    pass
 
 
 def enqueue_create_chunk_job(
@@ -85,7 +86,7 @@ def enqueue_create_chunk_job(
     blocking_timeout: int = 50,
     rq_job_result_ttl: int = 60,
     rq_job_failure_ttl: int = 3600 * 24 * 14,  # 2 weeks
-):
+) -> rq.job.Job:
     try:
         with get_rq_lock_for_job(queue, rq_job_id, blocking_timeout=blocking_timeout):
             rq_job = queue.fetch_job(rq_job_id)
@@ -100,6 +101,10 @@ def enqueue_create_chunk_job(
     except LockError:
         raise TimeoutError(f"Cannot acquire lock for {rq_job_id}")
 
+    return rq_job
+
+
+def wait_for_rq_job(rq_job: rq.job.Job):
     retries = settings.CVAT_CHUNK_CREATE_TIMEOUT // settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL or 1
     while retries > 0:
         job_status = rq_job.get_status()
@@ -114,7 +119,7 @@ def enqueue_create_chunk_job(
         time.sleep(settings.CVAT_CHUNK_CREATE_CHECK_INTERVAL)
         retries -= 1
 
-    raise TimeoutError(f"Chunk processing takes too long {rq_job_id}")
+    raise TimeoutError(f"Chunk processing takes too long {rq_job.id}")
 
 
 def _is_run_inside_rq() -> bool:
@@ -241,7 +246,7 @@ class MediaCache:
                     cache_item_ttl=cache_item_ttl,
                 )
         else:
-            enqueue_create_chunk_job(
+            rq_job = enqueue_create_chunk_job(
                 queue=queue,
                 rq_job_id=rq_id,
                 create_callback=Callback(
@@ -256,6 +261,7 @@ class MediaCache:
                     },
                 ),
             )
+            wait_for_rq_job(rq_job)
             item = self._get_cache_item(key)
 
         slogger.glob.info(f"Ending to prepare chunk: key {key}")
@@ -291,7 +297,7 @@ class MediaCache:
         self, item: _CacheItem, expected_timestamp: datetime
     ) -> _CacheItem:
         if item[3] < expected_timestamp:
-            raise CvatCacheTimestampMismatchError(
+            raise CvatChunkTimestampMismatchError(
                 f"Cache timestamp mismatch. Item_ts: {item[3]}, expected_ts: {expected_timestamp}"
             )
 
