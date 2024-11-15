@@ -7,18 +7,13 @@ import zipfile
 from datumaro.components.dataset import Dataset
 
 from cvat.apps.dataset_manager.bindings import (
-    CvatImportError, GetCVATDataExtractor, import_dm_annotations
+    GetCVATDataExtractor, import_dm_annotations, NoMediaInAnnotationFileError
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
 
 from .registry import dm_env, exporter, importer
 
-
-_NO_MEDIA_IN_UPLOADED_JSON_ERROR = (
-    "Can't import media data from the annotation file. "
-    "Please upload full dataset as a zip archive."
-)
 
 @exporter(name="Datumaro", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
@@ -37,7 +32,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
     else:
         if load_data_callback:
-            raise CvatImportError(_NO_MEDIA_IN_UPLOADED_JSON_ERROR)
+            raise NoMediaInAnnotationFileError()
 
         dataset = Dataset.import_from(src_file.name, 'datumaro', env=dm_env)
 
@@ -63,7 +58,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
     else:
         if load_data_callback:
-            raise CvatImportError(_NO_MEDIA_IN_UPLOADED_JSON_ERROR)
+            raise NoMediaInAnnotationFileError()
 
         dataset = Dataset.import_from(src_file.name, 'datumaro', env=dm_env)
 

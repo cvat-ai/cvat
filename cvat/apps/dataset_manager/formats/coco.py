@@ -8,8 +8,9 @@ import zipfile
 from datumaro.components.dataset import Dataset
 from datumaro.components.annotation import AnnotationType
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, \
-    import_dm_annotations
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor, NoMediaInAnnotationFileError, import_dm_annotations
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
@@ -32,6 +33,9 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
     else:
+        if load_data_callback:
+            raise NoMediaInAnnotationFileError()
+
         dataset = Dataset.import_from(src_file.name,
             'coco_instances', env=dm_env)
         import_dm_annotations(dataset, instance_data)
@@ -49,6 +53,8 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     def remove_extra_annotations(dataset):
         for item in dataset:
+            # Boxes would have invalid (skeleton) labels, so remove them
+            # TODO: find a way to import boxes
             annotations = [ann for ann in item.annotations
                 if ann.type != AnnotationType.bbox]
             item.annotations = annotations
@@ -61,7 +67,9 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
     else:
-        dataset = Dataset.import_from(src_file.name,
-            'coco_person_keypoints', env=dm_env)
+        if load_data_callback:
+            raise NoMediaInAnnotationFileError()
+
+        dataset = Dataset.import_from(src_file.name, 'coco_person_keypoints', env=dm_env)
         remove_extra_annotations(dataset)
         import_dm_annotations(dataset, instance_data)

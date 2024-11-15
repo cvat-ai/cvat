@@ -2287,3 +2287,10 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
+
+class NoMediaInAnnotationFileError(CvatImportError):
+    def __str__(self) -> str:
+        return (
+            "Can't import media data from the annotation file. "
+            "Please upload full dataset as a zip archive."
+        )

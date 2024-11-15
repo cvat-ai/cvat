@@ -20,10 +20,14 @@ from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
-from cvat.apps.dataset_manager.bindings import (ProjectData, CommonData,
-                                                get_defaulted_subset,
-                                                import_dm_annotations,
-                                                match_dm_item)
+from cvat.apps.dataset_manager.bindings import (
+    NoMediaInAnnotationFileError,
+    ProjectData,
+    CommonData,
+    get_defaulted_subset,
+    import_dm_annotations,
+    match_dm_item,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.frame_provider import FrameProvider
 
@@ -1448,4 +1452,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             for p in anno_paths:
                 load_anno(p, instance_data)
     else:
+        if load_data_callback:
+            raise NoMediaInAnnotationFileError()
+
         load_anno(src_file, instance_data)
