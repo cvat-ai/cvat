@@ -5,7 +5,7 @@
 
 from collections import Counter, OrderedDict
 from itertools import groupby
-from typing import Dict, Optional
+from typing import Optional
 from unittest import mock, skip
 import json
 import os
@@ -1440,7 +1440,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
     # We need to check that job assignee can call functions in the assigned jobs
     # This requires to pass the job id in the call request.
 
-    def _create_org(self, *, owner: int, members: Dict[int, str] = None) -> dict:
+    def _create_org(self, *, owner: int, members: dict[int, str] = None) -> dict:
         org = self._post_request('/api/organizations', user=owner, data={
             "slug": "testorg",
             "name": "test Org",

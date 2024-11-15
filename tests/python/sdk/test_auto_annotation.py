@@ -269,6 +269,44 @@ class TestTaskAutoAnnotation:
             assert shapes[i].points == [5, 6, 7, 8]
             assert shapes[i].rotation == 10
 
+    def test_conf_threshold(self):
+        spec = cvataa.DetectionFunctionSpec(labels=[])
+
+        received_threshold = None
+
+        def detect(
+            context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+        ) -> list[models.LabeledShapeRequest]:
+            nonlocal received_threshold
+            received_threshold = context.conf_threshold
+            return []
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            conf_threshold=0.75,
+        )
+
+        assert received_threshold == 0.75
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+        )
+
+        assert received_threshold is None
+
+        for bad_threshold in [-0.1, 1.1]:
+            with pytest.raises(ValueError):
+                cvataa.annotate_task(
+                    self.client,
+                    self.task.id,
+                    namespace(spec=spec, detect=detect),
+                    conf_threshold=bad_threshold,
+                )
+
     def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
         def detect(context, image):
             assert False
@@ -575,8 +613,9 @@ if torchvision_models is not None:
 
             return [
                 {
-                    "boxes": torch.tensor([[1, 2, 3, 4]]),
-                    "labels": torch.tensor([self._label_id]),
+                    "boxes": torch.tensor([[1, 2, 3, 4], [5, 6, 7, 8]]),
+                    "labels": torch.tensor([self._label_id, self._label_id]),
+                    "scores": torch.tensor([0.75, 0.74]),
                 }
             ]
 
@@ -599,15 +638,17 @@ if torchvision_models is not None:
 
             return [
                 {
-                    "labels": torch.tensor([self._label_id]),
+                    "labels": torch.tensor([self._label_id, self._label_id]),
                     "keypoints": torch.tensor(
                         [
                             [
                                 [hash(name) % 100, 0, 1 if name.startswith("right_") else 0]
                                 for i, name in enumerate(self._keypoint_names)
-                            ]
+                            ],
+                            [[0, 0, 1] for i, name in enumerate(self._keypoint_names)],
                         ]
                     ),
+                    "scores": torch.tensor([0.75, 0.74]),
                 }
             ]
 
@@ -672,6 +713,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             td.create("fasterrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()
@@ -691,6 +733,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             tkd.create("keypointrcnn_resnet50_fpn", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()
