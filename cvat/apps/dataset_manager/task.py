@@ -3,11 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import itertools
 import os
 from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from tempfile import TemporaryDirectory
+from typing import Optional, Union
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
@@ -18,13 +20,16 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.utils import chunked_list
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
-from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
+from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
+from cvat.apps.dataset_manager.util import (
+    add_prefetch_fields, bulk_create, get_cached, faster_deepcopy
+)
 
 dlogger = DatasetLogManager()
 
@@ -48,7 +53,7 @@ class PatchAction(str, Enum):
     def __str__(self):
         return self.value
 
-def _merge_table_rows(rows, keys_for_merge, field_id):
+def merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
     # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
     # than next_box.frame.
@@ -198,7 +203,7 @@ class JobAnnotation:
 
         if min_frame < parent_track.frame:
             # parent track cannot have a frame greater than the frame of the child track
-            parent_tracked_shape = parent_track.trackedshape_set.first()
+            parent_tracked_shape = parent_track.shapes.first()
             parent_track.frame = min_frame
             parent_tracked_shape.frame = min_frame
 
@@ -411,6 +416,8 @@ class JobAnnotation:
         self._save_tracks_to_db(data["tracks"])
 
     def create(self, data):
+        data = self._validate_input_annotations(data)
+
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
@@ -418,6 +425,8 @@ class JobAnnotation:
             self._set_updated_date()
 
     def put(self, data):
+        data = self._validate_input_annotations(data)
+
         deleted_data = self._delete()
         handle_annotations_change(self.db_job, deleted_data, "delete")
 
@@ -430,6 +439,8 @@ class JobAnnotation:
             self._set_updated_date()
 
     def update(self, data):
+        data = self._validate_input_annotations(data)
+
         self._delete(data)
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "update")
@@ -437,24 +448,66 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
+    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_job.segment.task.dimension, data)
+
+        db_data = self.db_job.segment.task.data
+
+        if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
+            # Only tags and shapes can be used in tasks with GT pool
+            raise ValidationError("Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            ))
+
+        return data
+
+    def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        ids = self.db_job.labeledimage_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+        models.LabeledImageAttributeVal.objects.filter(image_id__in=ids).delete()
+        self.db_job.labeledimage_set.filter(pk__in=ids).delete()
+
+    def _delete_job_labeledshapes(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledshape_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledshape_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledshapes(child_ids, is_subcall=True)
+
+        models.LabeledShapeAttributeVal.objects.filter(shape_id__in=ids).delete()
+        self.db_job.labeledshape_set.filter(pk__in=ids).delete()
+
+    def _delete_job_labeledtracks(self, ids__UNSAFE: list[int], *, is_subcall: bool = False) -> None:
+        # ids__UNSAFE is a list, received from the user
+        # we MUST filter it by job_id additionally before applying to any queries
+        if is_subcall:
+            ids = ids__UNSAFE
+        else:
+            ids = self.db_job.labeledtrack_set.filter(pk__in=ids__UNSAFE).values_list('id', flat=True)
+            child_ids = self.db_job.labeledtrack_set.filter(parent_id__in=ids).values_list('id', flat=True)
+            if len(child_ids):
+                self._delete_job_labeledtracks(child_ids, is_subcall=True)
+
+        models.TrackedShapeAttributeVal.objects.filter(shape__track_id__in=ids).delete()
+        models.LabeledTrackAttributeVal.objects.filter(track_id__in=ids).delete()
+        self.db_job.labeledtrack_set.filter(pk__in=ids).delete()
+
     def _delete(self, data=None):
         deleted_data = {}
         if data is None:
             self.init_from_db()
             deleted_data = self.data
-            self.db_job.labeledimage_set.all().delete()
-            self.db_job.labeledshape_set.all().delete()
-            self.db_job.labeledtrack_set.all().delete()
+            models.clear_annotations_in_jobs([self.db_job.id])
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
             labeledtrack_ids = [track["id"] for track in data["tracks"]]
-            labeledimage_set = self.db_job.labeledimage_set
-            labeledimage_set = labeledimage_set.filter(pk__in=labeledimage_ids)
-            labeledshape_set = self.db_job.labeledshape_set
-            labeledshape_set = labeledshape_set.filter(pk__in=labeledshape_ids)
-            labeledtrack_set = self.db_job.labeledtrack_set
-            labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
             # It is not important for us that data had some "invalid" objects
             # which were skipped (not actually deleted). The main idea is to
@@ -463,9 +516,14 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            labeledimage_set.delete()
-            labeledshape_set.delete()
-            labeledtrack_set.delete()
+            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, chunk_size=1000):
+                self._delete_job_labeledimages(labeledimage_ids_chunk)
+
+            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, chunk_size=1000):
+                self._delete_job_labeledshapes(labeledshape_ids_chunk)
+
+            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, chunk_size=1000):
+                self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
                 "tags": data["tags"],
@@ -477,10 +535,10 @@ class JobAnnotation:
 
     def delete(self, data=None):
         deleted_data = self._delete(data)
-        handle_annotations_change(self.db_job, deleted_data, "delete")
-
         if not self._data_is_empty(deleted_data):
             self._set_updated_date()
+
+        handle_annotations_change(self.db_job, deleted_data, "delete")
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -501,25 +559,25 @@ class JobAnnotation:
             'label_id',
             'group',
             'source',
-            'labeledimageattributeval__spec_id',
-            'labeledimageattributeval__value',
-            'labeledimageattributeval__id',
+            'attribute__spec_id',
+            'attribute__value',
+            'attribute__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
-        db_tags = _merge_table_rows(
+        db_tags = merge_table_rows(
             rows=db_tags,
             keys_for_merge={
-                "labeledimageattributeval_set": [
-                    'labeledimageattributeval__spec_id',
-                    'labeledimageattributeval__value',
-                    'labeledimageattributeval__id',
+                "attributes": [
+                    'attribute__spec_id',
+                    'attribute__value',
+                    'attribute__id',
                 ],
             },
             field_id='id',
         )
 
         for db_tag in db_tags:
-            self._extend_attributes(db_tag.labeledimageattributeval_set,
+            self._extend_attributes(db_tag.attributes,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
         serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
@@ -541,18 +599,18 @@ class JobAnnotation:
             'rotation',
             'points',
             'parent',
-            'labeledshapeattributeval__spec_id',
-            'labeledshapeattributeval__value',
-            'labeledshapeattributeval__id',
+            'attribute__spec_id',
+            'attribute__value',
+            'attribute__id',
         ).order_by('frame').iterator(chunk_size=2000)
 
-        db_shapes = _merge_table_rows(
+        db_shapes = merge_table_rows(
             rows=db_shapes,
             keys_for_merge={
-                'labeledshapeattributeval_set': [
-                    'labeledshapeattributeval__spec_id',
-                    'labeledshapeattributeval__value',
-                    'labeledshapeattributeval__id',
+                'attributes': [
+                    'attribute__spec_id',
+                    'attribute__value',
+                    'attribute__id',
                 ],
             },
             field_id='id',
@@ -561,8 +619,12 @@ class JobAnnotation:
         shapes = {}
         elements = {}
         for db_shape in db_shapes:
-            self._extend_attributes(db_shape.labeledshapeattributeval_set,
+            self._extend_attributes(db_shape.attributes,
                 self.db_attributes[db_shape.label_id]["all"].values())
+            if db_shape['type'] == str(models.ShapeType.SKELETON):
+                # skeletons themselves should not have points as they consist of other elements
+                # here we ensure that it was initialized correctly
+                db_shape['points'] = []
 
             if db_shape.parent is None:
                 db_shape.elements = []
@@ -588,42 +650,42 @@ class JobAnnotation:
             "group",
             "source",
             "parent",
-            "labeledtrackattributeval__spec_id",
-            "labeledtrackattributeval__value",
-            "labeledtrackattributeval__id",
-            "trackedshape__type",
-            "trackedshape__occluded",
-            "trackedshape__z_order",
-            "trackedshape__rotation",
-            "trackedshape__points",
-            "trackedshape__id",
-            "trackedshape__frame",
-            "trackedshape__outside",
-            "trackedshape__trackedshapeattributeval__spec_id",
-            "trackedshape__trackedshapeattributeval__value",
-            "trackedshape__trackedshapeattributeval__id",
-        ).order_by('id', 'trackedshape__frame').iterator(chunk_size=2000)
+            "attribute__spec_id",
+            "attribute__value",
+            "attribute__id",
+            "shape__type",
+            "shape__occluded",
+            "shape__z_order",
+            "shape__rotation",
+            "shape__points",
+            "shape__id",
+            "shape__frame",
+            "shape__outside",
+            "shape__attribute__spec_id",
+            "shape__attribute__value",
+            "shape__attribute__id",
+        ).order_by('id', 'shape__frame').iterator(chunk_size=2000)
 
-        db_tracks = _merge_table_rows(
+        db_tracks = merge_table_rows(
             rows=db_tracks,
             keys_for_merge={
-                "labeledtrackattributeval_set": [
-                    "labeledtrackattributeval__spec_id",
-                    "labeledtrackattributeval__value",
-                    "labeledtrackattributeval__id",
+                "attributes": [
+                    "attribute__spec_id",
+                    "attribute__value",
+                    "attribute__id",
                 ],
-                "trackedshape_set":[
-                    "trackedshape__type",
-                    "trackedshape__occluded",
-                    "trackedshape__z_order",
-                    "trackedshape__points",
-                    "trackedshape__rotation",
-                    "trackedshape__id",
-                    "trackedshape__frame",
-                    "trackedshape__outside",
-                    "trackedshape__trackedshapeattributeval__spec_id",
-                    "trackedshape__trackedshapeattributeval__value",
-                    "trackedshape__trackedshapeattributeval__id",
+                "shapes":[
+                    "shape__type",
+                    "shape__occluded",
+                    "shape__z_order",
+                    "shape__points",
+                    "shape__rotation",
+                    "shape__id",
+                    "shape__frame",
+                    "shape__outside",
+                    "shape__attribute__spec_id",
+                    "shape__attribute__value",
+                    "shape__attribute__id",
                 ],
             },
             field_id="id",
@@ -632,29 +694,31 @@ class JobAnnotation:
         tracks = {}
         elements = {}
         for db_track in db_tracks:
-            db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
-                'trackedshapeattributeval_set': [
-                    'trackedshapeattributeval__value',
-                    'trackedshapeattributeval__spec_id',
-                    'trackedshapeattributeval__id',
+            db_track["shapes"] = merge_table_rows(db_track["shapes"], {
+                'attributes': [
+                    'attribute__value',
+                    'attribute__spec_id',
+                    'attribute__id',
                 ]
             }, 'id')
 
             # A result table can consist many equal rows for track/shape attributes
             # We need filter unique attributes manually
-            db_track["labeledtrackattributeval_set"] = list(set(db_track["labeledtrackattributeval_set"]))
-            self._extend_attributes(db_track.labeledtrackattributeval_set,
+            db_track["attributes"] = list(set(db_track["attributes"]))
+            self._extend_attributes(db_track.attributes,
                 self.db_attributes[db_track.label_id]["immutable"].values())
 
             default_attribute_values = self.db_attributes[db_track.label_id]["mutable"].values()
-            for db_shape in db_track["trackedshape_set"]:
-                db_shape["trackedshapeattributeval_set"] = list(
-                    set(db_shape["trackedshapeattributeval_set"])
-                )
-                # in case of trackedshapes need to interpolate attriute values and extend it
+            for db_shape in db_track["shapes"]:
+                db_shape["attributes"] = list(set(db_shape["attributes"]))
+                # in case of trackedshapes need to interpolate attribute values and extend it
                 # by previous shape attribute values (not default values)
-                self._extend_attributes(db_shape["trackedshapeattributeval_set"], default_attribute_values)
-                default_attribute_values = db_shape["trackedshapeattributeval_set"]
+                self._extend_attributes(db_shape["attributes"], default_attribute_values)
+                if db_shape['type'] == str(models.ShapeType.SKELETON):
+                    # skeletons themselves should not have points as they consist of other elements
+                    # here we ensure that it was initialized correctly
+                    db_shape['points'] = []
+                default_attribute_values = db_shape["attributes"]
 
             if db_track.parent is None:
                 db_track.elements = []
@@ -708,7 +772,7 @@ class JobAnnotation:
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
-            except DatasetNotFoundError as not_found:
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="job",
@@ -728,17 +792,28 @@ class TaskAnnotation:
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
 
-        # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(
-            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
-        ).order_by('id')
+        requested_job_types = [models.JobType.ANNOTATION]
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
+            requested_job_types.append(models.JobType.GROUND_TRUTH)
+
+        self.db_jobs = (
+            models.Job.objects
+            .select_related("segment")
+            .filter(segment__task_id=pk, type__in=requested_job_types)
+        )
+
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data, action):
-        _data = data if isinstance(data, AnnotationIR) else AnnotationIR(self.db_task.dimension, data)
+    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_task.dimension, data)
+
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
+            self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
+
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
@@ -746,27 +821,112 @@ class TaskAnnotation:
             start = db_job.segment.start_frame
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
-            splitted_data[jid] = _data.slice(start, stop)
+            splitted_data[jid] = data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
-            _data = AnnotationIR(self.db_task.dimension)
+            data = AnnotationIR(self.db_task.dimension)
             if action is None:
-                _data.data = put_job_data(jid, job_data)
+                data.data = put_job_data(jid, job_data)
             else:
-                _data.data = patch_job_data(jid, job_data, action)
-            if _data.version > self.ir_data.version:
-                self.ir_data.version = _data.version
-            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap, self.db_task.dimension)
+                data.data = patch_job_data(jid, job_data, action)
 
-    def _merge_data(self, data, start_frame, overlap, dimension):
-        annotation_manager = AnnotationManager(self.ir_data)
-        annotation_manager.merge(data, start_frame, overlap, dimension)
+            if data.version > self.ir_data.version:
+                self.ir_data.version = data.version
+
+            self._merge_data(data, jobs[jid]["start"])
+
+    def _merge_data(self, data: AnnotationIR, start_frame: int):
+        annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
+        annotation_manager.merge(data, start_frame, overlap=self.db_task.overlap)
 
     def put(self, data):
         self._patch_data(data, None)
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
+
+    def _preprocess_input_annotations_for_gt_pool_task(
+        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
+    ) -> AnnotationIR:
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_task.dimension, data)
+
+        if data.tracks:
+            # Only tags and shapes are supported in tasks with GT pool
+            raise ValidationError("Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            ))
+
+        gt_job = self.db_task.gt_job
+        if gt_job is None:
+            raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
+
+        db_data = self.db_task.data
+        frame_step = db_data.get_frame_step()
+
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // frame_step
+
+        # Copy GT pool annotations into other jobs, with replacement of any existing annotations
+        gt_abs_frame_set = sorted(gt_job.segment.frame_set)
+        task_gt_honeypots: dict[int, int] = {} # real_id -> [placeholder_id, ...]
+        task_gt_frames: set[int] = set()
+        for abs_frame, abs_real_frame in (
+            self.db_task.data.images
+            .filter(is_placeholder=True, real_frame__in=gt_abs_frame_set)
+            .values_list('frame', 'real_frame')
+            .iterator(chunk_size=1000)
+        ):
+            frame = _to_rel_frame(abs_frame)
+            task_gt_frames.add(frame)
+            task_gt_honeypots.setdefault(_to_rel_frame(abs_real_frame), []).append(frame)
+
+        gt_pool_frames = tuple(map(_to_rel_frame, gt_abs_frame_set))
+        if sorted(gt_pool_frames) != list(range(min(gt_pool_frames), max(gt_pool_frames) + 1)):
+            raise AssertionError("Expected a continuous GT pool frame set") # to be used in slice()
+
+        gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
+
+        if action and not (
+            gt_annotations.tags or gt_annotations.shapes or gt_annotations.tracks
+        ):
+            return
+
+        if not (
+            action is None or # put
+            action == PatchAction.CREATE
+        ):
+            # allow validation frame editing only with full task updates
+            raise ValidationError(
+                "Annotations on validation frames can only be edited via task import or the GT job"
+            )
+
+        task_annotation_manager = AnnotationManager(data, dimension=self.db_task.dimension)
+        task_annotation_manager.clear_frames(task_gt_frames)
+
+        for ann_type, gt_annotation in itertools.chain(
+            zip(itertools.repeat('tag'), gt_annotations.tags),
+            zip(itertools.repeat('shape'), gt_annotations.shapes),
+        ):
+            for honeypot_frame_id in task_gt_honeypots.get(
+                gt_annotation["frame"], [] # some GT frames may be unused
+            ):
+                copied_annotation = faster_deepcopy(gt_annotation)
+                copied_annotation["frame"] = honeypot_frame_id
+
+                for ann in itertools.chain(
+                    [copied_annotation], copied_annotation.get('elements', [])
+                ):
+                    ann.pop("id", None)
+
+                if ann_type == 'tag':
+                    data.add_tag(copied_annotation)
+                elif ann_type == 'shape':
+                    data.add_shape(copied_annotation)
+                else:
+                    assert False
+
+        return data
 
     def update(self, data):
         self._patch_data(data, PatchAction.UPDATE)
@@ -782,18 +942,17 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
-            if db_job.type != models.JobType.ANNOTATION:
+            if db_job.type == models.JobType.GROUND_TRUTH and not (
+                self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
+            ):
                 continue
 
-            annotation = JobAnnotation(db_job.id, is_prefetched=True)
-            annotation.init_from_db()
-            if annotation.ir_data.version > self.ir_data.version:
-                self.ir_data.version = annotation.ir_data.version
-            db_segment = db_job.segment
-            start_frame = db_segment.start_frame
-            overlap = self.db_task.overlap
-            dimension = self.db_task.dimension
-            self._merge_data(annotation.ir_data, start_frame, overlap, dimension)
+            gt_annotation = JobAnnotation(db_job.id, is_prefetched=True)
+            gt_annotation.init_from_db()
+            if gt_annotation.ir_data.version > self.ir_data.version:
+                self.ir_data.version = gt_annotation.ir_data.version
+
+            self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
 
     def export(self, dst_file, exporter, host='', **options):
         task_data = TaskData(
@@ -820,7 +979,7 @@ class TaskAnnotation:
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)
-            except DatasetNotFoundError as not_found:
+            except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
                 if settings.CVAT_LOG_IMPORT_ERRORS:
                     dlogger.log_import_error(
                         entity="task",
@@ -941,7 +1100,6 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
-    task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
@@ -953,7 +1111,6 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
-    job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

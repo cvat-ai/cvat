@@ -325,8 +325,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const credentialsBlok = (): JSX.Element | null => {
         const internalCommonProps = {
             ...commonProps,
-            labelCol: { span: 8, offset: 2 },
-            wrapperCol: { offset: 2 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-2`,
         };
 
         if (providerType === ProviderType.AWS_S3_BUCKET && credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
@@ -491,9 +490,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     const awsS3Configuration = (): JSX.Element => {
         const internalCommonProps = {
-            ...commonProps,
-            labelCol: { offset: 1 },
-            wrapperCol: { offset: 1 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
         };
 
         return (
@@ -539,9 +536,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     const azureBlobStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
-            ...commonProps,
-            labelCol: { offset: 1 },
-            wrapperCol: { offset: 1 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
         };
 
         return (
@@ -576,9 +571,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     const googleCloudStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
-            ...commonProps,
-            labelCol: { span: 6, offset: 1 },
-            wrapperCol: { offset: 1 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
         };
 
         return (

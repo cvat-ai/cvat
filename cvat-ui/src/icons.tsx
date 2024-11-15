@@ -37,7 +37,6 @@ import SVGNextFilteredIcon from './assets/next-filtered-icon.svg';
 import SVGNextEmptyIcon from './assets/next-empty-icon.svg';
 import SVGForwardJumpIcon from './assets/forward-jump-icon.svg';
 import SVGLastIcon from './assets/last-icon.svg';
-import SVGInfoIcon from './assets/info-icon.svg';
 import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
 import SVGObjectOutsideIcon from './assets/object-outside-icon.svg';
 import SVGBackgroundIcon from './assets/background-icon.svg';
@@ -105,7 +104,6 @@ export const NextFilteredIcon = React.memo((): JSX.Element => <SVGNextFilteredIc
 export const NextEmptyIcon = React.memo((): JSX.Element => <SVGNextEmptyIcon />);
 export const ForwardJumpIcon = React.memo((): JSX.Element => <SVGForwardJumpIcon />);
 export const LastIcon = React.memo((): JSX.Element => <SVGLastIcon />);
-export const InfoIcon = React.memo((): JSX.Element => <SVGInfoIcon />);
 export const FullscreenIcon = React.memo((): JSX.Element => <SVGFullscreenIcon />);
 export const ObjectOutsideIcon = React.memo((): JSX.Element => <SVGObjectOutsideIcon />);
 export const BackgroundIcon = React.memo((): JSX.Element => <SVGBackgroundIcon />);

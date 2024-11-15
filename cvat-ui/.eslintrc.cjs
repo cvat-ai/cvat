@@ -29,6 +29,7 @@ module.exports = {
         'react/require-default-props': 'off',
         'react/no-unused-prop-types': 'off',
         'react/no-array-index-key': 'off',
+        'react/prop-types': 'off',
         'react/jsx-props-no-spreading': 0,
         'jsx-quotes': ['error', 'prefer-single'],
         'react/static-property-placement': ['warn', 'static public field'],

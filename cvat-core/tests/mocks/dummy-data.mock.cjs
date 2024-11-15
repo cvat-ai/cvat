@@ -3388,6 +3388,38 @@ const webhooksEventsDummyData = {
       },
 }
 
+const requestsDummyData = {
+    count: 1,
+    next: null,
+    previous: null,
+    results: [
+        {
+            status: "finished",
+            message: "",
+            id: "create:task-1",
+            operation: {
+                type: "create:task",
+                target: "task",
+                project_id: null,
+                task_id: 1,
+                job_id: null,
+                format: null,
+                name: "create:task-1"
+            },
+            percent: 0,
+            enqueue_date: "2024-04-26T09:22:43.824811Z",
+            start_date: "2024-04-26T09:22:43.827597Z",
+            finished_date: "2024-04-26T09:22:43.884098Z",
+            expire_date: "2024-04-26T09:31:03.884098",
+            owner: {
+                id: 1,
+                username: "admin",
+            },
+            result_url: null,
+        }
+    ]
+}
+
 module.exports = {
     tasksDummyData,
     tasksDummyLabelsData,
@@ -3404,4 +3436,5 @@ module.exports = {
     webhooksDummyData,
     webhooksEventsDummyData,
     jobsDummyData,
+    requestsDummyData,
 };

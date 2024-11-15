@@ -30,6 +30,10 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 @importer(name='ImageNet', ext='ZIP', version='1.0')
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
+
+    # We do not run detect_dataset before import because the Imagenet format
+    # has problem with the dataset detection in case of empty annotation file(s)
+    # Details in: https://github.com/cvat-ai/datumaro/issues/43
     if glob(osp.join(temp_dir, '*.txt')):
         dataset = Dataset.import_from(temp_dir, 'imagenet_txt', env=dm_env)
     else:

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
@@ -23,7 +23,9 @@ import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
+import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
+import { navigationActions } from 'actions/navigation-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -51,6 +53,8 @@ interface StateToProps {
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
+    requestsFetching: boolean;
+    requestsInitialized: boolean;
     serverAPISchemaFetching: boolean;
     serverAPISchemaInitialized: boolean;
     isPasswordResetEnabled: boolean;
@@ -68,12 +72,14 @@ interface DispatchToProps {
     loadUserAgreements: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
+    initRequests: () => void;
     loadServerAPISchema: () => void;
+    onChangeLocation: (from: string, to: string) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        plugins, auth, formats, about, userAgreements, models, organizations, invitations, serverAPI,
+        plugins, auth, formats, about, userAgreements, models, organizations, invitations, serverAPI, requests,
     } = state;
 
     return {
@@ -97,6 +103,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isModelPluginActive: plugins.list.MODELS,
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
+        requestsFetching: requests.fetching,
+        requestsInitialized: requests.initialized,
         serverAPISchemaFetching: serverAPI.fetching,
         serverAPISchemaInitialized: serverAPI.initialized,
         isPasswordResetEnabled: serverAPI.configuration.isPasswordResetEnabled,
@@ -116,22 +124,24 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetMessages: (): void => dispatch(resetMessages()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
         initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
+        initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
+        onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };
 }
 
 const ReduxAppWrapper = connect(mapStateToProps, mapDispatchToProps)(CVATApplication);
 
-ReactDOM.render(
+const root = createRoot(document.getElementById('root') as HTMLDivElement);
+root.render((
     <Provider store={cvatStore}>
         <BrowserRouter>
             <PluginsEntrypoint />
             <ReduxAppWrapper />
         </BrowserRouter>
         <LayoutGrid />
-    </Provider>,
-    document.getElementById('root'),
-);
+    </Provider>
+));
 
 window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
     const {

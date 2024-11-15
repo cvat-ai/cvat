@@ -274,6 +274,119 @@ context('Testing annotations actions workflow', () => {
         });
     });
 
+    describe('Test action: "Propagate shapes"', () => {
+        const ACTION_NAME = 'Propagate shapes';
+        const FORMAT_NAME = 'Segmentation mask 1.1';
+
+        function checkFramesContainShapes(from, to, amount) {
+            frames.forEach((frame) => {
+                cy.goCheckFrameNumber(frame);
+
+                if (frame >= from && frame <= to) {
+                    cy.get('.cvat_canvas_shape').should('have.length', amount);
+                } else {
+                    cy.get('.cvat_canvas_shape').should('have.length', 0);
+                }
+            });
+        }
+
+        before(() => {
+            const shapes = [{
+                type: 'rectangle',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                points: [250, 350, 350, 450],
+                rotation: 0,
+                attributes: [],
+                elements: [],
+                frame: 0,
+                label_id: labels[0].id,
+                group: 0,
+                source: 'manual',
+            }, {
+                type: 'rectangle',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                points: [350, 450, 450, 550],
+                rotation: 0,
+                attributes: [],
+                elements: [],
+                frame: 0,
+                label_id: labels[1].id,
+                group: 0,
+                source: 'manual',
+            }];
+
+            cy.window().then((window) => {
+                window.cvat.server.request(`/api/jobs/${jobID}/annotations`, {
+                    method: 'PUT',
+                    data: { shapes },
+                });
+            });
+        });
+
+        beforeEach(() => {
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('not.exist');
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+        });
+
+        it('Apply action on specific frames', () => {
+            const middleFrame = Math.round(latestFrameNumber / 2);
+            cy.openAnnotationsActionsModal();
+            cy.selectAnnotationsAction(ACTION_NAME);
+            cy.setAnnotationActionParameter('Target frame', 'input', middleFrame);
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
+            checkFramesContainShapes(0, middleFrame, 2);
+        });
+
+        it('Apply action on current frame', () => {
+            cy.openAnnotationsActionsModal();
+            cy.selectAnnotationsAction(ACTION_NAME);
+            cy.setAnnotationActionParameter('Target frame', 'input', 0);
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
+            checkFramesContainShapes(0, 0, 2);
+        });
+
+        it('Apply action on mask with different frame sizes. Mask is cropped. Segmentation mask export is available', () => {
+            // Default frame size is 800x800, but last frame is 500x500
+            cy.goCheckFrameNumber(latestFrameNumber - 1);
+            cy.startMaskDrawing();
+            cy.drawMask([{
+                method: 'brush',
+                coordinates: [[620, 620], [700, 620], [700, 700], [620, 700]],
+            }]);
+            cy.finishMaskDrawing();
+
+            cy.openAnnotationsActionsModal();
+            cy.selectAnnotationsAction(ACTION_NAME);
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
+
+            cy.get('.cvat_canvas_shape').should('have.length', 1);
+            cy.goCheckFrameNumber(latestFrameNumber);
+            cy.get('.cvat_canvas_shape').should('have.length', 1);
+
+            cy.saveJob('PUT', 200, 'saveJob');
+            const exportAnnotation = {
+                as: 'exportAnnotations',
+                type: 'annotations',
+                format: FORMAT_NAME,
+            };
+            cy.exportJob(exportAnnotation);
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+        });
+    });
+
     after(() => {
         cy.logout();
         cy.getAuthKey().then((response) => {

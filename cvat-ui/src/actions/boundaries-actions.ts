@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,6 @@ import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { EventScope } from 'cvat-logger';
 import { fetchAnnotationsAsync } from './annotation-actions';
 
 const cvat = getCore();
@@ -45,8 +44,6 @@ export function resetAfterErrorAsync(): ThunkAction {
                 const frameNumber = Math.max(Math.min(job.stopFrame, currentFrame), job.startFrame);
                 const frameData = await job.frames.get(frameNumber);
                 const colors = [...cvat.enums.colors];
-
-                await job.logger.log(EventScope.restoreJob);
 
                 dispatch(boundariesActions.resetAfterError({
                     job,

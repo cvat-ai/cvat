@@ -5,8 +5,6 @@
 from django.core import signing
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.authentication import TokenAuthentication
-from django.contrib.auth import login
 from django.contrib.auth import get_user_model
 from furl import furl
 import hashlib
@@ -51,21 +49,6 @@ class Signer:
             })
         except User.DoesNotExist:
             raise signing.BadSignature()
-
-# Even with token authentication it is very important to have a valid session id
-# in cookies because in some cases we cannot use token authentication (e.g. when
-# we redirect to the server in UI using just URL). To overkill that we override
-# the class to call `login` method which restores the session id in cookies.
-class TokenAuthenticationEx(TokenAuthentication):
-    def authenticate(self, request):
-        auth = super().authenticate(request)
-        # drf_spectacular uses mock requests without session field
-        session = getattr(request, 'session', None)
-        if (auth is not None and
-            session is not None and
-            (session.session_key is None or (not session.modified and not session.load()))):
-            login(request, auth[0], 'django.contrib.auth.backends.ModelBackend')
-        return auth
 
 class SignatureAuthentication(BaseAuthentication):
     """

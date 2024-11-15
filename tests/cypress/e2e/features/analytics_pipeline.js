@@ -52,7 +52,7 @@ context('Analytics pipeline', () => {
         },
     ];
 
-    const cardEntryNames = ['annotation_time', 'total_object_count', 'total_annotation_speed'];
+    const cardEntryNames = ['annotation_time', 'total_object_count', 'average_annotation_speed'];
     function checkCards() {
         cy.get('.cvat-analytics-card')
             .should('have.length', 3)
@@ -61,7 +61,7 @@ context('Analytics pipeline', () => {
                     .invoke('data', 'entry-name')
                     .then((val) => {
                         expect(cardEntryNames.includes(val)).to.eq(true);
-                        if (['total_object_count', 'total_annotation_speed'].includes(val)) {
+                        if (['total_object_count', 'average_annotation_speed'].includes(val)) {
                             cy.wrap(card).within(() => {
                                 cy.get('.cvat-analytics-card-value').should('not.have.text', '0.0');
                             });

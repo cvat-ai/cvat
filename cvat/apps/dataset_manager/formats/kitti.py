@@ -7,9 +7,10 @@ import os.path as osp
 
 from datumaro.components.dataset import Dataset
 from datumaro.plugins.kitti_format.format import KittiPath, write_label_map
+
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
@@ -41,6 +42,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
     if not osp.isfile(color_map_path):
         write_label_map(color_map_path, color_map)
 
+    detect_dataset(temp_dir, format_name='kitti', importer=dm_env.importers.get('kitti'))
     dataset = Dataset.import_from(temp_dir, format='kitti', env=dm_env)
     labels_meta = instance_data.meta[instance_data.META_FIELD]['labels']
     if 'background' not in [label['name'] for _, label in labels_meta]:

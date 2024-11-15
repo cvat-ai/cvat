@@ -47,7 +47,7 @@ describe('Feature: get frame meta', () => {
 describe('Feature: delete/restore frame', () => {
     test('delete frame from job', async () => {
         const job = (await cvat.jobs.get({ jobID: 100 }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         let frame = await job.frames.get(0);
         expect(frame.deleted).toBe(false);
         await job.frames.delete(0);
@@ -57,7 +57,7 @@ describe('Feature: delete/restore frame', () => {
 
     test('restore frame from job', async () => {
         const job = (await cvat.jobs.get({ jobID: 100 }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
         let frame = await job.frames.get(8);
         expect(frame.deleted).toBe(true);
         await job.frames.restore(8);
@@ -67,7 +67,7 @@ describe('Feature: delete/restore frame', () => {
 
     test('delete frame from task', async () => {
         const task = (await cvat.tasks.get({ id: 100 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         let frame = await task.frames.get(1);
         expect(frame.deleted).toBe(false);
         await task.frames.delete(1);
@@ -77,7 +77,7 @@ describe('Feature: delete/restore frame', () => {
 
     test('restore frame from task', async () => {
         const task = (await cvat.tasks.get({ id: 100 }))[0];
-        await task.annotations.clear(true);
+        await task.annotations.clear({ reload: true });
         let frame = await task.frames.get(7);
         expect(frame.deleted).toBe(true);
         await task.frames.restore(7);

@@ -1,11 +1,14 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 
 import requests
 from cvat_sdk.api_client import ApiClient, Configuration
+from cvat_sdk.core.client import Client, Config
 
 ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "utils")
 ASSETS_DIR = (ROOT_DIR / "assets").resolve()
@@ -18,6 +21,7 @@ API_URL = BASE_URL + "/api/"
 MINIO_KEY = "minio_access_key"
 MINIO_SECRET_KEY = "minio_secret_key"  # nosec
 MINIO_ENDPOINT_URL = "http://localhost:9000"
+IMPORT_EXPORT_BUCKET_ID = 3
 
 
 def _to_query_params(**kwargs):
@@ -70,3 +74,10 @@ def make_api_client(user: str, *, password: str = None) -> ApiClient:
     return ApiClient(
         configuration=Configuration(host=BASE_URL, username=user, password=password or USER_PASS)
     )
+
+
+@contextmanager
+def make_sdk_client(user: str, *, password: str = None) -> Generator[Client, None, None]:
+    with Client(BASE_URL, config=Config(status_check_period=0.01)) as client:
+        client.login((user, password or USER_PASS))
+        yield client

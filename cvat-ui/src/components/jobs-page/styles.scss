@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-jobs-page {
     padding-top: $grid-unit-size * 2;
@@ -13,6 +13,8 @@
     overflow: auto;
 
     .cvat-jobs-page-top-bar {
+        margin-bottom: $grid-unit-size;
+
         > div {
             display: flex;
             justify-content: space-between;
@@ -25,7 +27,6 @@
 
                 .cvat-jobs-page-search-bar {
                     width: $grid-unit-size * 32;
-                    padding-left: $grid-unit-size * 0.5;
                 }
 
                 > div {
@@ -49,8 +50,6 @@
     }
 
     .cvat-job-page-list-item {
-        width: 25%;
-        border-width: $grid-unit-size * 0.5;
         display: flex;
         flex-direction: column;
 
@@ -117,7 +116,7 @@
             margin: $grid-unit-size;
             width: $grid-unit-size * 4;
             background: white;
-            border-radius: 4px;
+            border-radius: $border-radius-base;
             text-align: center;
             opacity: 0.5;
             padding: $grid-unit-size;
@@ -130,7 +129,7 @@
             margin: $grid-unit-size $grid-unit-size $grid-unit-size 0;
             width: fit-content;
             background: white;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 $border-radius-base $border-radius-base 0;
             padding: $grid-unit-size;
             opacity: 0.5;
             transition: 0.15s all ease;
@@ -140,14 +139,22 @@
 
     .cvat-jobs-page-pagination {
         display: flex;
+        margin-top: $grid-unit-size;
         justify-content: center;
     }
 
     .cvat-jobs-page-list {
         display: flex;
         flex-wrap: wrap;
-        padding-top: $grid-unit-size;
-        padding-bottom: $grid-unit-size;
+
+        > div {
+            width: 100%;
+            margin-bottom: $grid-unit-size;
+
+            > div:not(:first-child) {
+                padding-left: $grid-unit-size;
+            }
+        }
     }
 
     .cvat-job-card-more-button {

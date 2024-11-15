@@ -39,19 +39,6 @@ def _convert_datetime_to_date(statistics):
     return statistics
 
 
-def _clamp_working_time(statistics):
-    affected_metrics = "annotation_speed"
-    for metric in statistics:
-        if metric["name"] not in affected_metrics:
-            continue
-        data_series = metric.get("data_series", {})
-        if data_series:
-            for df in data_series["working_time"]:
-                df["value"] = max(df["value"], 1)
-
-    return statistics
-
-
 def _get_object_report(obj_model, pk, start_date, end_date):
     data = {}
     try:
@@ -65,7 +52,7 @@ def _get_object_report(obj_model, pk, start_date, end_date):
 
     statistics = _filter_statistics_by_date(db_analytics_report.statistics, start_date, end_date)
     statistics = _convert_datetime_to_date(statistics)
-    data["statistics"] = _clamp_working_time(statistics)
+    data["statistics"] = statistics
     data["created_date"] = db_analytics_report.created_date
 
     if obj_model is Job:

@@ -7,7 +7,7 @@ import zipfile
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
                                                 import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
@@ -32,6 +32,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
 
+        detect_dataset(temp_dir, format_name='sly_pointcloud', importer=dm_env.importers.get('sly_pointcloud'))
         dataset = Dataset.import_from(temp_dir, 'sly_pointcloud', env=dm_env)
     else:
         dataset = Dataset.import_from(src_file.name, 'sly_pointcloud', env=dm_env)

@@ -108,7 +108,7 @@ presentations and covers the following topics:
 - **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
   What problems do CVAT and Datumaro solve, and how they can speed up your model
   training process. Some resources you can use to learn more about how to use them.
-- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai).
+- **Deployment and use CVAT**. Use the app online at [app.cvat.ai](https://app.cvat.ai).
   A local deployment. A containerized local deployment with Docker Compose (for regular use),
   and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
   tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
@@ -116,7 +116,7 @@ presentations and covers the following topics:
 
 [Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
 
-- **Pipeline**. In this video, we show how to use [app.cvat.ai](app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
+- **Pipeline**. In this video, we show how to use [app.cvat.ai](https://app.cvat.ai): how to sign up, upload your data, annotate it, and download it.
 
 <!--lint enable maximum-line-length-->
 
@@ -151,9 +151,9 @@ For more information about the supported formats, see:
 <!--lint disable maximum-line-length-->
 
 | Annotation format                                                                                | Import | Export |
-| ------------------------------------------------------------------------------------------------ | ------ | ------ |
-| [CVAT for images](https://docs.cvat.ai/docs/manual/advanced/xml_format/#annotation)     | ✔️     | ✔️     |
-| [CVAT for a video](https://docs.cvat.ai/docs/manual/advanced/xml_format/#interpolation) | ✔️     | ✔️     |
+|--------------------------------------------------------------------------------------------------| ------ | ------ |
+| [CVAT for images](https://docs.cvat.ai/docs/manual/advanced/xml_format/#annotation)              | ✔️     | ✔️     |
+| [CVAT for a video](https://docs.cvat.ai/docs/manual/advanced/xml_format/#interpolation)          | ✔️     | ✔️     |
 | [Datumaro](https://github.com/cvat-ai/datumaro)                                                  | ✔️     | ✔️     |
 | [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                                            | ✔️     | ✔️     |
 | Segmentation masks from [PASCAL VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                    | ✔️     | ✔️     |
@@ -175,6 +175,11 @@ For more information about the supported formats, see:
 | [Kitti Raw Format](https://www.cvlibs.net/datasets/kitti/raw_data.php)                           | ✔️     | ✔️     |
 | [LFW](http://vis-www.cs.umass.edu/lfw/)                                                          | ✔️     | ✔️     |
 | [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi) | ✔️     | ✔️     |
+| [YOLOv8 Detection](https://docs.ultralytics.com/datasets/detect/)                                | ✔️     | ✔️     |
+| [YOLOv8 Oriented Bounding Boxes](https://docs.ultralytics.com/datasets/obb/)                     | ✔️     | ✔️     |
+| [YOLOv8 Segmentation](https://docs.ultralytics.com/datasets/segment/)                            | ✔️     | ✔️     |
+| [YOLOv8 Pose](https://docs.ultralytics.com/datasets/pose/)                                       | ✔️     | ✔️     |
+| [YOLOv8 Classification](https://docs.ultralytics.com/datasets/classify/)                         | ✔️     | ✔️     |
 
 <!--lint enable maximum-line-length-->
 
@@ -211,6 +216,11 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 ## License
 
 The code is released under the [MIT License](https://opensource.org/licenses/MIT).
+
+The code contained within the `/serverless` directory is released under the **MIT License**.
+However, it may download and utilize various assets, such as source code, architectures, and weights, among others.
+These assets may be distributed under different licenses, including non-commercial licenses.
+It is your responsibility to ensure compliance with the terms of these licenses before using the assets.
 
 This software uses LGPL-licensed libraries from the [FFmpeg](https://www.ffmpeg.org) project.
 The exact steps on how FFmpeg was configured and compiled can be found in the [Dockerfile](Dockerfile).
@@ -249,7 +259,6 @@ questions and get our support.
 - [How to Use CVAT (Roboflow guide)](https://blog.roboflow.com/cvat/)
 - [How to auto-label data in CVAT with one of 50,000+ models on Roboflow Universe](https://blog.roboflow.com/how-to-use-roboflow-models-in-cvat/)
 
-  <!-- prettier-ignore-start -->
   <!-- Badges -->
 
 [docker-server-pulls-img]: https://img.shields.io/docker/pulls/cvat/server.svg?style=flat-square&label=server%20pulls
@@ -260,8 +269,8 @@ questions and get our support.
 [ci-url]: https://github.com/cvat-ai/cvat/actions
 [gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat/public
-[coverage-img]: https://codecov.io/github/opencv/cvat/branch/develop/graph/badge.svg
-[coverage-url]: https://codecov.io/github/opencv/cvat
+[coverage-img]: https://codecov.io/github/cvat-ai/cvat/branch/develop/graph/badge.svg
+[coverage-url]: https://codecov.io/github/cvat-ai/cvat
 [doi-img]: https://zenodo.org/badge/139156354.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
 [discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord

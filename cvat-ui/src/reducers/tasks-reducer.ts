@@ -8,9 +8,11 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 
+import { ProjectsActionTypes } from 'actions/projects-actions';
 import { TasksState } from '.';
 
 const defaultState: TasksState = {
+    fetchingTimestamp: Date.now(),
     initialized: false,
     fetching: false,
     moveTask: {
@@ -42,6 +44,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     deletes: {},
                 },
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 initialized: false,
                 fetching: true,
                 count: 0,
@@ -77,6 +80,13 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 initialized: true,
                 fetching: false,
             };
+        case ProjectsActionTypes.DELETE_PROJECT_SUCCESS: {
+            const { projectId } = action.payload;
+            return {
+                ...state,
+                current: state.current.filter((_task) => _task.projectId !== projectId),
+            };
+        }
         case TasksActionTypes.DELETE_TASK: {
             const { taskID } = action.payload;
             const { deletes } = state.activities;

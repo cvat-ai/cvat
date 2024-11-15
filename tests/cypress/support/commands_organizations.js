@@ -8,6 +8,7 @@
 function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
         .should('exist').and('be.visible').click();
+    cy.wait(500); // animation
     cy.get('.cvat-header-menu')
         .should('exist')
         .and('be.visible')

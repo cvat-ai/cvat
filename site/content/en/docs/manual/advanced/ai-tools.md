@@ -130,7 +130,7 @@ During the drawing process, you can remove the last point by clicking on it with
 ### Settings
 
 - On how to adjust the polygon,
-  see {{< ilink "/docs/manual/basics/objects-sidebar#appearance" "Objects sidebar" >}}.
+  see [Objects sidebar](/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar#appearance).
 
 - For more information about polygons in general, see
   {{< ilink "/docs/manual/advanced/annotation-with-polygons" "Annotation with polygons" >}}.

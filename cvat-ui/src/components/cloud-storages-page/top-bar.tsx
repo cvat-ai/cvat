@@ -53,7 +53,7 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                     />
                     <div>
                         <SortingComponent
-                            visible={visibility.sorting}
+                            open={visibility.sorting}
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}

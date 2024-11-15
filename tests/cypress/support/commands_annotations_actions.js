@@ -42,3 +42,14 @@ Cypress.Commands.add('selectAnnotationsAction', (name) => {
 Cypress.Commands.add('waitAnnotationsAction', () => {
     cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
 });
+
+Cypress.Commands.add('setAnnotationActionParameter', (parameterName, type, value) => {
+    if (type === 'input') {
+        cy.get('.cvat-action-runner-action-parameters').within(() => {
+            cy.contains('.cvat-action-runner-action-parameter', parameterName)
+                .get('input').clear();
+            cy.contains('.cvat-action-runner-action-parameter', parameterName)
+                .get('input').type(value);
+        });
+    }
+});

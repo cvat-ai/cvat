@@ -29,6 +29,11 @@ update:project,"Task, Project",Sandbox,"None, Assignee",,PATCH,/tasks/{id},Admin
 update:project,"Task, Project",Sandbox,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
 update:project,"Task, Project",Organization,"None, Assignee",,PATCH,/tasks/{id},User,Maintainer
 update:project,"Task, Project",Organization,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,Worker
+update:associated_storage,Task,Sandbox,None,,PATCH,/tasks/{id},Admin,N/A
+update:associated_storage,Task,Sandbox,"Owner, Project:owner",,PATCH,/tasks/{id},Worker,N/A
+update:associated_storage,Task,Organization,None,,PATCH,/tasks/{id},Admin,N/A
+update:associated_storage,Task,Organization,"None, Assignee, Project:assignee",,PATCH,/tasks/{id},User,Maintainer
+update:associated_storage,Task,Organization,"Owner, Project:owner",,PATCH,/tasks/{id},Worker,Worker
 delete,Task,Sandbox,"None, Assignee",,DELETE,/tasks/{id},Admin,N/A
 delete,Task,Sandbox,"Owner, Project:owner, Project:assignee",,DELETE,/tasks/{id},Worker,N/A
 delete,Task,Organization,"None, Assignee",,DELETE,/tasks/{id},User,Maintainer

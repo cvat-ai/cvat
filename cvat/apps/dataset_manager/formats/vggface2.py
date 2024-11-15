@@ -7,7 +7,7 @@ import zipfile
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, TaskData, \
+from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, TaskData, detect_dataset, \
     import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -26,6 +26,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name='vgg_face2', importer=dm_env.importers.get('vgg_face2'))
     dataset = Dataset.import_from(temp_dir, 'vgg_face2', env=dm_env)
     if isinstance(instance_data, TaskData):
         dataset.transform('rename', regex=r"|([^/]+/)?(.+)|\2|")

@@ -9,7 +9,7 @@ import data.utils
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": null,
 #     },
@@ -67,11 +67,6 @@ allow if {
 allow if {
     input.scope == utils.CREATE
     utils.has_perm(utils.USER)
-}
-
-allow if {
-    input.scope == utils.CREATE
-    utils.has_perm(utils.BUSINESS)
 }
 
 filter := [] if { # Django Q object to filter list of entries

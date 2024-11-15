@@ -111,12 +111,6 @@ volumes:
   - cvat_db:/var/lib/postgresql/data
 ```
 
-## How to mark job/task as completed
-
-The status is set by the user in the {{< ilink "/docs/manual/basics/top-panel#info" "Info window" >}}
-of the job annotation view.
-There are three types of status: annotation, validation or completed.
-The status of the job changes the progress bar of the task.
 
 ## How to install CVAT on Windows 10 Home
 
@@ -128,7 +122,7 @@ You should build CVAT images with ['Analytics' component](https://github.com/cva
 
 ## How to upload annotations to an entire task from UI when there are multiple jobs in the task
 
-You can upload annotation for a multi-job task from the Dasboard view or the Task view.
+You can upload annotation for a multi-job task from the Dashboard view or the Task view.
 Uploading of annotation from the Annotation view only affects the current job.
 
 ## How to specify multiple hostnames

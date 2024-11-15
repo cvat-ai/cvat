@@ -11,7 +11,7 @@ from glob import glob
 from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset, import_dm_annotations)
 from cvat.apps.dataset_manager.formats.transformations import MaskToPolygonTransformation
 from cvat.apps.dataset_manager.util import make_zip_archive
 
@@ -54,6 +54,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         for f in anno_files:
             shutil.move(f, anno_dir)
 
+    detect_dataset(temp_dir, format_name='voc', importer=dm_env.importers.get('voc'))
     dataset = Dataset.import_from(temp_dir, 'voc', env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:

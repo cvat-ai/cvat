@@ -1,0 +1,20 @@
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true # align tool behavior with Black
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+extend-exclude = """
+# TODO: get rid of these
+^/cvat/apps/(
+    dataset_manager|dataset_repo|engine|events
+    |health|iam|lambda_manager|log_viewer
+    |organizations|webhooks
+)/
+| ^/cvat/settings/
+| ^/serverless/
+| ^/utils/dataset_manifest/
+"""

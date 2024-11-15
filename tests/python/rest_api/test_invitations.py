@@ -121,7 +121,7 @@ class TestInvitationsListFilters(CollectionSimpleFilterTestBase):
         ("owner",),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

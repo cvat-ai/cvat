@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Optional, Protocol
 
 import attrs
 import PIL.Image
@@ -49,7 +50,23 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         The file name of the frame that the current image corresponds to in
         the dataset.
         """
-        ...
+
+    @property
+    @abc.abstractmethod
+    def conf_threshold(self) -> Optional[float]:
+        """
+        The confidence threshold that the function should use for filtering
+        detections.
+
+        If the function is able to estimate confidence levels, then:
+
+        * If this value is None, the function may apply a default threshold at its discretion.
+
+        * Otherwise, it will be a number between 0 and 1. The function must only return
+          objects with confidence levels greater than or equal to this value.
+
+        If the function is not able to estimate confidence levels, it can ignore this value.
+        """
 
 
 class DetectionFunction(Protocol):
@@ -79,7 +96,7 @@ class DetectionFunction(Protocol):
 
     def detect(
         self, context: DetectionFunctionContext, image: PIL.Image.Image
-    ) -> List[models.LabeledShapeRequest]:
+    ) -> list[models.LabeledShapeRequest]:
         """
         Detects objects on the supplied image and returns the results.
 

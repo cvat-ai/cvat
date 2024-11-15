@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import * as SVG from 'svg.js';
 import {
     stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG,
     findIntersection, zipChannels, Segment, findClosestPointOnSegment, segmentsFromPoints,
+    toReversed,
 } from './shared';
 import {
     Geometry, SliceData, Configuration, CanvasHint,
@@ -294,8 +295,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 const d2 = Math.sqrt((p2[0] - p[0]) ** 2 + (p2[1] - p[1]) ** 2);
 
                 if (d2 > d1) {
-                    // @ts-ignore error TS2551 (need to update typescript up to 5.2)
-                    contour2.push(...otherPoints.toReversed().flat());
+                    contour2.push(...toReversed<[number, number]>(otherPoints).flat());
                 } else {
                     contour2.push(...otherPoints.flat());
                 }
@@ -312,8 +312,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     ...firstSegmentPoint, // first intersection
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
-                        // @ts-ignore error TS2551 (need to update typescript up to 5.2)
-                        intermediatePoints : intermediatePoints.toReversed()
+                        intermediatePoints : toReversed<[number, number]>(intermediatePoints)
                     ).flat(),
                     // second intersection
                     ...secondSegmentPoint,
@@ -326,8 +325,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     ...firstSegmentPoint, // first intersection
                     // intermediate points (reversed if intersections order was swopped)
                     ...(firstSegmentIdx === firstIntersectedSegmentIdx ?
-                        // @ts-ignore error TS2551 (need to update typescript up to 5.2)
-                        intermediatePoints : intermediatePoints.toReversed()
+                        intermediatePoints : toReversed<[number, number]>(intermediatePoints)
                     ).flat(),
                     ...secondSegmentPoint,
                     // all the previous contours points N, N-1, .. until (including) the first intersected segment

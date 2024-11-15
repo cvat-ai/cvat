@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from functools import cached_property
-from typing import List
 
 import PIL.Image
 import torchvision.models
@@ -28,13 +27,17 @@ class _TorchvisionDetectionFunction:
             ]
         )
 
-    def detect(self, context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+    def detect(
+        self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+    ) -> list[models.LabeledShapeRequest]:
+        conf_threshold = context.conf_threshold or 0
         results = self._model([self._transforms(image)])
 
         return [
             cvataa.rectangle(label.item(), [x.item() for x in box])
             for result in results
-            for box, label in zip(result["boxes"], result["labels"])
+            for box, label, score in zip(result["boxes"], result["labels"], result["scores"])
+            if score >= conf_threshold
         ]
 
 

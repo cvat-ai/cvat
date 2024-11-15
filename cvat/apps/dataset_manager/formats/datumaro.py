@@ -7,7 +7,7 @@ import zipfile
 from datumaro.components.dataset import Dataset
 
 from cvat.apps.dataset_manager.bindings import (
-    GetCVATDataExtractor, import_dm_annotations, NoMediaInAnnotationFileError
+    GetCVATDataExtractor, import_dm_annotations, NoMediaInAnnotationFileError, detect_dataset
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
@@ -29,6 +29,8 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
+
+        detect_dataset(temp_dir, format_name='datumaro', importer=dm_env.importers.get('datumaro'))
         dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
     else:
         if load_data_callback:
@@ -55,6 +57,8 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
+
+        detect_dataset(temp_dir, format_name='datumaro', importer=dm_env.importers.get('datumaro'))
         dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
     else:
         if load_data_callback:

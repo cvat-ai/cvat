@@ -20,6 +20,7 @@ import {
     Configuration,
     MasksEditData,
     HighlightedElements,
+    PolyEditData,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -30,7 +31,7 @@ export interface CanvasController {
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
-    readonly editData: MasksEditData;
+    readonly editData: MasksEditData | PolyEditData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
@@ -44,7 +45,7 @@ export interface CanvasController {
 
     zoom(x: number, y: number, direction: number): void;
     draw(drawData: DrawData): void;
-    edit(editData: MasksEditData): void;
+    edit(editData: MasksEditData | PolyEditData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -96,7 +97,7 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.draw(drawData);
     }
 
-    public edit(editData: MasksEditData): void {
+    public edit(editData: MasksEditData | PolyEditData): void {
         this.model.edit(editData);
     }
 
@@ -136,7 +137,7 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.drawData;
     }
 
-    public get editData(): MasksEditData {
+    public get editData(): MasksEditData | PolyEditData {
         return this.model.editData;
     }
 

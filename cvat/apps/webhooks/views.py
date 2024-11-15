@@ -109,7 +109,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
         ],
         responses={"200": OpenApiResponse(EventsSerializer)},
     )
-    @action(detail=False, methods=["GET"], serializer_class=EventsSerializer)
+    @action(detail=False, methods=["GET"], serializer_class=EventsSerializer,
+        permission_classes=[],
+    )
     def events(self, request):
         webhook_type = request.query_params.get("type", "all")
         events = None

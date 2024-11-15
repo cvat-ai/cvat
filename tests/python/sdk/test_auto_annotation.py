@@ -6,7 +6,6 @@ import io
 from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace as namespace
-from typing import List, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -27,8 +26,9 @@ except ModuleNotFoundError:
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,
-    fxt_login: Tuple[Client, str],
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_login: tuple[Client, str],
+    fxt_logger: tuple[Logger, io.StringIO],
+    restore_redis_ondisk_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]
@@ -45,7 +45,7 @@ class TestTaskAutoAnnotation:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.images = [
@@ -113,7 +113,7 @@ class TestTaskAutoAnnotation:
 
         def detect(
             context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
-        ) -> List[models.LabeledShapeRequest]:
+        ) -> list[models.LabeledShapeRequest]:
             assert context.frame_name in {"1.png", "2.png"}
             assert image.width == image.height == 333
             return [
@@ -167,7 +167,7 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             assert image.width == image.height == 333
             return [
                 cvataa.skeleton(
@@ -240,7 +240,7 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             return [
                 cvataa.rectangle(
                     123,  # car
@@ -268,6 +268,44 @@ class TestTaskAutoAnnotation:
         for i in (1, 2):
             assert shapes[i].points == [5, 6, 7, 8]
             assert shapes[i].rotation == 10
+
+    def test_conf_threshold(self):
+        spec = cvataa.DetectionFunctionSpec(labels=[])
+
+        received_threshold = None
+
+        def detect(
+            context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+        ) -> list[models.LabeledShapeRequest]:
+            nonlocal received_threshold
+            received_threshold = context.conf_threshold
+            return []
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            conf_threshold=0.75,
+        )
+
+        assert received_threshold == 0.75
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+        )
+
+        assert received_threshold is None
+
+        for bad_threshold in [-0.1, 1.1]:
+            with pytest.raises(ValueError):
+                cvataa.annotate_task(
+                    self.client,
+                    self.task.id,
+                    namespace(spec=spec, detect=detect),
+                    conf_threshold=bad_threshold,
+                )
 
     def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
         def detect(context, image):
@@ -569,14 +607,15 @@ if torchvision_models is not None:
             super().__init__()
             self._label_id = label_id
 
-        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
             assert isinstance(images, list)
             assert all(isinstance(t, torch.Tensor) for t in images)
 
             return [
                 {
-                    "boxes": torch.tensor([[1, 2, 3, 4]]),
-                    "labels": torch.tensor([self._label_id]),
+                    "boxes": torch.tensor([[1, 2, 3, 4], [5, 6, 7, 8]]),
+                    "labels": torch.tensor([self._label_id, self._label_id]),
+                    "scores": torch.tensor([0.75, 0.74]),
                 }
             ]
 
@@ -588,26 +627,28 @@ if torchvision_models is not None:
         return FakeTorchvisionDetector(label_id=car_label_id)
 
     class FakeTorchvisionKeypointDetector(nn.Module):
-        def __init__(self, label_id: int, keypoint_names: List[str]) -> None:
+        def __init__(self, label_id: int, keypoint_names: list[str]) -> None:
             super().__init__()
             self._label_id = label_id
             self._keypoint_names = keypoint_names
 
-        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
             assert isinstance(images, list)
             assert all(isinstance(t, torch.Tensor) for t in images)
 
             return [
                 {
-                    "labels": torch.tensor([self._label_id]),
+                    "labels": torch.tensor([self._label_id, self._label_id]),
                     "keypoints": torch.tensor(
                         [
                             [
                                 [hash(name) % 100, 0, 1 if name.startswith("right_") else 0]
                                 for i, name in enumerate(self._keypoint_names)
-                            ]
+                            ],
+                            [[0, 0, 1] for i, name in enumerate(self._keypoint_names)],
                         ]
                     ),
+                    "scores": torch.tensor([0.75, 0.74]),
                 }
             ]
 
@@ -627,7 +668,7 @@ class TestAutoAnnotationFunctions:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.image = generate_image_file("1.png", size=(100, 100))
@@ -672,6 +713,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             td.create("fasterrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()
@@ -691,6 +733,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             tkd.create("keypointrcnn_resnet50_fpn", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()

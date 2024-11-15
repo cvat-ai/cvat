@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from functools import cached_property
-from typing import List
 
 import PIL.Image
 import torchvision.models
@@ -36,7 +35,10 @@ class _TorchvisionKeypointDetectionFunction:
             ]
         )
 
-    def detect(self, context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+    def detect(
+        self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+    ) -> list[models.LabeledShapeRequest]:
+        conf_threshold = context.conf_threshold or 0
         results = self._model([self._transforms(image)])
 
         return [
@@ -52,7 +54,10 @@ class _TorchvisionKeypointDetectionFunction:
                 ],
             )
             for result in results
-            for keypoints, label in zip(result["keypoints"], result["labels"])
+            for keypoints, label, score in zip(
+                result["keypoints"], result["labels"], result["scores"]
+            )
+            if score >= conf_threshold
         ]
 
 

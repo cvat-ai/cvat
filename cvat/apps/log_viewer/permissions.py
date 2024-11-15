@@ -5,9 +5,12 @@
 
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+
 
 class LogViewerPermission(OpenPolicyAgentPermission):
+    has_analytics_access: bool
+
     class Scopes(StrEnum):
         VIEW = 'view'
 
@@ -21,8 +24,21 @@ class LogViewerPermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    def __init__(self, **kwargs):
+    @classmethod
+    def create_base_perm(cls, request, view, scope, iam_context, obj=None, **kwargs):
+        if not iam_context and request:
+            iam_context = get_iam_context(request, obj)
+        return cls(
+            scope=scope,
+            obj=obj,
+            has_analytics_access=request.user.profile.has_analytics_access,
+            **iam_context,
+            **kwargs
+        )
+
+    def __init__(self, has_analytics_access=False, **kwargs):
         super().__init__(**kwargs)
+        self.payload['input']['auth']['user']['has_analytics_access'] = has_analytics_access
         self.url = settings.IAM_OPA_DATA_URL + '/analytics/allow'
 
     @staticmethod
@@ -30,9 +46,7 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         Scopes = __class__.Scopes
         return [{
             'list': Scopes.VIEW,
-        }.get(view.action, None)]
+        }[view.action]]
 
     def get_resource(self):
-        return {
-            'visibility': 'public' if settings.RESTRICTIONS['analytics_visibility'] else 'private',
-        }
+        return None

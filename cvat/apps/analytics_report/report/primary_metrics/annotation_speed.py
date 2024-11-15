@@ -7,7 +7,6 @@ from datetime import datetime
 
 from dateutil import parser
 
-import cvat.apps.dataset_manager as dm
 from cvat.apps.analytics_report.models import (
     BinaryOperatorType,
     GranularityChoice,
@@ -18,7 +17,8 @@ from cvat.apps.analytics_report.report.primary_metrics.base import (
     DataExtractorBase,
     PrimaryMetricBase,
 )
-from cvat.apps.engine.models import SourceType
+from cvat.apps.dataset_manager.task import merge_table_rows
+from cvat.apps.engine.models import ShapeType, SourceType
 
 
 class JobAnnotationSpeedExtractor(DataExtractorBase):
@@ -54,7 +54,7 @@ class JobAnnotationSpeedExtractor(DataExtractorBase):
 class JobAnnotationSpeed(PrimaryMetricBase):
     _key = "annotation_speed"
     _title = "Annotation speed (objects per hour)"
-    _description = "Metric shows the annotation speed in objects per hour."
+    _description = "Metric shows annotation speed in the job as number of objects per hour."
     _default_view = ViewChoice.HISTOGRAM
     _granularity = GranularityChoice.DAY
     _is_filterable_by_date = False
@@ -70,31 +70,80 @@ class JobAnnotationSpeed(PrimaryMetricBase):
     ]
 
     def calculate(self):
-        def get_tags_count(annotations):
-            return sum(1 for t in annotations["tags"] if t["source"] != SourceType.FILE)
+        def get_tags_count():
+            return self._db_obj.labeledimage_set.exclude(source=SourceType.FILE).count()
 
-        def get_shapes_count(annotations):
-            return sum(1 for s in annotations["shapes"] if s["source"] != SourceType.FILE)
+        def get_shapes_count():
+            return (
+                self._db_obj.labeledshape_set.exclude(source=SourceType.FILE)
+                .exclude(
+                    type=ShapeType.SKELETON
+                )  # skeleton's points are already counted as objects
+                .count()
+            )
 
-        def get_track_count(annotations):
+        def get_track_count():
+            db_tracks = (
+                self._db_obj.labeledtrack_set.exclude(source=SourceType.FILE)
+                .values(
+                    "id",
+                    "shape__id",
+                    "shape__frame",
+                    "shape__type",
+                    "shape__outside",
+                )
+                .order_by("id", "shape__frame")
+                .iterator(chunk_size=2000)
+            )
+
+            db_tracks = merge_table_rows(
+                rows=db_tracks,
+                keys_for_merge={
+                    "shapes": [
+                        "shape__id",
+                        "shape__frame",
+                        "shape__type",
+                        "shape__outside",
+                    ],
+                },
+                field_id="id",
+            )
+
             count = 0
-            for track in annotations["tracks"]:
-                if track["source"] == SourceType.FILE:
+            for track in db_tracks:
+                # Skip processing if no shapes are associated with the track
+                if not track["shapes"]:
                     continue
+
+                # Skip skeleton shapes as their points are already counted
+                if track["shapes"] and track["shapes"][0]["type"] == ShapeType.SKELETON:
+                    continue
+
+                # If only one shape exists, calculate the frames from the first frame to the stop frame of the segment
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
+                    continue
+
+                # Add the initial frame count and then iterate through shapes to count non-outside frames
+                count += 1
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
-                    if prev_shape["outside"] is not True:
+                    if not prev_shape["outside"]:
                         count += cur_shape["frame"] - prev_shape["frame"]
+
+                # Add frames until the end of segment if the latest shape was not outside
+                if (
+                    not cur_shape["outside"]
+                    and cur_shape["frame"] < self._db_obj.segment.stop_frame
+                ):
+                    count += self._db_obj.segment.stop_frame - cur_shape["frame"]
 
             return count
 
         # Calculate object count
-        annotations = dm.task.get_job_data(self._db_obj.id)
         object_count = 0
-        object_count += get_tags_count(annotations)
-        object_count += get_shapes_count(annotations)
-        object_count += get_track_count(annotations)
+        object_count += get_tags_count()
+        object_count += get_shapes_count()
+        object_count += get_track_count()
 
         start_datetime = self._db_obj.created_date
         timestamp = self._db_obj.updated_date
@@ -109,27 +158,24 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             if statistics is not None:
                 data_series = deepcopy(statistics["data_series"])
 
-        last_entry_count = 0
+        previous_count = 0
         if data_series["object_count"]:
-            last_entry = data_series["object_count"][-1]
-            last_entry_timestamp = parser.parse(last_entry["datetime"])
+            last_entry_timestamp = parser.parse(data_series["object_count"][-1]["datetime"])
 
             if last_entry_timestamp.date() == timestamp.date():
                 # remove last entry, it will be re-calculated below, because of the same date
                 data_series["object_count"] = data_series["object_count"][:-1]
                 data_series["working_time"] = data_series["working_time"][:-1]
 
-                if len(data_series["object_count"]):
-                    current_last_entry = data_series["object_count"][-1]
-                    start_datetime = parser.parse(current_last_entry["datetime"])
-                    last_entry_count = current_last_entry["value"]
-            else:
-                last_entry_count = last_entry["value"]
-                start_datetime = parser.parse(last_entry["datetime"])
+            for entry in data_series["object_count"]:
+                previous_count += entry["value"]
+
+            if data_series["object_count"]:
+                start_datetime = parser.parse(data_series["object_count"][-1]["datetime"])
 
         data_series["object_count"].append(
             {
-                "value": object_count - last_entry_count,
+                "value": object_count - previous_count,
                 "datetime": timestamp_str,
             }
         )

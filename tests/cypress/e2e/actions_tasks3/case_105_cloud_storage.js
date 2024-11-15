@@ -25,9 +25,20 @@ context('Cloud storage.', () => {
         projectID: 'Some ID',
     };
 
+    const cloudStorageDataWithoutManifest = {
+        displayName: 'Without manifest file',
+        resource: 'public',
+        endpointUrl: Cypress.config('minioUrl'),
+    };
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
+    });
+
+    after(() => {
+        cy.goToCloudStoragesPage();
+        cy.deleteCloudStorage(cloudStorageDataWithoutManifest.displayName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -171,6 +182,26 @@ context('Cloud storage.', () => {
                 cy.contains('[role="tab"]', 'Cloud Storage').click();
                 cy.get('#cloudStorageSelect').should('exist');
             });
+        });
+
+        it('Verify that attempting to update a non-existent cloud storage displays an error message', () => {
+            const nonExistCloudstorageId = 99;
+            cy.intercept({
+                method: 'GET',
+                url: `/api/cloudstorages/${nonExistCloudstorageId}`,
+            }).as('cloudstorageRequest');
+
+            cy.visit(`/cloudstorages/update/${nonExistCloudstorageId}`);
+            cy.wait('@cloudstorageRequest').its('response.statusCode').should('eq', 404);
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.contains('Sorry, but the requested cloud storage was not found');
+            cy.closeNotification('.ant-notification-notice-error');
+        });
+
+        it('Check create cloud storage without manifest file.', () => {
+            cy.attachS3Bucket(cloudStorageDataWithoutManifest);
+            cy.visit('/cloudstorages');
+            cy.contains(cloudStorageDataWithoutManifest.displayName);
         });
     });
 });

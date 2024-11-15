@@ -11,7 +11,6 @@ import Notification from 'antd/lib/notification';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Card from 'antd/lib/card';
-import Title from 'antd/lib/typography/Title';
 import { ReloadOutlined, LoadingOutlined } from '@ant-design/icons';
 
 import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
@@ -66,7 +65,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                         <Card>
                             <div className='cvat-empty-performance-analytics-item'>
                                 {reportRefreshingStatus ? <Text>{reportRefreshingStatus}</Text> :
-                                    <Title level={5}> Performance report was not calculated yet... </Title>}
+                                    <Text>{`A performance report for the ${report.target} was not computed`}</Text>}
                                 <Button
                                     onClick={onCreateReport}
                                     loading={reportRefreshingStatus !== null}

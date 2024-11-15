@@ -11,11 +11,11 @@
       "organization": 1,
       "role": "maintainer",
       "user": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 11,
-        "last_name": "Second",
+        "last_name": "Eighth",
         "url": "http://localhost:8080/api/users/11",
-        "username": "business2"
+        "username": "user8"
       }
     },
     {
@@ -146,11 +146,11 @@
       "organization": 2,
       "role": "maintainer",
       "user": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 11,
-        "last_name": "Second",
+        "last_name": "Eighth",
         "url": "http://localhost:8080/api/users/11",
-        "username": "business2"
+        "username": "user8"
       }
     },
     {
@@ -161,11 +161,11 @@
       "organization": 2,
       "role": "owner",
       "user": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 10,
-        "last_name": "First",
+        "last_name": "Seventh",
         "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
+        "username": "user7"
       }
     },
     {
@@ -176,11 +176,11 @@
       "organization": 1,
       "role": "maintainer",
       "user": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 10,
-        "last_name": "First",
+        "last_name": "Seventh",
         "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
+        "username": "user7"
       }
     },
     {

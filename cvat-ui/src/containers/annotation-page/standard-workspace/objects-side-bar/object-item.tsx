@@ -1,10 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import {
@@ -29,7 +28,6 @@ import {
     Label, ObjectState, Attribute, Job,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { EventScope } from 'cvat-logger';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
@@ -233,7 +231,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
         const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
         const url = `${origin}${pathname}?${search}`;
-        copy(url);
+
+        const fallback = (): void => {
+            // eslint-disable-next-line
+            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
+        };
+
+        if (window.isSecureContext) {
+            window.navigator.clipboard.writeText(url).catch(fallback);
+        } else {
+            fallback();
+        }
     };
 
     private switchOrientation = (): void => {
@@ -312,13 +320,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private changeLabel = (label: any): void => {
-        const { jobInstance, objectState, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.changeLabel, {
-                object_id: objectState.clientID,
-                from: objectState.label.id,
-                to: label.id,
-            });
             objectState.label = label;
             this.commit();
         }
@@ -413,8 +416,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
-                propagate={this.propagate}
                 createURL={this.createURL}
+                propagate={this.propagate}
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}

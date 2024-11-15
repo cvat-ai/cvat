@@ -18,7 +18,6 @@ const defaultState: ModelsState = {
     detectors: [],
     trackers: [],
     reid: [],
-    classifiers: [],
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
     requestedInferenceIDs: {},
@@ -60,9 +59,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 )),
                 reid: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.REID
-                )),
-                classifiers: action.payload.models.filter((model: MLModel) => (
-                    model.kind === ModelKind.CLASSIFIER
                 )),
                 totalCount: action.payload.count,
                 initialized: true,

@@ -1,9 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-models-page {
     padding-top: $grid-unit-size * 2;
@@ -14,12 +14,6 @@
 
     .cvat-models-page-top-bar {
         padding-bottom: $grid-unit-size;
-    }
-
-    >div:nth-child(2) {
-        &:not(.cvat-empty-models-list) {
-            height: 90%;
-        }
     }
 }
 
@@ -35,37 +29,14 @@
 .cvat-models-list {
     display: flex;
     flex-wrap: wrap;
-}
-
-.cvat-models-list-item {
-    position: relative;
-    width: 100%;
-    height: auto;
-    border: 1px solid $border-color-1;
-    border-radius: 3px;
-    margin-bottom: $grid-unit-size * 2;
-    padding: $grid-unit-size * 2;
-    background: $background-color-1;
-
-    &:hover {
-        border: 1px solid $border-color-hover;
-    }
 
     > div {
-        display: flex;
-        align-items: center;
-    }
+        width: 100%;
+        margin-bottom: $grid-unit-size;
 
-    > div:nth-child(2) > span {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    > div:nth-child(3) > span {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
+        > div:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
     }
 }
 
@@ -77,7 +48,6 @@
 .cvat-models-page-top-bar {
     .cvat-models-page-search-bar {
         width: $grid-unit-size * 32;
-        padding-left: $grid-unit-size * 0.5;
     }
 
     > div {
@@ -118,8 +88,6 @@
 }
 
 .cvat-models-item-card {
-    width: 25%;
-    border-width: $grid-unit-size * 0.5;
     height: $grid-unit-size * 28;
     overflow: hidden;
 
@@ -129,6 +97,18 @@
 
     &:nth-child(4n) {
         border-right: 0;
+    }
+
+    .cvat-models-item-card-preview-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: $grid-unit-size * 18;
+        overflow: hidden;
+
+        &:hover {
+            cursor: pointer;
+        }
     }
 }
 
@@ -145,18 +125,6 @@
 
 .cvat-model-item-loading-preview {
     padding-top: $grid-unit-size * 3;
-}
-
-.cvat-models-item-card-preview-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: $grid-unit-size * 18;
-    overflow: hidden;
-
-    &:hover {
-        cursor: pointer;
-    }
 }
 
 .cvat-model-item-top-bar {

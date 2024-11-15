@@ -17,7 +17,7 @@ visibility of different resources for example, tasks or jobs.
 
 **Limits**: Limits are applicable to all users of the CVAT.ai Cloud Platform
 using the [**Free plan**](https://www.cvat.ai/pricing/cloud) and can be lifted upon
-{{< ilink "/docs/enterprise/subscription-managment" "**choosing a subscription**" >}}.
+{{< ilink "/docs/enterprise/subscription-management" "**choosing a subscription**" >}}.
 
 All roles are predefined and cannot be modified through the user interface.
 However, within the _self-hosted solution_, roles can be adjusted using `.rego`

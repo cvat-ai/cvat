@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Human pose estimation
     type: detector
-    framework: pytorch
     spec: |
       [
         {

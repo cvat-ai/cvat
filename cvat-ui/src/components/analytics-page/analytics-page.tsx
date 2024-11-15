@@ -11,16 +11,14 @@ import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
-import { useIsMounted } from 'utils/hooks';
-import { Project, Task } from 'reducers';
-import {
-    AnalyticsReport, Job, RQStatus, getCore,
-} from 'cvat-core-wrapper';
 import moment from 'moment';
+import { useIsMounted } from 'utils/hooks';
+import {
+    AnalyticsReport, Job, Project, RQStatus, Task, getCore,
+} from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import AnalyticsOverview, { DateIntervals } from './analytics-performance';
-import TaskQualityComponent from './task-quality/task-quality-component';
 
 const core = getCore();
 
@@ -221,23 +219,6 @@ function AnalyticsPage(): JSX.Element {
         });
     }, [requestedInstanceType, requestedInstanceID, timePeriod]);
 
-    const onJobUpdate = useCallback((job: Job): void => {
-        setFetching(true);
-
-        job.save()
-            .catch((error: Error) => {
-                notification.error({
-                    message: 'Could not update the job',
-                    description: error.toString(),
-                });
-            })
-            .finally(() => {
-                if (isMounted()) {
-                    setFetching(false);
-                }
-            });
-    }, []);
-
     const onTabKeyChange = useCallback((key: string): void => {
         setTab(key as AnalyticsTabs);
     }, []);
@@ -247,9 +228,11 @@ function AnalyticsPage(): JSX.Element {
     let tabs: JSX.Element | null = null;
     if (instanceType && instance) {
         backNavigation = (
-            <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                <GoBackButton />
-            </Col>
+            <Row justify='center'>
+                <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
+                    <GoBackButton />
+                </Col>
+            </Row>
         );
 
         let analyticsFor: JSX.Element | null = <Link to={`/projects/${instance.id}`}>{`Project #${instance.id}`}</Link>;
@@ -275,22 +258,20 @@ function AnalyticsPage(): JSX.Element {
                 defaultActiveKey={AnalyticsTabs.OVERVIEW}
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
-            >
-                <Tabs.TabPane tab='Performance' key={AnalyticsTabs.OVERVIEW}>
-                    <AnalyticsOverview
-                        report={analyticsReport}
-                        timePeriod={timePeriod}
-                        reportRefreshingStatus={reportRefreshingStatus}
-                        onTimePeriodChange={setTimePeriod}
-                        onCreateReport={onCreateReport}
-                    />
-                </Tabs.TabPane>
-                {instanceType === 'task' && (
-                    <Tabs.TabPane tab='Quality' key={AnalyticsTabs.QUALITY}>
-                        <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
-                    </Tabs.TabPane>
-                )}
-            </Tabs>
+                items={[{
+                    key: AnalyticsTabs.OVERVIEW,
+                    label: 'Performance',
+                    children: (
+                        <AnalyticsOverview
+                            report={analyticsReport}
+                            timePeriod={timePeriod}
+                            reportRefreshingStatus={reportRefreshingStatus}
+                            onTimePeriodChange={setTimePeriod}
+                            onCreateReport={onCreateReport}
+                        />
+                    ),
+                }]}
+            />
         );
     }
 
@@ -301,11 +282,15 @@ function AnalyticsPage(): JSX.Element {
                     <CVATLoadingSpinner />
                 </div>
             ) : (
-                <Row justify='center' align='top' className='cvat-analytics-wrapper'>
-                    {backNavigation}
-                    <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
-                        {title}
-                        {tabs}
+                <Row className='cvat-analytics-wrapper'>
+                    <Col span={24}>
+                        {backNavigation}
+                        <Row justify='center'>
+                            <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
+                                {title}
+                                {tabs}
+                            </Col>
+                        </Row>
                     </Col>
                 </Row>
             )}

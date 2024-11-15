@@ -92,10 +92,10 @@ describe('Feature: get a list of jobs', () => {
 describe('Feature: save job', () => {
     test('save stage and state of a job', async () => {
         const result = await cvat.jobs.get({ jobID: 1 });
-
-        result[0].stage = 'validation';
-        result[0].state = 'new';
-        const newJob = await result[0].save();
+        const newJob = await result[0].save({
+            stage: 'validation',
+            state: 'new',
+        });
 
         expect(newJob.stage).toBe('validation');
         expect(newJob.state).toBe('new');
@@ -106,11 +106,7 @@ describe('Feature: save job', () => {
             jobID: 1,
         });
 
-        expect(() => {
-            result[0].state = 'invalid';
-        }).toThrow(cvat.exceptions.ArgumentError);
-        expect(() => {
-            result[0].stage = 'invalid';
-        }).toThrow(cvat.exceptions.ArgumentError);
+        await expect(result[0].save({ state: 'invalid' })).rejects.toThrow(cvat.exceptions.ArgumentError);
+        await expect(result[0].save({ stage: 'invalid' })).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });

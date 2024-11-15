@@ -47,13 +47,14 @@ export interface SerializedUser {
     first_name: string;
     last_name: string;
     email?: string;
-    groups?: ('user' | 'business' | 'admin')[];
+    groups?: ('user' | 'admin')[];
     is_staff?: boolean;
     is_superuser?: boolean;
     is_active?: boolean;
     last_login?: string;
     date_joined?: string;
     email_verification_required: boolean;
+    has_analytics_access: boolean;
 }
 
 interface SerializedStorage {
@@ -241,8 +242,12 @@ export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
 export interface SerializedQualitySettingsData {
     id?: number;
     task?: number;
+    target_metric?: string;
+    target_metric_threshold?: number;
+    max_validations_per_job?: number;
     iou_threshold?: number;
     oks_sigma?: number;
+    point_size_base?: string;
     line_thickness?: number;
     low_overlap_threshold?: number;
     compare_line_orientation?: boolean;
@@ -253,6 +258,8 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+    match_empty_frames?: boolean;
+    descriptions?: Record<string, string>;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {
@@ -296,6 +303,7 @@ export interface SerializedQualityReportData {
     target: string;
     created_date?: string;
     gt_last_updated?: string;
+    assignee?: SerializedUser | null;
     summary?: {
         frame_count: number;
         frame_share: number;
@@ -454,6 +462,7 @@ export interface SerializedFramesMetaData {
     deleted_frames: number[];
     included_frames: number[];
     frame_filter: string;
+    chunks_updated_date: string;
     frames: {
         width: number;
         height: number;
@@ -494,4 +503,39 @@ export interface SerializedAPISchema {
         description: string;
         url: string;
     };
+}
+
+export interface SerializedRequest {
+    id: string;
+    message: string;
+    status: string;
+    operation: {
+        target: string;
+        type: string;
+        format: string | null;
+        job_id: number | null;
+        task_id: number | null;
+        project_id: number | null;
+        function_id: string | null;
+    };
+    progress?: number;
+    result_url?: string;
+    result_id?: number;
+    created_date: string;
+    started_date?: string;
+    finished_date?: string;
+    expiry_date?: string;
+    owner: any;
+}
+
+export interface SerializedJobValidationLayout {
+    honeypot_count?: number;
+    honeypot_frames?: number[];
+    honeypot_real_frames?: number[];
+}
+
+export interface SerializedTaskValidationLayout extends SerializedJobValidationLayout {
+    mode: 'gt' | 'gt_pool' | null;
+    validation_frames?: number[];
+    disabled_frames?: number[];
 }

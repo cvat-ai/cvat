@@ -189,7 +189,7 @@ export default class AnnotationsSaver {
         for (const type of Object.keys(indexes)) {
             for (let i = 0; i < indexes[type].length; i++) {
                 const clientID = indexes[type][i];
-                this.collection.objects[clientID].updateServerID(saved[type][i]);
+                this.collection.objects[clientID].updateFromServerResponse(saved[type][i]);
             }
         }
     }

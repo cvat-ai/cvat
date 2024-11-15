@@ -11,7 +11,10 @@ import { QuestionCircleOutlined } from '@ant-design/icons';
 
 interface Props {
     title: string;
-    size?: number;
+    size?: {
+        cardSize?: number;
+        leftElementSize?: number;
+    };
     className?: string;
     value?: string | number;
     tooltip?: JSX.Element;
@@ -26,10 +29,10 @@ function AnalyticsCard(props: Props): JSX.Element {
     } = props;
 
     return (
-        <Col span={size || 24} className={className || 'cvat-analytics-card'} data-entry-name={entryName}>
+        <Col span={size?.cardSize ?? 24} className={className ?? 'cvat-analytics-card'} data-entry-name={entryName}>
             <Card>
                 <Row justify='space-between' align='middle'>
-                    <Col>
+                    <Col span={size?.leftElementSize}>
                         <Row>
                             <Col>
                                 <Text className='cvat-analytics-card-title'>

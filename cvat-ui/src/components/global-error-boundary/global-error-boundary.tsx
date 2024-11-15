@@ -11,14 +11,12 @@ import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Collapse from 'antd/lib/collapse';
 import TextArea from 'antd/lib/input/TextArea';
-import copy from 'copy-to-clipboard';
 import ErrorStackParser from 'error-stack-parser';
 
 import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers';
 import logger, { EventScope } from 'cvat-logger';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import config from 'config';
 import { saveLogsAsync } from 'actions/annotation-actions';
 
@@ -138,17 +136,23 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             <Paragraph>
                                 <Paragraph strong>What has happened?</Paragraph>
                                 <Paragraph>Program error has just occurred</Paragraph>
-                                <Collapse accordion defaultActiveKey={['errorMessage']}>
-                                    <Collapse.Panel header='Error message' key='errorMessage'>
-                                        <Text type='danger'>
-                                            <TextArea
-                                                className='cvat-global-boundary-error-field'
-                                                autoSize
-                                                value={message}
-                                            />
-                                        </Text>
-                                    </Collapse.Panel>
-                                </Collapse>
+                                <Collapse
+                                    accordion
+                                    defaultActiveKey={['errorMessage']}
+                                    items={[{
+                                        key: 'errorMessage',
+                                        label: 'Exception details',
+                                        children: (
+                                            <Text type='danger'>
+                                                <TextArea
+                                                    className='cvat-global-boundary-error-field'
+                                                    autoSize
+                                                    value={message}
+                                                />
+                                            </Text>
+                                        ),
+                                    }]}
+                                />
                             </Paragraph>
 
                             <Paragraph>
@@ -156,25 +160,11 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             </Paragraph>
                             <ul>
                                 <li>
-                                    <CVATTooltip title='Copied!' trigger='click'>
-                                        {/* eslint-disable-next-line */}
-                                        <a
-                                            onClick={() => {
-                                                copy(message);
-                                            }}
-                                        >
-                                            {' '}
-                                            Copy
-                                            {' '}
-                                        </a>
-                                    </CVATTooltip>
-                                    the error message to clipboard
-                                </li>
-                                <li>
                                     Notify an administrator or submit the issue directly on
                                     <a href={config.GITHUB_URL}> GitHub. </a>
                                     Please, provide also:
                                     <ul>
+                                        <li>Full error message above</li>
                                         <li>Steps to reproduce the issue</li>
                                         <li>Your operating system and browser version</li>
                                         <li>CVAT version</li>

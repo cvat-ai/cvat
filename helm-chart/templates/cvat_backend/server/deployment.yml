@@ -45,6 +45,7 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
       containers:
         - name: cvat-backend
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
@@ -57,14 +58,27 @@ spec:
           env:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
-          - name: DJANGO_MODWSGI_EXTRA_ARGS
-            value: {{ $localValues.envs.DJANGO_MODWSGI_EXTRA_ARGS}}
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
           - containerPort: 8080
+          {{- if $localValues.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if $localValues.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
           volumeMounts:
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache

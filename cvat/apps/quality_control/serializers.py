@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import textwrap
 
 from rest_framework import serializers
 
+from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.quality_control import models
 
 
@@ -33,16 +34,19 @@ class QualityReportSummarySerializer(serializers.Serializer):
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
 
-    # This set is enough for basic characteristics, such as
-    # DS_unmatched, GT_unmatched, accuracy, precision and recall
     valid_count = serializers.IntegerField(source="annotations.valid_count")
     ds_count = serializers.IntegerField(source="annotations.ds_count")
     gt_count = serializers.IntegerField(source="annotations.gt_count")
     total_count = serializers.IntegerField(source="annotations.total_count")
 
+    accuracy = serializers.FloatField(source="annotations.accuracy")
+    precision = serializers.FloatField(source="annotations.precision")
+    recall = serializers.FloatField(source="annotations.recall")
+
 
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
 
     class Meta:
@@ -57,12 +61,13 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "created_date",
             "target_last_updated",
             "gt_last_updated",
+            "assignee",
         )
         read_only_fields = fields
 
 
 class QualityReportCreateSerializer(serializers.Serializer):
-    task_id = serializers.IntegerField(write_only=True)
+    task_id = serializers.IntegerField(write_only=True, required=False)
 
 
 class QualitySettingsSerializer(serializers.ModelSerializer):
@@ -71,8 +76,12 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "task_id",
+            "target_metric",
+            "target_metric_threshold",
+            "max_validations_per_job",
             "iou_threshold",
             "oks_sigma",
+            "point_size_base",
             "line_thickness",
             "low_overlap_threshold",
             "compare_line_orientation",
@@ -83,6 +92,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "object_visibility_threshold",
             "panoptic_comparison",
             "compare_attributes",
+            "match_empty_frames",
         )
         read_only_fields = (
             "id",
@@ -90,18 +100,44 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
         )
 
         extra_kwargs = {k: {"required": False} for k in fields}
+        extra_kwargs.setdefault("match_empty_frames", {}).setdefault("default", False)
 
         for field_name, help_text in {
+            "target_metric": "The primary metric used for quality estimation",
+            "target_metric_threshold": """
+                Defines the minimal quality requirements in terms of the selected target metric.
+            """,
+            "max_validations_per_job": """
+                The maximum number of job validation attempts for the job assignee.
+                The job can be automatically accepted if the job quality is above the required
+                threshold, defined by the target threshold parameter.
+            """,
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
             "low_overlap_threshold": """
                 Used for distinction between strong / weak (low_overlap) matches
             """,
             "oks_sigma": """
                 Like IoU threshold, but for points.
-                The percent of the bbox area, used as the radius of the circle around the GT point,
-                where the checked point is expected to be.
+                The percent of the bbox side, used as the radius of the circle around the GT point,
+                where the checked point is expected to be. For boxes with different width and
+                height, the "side" is computed as a geometric mean of the width and height.
                 Read more: https://cocodataset.org/#keypoints-eval
             """,
+            "point_size_base": """
+                When comparing point annotations (including both separate points and point groups),
+                the OKS sigma parameter defines matching area for each GT point based to the
+                object size. The point size base parameter allows to configure how to determine
+                the object size.
+                If {image_size}, the image size is used. Useful if each point
+                annotation represents a separate object or boxes grouped with points do not
+                represent object boundaries.
+                If {group_bbox_size}, the object size is based on
+                the point group bbox size. Useful if each point group represents an object
+                or there is a bbox grouped with points, representing the object size.
+            """.format(
+                image_size=models.PointSizeBase.IMAGE_SIZE,
+                group_bbox_size=models.PointSizeBase.GROUP_BBOX_SIZE,
+            ),
             "line_thickness": """
                 Thickness of polylines, relatively to the (image area) ^ 0.5.
                 The distance to the boundary around the GT line,
@@ -130,6 +166,12 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 Use only the visible part of the masks and polygons in comparisons
             """,
             "compare_attributes": "Enables or disables annotation attribute comparison",
+            "match_empty_frames": """
+                Count empty frames as matching. This affects target metrics like accuracy in cases
+                there are no annotations. If disabled, frames without annotations
+                are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
+                This will also add virtual annotations to empty frames in the comparison results.
+            """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))

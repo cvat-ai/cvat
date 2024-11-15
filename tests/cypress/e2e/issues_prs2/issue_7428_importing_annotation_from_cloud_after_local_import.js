@@ -22,13 +22,11 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
         secondY: 200,
     };
 
-    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
-
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'manifest.jsonl',
-        endpointUrl: `http://${serverHost}:9000`,
+        endpointUrl: Cypress.config('minioUrl'),
     };
 
     function uploadToTask({
@@ -97,7 +95,10 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
                 archiveCustomName: annotationsArchiveNameLocal,
             };
             cy.exportTask(exportParams);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         it('Export Annotation to the cloud storage', () => {

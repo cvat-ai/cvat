@@ -7,28 +7,33 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
+from typing import Optional
 
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.proxies.types import Location
 from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
+from pytest_cases import fixture_ref, parametrize
 
+from shared.fixtures.data import CloudStorageAssets
 from shared.utils.helpers import generate_image_files
 
+from .common import TestDatasetExport
 from .util import make_pbar
 
 
-class TestTaskUsecases:
+class TestTaskUsecases(TestDatasetExport):
     @pytest.fixture(autouse=True)
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
+        restore_redis_ondisk_per_function,
     ):
         self.tmp_path = tmp_path
         logger, self.logger_stream = fxt_logger
@@ -50,19 +55,6 @@ class TestTaskUsecases:
         fxt_new_task.download_backup(backup_path)
 
         yield backup_path
-
-    @pytest.fixture
-    def fxt_new_task(self, fxt_image_file: Path):
-        task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
-            resources=[fxt_image_file],
-            data_params={"image_quality": 80},
-        )
-
-        return task
 
     @pytest.fixture
     def fxt_new_task_without_data(self):
@@ -274,24 +266,72 @@ class TestTaskUsecases:
         assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("format_name", ("CVAT for images 1.1",))
     @pytest.mark.parametrize("include_images", (True, False))
-    def test_can_download_dataset(self, fxt_new_task: Task, include_images: bool):
+    @parametrize(
+        "task, location",
+        [
+            (fixture_ref("fxt_new_task"), None),
+            (fixture_ref("fxt_new_task"), Location.LOCAL),
+            (
+                pytest.param(
+                    fixture_ref("fxt_new_task"),
+                    Location.CLOUD_STORAGE,
+                    marks=pytest.mark.with_external_services,
+                )
+            ),
+            (
+                pytest.param(
+                    fixture_ref("fxt_new_task_with_target_storage"),
+                    None,
+                    marks=pytest.mark.with_external_services,
+                )
+            ),
+            (fixture_ref("fxt_new_task_with_target_storage"), Location.LOCAL),
+            (
+                pytest.param(
+                    fixture_ref("fxt_new_task_with_target_storage"),
+                    Location.CLOUD_STORAGE,
+                    marks=pytest.mark.with_external_services,
+                )
+            ),
+        ],
+    )
+    def test_can_export_dataset(
+        self,
+        format_name: str,
+        include_images: bool,
+        task: Task,
+        location: Optional[Location],
+        request: pytest.FixtureRequest,
+        cloud_storages: CloudStorageAssets,
+    ):
+        file_path = self.tmp_path / f"task_{task.id}-{format_name.lower()}.zip"
+        self._test_can_export_dataset(
+            task,
+            format_name=format_name,
+            file_path=file_path,
+            include_images=include_images,
+            location=location,
+            request=request,
+            cloud_storages=cloud_storages,
+        )
+
+    def test_can_download_dataset_twice_in_a_row(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        task_id = fxt_new_task.id
-        path = self.tmp_path / f"task_{task_id}-cvat.zip"
-        task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(
-            format_name="CVAT for images 1.1",
-            filename=path,
-            pbar=pbar,
-            include_images=include_images,
-        )
-
-        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert path.is_file()
-        assert self.stdout.getvalue() == ""
+        for i in range(2):
+            path = self.tmp_path / f"dataset-{i}.zip"
+            fxt_new_task.export_dataset(
+                format_name="CVAT for images 1.1",
+                filename=self.tmp_path / f"dataset-{i}.zip",
+                include_images=False,
+                pbar=pbar,
+            )
+            assert self.stdout.getvalue() == ""
+            assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+            assert path.is_file()
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
@@ -323,7 +363,9 @@ class TestTaskUsecases:
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
-    def test_can_download_frames(self, fxt_new_task: Task, quality: str, image_extension: str):
+    def test_can_download_frames(
+        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+    ):
         fxt_new_task.download_frames(
             [0],
             image_extension=image_extension,
