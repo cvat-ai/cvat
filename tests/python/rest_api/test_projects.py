@@ -1007,14 +1007,15 @@ class TestImportExportDatasetProject:
 
         def _export_task(task_id: int, format_name: str) -> io.BytesIO:
             with make_api_client(admin_user) as api_client:
-                response = export_dataset(
-                    api_client.tasks_api.retrieve_annotations_endpoint,
-                    id=task_id,
-                    format=format_name,
+                return io.BytesIO(
+                    export_dataset(
+                        api_client.tasks_api,
+                        api_version=2,
+                        id=task_id,
+                        format=format_name,
+                        save_images=False,
+                    )
                 )
-                assert response.status == HTTPStatus.OK
-
-                return io.BytesIO(response.data)
 
         if format_name in list(DATUMARO_FORMAT_FOR_DIMENSION.values()):
             with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
@@ -1022,7 +1023,7 @@ class TestImportExportDatasetProject:
 
             dataset_file = io.BytesIO(annotations)
             dataset_file.name = "annotations.json"
-        elif format_name == "CVAT XML 1.1":
+        elif format_name == "CVAT 1.1":
             with zipfile.ZipFile(_export_task(task["id"], "CVAT for images 1.1")) as zip_file:
                 annotations = zip_file.read("annotations.xml")
 

@@ -992,14 +992,17 @@ class TestGetTaskDataset:
         )
 
         with make_api_client(admin_user) as api_client:
-            response = export_dataset(
-                api_client.tasks_api.retrieve_annotations_endpoint,
-                id=task["id"],
-                format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+            dataset_file = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    api_version=2,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
             )
-            assert response.status == HTTPStatus.OK
 
-        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+        with zipfile.ZipFile(dataset_file) as zip_file:
             annotations = json.loads(zip_file.read("annotations/default.json"))
 
         assert annotations["items"]
@@ -5232,20 +5235,27 @@ class TestImportTaskAnnotations:
 
     @pytest.mark.parametrize("dimension", ["2d", "3d"])
     def test_can_import_datumaro_json(self, admin_user, tasks, dimension):
-        task = next(t for t in tasks if t.get("size") if t["dimension"] == dimension)
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["dimension"] == dimension and t.get("validation_mode") != "gt_pool"
+        )
 
         with make_api_client(admin_user) as api_client:
             original_annotations = json.loads(
-                api_client.tasks_api.retrieve_annotations(task["id"], _parse_response=True)[1].data
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
 
-            response = export_dataset(
-                api_client.tasks_api.retrieve_annotations_endpoint,
-                id=task["id"],
-                format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+            dataset_archive = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    api_version=2,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
             )
-            assert response.status == HTTPStatus.OK
-            dataset_archive = io.BytesIO(response.data)
 
         with zipfile.ZipFile(dataset_archive) as zip_file:
             annotations = zip_file.read("annotations/default.json")
@@ -5259,7 +5269,7 @@ class TestImportTaskAnnotations:
 
         with make_api_client(admin_user) as api_client:
             updated_annotations = json.loads(
-                api_client.tasks_api.retrieve_annotations(task["id"], _parse_response=True)[1].data
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
 
         assert compare_annotations(original_annotations, updated_annotations) == {}
