@@ -26,18 +26,30 @@ function defaultTaskSpec({
         sorting_method: (validationParams && validationParams.mode === 'gt_pool') ? 'random' : 'lexicographical',
     };
 
-    const extras = validationParams ? {
-        validation_params: {
-            frames: validationParams.frames,
-            frame_selection_method: validationParams.frameSelectionMethod,
-            frame_count: validationParams.frameCount,
-            frames_per_job_count: validationParams.framesPerJobCount,
-            mode: validationParams.mode,
-            ...(validationParams.randomSeed ? {
-                random_seed: validationParams.randomSeed,
-            } : {}),
-        },
-    } : {};
+    const extras = {};
+    if (validationParams) {
+        const convertedParams = {};
+        if (validationParams.frames) {
+            convertedParams.frames = validationParams.frames;
+        }
+        if (validationParams.frameSelectionMethod) {
+            convertedParams.frame_selection_method = validationParams.frameSelectionMethod;
+        }
+        if (validationParams.frameCount) {
+            convertedParams.frame_count = validationParams.frameCount;
+        }
+        if (validationParams.framesPerJobCount) {
+            convertedParams.frames_per_job_count = validationParams.framesPerJobCount;
+        }
+        if (validationParams.mode) {
+            convertedParams.mode = validationParams.mode;
+        }
+        if (validationParams.randomSeed) {
+            convertedParams.random_seed = validationParams.randomSeed;
+        }
+
+        extras.validation_params = convertedParams;
+    }
 
     return {
         taskSpec,
@@ -46,21 +58,6 @@ function defaultTaskSpec({
     };
 }
 
-function defaultGTJobSpec({
-    frameCount = 3,
-    seed = null,
-}) {
-    return {
-        frame_count: frameCount,
-        type: 'ground_truth',
-        frame_selection_method: 'random_uniform',
-        ...(seed ? {
-            seed,
-        } : {}),
-    };
-}
-
 module.exports = {
     defaultTaskSpec,
-    defaultGTJobSpec,
 };

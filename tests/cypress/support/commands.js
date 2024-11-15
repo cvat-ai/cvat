@@ -8,7 +8,6 @@
 /* eslint-disable security/detect-non-literal-regexp */
 
 import { decomposeMatrix } from './utils';
-import { defaultTaskSpec } from './default-specs';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -380,39 +379,6 @@ Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
 
         const result = await job.save(data);
         return cy.wrap({ jobID: result.id });
-    });
-});
-
-Cypress.Commands.add('headlessCreateDummyTask', (taskParams, gtJobSpec = null) => {
-    const {
-        labelName, taskName, serverFiles, validationParams,
-    } = taskParams;
-    const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-        taskName, serverFiles, labelName, validationParams,
-    });
-    let taskID = null;
-    let jobID = null;
-    let groundTruthJobID = null;
-    cy.headlessCreateTask(taskSpec, dataSpec, extras).then((taskResponse) => {
-        taskID = taskResponse.taskID;
-        if (validationParams) {
-            [groundTruthJobID, jobID] = taskResponse.jobIDs;
-        } else {
-            [jobID] = taskResponse.jobIDs;
-        }
-    }).then(() => {
-        if (gtJobSpec) {
-            return cy.headlessCreateJob({
-                task_id: taskID,
-                ...gtJobSpec,
-            });
-        }
-        return null;
-    }).then((jobResponse) => {
-        if (jobResponse) {
-            groundTruthJobID = jobResponse.jobID;
-        }
-        return { taskID, jobID, groundTruthJobID };
     });
 });
 

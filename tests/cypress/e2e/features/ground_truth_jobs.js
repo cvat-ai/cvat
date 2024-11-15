@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { defaultGTJobSpec } from '../../support/default-specs';
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Ground truth jobs', () => {
     const labelName = 'car';
@@ -14,6 +14,12 @@ context('Ground truth jobs', () => {
         jobType: 'Ground truth',
         frameSelectionMethod: 'Random',
         fromTaskPage: true,
+    };
+
+    const defaultValidationParams = {
+        frameCount: 3,
+        mode: 'gt',
+        frameSelectionMethod: 'random_uniform',
     };
 
     const groundTruthRectangles = [
@@ -96,11 +102,17 @@ context('Ground truth jobs', () => {
         cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
     }
 
-    function createAndOpenTask(serverFiles, gtJobSpec = null) {
-        return cy.headlessCreateDummyTask({
-            taskName, serverFiles, labelName,
-        }, gtJobSpec ? defaultGTJobSpec(gtJobSpec) : null).then((response) => {
-            ({ taskID, jobID, groundTruthJobID } = response);
+    function createAndOpenTask(serverFiles, validationParams = null) {
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName, serverFiles, labelName, validationParams,
+        });
+        return cy.headlessCreateTask(taskSpec, dataSpec, extras).then((taskResponse) => {
+            taskID = taskResponse.taskID;
+            if (validationParams) {
+                [groundTruthJobID, jobID] = taskResponse.jobIDs;
+            } else {
+                [jobID] = taskResponse.jobIDs;
+            }
         }).then(() => {
             cy.visit(`/tasks/${taskID}`);
             cy.get('.cvat-task-details').should('exist').and('be.visible');
@@ -259,7 +271,7 @@ context('Ground truth jobs', () => {
         const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
         before(() => {
-            createAndOpenTask(serverFiles, { frameCount: 3 }).then(() => {
+            createAndOpenTask(serverFiles, defaultValidationParams).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
