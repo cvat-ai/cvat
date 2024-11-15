@@ -30,7 +30,7 @@ from shared.utils.config import (
     post_method,
 )
 
-from .utils import CollectionSimpleFilterTestBase, export_dataset
+from .utils import DATUMARO_FORMAT_FOR_DIMENSION, CollectionSimpleFilterTestBase, export_dataset
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -796,52 +796,64 @@ class TestImportExportDatasetProject:
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
-    _DATUMARO_FORMAT_FOR_DIMENSION = {
-        "2d": "Datumaro 1.0",
-        "3d": "Datumaro 3D 1.0",
-    }
+    @pytest.mark.parametrize(
+        "dimension, format_name",
+        [
+            *DATUMARO_FORMAT_FOR_DIMENSION.items(),
+            ("2d", "CVAT 1.1"),
+            ("3d", "CVAT 1.1"),
+            ("2d", "COCO 1.0"),
+        ],
+    )
+    def test_cant_import_annotations_as_project(self, admin_user, tasks, format_name, dimension):
+        task = next(t for t in tasks if t.get("size") if t["dimension"] == dimension)
 
-    @pytest.mark.parametrize("dimension", ["2d", "3d"])
-    def test_cant_import_datumaro_json_as_project(self, admin_user, tasks, labels, dimension):
-        task = next(
-            t
-            for t in tasks
-            if t.get("size")
-            if t["dimension"] == dimension
-            if all(
-                label["type"] != "skeleton"
-                for label in labels
-                if label.get("task_id") == t["id"]
-                or t.get("project_id")
-                and label.get("project_id") == t["project_id"]
-            )
-        )
+        def _export_task(task_id: int, format_name: str) -> io.BytesIO:
+            with make_api_client(admin_user) as api_client:
+                response = export_dataset(
+                    api_client.tasks_api.retrieve_annotations_endpoint,
+                    id=task_id,
+                    format=format_name,
+                )
+                assert response.status == HTTPStatus.OK
 
-        with make_api_client(admin_user) as api_client:
-            response = export_dataset(
-                api_client.tasks_api.retrieve_annotations_endpoint,
-                id=task["id"],
-                format=self._DATUMARO_FORMAT_FOR_DIMENSION[dimension],
-            )
-            assert response.status == HTTPStatus.OK
+                return io.BytesIO(response.data)
 
-        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-            annotations = zip_file.read("annotations/default.json")
-
-        with make_api_client(admin_user) as api_client:
-            project, _ = api_client.projects_api.create(
-                project_write_request=models.ProjectWriteRequest(name="test_json_import_as_project")
-            )
+        if format_name in list(DATUMARO_FORMAT_FOR_DIMENSION.values()):
+            with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
+                annotations = zip_file.read("annotations/default.json")
 
             dataset_file = io.BytesIO(annotations)
             dataset_file.name = "annotations.json"
+        elif format_name == "CVAT XML 1.1":
+            with zipfile.ZipFile(_export_task(task["id"], "CVAT for images 1.1")) as zip_file:
+                annotations = zip_file.read("annotations.xml")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.xml"
+        elif format_name == "COCO 1.0":
+            with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
+                annotations = zip_file.read("annotations/instances_default.json")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.json"
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            project, _ = api_client.projects_api.create(
+                project_write_request=models.ProjectWriteRequest(
+                    name=f"test_annotations_import_as_project {format_name}"
+                )
+            )
+
             import_data = {"dataset_file": dataset_file}
 
             with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(
                     admin_user,
                     project.id,
-                    format_name=self._DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    format_name=format_name,
                     data=import_data,
                 )
 

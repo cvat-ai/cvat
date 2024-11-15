@@ -49,17 +49,13 @@ from shared.utils.helpers import (
 )
 
 from .utils import (
+    DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
     compare_annotations,
     create_task,
     export_dataset,
     wait_until_task_is_created,
 )
-
-_DATUMARO_FORMAT_FOR_DIMENSION = {
-    "2d": "Datumaro 1.0",
-    "3d": "Datumaro 3D 1.0",
-}
 
 
 def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
@@ -797,7 +793,7 @@ class TestGetTaskDataset:
             response = export_dataset(
                 api_client.tasks_api.retrieve_annotations_endpoint,
                 id=task["id"],
-                format=_DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
             )
             assert response.status == HTTPStatus.OK
 
@@ -2721,41 +2717,38 @@ class TestImportTaskAnnotations:
         self._check_annotations(task_id)
 
     @pytest.mark.parametrize("dimension", ["2d", "3d"])
-    def test_can_import_datumaro_json(self, admin_user, tasks, dimension, labels):
-        task = next(
-            t
-            for t in tasks
-            if t.get("size")
-            if t["dimension"] == dimension
-            if all(
-                label["type"] != "skeleton"
-                for label in labels
-                if label.get("task_id") == t["id"]
-                or t.get("project_id")
-                and label.get("project_id") == t["project_id"]
-            )
-        )
+    def test_can_import_datumaro_json(self, admin_user, tasks, dimension):
+        task = next(t for t in tasks if t.get("size") if t["dimension"] == dimension)
 
         with make_api_client(admin_user) as api_client:
+            original_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"], _parse_response=True)[1].data
+            )
+
             response = export_dataset(
                 api_client.tasks_api.retrieve_annotations_endpoint,
                 id=task["id"],
-                format=_DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
             )
             assert response.status == HTTPStatus.OK
+            dataset_archive = io.BytesIO(response.data)
 
-        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+        with zipfile.ZipFile(dataset_archive) as zip_file:
             annotations = zip_file.read("annotations/default.json")
 
-        with Client(BASE_URL) as client, TemporaryDirectory() as tempdir:
-            client.config.status_check_period = 0.01
-            client.login((admin_user, USER_PASS))
-
+        with TemporaryDirectory() as tempdir:
             annotations_path = Path(tempdir) / "annotations.json"
             annotations_path.write_bytes(annotations)
-            client.tasks.retrieve(task["id"]).import_annotations(
-                _DATUMARO_FORMAT_FOR_DIMENSION[dimension], annotations_path
+            self.client.tasks.retrieve(task["id"]).import_annotations(
+                DATUMARO_FORMAT_FOR_DIMENSION[dimension], annotations_path
             )
+
+        with make_api_client(admin_user) as api_client:
+            updated_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"], _parse_response=True)[1].data
+            )
+
+        assert compare_annotations(original_annotations, updated_annotations) == {}
 
 
 class TestImportWithComplexFilenames:
