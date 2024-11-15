@@ -26,11 +26,11 @@ from cvat.apps.organizations.serializers import (InvitationReadSerializer,
                                                  MembershipReadSerializer,
                                                  OrganizationReadSerializer)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.webhooks.models import Webhook
+from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
-from ..webhooks.models import Webhook
-from ..webhooks.serializers import WebhookReadSerializer
 
 
 def project_id(instance):
@@ -219,36 +219,32 @@ def _get_object_name(instance):
 
     return None
 
+
+SERIALIZERS = [
+    (Organization, OrganizationReadSerializer),
+    (Project, ProjectReadSerializer),
+    (Task, TaskReadSerializer),
+    (Job, JobReadSerializer),
+    (User, BasicUserSerializer),
+    (CloudStorage, CloudStorageReadSerializer),
+    (Issue, IssueReadSerializer),
+    (Comment, CommentReadSerializer),
+    (Label, LabelSerializer),
+    (Membership, MembershipReadSerializer),
+    (Invitation, InvitationReadSerializer),
+    (Webhook, WebhookReadSerializer),
+]
+
+
 def get_serializer(instance):
     context = {
         "request": get_current_request()
     }
 
     serializer = None
-    if isinstance(instance, Organization):
-        serializer = OrganizationReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Project):
-        serializer = ProjectReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Task):
-        serializer = TaskReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Job):
-        serializer = JobReadSerializer(instance=instance, context=context)
-    if isinstance(instance, User):
-        serializer = BasicUserSerializer(instance=instance, context=context)
-    if isinstance(instance, CloudStorage):
-        serializer = CloudStorageReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Issue):
-        serializer = IssueReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Comment):
-        serializer = CommentReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Label):
-        serializer = LabelSerializer(instance=instance, context=context)
-    if isinstance(instance, Membership):
-        serializer = MembershipReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Invitation):
-        serializer = InvitationReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Webhook):
-        serializer = WebhookReadSerializer(instance=instance, context=context)
+    for model, serializer_class in SERIALIZERS:
+        if isinstance(instance, model):
+            serializer = serializer_class(instance=instance, context=context)
 
     return serializer
 
