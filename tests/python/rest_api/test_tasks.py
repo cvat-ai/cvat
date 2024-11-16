@@ -971,24 +971,14 @@ class TestGetTaskDataset:
                     subset_path in path for path in zip_file.namelist()
                 ), f"No {subset_path} in {zip_file.namelist()}"
 
-    @pytest.mark.parametrize("dimension", ["2d", "3d"])
-    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    @pytest.mark.parametrize(
+        "dimension, mode", [("2d", "annotation"), ("2d", "interpolation"), ("3d", "annotation")]
+    )
     def test_datumaro_export_without_annotations_includes_image_info(
-        self, admin_user, tasks, mode, dimension, labels
+        self, admin_user, tasks, mode, dimension
     ):
         task = next(
-            t
-            for t in tasks
-            if t.get("size")
-            if mode != "2d" or t["mode"] == mode
-            if t["dimension"] == dimension
-            if all(
-                label["type"] != "skeleton"
-                for label in labels
-                if label.get("task_id") == t["id"]
-                or t.get("project_id")
-                and label.get("project_id") == t["project_id"]
-            )
+            t for t in tasks if t.get("size") if t["mode"] == mode if t["dimension"] == dimension
         )
 
         with make_api_client(admin_user) as api_client:
