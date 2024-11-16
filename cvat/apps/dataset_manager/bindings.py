@@ -1462,7 +1462,10 @@ class ProjectData(InstanceLabelData):
 @attrs(frozen=True, auto_attribs=True)
 class MediaSource:
     db_task: Task
-    is_video: bool = attrib(kw_only=True)
+
+    @property
+    def is_video(self) -> bool:
+        return self.db_task.mode == 'interpolation'
 
 class MediaProvider:
     def __init__(self, sources: Dict[int, MediaSource]) -> None:
@@ -1551,7 +1554,7 @@ class MediaProvider3D(MediaProvider):
 
         return dm.PointCloud(point_cloud_path, extra_images=related_images)
 
-IMAGE_PROVIDERS_BY_DIMENSION: Dict[DimensionType, MediaProvider] = {
+MEDIA_PROVIDERS_BY_DIMENSION: Dict[DimensionType, MediaProvider] = {
     DimensionType.DIM_3D: MediaProvider3D,
     DimensionType.DIM_2D: MediaProvider2D,
 }
@@ -1562,14 +1565,14 @@ class CVATDataExtractorMixin:
     ):
         self.convert_annotations = convert_annotations or convert_cvat_anno_to_dm
 
-        self._image_provider: Optional[MediaProvider] = None
+        self._media_provider: Optional[MediaProvider] = None
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
-        if self._image_provider:
-            self._image_provider.unload()
+        if self._media_provider:
+            self._media_provider.unload()
 
     def categories(self) -> dict:
         raise NotImplementedError()
@@ -1659,15 +1662,15 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
             else:
                 assert False
 
-            self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
-                {0: MediaSource(db_task, is_video=is_video)}
+            self._media_provider = MEDIA_PROVIDERS_BY_DIMENSION[dimension](
+                {0: MediaSource(db_task)}
             )
 
         dm_items: List[dm.DatasetItem] = []
         for frame_data in instance_data.group_by_frame(include_empty=True):
             dm_media_args = { 'path': frame_data.name + ext }
             if dimension == DimensionType.DIM_3D:
-                dm_media: dm.PointCloud = self._image_provider.get_media_for_frame(
+                dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     0, frame_data.id, **dm_media_args
                 )
 
@@ -1680,7 +1683,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
             else:
                 dm_media_args['size'] = (frame_data.height, frame_data.width)
                 if include_images:
-                    dm_media: dm.Image = self._image_provider.get_media_for_frame(
+                    dm_media: dm.Image = self._media_provider.get_media_for_frame(
                         0, frame_data.idx, **dm_media_args
                     )
                 else:
@@ -1753,9 +1756,9 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         self._format_type = format_type
 
         if self._dimension == DimensionType.DIM_3D or include_images:
-            self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[self._dimension](
+            self._media_provider = MEDIA_PROVIDERS_BY_DIMENSION[self._dimension](
                 {
-                    task.id: MediaSource(task, is_video=task.mode == 'interpolation')
+                    task.id: MediaSource(task)
                     for task in project_data.tasks
                 }
             )
@@ -1770,7 +1773,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         for frame_data in project_data.group_by_frame(include_empty=True):
             dm_media_args = { 'path': frame_data.name + ext_per_task[frame_data.task_id] }
             if self._dimension == DimensionType.DIM_3D:
-                dm_media: dm.PointCloud = self._image_provider.get_media_for_frame(
+                dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     frame_data.task_id, frame_data.id, **dm_media_args
                 )
 
@@ -1783,7 +1786,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
             else:
                 dm_media_args['size'] = (frame_data.height, frame_data.width)
                 if include_images:
-                    dm_media: dm.Image = self._image_provider.get_media_for_frame(
+                    dm_media: dm.Image = self._media_provider.get_media_for_frame(
                         frame_data.task_id, frame_data.idx, **dm_media_args
                     )
                 else:
