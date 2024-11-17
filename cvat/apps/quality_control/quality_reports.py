@@ -572,7 +572,7 @@ class JobDataProvider:
     @transaction.atomic
     def __init__(self, job_id: int, *, queryset=None, included_frames=None) -> None:
         self.job_id = job_id
-        self.job_annotation = JobAnnotation(job_id, queryset=queryset)
+        self.job_annotation = JobAnnotation(job_id, queryset=queryset, prefetch_images=True)
         self.job_annotation.init_from_db()
         self.job_data = JobData(
             annotation_ir=self.job_annotation.ir_data,

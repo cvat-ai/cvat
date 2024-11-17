@@ -116,7 +116,7 @@ class JobAnnotation:
             Prefetch('segment__task__project__label_set', queryset=label_qs),
         )
 
-    def __init__(self, pk, *, is_prefetched: bool = False, queryset: QuerySet = None, prefetch_images: bool = True):
+    def __init__(self, pk, *, is_prefetched: bool = False, queryset: QuerySet = None, prefetch_images: bool = False):
         if queryset is None:
             queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
 
@@ -1010,6 +1010,7 @@ def get_job_data(pk):
 
     return annotation.data
 
+
 @silk_profile(name="POST job data")
 @transaction.atomic
 def put_job_data(pk, data):
@@ -1018,11 +1019,12 @@ def put_job_data(pk, data):
 
     return annotation.data
 
+
 @silk_profile(name="UPDATE job data")
 @plugin_decorator
 @transaction.atomic
 def patch_job_data(pk, data, action):
-    annotation = JobAnnotation(pk, prefetch_images=False)
+    annotation = JobAnnotation(pk)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
@@ -1032,11 +1034,13 @@ def patch_job_data(pk, data, action):
 
     return annotation.data
 
+
 @silk_profile(name="DELETE job data")
 @transaction.atomic
 def delete_job_data(pk):
-    annotation = JobAnnotation(pk, prefetch_images=False)
+    annotation = JobAnnotation(pk)
     annotation.delete()
+
 
 def export_job(job_id, dst_file, format_name, server_url=None, save_images=False):
     # For big tasks dump function may run for a long time and
@@ -1045,12 +1049,13 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
     # more dump request received at the same time:
     # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
-        job = JobAnnotation(job_id)
+        job = JobAnnotation(job_id, prefetch_images=True)
         job.init_from_db()
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
         job.export(f, exporter, host=server_url, save_images=save_images)
+
 
 @silk_profile(name="GET task data")
 @transaction.atomic
@@ -1060,6 +1065,7 @@ def get_task_data(pk):
 
     return annotation.data
 
+
 @silk_profile(name="POST task data")
 @transaction.atomic
 def put_task_data(pk, data):
@@ -1067,6 +1073,7 @@ def put_task_data(pk, data):
     annotation.put(data)
 
     return annotation.data
+
 
 @silk_profile(name="UPDATE task data")
 @transaction.atomic
@@ -1112,9 +1119,10 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
 
+
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
-    job = JobAnnotation(job_id)
+    job = JobAnnotation(job_id, prefetch_images=True)
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
