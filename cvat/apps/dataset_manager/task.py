@@ -94,9 +94,9 @@ class JobAnnotation:
         ])
         label_qs = JobData.add_prefetch_info(label_qs)
 
-        task_data_queryset = models.Data.objects.select_related('video')
+        task_data_queryset = models.Data.objects.all()
         if prefetch_images:
-            task_data_queryset = task_data_queryset.prefetch_related(
+            task_data_queryset = task_data_queryset.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.order_by('frame'))
             )
 
