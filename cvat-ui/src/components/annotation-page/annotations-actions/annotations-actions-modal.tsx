@@ -22,7 +22,7 @@ import { useIsMounted } from 'utils/hooks';
 import { createAction, ActionUnion } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
 import {
-    BaseSingleFrameAction, FrameSelectionType, Job, getCore,
+    BaseCollectionAction, BaseAction, Job, getCore,
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
@@ -32,8 +32,8 @@ import { clamp } from 'utils/math';
 const core = getCore();
 
 interface State {
-    actions: BaseSingleFrameAction[];
-    activeAction: BaseSingleFrameAction | null;
+    actions: BaseAction[];
+    activeAction: BaseAction | null;
     fetching: boolean;
     progress: number | null;
     progressMessage: string | null;
@@ -62,10 +62,10 @@ enum ReducerActionType {
 }
 
 export const reducerActions = {
-    setAnnotationsActions: (actions: BaseSingleFrameAction[]) => (
+    setAnnotationsActions: (actions: BaseAction[]) => (
         createAction(ReducerActionType.SET_ANNOTATIONS_ACTIONS, { actions })
     ),
-    setActiveAnnotationsAction: (activeAction: BaseSingleFrameAction) => (
+    setActiveAnnotationsAction: (activeAction: BaseAction) => (
         createAction(ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION, { activeAction })
     ),
     updateProgress: (progress: number | null, progressMessage: string | null) => (
@@ -111,8 +111,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     }
 
     if (action.type === ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION) {
-        const { frameSelection } = action.payload.activeAction;
-        if (frameSelection === FrameSelectionType.CURRENT_FRAME) {
+        if (action.payload.activeAction instanceof BaseCollectionAction) {
             const storage = getCVATStore();
             const currentFrame = storage.getState().annotation.player.frame.number;
             return {
@@ -123,6 +122,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
                 actionParameters: {},
             };
         }
+
         return {
             ...state,
             activeAction: action.payload.activeAction,
@@ -213,7 +213,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     return state;
 };
 
-type Props = NonNullable<BaseSingleFrameAction['parameters']>[keyof BaseSingleFrameAction['parameters']];
+type Props = NonNullable<BaseAction['parameters']>[keyof BaseAction['parameters']];
 
 function ActionParameterComponent(props: Props & { onChange: (value: string) => void }): JSX.Element {
     const {
@@ -285,7 +285,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
     });
 
     useEffect(() => {
-        core.actions.list().then((list: BaseSingleFrameAction[]) => {
+        core.actions.list().then((list: BaseAction[]) => {
             if (isMounted()) {
                 dispatch(reducerActions.setJobSavedFlag(!jobInstance.annotations.hasUnsavedChanges()));
                 dispatch(reducerActions.setAnnotationsActions(list));
@@ -298,7 +298,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
         progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
     } = state;
 
-    const currentFrameAction = activeAction?.frameSelection === FrameSelectionType.CURRENT_FRAME;
+    const currentFrameAction = activeAction instanceof BaseCollectionAction;
 
     return (
         <Modal
@@ -406,7 +406,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                 }}
                             >
                                 {actions.map(
-                                    (annotationFunction: BaseSingleFrameAction): JSX.Element => (
+                                    (annotationFunction: BaseAction): JSX.Element => (
                                         <Select.Option
                                             value={annotationFunction.name}
                                             title={annotationFunction.name}
@@ -596,8 +596,8 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
 
                                 core.actions.run(
                                     jobInstance,
-                                    [activeAction],
-                                    [actionParameters],
+                                    activeAction,
+                                    actionParameters,
                                     frameFrom,
                                     frameTo,
                                     storage.getState().annotation.annotations.filters,

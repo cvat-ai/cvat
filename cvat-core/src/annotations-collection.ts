@@ -201,7 +201,7 @@ export default class Collection {
         }
 
         const objectStates = [];
-        const filtered = this.annotationsFilter.filter(visible, filters);
+        const filtered = this.annotationsFilter.filterSerializedObjectStates(visible, filters);
 
         visible.forEach((stateData) => {
             if (!filters.length || filtered.includes(stateData.clientID)) {
@@ -1338,7 +1338,7 @@ export default class Collection {
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, annotationsFilters);
+            const filtered = this.annotationsFilter.filterSerializedObjectStates(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }

@@ -41,7 +41,9 @@ import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-co
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
-import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
+import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-action';
+import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-collection-action';
+import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
@@ -89,7 +91,9 @@ export {
     JobStage,
     JobState,
     RQStatus,
-    BaseSingleFrameAction,
+    BaseAction,
+    BaseShapesAction,
+    BaseCollectionAction,
     QualityReport,
     QualityConflict,
     QualitySettings,
@@ -105,7 +109,6 @@ export {
     Event,
     FrameData,
     ActionParameterType,
-    FrameSelectionType,
     Request,
     JobValidationLayout,
     TaskValidationLayout,
