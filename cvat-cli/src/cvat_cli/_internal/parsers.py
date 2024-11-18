@@ -53,6 +53,17 @@ def parse_function_parameter(s: str) -> tuple[str, Any]:
     return (key, value)
 
 
+def parse_threshold(s: str) -> float:
+    try:
+        value = float(s)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError("must be a number") from e
+
+    if not 0 <= value <= 1:
+        raise argparse.ArgumentTypeError("must be between 0 and 1")
+    return value
+
+
 class BuildDictAction(argparse.Action):
     def __init__(self, option_strings, dest, default=None, **kwargs):
         super().__init__(option_strings, dest, default=default or {}, **kwargs)
