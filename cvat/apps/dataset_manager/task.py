@@ -116,16 +116,11 @@ class JobAnnotation:
             Prefetch('segment__task__project__label_set', queryset=label_qs),
         )
 
-    def __init__(self, pk, *, is_prefetched: bool = False, queryset: QuerySet = None, prefetch_images: bool = False):
+    def __init__(self, pk, *, queryset: QuerySet | None = None, prefetch_images: bool = False):
         if queryset is None:
             queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
 
-        if is_prefetched:
-            self.db_job: models.Job = queryset.select_related(
-                'segment__task'
-            ).select_for_update().get(id=pk)
-        else:
-            self.db_job: models.Job = get_cached(queryset, pk=int(pk))
+        self.db_job: models.Job = get_cached(queryset, pk=int(pk))
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -951,7 +946,7 @@ class TaskAnnotation:
             ):
                 continue
 
-            gt_annotation = JobAnnotation(db_job.id, is_prefetched=True)
+            gt_annotation = JobAnnotation(db_job.id)
             gt_annotation.init_from_db()
             if gt_annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = gt_annotation.ir_data.version
