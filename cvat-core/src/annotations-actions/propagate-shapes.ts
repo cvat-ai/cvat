@@ -9,9 +9,9 @@ import { SerializedShape } from '../server-response-types';
 import { propagateShapes } from '../object-utils';
 
 import { ActionParameterType, ActionParameters } from './base-action';
-import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';
+import { BaseCollectionAction, CollectionActionInput, CollectionActionOutput } from './base-collection-action';
 
-export class PropagateShapes extends BaseShapesAction {
+export class PropagateShapes extends BaseCollectionAction {
     #instance: Task | Job;
     #targetFrame: number;
 
@@ -24,16 +24,38 @@ export class PropagateShapes extends BaseShapesAction {
         // nothing to destroy
     }
 
-    public async run(
-        { collection: { shapes }, frameData: { number } }: ShapesActionInput,
-    ): Promise<ShapesActionOutput> {
+    public async run(input: CollectionActionInput): Promise<CollectionActionOutput> {
+        const { collection, frameData: { number } } = input;
         if (number === this.#targetFrame) {
-            return { collection: { shapes } };
+            return { collection };
         }
 
         const frameNumbers = this.#instance instanceof Job ? await this.#instance.frames.frameNumbers() : range(0, this.#instance.size);
-        const propagatedShapes = propagateShapes<SerializedShape>(shapes, number, this.#targetFrame, frameNumbers);
-        return { collection: { shapes: [...shapes, ...propagatedShapes] } };
+        const propagatedShapes = propagateShapes<SerializedShape>(collection.shapes, number, this.#targetFrame, frameNumbers);
+        return {
+            collection: {
+                ...collection,
+                shapes: [...collection.shapes, ...propagatedShapes]
+            },
+        }
+    }
+
+    public applyFilter(input: CollectionActionInput): {
+        filtered: CollectionActionInput['collection'];
+        ignored: CollectionActionInput['collection'];
+    } {
+        return {
+            filtered: {
+                shapes: input.collection.shapes.filter((shape) => shape.frame === input.frameData.number),
+                tags: [],
+                tracks: [],
+            },
+            ignored: {
+                shapes: input.collection.shapes.filter((shape) => shape.frame !== input.frameData.number),
+                tags: input.collection.tags,
+                tracks: input.collection.tracks,
+            },
+        };
     }
 
     public get name(): string {

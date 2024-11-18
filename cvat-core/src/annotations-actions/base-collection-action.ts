@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { throttle } from 'lodash';
+import { throttle, omit } from 'lodash';
 
 import AnnotationsFilter from '../annotations-filter';
 import { Job, Task } from '../session';
@@ -15,7 +15,7 @@ export interface CollectionActionInput {
     onProgress(message: string, percent: number): void;
     cancelled(): boolean;
 
-    collection: Omit<SerializedCollection, 'version'>;
+    collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>;
     frameData: {
         width: number;
         height: number;
@@ -24,11 +24,15 @@ export interface CollectionActionInput {
 }
 
 export interface CollectionActionOutput {
-    collection: Omit<SerializedCollection, 'version'>;
+    collection: CollectionActionInput['collection'];
 }
 
 export abstract class BaseCollectionAction extends BaseAction {
     public abstract run(input: CollectionActionInput): Promise<CollectionActionOutput>;
+    public abstract applyFilter(input: Pick<CollectionActionInput, 'collection' | 'frameData'>): {
+        filtered: CollectionActionInput['collection'];
+        ignored: CollectionActionInput['collection'];
+    };
 }
 
 export async function run(
@@ -78,29 +82,35 @@ export async function run(
 
         const frameData = await Object.getPrototypeOf(instance).frames
             .get.implementation.call(instance, frame);
-
         const exportedCollection = getCollection(instance).export();
-        const filter = new AnnotationsFilter();
-        const filteredCollectionIndexes = filter.filterSerializedCollection(
-            exportedCollection,
-            instance.labels,
-            filters,
-        );
-        
-        const filtered = {
+
+        const annotationsFilter = new AnnotationsFilter();
+        const filteredCollectionIndexes = annotationsFilter
+            .filterSerializedCollection(exportedCollection, instance.labels, filters);
+
+        const filteredByUser = {
             shapes: filteredCollectionIndexes.shapes.map((idx) => exportedCollection.shapes[idx]),
             tags: filteredCollectionIndexes.tags.map((idx) => exportedCollection.tags[idx]),
             tracks: filteredCollectionIndexes.tracks.map((idx) => exportedCollection.tracks[idx]),
         };
 
-        const ignored =  {
+        // TODO: shall we optimize "includes" as collections may be large in this code
+        const finalCollection =  {
             shapes: exportedCollection.shapes.filter((_, idx) => !filteredCollectionIndexes.shapes.includes(idx)),
             tags: exportedCollection.tags.filter((_, idx) => !filteredCollectionIndexes.tags.includes(idx)),
             tracks: exportedCollection.tracks.filter((_, idx) => !filteredCollectionIndexes.tracks.includes(idx)),
         };
 
+        const { filtered: filteredByAction } = action.applyFilter({ collection: filteredByUser, frameData });
+        filteredByUser.shapes
+            .forEach((shape) => !filteredByAction.shapes.includes(shape) && finalCollection.shapes.push(shape));
+        filteredByUser.tags
+            .forEach((tag) => !filteredByAction.tags.includes(tag) && finalCollection.tags.push(tag));
+        filteredByUser.tracks
+            .forEach((track) => !filteredByAction.tracks.includes(track) && finalCollection.tracks.push(track));
+
         const handledCollection = (await action.run({
-            collection: filtered,
+            collection: filteredByAction,
             frameData: {
                 width: frameData.width,
                 height: frameData.height,
@@ -109,15 +119,35 @@ export async function run(
             onProgress: wrappedOnProgress,
             cancelled: cancelled,
         })).collection;
-        
+
+        // remove ids for updated objects, they are considered like new objects
+        handledCollection.tags = handledCollection.tags.map((tag) => omit(tag, 'id'));
+        handledCollection.shapes = handledCollection.shapes.map((shape) => {
+            const body = omit(shape, 'id');
+            if (shape.elements.length) {
+                body.elements = body.elements.map((element) => omit(element, 'id'));
+            }
+            return body;
+        });
+        handledCollection.tracks = handledCollection.tracks.map((track) => {
+            const body = omit(track, 'id');
+            body.shapes = body.shapes.map((shape) => omit(shape, 'id'));
+            if (body.elements.length) {
+                body.elements = body.elements.map((element) => ({
+                    ...omit(element, 'id'),
+                    shapes: element.shapes.map((shape) => omit(shape, 'id')),
+                }));
+            }
+            return body;
+        })
+
+        Array.prototype.push.apply(finalCollection.shapes, handledCollection.shapes);
+        Array.prototype.push.apply(finalCollection.tags, handledCollection.tags);
+        Array.prototype.push.apply(finalCollection.tracks, handledCollection.tracks);
 
         await instance.annotations.clear();
         await instance.actions.clear();
-        await instance.annotations.import({
-            shapes: [...handledCollection.shapes, ...ignored.shapes],
-            tags: [...handledCollection.tags, ...ignored.tags],
-            tracks: [...handledCollection.tracks, ...ignored.tracks],
-        });
+        await instance.annotations.import(finalCollection);
 
         event.close();
     } finally {

@@ -6,13 +6,14 @@ import { omit, throttle } from 'lodash';
 
 import ObjectState from '../object-state';
 import { Job, Task } from '../session';
-import { SerializedCollection } from '../server-response-types';
+import { SerializedCollection, SerializedShape } from '../server-response-types';
 import { EventScope, ObjectType } from '../enums';
 import { getAnnotations, getCollection } from '../annotations';
 import { ActionParameterType, BaseAction } from './base-action';
+import AnnotationsFilter from 'annotations-filter';
 
 export interface ShapesActionInput {
-    collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
+    collection: Pick<SerializedCollection, 'shapes'>;
     frameData: {
         width: number;
         height: number;
@@ -21,11 +22,15 @@ export interface ShapesActionInput {
 }
 
 export interface ShapesActionOutput {
-    collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
+    collection: ShapesActionInput['collection'];
 }
 
 export abstract class BaseShapesAction extends BaseAction {
     public abstract run(input: ShapesActionInput): Promise<ShapesActionOutput>;
+    public abstract applyFilter(input: ShapesActionInput): {
+        filtered: ShapesActionInput['collection'];
+        ignored: ShapesActionInput['collection'];
+    };
 }
 
 export async function run(
@@ -38,7 +43,6 @@ export async function run(
     onProgress: (message: string, progress: number) => void,
     cancelled: () => boolean,
 ): Promise<void> {
-    type IDsToHandle = { shapes: number[] };
     const event = await instance.logger.log(EventScope.annotationsAction, {
         from: frameFrom,
         to: frameTo,
@@ -76,8 +80,25 @@ export async function run(
         }
 
         const exportedCollection = getCollection(instance).export();
-        const handledCollection: ShapesActionInput['collection'] = { shapes: [] };
-        const modifiedCollectionIDs: IDsToHandle = { shapes: [] };
+
+        const annotationsFilter = new AnnotationsFilter();
+        const filteredShapeIDs = annotationsFilter.filterSerializedCollection({
+            shapes: exportedCollection.shapes,
+            tags: [],
+            tracks: [],
+        }, instance.labels, filters).shapes;
+
+        // key -1 contains final shapes collection
+        const finalShapes = [];
+        const filteredShapesByFrame = exportedCollection.shapes.reduce<Record<number, SerializedShape[]>>((acc, shape, idx) => {
+            if (shape.frame >= frameFrom && shape.frame <= frameTo && filteredShapeIDs.includes(idx)) {
+                acc[shape.frame] = acc[shape.frame] ?? [];
+                acc[shape.frame].push(shape);
+            } else {
+                finalShapes.push(shape);
+            }
+            return acc;
+        }, { });
 
         // Iterate over frames
         const totalFrames = frameTo - frameFrom + 1;
@@ -87,38 +108,49 @@ export async function run(
 
             // Ignore deleted frames
             if (!frameData.deleted) {
-                // Get annotations according to filter
-                const states: ObjectState[] = await getAnnotations(instance, frame, false, filters);
-                const frameCollectionIDs = states.reduce<IDsToHandle>((acc, val) => {
-                    if (val.objectType === ObjectType.SHAPE) {
-                        acc.shapes.push(val.clientID as number);
-                    }
-                    return acc;
-                }, { shapes: [] });
+                const frameShapes = filteredShapesByFrame[frame] ?? [];
+                if (!frameShapes.length) {
+                    continue;
+                }
 
-                // Pick frame collection according to filtered IDs
-                let frameCollection = {
-                    shapes: exportedCollection.shapes.filter((shape) => frameCollectionIDs
-                        .shapes.includes(shape.clientID as number)),
-                };
-
-                ({ collection: frameCollection } = await action.run({
-                    collection: frameCollection,
-                    frameData: {
-                        width: frameData.width,
-                        height: frameData.height,
-                        number: frameData.number,
+                // finally apply the own filter of the action
+                const { filtered } = action.applyFilter({
+                    collection: {
+                        shapes: frameShapes,
                     },
-                }));
+                    frameData,
+                });
+
+                for (const shape of frameShapes) {
+                    if (!filtered.shapes.includes(shape)) {
+                        finalShapes.push(shape);
+                    }
+                }
+
+                Array.prototype.push.apply(
+                    finalShapes,
+                    (await action.run({
+                        collection: { shapes: filtered.shapes },
+                        frameData: {
+                            width: frameData.width,
+                            height: frameData.height,
+                            number: frameData.number,
+                        },
+                    })).collection.shapes.map((shape) => {
+                        const body = omit(shape, 'id');
+                        if (shape.elements.length) {
+                            body.elements = body.elements.map((element) => omit(element, 'id'));
+                        }
+
+                        return body;
+                    })
+                );
 
                 const progress = Math.ceil(+(((frame - frameFrom) / totalFrames) * 100));
                 wrappedOnProgress('Actions are running', progress);
                 if (cancelled()) {
                     return;
                 }
-
-                handledCollection.shapes.push(...frameCollection.shapes.map((shape) => omit(shape, 'id')));
-                modifiedCollectionIDs.shapes.push(...frameCollectionIDs.shapes);
             }
         }
 
@@ -127,16 +159,10 @@ export async function run(
             return;
         }
 
-        exportedCollection.shapes.forEach((shape) => {
-            if (Number.isInteger(shape.clientID) && !modifiedCollectionIDs.shapes.includes(shape.clientID as number)) {
-                handledCollection.shapes.push(shape);
-            }
-        });
-
         await instance.annotations.clear();
         await instance.actions.clear();
         await instance.annotations.import({
-            ...handledCollection,
+            shapes: filteredShapesByFrame[-1],
             tracks: exportedCollection.tracks,
             tags: exportedCollection.tags,
         });

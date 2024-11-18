@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BaseShapesAction, ShapesActionOutput } from './base-shapes-action';
+import { BaseShapesAction, ShapesActionInput, ShapesActionOutput } from './base-shapes-action';
 import { ActionParameters } from './base-action';
 
 export class RemoveFilteredShapes extends BaseShapesAction {
@@ -16,6 +16,17 @@ export class RemoveFilteredShapes extends BaseShapesAction {
 
     public async run(): Promise<ShapesActionOutput> {
         return { collection: { shapes: [] } };
+    }
+
+    public applyFilter(input: ShapesActionInput): {
+        filtered: ShapesActionInput['collection'];
+        ignored: ShapesActionInput['collection'];
+    } {
+        const { collection } = input;
+        return {
+            filtered: { shapes: collection.shapes },
+            ignored: { shapes: [], },
+        };
     }
 
     public get name(): string {
