@@ -507,7 +507,12 @@ def save_report(
     return db_task_report.id
 
 
-def prepare_report_for_downloading(db_report: ConsensusReport, *, host: str) -> str:
+def prepare_report_for_downloading(
+    db_report: Union[AssigneeConsensusReport, ConsensusReport],
+    *,
+    host: str,
+    is_consensus_report: bool = True,
+) -> str:
     # copied from quality_reports.py
     # Decorate the report for better usability and readability:
     # - add conflicting annotation links like:
@@ -524,6 +529,9 @@ def prepare_report_for_downloading(db_report: ConsensusReport, *, host: str) -> 
         # check that only safe fields are reported
 
         return {k: getattr(assignee, k) for k in reported_keys}
+
+    if not is_consensus_report:
+        return dump_json(db_report.to_dict(), indent=True, append_newline=True).decode()
 
     task_id = db_report.get_task().id
     serialized_data = dict(

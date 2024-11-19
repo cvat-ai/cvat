@@ -470,5 +470,7 @@ class AssigneeConsensusReportViewSet(
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request, pk):
         report = self.get_object()  # check permissions
-        json_report = prepare_report_for_downloading(report, host=get_server_url(request))
+        json_report = prepare_report_for_downloading(
+            report, host=get_server_url(request), is_consensus_report=False
+        )
         return HttpResponse(json_report.encode(), content_type="application/json")
