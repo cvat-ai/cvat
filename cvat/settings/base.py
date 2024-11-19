@@ -563,12 +563,6 @@ CACHES = {
 
 USE_CACHE = True
 
-# Sets the chunk preparation timeout in seconds after which the backend will respond with 429 code.
-CVAT_CHUNK_CREATE_TIMEOUT = 50
-
-# Sets the frequency of checking the readiness of the chunk
-CVAT_CHUNK_CREATE_CHECK_INTERVAL = 0.2
-
 CORS_ALLOW_HEADERS = list(default_headers) + [
     # tus upload protocol headers
     'upload-offset',

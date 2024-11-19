@@ -145,7 +145,7 @@ def _convert_args_for_callback(func_args: list[Any]) -> list[Any]:
     return result
 
 
-@attrs.define
+@attrs.frozen
 class Callback:
     _callable: Callable[..., DataWithMime] = attrs.field(
         validator=attrs.validators.is_callable(),

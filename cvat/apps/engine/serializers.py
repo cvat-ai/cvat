@@ -1148,7 +1148,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
                 for quality in FrameQuality.__members__.values():
                     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
-                        rq_id = f"job_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
+                        rq_id = f"segment_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
                         rq_job = enqueue_create_chunk_job(
                             queue=queue,
                             rq_job_id=rq_id,
