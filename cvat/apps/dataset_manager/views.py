@@ -26,7 +26,7 @@ from .util import (
     LockNotAvailableError,
     current_function_name, get_export_cache_lock,
     get_export_cache_dir, make_export_filename,
-    parse_export_file_path
+    parse_export_file_path, make_export_cache_lock_key
 )
 from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 
@@ -133,11 +133,15 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
 
         os.makedirs(cache_dir, exist_ok=True)
 
+        current_rq_job = rq.get_current_job()
+        current_rq_job.meta['lock_key'] = make_export_cache_lock_key(output_path)
+        current_rq_job.save_meta()
+
         with get_export_cache_lock(
             output_path,
             block=True,
             acquire_timeout=EXPORT_CACHE_LOCK_TIMEOUT,
-            ttl=rq.get_current_job().timeout,
+            ttl=current_rq_job.timeout,
         ):
             if not osp.exists(output_path):
                 with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:

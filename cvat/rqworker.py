@@ -6,6 +6,9 @@
 import os
 
 from rq import Worker
+from rq.job import Job
+from resource import struct_rusage
+import signal
 
 import cvat.utils.remote_debugger as debug
 
@@ -66,6 +69,18 @@ if debug.is_debugging_enabled():
             return super().execute_job(*args, **kwargs)
 
     DefaultWorker = RemoteDebugWorker
+
+def handle_work_horse_killed(job: Job, retpid: int, ret_val: int, rusage: struct_rusage):
+    job.refresh()
+    if ret_val in (signal.SIGTERM, signal.SIGKILL) and (lock_key := job.meta.get('lock_key')):
+        job.connection.delete(lock_key)
+
+
+class WorkerWithCustomHandler(DefaultWorker):
+    # https://github.com/rq/django-rq/issues/579
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._work_horse_killed_handler = handle_work_horse_killed
 
 
 if os.environ.get("COVERAGE_PROCESS_START"):
