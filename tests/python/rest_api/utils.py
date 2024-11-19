@@ -449,7 +449,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 
     def _compare_results(self, gt_objects, received_objects):
         if self.cmp_ignore_keys:
-                ignore_regex_keys = [f"root(\\[\\d+\\])?\\['{k}'\\]" for k in self.cmp_ignore_keys]
+            ignore_regex_keys = [f"root(\\[\\d+\\])?\\['{k}'\\]" for k in self.cmp_ignore_keys]
         else:
             ignore_keys = None
 
