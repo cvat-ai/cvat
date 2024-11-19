@@ -29,10 +29,9 @@ export interface CollectionActionOutput {
 
 export abstract class BaseCollectionAction extends BaseAction {
     public abstract run(input: CollectionActionInput): Promise<CollectionActionOutput>;
-    public abstract applyFilter(input: Pick<CollectionActionInput, 'collection' | 'frameData'>): {
-        filtered: CollectionActionInput['collection'];
-        ignored: CollectionActionInput['collection'];
-    };
+    public abstract applyFilter(
+        input: Pick<CollectionActionInput, 'collection' | 'frameData'>,
+    ): CollectionActionInput['collection'];
 }
 
 export async function run(
@@ -101,7 +100,7 @@ export async function run(
             tracks: exportedCollection.tracks.filter((_, idx) => !filteredCollectionIndexes.tracks.includes(idx)),
         };
 
-        const { filtered: filteredByAction } = action.applyFilter({ collection: filteredByUser, frameData });
+        const filteredByAction = action.applyFilter({ collection: filteredByUser, frameData });
         filteredByUser.shapes
             .forEach((shape) => !filteredByAction.shapes.includes(shape) && finalCollection.shapes.push(shape));
         filteredByUser.tags

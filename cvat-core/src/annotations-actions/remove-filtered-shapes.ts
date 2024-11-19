@@ -18,15 +18,9 @@ export class RemoveFilteredShapes extends BaseShapesAction {
         return { collection: { shapes: [] } };
     }
 
-    public applyFilter(input: ShapesActionInput): {
-        filtered: ShapesActionInput['collection'];
-        ignored: ShapesActionInput['collection'];
-    } {
+    public applyFilter(input: ShapesActionInput): ShapesActionInput['collection'] {
         const { collection } = input;
-        return {
-            filtered: { shapes: collection.shapes },
-            ignored: { shapes: [], },
-        };
+        return collection;
     }
 
     public get name(): string {

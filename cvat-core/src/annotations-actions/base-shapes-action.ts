@@ -4,11 +4,10 @@
 
 import { omit, throttle } from 'lodash';
 
-import ObjectState from '../object-state';
 import { Job, Task } from '../session';
 import { SerializedCollection, SerializedShape } from '../server-response-types';
-import { EventScope, ObjectType } from '../enums';
-import { getAnnotations, getCollection } from '../annotations';
+import { EventScope } from '../enums';
+import { getCollection } from '../annotations';
 import { ActionParameterType, BaseAction } from './base-action';
 import AnnotationsFilter from 'annotations-filter';
 
@@ -27,10 +26,7 @@ export interface ShapesActionOutput {
 
 export abstract class BaseShapesAction extends BaseAction {
     public abstract run(input: ShapesActionInput): Promise<ShapesActionOutput>;
-    public abstract applyFilter(input: ShapesActionInput): {
-        filtered: ShapesActionInput['collection'];
-        ignored: ShapesActionInput['collection'];
-    };
+    public abstract applyFilter(input: ShapesActionInput): ShapesActionInput['collection'];
 }
 
 export async function run(
@@ -114,7 +110,7 @@ export async function run(
                 }
 
                 // finally apply the own filter of the action
-                const { filtered } = action.applyFilter({
+                const filteredByAction = action.applyFilter({
                     collection: {
                         shapes: frameShapes,
                     },
@@ -122,7 +118,7 @@ export async function run(
                 });
 
                 for (const shape of frameShapes) {
-                    if (!filtered.shapes.includes(shape)) {
+                    if (!filteredByAction.shapes.includes(shape)) {
                         finalShapes.push(shape);
                     }
                 }
@@ -130,7 +126,7 @@ export async function run(
                 Array.prototype.push.apply(
                     finalShapes,
                     (await action.run({
-                        collection: { shapes: filtered.shapes },
+                        collection: { shapes: filteredByAction.shapes },
                         frameData: {
                             width: frameData.width,
                             height: frameData.height,

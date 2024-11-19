@@ -40,21 +40,11 @@ export class PropagateShapes extends BaseCollectionAction {
         }
     }
 
-    public applyFilter(input: CollectionActionInput): {
-        filtered: CollectionActionInput['collection'];
-        ignored: CollectionActionInput['collection'];
-    } {
+    public applyFilter(input: CollectionActionInput): CollectionActionInput['collection'] {
         return {
-            filtered: {
-                shapes: input.collection.shapes.filter((shape) => shape.frame === input.frameData.number),
-                tags: [],
-                tracks: [],
-            },
-            ignored: {
-                shapes: input.collection.shapes.filter((shape) => shape.frame !== input.frameData.number),
-                tags: input.collection.tags,
-                tracks: input.collection.tracks,
-            },
+            shapes: input.collection.shapes.filter((shape) => shape.frame === input.frameData.number),
+            tags: [],
+            tracks: [],
         };
     }
 
