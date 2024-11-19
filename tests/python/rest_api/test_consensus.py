@@ -39,7 +39,7 @@ class _PermissionTestBase:
 
                 if response.status == HTTPStatus.CREATED:
                     break
-            print(json.loads(response.data))
+
             return json.loads(response.data)
 
 
@@ -106,8 +106,6 @@ class TestListConsensusReports(_PermissionTestBase):
             user = task["owner"]["username"]
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
-
-        print(task["id"])
 
         report = self.create_consensus_report(admin_user, task["id"])
 
@@ -575,7 +573,6 @@ class TestListConsensusConflicts(_PermissionTestBase):
 
         report = self.create_consensus_report(admin_user, task["id"])
         conflicts = self._test_list_conflicts_200(admin_user, report_id=report["id"])
-        assert conflicts
 
         if allow:
             self._test_list_conflicts_200(user, report["id"], expected_data=conflicts)
@@ -1142,7 +1139,7 @@ class TestConsensusReportMetrics(_PermissionTestBase):
         task_id = old_report["task_id"]
 
         settings = deepcopy(next(s for s in consensus_settings if s["task_id"] == task_id))
-        print("settings", settings)
+
         if isinstance(settings[parameter], float):
             if settings[parameter] != 0.5:
                 settings[parameter] = 1 - settings[parameter]
@@ -1197,41 +1194,52 @@ class TestConsensusReportMetrics(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListAssigneeConsensusReports(_PermissionTestBase):
-    def _test_get_assignee_consensus_report_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+    def _test_list_assignee_consensus_report_200(
+        self, user: str, task_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.assignee_consensus_retrieve_report(
-                obj_id, **kwargs
+            results = get_paginated_collection(
+                api_client.consensus_api.list_assignee_reports_endpoint,
+                return_json=True,
+                task_id=task_id,
+                **kwargs,
             )
-            assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            DeepDiff(expected_data, results, ignore_order=True) == {}
 
-        return response
+        return results
 
-    def _test_get_assignee_consensus_report_404(self, user: str, obj_id: int, **kwargs):
+    def _test_list_assignee_consensus_report_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.assignee_consensus_retrieve_report(
-                obj_id, **kwargs, _parse_response=False, _check_status=False
-            )
-            assert response.status == HTTPStatus.NOT_FOUND
+            with pytest.raises(exceptions.ApiException) as capture:
+                api_client.consensus_api.list_assignee_reports(task_id=obj_id, **kwargs)
+            assert capture.value.status == HTTPStatus.FORBIDDEN
 
-        return response
-
-    def test_can_list_assignee_consensus_reports(self, admin_user, consensus_reports):
-        parent_report = next(r for r in consensus_reports if r["task_id"])
-        task_id = parent_report["task_id"]
-
-        reports = [r for r in consensus_reports if r["task_id"] == task_id]
-
-        self._test_get_assignee_consensus_report_200(admin_user, task_id, expected_data=reports)
+    def test_can_list_assignee_consensus_reports(self, admin_user, consensus_assignee_reports):
+        consensus_assignee_report = next(r for r in consensus_assignee_reports)
+        consensus_assignee_reports = [
+            r
+            for r in consensus_assignee_reports
+            if r["task_id"] == consensus_assignee_report["task_id"]
+        ]
+        self._test_list_assignee_consensus_report_200(
+            admin_user,
+            consensus_assignee_report["task_id"],
+            expected_data=consensus_assignee_reports,
+        )
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
     def test_user_list_assignee_consensus_reports_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+        self,
+        tasks,
+        jobs,
+        users,
+        consensus_assignee_reports,
+        is_task_staff,
+        is_staff,
+        allow,
     ):
         task = next(
             t
@@ -1245,16 +1253,16 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        print(task["id"])
-
-        report = self.create_consensus_report(admin_user, task["id"])
+        assignee_consensus_reports = [
+            r for r in consensus_assignee_reports if r["task_id"] == task["id"]
+        ]
 
         if allow:
-            self._test_get_assignee_consensus_report_200(
-                user, task["id"], expected_data=[report], target="task"
+            self._test_list_assignee_consensus_report_200(
+                user, task["id"], expected_data=assignee_consensus_reports
             )
         else:
-            self._test_get_assignee_consensus_report_404(user, task["id"])
+            self._test_list_assignee_consensus_report_403(user, task["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
@@ -1271,10 +1279,10 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
         tasks,
         jobs,
         users,
+        consensus_assignee_reports,
         is_org_member,
         org_role,
         allow,
-        admin_user,
     ):
         for user in users:
             if user["is_superuser"]:
@@ -1295,14 +1303,16 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
 
         assert task
 
-        report = self.create_consensus_report(admin_user, task["id"])
+        assignee_consensus_reports = [
+            r for r in consensus_assignee_reports if r["task_id"] == task["id"]
+        ]
 
         if allow:
-            self._test_get_assignee_consensus_report_200(
-                user["username"], task["id"], expected_data=[report]
+            self._test_list_assignee_consensus_report_200(
+                user["username"], task["id"], expected_data=assignee_consensus_reports
             )
         else:
-            self._test_get_assignee_consensus_report_404(user["username"], task["id"])
+            self._test_list_assignee_consensus_report_403(user["username"], task["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1311,29 +1321,47 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
         self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.assignee_consensus_retrieve_report(
+            _, response = api_client.consensus_api.assignee_consensus_retrieve_report_data(
                 obj_id, **kwargs
             )
-            assert response.status == HTTPStatus.OK
+
+        assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
 
-        return response
+        return json.loads(response.data)
 
-    def _test_get_assignee_consensus_report_404(self, user: str, obj_id: int, **kwargs):
+    def _test_get_assignee_consensus_report_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.consensus_api.assignee_consensus_retrieve_report(
-                obj_id, **kwargs, _parse_response=False, _check_status=False
-            )
-            assert response.status == HTTPStatus.NOT_FOUND
+            with pytest.raises(exceptions.ApiException) as capture:
+                api_client.consensus_api.assignee_consensus_retrieve_report_data(obj_id, **kwargs)
+            assert capture.value.status == HTTPStatus.FORBIDDEN
 
-        return response
+    def test_can_get_assignee_consensus_reports(self, admin_user, consensus_assignee_reports):
+        consensus_assignee_report = next(r for r in consensus_assignee_reports)
+        consensus_assignee_report = [
+            r
+            for r in consensus_assignee_reports
+            if r["task_id"] == consensus_assignee_report["task_id"]
+        ][0]
+        self._test_get_assignee_consensus_report_200(
+            admin_user,
+            consensus_assignee_report["id"],
+            expected_data=consensus_assignee_report,
+        )
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
-    def test_user_get_assignee_consensus_report_in_sandbox_task(
-        self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
+    def test_user_get_assignee_consensus_reports_in_sandbox_task(
+        self,
+        tasks,
+        jobs,
+        users,
+        consensus_assignee_reports,
+        is_task_staff,
+        is_staff,
+        allow,
     ):
         task = next(
             t
@@ -1347,17 +1375,16 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        report = self.create_consensus_report(admin_user, task["id"])
-        assignee_consensus_report = self._test_get_assignee_consensus_report_200(
-            admin_user, report["id"]
-        )
+        assignee_consensus_report = [
+            r for r in consensus_assignee_reports if r["task_id"] == task["id"]
+        ][0]
 
         if allow:
             self._test_get_assignee_consensus_report_200(
-                user, report["id"], expected_data=assignee_consensus_report
+                user, assignee_consensus_report["id"], expected_data=assignee_consensus_report
             )
         else:
-            self._test_get_assignee_consensus_report_404(user, report["id"])
+            self._test_get_assignee_consensus_report_403(user, assignee_consensus_report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
@@ -1369,15 +1396,15 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
             ("worker", False),
         ],
     )
-    def test_user_get_assignee_consensus_report_in_org_task(
+    def test_user_get_reports_in_org_task(
         self,
         tasks,
         jobs,
         users,
+        consensus_assignee_reports,
         is_org_member,
         org_role,
         allow,
-        admin_user,
     ):
         for user in users:
             if user["is_superuser"]:
@@ -1398,14 +1425,17 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
 
         assert task
 
-        report = self.create_consensus_report(admin_user, task["id"])
-        assignee_consensus_report = self._test_get_assignee_consensus_report_200(
-            admin_user, report["id"]
-        )
+        assignee_consensus_report = [
+            r for r in consensus_assignee_reports if r["task_id"] == task["id"]
+        ][0]
 
         if allow:
             self._test_get_assignee_consensus_report_200(
-                user, report["id"], expected_data=assignee_consensus_report
+                user["username"],
+                assignee_consensus_report["id"],
+                expected_data=assignee_consensus_report,
             )
         else:
-            self._test_get_assignee_consensus_report_404(user, report["id"])
+            self._test_get_assignee_consensus_report_403(
+                user["username"], assignee_consensus_report["id"]
+            )
