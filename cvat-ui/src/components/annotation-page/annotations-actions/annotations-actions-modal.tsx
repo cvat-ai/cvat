@@ -26,8 +26,7 @@ import {
     ObjectState,
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { fetchAnnotationsAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
-import { switchAutoSave } from 'actions/settings-actions';
+import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 import { clamp } from 'utils/math';
 
 const core = getCore();
@@ -92,21 +91,41 @@ export const reducerActions = {
     ),
 };
 
+let lastSelectedActions: [string, Record<string, string>][] = [];
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
         const { actions } = action.payload;
         const list = state.targetObjectState ? actions
             .filter((action) => action.isApplicableForObject(state.targetObjectState as ObjectState)) : actions;
 
+        let activeAction = null;
+        let activeActionParameters = {};
+        for (const item of lastSelectedActions) {
+            const [actionName, actionParameters] = item;
+            const candidate = list.find((el) => el.name === actionName);
+            if (candidate) {
+                activeAction = candidate;
+                activeActionParameters = actionParameters;
+                break;
+            }
+        }
+
         return {
             ...state,
             actions: list,
-            activeAction: list[0] ?? null,
-            actionParameters: {},
+            activeAction: activeAction ?? list[0] ?? null,
+            actionParameters: activeActionParameters,
         };
     }
 
     if (action.type === ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION) {
+        const { activeAction } = action.payload;
+
+        const associatedItemFromLastSelected = lastSelectedActions.find((el) => el[0] === activeAction.name);
+        if (!associatedItemFromLastSelected) {
+            lastSelectedActions = [[activeAction.name, {}], ...lastSelectedActions.slice(-5)];
+        }
+
         if (action.payload.activeAction instanceof BaseCollectionAction) {
             const storage = getCVATStore();
             const currentFrame = storage.getState().annotation.player.frame.number;
@@ -176,12 +195,20 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     }
 
     if (action.type === ReducerActionType.UPDATE_ACTION_PARAMETER) {
+        const updatedActionParameters = {
+            ...state.actionParameters,
+            [action.payload.name]: action.payload.value,
+        };
+
+        // keep selected parameters for future runs
+        const associatedItemFromLastSelected = lastSelectedActions.find((el) => el[0] === state.activeAction?.name);
+        if (associatedItemFromLastSelected) {
+            associatedItemFromLastSelected[1] = updatedActionParameters;
+        }
+
         return {
             ...state,
-            actionParameters: {
-                ...state.actionParameters,
-                [action.payload.name]: action.payload.value,
-            },
+            actionParameters: updatedActionParameters,
         };
     }
 
@@ -296,30 +323,27 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
             className='cvat-action-runner-content'
         >
             <Row>
-                { targetObjectState === null && (
-                    <Col span={24} className='cvat-action-runner-info'>
-                        <Alert
-                            message={(
-                                <div>
-                                    <Text>Actions allow executing certain algorithms on </Text>
-                                    <Text strong>
-                                        <a
-                                            target='_blank'
-                                            rel='noopener noreferrer'
-                                            href={config.FILTERS_GUIDE_URL}
-                                        >
-                                            filtered
-                                        </a>
-                                    </Text>
-                                    <Text> annotations. </Text>
-                                    <Text strong>It affects only the local browser state. </Text>
-                                </div>
-                            )}
-                            type='info'
-                            showIcon
-                        />
-                    </Col>
-                )}
+                <Col span={24} className='cvat-action-runner-info'>
+                    <Alert
+                        message={(
+                            <div>
+                                <Text>Actions allow executing certain algorithms on </Text>
+                                <Text strong>
+                                    <a
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        href={config.FILTERS_GUIDE_URL}
+                                    >
+                                        filtered
+                                    </a>
+                                </Text>
+                                <Text> annotations. </Text>
+                            </div>
+                        )}
+                        type='info'
+                        showIcon
+                    />
+                </Col>
 
                 <Col span={24} className='cvat-action-runner-list'>
                     <Row>
@@ -469,7 +493,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                             onChange={(value: string) => {
                                                 dispatch(reducerActions.updateActionParameter(name, value));
                                             }}
-                                            defaultValue={defaultValue}
+                                            defaultValue={actionParameters[name] ?? defaultValue}
                                             type={type}
                                             values={values}
                                         />
