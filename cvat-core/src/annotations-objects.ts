@@ -150,6 +150,7 @@ class Annotation {
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected withContext(_: number): {
         delete: Annotation['delete'];
     } {
