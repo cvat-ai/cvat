@@ -92,6 +92,7 @@ export const reducerActions = {
     ),
 };
 
+const KEEP_LATEST = 5;
 let lastSelectedActions: [string, Record<string, string>][] = [];
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
@@ -124,7 +125,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 
         const associatedItemFromLastSelected = lastSelectedActions.find((el) => el[0] === activeAction.name);
         if (!associatedItemFromLastSelected) {
-            lastSelectedActions = [[activeAction.name, {}], ...lastSelectedActions.slice(-5)];
+            lastSelectedActions = [[activeAction.name, {}], ...lastSelectedActions.slice(-KEEP_LATEST)];
         }
 
         if (action.payload.activeAction instanceof BaseCollectionAction) {
@@ -205,6 +206,11 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         const associatedItemFromLastSelected = lastSelectedActions.find((el) => el[0] === state.activeAction?.name);
         if (associatedItemFromLastSelected) {
             associatedItemFromLastSelected[1] = updatedActionParameters;
+        } else {
+            lastSelectedActions = [
+                [(state.activeAction as BaseAction).name, updatedActionParameters],
+                ...lastSelectedActions.slice(-KEEP_LATEST),
+            ];
         }
 
         return {
