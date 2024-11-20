@@ -404,6 +404,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
+                    objectType: this.drawData.initialState.objectType,
                     shapeType: this.drawData.shapeType,
                     points: rle,
                     label: this.drawData.initialState.label,
