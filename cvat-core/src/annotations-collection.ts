@@ -157,6 +157,74 @@ export default class Collection {
         return result;
     }
 
+    public commit(
+        appended: Omit<SerializedCollection, 'version'>,
+        removed: Omit<SerializedCollection, 'version'>,
+        frame: number,
+    ): {
+        tags: Tag[];
+        shapes: Shape[];
+        tracks: Track[];
+    } {
+        const removedCollection: (Shape | Tag | Track)[] = [];
+        const collectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .reduce<boolean>((acc, serializedObject) => {
+                if (acc && typeof serializedObject.clientID === 'number') {
+                    const collectionObject = this.objects[serializedObject.clientID];
+                    if (collectionObject) {
+                        removedCollection.push(collectionObject);
+                        return true;
+                    }
+                }
+
+                return false;
+            }, true);
+
+        if (!collectionConsistent) {
+            throw new ArgumentError('Objects required to be deleted were not found in the collection');
+        }
+
+        const imported = this.import(appended);
+        const appendedCollection = ([] as (Shape | Tag | Track)[])
+            .concat(imported.shapes, imported.tags, imported.tracks);
+        if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
+            // nothing to commit
+            return;
+        }
+
+        let prevRemoved = [];
+        removedCollection.forEach((collectionObject) => {
+            prevRemoved.push(collectionObject.removed);
+            collectionObject.removed = true;
+        });
+
+        this.history.do(
+            HistoryActions.COMMIT_ANNOTATIONS,
+            () => {
+                removedCollection.forEach((collectionObject) => {
+                    prevRemoved.push(collectionObject.removed);
+                    collectionObject.removed = true;
+                });
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = false;
+                });
+            },
+            () => {
+                removedCollection.forEach((collectionObject, idx) => {
+                    collectionObject.removed = prevRemoved[idx];
+                });
+                prevRemoved = [];
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = true;
+                });
+            },
+            [].concat(removedCollection.map((object) => object.clientID), appendedCollection.map((object) => object.clientID)),
+            frame,
+        );
+
+        return;
+    }
+
     public export(): Omit<SerializedCollection, 'version'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),

@@ -23,6 +23,7 @@ import { createAction, ActionUnion } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
 import {
     BaseCollectionAction, BaseAction, Job, getCore,
+    ObjectState,
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
@@ -44,6 +45,7 @@ interface State {
     frameTo: number;
     actionParameters: Record<string, string>;
     modalVisible: boolean;
+    targetObjectState?: ObjectState | null;
 }
 
 enum ReducerActionType {
@@ -102,10 +104,14 @@ export const reducerActions = {
 
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
+        const { actions } = action.payload;
+        const list = state.targetObjectState ? actions
+            .filter((action) => action.isApplicableForObject(state.targetObjectState as ObjectState)) : actions;
+
         return {
             ...state,
-            actions: action.payload.actions,
-            activeAction: action.payload.actions[0] || null,
+            actions: list,
+            activeAction: list[0] ?? null,
             actionParameters: {},
         };
     }
@@ -213,9 +219,9 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     return state;
 };
 
-type Props = NonNullable<BaseAction['parameters']>[keyof BaseAction['parameters']];
+type ActionParameterProps = NonNullable<BaseAction['parameters']>[keyof BaseAction['parameters']];
 
-function ActionParameterComponent(props: Props & { onChange: (value: string) => void }): JSX.Element {
+function ActionParameterComponent(props: ActionParameterProps & { onChange: (value: string) => void }): JSX.Element {
     const {
         defaultValue, type, values, onChange,
     } = props;
@@ -262,7 +268,12 @@ function ActionParameterComponent(props: Props & { onChange: (value: string) => 
     );
 }
 
-function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.Element {
+interface Props {
+    onClose: () => void;
+    targetObjectState?: ObjectState;
+}
+
+function AnnotationsActionsModalContent(props: Props): JSX.Element {
     const { onClose } = props;
     const isMounted = useIsMounted();
     const storage = getCVATStore();
@@ -282,6 +293,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
         frameTo: jobInstance.stopFrame,
         actionParameters: {},
         modalVisible: true,
+        targetObjectState: props.targetObjectState ?? null,
     });
 
     useEffect(() => {
@@ -294,11 +306,11 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
     }, []);
 
     const {
-        actions, activeAction, fetching, autoSaveEnabled, jobHasBeenSaved,
+        actions, activeAction, fetching, autoSaveEnabled, jobHasBeenSaved, targetObjectState,
         progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
     } = state;
 
-    const currentFrameAction = activeAction instanceof BaseCollectionAction;
+    const currentFrameAction = activeAction instanceof BaseCollectionAction || targetObjectState !== null;
 
     return (
         <Modal
@@ -311,35 +323,38 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
             className='cvat-action-runner-content'
         >
             <Row>
-                <Col span={24} className='cvat-action-runner-info'>
-                    <Alert
-                        message={(
-                            <div>
-                                <Text>Actions allow executing certain algorithms on </Text>
-                                <Text strong>
-                                    <a
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        href={config.FILTERS_GUIDE_URL}
-                                    >
-                                        filtered
-                                    </a>
-                                </Text>
-                                <Text> annotations. </Text>
-                                <Text strong>It affects only the local browser state. </Text>
-                                <Text>Once an action has finished, </Text>
-                                <Text strong>it cannot be reverted. </Text>
-                                <Text>You may reload the page to get annotations from the server. </Text>
-                                <Text strong>It is strongly recommended to review the changes </Text>
-                                <Text strong>before saving annotations to the server. </Text>
-                            </div>
-                        )}
-                        type='info'
-                        showIcon
-                    />
-                </Col>
+                { targetObjectState === null && (
+                    <Col span={24} className='cvat-action-runner-info'>
+                        <Alert
+                            message={(
+                                <div>
+                                    <Text>Actions allow executing certain algorithms on </Text>
+                                    <Text strong>
+                                        <a
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            href={config.FILTERS_GUIDE_URL}
+                                        >
+                                            filtered
+                                        </a>
+                                    </Text>
+                                    <Text> annotations. </Text>
+                                    <Text strong>It affects only the local browser state. </Text>
+                                    <Text>Once an action has finished, </Text>
+                                    <Text strong>it cannot be reverted. </Text>
+                                    <Text>You may reload the page to get annotations from the server. </Text>
+                                    <Text strong>It is strongly recommended to review the changes </Text>
+                                    <Text strong>before saving annotations to the server. </Text>
+                                </div>
+                            )}
+                            type='info'
+                            showIcon
+                        />
+                    </Col>
+                )}
+                
 
-                {!jobHasBeenSaved ? (
+                {targetObjectState === null && !jobHasBeenSaved ? (
                     <Col span={24} className='cvat-action-runner-info'>
                         <Alert
                             message={(
@@ -364,7 +379,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                     </Col>
                 ) : null}
 
-                {autoSaveEnabled ? (
+                {targetObjectState === null && autoSaveEnabled ? (
                     <Col span={24} className='cvat-action-runner-info'>
                         <Alert
                             message={(
@@ -391,7 +406,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                 <Col span={24} className='cvat-action-runner-list'>
                     <Row>
                         <Col span={24}>
-                            <Text strong className='cvat-text-color'>1. Select action</Text>
+                            <Text strong className='cvat-text-color'>Select action</Text>
                             <hr />
                         </Col>
                         <Col span={24}>
@@ -421,60 +436,51 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                     </Row>
                 </Col>
 
-                {activeAction ? (
+                {activeAction && !currentFrameAction ? (
                     <>
                         <Col span={24} className='cvat-action-runner-frames'>
                             <Row>
                                 <Col span={24}>
-                                    <Text strong>2. Specify frames to apply the action </Text>
+                                    <Text strong>Specify frames to apply the action </Text>
                                     <hr />
                                 </Col>
                                 <Col span={24}>
-                                    {
-                                        currentFrameAction ? (
-                                            <Text>Running the action is only allowed on current frame</Text>
-                                        ) : (
-                                            <>
-                                                <Text> Starting from frame </Text>
-                                                <InputNumber
-                                                    value={frameFrom}
-                                                    min={jobInstance.startFrame}
-                                                    max={frameTo}
-                                                    step={1}
-                                                    onChange={(value) => {
-                                                        if (typeof value === 'number') {
-                                                            dispatch(reducerActions.updateFrameFrom(
-                                                                clamp(
-                                                                    Math.round(value),
-                                                                    jobInstance.startFrame,
-                                                                    frameTo,
-                                                                ),
-                                                            ));
-                                                        }
-                                                    }}
-                                                />
-                                                <Text> up to frame </Text>
-                                                <InputNumber
-                                                    value={frameTo}
-                                                    min={frameFrom}
-                                                    max={jobInstance.stopFrame}
-                                                    step={1}
-                                                    onChange={(value) => {
-                                                        if (typeof value === 'number') {
-                                                            dispatch(reducerActions.updateFrameTo(
-                                                                clamp(
-                                                                    Math.round(value),
-                                                                    frameFrom,
-                                                                    jobInstance.stopFrame,
-                                                                ),
-                                                            ));
-                                                        }
-                                                    }}
-                                                />
-
-                                            </>
-                                        )
-                                    }
+                                    <Text> Starting from frame </Text>
+                                    <InputNumber
+                                        value={frameFrom}
+                                        min={jobInstance.startFrame}
+                                        max={frameTo}
+                                        step={1}
+                                        onChange={(value) => {
+                                            if (typeof value === 'number') {
+                                                dispatch(reducerActions.updateFrameFrom(
+                                                    clamp(
+                                                        Math.round(value),
+                                                        jobInstance.startFrame,
+                                                        frameTo,
+                                                    ),
+                                                ));
+                                            }
+                                        }}
+                                    />
+                                    <Text> up to frame </Text>
+                                    <InputNumber
+                                        value={frameTo}
+                                        min={frameFrom}
+                                        max={jobInstance.stopFrame}
+                                        step={1}
+                                        onChange={(value) => {
+                                            if (typeof value === 'number') {
+                                                dispatch(reducerActions.updateFrameTo(
+                                                    clamp(
+                                                        Math.round(value),
+                                                        frameFrom,
+                                                        jobInstance.stopFrame,
+                                                    ),
+                                                ));
+                                            }
+                                        }}
+                                    />
                                 </Col>
                             </Row>
                         </Col>
@@ -534,7 +540,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                     <Col span={24} className='cvat-action-runner-action-parameters'>
                         <Row>
                             <Col span={24}>
-                                <Text strong>3. Setup action parameters </Text>
+                                <Text strong>Setup action parameters </Text>
                                 <hr />
                             </Col>
                             {Object.entries(activeAction.parameters)
@@ -593,28 +599,43 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                             if (activeAction) {
                                 cancellationRef.current = false;
                                 dispatch(reducerActions.resetBeforeRun());
+                                const updateProgressWrapper = (_message: string, _progress: number) => {
+                                    if (isMounted()) {
+                                        dispatch(reducerActions.updateProgress(_progress, _message));
+                                    }
+                                };
 
-                                core.actions.run(
+                                const actionPromise = targetObjectState ? core.actions.call(
+                                    jobInstance,
+                                    activeAction,
+                                    actionParameters,
+                                    storage.getState().annotation.player.frame.number,
+                                    [targetObjectState],
+                                    updateProgressWrapper,
+                                    () => cancellationRef.current,
+                                ) : core.actions.run(
                                     jobInstance,
                                     activeAction,
                                     actionParameters,
                                     frameFrom,
                                     frameTo,
                                     storage.getState().annotation.annotations.filters,
-                                    (_message: string, _progress: number) => {
-                                        if (isMounted()) {
-                                            dispatch(reducerActions.updateProgress(_progress, _message));
-                                        }
-                                    },
+                                    updateProgressWrapper,
                                     () => cancellationRef.current,
-                                ).then(() => {
+                                )
+
+                                actionPromise.then(() => {
                                     if (!cancellationRef.current) {
                                         canvasInstance.setup(frameData, []);
                                         storage.dispatch(fetchAnnotationsAsync());
                                     }
                                 }).finally(() => {
                                     if (isMounted()) {
-                                        dispatch(reducerActions.resetAfterRun());
+                                        if (targetObjectState !== null) {
+                                            onClose();
+                                        } else {
+                                            dispatch(reducerActions.resetAfterRun());
+                                        }
                                     }
                                 }).catch((error: unknown) => {
                                     if (error instanceof Error) {

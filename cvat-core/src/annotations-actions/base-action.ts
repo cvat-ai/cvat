@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import ObjectState from '../object-state';
 import { Job, Task } from '../session';
 
 export enum ActionParameterType {
@@ -23,7 +24,23 @@ export abstract class BaseAction {
     public abstract destroy(): Promise<void>;
     public abstract run(input: unknown): Promise<unknown>;
     public abstract applyFilter(input: unknown): unknown;
+    public abstract isApplicableForObject(objectState: ObjectState): boolean;
 
     public abstract get name(): string;
     public abstract get parameters(): ActionParameters | null;
+}
+
+export function prepareActionParameters(declared: ActionParameters, defined: object): Record<string, string | number> {
+    if (!declared) {
+        return {};
+    } else {
+        return Object.entries(declared).reduce((acc, [name, { type, defaultValue }]) => {
+            if (type === ActionParameterType.NUMBER) {
+                acc[name] = +(Object.hasOwn(defined, name) ? defined[name] : defaultValue);
+            } else {
+                acc[name] = (Object.hasOwn(defined, name) ? defined[name] : defaultValue);
+            }
+            return acc;
+        }, {} as Record<string, string | number>);
+    }
 }

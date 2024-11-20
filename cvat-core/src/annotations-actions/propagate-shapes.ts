@@ -4,9 +4,11 @@
 
 import { range } from 'lodash';
 
+import ObjectState from '../object-state';
 import { Job, Task } from '../session';
 import { SerializedShape } from '../server-response-types';
 import { propagateShapes } from '../object-utils';
+import { ObjectType } from '../enums';
 
 import { ActionParameterType, ActionParameters } from './base-action';
 import { BaseCollectionAction, CollectionActionInput, CollectionActionOutput } from './base-collection-action';
@@ -27,17 +29,18 @@ export class PropagateShapes extends BaseCollectionAction {
     public async run(input: CollectionActionInput): Promise<CollectionActionOutput> {
         const { collection, frameData: { number } } = input;
         if (number === this.#targetFrame) {
-            return { collection };
+            return {
+                created: { shapes: [], tags: [], tracks: [] },
+                deleted: { shapes: [], tags: [], tracks: [] },
+            };
         }
 
         const frameNumbers = this.#instance instanceof Job ? await this.#instance.frames.frameNumbers() : range(0, this.#instance.size);
         const propagatedShapes = propagateShapes<SerializedShape>(collection.shapes, number, this.#targetFrame, frameNumbers);
         return {
-            collection: {
-                ...collection,
-                shapes: [...collection.shapes, ...propagatedShapes]
-            },
-        }
+            created: { shapes: propagatedShapes, tags: [], tracks: [] },
+            deleted: { shapes: [], tags: [], tracks: [] },
+        };
     }
 
     public applyFilter(input: CollectionActionInput): CollectionActionInput['collection'] {
@@ -46,6 +49,10 @@ export class PropagateShapes extends BaseCollectionAction {
             tags: [],
             tracks: [],
         };
+    }
+
+    public isApplicableForObject(objectState: ObjectState): boolean {
+        return objectState.objectType === ObjectType.SHAPE;
     }
 
     public get name(): string {

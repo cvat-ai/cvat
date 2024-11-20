@@ -26,8 +26,8 @@ import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders,
-    ModelReturnType, DimensionType, JobType,
+    ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
+    ModelReturnType, DimensionType, JobType, Source,
     JobStage, JobState, RQStatus, StorageLocation,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
@@ -71,6 +71,8 @@ export {
     AnnotationGuide,
     Attribute,
     ShapeType,
+    Source,
+    ObjectType,
     LabelType,
     Storage,
     Webhook,

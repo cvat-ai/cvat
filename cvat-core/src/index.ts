@@ -36,6 +36,7 @@ import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import {
     runAction,
+    callAction,
     listActions,
     registerAction,
 } from './annotations-actions/annotations-actions';
@@ -172,6 +173,7 @@ export default interface CVATCore {
         list: typeof listActions;
         register: typeof registerAction;
         run: typeof runAction;
+        call: typeof callAction;
     };
     logger: typeof logger;
     config: {

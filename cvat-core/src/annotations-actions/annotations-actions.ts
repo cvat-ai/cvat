@@ -2,11 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
+import ObjectState from '../object-state';
 import { ArgumentError } from '../exceptions';
 import { Job, Task } from '../session';
 import { BaseAction } from './base-action';
-import { BaseShapesAction, run as runShapesAction } from './base-shapes-action';
-import { BaseCollectionAction, run as runCollectionAction } from './base-collection-action';
+import {
+    BaseShapesAction, run as runShapesAction, call as callShapesAction,
+} from './base-shapes-action';
+import {
+    BaseCollectionAction, run as runCollectionAction, call as callCollectionAction,
+} from './base-collection-action';
 
 import { RemoveFilteredShapes } from './remove-filtered-shapes';
 import { PropagateShapes } from './propagate-shapes';
@@ -39,7 +44,7 @@ export async function runAction(
     actionParameters: Record<string, string>,
     frameFrom: number,
     frameTo: number,
-    filters: string[],
+    filters: object[],
     onProgress: (message: string, progress: number) => void,
     cancelled: () => boolean,
 ): Promise<void> {
@@ -67,4 +72,43 @@ export async function runAction(
             cancelled,
         );
     }
+
+    return Promise.resolve();
 }
+
+export async function callAction(
+    instance: Job | Task,
+    action: BaseAction,
+    actionParameters: Record<string, string>,
+    frame: number,
+    states: ObjectState[],
+    onProgress: (message: string, progress: number) => void,
+    cancelled: () => boolean,
+): Promise<void> {
+    if (action instanceof BaseShapesAction) {
+        return callShapesAction(
+            instance,
+            action,
+            actionParameters,
+            frame,
+            states,
+            onProgress,
+            cancelled,
+        );
+    }
+
+    if (action instanceof BaseCollectionAction) {
+        return callCollectionAction(
+            instance,
+            action,
+            actionParameters,
+            frame,
+            states,
+            onProgress,
+            cancelled,
+        );
+    }
+
+    return Promise.resolve();
+}
+

@@ -41,6 +41,7 @@ interface Props {
     changeLabel(label: any): void;
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
     slice(): void;
 }
@@ -73,6 +74,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeLabel,
         changeColor,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
         slice,
         jobInstance,
@@ -133,6 +135,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}
+                    runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (

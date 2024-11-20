@@ -47,6 +47,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
     slice(): void;
 }
@@ -83,6 +84,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
         slice,
         jobInstance,
@@ -166,6 +168,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             setColorPickerVisible,
                             edit,
                             slice,
+                            runAnnotationAction,
                         })}
                     >
                         <Col span={2}>

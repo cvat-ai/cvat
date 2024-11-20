@@ -4,14 +4,17 @@
 
 import { omit, throttle } from 'lodash';
 
+import ObjectState from '../object-state';
+import AnnotationsFilter from '../annotations-filter';
 import { Job, Task } from '../session';
 import { SerializedCollection, SerializedShape } from '../server-response-types';
-import { EventScope } from '../enums';
+import { EventScope, ObjectType } from '../enums';
 import { getCollection } from '../annotations';
-import { ActionParameterType, BaseAction } from './base-action';
-import AnnotationsFilter from 'annotations-filter';
+import { BaseAction, prepareActionParameters } from './base-action';
 
 export interface ShapesActionInput {
+    onProgress(message: string, percent: number): void;
+    cancelled(): boolean;
     collection: Pick<SerializedCollection, 'shapes'>;
     frameData: {
         width: number;
@@ -21,12 +24,15 @@ export interface ShapesActionInput {
 }
 
 export interface ShapesActionOutput {
-    collection: ShapesActionInput['collection'];
+    created: ShapesActionInput['collection'];
+    deleted: ShapesActionInput['collection'];
 }
 
 export abstract class BaseShapesAction extends BaseAction {
     public abstract run(input: ShapesActionInput): Promise<ShapesActionOutput>;
-    public abstract applyFilter(input: ShapesActionInput): ShapesActionInput['collection'];
+    public abstract applyFilter(
+        input: Pick<ShapesActionInput, 'collection' | 'frameData'>
+    ): ShapesActionInput['collection'];
 }
 
 export async function run(
@@ -46,10 +52,10 @@ export async function run(
     }, true);
 
     // if called too fast, it will freeze UI, so, add throttling here
-    const wrappedOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
+    const throttledOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
     const showMessageWithPause = async (message: string, progress: number, duration: number): Promise<void> => {
         // wrapper that gives a chance to abort action
-        wrappedOnProgress(message, progress);
+        throttledOnProgress(message, progress);
         await new Promise((resolve) => setTimeout(resolve, duration));
     };
 
@@ -59,21 +65,7 @@ export async function run(
             return;
         }
 
-        const declaredParameters = action.parameters;
-        if (!declaredParameters) {
-            await action.init(instance, {});
-        } else {
-            const parameters = Object.entries(declaredParameters).reduce((acc, [name, { type, defaultValue }]) => {
-                if (type === ActionParameterType.NUMBER) {
-                    acc[name] = +(Object.hasOwn(actionParameters, name) ? actionParameters[name] : defaultValue);
-                } else {
-                    acc[name] = (Object.hasOwn(actionParameters, name) ? actionParameters[name] : defaultValue);
-                }
-                return acc;
-            }, {} as Record<string, string | number>);
-
-            await action.init(instance, parameters);
-        }
+        await action.init(instance, prepareActionParameters(action.parameters, actionParameters));
 
         const exportedCollection = getCollection(instance).export();
 
@@ -84,18 +76,15 @@ export async function run(
             tracks: [],
         }, instance.labels, filters).shapes;
 
-        // key -1 contains final shapes collection
-        const finalShapes = [];
-        const filteredShapesByFrame = exportedCollection.shapes.reduce<Record<number, SerializedShape[]>>((acc, shape, idx) => {
-            if (shape.frame >= frameFrom && shape.frame <= frameTo && filteredShapeIDs.includes(idx)) {
+        const filteredShapesByFrame = exportedCollection.shapes.reduce<Record<number, SerializedShape[]>>((acc, shape) => {
+            if (shape.frame >= frameFrom && shape.frame <= frameTo && filteredShapeIDs.includes(shape.clientID)) {
                 acc[shape.frame] = acc[shape.frame] ?? [];
                 acc[shape.frame].push(shape);
-            } else {
-                finalShapes.push(shape);
             }
             return acc;
-        }, { });
+        }, {});
 
+        const totalUpdates = { created: { shapes: [] }, deleted: { shapes: [] } };
         // Iterate over frames
         const totalFrames = frameTo - frameFrom + 1;
         for (let frame = frameFrom; frame <= frameTo; frame++) {
@@ -117,33 +106,22 @@ export async function run(
                     frameData,
                 });
 
-                for (const shape of frameShapes) {
-                    if (!filteredByAction.shapes.includes(shape)) {
-                        finalShapes.push(shape);
-                    }
-                }
+                const { created, deleted } = await action.run({
+                    onProgress: throttledOnProgress,
+                    cancelled,
+                    collection: { shapes: filteredByAction.shapes },
+                    frameData: {
+                        width: frameData.width,
+                        height: frameData.height,
+                        number: frameData.number,
+                    },
+                });
 
-                Array.prototype.push.apply(
-                    finalShapes,
-                    (await action.run({
-                        collection: { shapes: filteredByAction.shapes },
-                        frameData: {
-                            width: frameData.width,
-                            height: frameData.height,
-                            number: frameData.number,
-                        },
-                    })).collection.shapes.map((shape) => {
-                        const body = omit(shape, 'id');
-                        if (shape.elements.length) {
-                            body.elements = body.elements.map((element) => omit(element, 'id'));
-                        }
-
-                        return body;
-                    })
-                );
+                totalUpdates.created.shapes.concat(created.shapes);
+                totalUpdates.deleted.shapes.concat(deleted.shapes);
 
                 const progress = Math.ceil(+(((frame - frameFrom) / totalFrames) * 100));
-                wrappedOnProgress('Actions are running', progress);
+                throttledOnProgress('Actions are running', progress);
                 if (cancelled()) {
                     return;
                 }
@@ -155,17 +133,62 @@ export async function run(
             return;
         }
 
-        await instance.annotations.clear();
-        await instance.actions.clear();
-        await instance.annotations.import({
-            shapes: filteredShapesByFrame[-1],
-            tracks: exportedCollection.tracks,
-            tags: exportedCollection.tags,
-        });
+        await instance.annotations.commit(
+            { shapes: totalUpdates.created.shapes, tags: [], tracks: [] },
+            { shapes: totalUpdates.deleted.shapes, tags: [], tracks: [] },
+            frameFrom,
+        );
 
         event.close();
     } finally {
-        wrappedOnProgress('Finalizing', 100);
+        throttledOnProgress('Finalizing', 100);
+        await action.destroy();
+    }
+}
+
+export async function call(
+    instance: Job | Task,
+    action: BaseShapesAction,
+    actionParameters: Record<string, string>,
+    frame: number,
+    states: ObjectState[],
+    onProgress: (message: string, progress: number) => void,
+    cancelled: () => boolean,
+): Promise<void> {
+    const event = await instance.logger.log(EventScope.annotationsAction, {
+        from: frame,
+        to: frame,
+        name: action.name,
+    }, true);
+
+    const throttledOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
+    try {
+        await action.init(instance, prepareActionParameters(action.parameters, actionParameters));
+
+        const exported = await Promise.all(states.filter((state) => state.objectType === ObjectType.SHAPE)
+            .map((state) => state.export())) as SerializedShape[];
+        const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
+        const filteredByAction = action.applyFilter({ collection: { shapes: exported },  frameData });
+
+        const processedCollection = await action.run({
+            onProgress: throttledOnProgress,
+            cancelled,
+            collection: { shapes: filteredByAction.shapes },
+            frameData: {
+                width: frameData.width,
+                height: frameData.height,
+                number: frameData.number,
+            },
+        });
+
+        await instance.annotations.commit(
+            { shapes: processedCollection.created.shapes, tags: [], tracks: [] },
+            { shapes: processedCollection.deleted.shapes, tags: [], tracks: [] },
+            frame,
+        );
+
+        event.close();
+    } finally {
         await action.destroy();
     }
 }

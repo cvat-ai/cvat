@@ -4,17 +4,20 @@
 
 import { throttle, omit } from 'lodash';
 
+import ObjectState from '../object-state';
 import AnnotationsFilter from '../annotations-filter';
 import { Job, Task } from '../session';
-import { SerializedCollection } from '../server-response-types';
-import { EventScope } from '../enums';
+import {
+    SerializedCollection, SerializedShape,
+    SerializedTag, SerializedTrack,
+} from '../server-response-types';
+import { EventScope, ObjectType } from '../enums';
 import { getCollection } from '../annotations';
-import { ActionParameterType, BaseAction } from './base-action';
+import { BaseAction, prepareActionParameters } from './base-action';
 
 export interface CollectionActionInput {
     onProgress(message: string, percent: number): void;
     cancelled(): boolean;
-
     collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>;
     frameData: {
         width: number;
@@ -24,7 +27,8 @@ export interface CollectionActionInput {
 }
 
 export interface CollectionActionOutput {
-    collection: CollectionActionInput['collection'];
+    created: CollectionActionInput['collection'];
+    deleted: CollectionActionInput['collection'];
 }
 
 export abstract class BaseCollectionAction extends BaseAction {
@@ -63,53 +67,37 @@ export async function run(
             return;
         }
 
-        const declaredParameters = action.parameters;
-        if (!declaredParameters) {
-            await action.init(instance, {});
-        } else {
-            const parameters = Object.entries(declaredParameters).reduce((acc, [name, { type, defaultValue }]) => {
-                if (type === ActionParameterType.NUMBER) {
-                    acc[name] = +(Object.hasOwn(actionParameters, name) ? actionParameters[name] : defaultValue);
-                } else {
-                    acc[name] = (Object.hasOwn(actionParameters, name) ? actionParameters[name] : defaultValue);
-                }
-                return acc;
-            }, {} as Record<string, string | number>);
-
-            await action.init(instance, parameters);
-        }
+        await action.init(instance, prepareActionParameters(action.parameters, actionParameters));
 
         const frameData = await Object.getPrototypeOf(instance).frames
             .get.implementation.call(instance, frame);
         const exportedCollection = getCollection(instance).export();
 
+        // Apply action filter first
+        const filteredByAction = action.applyFilter({ collection: exportedCollection, frameData });
+        let mapID2Obj = [].concat(filteredByAction.shapes, filteredByAction.tags, filteredByAction.tracks)
+            .reduce((acc, object) => {
+                acc[object.clientID as number] = object;
+                return acc;
+            }, {});
+
+        // Then apply user filter
         const annotationsFilter = new AnnotationsFilter();
-        const filteredCollectionIndexes = annotationsFilter
-            .filterSerializedCollection(exportedCollection, instance.labels, filters);
-
+        const filteredCollectionIDs = annotationsFilter
+            .filterSerializedCollection(filteredByAction, instance.labels, filters);
         const filteredByUser = {
-            shapes: filteredCollectionIndexes.shapes.map((idx) => exportedCollection.shapes[idx]),
-            tags: filteredCollectionIndexes.tags.map((idx) => exportedCollection.tags[idx]),
-            tracks: filteredCollectionIndexes.tracks.map((idx) => exportedCollection.tracks[idx]),
+            shapes: filteredCollectionIDs.shapes.map((clientID) => mapID2Obj[clientID]),
+            tags: filteredCollectionIDs.tags.map((clientID) => mapID2Obj[clientID]),
+            tracks: filteredCollectionIDs.tracks.map((clientID) => mapID2Obj[clientID]),
         };
+        mapID2Obj = [].concat(filteredByUser.shapes, filteredByUser.tags, filteredByUser.tracks)
+            .reduce((acc, object) => {
+                acc[object.clientID as number] = object;
+                return acc;
+            }, {});
 
-        // TODO: shall we optimize "includes" as collections may be large in this code
-        const finalCollection =  {
-            shapes: exportedCollection.shapes.filter((_, idx) => !filteredCollectionIndexes.shapes.includes(idx)),
-            tags: exportedCollection.tags.filter((_, idx) => !filteredCollectionIndexes.tags.includes(idx)),
-            tracks: exportedCollection.tracks.filter((_, idx) => !filteredCollectionIndexes.tracks.includes(idx)),
-        };
-
-        const filteredByAction = action.applyFilter({ collection: filteredByUser, frameData });
-        filteredByUser.shapes
-            .forEach((shape) => !filteredByAction.shapes.includes(shape) && finalCollection.shapes.push(shape));
-        filteredByUser.tags
-            .forEach((tag) => !filteredByAction.tags.includes(tag) && finalCollection.tags.push(tag));
-        filteredByUser.tracks
-            .forEach((track) => !filteredByAction.tracks.includes(track) && finalCollection.tracks.push(track));
-
-        const handledCollection = (await action.run({
-            collection: filteredByAction,
+        const { created, deleted } = await action.run({
+            collection: filteredByUser,
             frameData: {
                 width: frameData.width,
                 height: frameData.height,
@@ -117,40 +105,69 @@ export async function run(
             },
             onProgress: wrappedOnProgress,
             cancelled: cancelled,
-        })).collection;
-
-        // remove ids for updated objects, they are considered like new objects
-        handledCollection.tags = handledCollection.tags.map((tag) => omit(tag, 'id'));
-        handledCollection.shapes = handledCollection.shapes.map((shape) => {
-            const body = omit(shape, 'id');
-            if (shape.elements.length) {
-                body.elements = body.elements.map((element) => omit(element, 'id'));
-            }
-            return body;
         });
-        handledCollection.tracks = handledCollection.tracks.map((track) => {
-            const body = omit(track, 'id');
-            body.shapes = body.shapes.map((shape) => omit(shape, 'id'));
-            if (body.elements.length) {
-                body.elements = body.elements.map((element) => ({
-                    ...omit(element, 'id'),
-                    shapes: element.shapes.map((shape) => omit(shape, 'id')),
-                }));
-            }
-            return body;
-        })
 
-        Array.prototype.push.apply(finalCollection.shapes, handledCollection.shapes);
-        Array.prototype.push.apply(finalCollection.tags, handledCollection.tags);
-        Array.prototype.push.apply(finalCollection.tracks, handledCollection.tracks);
-
-        await instance.annotations.clear();
-        await instance.actions.clear();
-        await instance.annotations.import(finalCollection);
-
+        await instance.annotations.commit(created, deleted, frame);
         event.close();
     } finally {
         wrappedOnProgress('Finalizing', 100);
+        await action.destroy();
+    }
+}
+
+export async function call(
+    instance: Job | Task,
+    action: BaseCollectionAction,
+    actionParameters: Record<string, string>,
+    frame: number,
+    states: ObjectState[],
+    onProgress: (message: string, progress: number) => void,
+    cancelled: () => boolean,
+): Promise<void> {
+    const event = await instance.logger.log(EventScope.annotationsAction, {
+        from: frame,
+        to: frame,
+        name: action.name,
+    }, true);
+
+    const throttledOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
+    try {
+        await action.init(instance, prepareActionParameters(action.parameters, actionParameters));
+
+        const exportedCollection = (await Promise.all(states.map((state) => state.export())))
+            .reduce<CollectionActionInput['collection']>((acc, value, idx) => {
+                if (states[idx].objectType === ObjectType.SHAPE) {
+                    acc.shapes.push(value as SerializedShape);
+                }
+
+                if (states[idx].objectType === ObjectType.TAG) {
+                    acc.tags.push(value as SerializedTag);
+                }
+
+                if (states[idx].objectType === ObjectType.TRACK) {
+                    acc.tracks.push(value as SerializedTrack);
+                }
+
+                return acc;
+            }, { shapes: [], tags: [], tracks: [] });
+
+        const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
+        const filteredByAction = action.applyFilter({ collection: exportedCollection,  frameData });
+
+        const processedCollection = await action.call({
+            onProgress: throttledOnProgress,
+            cancelled,
+            collection: filteredByAction,
+            frameData: {
+                width: frameData.width,
+                height: frameData.height,
+                number: frameData.number,
+            },
+        });
+
+        await instance.annotations.commit(processedCollection.created, processedCollection.deleted, frame);
+        event.close();
+    } finally {
         await action.destroy();
     }
 }

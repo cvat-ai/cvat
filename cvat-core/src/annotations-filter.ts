@@ -170,7 +170,7 @@ export default class AnnotationsFilter {
                     type: ObjectType.SHAPE,
                     shape: shape.type,
                     occluded: shape.occluded,
-                    objectID: idx,
+                    objectID: shape.clientID ?? null,
                 }
             }),
             tags: collection.tags.map((tag, idx) => {
@@ -187,7 +187,7 @@ export default class AnnotationsFilter {
                     type: ObjectType.SHAPE,
                     shape: null,
                     occluded: false,
-                    objectID: idx,
+                    objectID: tag.clientID ?? null,
                 };
             }),
             tracks: collection.tracks.map((track, idx) => {
@@ -196,15 +196,15 @@ export default class AnnotationsFilter {
                 return {
                     width: null,
                     height: null,
-                    attr: { 
+                    attr: {
                         [adjustName(label.name)]: convertAttributes(track.attributes),
                     },
                     label: labelByID[track.label_id]?.name ?? null,
                     serverID: track.id,
                     type: ObjectType.TRACK,
                     shape: track.shapes[0]?.type ?? null,
-                    occluded: track.shapes.length > 0 && track.shapes.every((shape) => shape.occluded),
-                    objectID: idx,
+                    occluded: null,
+                    objectID: track.clientID ?? null,
                 }
             }),
         };

@@ -223,6 +223,30 @@ function build(): CVATCore {
                 );
                 return result;
             },
+            async call(
+                instance: Job | Task,
+                actions: BaseAction,
+                actionsParameters: Record<string, string>,
+                frame: number,
+                states: ObjectState[],
+                onProgress: (
+                    message: string,
+                    progress: number,
+                ) => void,
+                cancelled: () => boolean,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.actions.call,
+                    instance,
+                    actions,
+                    actionsParameters,
+                    frame,
+                    states,
+                    onProgress,
+                    cancelled,
+                );
+                return result;
+            },
         },
         lambda: {
             async list() {

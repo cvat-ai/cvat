@@ -39,7 +39,9 @@ import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
 import AnalyticsReport from './analytics-report';
-import { listActions, registerAction, runAction } from './annotations-actions/annotations-actions';
+import {
+    callAction, listActions, registerAction, runAction,
+} from './annotations-actions/annotations-actions';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
@@ -55,6 +57,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.actions.list, listActions);
     implementationMixin(cvat.actions.register, registerAction);
     implementationMixin(cvat.actions.run, runAction);
+    implementationMixin(cvat.actions.call, callAction);
 
     implementationMixin(cvat.lambda.list, lambdaManager.list.bind(lambdaManager));
     implementationMixin(cvat.lambda.run, lambdaManager.run.bind(lambdaManager));

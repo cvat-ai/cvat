@@ -14,13 +14,21 @@ export class RemoveFilteredShapes extends BaseShapesAction {
         // nothing to destroy
     }
 
-    public async run(): Promise<ShapesActionOutput> {
-        return { collection: { shapes: [] } };
+    public async run(input: ShapesActionInput): Promise<ShapesActionOutput> {
+        return {
+            created: { shapes: [] },
+            deleted: input['collection'],
+        };
     }
 
     public applyFilter(input: ShapesActionInput): ShapesActionInput['collection'] {
         const { collection } = input;
         return collection;
+    }
+
+    public isApplicableForObject(): boolean {
+        // remove action does not make sense when running on one object
+        return false;
     }
 
     public get name(): string {
