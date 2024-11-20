@@ -35,6 +35,7 @@ interface Props {
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
     removeShortcut: string;
+    runAnnotationsActionShortcut: string;
     changeColor(value: string): void;
     copy(): void;
     remove(): void;
@@ -236,16 +237,18 @@ function RemoveItem(props: ItemProps): JSX.Element {
 
 function RunAnnotationActionItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
-    const { runAnnotationAction } = toolProps;
+    const { runAnnotationsActionShortcut, runAnnotationAction } = toolProps;
     return (
-        <Button
-            type='link'
-            icon={<FunctionOutlined />}
-            onClick={runAnnotationAction}
-            className='cvat-object-item-menu-remove-object'
-        >
-            Run annotation action
-        </Button>
+        <CVATTooltip title={`${runAnnotationsActionShortcut}`}>
+            <Button
+                type='link'
+                icon={<FunctionOutlined />}
+                onClick={runAnnotationAction}
+                className='cvat-object-item-menu-remove-object'
+            >
+                Run annotation action
+            </Button>
+        </CVATTooltip>
     );
 }
 

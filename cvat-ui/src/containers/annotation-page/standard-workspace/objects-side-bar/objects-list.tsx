@@ -34,6 +34,7 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 
 interface OwnProps {
     readonly: boolean;
@@ -146,6 +147,12 @@ const componentShortcuts = {
         name: 'Copy shape',
         description: 'Copy shape to CVAT internal clipboard',
         sequences: ['ctrl+c'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    RUN_ANNOTATIONS_ACTION: {
+        name: 'Run annotations action',
+        description: 'Opens a dialog with annotations actions to run one of them on a certain object',
+        sequences: ['ctrl+e'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     PROPAGATE_OBJECT: {
@@ -586,6 +593,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (state && !readonly) {
                     copyShape(state);
+                }
+            },
+            RUN_ANNOTATIONS_ACTION: () => {
+                const state = activatedState(true);
+                if (state && !readonly) {
+                    openAnnotationsActionModal(state);
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {

@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
-import { createRoot } from 'react-dom/client';
 
 import {
     updateAnnotationsAsync,
@@ -21,7 +20,7 @@ import {
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
 } from 'reducers';
-import AnnotationsActionsModalContent from 'components/annotation-page/annotations-actions/annotations-actions-modal';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
@@ -380,18 +379,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private runAnnotationAction = (): void => {
         const { objectState } = this.props;
-        const div = window.document.createElement('div');
-        window.document.body.append(div);
-        const root = createRoot(div);
-        root.render(
-            <AnnotationsActionsModalContent
-                targetObjectState={objectState}
-                onClose={() => {
-                    root.unmount();
-                    div.remove();
-                }}
-            />,
-        );
+        openAnnotationsActionModal(objectState);
     };
 
     private commit(): void {

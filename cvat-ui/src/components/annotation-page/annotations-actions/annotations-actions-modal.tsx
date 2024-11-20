@@ -7,6 +7,7 @@ import './styles.scss';
 import React, {
     useEffect, useReducer, useRef, useState,
 } from 'react';
+import { createRoot } from 'react-dom/client';
 import Button from 'antd/lib/button';
 import { Col, Row } from 'antd/lib/grid';
 import Progress from 'antd/lib/progress';
@@ -96,7 +97,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
         const { actions } = action.payload;
         const list = state.targetObjectState ? actions
-            .filter((action) => action.isApplicableForObject(state.targetObjectState as ObjectState)) : actions;
+            .filter((_action) => _action.isApplicableForObject(state.targetObjectState as ObjectState)) : actions;
 
         let activeAction = null;
         let activeActionParameters = {};
@@ -277,7 +278,7 @@ interface Props {
 }
 
 function AnnotationsActionsModalContent(props: Props): JSX.Element {
-    const { onClose } = props;
+    const { onClose, targetObjectState: defaultTargetObjectState } = props;
     const isMounted = useIsMounted();
     const storage = getCVATStore();
     const cancellationRef = useRef<boolean>(false);
@@ -294,7 +295,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
         frameTo: jobInstance.stopFrame,
         actionParameters: {},
         modalVisible: true,
-        targetObjectState: props.targetObjectState ?? null,
+        targetObjectState: defaultTargetObjectState ?? null,
     });
 
     useEffect(() => {
@@ -541,7 +542,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                             if (activeAction) {
                                 cancellationRef.current = false;
                                 dispatch(reducerActions.resetBeforeRun());
-                                const updateProgressWrapper = (_message: string, _progress: number) => {
+                                const updateProgressWrapper = (_message: string, _progress: number): void => {
                                     if (isMounted()) {
                                         dispatch(reducerActions.updateProgress(_progress, _message));
                                     }
@@ -564,7 +565,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     storage.getState().annotation.annotations.filters,
                                     updateProgressWrapper,
                                     () => cancellationRef.current,
-                                )
+                                );
 
                                 actionPromise.then(() => {
                                     if (!cancellationRef.current) {
@@ -597,4 +598,19 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(AnnotationsActionsModalContent);
+const MemoizedAnnotationsActionsModalContent = React.memo(AnnotationsActionsModalContent);
+
+export function openAnnotationsActionModal(objectState?: ObjectState): void {
+    const div = window.document.createElement('div');
+    window.document.body.append(div);
+    const root = createRoot(div);
+    root.render(
+        <MemoizedAnnotationsActionsModalContent
+            targetObjectState={objectState}
+            onClose={() => {
+                root.unmount();
+                div.remove();
+            }}
+        />,
+    );
+}

@@ -37,6 +37,7 @@ interface Props {
     toForegroundShortcut: string;
     removeShortcut: string;
     sliceShortcut: string;
+    runAnnotationsActionShortcut: string;
     changeColor(color: string): void;
     changeLabel(label: any): void;
     copy(): void;
@@ -73,6 +74,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForegroundShortcut,
         removeShortcut,
         sliceShortcut,
+        runAnnotationsActionShortcut,
         isGroundTruth,
         changeColor,
         changeLabel,
@@ -156,6 +158,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toForegroundShortcut,
                             removeShortcut,
                             sliceShortcut,
+                            runAnnotationsActionShortcut,
                             changeColor,
                             copy,
                             remove,
