@@ -441,6 +441,7 @@ export class Session {
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
             statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
             hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),

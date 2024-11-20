@@ -201,21 +201,21 @@ export default class Collection {
         this.history.do(
             HistoryActions.COMMIT_ANNOTATIONS,
             () => {
-                removedCollection.forEach((collectionObject) => {
-                    prevRemoved.push(collectionObject.removed);
-                    collectionObject.removed = true;
-                });
-                appendedCollection.forEach((collectionObject) => {
-                    collectionObject.removed = false;
-                });
-            },
-            () => {
                 removedCollection.forEach((collectionObject, idx) => {
                     collectionObject.removed = prevRemoved[idx];
                 });
                 prevRemoved = [];
                 appendedCollection.forEach((collectionObject) => {
                     collectionObject.removed = true;
+                });
+            },
+            () => {
+                removedCollection.forEach((collectionObject) => {
+                    prevRemoved.push(collectionObject.removed);
+                    collectionObject.removed = true;
+                });
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = false;
                 });
             },
             [].concat(removedCollection.map((object) => object.clientID), appendedCollection.map((object) => object.clientID)),

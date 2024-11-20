@@ -154,7 +154,7 @@ export async function call(
         const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
         const filteredByAction = action.applyFilter({ collection: exportedCollection,  frameData });
 
-        const processedCollection = await action.call({
+        const processedCollection = await action.run({
             onProgress: throttledOnProgress,
             cancelled,
             collection: filteredByAction,

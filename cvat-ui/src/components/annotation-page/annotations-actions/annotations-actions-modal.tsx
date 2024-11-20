@@ -39,8 +39,6 @@ interface State {
     progress: number | null;
     progressMessage: string | null;
     cancelled: boolean;
-    autoSaveEnabled: boolean;
-    jobHasBeenSaved: boolean;
     frameFrom: number;
     frameTo: number;
     actionParameters: Record<string, string>;
@@ -55,8 +53,6 @@ enum ReducerActionType {
     RESET_BEFORE_RUN = 'RESET_BEFORE_RUN',
     RESET_AFTER_RUN = 'RESET_AFTER_RUN',
     CANCEL_ACTION = 'CANCEL_ACTION',
-    SET_AUTOSAVE_DISABLED_FLAG = 'SET_AUTOSAVE_DISABLED_FLAG',
-    SET_JOB_WAS_SAVED_FLAG = 'SET_JOB_WAS_SAVED_FLAG',
     UPDATE_FRAME_FROM = 'UPDATE_FRAME_FROM',
     UPDATE_FRAME_TO = 'UPDATE_FRAME_TO',
     UPDATE_ACTION_PARAMETER = 'UPDATE_ACTION_PARAMETER',
@@ -81,12 +77,6 @@ export const reducerActions = {
     ),
     cancelAction: () => (
         createAction(ReducerActionType.CANCEL_ACTION)
-    ),
-    setAutoSaveDisabledFlag: () => (
-        createAction(ReducerActionType.SET_AUTOSAVE_DISABLED_FLAG)
-    ),
-    setJobSavedFlag: (jobHasBeenSaved: boolean) => (
-        createAction(ReducerActionType.SET_JOB_WAS_SAVED_FLAG, { jobHasBeenSaved })
     ),
     updateFrameFrom: (frameFrom: number) => (
         createAction(ReducerActionType.UPDATE_FRAME_FROM, { frameFrom })
@@ -166,20 +156,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         return {
             ...state,
             cancelled: true,
-        };
-    }
-
-    if (action.type === ReducerActionType.SET_AUTOSAVE_DISABLED_FLAG) {
-        return {
-            ...state,
-            autoSaveEnabled: false,
-        };
-    }
-
-    if (action.type === ReducerActionType.SET_JOB_WAS_SAVED_FLAG) {
-        return {
-            ...state,
-            jobHasBeenSaved: action.payload.jobHasBeenSaved,
         };
     }
 
@@ -287,8 +263,6 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
         progress: null,
         progressMessage: null,
         cancelled: false,
-        autoSaveEnabled: storage.getState().settings.workspace.autoSave,
-        jobHasBeenSaved: true,
         frameFrom: jobInstance.startFrame,
         frameTo: jobInstance.stopFrame,
         actionParameters: {},
@@ -299,14 +273,13 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
     useEffect(() => {
         core.actions.list().then((list: BaseAction[]) => {
             if (isMounted()) {
-                dispatch(reducerActions.setJobSavedFlag(!jobInstance.annotations.hasUnsavedChanges()));
                 dispatch(reducerActions.setAnnotationsActions(list));
             }
         });
     }, []);
 
     const {
-        actions, activeAction, fetching, autoSaveEnabled, jobHasBeenSaved, targetObjectState,
+        actions, activeAction, fetching, targetObjectState,
         progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
     } = state;
 
@@ -340,11 +313,6 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     </Text>
                                     <Text> annotations. </Text>
                                     <Text strong>It affects only the local browser state. </Text>
-                                    <Text>Once an action has finished, </Text>
-                                    <Text strong>it cannot be reverted. </Text>
-                                    <Text>You may reload the page to get annotations from the server. </Text>
-                                    <Text strong>It is strongly recommended to review the changes </Text>
-                                    <Text strong>before saving annotations to the server. </Text>
                                 </div>
                             )}
                             type='info'
@@ -352,56 +320,6 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                         />
                     </Col>
                 )}
-                
-
-                {targetObjectState === null && !jobHasBeenSaved ? (
-                    <Col span={24} className='cvat-action-runner-info'>
-                        <Alert
-                            message={(
-                                <>
-                                    <Text strong>Recommendation: </Text>
-                                    <Button
-                                        className='cvat-action-runner-save-job-recommendation'
-                                        type='link'
-                                        onClick={() => {
-                                            storage.dispatch(saveAnnotationsAsync()).then(() => {
-                                                dispatch(reducerActions.setJobSavedFlag(true));
-                                            });
-                                        }}
-                                    >
-                                        Click to save the job
-                                    </Button>
-                                </>
-                            )}
-                            type='warning'
-                            showIcon
-                        />
-                    </Col>
-                ) : null}
-
-                {targetObjectState === null && autoSaveEnabled ? (
-                    <Col span={24} className='cvat-action-runner-info'>
-                        <Alert
-                            message={(
-                                <>
-                                    <Text strong>Recommendation: </Text>
-                                    <Button
-                                        className='cvat-action-runner-disable-autosave-recommendation'
-                                        type='link'
-                                        onClick={() => {
-                                            storage.dispatch(switchAutoSave(false));
-                                            dispatch(reducerActions.setAutoSaveDisabledFlag());
-                                        }}
-                                    >
-                                        Click to disable automatic saving
-                                    </Button>
-                                </>
-                            )}
-                            type='warning'
-                            showIcon
-                        />
-                    </Col>
-                ) : null}
 
                 <Col span={24} className='cvat-action-runner-list'>
                     <Row>

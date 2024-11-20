@@ -117,8 +117,8 @@ export async function run(
                     },
                 });
 
-                totalUpdates.created.shapes.concat(created.shapes);
-                totalUpdates.deleted.shapes.concat(deleted.shapes);
+                Array.prototype.push.apply(totalUpdates.created.shapes, created.shapes);
+                Array.prototype.push.apply(totalUpdates.deleted.shapes, deleted.shapes);
 
                 const progress = Math.ceil(+(((frame - frameFrom) / totalFrames) * 100));
                 throttledOnProgress('Actions are running', progress);
