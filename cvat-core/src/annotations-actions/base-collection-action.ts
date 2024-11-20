@@ -13,7 +13,7 @@ import {
 } from '../server-response-types';
 import { EventScope, ObjectType } from '../enums';
 import { getCollection } from '../annotations';
-import { BaseAction, prepareActionParameters } from './base-action';
+import { BaseAction, prepareActionParameters, validateClientIDs } from './base-action';
 
 export interface CollectionActionInput {
     onProgress(message: string, percent: number): void;
@@ -53,7 +53,6 @@ export async function run(
         name: action.name,
     }, true);
 
-    // if called too fast, it will freeze UI, so, add throttling here
     const wrappedOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
     const showMessageWithPause = async (message: string, progress: number, duration: number): Promise<void> => {
         // wrapper that gives a chance to abort action
@@ -75,6 +74,8 @@ export async function run(
 
         // Apply action filter first
         const filteredByAction = action.applyFilter({ collection: exportedCollection, frameData });
+        validateClientIDs(filteredByAction);
+
         let mapID2Obj = [].concat(filteredByAction.shapes, filteredByAction.tags, filteredByAction.tracks)
             .reduce((acc, object) => {
                 acc[object.clientID as number] = object;
@@ -152,6 +153,7 @@ export async function call(
 
         const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
         const filteredByAction = action.applyFilter({ collection: exportedCollection, frameData });
+        validateClientIDs(filteredByAction);
 
         const processedCollection = await action.run({
             onProgress: throttledOnProgress,

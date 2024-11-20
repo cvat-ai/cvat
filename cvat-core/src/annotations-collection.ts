@@ -215,9 +215,10 @@ export default class Collection {
         );
     }
 
-    public export(): Omit<SerializedCollection, 'version'> {
+    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'> {
         const data = {
-            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),
+            tracks: this.tracks.filter((track) => !track.removed)
+                .map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
                 .reduce((accumulator, frameShapes) => {
                     accumulator.push(...frameShapes);

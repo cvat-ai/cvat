@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { SerializedCollection } from 'server-response-types';
 import ObjectState from '../object-state';
 import { Job, Task } from '../session';
 
@@ -43,4 +44,17 @@ export function prepareActionParameters(declared: ActionParameters, defined: obj
         }
         return acc;
     }, {} as Record<string, string | number>);
+}
+
+export function validateClientIDs(collection: Partial<SerializedCollection>) {
+    [].concat(
+        collection.shapes ?? [],
+        collection.tracks ?? [],
+        collection.tags ?? [],
+    ).forEach((object) => {
+        // clientID is required to correct collection filtering and commiting in annotations actions logic
+        if (typeof object.clientID !== 'number') {
+            throw new Error('ClientID is undefined when running annotations action, but required');
+        }
+    });
 }

@@ -10,7 +10,7 @@ import { Job, Task } from '../session';
 import { SerializedCollection, SerializedShape } from '../server-response-types';
 import { EventScope, ObjectType } from '../enums';
 import { getCollection } from '../annotations';
-import { BaseAction, prepareActionParameters } from './base-action';
+import { BaseAction, prepareActionParameters, validateClientIDs } from './base-action';
 
 export interface ShapesActionInput {
     onProgress(message: string, percent: number): void;
@@ -51,7 +51,6 @@ export async function run(
         name: action.name,
     }, true);
 
-    // if called too fast, it will freeze UI, so, add throttling here
     const throttledOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
     const showMessageWithPause = async (message: string, progress: number, duration: number): Promise<void> => {
         // wrapper that gives a chance to abort action
@@ -68,6 +67,7 @@ export async function run(
         await action.init(instance, prepareActionParameters(action.parameters, actionParameters));
 
         const exportedCollection = getCollection(instance).export();
+        validateClientIDs(exportedCollection);
 
         const annotationsFilter = new AnnotationsFilter();
         const filteredShapeIDs = annotationsFilter.filterSerializedCollection({
@@ -105,6 +105,7 @@ export async function run(
                     },
                     frameData,
                 });
+                validateClientIDs(filteredByAction);
 
                 const { created, deleted } = await action.run({
                     onProgress: throttledOnProgress,
@@ -169,6 +170,7 @@ export async function call(
             .map((state) => state.export())) as SerializedShape[];
         const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
         const filteredByAction = action.applyFilter({ collection: { shapes: exported }, frameData });
+        validateClientIDs(filteredByAction);
 
         const processedCollection = await action.run({
             onProgress: throttledOnProgress,
