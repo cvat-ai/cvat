@@ -17,7 +17,7 @@ export class RemoveFilteredShapes extends BaseShapesAction {
     public async run(input: ShapesActionInput): Promise<ShapesActionOutput> {
         return {
             created: { shapes: [] },
-            deleted: input['collection'],
+            deleted: input.collection,
         };
     }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ export async function listActions(): Promise<typeof registeredActions> {
 }
 
 export async function registerAction(action: BaseAction): Promise<void> {
-    if (!(action instanceof BaseAction) ) {
+    if (!(action instanceof BaseAction)) {
         throw new ArgumentError('Provided action must inherit one of base classes');
     }
 
@@ -111,4 +111,3 @@ export async function callAction(
 
     return Promise.resolve();
 }
-

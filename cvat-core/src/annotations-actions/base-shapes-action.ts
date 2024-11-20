@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { omit, throttle } from 'lodash';
+import { throttle } from 'lodash';
 
 import ObjectState from '../object-state';
 import AnnotationsFilter from '../annotations-filter';
@@ -76,13 +76,13 @@ export async function run(
             tracks: [],
         }, instance.labels, filters).shapes;
 
-        const filteredShapesByFrame = exportedCollection.shapes.reduce<Record<number, SerializedShape[]>>((acc, shape) => {
+        const filteredShapesByFrame = exportedCollection.shapes.reduce((acc, shape) => {
             if (shape.frame >= frameFrom && shape.frame <= frameTo && filteredShapeIDs.includes(shape.clientID)) {
                 acc[shape.frame] = acc[shape.frame] ?? [];
                 acc[shape.frame].push(shape);
             }
             return acc;
-        }, {});
+        }, {} as Record<number, SerializedShape[]>);
 
         const totalUpdates = { created: { shapes: [] }, deleted: { shapes: [] } };
         // Iterate over frames
@@ -168,7 +168,7 @@ export async function call(
         const exported = await Promise.all(states.filter((state) => state.objectType === ObjectType.SHAPE)
             .map((state) => state.export())) as SerializedShape[];
         const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
-        const filteredByAction = action.applyFilter({ collection: { shapes: exported },  frameData });
+        const filteredByAction = action.applyFilter({ collection: { shapes: exported }, frameData });
 
         const processedCollection = await action.run({
             onProgress: throttledOnProgress,

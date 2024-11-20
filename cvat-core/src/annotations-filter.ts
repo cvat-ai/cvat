@@ -6,8 +6,8 @@
 import jsonLogic from 'json-logic-js';
 import { SerializedData } from './object-state';
 import { AttributeType, ObjectType, ShapeType } from './enums';
-import { SerializedCollection } from 'server-response-types';
-import { Attribute, Label } from 'labels';
+import { SerializedCollection } from './server-response-types';
+import { Attribute, Label } from './labels';
 
 function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
@@ -59,7 +59,9 @@ function convertAttribute(id: number, value: string, attributesSpec: Record<numb
     const name = adjustName(spec.name);
     if (spec.inputType === AttributeType.NUMBER) {
         return [name, +value];
-    } else if (spec.inputType === AttributeType.CHECKBOX) {
+    }
+
+    if (spec.inputType === AttributeType.CHECKBOX) {
         return [name, value === 'true'];
     }
 
@@ -98,12 +100,11 @@ export default class AnnotationsFilter {
                 ({ width, height } = getDimensions(points, state.shapeType as ShapeType));
             }
 
-            const attributes = Object.keys(state.attributes)
-                .reduce<Record<string, string | number | boolean>>((acc, key) => {
-                    const [name, value] = convertAttribute(+key, state.attributes[key], labelAttributes);
-                    acc[name] = value;
-                    return acc;
-                }, {});
+            const attributes = Object.keys(state.attributes).reduce((acc, key) => {
+                const [name, value] = convertAttribute(+key, state.attributes[key], labelAttributes);
+                acc[name] = value;
+                return acc;
+            }, {} as Record<string, string | number | boolean>);
 
             return {
                 width,
@@ -126,43 +127,37 @@ export default class AnnotationsFilter {
     private _convertSerializedCollection(
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
-    ): {
-        shapes: ConvertedObjectData[];
-        tags: ConvertedObjectData[];
-        tracks: ConvertedObjectData[];
-    } {
+    ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[]; } {
         const labelByID = labelsSpec.reduce<Record<number, Label>>((acc, label) => ({
             [label.id]: label,
             ...acc,
-        }), {})
+        }), {});
 
-        const attributeById = labelsSpec.map((label) =>label.attributes).flat()
-            .reduce<Record<number, Attribute>>((acc, attribute) => ({
-                ...acc,
-                [attribute.id]: attribute,
-            }), {});
+        const attributeById = labelsSpec.map((label) => label.attributes).flat().reduce((acc, attribute) => ({
+            ...acc,
+            [attribute.id]: attribute,
+        }), {} as Record<number, Attribute>);
 
         const convertAttributes = (
-            attributes: SerializedCollection['shapes'][0]['attributes']
-        ): ConvertedAttributes => (
-            attributes.reduce<Record<string, string | number | boolean>>((acc, { spec_id, value }) => {
-                const [name, adjustedValue] = convertAttribute(spec_id, value, attributeById);
-                acc[name] = adjustedValue;
-                return acc;
-            }, {})
-        );
+            attributes: SerializedCollection['shapes'][0]['attributes'],
+        ): ConvertedAttributes => attributes.reduce((acc, { spec_id, value }) => {
+            const [name, adjustedValue] = convertAttribute(spec_id, value, attributeById);
+            acc[name] = adjustedValue;
+            return acc;
+        }, {} as Record<string, string | number | boolean>);
 
         return {
-            shapes: collection.shapes.map((shape, idx) => {
+            shapes: collection.shapes.map((shape) => {
                 const label = labelByID[shape.label_id];
-                const points = shape.type === ShapeType.SKELETON ? shape.elements.map((el) => el.points).flat() : shape.points;
+                const points = shape.type === ShapeType.SKELETON ?
+                    shape.elements.map((el) => el.points).flat() : shape.points;
                 let [width, height]: (number | null)[] = [null, null];
                 ({ width, height } = getDimensions(points, shape.type));
 
                 return {
                     width,
                     height,
-                    attr: { 
+                    attr: {
                         [adjustName(label.name)]: convertAttributes(shape.attributes),
                     },
                     label: label.name,
@@ -171,15 +166,15 @@ export default class AnnotationsFilter {
                     shape: shape.type,
                     occluded: shape.occluded,
                     objectID: shape.clientID ?? null,
-                }
+                };
             }),
-            tags: collection.tags.map((tag, idx) => {
+            tags: collection.tags.map((tag) => {
                 const label = labelByID[tag.label_id];
 
                 return {
                     width: null,
                     height: null,
-                    attr: { 
+                    attr: {
                         [adjustName(label.name)]: convertAttributes(tag.attributes),
                     },
                     label: labelByID[tag.label_id]?.name ?? null,
@@ -190,7 +185,7 @@ export default class AnnotationsFilter {
                     objectID: tag.clientID ?? null,
                 };
             }),
-            tracks: collection.tracks.map((track, idx) => {
+            tracks: collection.tracks.map((track) => {
                 const label = labelByID[track.label_id];
 
                 return {
@@ -205,7 +200,7 @@ export default class AnnotationsFilter {
                     shape: track.shapes[0]?.type ?? null,
                     occluded: null,
                     objectID: track.clientID ?? null,
-                }
+                };
             }),
         };
     }
@@ -222,18 +217,14 @@ export default class AnnotationsFilter {
         collection: Omit<SerializedCollection, 'version'>,
         labelsSpec: Label[],
         filters: object[],
-    ): {
-        shapes: number[];
-        tags: number[];
-        tracks: number[];
-    } {
+    ): { shapes: number[]; tags: number[]; tracks: number[]; } {
         if (!filters.length) {
             return {
                 shapes: collection.shapes.map((_, idx) => idx),
                 tags: collection.tags.map((_, idx) => idx),
                 tracks: collection.tracks.map((_, idx) => idx),
             };
-        };
+        }
 
         const converted = this._convertSerializedCollection(collection, labelsSpec);
         return {

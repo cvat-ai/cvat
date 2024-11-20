@@ -40,8 +40,8 @@ import {
     listActions,
     registerAction,
 } from './annotations-actions/annotations-actions';
-import { BaseCollectionAction } from './annotations-actions/base-collection-action'
-import { BaseShapesAction } from './annotations-actions/base-shapes-action'
+import { BaseCollectionAction } from './annotations-actions/base-collection-action';
+import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';

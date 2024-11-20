@@ -173,7 +173,13 @@ function buildDuplicatedAPI(prototype) {
                 },
 
                 async commit(added, removed, frame) {
-                    const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.commit, added, removed, frame);
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.commit,
+                        added,
+                        removed,
+                        frame,
+                    );
                     return result;
                 },
 

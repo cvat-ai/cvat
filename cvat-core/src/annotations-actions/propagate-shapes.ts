@@ -35,8 +35,12 @@ export class PropagateShapes extends BaseCollectionAction {
             };
         }
 
-        const frameNumbers = this.#instance instanceof Job ? await this.#instance.frames.frameNumbers() : range(0, this.#instance.size);
-        const propagatedShapes = propagateShapes<SerializedShape>(collection.shapes, number, this.#targetFrame, frameNumbers);
+        const frameNumbers = this.#instance instanceof Job ?
+            await this.#instance.frames.frameNumbers() : range(0, this.#instance.size);
+        const propagatedShapes = propagateShapes<SerializedShape>(
+            collection.shapes, number, this.#targetFrame, frameNumbers,
+        );
+
         return {
             created: { shapes: propagatedShapes, tags: [], tracks: [] },
             deleted: { shapes: [], tags: [], tracks: [] },

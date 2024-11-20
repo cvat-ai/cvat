@@ -33,14 +33,14 @@ export abstract class BaseAction {
 export function prepareActionParameters(declared: ActionParameters, defined: object): Record<string, string | number> {
     if (!declared) {
         return {};
-    } else {
-        return Object.entries(declared).reduce((acc, [name, { type, defaultValue }]) => {
-            if (type === ActionParameterType.NUMBER) {
-                acc[name] = +(Object.hasOwn(defined, name) ? defined[name] : defaultValue);
-            } else {
-                acc[name] = (Object.hasOwn(defined, name) ? defined[name] : defaultValue);
-            }
-            return acc;
-        }, {} as Record<string, string | number>);
     }
+
+    return Object.entries(declared).reduce((acc, [name, { type, defaultValue }]) => {
+        if (type === ActionParameterType.NUMBER) {
+            acc[name] = +(Object.hasOwn(defined, name) ? defined[name] : defaultValue);
+        } else {
+            acc[name] = (Object.hasOwn(defined, name) ? defined[name] : defaultValue);
+        }
+        return acc;
+    }, {} as Record<string, string | number>);
 }

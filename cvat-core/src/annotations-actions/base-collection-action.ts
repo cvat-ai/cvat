@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { throttle, omit } from 'lodash';
+import { throttle } from 'lodash';
 
 import ObjectState from '../object-state';
 import AnnotationsFilter from '../annotations-filter';
@@ -104,7 +104,7 @@ export async function run(
                 number: frameData.number,
             },
             onProgress: wrappedOnProgress,
-            cancelled: cancelled,
+            cancelled,
         });
 
         await instance.annotations.commit(created, deleted, frame);
@@ -133,26 +133,25 @@ export async function call(
     const throttledOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
     try {
         await action.init(instance, prepareActionParameters(action.parameters, actionParameters));
+        const exportedStates = await Promise.all(states.map((state) => state.export()));
+        const exportedCollection = exportedStates.reduce<CollectionActionInput['collection']>((acc, value, idx) => {
+            if (states[idx].objectType === ObjectType.SHAPE) {
+                acc.shapes.push(value as SerializedShape);
+            }
 
-        const exportedCollection = (await Promise.all(states.map((state) => state.export())))
-            .reduce<CollectionActionInput['collection']>((acc, value, idx) => {
-                if (states[idx].objectType === ObjectType.SHAPE) {
-                    acc.shapes.push(value as SerializedShape);
-                }
+            if (states[idx].objectType === ObjectType.TAG) {
+                acc.tags.push(value as SerializedTag);
+            }
 
-                if (states[idx].objectType === ObjectType.TAG) {
-                    acc.tags.push(value as SerializedTag);
-                }
+            if (states[idx].objectType === ObjectType.TRACK) {
+                acc.tracks.push(value as SerializedTrack);
+            }
 
-                if (states[idx].objectType === ObjectType.TRACK) {
-                    acc.tracks.push(value as SerializedTrack);
-                }
-
-                return acc;
-            }, { shapes: [], tags: [], tracks: [] });
+            return acc;
+        }, { shapes: [], tags: [], tracks: [] });
 
         const frameData = await Object.getPrototypeOf(instance).frames.get.implementation.call(instance, frame);
-        const filteredByAction = action.applyFilter({ collection: exportedCollection,  frameData });
+        const filteredByAction = action.applyFilter({ collection: exportedCollection, frameData });
 
         const processedCollection = await action.run({
             onProgress: throttledOnProgress,
@@ -165,7 +164,11 @@ export async function call(
             },
         });
 
-        await instance.annotations.commit(processedCollection.created, processedCollection.deleted, frame);
+        await instance.annotations.commit(
+            processedCollection.created,
+            processedCollection.deleted,
+            frame,
+        );
         event.close();
     } finally {
         await action.destroy();

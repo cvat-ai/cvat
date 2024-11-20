@@ -161,28 +161,17 @@ export default class Collection {
         appended: Omit<SerializedCollection, 'version'>,
         removed: Omit<SerializedCollection, 'version'>,
         frame: number,
-    ): {
-        tags: Tag[];
-        shapes: Shape[];
-        tracks: Track[];
-    } {
-        const removedCollection: (Shape | Tag | Track)[] = [];
-        const collectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
-            .reduce<boolean>((acc, serializedObject) => {
-                if (acc && typeof serializedObject.clientID === 'number') {
-                    const collectionObject = this.objects[serializedObject.clientID];
-                    if (collectionObject) {
-                        removedCollection.push(collectionObject);
-                        return true;
-                    }
-                }
+    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
+        const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .every((object) => typeof object.clientID === 'number' &&
+                Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
 
-                return false;
-            }, true);
-
-        if (!collectionConsistent) {
+        if (!isCollectionConsistent) {
             throw new ArgumentError('Objects required to be deleted were not found in the collection');
         }
+
+        const removedCollection: (Shape | Tag | Track)[] = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .map((object) => this.objects[object.clientID as number]);
 
         const imported = this.import(appended);
         const appendedCollection = ([] as (Shape | Tag | Track)[])
@@ -218,11 +207,12 @@ export default class Collection {
                     collectionObject.removed = false;
                 });
             },
-            [].concat(removedCollection.map((object) => object.clientID), appendedCollection.map((object) => object.clientID)),
+            [].concat(
+                removedCollection.map((object) => object.clientID),
+                appendedCollection.map((object) => object.clientID),
+            ),
             frame,
         );
-
-        return;
     }
 
     public export(): Omit<SerializedCollection, 'version'> {
