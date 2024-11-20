@@ -20,7 +20,13 @@ from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .command_base import CommandGroup
-from .parsers import BuildDictAction, parse_function_parameter, parse_label_arg, parse_resource_type
+from .parsers import (
+    BuildDictAction,
+    parse_function_parameter,
+    parse_label_arg,
+    parse_resource_type,
+    parse_threshold,
+)
 
 COMMANDS = CommandGroup(description="Perform common operations related to CVAT tasks.")
 
@@ -463,6 +469,13 @@ class TaskAutoAnnotate:
             help="Allow the function to declare labels not configured in the task",
         )
 
+        parser.add_argument(
+            "--conf-threshold",
+            type=parse_threshold,
+            help="Confidence threshold for filtering detections",
+            default=None,
+        )
+
     def execute(
         self,
         client: Client,
@@ -473,6 +486,7 @@ class TaskAutoAnnotate:
         function_parameters: dict[str, Any],
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
+        conf_threshold: Optional[float],
     ) -> None:
         if function_module is not None:
             function = importlib.import_module(function_module)
@@ -497,4 +511,5 @@ class TaskAutoAnnotate:
             pbar=DeferredTqdmProgressReporter(),
             clear_existing=clear_existing,
             allow_unmatched_labels=allow_unmatched_labels,
+            conf_threshold=conf_threshold,
         )
