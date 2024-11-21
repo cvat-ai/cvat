@@ -574,6 +574,8 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
 # Forwarded host - https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-USE_X_FORWARDED_HOST
 # Is used in TUS uploads to provide correct upload endpoint
 USE_X_FORWARDED_HOST = True
