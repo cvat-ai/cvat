@@ -32,6 +32,7 @@ export interface ImageFilter {
 
 export enum ImageFilterAlias {
     HISTOGRAM_EQUALIZATION = 'opencv.histogramEqualizaton',
+    CLAHE = 'opencv.CLAHE',
     GAMMA_CORRECTION = 'fabric.gammaCorrection',
 }
 

@@ -7,10 +7,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import Icon, { AreaChartOutlined, ScissorOutlined } from '@ant-design/icons';
+import Icon, { AreaChartOutlined, BarChartOutlined, ScissorOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
+import InputNumber from 'antd/lib/input-number';
 import Progress from 'antd/lib/progress';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
@@ -84,6 +85,9 @@ interface State {
     activeTracker: OpenCVTracker | null;
     trackers: OpenCVTracker[];
     lastTrackedFrame: number | null;
+    claheClipLimit: number;
+    claheTileColumns: number;
+    claheTileRows: number;
 }
 
 const core = getCore();
@@ -156,6 +160,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             trackers: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking) : [],
             activeTracker: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking)[0] : null,
             lastTrackedFrame: null,
+            claheClipLimit: 40,
+            claheTileColumns: 8,
+            claheTileRows: 8,
         };
     }
 
@@ -581,6 +588,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     private renderImageContent():JSX.Element {
         const { enableImageFilter, disableImageFilter, filters } = this.props;
+        const { claheClipLimit, claheTileColumns, claheTileRows } = this.state;
+
         return (
             <Row justify='start'>
                 <Col>
@@ -606,6 +615,118 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             <AreaChartOutlined />
                         </Button>
                     </CVATTooltip>
+                </Col>
+                <Col>
+                    <CVATTooltip title='Contrast Limited Adaptive Histogram Equalization' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                hasFilter(filters, ImageFilterAlias.CLAHE) ?
+                                    'cvat-opencv-clahe-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-clahe-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                if (!hasFilter(filters, ImageFilterAlias.CLAHE)) {
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    },
+                                    {
+                                        clipLimit: claheClipLimit,
+                                        tileGridSize: {
+                                            columns: claheTileColumns,
+                                            rows: claheTileRows,
+                                        },
+                                    });
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    disableImageFilter(ImageFilterAlias.CLAHE);
+                                }
+                            }}
+                        >
+                            <BarChartOutlined />
+                        </Button>
+                    </CVATTooltip>
+
+                    {hasFilter(filters, ImageFilterAlias.CLAHE) && (
+                        <div>
+                            <Row align='middle' gutter={8}>
+                                <Col span={12}>Clip Limit:</Col>
+                                <Col span={12}>
+                                    <InputNumber
+                                        min={1}
+                                        max={255}
+                                        step={1}
+                                        value={claheClipLimit}
+                                        onChange={(value) => {
+                                            this.setState({
+                                                claheClipLimit: value || 40,
+                                            });
+                                            enableImageFilter({
+                                                modifier: openCVWrapper.imgproc.clahe(),
+                                                alias: ImageFilterAlias.CLAHE,
+                                            }, {
+                                                clipLimit: value || 40,
+                                                tileGridSize: {
+                                                    columns: claheTileColumns,
+                                                    rows: claheTileRows,
+                                                },
+                                            });
+                                        }}
+                                    />
+                                </Col>
+                            </Row>
+                            <Row align='middle' gutter={8}>
+                                <Col span={12}>Tile Width:</Col>
+                                <Col span={12}>
+                                    <InputNumber
+                                        min={1}
+                                        max={128}
+                                        value={claheTileColumns}
+                                        onChange={(value) => {
+                                            this.setState({
+                                                claheTileColumns: value || 8,
+                                            });
+                                            enableImageFilter({
+                                                modifier: openCVWrapper.imgproc.clahe(),
+                                                alias: ImageFilterAlias.CLAHE,
+                                            }, {
+                                                clipLimit: claheClipLimit,
+                                                tileGridSize: {
+                                                    columns: value || 8,
+                                                    rows: claheTileRows,
+                                                },
+                                            });
+                                        }}
+                                    />
+                                </Col>
+                            </Row>
+                            <Row align='middle' gutter={8}>
+                                <Col span={12}>Tile Height:</Col>
+                                <Col span={12}>
+                                    <InputNumber
+                                        min={1}
+                                        max={128}
+                                        value={claheTileRows}
+                                        onChange={(value) => {
+                                            this.setState({
+                                                claheTileRows: value || 8,
+                                            });
+                                            enableImageFilter({
+                                                modifier: openCVWrapper.imgproc.clahe(),
+                                                alias: ImageFilterAlias.CLAHE,
+                                            }, {
+                                                clipLimit: claheClipLimit,
+                                                tileGridSize: {
+                                                    columns: claheTileColumns,
+                                                    rows: value || 8,
+                                                },
+                                            });
+                                        }}
+                                    />
+                                </Col>
+                            </Row>
+                        </div>
+                    )}
                 </Col>
             </Row>
         );

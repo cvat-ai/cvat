@@ -31,7 +31,9 @@ See:
   - [OpenCV: annotate with trackers](#opencv-annotate-with-trackers)
   - [When tracking](#when-tracking)
   - [Trackers models](#trackers-models)
-- [OpenCV: histogram equalization](#opencv-histogram-equalization)
+- [OpenCV](#opencv)
+  - [Histogram Equalization](#opencv-histogram-equalization)
+  - [Contrast Limited Adaptive Histogram Equalization](#opencv-clahe)
 
 ## Interactors
 
@@ -280,7 +282,8 @@ All annotated objects will be automatically tracked when you move to the next fr
 
 <!--lint enable maximum-line-length-->
 
-## OpenCV: histogram equalization
+## OpenCV
+### Histogram Equalization
 
 **Histogram equalization** improves
 the contrast by stretching the intensity range.
@@ -306,3 +309,15 @@ Example of the result:
 ![](/images/image222.jpg)
 
 To disable **Histogram equalization**, click on the button again.
+
+### Contrast Limited Adaptive Histogram Equalization
+Contrast Limited Adaptive Histogram Equalization (CLAHE) increases contrast by applying clipped histogram equalization to multiple tiles across the input image. In images where there are both very bright and very dark regions, this improves contrast in the dark regions without loosing contrast in the bright ones.
+
+#### Parameters
+* Clip Limit: Maximum value a pixel can be adjusted. Higher values allow for noise to be over-amplified.
+* Tile Rows: How many rows of tiles to break the image into.
+* Tile Columns: How many columns of tiles to break the image into.
+
+
+User Interface
+![](/images/opencv-image-clahe_interaction.jpg)
