@@ -220,9 +220,9 @@ export default class AnnotationsFilter {
     ): { shapes: number[]; tags: number[]; tracks: number[]; } {
         if (!filters.length) {
             return {
-                shapes: collection.shapes.map((_, idx) => idx),
-                tags: collection.tags.map((_, idx) => idx),
-                tracks: collection.tracks.map((_, idx) => idx),
+                shapes: collection.shapes.map((shape) => shape.clientID),
+                tags: collection.tags.map((tag) => tag.clientID),
+                tracks: collection.tracks.map((track) => track.clientID),
             };
         }
 
