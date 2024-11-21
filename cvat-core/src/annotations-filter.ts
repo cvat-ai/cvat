@@ -206,7 +206,10 @@ export default class AnnotationsFilter {
     }
 
     public filterSerializedObjectStates(statesData: SerializedData[], filters: object[]): number[] {
-        if (!filters.length) return statesData.map((stateData): number => stateData.clientID);
+        if (!filters.length) {
+            return statesData.map((stateData): number => stateData.clientID);
+        }
+
         const converted = this._convertSerializedObjectStates(statesData);
         return converted
             .map((state) => state.objectID)
