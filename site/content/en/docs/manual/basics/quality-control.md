@@ -102,13 +102,18 @@ With any of the validation modes, there will be a special Ground Truth (GT) job 
 ### Frame set management
 
 Validation frames can be managed on the task Quality Management page. Here it's possible to
-check the number of validation frames, current validation mode and review the frame status.
+check the number of validation frames, current validation mode and review the frame details.
+For each frame you can see the number of uses in the task. When in the Ground Truth mode, this
+number will be 1 for all frames. With Honeypots, these numbers can be 0, 1 or more.
 
 In both validation modes it's possible to exclude some of the validation frames
 from being used for validation. This can be useful if you find that some
 of the validation frames are "bad", extra, or it they have incorrect annotations,
 which you don't want to fix. Once a frame is marked "excluded", it will not be used
 for validation. There is also an option to restore a previously excluded frame if you decide so.
+
+There is an option to exclude or restore frames in bulk mode. To use it, select the frames needed
+using checkboxes, and click one of the buttons next to the table header.
 
 In the Ground Truth validation mode, there will be an option to remove the GT job from the task.
 It can be useful if you want to change validation set frames completely, add more frames,
@@ -118,3 +123,24 @@ In the Honeypots mode, it's not possible to add or remove the GT job, so it's no
 add more validation frames.
 
 ### Annotation management
+
+<!-- TODO: merge with info from auto-qa.md -->
+
+Annotations for validation frames can be displayed and edited in a special Ground Truth (GT) job
+in the task. You can edit the annotations manually, use auto-annotation features, and import
+annotations in this job.
+
+In the Ground Truth mode, annotations of the GT job does not affect other jobs in any way.
+The GT job is just a separate job, which can only be edited directly.
+
+In the Honeypots mode the annotations of the GT job also does not affect other jobs in any way.
+However, import and export of annotations in the **task** will have different results,
+compared to importing and exporting in the GT **job**. When importing **task** annotations,
+annotations for validation frames will be copied both into GT job frames
+and into corresponding honeypot frames in annotation jobs. When exporting **task** annotations,
+honeypot frames in annotation jobs will be ignored, and validation frames in the resulting dataset
+will get annotations from the GT job.
+
+> Note that it means that exporting from a task with honeypots and importing the results back
+> will result in changed annotations on the honeypot frames. If you want to backup annotations,
+> use a task backup or export job annotations instead.
