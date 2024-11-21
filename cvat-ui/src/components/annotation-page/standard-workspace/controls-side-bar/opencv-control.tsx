@@ -676,7 +676,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 </Col>
                             </Row>
                             <Row align='middle' gutter={8}>
-                                <Col span={12}>Tile Width:</Col>
+                                <Col span={12}>Tile Rows:</Col>
                                 <Col span={12}>
                                     <InputNumber
                                         min={1}
@@ -701,7 +701,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 </Col>
                             </Row>
                             <Row align='middle' gutter={8}>
-                                <Col span={12}>Tile Height:</Col>
+                                <Col span={12}>Tile Columns:</Col>
                                 <Col span={12}>
                                     <InputNumber
                                         min={1}
