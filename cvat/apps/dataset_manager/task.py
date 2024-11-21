@@ -116,9 +116,12 @@ class JobAnnotation:
             Prefetch('segment__task__project__label_set', queryset=label_qs),
         )
 
-    def __init__(self, pk, *, queryset: QuerySet | None = None, prefetch_images: bool = False):
+    def __init__(self, pk, *, lock_job_in_db: bool = False, queryset: QuerySet | None = None, prefetch_images: bool = False):
         if queryset is None:
             queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
+
+        if lock_job_in_db:
+            queryset = queryset.select_for_update()
 
         self.db_job: models.Job = get_cached(queryset, pk=int(pk))
 
@@ -946,7 +949,7 @@ class TaskAnnotation:
             ):
                 continue
 
-            gt_annotation = JobAnnotation(db_job.id)
+            gt_annotation = JobAnnotation(db_job.id, lock_job_in_db=True)
             gt_annotation.init_from_db()
             if gt_annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = gt_annotation.ir_data.version
