@@ -22,8 +22,10 @@ def encode_mask(bitmap: ArrayLike, /, bbox: Sequence[float]) -> list[float]:
     """
 
     bitmap = np.asanyarray(bitmap)
-    if bitmap.ndim != 2 or bitmap.dtype != np.bool_:
-        raise ValueError("bitmap must be a 2-dimensional boolean array")
+    if bitmap.ndim != 2:
+        raise ValueError("bitmap must have 2 dimensions")
+    if bitmap.dtype != np.bool_:
+        raise ValueError("bitmap must have boolean items")
 
     x1, y1 = map(math.floor, bbox[0:2])
     x2, y2 = map(math.ceil, bbox[2:4])

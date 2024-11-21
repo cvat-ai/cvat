@@ -47,20 +47,25 @@ class TestMasks:
         bbox = [0, 0, 6, 2]
         assert encode_mask(bitmap, bbox) == [2, 3, 2, 2, 3, 0, 0, 5, 1]
 
-    def test_encode_mask_invalid(self):
-        with pytest.raises(ValueError):
-            encode_mask([True], [0, 0, 1, 1])  # not 2D
+    def test_encode_mask_invalid_dim(self):
+        with pytest.raises(ValueError, match="bitmap must have 2 dimensions"):
+            encode_mask([True], [0, 0, 1, 1])
 
-        with pytest.raises(ValueError):
-            encode_mask([[1]], [0, 0, 1, 1])  # not boolean
+    def test_encode_mask_invalid_dtype(self):
+        with pytest.raises(ValueError, match="bitmap must have boolean items"):
+            encode_mask([[1]], [0, 0, 1, 1])
 
-        for bad_bbox in [
+    @pytest.mark.parametrize(
+        "bbox",
+        [
             [-0.1, 0, 1, 1],
             [0, -0.1, 1, 1],
             [0, 0, 1.1, 1],
             [0, 0, 1, 1.1],
             [1, 0, 0, 1],
             [0, 1, 1, 0],
-        ]:
-            with pytest.raises(ValueError):
-                encode_mask([[True]], bad_bbox)
+        ],
+    )
+    def test_encode_mask_invalid_bbox(self, bbox):
+        with pytest.raises(ValueError, match="bbox has invalid coordinates"):
+            encode_mask([[True]], bbox)
