@@ -333,7 +333,7 @@ context('Testing annotations actions workflow', () => {
             cy.goCheckFrameNumber(latestFrameNumber);
             cy.get('.cvat_canvas_shape').should('have.length', 1);
 
-            cy.saveJob('PUT', 200, 'saveJob');
+            cy.saveJob('PATCH', 200, 'saveJob');
             const exportAnnotation = {
                 as: 'exportAnnotations',
                 type: 'annotations',
