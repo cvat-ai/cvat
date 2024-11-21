@@ -94,6 +94,21 @@ export const reducerActions = {
 
 const KEEP_LATEST = 5;
 let lastSelectedActions: [string, Record<string, string>][] = [];
+function updateLatestActions(name: string, parameters: Record<string, string> = {}): void {
+    const idx = lastSelectedActions.findIndex((el) => el[0] === name);
+    if (idx === -1) {
+        lastSelectedActions = [[name, parameters], ...lastSelectedActions];
+    } else {
+        lastSelectedActions = [
+            [name, parameters],
+            ...lastSelectedActions.slice(0, idx),
+            ...lastSelectedActions.slice(idx + 1),
+        ];
+    }
+
+    lastSelectedActions = lastSelectedActions.slice(-KEEP_LATEST);
+}
+
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
         const { actions } = action.payload;
@@ -122,11 +137,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 
     if (action.type === ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION) {
         const { activeAction } = action.payload;
-
-        const associatedItemFromLastSelected = lastSelectedActions.find((el) => el[0] === activeAction.name);
-        if (!associatedItemFromLastSelected) {
-            lastSelectedActions = [[activeAction.name, {}], ...lastSelectedActions.slice(-KEEP_LATEST)];
-        }
+        updateLatestActions(activeAction.name, {});
 
         if (action.payload.activeAction instanceof BaseCollectionAction) {
             const storage = getCVATStore();
@@ -202,16 +213,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             [action.payload.name]: action.payload.value,
         };
 
-        // keep selected parameters for future runs
-        const associatedItemFromLastSelected = lastSelectedActions.find((el) => el[0] === state.activeAction?.name);
-        if (associatedItemFromLastSelected) {
-            associatedItemFromLastSelected[1] = updatedActionParameters;
-        } else {
-            lastSelectedActions = [
-                [(state.activeAction as BaseAction).name, updatedActionParameters],
-                ...lastSelectedActions.slice(-KEEP_LATEST),
-            ];
-        }
+        updateLatestActions((state.activeAction as BaseAction).name, updatedActionParameters);
 
         return {
             ...state,
