@@ -43,7 +43,7 @@ elif settings.IAM_TYPE == 'LDAP':
                         user.is_staff = user.is_superuser = True
                     break
         # add default group if no other group has been assigned and the user is not a superuser
-        if len(user_groups) == 0 and not (user.is_superuser or user.is_staff):
+        if not len(user_groups):
             user_groups.append(Group.objects.get(name=settings.IAM_DEFAULT_ROLE))
 
         # It is important to save the user before adding groups. Please read
