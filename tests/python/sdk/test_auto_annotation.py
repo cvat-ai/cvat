@@ -673,13 +673,18 @@ if torchvision_models is not None:
                 return [im.shape[2] * a1, im.shape[1] * a1, im.shape[2] * a2, im.shape[1] * a2]
 
             def make_mask(im, a1, a2):
-                # creates a rectangular mask
+                # creates a rectangular mask with a hole
                 mask = torch.full((1, im.shape[1], im.shape[2]), 0.49)
                 mask[
                     0,
                     math.ceil(im.shape[1] * a1) : math.floor(im.shape[1] * a2),
                     math.ceil(im.shape[2] * a1) : math.floor(im.shape[2] * a2),
                 ] = 0.5
+                mask[
+                    0,
+                    math.ceil(im.shape[1] * a1) + 3 : math.floor(im.shape[1] * a2) - 3,
+                    math.ceil(im.shape[2] * a1) + 3 : math.floor(im.shape[2] * a2) - 3,
+                ] = 0.49
                 return mask
 
             return [
@@ -827,6 +832,7 @@ class TestAutoAnnotationFunctions:
 
         expected_bitmap = torch.zeros((100, 100), dtype=torch.bool)
         expected_bitmap[17:33, 17:33] = True
+        expected_bitmap[20:30, 20:30] = False
 
         assert annotations.shapes[0].type.value == "mask"
         assert annotations.shapes[0].points == encode_mask(expected_bitmap, [16, 16, 34, 34])
