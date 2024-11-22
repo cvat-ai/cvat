@@ -38,6 +38,7 @@ interface Preview {
 }
 
 export interface ProjectsState {
+    fetchingTimestamp: number;
     initialized: boolean;
     fetching: boolean;
     count: number;
@@ -75,6 +76,7 @@ export interface JobsQuery {
 }
 
 export interface JobsState {
+    fetchingTimestamp: number;
     query: JobsQuery;
     fetching: boolean;
     count: number;
@@ -90,6 +92,7 @@ export interface JobsState {
 }
 
 export interface TasksState {
+    fetchingTimestamp: number;
     initialized: boolean;
     fetching: boolean;
     moveTask: {
@@ -766,7 +769,7 @@ export interface AnnotationState {
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
         activeInteractorParameters?: MLModel['params']['canvas'];
-        activeShapeType: ShapeType;
+        activeShapeType: ShapeType | null;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;

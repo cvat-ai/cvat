@@ -16,6 +16,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.22.0'></a>
+## \[2.22.0\] - 2024-11-11
+
+### Added
+
+- Feature to hide a mask during editing  (<https://github.com/cvat-ai/cvat/pull/8554>)
+
+- A quality setting to compare point groups without using bbox
+  (<https://github.com/cvat-ai/cvat/pull/8634>)
+
+- A quality check option to consider empty frames matching
+  (<https://github.com/cvat-ai/cvat/pull/8652>)
+
+### Changed
+
+- Reduced memory usage of the utils container
+  (<https://github.com/cvat-ai/cvat/pull/8672>)
+
+### Removed
+
+- Removed unused business group
+  (<https://github.com/cvat-ai/cvat/pull/8607>)
+
+### Fixed
+
+- Propagation creates copies on non-existing frames in a ground truth job
+  (<https://github.com/cvat-ai/cvat/pull/8550>)
+
+- Exporting projects with tasks containing honeypots. Honeypots are no longer exported.
+  (<https://github.com/cvat-ai/cvat/pull/8597>)
+
+- Error after creating GT job on Create job page with frame selection method `random_per_job`
+  (<https://github.com/cvat-ai/cvat/pull/8623>)
+
+- Fixed issue 'Cannot read properties of undefined (reading 'push')'
+  (<https://github.com/cvat-ai/cvat/pull/8648>)
+
+- Re-newed import/export request failed immediately if the previous failed
+  (<https://github.com/cvat-ai/cvat/pull/8649>)
+
+- Fixed automatic zooming in attribute annotation mode for masks
+  (<https://github.com/cvat-ai/cvat/pull/8657>)
+
+- Export dataset in CVAT format misses frames in tasks with non-default frame step
+  (<https://github.com/cvat-ai/cvat/pull/8662>)
+
+- Incorrect progress representation on `Requests` page
+  (<https://github.com/cvat-ai/cvat/pull/8668>)
+
 <a id='changelog-2.21.3'></a>
 ## \[2.21.3\] - 2024-10-31
 

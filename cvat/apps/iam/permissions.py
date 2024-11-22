@@ -8,9 +8,10 @@ from __future__ import annotations
 import importlib
 import operator
 from abc import ABCMeta, abstractmethod
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, TypeVar
+from typing import Any, Optional, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
@@ -33,7 +34,7 @@ class StrEnum(str, Enum):
 @define
 class PermissionResult:
     allow: bool
-    reasons: List[str] = field(factory=list)
+    reasons: list[str] = field(factory=list)
 
 
 def get_organization(request, obj):
@@ -83,7 +84,7 @@ def build_iam_context(request, organization: Optional[Organization], membership:
     }
 
 
-def get_iam_context(request, obj) -> Dict[str, Any]:
+def get_iam_context(request, obj) -> dict[str, Any]:
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
@@ -198,9 +199,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             q_objects.append(Q())
 
         # By default, a QuerySet will not eliminate duplicate rows. If your
-        # query spans multiple tables (e.g. members__user_id, owner_id), it’s
+        # query spans multiple tables (e.g. members__user_id, owner_id), it's
         # possible to get duplicate results when a QuerySet is evaluated.
-        # That’s when you’d use distinct().
+        # That's when you'd use distinct().
         return queryset.filter(q_objects[0]).distinct()
 
     @classmethod

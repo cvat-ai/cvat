@@ -398,18 +398,21 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
             const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
+
             let errorLength = error.length;
             // Do not count the length of the link in the Markdown error message
             if (/]\(.+\)/.test(error)) {
                 errorLength = error.replace(/]\(.+\)/, ']').length;
             }
+
             notification.error({
                 ...dynamicProps,
                 message: (
                     <CVATMarkdown history={history}>{title}</CVATMarkdown>
                 ),
                 duration: null,
-                description: errorLength > 300 ? 'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
+                description: errorLength > appConfig.MAXIMUM_NOTIFICATION_MESSAGE_LENGTH ?
+                    'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
             });
 
             if (shouldLog) {

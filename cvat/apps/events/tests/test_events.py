@@ -5,7 +5,7 @@
 import json
 import unittest
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import Optional
 
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
@@ -42,7 +42,7 @@ class WorkingTimeTestCase(unittest.TestCase):
         return payload["working_time"]
 
     @staticmethod
-    def _deserialize(events: List[dict], previous_event: Optional[dict] = None) -> List[dict]:
+    def _deserialize(events: list[dict], previous_event: Optional[dict] = None) -> list[dict]:
         request = RequestFactory().post("/api/events")
         request.user = get_user_model()(id=100, username="testuser", email="testuser@example.org")
         request.iam_context = {

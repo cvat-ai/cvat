@@ -1918,15 +1918,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.gridPattern.setAttribute('height', `${size.height}`);
         } else if (reason === UpdateReasons.SHAPE_FOCUSED) {
             const { padding, clientID } = this.controller.focusData;
+            const drawnState = this.drawnStates[clientID];
             const object = this.svgShapes[clientID];
-            if (object) {
-                const bbox: SVG.BBox = object.bbox();
-                this.onFocusRegion(
-                    bbox.x - padding,
-                    bbox.y - padding,
-                    bbox.width + padding * 2,
-                    bbox.height + padding * 2,
-                );
+            if (drawnState && object) {
+                const { offset } = this.geometry;
+                let [x, y, width, height] = [0, 0, 0, 0];
+
+                if (drawnState.shapeType === 'mask') {
+                    const [xtl, ytl, xbr, ybr] = drawnState.points.slice(-4);
+                    x = xtl + offset;
+                    y = ytl + offset;
+                    width = xbr - xtl + 1;
+                    height = ybr - ytl + 1;
+                } else {
+                    const bbox: SVG.BBox = object.bbox();
+                    ({
+                        x, y, width, height,
+                    } = bbox);
+                }
+
+                this.onFocusRegion(x - padding, y - padding, width + padding * 2, height + padding * 2);
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
@@ -2866,6 +2877,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
             if (shapeView) shapeView.classList.remove(this.getHighlightClassname());
         });
+        const redrawMasks = (highlightedElements.elementsIDs.length !== 0 ||
+            this.highlightedElements.elementsIDs.length !== 0);
+
         if (highlightedElements.elementsIDs.length) {
             this.highlightedElements = { ...highlightedElements };
             this.canvas.classList.add('cvat-canvas-highlight-enabled');
@@ -2880,9 +2894,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             };
             this.canvas.classList.remove('cvat-canvas-highlight-enabled');
         }
-        const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
-        this.deleteObjects(masks);
-        this.addObjects(masks);
+        if (redrawMasks) {
+            const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
+            this.deleteObjects(masks);
+            this.addObjects(masks);
+        }
         if (this.highlightedElements.elementsIDs.length) {
             this.deactivate();
             const clientID = this.highlightedElements.elementsIDs[0];
