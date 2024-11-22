@@ -17,49 +17,125 @@ based on this comparison.
 > **Note** that tracks are considered separate shapes
 > and compared on a per-frame basis with other tracks and shapes.
 
+> **Note** that quality estimation is currently available for tasks and jobs.
+> Quality estimation in projects is not implemented yet.
+
 See:
 
-- [Ground truth job](#ground-truth-job)
-- [Managing Ground Truth jobs: Import, Export, and Deletion](#managing-ground-truth-jobs-import-export-and-deletion)
-  - [Import](#import)
-  - [Export](#export)
-  - [Delete](#delete)
-- [Assessing data quality with Ground truth jobs](#assessing-data-quality-with-ground-truth-jobs)
-  - [Quality data](#quality-data)
+- [Basics](#basics)
+- [Ground Truth jobs](#ground-truth-jobs)
+- [Configuration](#configuration)
+  - [How to enable quality control in a new task](#enable-in-new-task)
+  - [How to enable quality control in an existing task](#enable-in-existing-task)
+- [Validation modes](#validation-modes)
+  - [Ground Truth](#validation-mode-gt)
+  - [Honeypots](#validation-mode-gt-pool)
+  - [Summary](#validation-mode-summary)
+- [Quality management](#quality-management)
+  - [Frames](#validation-set-management)
+  - [Annotations](#annotation-management)
+  - [Ground Truth jobs](#ground-truth-job-management)
   - [Annotation quality settings](#annotation-quality-settings)
+- [Quality analytics](#quality-analytics)
+  - [Quality data](#quality-data)
   - [GT conflicts in the CVAT interface](#gt-conflicts-in-the-cvat-interface)
 - [Annotation quality \& Honeypot video tutorial](#annotation-quality--honeypot-video-tutorial)
 
-## Ground truth job
+## Basics
 
-A **Ground truth** job is a way to tell CVAT where to store
-and get the "correct" annotations for task quality estimation.
+There are several approaches to quality estimation used in the industry. In CVAT,
+we can use a method known as Ground Truth or Honeypots. The method assumes there are
+Ground Truth annotations for images in the dataset. This method is statistical,
+which means that we can use only a small portion of the whole dataset to
+estimate quality on the full dataset, so we don't need to annotate the whole dataset twice.
+Here we assume that the images in the dataset are similar (represent the same task).
 
-To estimate task quality, you need to
-create a **Ground truth** job in the task,
-and annotate it. You don’t need to
-annotate the whole dataset twice,
-the annotation quality of a small part of
-the data shows the quality of annotation for
-the whole dataset.
+We will call the validation portion of the whole dataset (or a task in CVAT) a validation set.
+In practice, it is typically expected that annotations in the validation set are carefully
+validated and curated. It means that they are more expensive - creating them might require
+expert annotators or just several iterations of annotation and validation. It means that it's
+desirable to keep the validation set small enough. At the same time, it must be representative
+enough to provide reliable estimations. To achieve this, it's advised that the validation set
+images are sampled randomly and independently from the full dataset.
+That is, for the quality assurance to function correctly, the validation set must
+have some portion of the task frames, and the frames must be chosen randomly.
 
-For the quality assurance to function correctly, the **Ground truth** job must
-have a small portion of the task frames and the frames must be chosen randomly.
-Depending on the dataset size and task complexity,
+Depending on the dataset size, data variance, and task complexity,
 **5-15% of the data is typically good enough** for quality estimation,
-while keeping extra annotation overhead acceptable.
+while keeping extra annotation overhead for the Ground Truth acceptable.
 
 For example, in a typical **task with 2000 frames**, selecting **just 5%**,
 which is 100 extra frames to annotate, **is enough** to estimate the
 annotation quality. If the task contains **only 30 frames**, it's advisable to
-select **8-10 frames**, which is **about 30%**.
+select **8-10 frames**, which is **about 30%**. It is more than 15%,
+but in the case of smaller datasets, we need more samples to estimate quality reliably,
+as data variance is higher.
 
-It is more than 15% but in the case of smaller datasets,
-we need more samples to estimate quality reliably.
+## Ground truth jobs
 
-To create a **Ground truth** job, do the following:
+A **Ground Truth job** (GT job) is a way to represent the validation set in a CVAT task.
+This job is similar to regular annotation jobs - you can edit the annotations manually,
+use auto-annotation features, and import annotations in this job. There can be no more
+than 1 Ground Truth job in a task.
 
-1. Create a {{< ilink "/docs/manual/basics/create_an_annotation_task" "task" >}}, and open the task page.
+To enable quality estimation in a task, you need to create a Ground truth job in the task,
+annotate it, and switch the job state to be `acceptance`-`completed`.
+Once the Ground Truth job is configured, CVAT will start using this job for quality estimation.
+
+![Ground truth job actions](/images/honeypot04.jpg)
+
+### Import annotations
+
+If you want to import annotations into the Ground truth job, do the following.
+
+1. Open the task, and find the Ground truth job in the jobs list.
+2. Click on three dots to open the menu.
+3. From the menu, select **Import annotations**.
+4. Select import format, and select file.
+5. Click **OK**.
+
+> **Note** that if there are imported annotations for the frames that exist in the task,
+> but are not included in the **Ground truth** job, they will be ignored.
+> This way, you don't need to worry about "cleaning up" your Ground truth
+> annotations for the whole dataset before importing them.
+> Importing annotations for the frames that are not known in the task still raises errors.
+
+### Export annotations
+
+To export annotations from the Ground Truth job, do the following.
+
+1. Open the task, and find a job in the jobs list.
+2. Click on three dots to open the menu.
+3. From the menu, select **Export annotations**.
+
+### Delete
+
+To delete the Ground Truth job, do the following.
+
+1. Open the task, and find the Ground Truth job in the jobs list.
+2. Click on three dots to open the menu.
+3. From the menu, select **Delete**.
+
+## Configuring quality estimation <a id="configuration"></a>
+
+Quality estimation is configured on the Task level. There are 2 ways to enable for a task.
+
+### How to enable quality control for a new task <a id="enable-in-new-task" ></a>
+
+1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
+2. Select the source media, configure other parameters
+3. Scroll down to the **Quality Control** section below
+4. Select one of the [validation modes]() available
+5. Create the task and open the task page
+6. Upload or create Ground Truth annotations in the Ground Truth job in the task
+7. Switch the GT job into the `acceptance`-`completed` state
+
+### How to enable quality control for an already existing task <a id="enable-in-existing-task" ></a>
+
+> For already existing tasks only the Ground Truth validation mode is available. If you want
+> to use Honeypots for your task, you will need to recreate the task.
+
+1. Open the task page
 2. Click **+**.
 
    ![Create job](/images/honeypot01.jpg)
@@ -78,90 +154,177 @@ To create a **Ground truth** job, do the following:
      It can be any integer number, the same value will yield the same random selection (given that the
      frame number is unchanged). <br> **Note** that if you want to use a
      custom frame sequence, you can do this using the server API instead,
-     see [Jobs API #create](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+     see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
-5. Annotate frames, save your work.
-6. Change the status of the job to **Completed**.
-7. Change **Stage** to **Accepted**.
 
 The **Ground truth** job will appear in the jobs list.
 
-![Add new job](/images/honeypot03.jpg)
+![Ground Truth job](/images/honeypot03.jpg)
 
-## Managing Ground Truth jobs: Import, Export, and Deletion
+5. Annotate frames and save your work or upload annotations.
+6. Change the **Stage** of the job to **Acceptance**.
+7. Change the **Status** of the job to **Completed**.
 
-Annotations from **Ground truth** jobs are not included in the dataset export,
-they also cannot be imported during task annotations import
+## Validation modes
+
+Currently, there are 2 validation modes available for tasks: **Ground Truth** and **Honeypots**.
+These names are often used interchangeably, but in CVAT they have some differences.
+Both modes rely on the use of Ground Truth annotations in a task,
+stored in a [Ground Truth job](#ground-truth-jobs), where they can be managed.
+
+### Ground Truth <a id="validation-mode-gt"></a>
+
+In this mode some of the task frames are selected into the validation set, represented as a
+separate Ground Truth job. The regular annotation jobs in the task are not affected in any way.
+
+Ground Truth jobs can be created and removed at the task creation automatically or
+manually, in any moment later. This validation mode is available for any tasks and annotations.
+
+This is a flexible mode that can be enabled or disabled in any moment without any disruptions
+to the annotation process.
+
+#### Frame selection
+
+This validation mode can use several frame selection methods.
+
+##### Random (the default)
+
+This is a simple method that selects frames into the validation set randomly,
+representing the [basic approach](#basics), described above.
+
+Parameters:
+- frame count (%) - the percent of the task frames to be used for validation
+
+##### Random per job
+
+This method selects frames into the validation set randomly from each annotation job in the task.
+
+It solves one of the issues with the simple Random method that some of the jobs can get
+no validation frames, which makes it impossible to estimate quality in such jobs. Note
+that using this methods can result in increased total size of the validation set.
+
+Parameters:
+- frame count per job (%) - the percent of the job frames to be used for validation.
+This method uses segment size of the task to select the same number of validation frames
+in each job, if possible.
+
+### Honeypots <a id="validation-mode-gt-pool"></a>
+
+In this mode some random frames of the task are selected into the validation set.
+Then, validation frames are randomly mixed into regular annotation jobs. It can also be
+called "Ground Truth pool", reflecting the way validation frames are used.
+This mode can only be used at task creation and cannot be changed later.
+
+The mode has some limitations on the compatible tasks:
+- It's not possible to use it for an already existing task, the task has to be recreated.
+- This mode assumes random frame ordering, so it is only available for image annotation tasks a
+nd not for ordered sequences like videos.
+- Tracks are not supported in such tasks.
+
+The validation set can be managed after the task is created - annotations can be edited,
+frames can be excluded and restored, and honeypot frames in the regular jobs can be changed.
+However, it's not possible to select new validation frames after the task is created.
+
+Parameters:
+- frame count per job (%) - the percent of job frames (segment size) to be **added** into each
+annotation job from the validation set
+- total frame count (%) - the percent of the task frames to be included into the validation set.
+This value must result in at least `frame count per job` * `segment size` frames.
+
+### Mode summary <a id="validation-mode-summary"></a>
+
+Here is a brief summary of the validation modes:
+
+| **Aspect**         | **Ground Truth**                                 | **Honeypots**                         |
+| -------------- | -------------------------------------------- | ------------------------------------------- |
+| When can be used        | any time                          | at task creation only |
+| Frame management options       | add, remove, exclude, restore     | exclude, restore, change honeypots in jobs |
+| Task frame requirements        | -                          | random ordering only |
+| Annotations    | any                                 | tracks are not supported |
+| Minimum validation frames count    | - `manual`, `random_uniform` - any</br>&nbsp;(but some jobs can get no validation frames)</br>- `random_per_job` - jobs count * GT frames per job        | not less than honeypots count per job |
+| Task annotation import | GT annotations and regular annotations do not affect each other | Annotations are imported both into the GT job and regular jobs. Annotations for validation frames are copied into corresponding honeypot frames. |
+| Task annotation export | GT annotations and regular annotations do not affect each other | Annotations for non-validation frames are exported as is. Annotations for validation frames are taken from the GT frames. Honeypot frames are skipped. |
+
+Here are some examples on how to choose between these options. The general advice is to use
+Ground Truth for better flexibility, but keep in mind that it can require more resources for
+validation set annotation. Honeypots, on the other side, can be beneficial if you want to
+minimize the number of validation images required, but the downside here is that there are some
+limitations on where this mode can be used.
+
+Example: a video annotation with tracks. In this case there is only 1 option -
+the Ground Truth mode, so just use it.
+
+Example: an image dataset annotation, image order is not important. Here you can use both options.
+You can choose Ground Truth for better flexibility in validation. This way, you will have the
+full control of validation frames in the task, annotations options won't be limited, and the
+regular jobs will not be affected in any way. However, if you have a limited budget
+for the validation (for instance, you have only a small number of validation frames) or you want
+to allow more scalability (with this approach the number of validation frames doesn't depend on
+the number of regular annotation jobs), it makes sense to consider using Honeypots instead.
+
+## Quality management
+
+If a task has a validation configured, there are several options to manage validation set images.
+With any of the validation modes, there will be a special Ground Truth (GT) job in the task.
+
+### Validation set management
+
+Validation frames can be managed on the task Quality Management page. Here it's possible to
+check the number of validation frames, current validation mode and review the frame details.
+For each frame you can see the number of uses in the task. When in the Ground Truth mode, this
+number will be 1 for all frames. With Honeypots, these numbers can be 0, 1 or more.
+
+#### Frame changes
+
+In both validation modes it's possible to exclude some of the validation frames
+from being used for validation. This can be useful if you find that some
+of the validation frames are "bad", extra, or it they have incorrect annotations,
+which you don't want to fix. Once a frame is marked "excluded", it will not be used
+for validation. There is also an option to restore a previously excluded frame if you decide so.
+
+There is an option to exclude or restore frames in bulk mode. To use it, select the frames needed
+using checkboxes, and click one of the buttons next to the table header.
+
+#### Ground Truth job management
+
+In the Ground Truth validation mode, there will be an option to remove the GT job from the task.
+It can be useful if you want to change validation set frames completely, add more frames,
+or remove some of the frames for any reason. This is available in the job Actions menu.
+Read more [here](#ground-truth-jobs).
+
+In the Honeypots mode, it's not possible to add or remove the GT job, so it's not possible to
+add more validation frames.
+
+### Annotation management
+
+Annotations for validation frames can be displayed and edited in a special
+[Ground Truth job](#ground-truth-jobs) in the task. You can edit the annotations manually,
+use auto-annotation features, import and export annotations in this job.
+
+In the Ground Truth task validation mode, annotations of the ground Truth job do not affect
+other jobs in any way. The Ground Truth job is just a separate job, which can only be
+changed directly. Annotations from **Ground truth** jobs are not included in the dataset
+export, they also cannot be imported during task annotations import
 or with automatic annotation for the task.
 
-Import, export, and delete options are available from the
-job's menu.
+In the Honeypots task validation mode, the annotations of the GT job also do not affect other
+jobs in any way. However, import and export of **task** annotations works differently.
+When importing **task** annotations, annotations for validation frames will be copied
+both into GT job frames and into corresponding honeypot frames in annotation jobs.
+When exporting **task** annotations, honeypot frames in annotation jobs will be ignored,
+and validation frames in the resulting dataset will get annotations from the GT job.
 
-![Add new job](/images/honeypot04.jpg)
+> Note that it means that exporting from a task with honeypots and importing the results back
+> will result in changed annotations on the honeypot frames. If you want to backup annotations,
+> use a task backup or export job annotations instead.
 
-### Import
+Import and export of Ground Truth **job** annotations works the same way in both modes.
 
-If you want to import annotations into the **Ground truth** job, do the following.
+Ground Truth jobs are included in task backups, so can be saved and restored this way.
 
-1. Open the task, and find the **Ground truth** job in the jobs list.
-2. Click on three dots to open the menu.
-3. From the menu, select **Import annotations**.
-4. Select import format, and select file.
-5. Click **OK**.
-
-> **Note** that if there are imported annotations for the frames that exist in the task,
-> but are not included in the **Ground truth** job, they will be ignored.
-> This way, you don't need to worry about "cleaning up" your **Ground truth**
-> annotations for the whole dataset before importing them.
-> Importing annotations for the frames that are not known in the task still raises errors.
-
-### Export
-
-To export annotations from the **Ground truth** job, do the following.
-
-1. Open the task, and find a job in the jobs list.
-2. Click on three dots to open the menu.
-3. From the menu, select **Export annotations**.
-
-### Delete
-
-To delete the **Ground truth** job, do the following.
-
-1. Open the task, and find the **Ground truth** job in the jobs list.
-2. Click on three dots to open the menu.
-3. From the menu, select **Delete**.
-
-## Assessing data quality with Ground truth jobs
-
-Once you've established the **Ground truth** job, proceed to annotate the dataset.
-
-CVAT will begin the quality comparison between the annotated task and the
-**Ground truth** job in this task once it is finished (on the `acceptance` stage and in the `completed` state).
-
-> **Note** that the process of quality calculation may take up to several hours, depending on
-> the amount of data and labeled objects, and is **not updated immediately** after task updates.
-
-To view results go to the **Task** > **Actions** > **View analytics**> **Performance** tab.
-
-![Add new job](/images/honeypot05.jpg)
-
-### Quality data
-
-The Analytics page has the following fields:
-
-<!--lint disable maximum-line-length-->
-
-| Field                   | Description                                                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
-| GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
-| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, will show 0.                                                                                                |
-| Quality report          | Quality report in JSON format.                                                                                                                                                                    |
-| Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
-| List of jobs            | List of all the jobs in the task                                                                                                                                                                  |
-
-<!--lint enable maximum-line-length-->
+Import, Export, and Delete options are available from the Ground Truth job Actions menu.
+[Read more](#ground-truth-jobs).
 
 ### Annotation quality settings
 
@@ -181,7 +344,7 @@ three dots.
 The following window will open.
 Hover over the **?** marks to understand what each field represents.
 
-![Add new job](/images/honeypot08.jpg)
+![Quality settings page](/images/honeypot08.jpg)
 
 Annotation quality settings have the following parameters:
 
@@ -201,6 +364,42 @@ Annotation quality settings have the following parameters:
 | Min visibility threshold          | Minimal visible area percent of the spatial annotations (polygons, masks). For reporting covered annotations, useful with the Check object visibility option.  |
 | Match only visible parts          | Use only the visible part of the masks and polygons in comparisons.                                                                                            |
 
+<!--lint enable maximum-line-length-->
+
+## Quality Analytics
+
+> **Note**: quality analytics is a premium feature.
+
+Once the quality estimation is enabled in a task and the Ground Truth job is configured,
+quality analytics will become available for the task and its jobs.
+
+> A **Ground truth** job is considered configured
+> if it is at the **acceptance** stage and in the **completed** state.
+
+By default, CVAT computes quality metrics automatically at regular intervals.
+
+> **Note** that the process of quality calculation may take up to several hours, depending on
+> the amount of data and labeled objects, and is **not updated immediately** after task updates.
+
+It you want request quality metrics update, you can do this by pressing the "Refresh" button
+on the task **Quality Management** > **Analytics** page.
+
+![Quality Analytics page](/images/honeypot05.jpg)
+
+### Quality data
+
+The Analytics page has the following fields:
+
+<!--lint disable maximum-line-length-->
+
+| Field                   | Description                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
+| GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
+| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, will show 0.                                                                                                |
+| Quality report          | Quality report in JSON format.                                                                                                                                                                    |
+| Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
+| List of jobs            | List of all the jobs in the task                                                                                                                                                                  |
 <!--lint enable maximum-line-length-->
 
 ### GT conflicts in the CVAT interface
