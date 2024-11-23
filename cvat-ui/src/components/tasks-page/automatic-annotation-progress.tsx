@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { CloseOutlined, LoadingOutlined } from '@ant-design/icons';
+import { CloseOutlined, LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import Modal from 'antd/lib/modal';
@@ -56,7 +56,14 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                             }
 
                             if (activeInference.status === RQStatus.FAILED) {
-                                return (<>Automatic annotation failed</>);
+                                return (
+                                    <>
+                                        Automatic annotation failed
+                                        <CVATTooltip title={activeInference.error}>
+                                            <QuestionCircleOutlined />
+                                        </CVATTooltip>
+                                    </>
+                                );
                             }
 
                             if (activeInference.status === RQStatus.UNKNOWN) {

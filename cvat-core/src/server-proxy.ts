@@ -171,26 +171,10 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
     });
 }
 
-function filterPythonTraceback(data: string): string {
-    if (typeof data === 'string' && data.trim().startsWith('Traceback')) {
-        const lastRow = data.split('\n').findLastIndex((str) => str.trim().length);
-        let errorText = `${data.split('\n').slice(lastRow, lastRow + 1)[0]}`;
-        if (errorText.includes('CvatDatasetNotFoundError')) {
-            errorText = errorText.replace(/.*CvatDatasetNotFoundError: /, '');
-        }
-        return errorText;
-    }
-
-    return data;
-}
-
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
-            return new ServerError(
-                filterPythonTraceback(errorData.response.data),
-                errorData.response.status,
-            );
+            return new ServerError(errorData.response.data, errorData.response.status);
         }
 
         if (errorData.response.status >= 400 && errorData.response.data) {

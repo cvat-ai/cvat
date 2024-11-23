@@ -29,7 +29,7 @@ from numpy import random
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import TaskFrameProvider
-from cvat.apps.engine.utils import format_list, parse_exception_message
+from cvat.apps.engine.utils import format_list
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
@@ -3230,12 +3230,9 @@ class RequestSerializer(serializers.Serializer):
         message = ''
 
         if RQJobStatus.STARTED == rq_job_status:
-            message = rq_job.meta.get(RQJobMetaField.STATUS, '')
+            message = rq_job.meta.get(RQJobMetaField.STATUS, "")
         elif RQJobStatus.FAILED == rq_job_status:
-            message = rq_job.meta.get(
-                RQJobMetaField.FORMATTED_EXCEPTION,
-                parse_exception_message(str(rq_job.exc_info or "Unknown error")),
-            )
+            message = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, "Unknown error")
 
         return message
 

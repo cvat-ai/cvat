@@ -138,7 +138,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                             error: message as string,
                             id: requestID,
                         },
-                        new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
+                        new Error(message as string),
                     ),
                 );
 

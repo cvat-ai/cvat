@@ -3252,8 +3252,9 @@ class AnnotationGuidesViewSet(
         target.touch()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
-    rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(
+    formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))
+    rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = parse_exception_message(formatted_exception)
     rq_job.save_meta()
 
     return True

@@ -609,10 +609,14 @@ class LambdaJob:
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
-            "exc_info": self.job.exc_info
+            "exc_info": None
         }
+
         if dict_['status'] == rq.job.JobStatus.DEFERRED:
             dict_['status'] = rq.job.JobStatus.QUEUED.value
+
+        if dict_['status'] == rq.job.JobStatus.FAILED:
+            dict_['exc_info'] = self.job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, 'Unknown error')
 
         return dict_
 
@@ -1188,7 +1192,6 @@ class RequestViewSet(viewsets.ViewSet):
         self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)
-
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data
 
