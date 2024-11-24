@@ -8049,15 +8049,6 @@ components:
         job:
           type: integer
           description: The id of the job to be annotated
-        quality:
-          allOf:
-          - $ref: '#/components/schemas/QualityEnum'
-          default: original
-          description: |-
-            The quality of the images to use in the model run
-
-            * `compressed` - compressed
-            * `original` - original
         max_distance:
           type: integer
         threshold:
@@ -10020,14 +10011,6 @@ components:
         * `AZURE_CONTAINER` - AZURE_CONTAINER
         * `GOOGLE_DRIVE` - GOOGLE_DRIVE
         * `GOOGLE_CLOUD_STORAGE` - GOOGLE_CLOUD_STORAGE
-    QualityEnum:
-      enum:
-      - compressed
-      - original
-      type: string
-      description: |-
-        * `compressed` - compressed
-        * `original` - original
     QualityReport:
       type: object
       properties:

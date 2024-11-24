@@ -19,7 +19,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 
 from drf_spectacular.utils import extend_schema_field
-from typing import Optional, Union, Dict
+from typing import Optional, Union
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
 from cvat.apps.iam.utils import get_dummy_user
@@ -32,11 +32,11 @@ class RegisterSerializerEx(RegisterSerializer):
     key = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.BooleanField)
-    def get_email_verification_required(self, obj: Union[Dict, User]) -> bool:
+    def get_email_verification_required(self, obj: Union[dict, User]) -> bool:
         return allauth_settings.EMAIL_VERIFICATION == allauth_settings.EmailVerificationMethod.MANDATORY
 
     @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_key(self, obj: Union[Dict, User]) -> Optional[str]:
+    def get_key(self, obj: Union[dict, User]) -> Optional[str]:
         key = None
         if isinstance(obj, User) and allauth_settings.EMAIL_VERIFICATION != \
             allauth_settings.EmailVerificationMethod.MANDATORY:
