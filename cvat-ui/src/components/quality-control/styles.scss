@@ -85,7 +85,6 @@ $excluded-background: #d9d9d973;
     }
 }
 
-
 .cvat-frame-allocation-header {
     margin-bottom: 0;
     font-size: 20px;
@@ -132,7 +131,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-frame-allocation-table .ant-table-container {
-    max-height: calc(100vh - $grid-unit-size * 60);
+    max-height: calc(100vh - $grid-unit-size * 61);
     overflow-y: auto;
 }
 
@@ -140,6 +139,6 @@ $excluded-background: #d9d9d973;
     .ant-tabs-tabpane {
         @extend .cvat-quality-scrollbar;
 
-        max-height: calc(100vh - $grid-unit-size * 35);
+        height: calc(100vh - $grid-unit-size * 33);
     }
 }

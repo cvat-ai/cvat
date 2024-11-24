@@ -87,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8586>)
 
 - Tags in ground truth job couldn't be deleted via `x` button
- (<https://github.com/cvat-ai/cvat/pull/8586>)
+  (<https://github.com/cvat-ai/cvat/pull/8586>)
 
 - Exception 'Canvas is busy' when change frame during drag/resize a track
   (<https://github.com/cvat-ai/cvat/pull/8598>)
@@ -377,7 +377,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 - Client events `upload:annotations`, `lock:object`, `change:attribute`, `change:label`
- (<https://github.com/cvat-ai/cvat/pull/8304>)
+  (<https://github.com/cvat-ai/cvat/pull/8304>)
 
 ### Removed
 
@@ -404,7 +404,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/cvat-ai/cvat/pull/8216>)
 
 - Sometimes it is not possible to switch workspace because active control broken after
-trying to create a tag with a shortcut (<https://github.com/cvat-ai/cvat/pull/8334>)
+  trying to create a tag with a shortcut
+  (<https://github.com/cvat-ai/cvat/pull/8334>)
 
 <a id='changelog-2.16.3'></a>
 ## \[2.16.3\] - 2024-08-13
@@ -445,13 +446,14 @@ trying to create a tag with a shortcut (<https://github.com/cvat-ai/cvat/pull/83
 ### Fixed
 
 - Copy/paste annotation guide with assets did not work, showing the message
-**Asset is already related to another guide** (<https://github.com/cvat-ai/cvat/pull/7989>)
+  **Asset is already related to another guide**
+  (<https://github.com/cvat-ai/cvat/pull/7989>)
 
 - Undo can't be done when a shape is rotated
   (<https://github.com/cvat-ai/cvat/pull/8129>)
 
 - Exporting a skeleton track in a format defined for shapes raises error
-`operands could not be broadcast together with shapes (X, ) (Y, )`
+  `operands could not be broadcast together with shapes (X, ) (Y, )`
   (<https://github.com/cvat-ai/cvat/pull/8179>)
 
 - Delete label modal window does not have cancellation button
@@ -470,10 +472,11 @@ trying to create a tag with a shortcut (<https://github.com/cvat-ai/cvat/pull/83
   (<https://github.com/cvat-ai/cvat/pull/8206>)
 
 - API call to run automatic annotations fails on a model with attributes
- when mapping not provided in the request (<https://github.com/cvat-ai/cvat/pull/8250>)
+  when mapping not provided in the request
+  (<https://github.com/cvat-ai/cvat/pull/8250>)
 
 - Fixed a label collision issue where labels with similar prefixes
-and numeric suffixes could conflict, causing error on export.
+  and numeric suffixes could conflict, causing error on export.
   (<https://github.com/cvat-ai/cvat/pull/8262>)
 
 <a id='changelog-2.16.1'></a>
@@ -510,9 +513,9 @@ and numeric suffixes could conflict, causing error on export.
 ### Added
 
 - Set of features to track background activities: importing/exporting datasets, annotations or backups, creating tasks.
-Now you may find these processes on Requests page, it allows a user to understand current status of these activities
-and enhances user experience, not losing progress when the browser tab is closed
-(<https://github.com/cvat-ai/cvat/pull/7537>)
+  Now you may find these processes on Requests page, it allows a user to understand current status of these activities
+  and enhances user experience, not losing progress when the browser tab is closed
+  (<https://github.com/cvat-ai/cvat/pull/7537>)
 
 - User now may update a job state from the corresponding task page
   (<https://github.com/cvat-ai/cvat/pull/8102>)
@@ -523,7 +526,8 @@ and enhances user experience, not losing progress when the browser tab is closed
 ### Changed
 
 - "Finish the job" button on annotation view now only sets state to 'completed'.
- The job stage keeps unchanged (<https://github.com/cvat-ai/cvat/pull/8102>)
+  The job stage keeps unchanged
+  (<https://github.com/cvat-ai/cvat/pull/8102>)
 
 - Log files for individual backend processes are now stored in ephemeral
   storage of each backend container rather than in the `cvat_logs` volume
@@ -535,7 +539,7 @@ and enhances user experience, not losing progress when the browser tab is closed
 ### Removed
 
 - Renew the job button in annotation menu was removed
- (<https://github.com/cvat-ai/cvat/pull/8102>)
+  (<https://github.com/cvat-ai/cvat/pull/8102>)
 
 ### Fixed
 
@@ -583,10 +587,12 @@ and enhances user experience, not losing progress when the browser tab is closed
   (<https://github.com/cvat-ai/cvat/pull/8039>)
 
 - Exception 'this.el.node.getScreenCTM() is null' occuring in Firefox when
-a user resizes window during skeleton dragging/resizing (<https://github.com/cvat-ai/cvat/pull/8067>)
+  a user resizes window during skeleton dragging/resizing
+  (<https://github.com/cvat-ai/cvat/pull/8067>)
 
 - Exception 'Edge's nodeFrom M or nodeTo N do not to refer to any node'
-occuring when a user resizes window during skeleton dragging/resizing (<https://github.com/cvat-ai/cvat/pull/8067>)
+  occuring when a user resizes window during skeleton dragging/resizing
+  (<https://github.com/cvat-ai/cvat/pull/8067>)
 
 - Slightly broken layout when running attributed face detection model
   (<https://github.com/cvat-ai/cvat/pull/8072>)
@@ -644,7 +650,8 @@ occuring when a user resizes window during skeleton dragging/resizing (<https://
   (<https://github.com/cvat-ai/cvat/pull/7997>)
 
 - When use route `/auth/login-with-token/<token>` without `next` query parameter
-the page reloads infinitely (<https://github.com/cvat-ai/cvat/pull/7999>)
+  the page reloads infinitely
+  (<https://github.com/cvat-ai/cvat/pull/7999>)
 
 - Fixed kvrocks port naming for istio
   (<https://github.com/cvat-ai/cvat/pull/8010>)
@@ -815,7 +822,7 @@ the page reloads infinitely (<https://github.com/cvat-ai/cvat/pull/7999>)
 - Opening update CS page sends infinite requests when CS id does not exist
   (<https://github.com/cvat-ai/cvat/pull/7828>)
 
-Uploading files with TUS immediately failed when one of the requests failed
+- Uploading files with TUS immediately failed when one of the requests failed
   (<https://github.com/cvat-ai/cvat/pull/7830>)
 
 - Longer analytics report calculation because of inefficient requests to analytics db
@@ -985,7 +992,7 @@ Uploading files with TUS immediately failed when one of the requests failed
   (<https://github.com/opencv/cvat/pull/7604>)
 
 - 90 deg-rotated video was added with "Prefer Zip Chunks" disabled
-was warped, fixed using the static cropImage function.
+  was warped, fixed using the static cropImage function.
   (<https://github.com/opencv/cvat/pull/7583>)
 
 <a id='changelog-2.11.2'></a>
@@ -1023,7 +1030,7 @@ was warped, fixed using the static cropImage function.
 ### Added
 
 - Single shape annotation mode allowing to easily annotate scenarious where a user
-only needs to draw one object on one image (<https://github.com/opencv/cvat/pull/7486>)
+  only needs to draw one object on one image (<https://github.com/opencv/cvat/pull/7486>)
 
 ### Fixed
 
@@ -1151,7 +1158,7 @@ only needs to draw one object on one image (<https://github.com/opencv/cvat/pull
 ### Changed
 
 - When the `ORG_INVITATION_CONFIRM` setting is enabled, organization invitations for existing users are no
-longer accepted automatically. Instead, the invitee can now review the invitation and choose to accept or decline it.
+  longer accepted automatically. Instead, the invitee can now review the invitation and choose to accept or decline it.
   (<https://github.com/opencv/cvat/pull/7138>)
 
 - \[Compose, Helm\] Updated Clickhouse to version 23.11.*
@@ -1200,11 +1207,11 @@ longer accepted automatically. Instead, the invitee can now review the invitatio
   (<https://github.com/opencv/cvat/pull/7299>)
 
 - Error message `Edge's nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not to refer to any node`
- when upload a file with some abscent skeleton nodes (<https://github.com/opencv/cvat/pull/7302>)
+  when upload a file with some abscent skeleton nodes (<https://github.com/opencv/cvat/pull/7302>)
 - Wrong context menu position in skeleton configurator (Firefox only)
- (<https://github.com/opencv/cvat/pull/7302>)
+  (<https://github.com/opencv/cvat/pull/7302>)
 - Fixed console error `(Error: <rect> attribute width: A negative value is not valid`
- appearing when skeleton with all outside elements is created (<https://github.com/opencv/cvat/pull/7302>)
+  appearing when skeleton with all outside elements is created (<https://github.com/opencv/cvat/pull/7302>)
 
 - Updating cloud storage attached to CVAT using Azure connection string
   (<https://github.com/opencv/cvat/pull/7336>)
@@ -1215,7 +1222,7 @@ longer accepted automatically. Instead, the invitee can now review the invitatio
 ### Added
 
 - Introduced CVAT actions. Actions allow performing different
- predefined scenarios on annotations automatically (e.g. shape converters)
+  predefined scenarios on annotations automatically (e.g. shape converters)
   (<https://github.com/opencv/cvat/pull/7172>)
 
 - The UI will now retry requests that were rejected due to rate limiting
