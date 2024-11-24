@@ -4,7 +4,7 @@
 
 import datetime
 import traceback
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import rq
 from crum import get_current_request, get_current_user
@@ -68,6 +68,7 @@ def task_id(instance):
     except Exception:
         return None
 
+
 def job_id(instance):
     if isinstance(instance, Job):
         return instance.id
@@ -79,6 +80,7 @@ def job_id(instance):
         return jid
     except Exception:
         return None
+
 
 def get_user(instance=None):
     # Try to get current user from request
@@ -99,6 +101,7 @@ def get_user(instance=None):
 
     return None
 
+
 def get_request(instance=None):
     request = get_current_request()
     if request is not None:
@@ -113,6 +116,7 @@ def get_request(instance=None):
 
     return None
 
+
 def _get_value(obj, key):
     if obj is not None:
         if isinstance(obj, dict):
@@ -121,21 +125,26 @@ def _get_value(obj, key):
 
     return None
 
+
 def request_id(instance=None):
     request = get_request(instance)
     return _get_value(request, "uuid")
+
 
 def user_id(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "id")
 
+
 def user_name(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "username")
 
+
 def user_email(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "email") or None
+
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -148,6 +157,7 @@ def organization_slug(instance):
         return org.slug
     except Exception:
         return None
+
 
 def get_instance_diff(old_data, data):
     ignore_related_fields = (
@@ -166,7 +176,8 @@ def get_instance_diff(old_data, data):
 
     return diff
 
-def _cleanup_fields(obj):
+
+def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
     fields=(
         "slug",
         "id",
@@ -185,6 +196,7 @@ def _cleanup_fields(obj):
         "url",
         "issues",
         "attributes",
+        "key",
     )
     subfields=(
         "url",
@@ -199,6 +211,7 @@ def _cleanup_fields(obj):
         else:
             data[k] = v
     return data
+
 
 def _get_object_name(instance):
     if isinstance(instance, Organization) or \
