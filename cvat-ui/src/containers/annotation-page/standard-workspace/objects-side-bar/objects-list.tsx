@@ -151,7 +151,7 @@ const componentShortcuts = {
     },
     RUN_ANNOTATIONS_ACTION: {
         name: 'Run annotations action',
-        description: 'Opens a dialog with annotations actions to run one of them on a certain object',
+        description: 'Opens a dialog with annotations actions',
         sequences: ['ctrl+e'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
