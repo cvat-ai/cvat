@@ -404,6 +404,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
+                    occluded: this.drawData.initialState.occluded,
+                    attributes: { ...this.drawData.initialState.attributes },
+                    color: this.drawData.initialState.color,
+                    objectType: this.drawData.initialState.objectType,
                     shapeType: this.drawData.shapeType,
                     points: rle,
                     label: this.drawData.initialState.label,
