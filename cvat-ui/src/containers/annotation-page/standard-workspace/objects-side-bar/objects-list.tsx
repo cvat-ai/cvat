@@ -597,8 +597,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             RUN_ANNOTATIONS_ACTION: () => {
                 const state = activatedState(true);
-                if (state && !readonly) {
-                    openAnnotationsActionModal(state);
+                if (!readonly) {
+                    if (state) {
+                        openAnnotationsActionModal(state);
+                    } else {
+                        openAnnotationsActionModal();
+                    }
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {

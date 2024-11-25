@@ -335,19 +335,23 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                 <Col span={24} className='cvat-action-runner-info'>
                     <Alert
                         message={(
-                            <div>
-                                <Text>Actions allow executing certain algorithms on </Text>
-                                <Text strong>
-                                    <a
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                        href={config.FILTERS_GUIDE_URL}
-                                    >
-                                        filtered
-                                    </a>
-                                </Text>
-                                <Text> annotations. </Text>
-                            </div>
+                            targetObjectState ? (
+                                <Text> Selected action will be applied to the current object </Text>
+                            ) : (
+                                <div>
+                                    <Text>Actions allow executing certain algorithms on </Text>
+                                    <Text strong>
+                                        <a
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            href={config.FILTERS_GUIDE_URL}
+                                        >
+                                            filtered
+                                        </a>
+                                    </Text>
+                                    <Text> annotations. </Text>
+                                </div>
+                            )
                         )}
                         type='info'
                         showIcon
