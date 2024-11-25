@@ -130,7 +130,7 @@ context('Edit handler.', () => {
                         cy.get('.cvat_canvas_shape_drawing')
                             .should('exist')
                             .and('have.attr', 'data-origin-client-id', '2');
-                        cy.get('body').type('{Ctrl}');
+                        cy.get('body').type('{Ctrl}a');
                         cy.get('.cvat_canvas_autoborder_point')
                             .should('exist')
                             .and('be.visible')

@@ -177,7 +177,9 @@ REST_AUTH = {
     'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
-if to_bool(os.getenv('CVAT_ANALYTICS', False)):
+ANALYTICS_ENABLED = to_bool(os.getenv('CVAT_ANALYTICS', False))
+
+if ANALYTICS_ENABLED:
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -234,7 +236,7 @@ IAM_DEFAULT_ROLE = 'user'
 
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
-IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+IAM_ROLES = [IAM_ADMIN_ROLE, 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
@@ -337,6 +339,15 @@ RQ_SHOW_ADMIN_LINK = True
 RQ_EXCEPTION_HANDLERS = [
     'cvat.apps.engine.views.rq_exception_handler',
     'cvat.apps.events.handlers.handle_rq_exception',
+]
+
+PERIODIC_RQ_JOBS = [
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'clean_up_sessions',
+        'func': 'cvat.apps.iam.utils.clean_up_sessions',
+        'cron_string': '0 0 * * *',
+    },
 ]
 
 # JavaScript and CSS compression
@@ -521,12 +532,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 
-RESTRICTIONS = {
-    # allow access to analytics component to users with business role
-    # otherwise, only the administrator has access
-    'analytics_visibility': True,
-}
-
 redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 # The default port is not Redis's default port (6379).
 # This is so that a developer can run both in-mem Redis and on-disk Kvrocks on their machine
@@ -568,6 +573,8 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Forwarded host - https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-USE_X_FORWARDED_HOST
 # Is used in TUS uploads to provide correct upload endpoint
@@ -638,6 +645,8 @@ SPECTACULAR_SETTINGS = {
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
         'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
+        'ValidationMode': 'cvat.apps.engine.models.ValidationMode',
+        'FrameSelectionMethod': 'cvat.apps.engine.models.JobFrameSelectionMethod',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,

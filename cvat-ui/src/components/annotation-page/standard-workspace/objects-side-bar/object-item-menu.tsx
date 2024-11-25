@@ -8,6 +8,7 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
+    FunctionOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -34,6 +35,7 @@ interface Props {
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
     removeShortcut: string;
+    runAnnotationsActionShortcut: string;
     changeColor(value: string): void;
     copy(): void;
     remove(): void;
@@ -46,6 +48,7 @@ interface Props {
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
+    runAnnotationAction(): void;
     jobInstance: Job;
 }
 
@@ -232,6 +235,23 @@ function RemoveItem(props: ItemProps): JSX.Element {
     );
 }
 
+function RunAnnotationActionItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { runAnnotationsActionShortcut, runAnnotationAction } = toolProps;
+    return (
+        <CVATTooltip title={`${runAnnotationsActionShortcut}`}>
+            <Button
+                type='link'
+                icon={<FunctionOutlined />}
+                onClick={runAnnotationAction}
+                className='cvat-object-item-menu-remove-object'
+            >
+                Run annotation action
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 export default function ItemMenu(props: Props): MenuProps {
     const {
         readonly, shapeType, objectType, colorBy, jobInstance,
@@ -249,6 +269,7 @@ export default function ItemMenu(props: Props): MenuProps {
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
         SLICE_ITEM = 'slice_item',
+        RUN_ANNOTATION_ACTION = 'run_annotation_action',
     }
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
@@ -323,6 +344,13 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.REMOVE_ITEM,
             label: <RemoveItem toolProps={props} />,
+        });
+    }
+
+    if (!readonly) {
+        items.push({
+            key: MenuKeys.RUN_ANNOTATION_ACTION,
+            label: <RunAnnotationActionItem toolProps={props} />,
         });
     }
 

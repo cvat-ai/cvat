@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Mapping
+from collections.abc import Mapping
 
 import attrs
 

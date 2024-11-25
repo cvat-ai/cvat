@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,9 @@ import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
-import { Task } from 'reducers';
+import { TaskNotFoundComponent } from 'components/common/not-found';
 import { useIsMounted } from 'utils/hooks';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, Task } from 'cvat-core-wrapper';
 import JobForm from './job-form';
 
 const core = getCore();
@@ -50,6 +50,15 @@ function CreateJobPage(): JSX.Element {
             setFetchingTask(false);
         }
     }, []);
+
+    if (fetchingTask) {
+        return <Spin size='large' className='cvat-spinner' />;
+    }
+
+    if (!taskInstance) {
+        return <TaskNotFoundComponent />;
+    }
+
     return (
         <div className='cvat-create-job-page'>
             <Row justify='center' align='middle'>
@@ -57,19 +66,11 @@ function CreateJobPage(): JSX.Element {
                     <Text className='cvat-title'>Add a new job</Text>
                 </Col>
             </Row>
-            {
-                fetchingTask ? (
-                    <div className='cvat-create-job-loding'>
-                        <Spin size='large' className='cvat-spinner' />
-                    </div>
-                ) : (
-                    <Row justify='center' align='top'>
-                        <Col md={20} lg={16} xl={14} xxl={9}>
-                            <JobForm task={taskInstance} />
-                        </Col>
-                    </Row>
-                )
-            }
+            <Row justify='center' align='top'>
+                <Col md={20} lg={16} xl={14} xxl={9}>
+                    <JobForm task={taskInstance} />
+                </Col>
+            </Row>
         </div>
     );
 }

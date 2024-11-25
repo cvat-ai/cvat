@@ -96,7 +96,7 @@ class TestPostWebhooks:
         assert response.status_code == HTTPStatus.CREATED
         assert "secret" not in response.json()
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_sandbox_project_owner_can_create_webhook_for_project(self, privilege, projects, users):
         users = [user for user in users if privilege in user["groups"]]
         username, project_id = next(
@@ -116,7 +116,7 @@ class TestPostWebhooks:
         assert response.status_code == HTTPStatus.CREATED
         assert "secret" not in response.json()
 
-    @pytest.mark.parametrize("privilege", ["worker", "user", "business"])
+    @pytest.mark.parametrize("privilege", ["worker", "user"])
     def test_sandbox_project_assignee_cannot_create_webhook_for_project(
         self, privilege, projects, users
     ):
@@ -410,7 +410,7 @@ class TestGetWebhooks:
         assert "secret" not in response.json()
         assert DeepDiff(webhooks[wid], response.json(), ignore_order=True) == {}
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_project_owner_can_get_webhook(self, privilege, webhooks, projects, users):
         proj_webhooks = [w for w in webhooks if w["type"] == "project"]
         username, wid = next(
@@ -418,7 +418,7 @@ class TestGetWebhooks:
                 (user["username"], webhook["id"])
                 for user in users
                 for webhook in proj_webhooks
-                if privilege not in user["groups"]
+                if privilege in user["groups"]
                 and projects[webhook["project_id"]]["owner"]["id"] == user["id"]
             )
         )
@@ -429,7 +429,7 @@ class TestGetWebhooks:
         assert "secret" not in response.json()
         assert DeepDiff(webhooks[wid], response.json(), ignore_order=True) == {}
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_webhook_owner_can_get_webhook(self, privilege, webhooks, projects, users):
         proj_webhooks = [w for w in webhooks if w["type"] == "project"]
         username, wid = next(
@@ -447,7 +447,7 @@ class TestGetWebhooks:
         assert "secret" not in response.json()
         assert DeepDiff(webhooks[wid], response.json(), ignore_order=True) == {}
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_not_project_staff_cannot_get_webhook(self, privilege, webhooks, projects, users):
         proj_webhooks = [w for w in webhooks if w["type"] == "project"]
         username, wid = next(
@@ -631,7 +631,7 @@ class TestGetListWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert DeepDiff(expected_response, response.json()["results"], ignore_order=True) == {}
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_user_cannot_get_webhook_list_for_project(
         self, privilege, find_users, webhooks, projects
     ):
@@ -654,7 +654,7 @@ class TestGetListWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert DeepDiff([], response.json()["results"], ignore_order=True) == {}
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_user_can_get_webhook_list_for_project(self, privilege, find_users, webhooks, projects):
         username, pid = next(
             (
@@ -824,7 +824,7 @@ class TestPatchWebhooks:
         response = patch_method("admin2", f"webhooks/{self.WID}", patch_data)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_sandbox_user_can_update_webhook(self, privilege, find_users, webhooks):
         username, webhook = next(
             (
@@ -852,7 +852,7 @@ class TestPatchWebhooks:
             == {}
         )
 
-    @pytest.mark.parametrize("privilege", ["worker", "user", "business"])
+    @pytest.mark.parametrize("privilege", ["worker", "user"])
     def test_sandbox_user_cannot_update_webhook(self, privilege, find_users, webhooks):
         username, webhook = next(
             (
@@ -1029,9 +1029,7 @@ class TestPatchWebhooks:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteWebhooks:
-    @pytest.mark.parametrize(
-        "privilege, allow", [("user", False), ("business", False), ("admin", True)]
-    )
+    @pytest.mark.parametrize("privilege, allow", [("user", False), ("admin", True)])
     def test_user_can_delete_project_webhook(
         self, privilege, allow, find_users, webhooks, projects
     ):
@@ -1101,7 +1099,7 @@ class TestDeleteWebhooks:
         response = get_method(username, f"webhooks/{webhook_id}")
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_project_owner_can_delete_project_webhook(
         self, privilege, find_users, webhooks, projects
     ):
@@ -1123,7 +1121,7 @@ class TestDeleteWebhooks:
         response = get_method(username, f"webhooks/{webhook_id}")
         assert response.status_code == HTTPStatus.NOT_FOUND
 
-    @pytest.mark.parametrize("privilege", ["user", "business"])
+    @pytest.mark.parametrize("privilege", ["user"])
     def test_webhook_owner_can_delete_project_webhook(
         self, privilege, find_users, webhooks, projects
     ):

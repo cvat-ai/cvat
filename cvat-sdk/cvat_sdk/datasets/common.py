@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List, Optional
+from typing import Optional
 
 import attrs
 import attrs.validators
@@ -24,8 +24,8 @@ class FrameAnnotations:
     Contains annotations that pertain to a single frame.
     """
 
-    tags: List[models.LabeledImage] = attrs.Factory(list)
-    shapes: List[models.LabeledShape] = attrs.Factory(list)
+    tags: list[models.LabeledImage] = attrs.Factory(list)
+    shapes: list[models.LabeledShape] = attrs.Factory(list)
 
 
 class MediaElement(metaclass=abc.ABCMeta):

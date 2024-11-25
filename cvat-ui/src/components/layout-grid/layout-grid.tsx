@@ -14,11 +14,11 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 
 const componentShortcuts = {
-    TOGGLE_LAYOUT_GRID: {
+    TOGGLE_ANNOTATION_PAGE: {
         name: 'Toggle layout grid',
         description: 'The grid is used to UI development',
         sequences: ['ctrl+alt+enter'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.GENERAL,
     },
 };
 
@@ -32,7 +32,7 @@ const LayoutGrid = (): React.ReactPortal => {
     }, [showGrid]);
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        TOGGLE_LAYOUT_GRID: toggleLayoutGrid,
+        TOGGLE_ANNOTATION_PAGE: toggleLayoutGrid,
     };
 
     const portalContent: JSX.Element = (

@@ -190,6 +190,10 @@ module.exports = (env) => {
                         to  : 'assets/opencv_4.8.0.js',
                     },
                     {
+                        from: 'src/assets/*.png',
+                        to  : 'assets/[name][ext]',
+                    },
+                    {
                         from: 'plugins/**/assets/*.(onnx|js)',
                         to  : 'assets/[name][ext]',
                     }

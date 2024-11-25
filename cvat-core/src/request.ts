@@ -6,10 +6,10 @@ import { RQStatus } from './enums';
 import User from './user';
 import { SerializedRequest } from './server-response-types';
 
-type Operation = {
+export type RequestOperation = {
     target: string;
     type: string;
-    format: string;
+    format: string | null;
     jobID: number | null;
     taskID: number | null;
     projectID: number | null;
@@ -44,9 +44,7 @@ export class Request {
         this.#finishedDate = initialData.finished_date;
         this.#expiryDate = initialData.expiry_date;
 
-        if (initialData.owner) {
-            this.#owner = new User(initialData.owner);
-        }
+        this.#owner = new User(initialData.owner);
     }
 
     get id(): string {
@@ -57,7 +55,8 @@ export class Request {
         return this.#status.toLowerCase() as RQStatus;
     }
 
-    get progress(): number {
+    // The `progress` represents a value between 0 and 1
+    get progress(): number | undefined {
         return this.#progress;
     }
 
@@ -65,7 +64,7 @@ export class Request {
         return this.#message;
     }
 
-    get operation(): Operation {
+    get operation(): RequestOperation {
         return {
             target: this.#operation.target,
             type: this.#operation.type,
@@ -77,11 +76,11 @@ export class Request {
         };
     }
 
-    get url(): string {
+    get url(): string | undefined {
         return this.#resultUrl;
     }
 
-    get resultID(): number {
+    get resultID(): number | undefined {
         return this.#resultID;
     }
 
@@ -89,19 +88,49 @@ export class Request {
         return this.#createdDate;
     }
 
-    get startedDate(): string {
+    get startedDate(): string | undefined {
         return this.#startedDate;
     }
 
-    get finishedDate(): string {
+    get finishedDate(): string | undefined {
         return this.#finishedDate;
     }
 
-    get expiryDate(): string {
+    get expiryDate(): string | undefined {
         return this.#expiryDate;
     }
 
     get owner(): User {
         return this.#owner;
+    }
+
+    public toJSON(): SerializedRequest {
+        const result: SerializedRequest = {
+            id: this.#id,
+            status: this.#status,
+            operation: {
+                target: this.#operation.target,
+                type: this.#operation.type,
+                format: this.#operation.format,
+                job_id: this.#operation.job_id,
+                task_id: this.#operation.task_id,
+                project_id: this.#operation.project_id,
+                function_id: this.#operation.function_id,
+            },
+            progress: this.#progress,
+            message: this.#message,
+            result_url: this.#resultUrl,
+            result_id: this.#resultID,
+            created_date: this.#createdDate,
+            started_date: this.#startedDate,
+            finished_date: this.#finishedDate,
+            expiry_date: this.#expiryDate,
+            owner: {
+                id: this.#owner.id,
+                username: this.#owner.username,
+            },
+        };
+
+        return result;
     }
 }

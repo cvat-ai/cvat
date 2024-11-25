@@ -20,9 +20,9 @@ import itertools
 from django.contrib.auth.models import Group, User
 from rest_framework import status
 
+from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from datumaro.util.test_utils import TestDir
 
 from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
 
@@ -86,9 +86,13 @@ class _DbTestBase(ApiTestBase):
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid,
-                data=image_data)
+            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+            rq_id = response.json()["rq_id"]
+
+            response = self.client.get(f"/api/requests/{rq_id}")
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+            assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get("/api/tasks/%s" % tid)
 
@@ -527,7 +531,7 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_dump"):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         url = self._generate_url_dump_tasks_annotations(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
@@ -718,7 +722,7 @@ class Task3DTest(_DbTestBase):
 
                 for user, edata in list(self.expected_dump_upload.items()):
                     with self.subTest(format=f"{format_name}_{edata['name']}_export"):
-                        self._clear_rq_jobs() # clean up from previous tests and iterations
+                        self._clear_temp_data() # clean up from previous tests and iterations
 
                         url = self._generate_url_dump_dataset(task_id)
                         file_name = osp.join(test_dir, f"{format_name}_{edata['name']}.zip")
@@ -740,6 +744,8 @@ class Task3DTest(_DbTestBase):
                             content = io.BytesIO(b"".join(response.streaming_content))
                             with open(file_name, "wb") as f:
                                 f.write(content.getvalue())
-                        self.assertEqual(osp.exists(file_name), edata['file_exists'])
-                        self._check_dump_content(content, task_ann_prev.data, format_name,related_files=False)
+                            self.assertEqual(osp.exists(file_name), edata['file_exists'])
+                            self._check_dump_content(
+                                content, task_ann_prev.data, format_name, related_files=False
+                            )
 

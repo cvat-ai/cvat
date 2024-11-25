@@ -6,7 +6,7 @@ import { fabric } from 'fabric';
 import debounce from 'lodash/debounce';
 
 import {
-    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
+    DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy, Position,
 } from './canvasModel';
 import consts from './consts';
 import { DrawHandler } from './drawHandler';
@@ -61,10 +61,11 @@ export class MasksHandlerImpl implements MasksHandler {
     private editData: MasksEditData | null;
 
     private colorBy: ColorBy;
-    private latestMousePos: { x: number; y: number; };
+    private latestMousePos: Position;
     private startTimestamp: number;
     private geometry: Geometry;
     private drawingOpacity: number;
+    private isHidden: boolean;
 
     private keepDrawnPolygon(): void {
         const canvasWrapper = this.canvas.getElement().parentElement;
@@ -217,10 +218,27 @@ export class MasksHandlerImpl implements MasksHandler {
     private imageDataFromCanvas(wrappingBBox: WrappingBBox): Uint8ClampedArray {
         const imageData = this.canvas.toCanvasElement()
             .getContext('2d').getImageData(
-                wrappingBBox.left, wrappingBBox.top,
-                wrappingBBox.right - wrappingBBox.left + 1, wrappingBBox.bottom - wrappingBBox.top + 1,
+                wrappingBBox.left,
+                wrappingBBox.top,
+                wrappingBBox.right - wrappingBBox.left + 1,
+                wrappingBBox.bottom - wrappingBBox.top + 1,
             ).data;
         return imageData;
+    }
+
+    private updateHidden(value: boolean) {
+        this.isHidden = value;
+
+        // Need to update style of upper canvas explicitly because update of default cursor is not applied immediately
+        // https://github.com/fabricjs/fabric.js/issues/1456
+        const newOpacity = value ? '0' : '';
+        const newCursor = value ? 'inherit' : 'none';
+        this.canvas.getElement().parentElement.style.opacity = newOpacity;
+        const upperCanvas = this.canvas.getElement().parentElement.querySelector('.upper-canvas') as HTMLElement;
+        if (upperCanvas) {
+            upperCanvas.style.cursor = newCursor;
+        }
+        this.canvas.defaultCursor = newCursor;
     }
 
     private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
@@ -350,6 +368,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.editData = null;
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
+        this.isHidden = false;
         this.colorBy = ColorBy.LABEL;
         this.onDrawDone = onDrawDone;
         this.onDrawRepeat = onDrawRepeat;
@@ -385,6 +404,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
+                    occluded: this.drawData.initialState.occluded,
+                    attributes: { ...this.drawData.initialState.attributes },
+                    color: this.drawData.initialState.color,
+                    objectType: this.drawData.initialState.objectType,
                     shapeType: this.drawData.shapeType,
                     points: rle,
                     label: this.drawData.initialState.label,
@@ -452,7 +475,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.canvas.renderAll();
             }
 
-            if (isMouseDown && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
+            if (isMouseDown && !this.isHidden && !isBrushSizeChanging && ['brush', 'eraser'].includes(tool?.type)) {
                 const color = fabric.Color.fromHex(tool.color);
                 color.setAlpha(tool.type === 'eraser' ? 1 : 0.5);
 
@@ -530,6 +553,10 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public configurate(configuration: Configuration): void {
         this.colorBy = configuration.colorBy;
+
+        if (this.isHidden !== configuration.hideEditedObject) {
+            this.updateHidden(configuration.hideEditedObject);
+        }
     }
 
     public transform(geometry: Geometry): void {
@@ -563,7 +590,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = expandChannels(color[0], color[1], color[2], points);
-                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
                             try {
@@ -654,7 +684,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
                 const imageBitmap = expandChannels(color[0], color[1], color[2], points);
-                imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
                             try {

@@ -9,7 +9,8 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { getProjectsAsync } from 'actions/projects-actions';
-import { CombinedState, Project } from 'reducers';
+import { CombinedState } from 'reducers';
+import { Project } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import ProjectItem from './project-item';
 

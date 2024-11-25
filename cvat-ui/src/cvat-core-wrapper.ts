@@ -17,17 +17,18 @@ import {
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
 } from 'cvat-core/src/server-response-types';
+import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings from 'cvat-core/src/quality-settings';
+import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders,
-    ModelReturnType, DimensionType, JobType,
-    JobStage, JobState, RQStatus,
+    ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
+    ModelReturnType, DimensionType, JobType, Source,
+    JobStage, JobState, RQStatus, StorageLocation,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -35,12 +36,15 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
+import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
-import BaseSingleFrameAction, { ActionParameterType, FrameSelectionType } from 'cvat-core/src/annotations-actions';
-import { Request } from 'cvat-core/src/request';
+import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-action';
+import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-collection-action';
+import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
+import { Request, RequestOperation } from 'cvat-core/src/request';
 
 const cvat: CVATCore = _cvat;
 
@@ -67,6 +71,8 @@ export {
     AnnotationGuide,
     Attribute,
     ShapeType,
+    Source,
+    ObjectType,
     LabelType,
     Storage,
     Webhook,
@@ -87,10 +93,13 @@ export {
     JobStage,
     JobState,
     RQStatus,
-    BaseSingleFrameAction,
+    BaseAction,
+    BaseShapesAction,
+    BaseCollectionAction,
     QualityReport,
     QualityConflict,
     QualitySettings,
+    TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
@@ -102,8 +111,10 @@ export {
     Event,
     FrameData,
     ActionParameterType,
-    FrameSelectionType,
     Request,
+    JobValidationLayout,
+    TaskValidationLayout,
+    StorageLocation,
 };
 
 export type {
@@ -116,4 +127,6 @@ export type {
     CVATCore,
     SerializedAPISchema,
     ProjectOrTaskOrJob,
+    RequestOperation,
+    UpdateStatusData,
 };

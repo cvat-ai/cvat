@@ -39,19 +39,19 @@ jobs:
         run: ./dev/check_changelog_fragments.py
 
       - name: CVAT server. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
       - name: CVAT UI. Getting cache from the default branch
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /tmp/cvat_cache_ui
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Create artifact directories
         run: |
@@ -60,14 +60,14 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
-          tags: cvat/server
+          tags: cvat/server:${{ env.CVAT_VERSION }}
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: Instrumentation of the code then rebuilding the CVAT UI
@@ -76,12 +76,12 @@ jobs:
           yarn run coverage
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
           file: Dockerfile.ui
-          tags: cvat/ui
+          tags: cvat/ui:${{ env.CVAT_VERSION }}
           outputs: type=docker,dest=/tmp/cvat_ui/image.tar
 
       - name: CVAT SDK. Build
@@ -95,7 +95,7 @@ jobs:
         id: verify_schema
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker run --rm cvat/server bash \
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py spectacular' > cvat/schema-expected.yml
 
           if ! git diff --no-index cvat/schema.yml cvat/schema-expected.yml; then
@@ -109,23 +109,23 @@ jobs:
 
       - name: Verify migrations
         run: |
-          docker run --rm cvat/server bash \
+          docker run --rm "cvat/server:${CVAT_VERSION}" bash \
             -c 'python manage.py makemigrations --check'
 
       - name: Upload CVAT server artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/image.tar
 
       - name: Upload CVAT UI artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/image.tar
 
       - name: Upload CVAT SDK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
@@ -136,18 +136,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -156,16 +156,7 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
-
-      - name: Upload expected schema as an artifact
-        if: failure() && steps.verify_schema.conclusion == 'failure'
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: expected_schema
-          path: cvat/schema-expected.yml
 
       - name: Generate SDK
         run: |
@@ -175,7 +166,7 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[pytorch]' -e ./cvat-cli \
+            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
       - name: Run REST API and SDK tests
@@ -184,13 +175,14 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
           pytest tests/python/ --cov --cov-report=json
-          for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
           ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
+          CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python --cov --cov-report=json
+          for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage_results
+          name: coverage_results_rest_api
           path: |
             coverage*.json
 
@@ -207,7 +199,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure() && steps.run_tests.conclusion == 'failure'
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4
         with:
           name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
@@ -219,7 +211,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
@@ -227,7 +219,6 @@ jobs:
       - name: Load Docker server image
         run: |
           docker load --input /tmp/cvat_server/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
           docker image ls -a
 
       - name: Running OPA tests
@@ -254,9 +245,9 @@ jobs:
             -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage_results
+          name: coverage_results_unit_tests
           path: |
             ${{ github.workspace }}/coverage-final.json
             ${{ github.workspace }}/unit_tests_coverage.json
@@ -272,7 +263,7 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: unit_tests_container_logs
           path: "${{ github.workspace }}/unit_testing"
@@ -295,13 +286,13 @@ jobs:
             node-version: '18.x'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI image
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -310,8 +301,6 @@ jobs:
         run: |
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
-          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
       - name: Run CVAT instance
@@ -363,9 +352,9 @@ jobs:
           mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
       - name: Uploading code coverage results as an artifact
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage_results
+          name: coverage_results_e2e_${{ matrix.specs }}
           path: |
             tests/coverage/${{ matrix.specs }}_coverage.json
 
@@ -378,21 +367,21 @@ jobs:
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
-          name: e2e_container_logs
+          name: e2e_container_logs_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
       - name: Uploading cypress screenshots as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
       - name: Uploading cypress videos as an artifact
         if: failure()
-        uses: actions/upload-artifact@v3.1.1
+        uses: actions/upload-artifact@v4
         with:
           name: cypress_videos_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/videos
@@ -405,13 +394,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download CVAT server images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
@@ -432,10 +421,10 @@ jobs:
           SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
           UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
         run: |
-          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
+          docker tag "cvat/server:${CVAT_VERSION}" "${SERVER_IMAGE_REPO}:dev"
           docker push "${SERVER_IMAGE_REPO}:dev"
 
-          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
+          docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
           docker push "${UI_IMAGE_REPO}:dev"
 
   codecov:
@@ -444,12 +433,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Merge coverage artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: coverage_results
+          pattern: coverage_results_*
+          delete-merged: true
+
       - name: Downloading coverage results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage_results
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

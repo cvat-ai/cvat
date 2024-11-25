@@ -41,6 +41,7 @@ interface Props {
     changeLabel(label: any): void;
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
     slice(): void;
 }
@@ -73,6 +74,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeLabel,
         changeColor,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
         slice,
         jobInstance,
@@ -118,9 +120,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
-                    removeShortcut={normalizedKeyMap.DELETE_OBJECT}
+                    removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
+                    runAnnotationsActionShortcut={normalizedKeyMap.RUN_ANNOTATIONS_ACTION}
                     changeLabel={changeLabel}
                     changeColor={changeColor}
                     copy={copy}
@@ -133,6 +136,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}
+                    runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (

@@ -6,11 +6,12 @@
 import { AnyAction } from 'redux';
 import { TasksQuery, StorageLocation } from 'reducers';
 import {
-    getCore, RQStatus, Storage, Task,
+    getCore, RQStatus, Storage, Task, UpdateStatusData, Request,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';
 
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import { getInferenceStatusAsync } from './models-actions';
 import { updateRequestProgress } from './requests-actions';
 
@@ -31,10 +32,11 @@ export enum TasksActionTypes {
     UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
 }
 
-function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
+function getTasks(query: Partial<TasksQuery>, updateQuery: boolean, fetchingTimestamp: number): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
         payload: {
+            fetchingTimestamp,
             updateQuery,
             query,
         },
@@ -68,23 +70,30 @@ export function getTasksAsync(
     query: Partial<TasksQuery>,
     updateQuery = true,
 ): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        dispatch(getTasks(query, updateQuery));
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const requestedOn = Date.now();
+        const isRequestRelevant = (): boolean => (
+            getState().tasks.fetchingTimestamp === requestedOn
+        );
 
+        dispatch(getTasks(query, updateQuery, requestedOn));
         const filteredQuery = filterNull(query);
 
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
         } catch (error) {
-            dispatch(getTasksFailed(error));
+            if (isRequestRelevant()) {
+                dispatch(getTasksFailed(error));
+            }
             return;
         }
 
-        const array = Array.from(result);
-
-        dispatch(getInferenceStatusAsync());
-        dispatch(getTasksSuccess(array, result.count));
+        if (isRequestRelevant()) {
+            const array = Array.from(result);
+            dispatch(getInferenceStatusAsync());
+            dispatch(getTasksSuccess(array, result.count));
+        }
     };
 }
 
@@ -213,8 +222,8 @@ ThunkAction {
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
+            source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
+            target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
 
         if (data.projectId) {
@@ -254,17 +263,29 @@ ThunkAction {
             description.cloud_storage_id = data.cloudStorageId;
         }
 
+        let extras = {};
+
+        if (data.quality.validationMode !== ValidationMode.NONE) {
+            extras = {
+                validation_params: {
+                    mode: data.quality.validationMode,
+                    frame_selection_method: data.quality.frameSelectionMethod,
+                    frame_share: data.quality.validationFramesPercent,
+                    frames_per_job_share: data.quality.validationFramesPerJobPercent,
+                },
+            };
+        }
+
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
-
         try {
-            const savedTask = await taskInstance.save({
-                requestStatusCallback(request) {
-                    let { message } = request;
+            const savedTask = await taskInstance.save(extras, {
+                updateStatusCallback(updateData: Request | UpdateStatusData) {
+                    let { message } = updateData;
+                    const { status, progress } = updateData;
                     let helperMessage = '';
-                    const { status, progress } = request;
                     if (!message) {
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             message = 'CVAT queued the task to import';
@@ -278,7 +299,7 @@ ThunkAction {
                         }
                     }
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
-                    if (request.id) updateRequestProgress(request, dispatch);
+                    if (updateData instanceof Request) updateRequestProgress(updateData, dispatch);
                 },
             });
 

@@ -10,7 +10,9 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType, JobStage, LabelType } from 'cvat-core-wrapper';
+import {
+    DimensionType, JobStage, Label, LabelType,
+} from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 import {
@@ -27,6 +29,16 @@ function updateActivatedStateID(newStates: any[], prevActivatedStateID: number |
     return prevActivatedStateID === null || newStates.some((_state: any) => _state.clientID === prevActivatedStateID) ?
         prevActivatedStateID :
         null;
+}
+
+export function labelShapeType(label?: Label): ShapeType | null {
+    if (label && Object.values(ShapeType).includes(label.type as any)) {
+        return label.type as unknown as ShapeType;
+    }
+    if (label?.type === LabelType.TAG) {
+        return null;
+    }
+    return ShapeType.RECTANGLE;
 }
 
 const defaultState: AnnotationState = {
@@ -51,19 +63,25 @@ const defaultState: AnnotationState = {
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
+        activeObjectHidden: false,
     },
     job: {
         openTime: null,
         labels: [],
         requestedId: null,
-        groundTruthJobFramesMeta: null,
-        groundTruthInstance: null,
         queryParameters: {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
         },
+        groundTruthInfo: {
+            validationLayout: null,
+            groundTruthJobFramesMeta: null,
+            groundTruthInstance: null,
+        },
+        frameNumbers: [],
         instance: null,
+        meta: null,
         attributes: {},
         fetching: false,
         saving: false,
@@ -89,6 +107,9 @@ const defaultState: AnnotationState = {
         activeShapeType: ShapeType.RECTANGLE,
         activeLabelID: null,
         activeObjectType: ObjectType.SHAPE,
+    },
+    editing: {
+        objectState: null,
     },
     annotations: {
         activatedStateID: null,
@@ -155,7 +176,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 job,
+                jobMeta,
                 openTime,
+                frameNumbers,
                 frameNumber: number,
                 frameFilename: filename,
                 relatedFiles,
@@ -165,18 +188,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
+                validationLayout,
             } = action.payload;
 
             const defaultLabel = job.labels.length ? job.labels[0] : null;
             const isReview = job.stage === JobStage.VALIDATION;
             let workspaceSelected = null;
             let activeObjectType;
-            let activeShapeType;
+            let activeShapeType = null;
             if (defaultLabel?.type === LabelType.TAG) {
                 activeObjectType = ObjectType.TAG;
             } else {
-                activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
-                    defaultLabel.type : ShapeType.RECTANGLE;
+                activeShapeType = labelShapeType(defaultLabel);
                 activeObjectType = job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE;
             }
 
@@ -199,16 +222,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 job: {
                     ...state.job,
                     openTime,
+                    frameNumbers,
                     fetching: false,
                     instance: job,
+                    meta: jobMeta,
                     labels: job.labels,
                     attributes: job.labels
                         .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    groundTruthInstance,
-                    groundTruthJobFramesMeta,
+                    groundTruthInfo: {
+                        validationLayout,
+                        groundTruthInstance,
+                        groundTruthJobFramesMeta,
+                    },
                     queryParameters: {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,
@@ -218,6 +246,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        cur: Number.MAX_SAFE_INTEGER,
+                    },
                 },
                 player: {
                     ...state.player,
@@ -468,21 +500,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
-            if ('activeObjectType' in payload && payload.activeObjectType === ObjectType.TAG) {
-                activeControl = ActiveControl.CURSOR;
-            } else if ('activeShapeType' in payload) {
-                const controlMapping = {
-                    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
-                    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
-                    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
-                    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
-                    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
-                    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
-                    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
-                    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
-                };
+            if (payload.updateCurrentControl) {
+                if ('activeObjectType' in payload && payload.activeObjectType === ObjectType.TAG) {
+                    activeControl = ActiveControl.CURSOR;
+                } else if ('activeShapeType' in payload) {
+                    const controlMapping = {
+                        [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+                        [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+                        [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+                        [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+                        [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+                        [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+                        [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+                        [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+                    };
 
-                activeControl = controlMapping[payload.activeShapeType as ShapeType];
+                    activeControl = controlMapping[payload.activeShapeType as ShapeType];
+                }
             }
 
             return {
@@ -618,6 +652,26 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.remove,
                     objectState,
                     force,
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_EDITED_STATE: {
+            const { objectState } = action.payload;
+            return {
+                ...state,
+                editing: {
+                    ...state.editing,
+                    objectState,
+                },
+            };
+        }
+        case AnnotationActionTypes.HIDE_ACTIVE_OBJECT: {
+            const { hide } = action.payload;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    activeObjectHidden: hide,
                 },
             };
         }
@@ -968,7 +1022,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_WORKSPACE: {
             const { workspace } = action.payload;
-            if (state.canvas.activeControl !== ActiveControl.CURSOR) {
+            if (state.canvas.activeControl !== ActiveControl.CURSOR && state.workspace !== Workspace.SINGLE_SHAPE) {
                 return state;
             }
 
@@ -980,6 +1034,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     states: state.annotations.states.filter((_state) => !_state.isGroundTruth),
                     activatedStateID: null,
                     activatedAttributeID: null,
+
+                },
+                canvas: {
+                    ...state.canvas,
+                    activeControl: ActiveControl.CURSOR,
                 },
             };
         }

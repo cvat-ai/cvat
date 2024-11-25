@@ -108,6 +108,7 @@ const DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS: string[][] = [
     ['NAM4', 'US-CENTRAL1 and US-EAST1'],
 ];
 
+const MAXIMUM_NOTIFICATION_MESSAGE_LENGTH = 600; // all above will be sent to console
 const HEALTH_CHECK_RETRIES = 10;
 const HEALTH_CHECK_PERIOD = 3000; // ms
 const HEALTH_CHECK_REQUEST_TIMEOUT = 15000; // ms
@@ -137,6 +138,16 @@ const REQUEST_SUCCESS_NOTIFICATION_DURATION = 5; // seconds
 const BLACKLISTED_GO_BACK_PATHS = [
     /\/auth.+/,
 ];
+
+const PAID_PLACEHOLDER_CONFIG = {
+    url: 'https://www.cvat.ai/pricing/cloud',
+    features: {
+        qualityControl:
+        'The Quality Control feature enables effortless evaluation of annotation quality by creating' +
+        ' a Ground Truth job that works as benchmark. CVAT automatically compares all task-related jobs' +
+        ' to this benchmark, calculating annotation precision to ensure high-quality results.',
+    },
+};
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -179,4 +190,6 @@ export default {
     LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT,
     REQUEST_SUCCESS_NOTIFICATION_DURATION,
     BLACKLISTED_GO_BACK_PATHS,
+    PAID_PLACEHOLDER_CONFIG,
+    MAXIMUM_NOTIFICATION_MESSAGE_LENGTH,
 };

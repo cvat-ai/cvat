@@ -4,7 +4,6 @@
 
 import io
 from http import HTTPStatus
-from typing import List
 from urllib.parse import urlparse
 
 import pytest
@@ -29,6 +28,7 @@ from .utils import (
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.timeout(30)
 class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
@@ -87,7 +87,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
         fxt_make_export_job_requests,
         fxt_download_file,
     ):
-        def _make_requests(project_ids: List[int], task_ids: List[int], job_ids: List[int]):
+        def _make_requests(project_ids: list[int], task_ids: list[int], job_ids: list[int]):
             # make requests to export projects|tasks|jobs annotations|datasets|backups
             fxt_make_export_project_requests(project_ids[1:])
             fxt_make_export_task_requests(task_ids[1:])
@@ -161,7 +161,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture
     def fxt_make_export_project_requests(self):
-        def make_requests(project_ids: List[int]):
+        def make_requests(project_ids: list[int]):
             for project_id in project_ids:
                 export_project_backup(
                     self.user, api_version=2, id=project_id, download_result=False
@@ -181,7 +181,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture
     def fxt_make_export_task_requests(self):
-        def make_requests(task_ids: List[int]):
+        def make_requests(task_ids: list[int]):
             for task_id in task_ids:
                 export_task_backup(self.user, api_version=2, id=task_id, download_result=False)
                 export_task_dataset(
@@ -195,7 +195,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture
     def fxt_make_export_job_requests(self):
-        def make_requests(job_ids: List[int]):
+        def make_requests(job_ids: list[int]):
             for job_id in job_ids:
                 export_job_dataset(
                     self.user,
@@ -230,7 +230,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
         ],
     )
     def test_can_use_simple_filter_for_object_list(
-        self, simple_filter: str, values: List, fxt_resources_ids, fxt_make_requests
+        self, simple_filter: str, values: list, fxt_resources_ids, fxt_make_requests
     ):
         project_ids, task_ids, job_ids = fxt_resources_ids
         fxt_make_requests(project_ids, task_ids, job_ids)

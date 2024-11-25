@@ -290,7 +290,7 @@ Object.defineProperties(CloudStorage.prototype.save, {
             }
             // update
             if (typeof this.id !== 'undefined') {
-                // provider_type and recource should not change;
+                // provider_type and resource should not change;
                 // send to the server only the values that have changed
                 const initialData: SerializedCloudStorage = {};
                 if (this.displayName) {

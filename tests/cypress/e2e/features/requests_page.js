@@ -293,7 +293,7 @@ context('Requests page', () => {
             });
         });
 
-        it('Import backup creates a request. Project  can not be opened.', () => {
+        it('Import backup creates a request. Project can not be opened.', () => {
             cy.restoreProject(
                 `${backupArchiveName}.zip`,
             );
@@ -303,6 +303,10 @@ context('Requests page', () => {
                 cy.get('.cvat-request-item-progress-success').should('exist');
                 cy.get('.cvat-requests-name').should('not.exist');
             }, { checkResourceLink: false });
+
+            cy.goToProjectsList();
+            cy.openProject(projectName);
+            cy.deleteProjectViaActions(projectName);
         });
     });
 
@@ -319,7 +323,8 @@ context('Requests page', () => {
             cy.getJobIDFromIdx(0).then((jobID) => {
                 const closeExportNotification = () => {
                     cy.contains('Export is finished').should('be.visible');
-                    cy.closeNotification('.ant-notification-notice-info');
+                    cy.contains('Export is finished').parents('.ant-notification-notice')
+                        .find('span[aria-label="close"]').click();
                 };
 
                 const exportParams = {
@@ -351,6 +356,25 @@ context('Requests page', () => {
                         });
                     });
             });
+        });
+
+        it('Export task. Request for status fails, UI is not crushing', () => {
+            cy.intercept('GET', '/api/requests/**', {
+                statusCode: 500,
+                body: 'Network error',
+            });
+
+            cy.exportTask({
+                type: 'annotations',
+                format: exportFormat,
+                archiveCustomName: annotationsArchiveNameLocal,
+            });
+
+            cy.contains('Could not export dataset').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-error');
+
+            cy.contains('.cvat-header-button', 'Requests').should('be.visible').click();
+            cy.get('.cvat-requests-page').should('be.visible');
         });
     });
 });

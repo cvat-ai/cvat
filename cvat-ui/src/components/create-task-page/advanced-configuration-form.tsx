@@ -76,6 +76,7 @@ interface Props {
     onChangeUseProjectTargetStorage(value: boolean): void;
     onChangeSourceStorageLocation: (value: StorageLocation) => void;
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
+    onChangeSortingMethod(value: SortingMethod): void;
     projectId: number | null;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
@@ -225,6 +226,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     private renderSortingMethodRadio(): JSX.Element {
+        const { onChangeSortingMethod } = this.props;
+
         return (
             <Form.Item
                 label='Sorting method'
@@ -237,7 +240,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group buttonStyle='solid'>
+                <Radio.Group buttonStyle='solid' onChange={(e) => onChangeSortingMethod(e.target.value)}>
                     <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
                     </Radio.Button>

@@ -28,7 +28,7 @@ const componentShortcuts = {
         name: 'Open an issue',
         description: 'Create a new issues in the review workspace',
         sequences: ['n'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.REVIEW_WORKSPACE_CONTROLS,
     },
 };
 

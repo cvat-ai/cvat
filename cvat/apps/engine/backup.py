@@ -3,18 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from logging import Logger
 import io
+import mimetypes
 import os
-from enum import Enum
 import re
 import shutil
 import tempfile
-from typing import Any, Dict, Iterable
 import uuid
-import mimetypes
-from zipfile import ZipFile
+from enum import Enum
+from logging import Logger
 from tempfile import NamedTemporaryFile
+from typing import Any, Collection, Dict, Iterable, Optional, Union
+from zipfile import ZipFile
 
 import django_rq
 from django.conf import settings
@@ -30,10 +30,11 @@ from rest_framework.exceptions import ValidationError
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
-    JobWriteSerializer, LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
+from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, JobWriteSerializer,
+    LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
-    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
+    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer,
+    ValidationParamsSerializer)
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job,
     get_rq_job_meta, import_resource_with_clean_up_after,
@@ -174,6 +175,8 @@ class _BackupBase():
 
 class _TaskBackupBase(_BackupBase):
     MANIFEST_FILENAME = 'task.json'
+    MEDIA_MANIFEST_FILENAME = 'manifest.jsonl'
+    MEDIA_MANIFEST_INDEX_FILENAME = 'index.json'
     ANNOTATIONS_FILENAME = 'annotations.json'
     DATA_DIRNAME = 'data'
     TASK_DIRNAME = 'task'
@@ -203,9 +206,17 @@ class _TaskBackupBase(_BackupBase):
             'deleted_frames',
             'custom_segments',
             'job_file_mapping',
+            'validation_layout'
         }
 
         self._prepare_meta(allowed_fields, data)
+
+        if 'validation_layout' in data:
+            self._prepare_meta(
+                allowed_keys={'mode', 'frames', 'frames_per_job_count'},
+                meta=data['validation_layout']
+            )
+
         if 'frame_filter' in data and not data['frame_filter']:
             data.pop('frame_filter')
 
@@ -327,7 +338,14 @@ class _ExporterBase():
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
-        self._db_task = models.Task.objects.prefetch_related('data__images', 'annotation_guide__assets').select_related('data__video', 'annotation_guide').get(pk=pk)
+
+        self._db_task = (
+            models.Task.objects
+            .prefetch_related('data__images', 'annotation_guide__assets')
+            .select_related('data__video', 'data__validation_layout', 'annotation_guide')
+            .get(pk=pk)
+        )
+
         self._db_data = self._db_task.data
         self._version = version
 
@@ -342,17 +360,19 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def _write_data(self, zip_object, target_dir=None):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
         if self._db_data.storage == StorageChoice.LOCAL:
+            data_dir = self._db_data.get_upload_dirname()
             self._write_directory(
-                source_dir=self._db_data.get_upload_dirname(),
+                source_dir=data_dir,
                 zip_object=zip_object,
                 target_dir=target_data_dir,
+                exclude_files=[self.MEDIA_MANIFEST_INDEX_FILENAME]
             )
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
             if hasattr(self._db_data, 'video'):
                 media_files = (os.path.join(data_dir, self._db_data.video.path), )
             else:
-                media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all().order_by('frame'))
+                media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all())
 
             self._write_files(
                 source_dir=data_dir,
@@ -361,11 +381,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
 
-            upload_dir = self._db_data.get_upload_dirname()
             self._write_files(
-                source_dir=upload_dir,
+                source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
-                files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl',)),
+                files=[self._db_data.get_manifest_path()],
                 target_dir=target_data_dir,
             )
         else:
@@ -409,8 +428,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             segment_type = segment.pop("type")
             segment.update(job_data)
 
-            if self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE:
-                segment.update(serialize_custom_file_mapping(db_segment))
+            if (
+                self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE
+                or self._db_data.validation_mode == models.ValidationMode.GT_POOL
+            ):
+                segment.update(serialize_segment_file_names(db_segment))
 
             return segment
 
@@ -419,11 +441,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_segments.sort(key=lambda i: i.job_set.first().id)
             return (serialize_segment(s) for s in db_segments)
 
-        def serialize_custom_file_mapping(db_segment: models.Segment):
+        def serialize_segment_file_names(db_segment: models.Segment):
             if self._db_task.mode == 'annotation':
-                files: Iterable[models.Image] = self._db_data.images.all().order_by('frame')
-                segment_files = files[db_segment.start_frame : db_segment.stop_frame + 1]
-                return {'files': list(frame.path for frame in segment_files)}
+                files: Iterable[models.Image] = self._db_data.images.order_by('frame').all()
+                return {'files': [files[f].path for f in sorted(db_segment.frame_set)]}
             else:
                 assert False, (
                     "Backups with custom file mapping are not supported"
@@ -440,6 +461,31 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             if self._db_task.segment_size == 0:
                 data['custom_segments'] = True
+
+            if (
+                (validation_layout := getattr(self._db_data, 'validation_layout', None)) and
+                validation_layout.mode == models.ValidationMode.GT_POOL
+            ):
+                validation_params_serializer = ValidationParamsSerializer({
+                    "mode": validation_layout.mode,
+                    "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
+                    "frames_per_job_count": validation_layout.frames_per_job_count,
+                })
+                validation_params = validation_params_serializer.data
+                media_filenames = dict(
+                    self._db_data.images
+                    .order_by('frame')
+                    .filter(
+                        frame__gte=min(validation_layout.frames),
+                        frame__lte=max(validation_layout.frames),
+                    )
+                    .values_list('frame', 'path')
+                    .all()
+                )
+                validation_params['frames'] = [
+                    media_filenames[frame] for frame in validation_layout.frames
+                ]
+                data['validation_layout'] = validation_params
 
             return self._prepare_data_meta(data)
 
@@ -551,6 +597,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         super().__init__(logger=slogger.glob)
         self._file = file
         self._subdir = subdir
+        "Task subdirectory with the separator included, e.g. task_0/"
+
         self._user_id = user_id
         self._org_id = org_id
         self._manifest, self._annotations, self._annotation_guide, self._assets = self._read_meta()
@@ -602,11 +650,21 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return segment_size, overlap
 
     @staticmethod
-    def _parse_custom_segments(*, jobs: Dict[str, Any]) -> JobFileMapping:
+    def _parse_segment_frames(*, jobs: Dict[str, Any]) -> JobFileMapping:
         segments = []
 
         for i, segment in enumerate(jobs):
             segment_size = segment['stop_frame'] - segment['start_frame'] + 1
+            if segment_frames := segment.get('frames'):
+                segment_frames = set(segment_frames)
+                segment_range = range(segment['start_frame'], segment['stop_frame'] + 1)
+                if not segment_frames.issubset(segment_range):
+                    raise ValidationError(
+                        "Segment frames must be inside the range [start_frame; stop_frame]"
+                    )
+
+                segment_size = len(segment_frames)
+
             segment_files = segment['files']
             if len(segment_files) != segment_size:
                 raise ValidationError(f"segment {i}: segment files do not match segment size")
@@ -615,29 +673,55 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         return segments
 
+    def _copy_input_files(
+        self,
+        input_archive: Union[ZipFile, str],
+        output_task_path: str,
+        *,
+        excluded_filenames: Optional[Collection[str]] = None,
+    ) -> list[str]:
+        if isinstance(input_archive, str):
+            with ZipFile(input_archive, 'r') as zf:
+                return self._copy_input_files(
+                    input_archive=zf,
+                    output_task_path=output_task_path,
+                    excluded_filenames=excluded_filenames,
+                )
+
+        input_task_dirname = self.TASK_DIRNAME
+        input_data_dirname = self.DATA_DIRNAME
+        output_data_path = self._db_task.data.get_upload_dirname()
+        uploaded_files = []
+        for file_path in input_archive.namelist():
+            if file_path.endswith('/') or self._subdir and not file_path.startswith(self._subdir):
+                continue
+
+            file_name = os.path.relpath(file_path, self._subdir)
+            if excluded_filenames and file_name in excluded_filenames:
+                continue
+
+            if file_name.startswith(input_data_dirname + '/'):
+                target_file = os.path.join(
+                    output_data_path, os.path.relpath(file_name, input_data_dirname)
+                )
+
+                self._prepare_dirs(target_file)
+                with open(target_file, "wb") as out:
+                    out.write(input_archive.read(file_path))
+
+                uploaded_files.append(os.path.relpath(file_name, input_data_dirname))
+            elif file_name.startswith(input_task_dirname + '/'):
+                target_file = os.path.join(
+                    output_task_path, os.path.relpath(file_name, input_task_dirname)
+                )
+
+                self._prepare_dirs(target_file)
+                with open(target_file, "wb") as out:
+                    out.write(input_archive.read(file_path))
+
+        return uploaded_files
+
     def _import_task(self):
-        def _write_data(zip_object):
-            data_path = self._db_task.data.get_upload_dirname()
-            task_dirname = os.path.join(self._subdir, self.TASK_DIRNAME) if self._subdir else self.TASK_DIRNAME
-            data_dirname = os.path.join(self._subdir, self.DATA_DIRNAME) if self._subdir else self.DATA_DIRNAME
-            uploaded_files = []
-            for f in zip_object.namelist():
-                if f.endswith(os.path.sep):
-                    continue
-                if f.startswith(data_dirname + os.path.sep):
-                    target_file = os.path.join(data_path, os.path.relpath(f, data_dirname))
-                    self._prepare_dirs(target_file)
-                    with open(target_file, "wb") as out:
-                        out.write(zip_object.read(f))
-                    uploaded_files.append(os.path.relpath(f, data_dirname))
-                elif f.startswith(task_dirname + os.path.sep):
-                    target_file = os.path.join(task_path, os.path.relpath(f, task_dirname))
-                    self._prepare_dirs(target_file)
-                    with open(target_file, "wb") as out:
-                        out.write(zip_object.read(f))
-
-            return uploaded_files
-
         data = self._manifest.pop('data')
         labels = self._manifest.pop('labels')
         jobs = self._manifest.pop('jobs')
@@ -646,9 +730,15 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._manifest['owner_id'] = self._user_id
         self._manifest['project_id'] = self._project_id
 
-        if custom_segments := data.pop('custom_segments', False):
-            job_file_mapping = self._parse_custom_segments(jobs=jobs)
-            data['job_file_mapping'] = job_file_mapping
+        self._prepare_data_meta(data)
+
+        excluded_input_files = [os.path.join(self.DATA_DIRNAME, self.MEDIA_MANIFEST_INDEX_FILENAME)]
+
+        job_file_mapping = None
+        if data.pop('custom_segments', False):
+            job_file_mapping = self._parse_segment_frames(jobs=[
+                v for v in jobs if v.get('type') != models.JobType.GROUND_TRUTH
+            ])
 
             for d in [self._manifest, data]:
                 for k in [
@@ -660,48 +750,85 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             self._manifest['segment_size'], self._manifest['overlap'] = \
                 self._calculate_segment_size(jobs)
 
-        self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
-        task_path = self._db_task.get_dirname()
-        if os.path.isdir(task_path):
-            shutil.rmtree(task_path)
+        validation_params = data.pop('validation_layout', None)
+        if validation_params:
+            validation_params['frame_selection_method'] = models.JobFrameSelectionMethod.MANUAL
+            validation_params_serializer = ValidationParamsSerializer(data=validation_params)
+            validation_params_serializer.is_valid(raise_exception=True)
+            validation_params = validation_params_serializer.data
 
-        os.makedirs(task_path)
+            gt_jobs = [v for v in jobs if v.get('type') == models.JobType.GROUND_TRUTH]
+            if not gt_jobs:
+                raise ValidationError("Can't find any GT jobs info in the backup files")
+            elif len(gt_jobs) != 1:
+                raise ValidationError("A task can have only one GT job info in the backup files")
+
+            validation_params['frames'] = validation_params_serializer.initial_data['frames']
+
+            if validation_params['mode'] == models.ValidationMode.GT_POOL:
+                gt_job_frames = self._parse_segment_frames(jobs=gt_jobs)[0]
+                if set(gt_job_frames) != set(validation_params_serializer.initial_data['frames']):
+                    raise ValidationError("GT job frames do not match validation frames")
+
+                # Validation frames can have a different order, we must use the GT job order
+                if not job_file_mapping:
+                    raise ValidationError("Expected segment info in the backup files")
+
+                job_file_mapping.append(gt_job_frames)
+
+            data['validation_params'] = validation_params
+
+        if job_file_mapping and (
+            not validation_params or validation_params['mode'] != models.ValidationMode.GT_POOL
+        ):
+            # It's currently prohibited to have repeated file names in jobs.
+            # DataSerializer checks for this, but we don't need it for tasks with a GT pool
+            data['job_file_mapping'] = job_file_mapping
+
+        self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
+
+        task_data_path = self._db_task.get_dirname()
+        if os.path.isdir(task_data_path):
+            shutil.rmtree(task_data_path)
+        os.makedirs(task_data_path)
 
         if not self._labels_mapping:
             self._labels_mapping = self._create_labels(db_task=self._db_task, labels=labels)
 
-        self._prepare_data_meta(data)
         data_serializer = DataSerializer(data=data)
         data_serializer.is_valid(raise_exception=True)
         db_data = data_serializer.save()
         self._db_task.data = db_data
         self._db_task.save()
 
-        if isinstance(self._file, str):
-            with ZipFile(self._file, 'r') as zf:
-                uploaded_files = _write_data(zf)
-        else:
-            uploaded_files = _write_data(self._file)
+        uploaded_files = self._copy_input_files(
+            self._file, task_data_path, excluded_filenames=excluded_input_files
+        )
 
         data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
         data['client_files'] = uploaded_files
-        if custom_segments:
+
+        if job_file_mapping or (
+            validation_params and validation_params['mode'] == models.ValidationMode.GT_POOL
+        ):
             data['job_file_mapping'] = job_file_mapping
 
-        _create_thread(self._db_task.pk, data.copy(), isBackupRestore=True)
+        if validation_params:
+            data['validation_params'] = validation_params
+
+        _create_thread(self._db_task.pk, data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
-        db_data.start_frame = data['start_frame']
-        db_data.stop_frame = data['stop_frame']
-        db_data.frame_filter = data['frame_filter']
         db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
         db_data.storage = StorageChoice.LOCAL
-        db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage', 'deleted_frames'])
+        db_data.save(update_fields=['storage', 'deleted_frames'])
 
-        # Recreate Ground Truth jobs (they won't be created automatically)
-        self._import_gt_jobs(jobs)
+        if not validation_params:
+            # In backups created before addition of GT pools there was no validation_layout field
+            # Recreate Ground Truth jobs
+            self._import_gt_jobs(jobs)
 
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job['status']
@@ -709,7 +836,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _import_gt_jobs(self, jobs):
         for job in jobs:
-            # The type field will be missing in backups create before the GT jobs were introduced
+            # The type field will be missing in backups created before the GT jobs were introduced
             try:
                 raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
                 job_type = models.JobType(raw_job_type)

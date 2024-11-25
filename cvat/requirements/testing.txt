@@ -6,7 +6,6 @@
 #    pip-compile-multi
 #
 -r development.txt
-
 coverage==7.2.3
     # via -r cvat/requirements/testing.in
 fakeredis[lua]==2.10.3

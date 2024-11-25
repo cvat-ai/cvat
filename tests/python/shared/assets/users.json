@@ -10,6 +10,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": false,
       "id": 21,
       "is_active": true,
       "is_staff": false,
@@ -26,6 +27,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": false,
       "id": 20,
       "is_active": true,
       "is_staff": false,
@@ -42,6 +44,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": false,
       "id": 19,
       "is_active": true,
       "is_staff": false,
@@ -58,6 +61,7 @@
       "groups": [
         "admin"
       ],
+      "has_analytics_access": true,
       "id": 18,
       "is_active": true,
       "is_staff": true,
@@ -72,6 +76,7 @@
       "email": "dummy4@cvat.org",
       "first_name": "Dummy",
       "groups": [],
+      "has_analytics_access": false,
       "id": 17,
       "is_active": true,
       "is_staff": false,
@@ -86,6 +91,7 @@
       "email": "dummy3@cvat.org",
       "first_name": "Dummy",
       "groups": [],
+      "has_analytics_access": false,
       "id": 16,
       "is_active": true,
       "is_staff": false,
@@ -100,6 +106,7 @@
       "email": "dummy2@cvat.org",
       "first_name": "Dummy",
       "groups": [],
+      "has_analytics_access": false,
       "id": 15,
       "is_active": true,
       "is_staff": false,
@@ -114,6 +121,7 @@
       "email": "dummy1@cvat.org",
       "first_name": "Dummy",
       "groups": [],
+      "has_analytics_access": false,
       "id": 14,
       "is_active": true,
       "is_staff": false,
@@ -125,67 +133,71 @@
     },
     {
       "date_joined": "2021-12-14T18:35:15Z",
-      "email": "business4@cvat.org",
-      "first_name": "Business",
+      "email": "user10@cvat.org",
+      "first_name": "User",
       "groups": [
-        "business"
+        "user"
       ],
+      "has_analytics_access": false,
       "id": 13,
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
       "last_login": null,
-      "last_name": "Fourth",
+      "last_name": "Tenth",
       "url": "http://localhost:8080/api/users/13",
-      "username": "business4"
+      "username": "user10"
     },
     {
       "date_joined": "2021-12-14T18:34:34Z",
-      "email": "business3@cvat.org",
-      "first_name": "Business",
+      "email": "user9@cvat.org",
+      "first_name": "User",
       "groups": [
-        "business"
+        "user"
       ],
+      "has_analytics_access": false,
       "id": 12,
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
       "last_login": null,
-      "last_name": "Third",
+      "last_name": "Nineth",
       "url": "http://localhost:8080/api/users/12",
-      "username": "business3"
+      "username": "user9"
     },
     {
       "date_joined": "2021-12-14T18:34:01Z",
-      "email": "business2@cvat.org",
-      "first_name": "Business",
+      "email": "user8@cvat.org",
+      "first_name": "User",
       "groups": [
-        "business"
+        "user"
       ],
+      "has_analytics_access": false,
       "id": 11,
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
       "last_login": "2022-03-17T07:22:55.930000Z",
-      "last_name": "Second",
+      "last_name": "Eighth",
       "url": "http://localhost:8080/api/users/11",
-      "username": "business2"
+      "username": "user8"
     },
     {
       "date_joined": "2021-12-14T18:33:06Z",
-      "email": "business1@cvat.org",
-      "first_name": "Business",
+      "email": "user7@cvat.org",
+      "first_name": "User",
       "groups": [
-        "business"
+        "user"
       ],
+      "has_analytics_access": false,
       "id": 10,
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
       "last_login": "2022-09-28T12:17:51.373000Z",
-      "last_name": "First",
+      "last_name": "Seventh",
       "url": "http://localhost:8080/api/users/10",
-      "username": "business1"
+      "username": "user7"
     },
     {
       "date_joined": "2021-12-14T18:32:01Z",
@@ -194,6 +206,7 @@
       "groups": [
         "worker"
       ],
+      "has_analytics_access": true,
       "id": 9,
       "is_active": true,
       "is_staff": false,
@@ -210,6 +223,7 @@
       "groups": [
         "worker"
       ],
+      "has_analytics_access": false,
       "id": 8,
       "is_active": true,
       "is_staff": false,
@@ -226,6 +240,7 @@
       "groups": [
         "worker"
       ],
+      "has_analytics_access": false,
       "id": 7,
       "is_active": true,
       "is_staff": false,
@@ -242,6 +257,7 @@
       "groups": [
         "worker"
       ],
+      "has_analytics_access": false,
       "id": 6,
       "is_active": true,
       "is_staff": false,
@@ -258,6 +274,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": true,
       "id": 5,
       "is_active": true,
       "is_staff": false,
@@ -274,6 +291,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": false,
       "id": 4,
       "is_active": true,
       "is_staff": false,
@@ -290,6 +308,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": false,
       "id": 3,
       "is_active": true,
       "is_staff": false,
@@ -306,6 +325,7 @@
       "groups": [
         "user"
       ],
+      "has_analytics_access": false,
       "id": 2,
       "is_active": true,
       "is_staff": false,
@@ -322,6 +342,7 @@
       "groups": [
         "admin"
       ],
+      "has_analytics_access": true,
       "id": 1,
       "is_active": true,
       "is_staff": true,

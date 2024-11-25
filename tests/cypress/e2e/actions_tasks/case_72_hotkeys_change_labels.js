@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -71,9 +71,9 @@ context('Hotkeys to change labels feature.', () => {
             cy.get('.cvat-objects-sidebar-tabs').within(() => {
                 cy.contains('[role="tab"]', 'Labels').click();
             });
-            cy.get('.cvat-objects-sidebar-label-item').then(($objectsSidebarLabelItem) => {
-                firstLabelCurrentVal = $objectsSidebarLabelItem[0].innerText.slice(0, -2);
-                secondLabelCurrentVal = $objectsSidebarLabelItem[1].innerText.slice(0, -2);
+            cy.get('.cvat-objects-sidebar-label-item .cvat-text').then(($objectsSidebarLabelItem) => {
+                firstLabelCurrentVal = $objectsSidebarLabelItem[0].innerText;
+                secondLabelCurrentVal = $objectsSidebarLabelItem[1].innerText;
             });
             cy.get('.cvat-objects-sidebar-tabs').within(() => {
                 cy.contains('[role="tab"]', 'Objects').click();
@@ -134,49 +134,6 @@ context('Hotkeys to change labels feature.', () => {
             cy.get('#cvat-objects-sidebar-state-item-2')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .should('have.text', secondLabelCurrentVal);
-        });
-
-        it('Check changing shortcut for a label.', () => {
-            // Go to a labels tab
-            cy.get('.cvat-objects-sidebar-tabs').within(() => {
-                cy.contains('[role="tab"]', 'Labels').click();
-            });
-            cy.contains('.cvat-label-item-setup-shortcut-button', '1').click();
-            cy.get('.cvat-label-item-setup-shortcut-popover')
-                .should('be.visible')
-                .within(() => {
-                    cy.get('[type="button"]').then(($btn) => {
-                        expect($btn[0].innerText).to.be.equal(`1:${firstLabelCurrentVal}`);
-                        expect($btn[1].innerText).to.be.equal(`2:${secondLabelCurrentVal}`);
-                        expect($btn[2].innerText).to.be.equal('3:None');
-                        // Click to "3" button
-                        cy.get($btn[2]).click();
-                    });
-                });
-            cy.get('.cvat-label-item-setup-shortcut-popover')
-                .should('be.visible')
-                .within(() => {
-                    cy.get('[type="button"]').then(($btn) => {
-                        // Buttons 1 and 3 have changed values
-                        expect($btn[0].innerText).to.be.equal('1:None');
-                        expect($btn[2].innerText).to.be.equal(`3:${firstLabelCurrentVal}`);
-                    });
-                });
-            cy.contains('.cvat-label-item-setup-shortcut-button', '3').should('exist');
-            cy.get('.cvat-canvas-container').click(); // Hide shortcut popover
-            // Go to "Objects" tab
-            cy.get('.cvat-objects-sidebar-tabs').within(() => {
-                cy.contains('[role="tab"]', 'Objects').click();
-            });
-            // Checking the label change via the new hotkey value
-            cy.get('.cvat-canvas-container').click(270, 260);
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{Ctrl}3');
-            cy.contains('tspan', `${firstLabelCurrentVal} 1 (manual)`).should('be.visible');
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .find('.cvat-objects-sidebar-state-item-label-selector')
-                .should('have.text', firstLabelCurrentVal);
-            cy.checkCanvasSidebarColorEqualness(1);
         });
     });
 });

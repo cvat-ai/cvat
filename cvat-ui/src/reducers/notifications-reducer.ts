@@ -5,7 +5,7 @@
 
 import { AnyAction } from 'redux';
 
-import { ServerError, RequestError } from 'cvat-core-wrapper';
+import { ServerError, RequestError, StorageLocation } from 'cvat-core-wrapper';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
@@ -30,9 +30,14 @@ import { ExportActionTypes } from 'actions/export-actions';
 import config from 'config';
 import { NotificationsState } from '.';
 
-const shouldLog = (error: Error): boolean => (
-    ![ServerError, RequestError].some((ErrorClass) => error instanceof ErrorClass)
-);
+const shouldLog = (error: Error): boolean => {
+    if (error instanceof ServerError) {
+        const ignoredCodes = [0, 400, 401, 403, 404, 429, 500];
+        return !ignoredCodes.includes(error.code);
+    }
+
+    return !(error instanceof RequestError);
+};
 
 const defaultState: NotificationsState = {
     errors: {
@@ -350,7 +355,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.auth,
                         requestPasswordResetDone: {
                             message: `Check your email for a link to reset your password.
-                            If it doesn’t appear within a few minutes, check your spam folder.`,
+                            If it doesn't appear within a few minutes, check your spam folder.`,
                         },
                     },
                 },
@@ -541,9 +546,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 instance, instanceType, resource, target,
             } = action.payload;
             let description = `Export ${resource} for ${instanceType} ${instance.id} is finished. `;
-            if (target === 'local') {
+            if (target === StorageLocation.LOCAL) {
                 description += 'You can [download it here](/requests).';
-            } else if (target === 'cloudstorage') {
+            } else if (target === StorageLocation.CLOUD_STORAGE) {
                 description =
                     `Export ${resource} for ${instanceType} ${instance.id} has been uploaded to cloud storage.`;
             }
@@ -585,9 +590,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 instance, instanceType, target,
             } = action.payload;
             let description = `Backup for the ${instanceType} ${instance.id} is finished. `;
-            if (target === 'local') {
+            if (target === StorageLocation.LOCAL) {
                 description += 'You can [download it here](/requests).';
-            } else if (target === 'cloudstorage') {
+            } else if (target === StorageLocation.CLOUD_STORAGE) {
                 description =
                     `Backup for the ${instanceType} ${instance.id} has been uploaded to cloud storage.`;
             }

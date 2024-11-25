@@ -80,7 +80,7 @@ RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 ARG CVAT_CONFIGURATION="production"
 
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps --no-binary lxml,xmlsec \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
@@ -134,6 +134,7 @@ RUN apt-get update && \
         supervisor \
         tzdata \
         unrar \
+        wait-for-it \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
@@ -192,7 +193,7 @@ RUN python -m pip uninstall -y pip
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
+COPY --chown=${USER} manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} rqscheduler.py ${HOME}

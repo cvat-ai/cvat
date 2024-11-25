@@ -7,43 +7,32 @@ from __future__ import annotations
 import contextlib
 import itertools
 import os
-from typing import (
-    IO,
-    Any,
-    BinaryIO,
-    ContextManager,
-    Dict,
-    Iterator,
-    Literal,
-    Sequence,
-    TextIO,
-    Union,
-    overload,
-)
+from collections.abc import Generator, Sequence
+from typing import IO, Any, BinaryIO, Literal, TextIO, Union, overload
 
 
 def filter_dict(
-    d: Dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
-) -> Dict[str, Any]:
+    d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> dict[str, Any]:
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}
 
 
 @overload
 def atomic_writer(
     path: Union[os.PathLike, str], mode: Literal["wb"]
-) -> ContextManager[BinaryIO]: ...
+) -> contextlib.AbstractContextManager[BinaryIO]: ...
 
 
 @overload
 def atomic_writer(
     path: Union[os.PathLike, str], mode: Literal["w"], encoding: str = "UTF-8"
-) -> ContextManager[TextIO]: ...
+) -> contextlib.AbstractContextManager[TextIO]: ...
 
 
 @contextlib.contextmanager
 def atomic_writer(
     path: Union[os.PathLike, str], mode: Literal["w", "wb"], encoding: str = "UTF-8"
-) -> Iterator[IO]:
+) -> Generator[IO, None, None]:
     """
     Returns a context manager that, when entered, returns a handle to a temporary
     file opened with the specified `mode` and `encoding`. If the context manager

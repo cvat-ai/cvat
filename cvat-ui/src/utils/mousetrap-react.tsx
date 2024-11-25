@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,9 @@ export interface KeyMapItem {
     sequences: string[];
     displayedSequences?: string[];
     scope: ShortcutScope;
+    nonActive?: boolean;
     applicable?: string[];
+    displayWeight?: number;
 }
 
 export interface KeyMap {
@@ -38,7 +40,13 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
         for (const key of Object.keys(keyMap)) {
             const { sequences } = keyMap[key];
             const handler = handlers[key];
-            Mousetrap.bind(sequences, handler, 'keydown');
+            Mousetrap.bind(sequences, (event, combo) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (handler) {
+                    handler(event, combo);
+                }
+            }, 'keydown');
             applicationKeyMap[key] = keyMap[key];
         }
 
@@ -55,18 +63,28 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 }
 
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
+    if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+        // stop for input, select, and textarea
+        return true;
+    }
+
+    const activeSequences = Object.values(applicationKeyMap).map((keyMap) => [...keyMap.sequences]).flat();
+    if (activeSequences.some((sequence) => sequence.startsWith(combo))) {
+        e?.preventDefault();
+    }
+
     // stop when modals are opened
     const someModalsOpened = Array.from(
         window.document.getElementsByClassName('ant-modal'),
     ).some((el) => (el as HTMLElement).style.display !== 'none');
-    if (someModalsOpened && !['f1', 'f2'].includes(combo)) {
-        return true;
+
+    if (someModalsOpened) {
+        const modalClosingSequences = ['SWITCH_SHORTCUTS', 'SWITCH_SETTINGS']
+            .map((key) => [...(applicationKeyMap[key]?.sequences ?? [])]).flat();
+        return !modalClosingSequences.includes(combo) && !modalClosingSequences.some((seq) => seq.startsWith(combo));
     }
 
-    // stop for input, select, and textarea
-    return element.tagName === 'INPUT' ||
-        element.tagName === 'SELECT' ||
-        element.tagName === 'TEXTAREA';
+    return false;
 };
 
 export function getApplicationKeyMap(): KeyMap {

@@ -56,55 +56,55 @@ const componentShortcuts = {
         name: 'Next attribute',
         description: 'Go to the next attribute',
         sequences: ['down'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     PREVIOUS_ATTRIBUTE: {
         name: 'Previous attribute',
         description: 'Go to the previous attribute',
         sequences: ['up'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     NEXT_OBJECT: {
         name: 'Next object',
         description: 'Go to the next object',
         sequences: ['tab'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     PREVIOUS_OBJECT: {
         name: 'Previous object',
         description: 'Go to the previous object',
         sequences: ['shift+tab'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
     },
     SWITCH_LOCK: {
         name: 'Lock/unlock an object',
         description: 'Change locked state for an active object',
         sequences: ['l'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_OCCLUDED: {
         name: 'Switch occluded',
         description: 'Change occluded property for an active object',
         sequences: ['q', '/'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     NEXT_KEY_FRAME: {
         name: 'Next keyframe',
         description: 'Go to the next keyframe of an active track',
         sequences: ['r'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     PREV_KEY_FRAME: {
         name: 'Previous keyframe',
         description: 'Go to the previous keyframe of an active track',
         sequences: ['e'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
 };
 
@@ -316,7 +316,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
                 const frame =
                     typeof activeObjectState.keyframes.next === 'number' ? activeObjectState.keyframes.next : null;
-                if (frame !== null && isAbleToChangeFrame()) {
+                if (frame !== null && isAbleToChangeFrame(frame)) {
                     changeFrame(frame);
                 }
             }
@@ -326,7 +326,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             if (activeObjectState && activeObjectState.objectType === ObjectType.TRACK) {
                 const frame =
                     typeof activeObjectState.keyframes.prev === 'number' ? activeObjectState.keyframes.prev : null;
-                if (frame !== null && isAbleToChangeFrame()) {
+                if (frame !== null && isAbleToChangeFrame(frame)) {
                     changeFrame(frame);
                 }
             }

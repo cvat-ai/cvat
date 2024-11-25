@@ -9,7 +9,7 @@ import { getCVATStore } from 'cvat-store';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl, CombinedState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import GlobalHotKeys from 'utils/mousetrap-react';
 import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { SliceIcon } from 'icons';
 import { ShortcutScope } from 'utils/enums';
@@ -22,20 +22,14 @@ export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     disabled?: boolean;
-    shortcuts: {
-        SWITCH_SLICE_MODE: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-    };
 }
 
 const componentShortcuts = {
-    SWITCH_SLICE_MODE: {
+    SWITCH_SLICE_MODE_STANDARD_CONTROLS: {
         name: 'Slice mode',
         description: 'Activate or deactivate a mode to slice a polygon/mask',
         sequences: ['alt+j'],
-        scope: ShortcutScope.ALL,
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
 };
 
@@ -43,10 +37,10 @@ registerComponentShortcuts(componentShortcuts);
 
 function SliceControl(props: Props): JSX.Element {
     const {
-        updateActiveControl, canvasInstance, activeControl, disabled, shortcuts,
+        updateActiveControl, canvasInstance, activeControl, disabled,
     } = props;
 
-    const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const { keyMap, normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const dynamicIconProps =
         activeControl === ActiveControl.SLICE ?
@@ -73,7 +67,7 @@ function SliceControl(props: Props): JSX.Element {
             };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        SWITCH_SLICE_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_SLICE_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
             dynamicIconProps.onClick();
         },
@@ -87,7 +81,7 @@ function SliceControl(props: Props): JSX.Element {
                 keyMap={subKeyMap(componentShortcuts, keyMap)}
                 handlers={handlers}
             />
-            <CVATTooltip title={`Slice a mask/polygon shape ${shortcuts.SWITCH_SLICE_MODE.displayValue}`} placement='right'>
+            <CVATTooltip title={`Slice a mask/polygon shape ${normalizedKeyMap.SWITCH_SLICE_MODE_STANDARD_CONTROLS}`} placement='right'>
                 <Icon {...dynamicIconProps} component={SliceIcon} />
             </CVATTooltip>
         </>
