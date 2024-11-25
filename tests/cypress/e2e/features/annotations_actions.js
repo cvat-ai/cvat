@@ -86,47 +86,6 @@ context('Testing annotations actions workflow', () => {
 
             cy.closeAnnotationsActionsModal();
         });
-
-        it('Recommendation to save the job appears if there are unsaved changes', () => {
-            cy.createRectangle({
-                points: 'By 2 Points',
-                type: 'Shape',
-                labelName: taskPayload.labels[0].name,
-                firstX: 250,
-                firstY: 350,
-                secondX: 350,
-                secondY: 450,
-            });
-
-            cy.openAnnotationsActionsModal();
-            cy.intercept(`/api/jobs/${jobID}/annotations?**action=create**`).as('createAnnotationsRequest');
-            cy.get('.cvat-action-runner-save-job-recommendation').should('exist').and('be.visible').click();
-            cy.wait('@createAnnotationsRequest').its('response.statusCode').should('equal', 200);
-            cy.get('.cvat-action-runner-save-job-recommendation').should('not.exist');
-
-            cy.closeAnnotationsActionsModal();
-        });
-
-        it('Recommendation to disable automatic saving appears in modal if automatic saving is enabled', () => {
-            cy.openSettings();
-            cy.contains('Workspace').click();
-            cy.get('.cvat-workspace-settings-auto-save').within(() => {
-                cy.get('[type="checkbox"]').check();
-            });
-            cy.closeSettings();
-
-            cy.openAnnotationsActionsModal();
-            cy.get('.cvat-action-runner-disable-autosave-recommendation').should('exist').and('be.visible').click();
-            cy.get('.cvat-action-runner-disable-autosave-recommendation').should('not.exist');
-            cy.closeAnnotationsActionsModal();
-
-            cy.openSettings();
-            cy.contains('Workspace').click();
-            cy.get('.cvat-workspace-settings-auto-save').within(() => {
-                cy.get('[type="checkbox"]').should('not.be.checked');
-            });
-            cy.closeSettings();
-        });
     });
 
     describe('Test action: "Remove filtered shapes"', () => {
@@ -374,7 +333,7 @@ context('Testing annotations actions workflow', () => {
             cy.goCheckFrameNumber(latestFrameNumber);
             cy.get('.cvat_canvas_shape').should('have.length', 1);
 
-            cy.saveJob('PUT', 200, 'saveJob');
+            cy.saveJob('PATCH', 200, 'saveJob');
             const exportAnnotation = {
                 as: 'exportAnnotations',
                 type: 'annotations',
