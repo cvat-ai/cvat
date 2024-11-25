@@ -99,9 +99,11 @@ class _AnnotationMapper:
         ds_labels: Sequence[models.ILabel],
         *,
         allow_unmatched_labels: bool,
+        conv_mask_to_poly: bool,
     ) -> None:
         self._logger = logger
         self._allow_unmatched_labels = allow_unmatched_labels
+        self._conv_mask_to_poly = conv_mask_to_poly
 
         ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
 
@@ -217,6 +219,11 @@ class _AnnotationMapper:
                 if getattr(shape, "elements", None):
                     raise BadFunctionError("function output non-skeleton shape with elements")
 
+                if shape.type.value == "mask" and self._conv_mask_to_poly:
+                    raise BadFunctionError(
+                        "function output mask shape despite conv_mask_to_poly=True"
+                    )
+
         shapes[:] = new_shapes
 
 
@@ -224,6 +231,7 @@ class _AnnotationMapper:
 class _DetectionFunctionContextImpl(DetectionFunctionContext):
     frame_name: str
     conf_threshold: Optional[float] = None
+    conv_mask_to_poly: bool = False
 
 
 def annotate_task(
@@ -235,6 +243,7 @@ def annotate_task(
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
     conf_threshold: Optional[float] = None,
+    conv_mask_to_poly: bool = False,
 ) -> None:
     """
     Downloads data for the task with the given ID, applies the given function to it
@@ -268,7 +277,11 @@ def annotate_task(
     function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
 
     The conf_threshold parameter must be None or a number between 0 and 1. It will be passed
-    to the function as the conf_threshold attribute of the context object.
+    to the AA function as the conf_threshold attribute of the context object.
+
+    The conv_mask_to_poly parameter will be passed to the AA function as the conv_mask_to_poly
+    attribute of the context object. If it's true, and the AA function returns any mask shapes,
+    BadFunctionError will be raised.
     """
 
     if pbar is None:
@@ -286,6 +299,7 @@ def annotate_task(
         function.spec.labels,
         dataset.labels,
         allow_unmatched_labels=allow_unmatched_labels,
+        conv_mask_to_poly=conv_mask_to_poly,
     )
 
     shapes = []
@@ -294,7 +308,9 @@ def annotate_task(
         for sample in pbar.iter(dataset.samples):
             frame_shapes = function.detect(
                 _DetectionFunctionContextImpl(
-                    frame_name=sample.frame_name, conf_threshold=conf_threshold
+                    frame_name=sample.frame_name,
+                    conf_threshold=conf_threshold,
+                    conv_mask_to_poly=conv_mask_to_poly,
                 ),
                 sample.media.load_image(),
             )
