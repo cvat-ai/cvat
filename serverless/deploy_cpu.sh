@@ -25,7 +25,10 @@ do
 
     echo "Deploying $func_rel_path function..."
     nuctl deploy --project-name cvat --path "$func_root" \
-        --file "$func_config" --platform local
+        --file "$func_config" --platform local \
+        --env CVAT_REDIS_HOST=$(echo ${CVAT_REDIS_INMEM_HOST:-cvat_redis_ondisk}) \
+        --env CVAT_REDIS_PORT=$(echo ${CVAT_REDIS_INMEM_PORT:-6666}) \
+        --env CVAT_REDIS_PASSWORD=$(echo ${CVAT_REDIS_INMEM_PASSWORD})
 done
 
 nuctl get function --platform local

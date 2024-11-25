@@ -37,6 +37,7 @@ interface Props {
     toForegroundShortcut: string;
     removeShortcut: string;
     sliceShortcut: string;
+    runAnnotationsActionShortcut: string;
     changeColor(color: string): void;
     changeLabel(label: any): void;
     copy(): void;
@@ -47,6 +48,7 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
     slice(): void;
 }
@@ -72,6 +74,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForegroundShortcut,
         removeShortcut,
         sliceShortcut,
+        runAnnotationsActionShortcut,
         isGroundTruth,
         changeColor,
         changeLabel,
@@ -83,6 +86,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
         slice,
         jobInstance,
@@ -154,6 +158,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toForegroundShortcut,
                             removeShortcut,
                             sliceShortcut,
+                            runAnnotationsActionShortcut,
                             changeColor,
                             copy,
                             remove,
@@ -166,6 +171,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             setColorPickerVisible,
                             edit,
                             slice,
+                            runAnnotationAction,
                         })}
                     >
                         <Col span={2}>
