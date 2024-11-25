@@ -10,11 +10,10 @@ The annotator can either agree or disagree with the feedback.
 If they disagree, they have the option to re-annotate the job and request feedback again.
 However, feedback is only available a limited number of times, as specified in the task's quality settings.
 
-To ensure transparency with the annotator, the immediate feedback shows the collected score and 
+To ensure transparency with the annotator, the immediate feedback shows the collected score and
 the minimum required score.
-Immediate feedback settings, such as `Target metric`, `Target metric threshold`, 
+Immediate feedback settings, such as `Target metric`, `Target metric threshold`,
 `Max validations per job` and others, can be configured on the quality settings page:
-<!--- TODO: Update quality page documentation and refer from this section -->
 
 <img src="/images/immediate-feedback-quality-settings.png" style="max-width: 600px;">
 
@@ -40,11 +39,11 @@ In this case annotators do not see any feedback dialogs.
 > The number of attempts resets when the job assignee is updated.
 
 Requirements:
-1. The task is configured with a Ground Truth job that has been annotated, 
+1. The task is configured with a Ground Truth job that has been annotated,
 moved to the acceptance stage, and is in the completed state.
 2. The current job is in the annotation stage.
 3. The current job is a regular annotation job. Immediate feedback is not available for Ground Truth jobs
-4. The `Max validations per job` setting has been configured on the quality settings page. 
+4. The `Max validations per job` setting has been configured on the quality settings page.
 
 
 

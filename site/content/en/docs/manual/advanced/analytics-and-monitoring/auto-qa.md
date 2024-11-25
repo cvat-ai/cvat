@@ -1,15 +1,14 @@
 ---
-title: 'Automated QA, Review & Honeypot'
+title: 'Automated QA, Review & Honeypots'
 linkTitle: 'Automated QA'
 weight: 1
 description: 'Guidelines for assessing annotation quality in CVAT automatically'
 ---
 
-In CVAT, it's possible to evaluate the quality of annotation through
-the creation of a **Ground truth** job, referred to as a Honeypot.
-To estimate the task quality, CVAT compares all other jobs in the task against the
-established **Ground truth** job, and calculates annotation quality
-based on this comparison.
+In CVAT, it's possible to evaluate the quality of annotation through the creation
+of a validation subset of images. To estimate the task quality, CVAT compares
+all other jobs in the task against the established **Ground truth** job,
+and calculates annotation quality based on this comparison.
 
 > **Note** that quality estimation only supports
 > 2d tasks. It supports all the annotation types except 2d cuboids.
@@ -20,17 +19,23 @@ based on this comparison.
 > **Note** that quality estimation is currently available for tasks and jobs.
 > Quality estimation in projects is not implemented yet.
 
+CVAT has the following features for automated quality control of annotations:
+- Validation set configuration for a task
+- Job validation on job finish ("{{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}}")
+- Review mode for problems found
+- Quality analytics
+
 See:
 
 - [Basics](#basics)
 - [Ground Truth jobs](#ground-truth-jobs)
-- [Configuration](#configuration)
-  - [How to enable quality control in a new task](#enable-in-new-task)
-  - [How to enable quality control in an existing task](#enable-in-existing-task)
+- [Configuration](#configuring-quality-estimation)
+  - [How to enable quality control in a new task](#how-to-enable-quality-control-for-a-new-task)
+  - [How to enable quality control in an existing task](#how-to-enable-quality-control-for-an-already-existing-task)
 - [Validation modes](#validation-modes)
-  - [Ground Truth](#validation-mode-gt)
-  - [Honeypots](#validation-mode-gt-pool)
-  - [Summary](#validation-mode-summary)
+  - [Ground Truth](#ground-truth)
+  - [Honeypots](#honeypots)
+  - [Summary](#mode-summary)
 - [Quality management](#quality-management)
   - [Frames](#validation-set-management)
   - [Annotations](#annotation-management)
@@ -116,21 +121,26 @@ To delete the Ground Truth job, do the following.
 2. Click on three dots to open the menu.
 3. From the menu, select **Delete**.
 
-## Configuring quality estimation <a id="configuration"></a>
+## Configuring quality estimation
 
 Quality estimation is configured on the Task level. There are 2 ways to enable for a task.
 
-### How to enable quality control for a new task <a id="enable-in-new-task" ></a>
+### How to enable quality control for a new task
 
 1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
 2. Select the source media, configure other parameters
 3. Scroll down to the **Quality Control** section below
-4. Select one of the [validation modes]() available
+4. Select one of the [validation modes](#validation-modes) available
+
+![Create task with validation mode](/images/honeypot09.jpg)
+
 5. Create the task and open the task page
 6. Upload or create Ground Truth annotations in the Ground Truth job in the task
 7. Switch the GT job into the `acceptance`-`completed` state
 
-### How to enable quality control for an already existing task <a id="enable-in-existing-task" ></a>
+![Set job status](/images/honeypot10.jpg)
+
+### How to enable quality control for an already existing task
 
 > For already existing tasks only the Ground Truth validation mode is available. If you want
 > to use Honeypots for your task, you will need to recreate the task.
@@ -142,7 +152,7 @@ Quality estimation is configured on the Task level. There are 2 ways to enable f
 
 3. In the **Add new job** window, fill in the following fields:
 
-   ![Add new job](/images/honeypot02.jpg)
+   ![Configure job parameters](/images/honeypot02.jpg)
 
    - **Job type**: Use the default parameter **Ground truth**.
    - **Frame selection method**: Use the default parameter **Random**.
@@ -166,6 +176,8 @@ The **Ground truth** job will appear in the jobs list.
 6. Change the **Stage** of the job to **Acceptance**.
 7. Change the **Status** of the job to **Completed**.
 
+![Set job status](/images/honeypot10.jpg)
+
 ## Validation modes
 
 Currently, there are 2 validation modes available for tasks: **Ground Truth** and **Honeypots**.
@@ -173,7 +185,7 @@ These names are often used interchangeably, but in CVAT they have some differenc
 Both modes rely on the use of Ground Truth annotations in a task,
 stored in a [Ground Truth job](#ground-truth-jobs), where they can be managed.
 
-### Ground Truth <a id="validation-mode-gt"></a>
+### Ground Truth
 
 In this mode some of the task frames are selected into the validation set, represented as a
 separate Ground Truth job. The regular annotation jobs in the task are not affected in any way.
@@ -209,7 +221,7 @@ Parameters:
 This method uses segment size of the task to select the same number of validation frames
 in each job, if possible.
 
-### Honeypots <a id="validation-mode-gt-pool"></a>
+### Honeypots
 
 In this mode some random frames of the task are selected into the validation set.
 Then, validation frames are randomly mixed into regular annotation jobs. It can also be
@@ -232,7 +244,7 @@ annotation job from the validation set
 - total frame count (%) - the percent of the task frames to be included into the validation set.
 This value must result in at least `frame count per job` * `segment size` frames.
 
-### Mode summary <a id="validation-mode-summary"></a>
+### Mode summary
 
 Here is a brief summary of the validation modes:
 
@@ -368,12 +380,13 @@ Annotation quality settings have the following parameters:
 
 ## Quality Analytics
 
-> **Note**: quality analytics is a premium feature.
+> **Note**: quality analytics is a premium feature. Please check how to get access to this
+> functionality in the {{< ilink "/docs/enterprise" "Paid features" >}} section of the site.
 
 Once the quality estimation is enabled in a task and the Ground Truth job is configured,
-quality analytics will become available for the task and its jobs.
+quality analytics becomes available for the task and its jobs.
 
-> A **Ground truth** job is considered configured
+> A **Ground truth** job is considered **configured**
 > if it is at the **acceptance** stage and in the **completed** state.
 
 By default, CVAT computes quality metrics automatically at regular intervals.
@@ -381,14 +394,23 @@ By default, CVAT computes quality metrics automatically at regular intervals.
 > **Note** that the process of quality calculation may take up to several hours, depending on
 > the amount of data and labeled objects, and is **not updated immediately** after task updates.
 
-It you want request quality metrics update, you can do this by pressing the "Refresh" button
+It you want request quality metrics update, you can do this by pressing the **Refresh** button
 on the task **Quality Management** > **Analytics** page.
 
-![Quality Analytics page](/images/honeypot05.jpg)
+![Quality Analytics page - refresh button](/images/honeypot11.jpg)
+
+Once a quality metrics are computed, they are available for detailed review on this page.
+Conflicts can be reviewed in the [Review mode of jobs](#gt-conflicts-in-the-cvat-interface).
+A job must have at least 1 validation frame (shown in the **Frame intersection** column) to
+be included in quality computation.
+
+![Jobs list](/images/honeypot12.jpg)
 
 ### Quality data
 
 The Analytics page has the following fields:
+
+![Quality Analytics page](/images/honeypot05.jpg)
 
 <!--lint disable maximum-line-length-->
 
