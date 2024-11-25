@@ -476,6 +476,12 @@ class TaskAutoAnnotate:
             default=None,
         )
 
+        parser.add_argument(
+            "--conv-mask-to-poly",
+            action="store_true",
+            help="Convert mask shapes to polygon shapes",
+        )
+
     def execute(
         self,
         client: Client,
@@ -487,6 +493,7 @@ class TaskAutoAnnotate:
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
         conf_threshold: Optional[float],
+        conv_mask_to_poly: bool,
     ) -> None:
         if function_module is not None:
             function = importlib.import_module(function_module)
@@ -512,4 +519,5 @@ class TaskAutoAnnotate:
             clear_existing=clear_existing,
             allow_unmatched_labels=allow_unmatched_labels,
             conf_threshold=conf_threshold,
+            conv_mask_to_poly=conv_mask_to_poly,
         )
