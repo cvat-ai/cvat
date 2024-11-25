@@ -116,14 +116,27 @@ class JobAnnotation:
             Prefetch('segment__task__project__label_set', queryset=label_qs),
         )
 
-    def __init__(self, pk, *, lock_job_in_db: bool = False, queryset: QuerySet | None = None, prefetch_images: bool = False):
+    def __init__(
+        self,
+        pk,
+        *,
+        lock_job_in_db: bool = False,
+        queryset: QuerySet | None = None,
+        prefetch_images: bool = False,
+        db_task: models.Task | None = None
+    ):
         if queryset is None:
-            queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
+            if db_task is None:
+                queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
+            else:
+                queryset = models.Job.objects.select_related("segment", "segment__task")
 
         if lock_job_in_db:
             queryset = queryset.select_for_update()
 
         self.db_job: models.Job = get_cached(queryset, pk=int(pk))
+        if db_task is not None:
+            self.db_job.segment.task = db_task
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -788,11 +801,36 @@ class JobAnnotation:
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
+
 class TaskAnnotation:
+    @classmethod
+    def add_prefetch_info(cls, queryset: QuerySet):
+        assert issubclass(queryset.model, models.Task)
+
+        label_qs = add_prefetch_fields(models.Label.objects.all(), [
+            'skeleton',
+            'parent',
+            'attributespec_set',
+        ])
+        label_qs = TaskData.add_prefetch_info(label_qs)
+
+        return queryset.prefetch_related(
+            'project',
+            'owner',
+            'assignee',
+            'project__owner',
+            'project__assignee',
+
+            Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.order_by('frame'))
+            )),
+
+            Prefetch('label_set', queryset=label_qs),
+            Prefetch('project__label_set', queryset=label_qs),
+        )
+
     def __init__(self, pk):
-        self.db_task = models.Task.objects.prefetch_related(
-            Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
-        ).get(id=pk)
+        self.db_task = self.add_prefetch_info(models.Task.objects).get(id=pk)
 
         requested_job_types = [models.JobType.ANNOTATION]
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
@@ -828,9 +866,9 @@ class TaskAnnotation:
         for jid, job_data in splitted_data.items():
             data = AnnotationIR(self.db_task.dimension)
             if action is None:
-                data.data = put_job_data(jid, job_data)
+                data.data = put_job_data(jid, job_data, db_task=self.db_task)
             else:
-                data.data = patch_job_data(jid, job_data, action)
+                data.data = patch_job_data(jid, job_data, action, db_task=self.db_task)
 
             if data.version > self.ir_data.version:
                 self.ir_data.version = data.version
@@ -938,7 +976,7 @@ class TaskAnnotation:
             self._patch_data(data, PatchAction.DELETE)
         else:
             for db_job in self.db_jobs:
-                delete_job_data(db_job.id)
+                delete_job_data(db_job.id, db_task=self.db_task)
 
     def init_from_db(self):
         self.reset()
@@ -949,7 +987,7 @@ class TaskAnnotation:
             ):
                 continue
 
-            gt_annotation = JobAnnotation(db_job.id, lock_job_in_db=True)
+            gt_annotation = JobAnnotation(db_job.id, lock_job_in_db=True, db_task=self.db_task)
             gt_annotation.init_from_db()
             if gt_annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = gt_annotation.ir_data.version
@@ -1011,8 +1049,8 @@ def get_job_data(pk):
 
 @silk_profile(name="POST job data")
 @transaction.atomic
-def put_job_data(pk, data):
-    annotation = JobAnnotation(pk)
+def put_job_data(pk, data, db_task: models.Task | None = None):
+    annotation = JobAnnotation(pk, db_task=db_task)
     annotation.put(data)
 
     return annotation.data
@@ -1021,8 +1059,8 @@ def put_job_data(pk, data):
 @silk_profile(name="UPDATE job data")
 @plugin_decorator
 @transaction.atomic
-def patch_job_data(pk, data, action):
-    annotation = JobAnnotation(pk)
+def patch_job_data(pk, data, action, db_task: models.Task | None = None):
+    annotation = JobAnnotation(pk, db_task=db_task)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
@@ -1035,8 +1073,8 @@ def patch_job_data(pk, data, action):
 
 @silk_profile(name="DELETE job data")
 @transaction.atomic
-def delete_job_data(pk):
-    annotation = JobAnnotation(pk)
+def delete_job_data(pk, db_task: models.Task | None = None):
+    annotation = JobAnnotation(pk, db_task=db_task)
     annotation.delete()
 
 
