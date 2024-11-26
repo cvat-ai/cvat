@@ -32,11 +32,9 @@ from .util import (
 )
 from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 from pottery.redlock import Redlock
-from pottery.exceptions import TooManyExtensions
-from typing import Any, Callable
+from typing import Callable
 
 from time import sleep
-import signal
 
 slogger = ServerLogManager(__name__)
 
@@ -72,7 +70,7 @@ def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
 
 def _patch_scheduled_job_status(job: rq.job.Job):
     # NOTE: rq scheduler < 0.14 does not set the appropriate
-    # job status SCHEDULED. It has been fixed in the 0.14 version
+    # job status (SCHEDULED). This has been fixed in the 0.14 version.
     # https://github.com/rq/rq-scheduler/blob/f7d5787c5f94b5517e209c612ef648f4bfc44f9e/rq_scheduler/scheduler.py#L148
     # FUTURE-TODO: delete manual status setting after upgrading to 0.14
     if job.get_status(refresh=False) != rq.job.JobStatus.SCHEDULED:

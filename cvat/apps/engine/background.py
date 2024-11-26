@@ -113,7 +113,7 @@ class _ResourceExportManager(ABC):
         rq_job.delete()
         return None
 
-    def handle_rq_job(self, rq_job: RQJob, queue: DjangoRQ) -> Optional[Response]:
+    def handle_rq_job(self, rq_job: RQJob | None, queue: DjangoRQ) -> Optional[Response]:
         if self.version == 1:
             return self._handle_rq_job_v1(rq_job, queue)
         elif self.version == 2:
