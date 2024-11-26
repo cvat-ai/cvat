@@ -1085,7 +1085,7 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
     # more dump request received at the same time:
     # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
-        job = JobAnnotation(job_id, prefetch_images=True)
+        job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
         job.init_from_db()
 
     exporter = make_exporter(format_name)
