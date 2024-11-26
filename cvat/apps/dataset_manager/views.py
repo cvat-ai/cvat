@@ -70,6 +70,14 @@ def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
 
     return TTL_CONSTS[db_instance.lower()]
 
+def _patch_scheduled_job_status(job: rq.job.Job):
+    # NOTE: rq scheduler < 0.14 does not set the appropriate
+    # job status SCHEDULED. It has been fixed in the 0.14 version
+    # https://github.com/rq/rq-scheduler/blob/f7d5787c5f94b5517e209c612ef648f4bfc44f9e/rq_scheduler/scheduler.py#L148
+    # FUTURE-TODO: delete manual status setting after upgrading to 0.14
+    if job.get_status(refresh=False) != rq.job.JobStatus.SCHEDULED:
+        job.set_status(rq.job.JobStatus.SCHEDULED)
+
 def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     # TODO: implement using retries once we move from rq_scheduler to builtin RQ scheduler
     # for better reliability and error reporting
@@ -88,7 +96,7 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
         user_id = current_rq_job.meta.get('user', {}).get('id') or -1
 
         with get_rq_lock_by_user(settings.CVAT_QUEUES.EXPORT_DATA.value, user_id):
-            scheduler.enqueue_in(
+            scheduled_rq_job: rq.job.Job = scheduler.enqueue_in(
                 time_delta,
                 current_rq_job.func,
                 *current_rq_job.args,
@@ -101,6 +109,7 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
                 on_success=current_rq_job.success_callback,
                 on_failure=current_rq_job.failure_callback,
             )
+            _patch_scheduled_job_status(scheduled_rq_job)
 
     current_rq_job.retries_left = 1
     setattr(current_rq_job, 'retry', _patched_retry)
@@ -244,7 +253,7 @@ def export(
         current_rq_job.meta["lock_key"] = make_export_cache_lock_key(output_path)
         current_rq_job.save_meta()
 
-        # It make sense to acquire a lock if real export process is running and we are writing data into a file
+        # Acquiring a lock makes sense if a real export process is running and we are writing data into a file
         # If such a file exists, we can just return the path without acquiring a lock
         if osp.exists(output_path):
             return output_path
@@ -295,6 +304,7 @@ def export(
             file_ctime=instance_update_time.timestamp(),
             logger=logger,
         )
+        _patch_scheduled_job_status(cleaning_job)
         logger.info(
             "The {} '{}' is exported as '{}' at '{}' "
             "and available for downloading for the next {}. "
@@ -322,23 +332,23 @@ def export(
         log_exception(logger)
         raise
 
-def export_job_annotations(job_id, dst_format=None, server_url=None):
-    return export(dst_format,job_id=job_id, server_url=server_url, save_images=False)
+def export_job_annotations(job_id: int, dst_format: str, *, server_url: str | None = None):
+    return export(dst_format=dst_format, job_id=job_id, server_url=server_url, save_images=False)
 
-def export_job_as_dataset(job_id, dst_format=None, server_url=None):
-    return export(dst_format, job_id=job_id, server_url=server_url, save_images=True)
+def export_job_as_dataset(job_id: int, dst_format: str, *, server_url: str | None = None):
+    return export(dst_format=dst_format, job_id=job_id, server_url=server_url, save_images=True)
 
-def export_task_as_dataset(task_id, dst_format=None, server_url=None):
-    return export(dst_format, task_id=task_id, server_url=server_url, save_images=True)
+def export_task_as_dataset(task_id: int, dst_format: str, *, server_url: str | None = None):
+    return export(dst_format=dst_format, task_id=task_id, server_url=server_url, save_images=True)
 
-def export_task_annotations(task_id, dst_format=None, server_url=None):
-    return export(dst_format,task_id=task_id, server_url=server_url, save_images=False)
+def export_task_annotations(task_id: int, dst_format: str, *, server_url: str | None = None):
+    return export(dst_format=dst_format, task_id=task_id, server_url=server_url, save_images=False)
 
-def export_project_as_dataset(project_id, dst_format=None, server_url=None):
-    return export(dst_format, project_id=project_id, server_url=server_url, save_images=True)
+def export_project_as_dataset(project_id: int, dst_format: str, *, server_url: str | None = None):
+    return export(dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=True)
 
-def export_project_annotations(project_id, dst_format=None, server_url=None):
-    return export(dst_format, project_id=project_id, server_url=server_url, save_images=False)
+def export_project_annotations(project_id: int, dst_format: str, *, server_url: str | None = None):
+    return export(dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=False)
 
 
 class FileIsBeingUsedError(Exception):
