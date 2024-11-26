@@ -8,11 +8,12 @@ import os
 import os.path as osp
 import re
 import zipfile
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from threading import Lock
-from typing import Any, Generator, Optional, Sequence
+from typing import Any, Optional
 
 import attrs
 import django_rq
