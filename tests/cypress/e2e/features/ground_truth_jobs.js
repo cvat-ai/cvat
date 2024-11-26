@@ -361,7 +361,7 @@ context('Ground truth jobs', () => {
     describe('Regression tests', () => {
         const serverFiles = ['bigArchive.zip'];
 
-        before(() => {
+        beforeEach(() => {
             createAndOpenTask(serverFiles);
         });
 
@@ -399,6 +399,52 @@ context('Ground truth jobs', () => {
             cy.url().then((url) => {
                 jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
             }).should('match', /\/tasks\/\d+\/jobs\/\d+/);
+        });
+
+        it('Check GT annotations can not be shown in standard annotation view', () => {
+            cy.headlessCreateJob({
+                task_id: taskID,
+                frame_count: 4,
+                type: 'ground_truth',
+                frame_selection_method: 'random_uniform',
+                seed: 1,
+            }).then((jobResponse) => {
+                groundTruthJobID = jobResponse.jobID;
+                return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
+                    const gtRect = groundTruthRectangles[index];
+                    return {
+                        labelName,
+                        objectType: 'shape',
+                        shapeType: 'rectangle',
+                        occluded: false,
+                        frame,
+                        points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],
+                    };
+                }), groundTruthJobID);
+            }).then(() => {
+                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                cy.get('.cvat-canvas-container').should('exist');
+
+                cy.changeWorkspace('Review');
+                cy.get('.cvat-objects-sidebar-show-ground-truth').click();
+                cy.get('.cvat-objects-sidebar-show-ground-truth').should(
+                    'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
+                );
+                groundTruthFrames.forEach((frame, index) => {
+                    cy.goCheckFrameNumber(frame);
+                    checkRectangleAndObjectMenu(groundTruthRectangles[index]);
+                });
+
+                cy.interactMenu('Open the task');
+                cy.get('.cvat-task-job-list').within(() => {
+                    cy.contains('a', `Job #${jobID}`).click();
+                });
+                groundTruthFrames.forEach((frame) => {
+                    cy.goCheckFrameNumber(frame);
+                    cy.get('.cvat_canvas_shape').should('not.exist');
+                    cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
+                });
+            });
         });
     });
 });
