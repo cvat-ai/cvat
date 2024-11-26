@@ -24,7 +24,7 @@ from datumaro.components.media import PointCloud
 from datumaro.components.environment import Environment
 from datumaro.components.extractor import Importer
 from datumaro.components.format_detection import RejectionReason
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 from django.conf import settings
 
@@ -861,7 +861,9 @@ class TaskData(CommonData):
 
     @staticmethod
     def meta_for_task(db_task, host, label_mapping=None):
-        db_segments = db_task.segment_set.all().prefetch_related('job_set')
+        db_segments = db_task.segment_set.all().prefetch_related(
+            Prefetch('job_set', models.Job.objects.order_by("pk"))
+        )
 
         meta = OrderedDict([
             ("id", str(db_task.id)),
