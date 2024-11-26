@@ -8060,7 +8060,11 @@ components:
           description: Whether existing annotations should be removed
         convMaskToPoly:
           type: boolean
-          default: false
+          writeOnly: true
+          description: Deprecated; use conv_mask_to_poly instead
+        conv_mask_to_poly:
+          type: boolean
+          description: Convert mask shapes to polygons
         mapping:
           type: object
           additionalProperties:
