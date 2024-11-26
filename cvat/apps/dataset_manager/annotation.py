@@ -6,7 +6,8 @@
 from copy import copy, deepcopy
 
 import math
-from typing import Container, Optional, Sequence
+from collections.abc import Container, Sequence
+from typing import Optional
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
