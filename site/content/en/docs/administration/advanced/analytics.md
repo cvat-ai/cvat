@@ -135,6 +135,12 @@ Server events:
 
 - `call:function`
 
+- `create:membership`, `update:membership`, `delete:membership`
+
+- `create:webhook`, `update:webhook`, `delete:webhook`
+
+- `create:invitation`, `delete:invitation`
+
 Client events:
 
 - `load:cvat`
