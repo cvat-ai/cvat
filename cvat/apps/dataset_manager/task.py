@@ -107,8 +107,6 @@ class JobAnnotation:
             'segment__task__project',
             'segment__task__owner',
             'segment__task__assignee',
-            'segment__task__project__owner',
-            'segment__task__project__assignee',
 
             Prefetch('segment__task__data', queryset=task_data_queryset),
 
@@ -818,8 +816,6 @@ class TaskAnnotation:
             'project',
             'owner',
             'assignee',
-            'project__owner',
-            'project__assignee',
 
             Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.order_by('frame'))
@@ -1124,11 +1120,13 @@ def patch_task_data(pk, data, action):
 
     return annotation.data
 
+
 @silk_profile(name="DELETE task data")
 @transaction.atomic
 def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
+
 
 def export_task(task_id, dst_file, format_name, server_url=None, save_images=False):
     # For big tasks dump function may run for a long time and
@@ -1143,6 +1141,7 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
         task.export(f, exporter, host=server_url, save_images=save_images)
+
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
