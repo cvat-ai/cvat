@@ -13,9 +13,6 @@ import signal
 import cvat.utils.remote_debugger as debug
 
 
-DefaultWorker = Worker
-
-
 class BaseDeathPenalty:
     def __init__(self, timeout, exception, **kwargs):
         pass
@@ -26,6 +23,20 @@ class BaseDeathPenalty:
     def __exit__(self, exc_type, exc_value, traceback):
         pass
 
+def handle_work_horse_killed(job: Job, retpid: int, ret_val: int, rusage: struct_rusage):
+    print('IMPORTANT: handle_work_horse_killed')
+    job.refresh()
+    if ret_val in (signal.SIGTERM, signal.SIGINT) and (lock_key := job.meta.get('lock_key')):
+        # todo: check lock ttl
+        job.connection.delete(lock_key)
+
+class WorkerWithCustomHandler(Worker):
+    # https://github.com/rq/django-rq/issues/579
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._work_horse_killed_handler = handle_work_horse_killed
+
+DefaultWorker = WorkerWithCustomHandler
 
 class SimpleWorker(Worker):
     """
@@ -69,18 +80,6 @@ if debug.is_debugging_enabled():
             return super().execute_job(*args, **kwargs)
 
     DefaultWorker = RemoteDebugWorker
-
-def handle_work_horse_killed(job: Job, retpid: int, ret_val: int, rusage: struct_rusage):
-    job.refresh()
-    if ret_val in (signal.SIGTERM, signal.SIGKILL) and (lock_key := job.meta.get('lock_key')):
-        job.connection.delete(lock_key)
-
-
-class WorkerWithCustomHandler(DefaultWorker):
-    # https://github.com/rq/django-rq/issues/579
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._work_horse_killed_handler = handle_work_horse_killed
 
 
 if os.environ.get("COVERAGE_PROCESS_START"):

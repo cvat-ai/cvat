@@ -99,6 +99,9 @@ def faster_deepcopy(v):
 class LockNotAvailableError(Exception):
     pass
 
+class ProlongLockError(Exception):
+    pass
+
 
 def make_export_cache_lock_key(filename: os.PathLike[str]) -> str:
     return f"export_lock:{os.fspath(filename)}"
@@ -111,6 +114,7 @@ def get_export_cache_lock(
     ttl: int | timedelta,
     block: bool = True,
     acquire_timeout: Optional[int | timedelta] = None,
+    num_extensions: int | None = None,
 ) -> Generator[Lock, Any, Any]:
     if isinstance(acquire_timeout, timedelta):
         acquire_timeout = acquire_timeout.total_seconds()
@@ -124,6 +128,9 @@ def get_export_cache_lock(
     if not ttl or ttl < 0:
         raise ValueError("ttl must be a non-negative number")
 
+    if num_extensions and num_extensions < 0:
+        raise ValueError("num_extensions must be a non-negative number")
+
     # https://redis.io/docs/latest/develop/use/patterns/distributed-locks/
     # The lock is exclusive, so it may potentially reduce performance in some cases,
     # where parallel access is potentially possible and valid,
@@ -132,6 +139,7 @@ def get_export_cache_lock(
         key=make_export_cache_lock_key(export_path),
         masters={django_rq.get_connection(settings.CVAT_QUEUES.EXPORT_DATA.value)},
         auto_release_time=ttl,
+        **({"num_extensions": num_extensions} if num_extensions is not None else {}),
     )
     acquired = lock.acquire(blocking=block, timeout=acquire_timeout)
     try:
