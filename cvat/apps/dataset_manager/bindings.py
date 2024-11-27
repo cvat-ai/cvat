@@ -8,12 +8,13 @@ from __future__ import annotations
 import os.path as osp
 import re
 import sys
+from collections import OrderedDict, defaultdict
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import reduce
 from operator import add
 from pathlib import Path
 from types import SimpleNamespace
-from typing import (Any, Callable, DefaultDict, Dict, Iterable, Iterator, List, Literal, Mapping,
-                    NamedTuple, Optional, OrderedDict, Sequence, Set, Tuple, Union)
+from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
 from attrs.converters import to_bool
 import datumaro as dm
@@ -277,12 +278,12 @@ class CommonData(InstanceLabelData):
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
         self._frame_info = {}
-        self._frame_mapping: Dict[str, int] = {}
+        self._frame_mapping: dict[str, int] = {}
         self._frame_step = db_task.data.get_frame_step()
         self._db_data: models.Data = db_task.data
         self._use_server_track_ids = use_server_track_ids
         self._required_frames = included_frames
-        self._initialized_included_frames: Optional[Set[int]] = None
+        self._initialized_included_frames: Optional[set[int]] = None
         self._db_subset = db_task.subset
 
         super().__init__(db_task)
@@ -960,9 +961,9 @@ class ProjectData(InstanceLabelData):
         type: str = attrib()
         frame: int = attrib()
         label: str = attrib()
-        points: List[float] = attrib()
+        points: list[float] = attrib()
         occluded: bool = attrib()
-        attributes: List[InstanceLabelData.Attribute] = attrib()
+        attributes: list[InstanceLabelData.Attribute] = attrib()
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         rotation: int = attrib(default=0)
@@ -970,40 +971,40 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
         outside: bool = attrib(default=False)
-        elements: List['ProjectData.LabeledShape'] = attrib(default=[])
+        elements: list['ProjectData.LabeledShape'] = attrib(default=[])
 
     @attrs
     class TrackedShape:
         type: str = attrib()
         frame: int = attrib()
-        points: List[float] = attrib()
+        points: list[float] = attrib()
         occluded: bool = attrib()
         outside: bool = attrib()
         keyframe: bool = attrib()
-        attributes: List[InstanceLabelData.Attribute] = attrib()
+        attributes: list[InstanceLabelData.Attribute] = attrib()
         rotation: int = attrib(default=0)
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         z_order: int = attrib(default=0)
         label: str = attrib(default=None)
         track_id: int = attrib(default=0)
-        elements: List['ProjectData.TrackedShape'] = attrib(default=[])
+        elements: list['ProjectData.TrackedShape'] = attrib(default=[])
 
     @attrs
     class Track:
         label: str = attrib()
-        shapes: List['ProjectData.TrackedShape'] = attrib()
+        shapes: list['ProjectData.TrackedShape'] = attrib()
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
-        elements: List['ProjectData.Track'] = attrib(default=[])
+        elements: list['ProjectData.Track'] = attrib(default=[])
 
     @attrs
     class Tag:
         frame: int = attrib()
         label: str = attrib()
-        attributes: List[InstanceLabelData.Attribute] = attrib()
+        attributes: list[InstanceLabelData.Attribute] = attrib()
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         task_id: int = attrib(default=None)
@@ -1017,8 +1018,8 @@ class ProjectData(InstanceLabelData):
         name: str = attrib()
         width: int = attrib()
         height: int = attrib()
-        labeled_shapes: List[Union['ProjectData.LabeledShape', 'ProjectData.TrackedShape']] = attrib()
-        tags: List['ProjectData.Tag'] = attrib()
+        labeled_shapes: list[Union['ProjectData.LabeledShape', 'ProjectData.TrackedShape']] = attrib()
+        tags: list['ProjectData.Tag'] = attrib()
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
 
@@ -1037,12 +1038,12 @@ class ProjectData(InstanceLabelData):
         self._host = host
         self._soft_attribute_import = False
         self._project_annotation = project_annotation
-        self._tasks_data: Dict[int, TaskData] = {}
-        self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
+        self._tasks_data: dict[int, TaskData] = {}
+        self._frame_info: dict[tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         # (subset, path): (task id, frame number)
-        self._frame_mapping: Dict[Tuple[str, str], Tuple[int, int]] = dict()
-        self._frame_steps: Dict[int, int] = {}
-        self.new_tasks: Set[int] = set()
+        self._frame_mapping: dict[tuple[str, str], tuple[int, int]] = dict()
+        self._frame_steps: dict[int, int] = {}
+        self.new_tasks: set[int] = set()
         self._use_server_track_ids = use_server_track_ids
 
         InstanceLabelData.__init__(self, db_project)
@@ -1080,12 +1081,12 @@ class ProjectData(InstanceLabelData):
         subsets = set()
         for task in self._db_tasks.values():
             subsets.add(task.subset)
-        self._subsets: List[str] = list(subsets)
+        self._subsets: list[str] = list(subsets)
 
-        self._frame_steps: Dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
+        self._frame_steps: dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
 
     def _init_task_frame_offsets(self):
-        self._task_frame_offsets: Dict[int, int] = dict()
+        self._task_frame_offsets: dict[int, int] = dict()
         s = 0
         subset = None
 
@@ -1100,7 +1101,7 @@ class ProjectData(InstanceLabelData):
     def _init_frame_info(self):
         self._frame_info = dict()
         self._deleted_frames = { (task.id, frame): True for task in self._db_tasks.values() for frame in task.data.deleted_frames }
-        original_names = DefaultDict[Tuple[str, str], int](int)
+        original_names = defaultdict[tuple[str, str], int](int)
         for task in self._db_tasks.values():
             defaulted_subset = get_defaulted_subset(task.subset, self._subsets)
             if hasattr(task.data, 'video'):
@@ -1254,7 +1255,7 @@ class ProjectData(InstanceLabelData):
         )
 
     def group_by_frame(self, include_empty: bool = False):
-        frames: Dict[Tuple[str, int], ProjectData.Frame] = {}
+        frames: dict[tuple[str, int], ProjectData.Frame] = {}
         def get_frame(task_id: int, idx: int) -> ProjectData.Frame:
             frame_info = self._frame_info[(task_id, idx)]
             abs_frame = self.abs_frame_id(task_id, idx)
@@ -1365,7 +1366,7 @@ class ProjectData(InstanceLabelData):
         return self._db_project
 
     @property
-    def subsets(self) -> List[str]:
+    def subsets(self) -> list[str]:
         return self._subsets
 
     @property
@@ -1447,7 +1448,7 @@ class ProjectData(InstanceLabelData):
             subset_dataset: dm.Dataset = dataset.subsets()[task_data.db_instance.subset].as_dataset()
             yield subset_dataset, task_data
 
-    def add_labels(self, labels: List[dict]):
+    def add_labels(self, labels: list[dict]):
         attributes = []
         _labels = []
         for label in labels:
@@ -1468,14 +1469,14 @@ class MediaSource:
         return self.db_task.mode == 'interpolation'
 
 class MediaProvider:
-    def __init__(self, sources: Dict[int, MediaSource]) -> None:
+    def __init__(self, sources: dict[int, MediaSource]) -> None:
         self._sources = sources
 
     def unload(self) -> None:
         pass
 
 class MediaProvider2D(MediaProvider):
-    def __init__(self, sources: Dict[int, MediaSource]) -> None:
+    def __init__(self, sources: dict[int, MediaSource]) -> None:
         super().__init__(sources)
         self._current_source_id = None
         self._frame_provider = None
@@ -1526,7 +1527,7 @@ class MediaProvider2D(MediaProvider):
         self._current_source_id = None
 
 class MediaProvider3D(MediaProvider):
-    def __init__(self, sources: Dict[int, MediaSource]) -> None:
+    def __init__(self, sources: dict[int, MediaSource]) -> None:
         super().__init__(sources)
         self._images_per_source = {
             source_id: {
@@ -1554,7 +1555,7 @@ class MediaProvider3D(MediaProvider):
 
         return dm.PointCloud(point_cloud_path, extra_images=related_images)
 
-MEDIA_PROVIDERS_BY_DIMENSION: Dict[DimensionType, MediaProvider] = {
+MEDIA_PROVIDERS_BY_DIMENSION: dict[DimensionType, MediaProvider] = {
     DimensionType.DIM_3D: MediaProvider3D,
     DimensionType.DIM_2D: MediaProvider2D,
 }
@@ -1579,7 +1580,7 @@ class CVATDataExtractorMixin:
 
     @staticmethod
     def _load_categories(labels: list):
-        categories: Dict[dm.AnnotationType,
+        categories: dict[dm.AnnotationType,
             dm.Categories] = {}
 
         label_categories = dm.LabelCategories(attributes=['occluded'])
@@ -1666,7 +1667,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                 {0: MediaSource(db_task)}
             )
 
-        dm_items: List[dm.DatasetItem] = []
+        dm_items: list[dm.DatasetItem] = []
         for frame_data in instance_data.group_by_frame(include_empty=True):
             dm_media_args = { 'path': frame_data.name + ext }
             if dimension == DimensionType.DIM_3D:
@@ -1763,13 +1764,13 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                 }
             )
 
-        ext_per_task: Dict[int, str] = {
+        ext_per_task: dict[int, str] = {
             task.id: TaskFrameProvider.VIDEO_FRAME_EXT if is_video else ''
             for task in project_data.tasks
             for is_video in [task.mode == 'interpolation']
         }
 
-        dm_items: List[dm.DatasetItem] = []
+        dm_items: list[dm.DatasetItem] = []
         for frame_data in project_data.group_by_frame(include_empty=True):
             dm_media_args = { 'path': frame_data.name + ext_per_task[frame_data.task_id] }
             if self._dimension == DimensionType.DIM_3D:
@@ -1881,7 +1882,7 @@ class CvatDatasetNotFoundError(CvatImportError):
             message = "Dataset must contain a file:" + message
         return re.sub(r' +', " ", message)
 
-def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str], int]) -> str:
+def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str], int]) -> str:
     name, ext = name.rsplit(osp.extsep, maxsplit=1)
 
     if not names[(subset, name)]:
@@ -1902,7 +1903,7 @@ def mangle_image_name(name: str, subset: str, names: DefaultDict[Tuple[str, str]
                 i += 1
     raise Exception('Cannot mangle image name')
 
-def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
+def get_defaulted_subset(subset: str, subsets: list[str]) -> str:
     if subset:
         return subset
     else:
@@ -2064,7 +2065,7 @@ class CvatToDmAnnotationConverter:
 
         return results
 
-    def _convert_shapes(self, shapes: List[CommonData.LabeledShape]) -> Iterable[dm.Annotation]:
+    def _convert_shapes(self, shapes: list[CommonData.LabeledShape]) -> Iterable[dm.Annotation]:
         dm_anno = []
 
         self.num_of_tracks = reduce(
@@ -2078,7 +2079,7 @@ class CvatToDmAnnotationConverter:
 
         return dm_anno
 
-    def convert(self) -> List[dm.Annotation]:
+    def convert(self) -> list[dm.Annotation]:
         dm_anno = []
         dm_anno.extend(self._convert_tags(self.cvat_frame_anno.tags))
         dm_anno.extend(self._convert_shapes(self.cvat_frame_anno.labeled_shapes))
@@ -2091,7 +2092,7 @@ def convert_cvat_anno_to_dm(
     map_label,
     format_name=None,
     dimension=DimensionType.DIM_2D
-) -> List[dm.Annotation]:
+) -> list[dm.Annotation]:
     converter = CvatToDmAnnotationConverter(
         cvat_frame_anno=cvat_frame_anno,
         label_attrs=label_attrs,
