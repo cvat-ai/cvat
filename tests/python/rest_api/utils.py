@@ -451,7 +451,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
         if self.cmp_ignore_keys:
             ignore_regex_keys = [f"root(\\[\\d+\\])?\\['{k}'\\]" for k in self.cmp_ignore_keys]
         else:
-            ignore_keys = None
+            ignore_regex_keys = None
 
         diff = DeepDiff(
             list(gt_objects),

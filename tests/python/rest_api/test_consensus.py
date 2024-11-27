@@ -1206,7 +1206,7 @@ class TestListAssigneeConsensusReports(_PermissionTestBase):
             )
 
         if expected_data is not None:
-            DeepDiff(expected_data, results, ignore_order=True) == {}
+            assert DeepDiff(expected_data, results, ignore_order=True) == {}
 
         return results
 
@@ -1328,7 +1328,7 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
         assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
-            DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
 
         return json.loads(response.data)
 
