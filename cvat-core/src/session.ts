@@ -172,6 +172,17 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async commit(added, removed, frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.commit,
+                        added,
+                        removed,
+                        frame,
+                    );
+                    return result;
+                },
+
                 async exportDataset(
                     format: string,
                     saveImages: boolean,
@@ -332,7 +343,7 @@ export class Session {
             delTrackKeyframesOnly?: boolean;
         }) => Promise<void>;
         save: (
-            onUpdate ?: (message: string) => void,
+            onUpdate?: (message: string) => void,
         ) => Promise<void>;
         search: (
             frameFrom: number,
@@ -361,6 +372,11 @@ export class Session {
         }>;
         import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
         export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        commit: (
+            added: Omit<SerializedCollection, 'version'>,
+            removed: Omit<SerializedCollection, 'version'>,
+            frame: number,
+        ) => Promise<void>;
         statistics: () => Promise<Statistics>;
         hasUnsavedChanges: () => boolean;
         exportDataset: (
@@ -431,6 +447,7 @@ export class Session {
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
             statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
             hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),

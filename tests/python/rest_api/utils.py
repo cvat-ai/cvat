@@ -573,7 +573,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
     return task.id, response_.headers.get("X-Request-Id")
 
 
-def compare_annotations(a, b):
+def compare_annotations(a: dict, b: dict) -> dict:
     def _exclude_cb(obj, path):
         return path.endswith("['elements']") and not obj
 
@@ -591,6 +591,12 @@ def compare_annotations(a, b):
             r"root(\['\w+'\]\[\d+\])+\['source'\]",
         ],
     )
+
+
+DATUMARO_FORMAT_FOR_DIMENSION = {
+    "2d": "Datumaro 1.0",
+    "3d": "Datumaro 3D 1.0",
+}
 
 
 def parse_frame_step(frame_filter: str) -> int:
