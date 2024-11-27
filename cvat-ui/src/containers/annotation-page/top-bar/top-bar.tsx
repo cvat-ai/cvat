@@ -225,12 +225,12 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
-    private lockedPlayTimeout: boolean;
+    private isWaitingForPlayDelay: boolean;
     private unblock: any;
 
     constructor(props: Props) {
         super(props);
-        this.lockedPlayTimeout = false;
+        this.isWaitingForPlayDelay = false;
         this.inputFrameRef = React.createRef<HTMLInputElement>();
     }
 
@@ -272,13 +272,56 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (this.autoSaveInterval) window.clearInterval(this.autoSaveInterval);
             this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
         }
-        this.play();
+        this.handlePlayIfNecessary();
     }
 
     public componentWillUnmount(): void {
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
         this.unblock();
+    }
+
+    private async handlePlayIfNecessary(): Promise<void> {
+        const {
+            jobInstance,
+            frameNumber,
+            frameDelay,
+            frameFetching,
+            playing,
+            canvasIsReady,
+            onSwitchPlay,
+            onChangeFrame,
+        } = this.props;
+
+        const { stopFrame } = jobInstance;
+
+        if (playing && canvasIsReady && !frameFetching && !this.isWaitingForPlayDelay) {
+            this.isWaitingForPlayDelay = true;
+            try {
+                await new Promise((resolve) => {
+                    setTimeout(resolve, frameDelay);
+                });
+
+                const { playing: currentPlaying } = this.props;
+
+                if (currentPlaying) {
+                    const nextCandidate = frameNumber + 1;
+                    if (nextCandidate > stopFrame) {
+                        onSwitchPlay(false);
+                        return;
+                    }
+
+                    const next = await jobInstance.frames.search({ notDeleted: true }, nextCandidate, stopFrame);
+                    if (next !== null && isAbleToChangeFrame(next)) {
+                        onChangeFrame(next, currentPlaying);
+                    } else {
+                        onSwitchPlay(false);
+                    }
+                }
+            } finally {
+                this.isWaitingForPlayDelay = false;
+            }
+        }
     }
 
     private undo = (): void => {
@@ -570,44 +613,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
         return undefined;
     };
-
-    private play(): void {
-        const {
-            jobInstance,
-            frameNumber,
-            frameDelay,
-            frameFetching,
-            playing,
-            canvasIsReady,
-            onSwitchPlay,
-            onChangeFrame,
-        } = this.props;
-
-        const { stopFrame } = jobInstance;
-
-        if (playing && canvasIsReady && !frameFetching && !this.lockedPlayTimeout) {
-            this.lockedPlayTimeout = true;
-            setTimeout(async () => {
-                const { playing: currentPlaying } = this.props;
-                this.lockedPlayTimeout = false;
-
-                if (currentPlaying) {
-                    const nextCandidate = frameNumber + 1;
-                    if (nextCandidate > stopFrame) {
-                        onSwitchPlay(false);
-                        return;
-                    }
-
-                    const next = await jobInstance.frames.search({ notDeleted: true }, nextCandidate, stopFrame);
-                    if (next !== null && isAbleToChangeFrame(next)) {
-                        onChangeFrame(next, currentPlaying);
-                    } else {
-                        onSwitchPlay(false);
-                    }
-                }
-            }, frameDelay);
-        }
-    }
 
     private autoSave(): void {
         const { autoSave, saving, onSaveAnnotation } = this.props;
