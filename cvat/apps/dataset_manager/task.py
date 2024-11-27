@@ -123,6 +123,9 @@ class JobAnnotation:
         prefetch_images: bool = False,
         db_job: models.Job | None = None
     ):
+        assert db_job is None or lock_job_in_db is False
+        assert (db_job is None and queryset is None) or prefetch_images is False
+        assert db_job is None or queryset is None
         if db_job is None:
             if queryset is None:
                 queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
@@ -799,22 +802,19 @@ class JobAnnotation:
 
 
 class TaskAnnotation:
-    def __init__(self, pk, lock_jobs_in_db: bool = False):
-        db_task = models.Task.objects.select_related('data').get(id=pk)
+    def __init__(self, pk):
+        self.db_task = models.Task.objects.prefetch_related(
+            Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
+        ).get(id=pk)
 
         requested_job_types = [models.JobType.ANNOTATION]
-        if db_task.data.validation_mode == models.ValidationMode.GT_POOL:
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
 
-        db_jobs_queryset = (
-            JobAnnotation.add_prefetch_info(models.Job.objects)
+        self.db_jobs = (
+            JobAnnotation.add_prefetch_info(models.Job.objects, prefetch_images=False)
             .filter(segment__task_id=pk, type__in=requested_job_types)
         )
-        if lock_jobs_in_db:
-            db_jobs_queryset = db_jobs_queryset.select_for_update()
-
-        self.db_jobs = list(db_jobs_queryset)
-        self.db_task = self.db_jobs[0].segment.task
 
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
@@ -955,13 +955,13 @@ class TaskAnnotation:
     def init_from_db(self):
         self.reset()
 
-        for db_job in self.db_jobs:
+        for db_job in self.db_jobs.select_for_update():
             if db_job.type == models.JobType.GROUND_TRUTH and not (
                 self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
             ):
                 continue
 
-            gt_annotation = JobAnnotation(db_job.id, lock_job_in_db=True, db_job=db_job)
+            gt_annotation = JobAnnotation(db_job.id, db_job=db_job)
             gt_annotation.init_from_db()
             if gt_annotation.ir_data.version > self.ir_data.version:
                 self.ir_data.version = gt_annotation.ir_data.version
@@ -1113,7 +1113,7 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
     # more dump request received at the same time:
     # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
-        task = TaskAnnotation(task_id, lock_jobs_in_db=True)
+        task = TaskAnnotation(task_id)
         task.init_from_db()
 
     exporter = make_exporter(format_name)
