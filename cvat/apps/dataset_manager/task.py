@@ -1023,7 +1023,7 @@ def get_job_data(pk):
 
 @silk_profile(name="POST job data")
 @transaction.atomic
-def put_job_data(pk, data, db_job: models.Job | None = None):
+def put_job_data(pk, data: AnnotationIR | dict, db_job: models.Job | None = None):
     annotation = JobAnnotation(pk, db_job=db_job)
     annotation.put(data)
 
@@ -1033,7 +1033,7 @@ def put_job_data(pk, data, db_job: models.Job | None = None):
 @silk_profile(name="UPDATE job data")
 @plugin_decorator
 @transaction.atomic
-def patch_job_data(pk, data, action, db_job: models.Job | None = None):
+def patch_job_data(pk, data: AnnotationIR | dict, action: PatchAction, db_job: models.Job | None = None):
     annotation = JobAnnotation(pk, db_job=db_job)
     if action == PatchAction.CREATE:
         annotation.create(data)
