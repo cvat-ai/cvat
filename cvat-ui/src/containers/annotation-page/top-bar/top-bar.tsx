@@ -28,7 +28,7 @@ import {
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType, Job, JobType } from 'cvat-core-wrapper';
+import { Job } from 'cvat-core-wrapper';
 import {
     CombinedState,
     FrameSpeed,
@@ -225,10 +225,12 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
+    private lockedPlayTimeout: boolean;
     private unblock: any;
 
     constructor(props: Props) {
         super(props);
+        this.lockedPlayTimeout = false;
         this.inputFrameRef = React.createRef<HTMLInputElement>();
     }
 
@@ -572,7 +574,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private play(): void {
         const {
             jobInstance,
-            frameSpeed,
             frameNumber,
             frameDelay,
             frameFetching,
@@ -582,44 +583,26 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             onChangeFrame,
         } = this.props;
 
-        if (playing && canvasIsReady && !frameFetching) {
-            if (frameNumber < jobInstance.stopFrame) {
-                let framesSkipped = 0;
-                if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
-                    framesSkipped = 1;
-                }
-                if (frameSpeed === FrameSpeed.Fastest && frameNumber + 2 < jobInstance.stopFrame) {
-                    framesSkipped = 2;
-                }
+        if (playing && canvasIsReady && !frameFetching && !this.lockedPlayTimeout) {
+            this.lockedPlayTimeout = true;
+            setTimeout(async () => {
+                const { playing: stillPlaying } = this.props;
+                this.lockedPlayTimeout = false;
 
-                setTimeout(async () => {
-                    const { playing: stillPlaying } = this.props;
-                    if (stillPlaying) {
-                        if (isAbleToChangeFrame()) {
-                            if (jobInstance.type === JobType.GROUND_TRUTH) {
-                                const newFrame = await jobInstance.frames.search(
-                                    { notDeleted: true },
-                                    frameNumber + 1,
-                                    jobInstance.stopFrame,
-                                );
-                                if (newFrame !== null) {
-                                    onChangeFrame(newFrame, stillPlaying);
-                                } else {
-                                    onSwitchPlay(false);
-                                }
-                            } else {
-                                onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                            }
-                        } else if (jobInstance.dimension === DimensionType.DIMENSION_2D) {
-                            onSwitchPlay(false);
-                        } else {
-                            setTimeout(() => this.play(), frameDelay);
-                        }
+                if (stillPlaying) {
+                    const newFrame = await jobInstance.frames.search(
+                        { notDeleted: true },
+                        frameNumber + 1,
+                        jobInstance.stopFrame,
+                    );
+
+                    if (newFrame !== null && isAbleToChangeFrame(newFrame)) {
+                        onChangeFrame(newFrame, stillPlaying);
+                    } else {
+                        onSwitchPlay(false);
                     }
-                }, frameDelay);
-            } else {
-                onSwitchPlay(false);
-            }
+                }
+            }, frameDelay);
         }
     }
 
