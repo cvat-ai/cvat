@@ -203,7 +203,7 @@ class IMediaReader(ABC):
         dimension: DimensionType = DimensionType.DIM_2D
     ):
         self._source_path = source_path
-        self._source_path_set = set(source_path)
+        self._source_path_set = set(source_path) if source_path else set()
 
         self._step = step
 

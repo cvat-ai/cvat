@@ -642,7 +642,7 @@ class ImageManifestManager(_ManifestManager):
         index_list = []
         subset = []
         # First, create a dictionary mapping image names to their indices
-        name_to_index = {name: index for index, name in enumerate(subset_names)}
+        name_to_index = {name: index for index, name in enumerate(subset_names)} if subset_names else {}
 
         # Now, loop through the images and check against the dictionary
         for _, image in self:
