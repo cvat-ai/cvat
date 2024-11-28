@@ -583,15 +583,14 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     if (!cancellationRef.current) {
                                         canvasInstance.setup(frameData, []);
                                         storage.dispatch(fetchAnnotationsAsync());
-                                        if (isMounted()) {
-                                            if (targetObjectState !== null) {
-                                                onClose();
-                                            }
-                                        }
                                     }
                                 }).finally(() => {
                                     if (isMounted()) {
-                                        dispatch(reducerActions.resetAfterRun());
+                                        if (targetObjectState !== null) {
+                                            onClose();
+                                        } else {
+                                            dispatch(reducerActions.resetAfterRun());
+                                        }
                                     }
                                 }).catch((error: unknown) => {
                                     if (error instanceof Error) {
