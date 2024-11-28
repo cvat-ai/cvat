@@ -64,9 +64,11 @@ from shared.utils.helpers import (
 )
 
 from .utils import (
+    DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
     compare_annotations,
     create_task,
+    export_dataset,
     export_task_backup,
     export_task_dataset,
     parse_frame_step,
@@ -969,6 +971,46 @@ class TestGetTaskDataset:
                 assert any(
                     subset_path in path for path in zip_file.namelist()
                 ), f"No {subset_path} in {zip_file.namelist()}"
+
+    @pytest.mark.parametrize(
+        "dimension, mode", [("2d", "annotation"), ("2d", "interpolation"), ("3d", "annotation")]
+    )
+    def test_datumaro_export_without_annotations_includes_image_info(
+        self, admin_user, tasks, mode, dimension
+    ):
+        task = next(
+            t for t in tasks if t.get("size") if t["mode"] == mode if t["dimension"] == dimension
+        )
+
+        with make_api_client(admin_user) as api_client:
+            dataset_file = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    api_version=2,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
+            )
+
+        with zipfile.ZipFile(dataset_file) as zip_file:
+            annotations = json.loads(zip_file.read("annotations/default.json"))
+
+        assert annotations["items"]
+        for item in annotations["items"]:
+            assert "media" not in item
+
+            if dimension == "2d":
+                assert osp.splitext(item["image"]["path"])[0] == item["id"]
+                assert not Path(item["image"]["path"]).is_absolute()
+                assert tuple(item["image"]["size"]) > (0, 0)
+            elif dimension == "3d":
+                assert osp.splitext(osp.basename(item["point_cloud"]["path"]))[0] == item["id"]
+                assert not Path(item["point_cloud"]["path"]).is_absolute()
+                for related_image in item["related_images"]:
+                    assert not Path(related_image["path"]).is_absolute()
+                    if "size" in related_image:
+                        assert tuple(related_image["size"]) > (0, 0)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -5184,6 +5226,47 @@ class TestImportTaskAnnotations:
         self._delete_annotations(task_id)
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
+
+    @pytest.mark.parametrize("dimension", ["2d", "3d"])
+    def test_can_import_datumaro_json(self, admin_user, tasks, dimension):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["dimension"] == dimension and t.get("validation_mode") != "gt_pool"
+        )
+
+        with make_api_client(admin_user) as api_client:
+            original_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+            )
+
+            dataset_archive = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    api_version=2,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
+            )
+
+        with zipfile.ZipFile(dataset_archive) as zip_file:
+            annotations = zip_file.read("annotations/default.json")
+
+        with TemporaryDirectory() as tempdir:
+            annotations_path = Path(tempdir) / "annotations.json"
+            annotations_path.write_bytes(annotations)
+            self.client.tasks.retrieve(task["id"]).import_annotations(
+                DATUMARO_FORMAT_FOR_DIMENSION[dimension], annotations_path
+            )
+
+        with make_api_client(admin_user) as api_client:
+            updated_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+            )
+
+        assert compare_annotations(original_annotations, updated_annotations) == {}
 
     @pytest.mark.parametrize(
         "format_name",
