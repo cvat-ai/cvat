@@ -44,7 +44,7 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
 def wait_and_download_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 100,
     interval: float = 0.1,
     download_result: bool = True,
     **kwargs,
@@ -75,7 +75,7 @@ def wait_and_download_v1(
 def export_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 100,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -115,7 +115,7 @@ def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 30,
+    max_retries: int = 100,
     interval: float = 0.1,
     download_result: bool = True,
 ) -> Optional[bytes]:
@@ -153,7 +153,7 @@ def wait_and_download_v2(
 def export_v2(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 100,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
