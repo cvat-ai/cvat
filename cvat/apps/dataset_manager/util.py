@@ -99,7 +99,7 @@ def faster_deepcopy(v):
 class LockNotAvailableError(Exception):
     pass
 
-class ProlongLockError(Exception):
+class ExtendLockError(Exception):
     pass
 
 

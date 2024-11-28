@@ -32,7 +32,7 @@ else:
     to handle possible cases when a lock wasn't released by the worker process
     and will be released automatically by Redis
     """
-    DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT = int(os.getenv("DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT", 10))
+    DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT = int(os.getenv("DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT", default_dataset_lock_acquire_timeout))
 
 DATASET_EXPORT_LOCKED_RETRY_INTERVAL = int(os.getenv("CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL", 60))
 "Retry interval for cases the export cache lock was unavailable, in seconds"

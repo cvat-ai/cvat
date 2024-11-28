@@ -25,10 +25,10 @@ from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
-    LockNotAvailableError, ProlongLockError,
+    LockNotAvailableError, ExtendLockError,
     current_function_name, get_export_cache_lock,
     get_export_cache_dir, make_export_filename,
-    parse_export_file_path, make_export_cache_lock_key
+    parse_export_file_path
 )
 from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 from pottery.redlock import Redlock
@@ -39,7 +39,8 @@ from time import sleep
 slogger = ServerLogManager(__name__)
 
 _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
-def log_exception(logger=None, exc_info=True):
+
+def log_exception(logger: logging.Logger | None = None, exc_info: bool = True):
     if logger is None:
         logger = slogger
     logger.exception("[%s @ %s]: exception occurred" % \
@@ -59,7 +60,8 @@ TTL_CONSTS = {
 EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.DATASET_EXPORT_LOCKED_RETRY_INTERVAL)
 EXPORT_LOCK_TTL = settings.DATASET_EXPORT_LOCK_TTL
-EXPORT_LOCK_EXTEND_INTERVAL = EXPORT_LOCK_TTL - 2 # todo: move into const
+# prevent lock auto releasing when extending a lock by setting a slightly lower value
+EXPORT_LOCK_EXTEND_INTERVAL = EXPORT_LOCK_TTL - 2
 
 
 def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
@@ -114,33 +116,31 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     return current_rq_job
 
 
-class ProlongLockThread(threading.Thread):
+class ExtendLockThread(threading.Thread):
     def __init__(
         self,
         *,
         lock: Redlock,
         lock_extend_interval: int,
         stop_event: threading.Event,
-        **kwargs,
     ):
+        super().__init__(target=self._extend_lock)
+
         self.lock = lock
         self.lock_extend_interval = lock_extend_interval
         self.cur_sleep_interval = lock_extend_interval
         self.stop_event = stop_event
         self.logger = ServerLogManager(__name__)
         self.max_retry_attempt_count = 3
-        super().__init__(**kwargs, target=self._prolong_lock)
 
     def _reset(self):
         self.cur_sleep_interval = self.lock_extend_interval
 
-    def _prolong_lock(self):
+    def _extend_lock(self):
         """
-        Prolong the lock's TTL every <lock_extend_interval> seconds until <stop_event> is set.
+        Extend the lock's TTL every <lock_extend_interval> seconds until <stop_event> is set.
         The stop event is checked every second to minimize waiting time when the export process is completed.
         """
-
-        self.logger.glob.debug("The prolong_lock is called")
 
         while not self.stop_event.is_set():
             sleep(1)
@@ -150,11 +150,11 @@ class ProlongLockThread(threading.Thread):
                 continue
 
             self.logger.glob.debug(
-                f"Extend lock {self.lock.key}, number of remaining extensions: {self.lock.num_extensions - self.lock._extension_num}"
+                f"Extend lock {self.lock.key}, number of remaining extensions: "
+                f"{self.lock.num_extensions - self.lock._extension_num}"
             )
             for attempt_number in range(1, self.max_retry_attempt_count + 1):
                 try:
-                    # raise Exception('Ooops')
                     self.lock.extend()
                     self._reset()
                 except Exception as ex:
@@ -179,6 +179,7 @@ class ExportThread(threading.Thread):
         save_images: bool,
         dst_format: str,
     ):
+        super().__init__(target=self._export_dataset)
         self.cache_dir = cache_dir
         self.output_path = output_path
         self.instance_id = instance_id
@@ -186,10 +187,8 @@ class ExportThread(threading.Thread):
         self.server_url = server_url
         self.save_images = save_images
         self.dst_format = dst_format
-        super().__init__(target=self._export_dataset)
 
     def _export_dataset(self):
-        # sleep(10)
         with tempfile.TemporaryDirectory(dir=self.cache_dir) as temp_dir:
             temp_file = osp.join(temp_dir, "result")
             self.export_fn(
@@ -247,15 +246,6 @@ def export(
 
         os.makedirs(cache_dir, exist_ok=True)
 
-        current_rq_job = rq.get_current_job()
-        current_rq_job.meta["lock_key"] = make_export_cache_lock_key(output_path)
-        current_rq_job.save_meta()
-
-        # Acquiring a lock makes sense if a real export process is running and we are writing data into a file
-        # If such a file exists, we can just return the path without acquiring a lock
-        if osp.exists(output_path):
-            return output_path
-
         stop_event = threading.Event()
 
         with get_export_cache_lock(
@@ -265,14 +255,18 @@ def export(
             ttl=EXPORT_LOCK_TTL,
             num_extensions=math.ceil(rq.get_current_job().timeout / EXPORT_LOCK_EXTEND_INTERVAL),
         ) as red_lock:
-            extend_lock_thread = ProlongLockThread(
+            if osp.exists(output_path):
+                # Update last update time to prolong the export lifetime
+                # and postpone the file deleting by the cleaning job
+                os.utime(output_path, None)
+                return output_path
+
+            extend_lock_thread = ExtendLockThread(
                 lock=red_lock,
                 lock_extend_interval=EXPORT_LOCK_EXTEND_INTERVAL,
                 stop_event=stop_event,
             )
             extend_lock_thread.start()
-
-            print(f"current pid: {os.getpid()}")
 
             export_thread = ExportThread(
                 cache_dir,
@@ -287,8 +281,8 @@ def export(
 
             while export_thread.is_alive():
                 if stop_event.is_set():
-                    raise ProlongLockError("Export aborted because the lock extension failed.")
-                sleep(5)  # todo: move into const
+                    raise ExtendLockError("Export aborted because the lock extension failed.")
+                sleep(5)
 
             export_thread.join()
             stop_event.set()
