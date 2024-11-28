@@ -124,7 +124,7 @@ usage patterns and simpler/faster ways to achieve results.
   default `<api>/<object>_<method>`.
 
 - Server operations have different types for input and output values.
-  While it can be expected that an endopint with POST/PUT methods available
+  While it can be expected that an endpoint with POST/PUT methods available
   (like `create` or `partial_update`) has the same type for input and output
   (because it looks natural), it also leads to the situation, in which there
   are lots of read-/write-only fields, and it becomes hard for understanding.
