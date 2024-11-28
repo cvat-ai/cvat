@@ -4,7 +4,7 @@
 
 import datetime
 import traceback
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import rq
 from crum import get_current_request, get_current_user
@@ -26,6 +26,8 @@ from cvat.apps.organizations.serializers import (InvitationReadSerializer,
                                                  MembershipReadSerializer,
                                                  OrganizationReadSerializer)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.webhooks.models import Webhook
+from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
@@ -66,6 +68,7 @@ def task_id(instance):
     except Exception:
         return None
 
+
 def job_id(instance):
     if isinstance(instance, Job):
         return instance.id
@@ -77,6 +80,7 @@ def job_id(instance):
         return jid
     except Exception:
         return None
+
 
 def get_user(instance=None):
     # Try to get current user from request
@@ -97,6 +101,7 @@ def get_user(instance=None):
 
     return None
 
+
 def get_request(instance=None):
     request = get_current_request()
     if request is not None:
@@ -111,6 +116,7 @@ def get_request(instance=None):
 
     return None
 
+
 def _get_value(obj, key):
     if obj is not None:
         if isinstance(obj, dict):
@@ -119,21 +125,26 @@ def _get_value(obj, key):
 
     return None
 
+
 def request_id(instance=None):
     request = get_request(instance)
     return _get_value(request, "uuid")
+
 
 def user_id(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "id")
 
+
 def user_name(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "username")
 
+
 def user_email(instance=None):
     current_user = get_user(instance)
     return _get_value(current_user, "email") or None
+
 
 def organization_slug(instance):
     if isinstance(instance, Organization):
@@ -146,6 +157,7 @@ def organization_slug(instance):
         return org.slug
     except Exception:
         return None
+
 
 def get_instance_diff(old_data, data):
     ignore_related_fields = (
@@ -164,7 +176,8 @@ def get_instance_diff(old_data, data):
 
     return diff
 
-def _cleanup_fields(obj):
+
+def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
     fields=(
         "slug",
         "id",
@@ -183,6 +196,7 @@ def _cleanup_fields(obj):
         "url",
         "issues",
         "attributes",
+        "key",
     )
     subfields=(
         "url",
@@ -197,6 +211,7 @@ def _cleanup_fields(obj):
         else:
             data[k] = v
     return data
+
 
 def _get_object_name(instance):
     if isinstance(instance, Organization) or \
@@ -217,34 +232,32 @@ def _get_object_name(instance):
 
     return None
 
+
+SERIALIZERS = [
+    (Organization, OrganizationReadSerializer),
+    (Project, ProjectReadSerializer),
+    (Task, TaskReadSerializer),
+    (Job, JobReadSerializer),
+    (User, BasicUserSerializer),
+    (CloudStorage, CloudStorageReadSerializer),
+    (Issue, IssueReadSerializer),
+    (Comment, CommentReadSerializer),
+    (Label, LabelSerializer),
+    (Membership, MembershipReadSerializer),
+    (Invitation, InvitationReadSerializer),
+    (Webhook, WebhookReadSerializer),
+]
+
+
 def get_serializer(instance):
     context = {
         "request": get_current_request()
     }
 
     serializer = None
-    if isinstance(instance, Organization):
-        serializer = OrganizationReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Project):
-        serializer = ProjectReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Task):
-        serializer = TaskReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Job):
-        serializer = JobReadSerializer(instance=instance, context=context)
-    if isinstance(instance, User):
-        serializer = BasicUserSerializer(instance=instance, context=context)
-    if isinstance(instance, CloudStorage):
-        serializer = CloudStorageReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Issue):
-        serializer = IssueReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Comment):
-        serializer = CommentReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Label):
-        serializer = LabelSerializer(instance=instance, context=context)
-    if isinstance(instance, Membership):
-        serializer = MembershipReadSerializer(instance=instance, context=context)
-    if isinstance(instance, Invitation):
-        serializer = InvitationReadSerializer(instance=instance, context=context)
+    for model, serializer_class in SERIALIZERS:
+        if isinstance(instance, model):
+            serializer = serializer_class(instance=instance, context=context)
 
     return serializer
 
@@ -253,6 +266,7 @@ def get_serializer_without_url(instance):
     if serializer:
         serializer.fields.pop("url", None)
     return serializer
+
 
 def handle_create(scope, instance, **kwargs):
     oid = organization_id(instance)
@@ -288,6 +302,7 @@ def handle_create(scope, instance, **kwargs):
         payload=payload,
     )
 
+
 def handle_update(scope, instance, old_instance, **kwargs):
     oid = organization_id(instance)
     oslug = organization_slug(instance)
@@ -322,12 +337,14 @@ def handle_update(scope, instance, old_instance, **kwargs):
             payload={"old_value": change["old_value"]},
         )
 
+
 def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     deletion_cache = get_cache()
+    instance_id = getattr(instance, "id", None)
     if store_in_deletion_cache:
         deletion_cache.set(
             instance.__class__,
-            instance.id,
+            instance_id,
             {
                 "oid": organization_id(instance),
                 "oslug": organization_slug(instance),
@@ -338,7 +355,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         )
         return
 
-    instance_meta_info = deletion_cache.pop(instance.__class__, instance.id)
+    instance_meta_info = deletion_cache.pop(instance.__class__, instance_id)
     if instance_meta_info:
         oid = instance_meta_info["oid"]
         oslug = instance_meta_info["oslug"]
@@ -360,7 +377,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         scope=scope,
         request_id=request_id(),
         on_commit=True,
-        obj_id=getattr(instance, 'id', None),
+        obj_id=instance_id,
         obj_name=_get_object_name(instance),
         org_id=oid,
         org_slug=oslug,
@@ -372,15 +389,12 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
         user_email=uemail,
     )
 
+
 def handle_annotations_change(instance, annotations, action, **kwargs):
     def filter_data(data):
         filtered_data = {
             "id": data["id"],
-            "frame": data["frame"],
-            "attributes": data["attributes"],
         }
-        if label_id := data.get("label_id"):
-            filtered_data["label_id"] = label_id
 
         return filtered_data
 
