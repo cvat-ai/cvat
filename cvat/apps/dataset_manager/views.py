@@ -60,8 +60,8 @@ TTL_CONSTS = {
 EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.DATASET_EXPORT_LOCKED_RETRY_INTERVAL)
 EXPORT_LOCK_TTL = settings.DATASET_EXPORT_LOCK_TTL
-# prevent lock auto releasing when extending a lock by setting a slightly lower value
-EXPORT_LOCK_EXTEND_INTERVAL = EXPORT_LOCK_TTL - 2
+
+EXPORT_LOCK_EXTEND_INTERVAL = settings.DATASET_EXPORT_LOCK_EXTEND_INTERVAL
 
 
 def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:

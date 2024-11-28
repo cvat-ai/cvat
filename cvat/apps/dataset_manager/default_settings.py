@@ -4,11 +4,14 @@
 
 import os
 import warnings
+from django.core.exceptions import ImproperlyConfigured
+
 
 DATASET_CACHE_TTL = int(os.getenv("CVAT_DATASET_CACHE_TTL", 60 * 60 * 24))
 "Base lifetime for cached exported datasets, in seconds"
 
 default_dataset_export_lock_ttl = 60 * 5
+
 DATASET_EXPORT_LOCK_TTL = int(os.getenv("CVAT_DATASET_EXPORT_LOCK_TTL",  default_dataset_export_lock_ttl))
 """
 Default lifetime for the export cache lock, in seconds.
@@ -16,6 +19,12 @@ This value should be short enough to minimize the waiting time until the lock is
 (e.g., in cases where a worker process is killed by the OOM killer and the lock is not released).
 The lock will be automatically extended as needed for the duration of the worker process.
 """
+
+# prevent lock auto releasing when extending a lock by setting a slightly lower value
+DATASET_EXPORT_LOCK_EXTEND_INTERVAL = DATASET_EXPORT_LOCK_TTL - 10
+
+if DATASET_EXPORT_LOCK_EXTEND_INTERVAL < 5:
+    raise ImproperlyConfigured("Recheck value of DATASET_EXPORT_LOCK_TTL")
 
 DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT = os.getenv("CVAT_DATASET_CACHE_LOCK_TIMEOUT")
 "Timeout for cache lock acquiring, in seconds"
@@ -26,7 +35,7 @@ if DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT is not None:
         "The CVAT_DATASET_CACHE_LOCK_TIMEOUT is deprecated, "
         "use DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT instead", DeprecationWarning)
 else:
-    default_dataset_lock_acquire_timeout = default_dataset_export_lock_ttl + 5
+    default_dataset_lock_acquire_timeout = default_dataset_export_lock_ttl + 30
     """
     Set default lock acquire timeout to the default lock lifetime + small buffer
     to handle possible cases when a lock wasn't released by the worker process
