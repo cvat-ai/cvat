@@ -302,7 +302,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                     setTimeout(resolve, frameDelay);
                 });
 
-                const { playing: currentPlaying } = this.props;
+                const { playing: currentPlaying, showDeletedFrames } = this.props;
 
                 if (currentPlaying) {
                     const nextCandidate = frameNumber + 1;
@@ -311,7 +311,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                         return;
                     }
 
-                    const next = await jobInstance.frames.search({ notDeleted: true }, nextCandidate, stopFrame);
+                    const next = await jobInstance.frames
+                        .search({ notDeleted: !showDeletedFrames }, nextCandidate, stopFrame);
                     if (next !== null && isAbleToChangeFrame(next)) {
                         onChangeFrame(next, currentPlaying);
                     } else {
