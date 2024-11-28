@@ -300,7 +300,7 @@ class ExportDatasetMixin(_ExportMixin):
         cloud_storage_id: Optional[int] = None,
     ) -> None:
         """
-        Export a dataset in the specified format (e.g. 'YOLO ZIP 1.0').
+        Export a dataset in the specified format (e.g. 'YOLO 1.1').
         By default, a result file will be downloaded based on the default configuration.
         To force file downloading, pass `location=Location.LOCAL`.
         To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.

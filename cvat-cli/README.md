@@ -11,7 +11,7 @@ Overview of functionality:
 - List all tasks (supports basic CSV or JSON output)
 - Download JPEG frames (supports a list of frame IDs)
 - Dump annotations (supports all formats via format string)
-- Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0')
+- Upload annotations for a task in the specified format (e.g. 'YOLO 1.1')
 - Export and download a whole task
 - Import a task
 
