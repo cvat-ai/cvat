@@ -54,14 +54,9 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         key: frame,
         frame,
         name: gtJobMeta.frames[
-            (validationLayout.mode === ValidationMode.GT) ? frame : index
-            // The generic formula was here:
-            // https://github.com/cvat-ai/cvat/blob/45e1b4be5f40667d254cb869395f4cfa7dafc3ad/cvat-ui/ ...
-            // ... /src/components/quality-control/task-quality/allocation-table.tsx#L43
-            //
-            // Shortly:
             // - gt job meta starts from the 0 task frame;
             // - honeypot gt job meta starts from the job start frame;
+            (validationLayout.mode === ValidationMode.GT) ? frame : index
         ]?.name ?? gtJobMeta.frames[0].name,
         active: !disabledFrames.includes(frame),
     }));
