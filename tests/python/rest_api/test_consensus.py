@@ -1321,7 +1321,7 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
         self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            _, response = api_client.consensus_api.assignee_consensus_retrieve_report_data(
+            _, response = api_client.consensus_api.assignee_consensus_retrieve_report(
                 obj_id, **kwargs
             )
 
@@ -1335,7 +1335,7 @@ class TestGetAssigneeConsensusReports(_PermissionTestBase):
     def _test_get_assignee_consensus_report_403(self, user: str, obj_id: int, **kwargs):
         with make_api_client(user) as api_client:
             with pytest.raises(exceptions.ApiException) as capture:
-                api_client.consensus_api.assignee_consensus_retrieve_report_data(obj_id, **kwargs)
+                api_client.consensus_api.assignee_consensus_retrieve_report(obj_id, **kwargs)
             assert capture.value.status == HTTPStatus.FORBIDDEN
 
     def test_can_get_assignee_consensus_reports(self, admin_user, consensus_assignee_reports):
