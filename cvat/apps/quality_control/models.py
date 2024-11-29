@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import models

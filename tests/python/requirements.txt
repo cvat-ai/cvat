@@ -4,9 +4,9 @@ pytest-cases==3.6.13
 pytest-timeout==2.1.0
 pytest-cov==4.1.0
 requests==2.32.2
-deepdiff==5.6.0
+deepdiff==7.0.1
 boto3==1.17.61
 Pillow==10.3.0
 python-dateutil==2.8.2
 pyyaml==6.0.0
-numpy==1.22.0
+numpy==2.0.0

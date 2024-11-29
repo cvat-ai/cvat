@@ -7,10 +7,11 @@ from __future__ import annotations
 import itertools
 import math
 from collections import Counter
+from collections.abc import Hashable, Sequence
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 import datumaro as dm
 import datumaro.util.mask_tools
@@ -77,7 +78,7 @@ class _Serializable:
     def to_dict(self) -> dict:
         return self._value_serializer(self._fields_dict())
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         d = asdict(self, recurse=False)
 
         for field_name in include_properties or []:
@@ -117,7 +118,7 @@ class AnnotationId(_Serializable):
 class AnnotationConflict(_Serializable):
     frame_id: int
     type: AnnotationConflictType
-    annotation_ids: List[AnnotationId]
+    annotation_ids: list[AnnotationId]
 
     @property
     def severity(self) -> AnnotationConflictSeverity:
@@ -146,7 +147,7 @@ class AnnotationConflict(_Serializable):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["severity"])
 
     @classmethod
@@ -160,7 +161,7 @@ class AnnotationConflict(_Serializable):
 
 @define(kw_only=True)
 class ComparisonParameters(_Serializable):
-    included_annotation_types: List[dm.AnnotationType] = [
+    included_annotation_types: list[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
         dm.AnnotationType.mask,
@@ -176,7 +177,7 @@ class ComparisonParameters(_Serializable):
     compare_attributes: bool = True
     "Enables or disables attribute checks"
 
-    ignored_attributes: List[str] = []
+    ignored_attributes: list[str] = []
 
     iou_threshold: float = 0.4
     "Used for distinction between matched / unmatched shapes"
@@ -238,7 +239,7 @@ class ComparisonParameters(_Serializable):
 
 @define(kw_only=True)
 class ConfusionMatrix(_Serializable):
-    labels: List[str]
+    labels: list[str]
     rows: np.ndarray
     precision: np.ndarray
     recall: np.ndarray
@@ -255,7 +256,7 @@ class ConfusionMatrix(_Serializable):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["axes"])
 
     @classmethod
@@ -305,7 +306,7 @@ class ComparisonReportAnnotationsSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(
             include_properties=include_properties or ["accuracy", "precision", "recall"]
         )
@@ -348,7 +349,7 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["accuracy"])
 
     @classmethod
@@ -378,7 +379,7 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         for field in ["valid_count", "total_count", "invalid_count"]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["accuracy"])
 
     @classmethod
@@ -410,7 +411,7 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
 @define(kw_only=True)
 class ComparisonReportComparisonSummary(_Serializable):
     frame_share: float
-    frames: List[str]
+    frames: list[str]
 
     @property
     def mean_conflict_count(self) -> float:
@@ -419,7 +420,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     conflict_count: int
     warning_count: int
     error_count: int
-    conflicts_by_type: Dict[AnnotationConflictType, int]
+    conflicts_by_type: dict[AnnotationConflictType, int]
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
@@ -434,7 +435,7 @@ class ComparisonReportComparisonSummary(_Serializable):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(
             include_properties=include_properties
             or [
@@ -466,7 +467,7 @@ class ComparisonReportComparisonSummary(_Serializable):
 
 @define(kw_only=True, init=False)
 class ComparisonReportFrameSummary(_Serializable):
-    conflicts: List[AnnotationConflict]
+    conflicts: list[AnnotationConflict]
 
     @cached_property
     def conflict_count(self) -> int:
@@ -481,7 +482,7 @@ class ComparisonReportFrameSummary(_Serializable):
         return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR])
 
     @cached_property
-    def conflicts_by_type(self) -> Dict[AnnotationConflictType, int]:
+    def conflicts_by_type(self) -> dict[AnnotationConflictType, int]:
         return Counter(c.type for c in self.conflicts)
 
     annotations: ComparisonReportAnnotationsSummary
@@ -503,7 +504,7 @@ class ComparisonReportFrameSummary(_Serializable):
 
         self.__attrs_init__(*args, **kwargs)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
 
     @classmethod
@@ -534,14 +535,14 @@ class ComparisonReportFrameSummary(_Serializable):
 class ComparisonReport(_Serializable):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
-    frame_results: Dict[int, ComparisonReportFrameSummary]
+    frame_results: dict[int, ComparisonReportFrameSummary]
 
     @property
-    def conflicts(self) -> List[AnnotationConflict]:
+    def conflicts(self) -> list[AnnotationConflict]:
         return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> ComparisonReport:
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReport:
         return cls(
             parameters=ComparisonParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d["comparison_summary"]),
@@ -632,7 +633,7 @@ class _MemoizingAnnotationConverterFactory:
     def clear(self):
         self._annotation_mapping.clear()
 
-    def __call__(self, *args, **kwargs) -> List[dm.Annotation]:
+    def __call__(self, *args, **kwargs) -> list[dm.Annotation]:
         converter = _MemoizingAnnotationConverter(*args, factory=self, **kwargs)
         return converter.convert()
 
@@ -861,7 +862,7 @@ class _LineMatcher(dm.ops.LineMatcher):
         return sum(np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))) / len(a)
 
     @classmethod
-    def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Creates 2 polylines with the same numbers of points,
         the points are placed on the original lines with the same step.
@@ -959,7 +960,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self,
         categories: dm.CategoriesInfo,
         *,
-        included_ann_types: Optional[List[dm.AnnotationType]] = None,
+        included_ann_types: Optional[list[dm.AnnotationType]] = None,
         return_distances: bool = False,
         iou_threshold: float = 0.5,
         # https://cocodataset.org/#keypoints-eval
@@ -994,7 +995,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
     def _instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
-    ) -> Tuple[float, float, float, float]:
+    ) -> tuple[float, float, float, float]:
         return dm.ops.max_bbox(
             a.get_bbox() if isinstance(a, dm.Skeleton) else a
             for a in instance_anns
@@ -1141,7 +1142,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             return instances, instance_map
 
         def _get_compiled_mask(
-            anns: Sequence[dm.Annotation], *, instance_ids: Dict[int, int]
+            anns: Sequence[dm.Annotation], *, instance_ids: dict[int, int]
         ) -> dm.CompiledMask:
             if not anns:
                 return None
@@ -1583,7 +1584,7 @@ class _Comparator:
 
     def find_groups(
         self, item: dm.DatasetItem
-    ) -> Tuple[Dict[int, List[dm.Annotation]], Dict[int, int]]:
+    ) -> tuple[dict[int, list[dm.Annotation]], dict[int, int]]:
         ann_groups = dm.ops.find_instances(
             [
                 ann
@@ -1632,7 +1633,7 @@ class _Comparator:
 
         return ds_to_gt_groups
 
-    def find_covered(self, item: dm.DatasetItem) -> List[dm.Annotation]:
+    def find_covered(self, item: dm.DatasetItem) -> list[dm.Annotation]:
         # Get annotations that can cover or be covered
         spatial_types = {
             dm.AnnotationType.polygon,
@@ -1707,7 +1708,7 @@ class DatasetComparator:
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
-        self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
+        self._frame_results: dict[int, ComparisonReportFrameSummary] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories(), settings=settings)
 
@@ -1744,7 +1745,7 @@ class DatasetComparator:
 
     def _process_frame(
         self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
-    ) -> List[AnnotationConflict]:
+    ) -> list[AnnotationConflict]:
         frame_id = self._dm_item_to_frame_id(ds_item, self._ds_dataset)
 
         frame_results = self.comparator.match_annotations(gt_item, ds_item)
@@ -1756,7 +1757,7 @@ class DatasetComparator:
 
     def _generate_frame_annotation_conflicts(
         self, frame_id: str, frame_results, *, gt_item: dm.DatasetItem, ds_item: dm.DatasetItem
-    ) -> List[AnnotationConflict]:
+    ) -> list[AnnotationConflict]:
         conflicts = []
 
         matches, mismatches, gt_unmatched, ds_unmatched, _ = frame_results["all_ann_types"]
@@ -2017,7 +2018,7 @@ class DatasetComparator:
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
 
-    def _make_zero_confusion_matrix(self) -> Tuple[List[str], np.ndarray, Dict[int, int]]:
+    def _make_zero_confusion_matrix(self) -> tuple[list[str], np.ndarray, dict[int, int]]:
         label_id_idx_map = {}
         label_names = []
         for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
@@ -2033,7 +2034,7 @@ class DatasetComparator:
         return label_names, confusion_matrix, label_id_idx_map
 
     def _compute_annotations_summary(
-        self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
     ) -> ComparisonReportAnnotationsSummary:
         matched_ann_counts = np.diag(confusion_matrix)
         ds_ann_counts = np.sum(confusion_matrix, axis=1)
@@ -2076,7 +2077,7 @@ class DatasetComparator:
         )
 
     def _generate_frame_annotations_summary(
-        self, confusion_matrix: np.ndarray, confusion_matrix_labels: List[str]
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
     ) -> ComparisonReportAnnotationsSummary:
         summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
 
@@ -2090,8 +2091,8 @@ class DatasetComparator:
         return summary
 
     def _generate_dataset_annotations_summary(
-        self, frame_summaries: Dict[int, ComparisonReportFrameSummary]
-    ) -> Tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
+        self, frame_summaries: dict[int, ComparisonReportFrameSummary]
+    ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
         # accumulate stats
         annotation_components = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
@@ -2372,7 +2373,7 @@ class QualityReportUpdateManager:
                     in active_validation_frames
                 )
 
-            jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
+            jobs: list[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
             job_data_providers = {
                 job.id: JobDataProvider(
                     job.id,
@@ -2384,7 +2385,7 @@ class QualityReportUpdateManager:
 
             quality_params = self._get_task_quality_params(task)
 
-        job_comparison_reports: Dict[int, ComparisonReport] = {}
+        job_comparison_reports: dict[int, ComparisonReport] = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = DatasetComparator(
@@ -2449,14 +2450,14 @@ class QualityReportUpdateManager:
         return get_current_job()
 
     def _compute_task_report(
-        self, task: Task, job_reports: Dict[int, ComparisonReport]
+        self, task: Task, job_reports: dict[int, ComparisonReport]
     ) -> ComparisonReport:
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
         # Thus, a separate report could be computed for the task. Instead, here we only
         # compute the combined summary of the job reports.
         task_intersection_frames = set()
-        task_conflicts: List[AnnotationConflict] = []
+        task_conflicts: list[AnnotationConflict] = []
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
@@ -2533,7 +2534,7 @@ class QualityReportUpdateManager:
 
         return task_report_data
 
-    def _save_reports(self, *, task_report: Dict, job_reports: List[Dict]) -> models.QualityReport:
+    def _save_reports(self, *, task_report: dict, job_reports: list[dict]) -> models.QualityReport:
         # TODO: add validation (e.g. ann id count for different types of conflicts)
 
         db_task_report = models.QualityReport(

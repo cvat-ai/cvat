@@ -354,6 +354,13 @@ class OpenApiModel(object):
         new_inst = new_cls._new_from_openapi_data(*args, **kwargs)
         return new_inst
 
+    def __setstate__(self, state):
+        # This is the same as the default implementation. We override it,
+        # because unpickling attempts to access `obj.__setstate__` on an uninitialized
+        # object, and if this method is not defined, it results in a call to `__getattr__`.
+        # This fails, because `__getattr__` relies on `self._data_store`, which doesn't
+        # exist in an uninitialized object.
+        self.__dict__.update(state)
 
 class ModelSimple(OpenApiModel):
     """the parent class of models whose type != object in their
@@ -1084,7 +1091,7 @@ def deserialize_file(response_data, configuration, content_disposition=None):
         (file_type): the deserialized file which is open
             The user is responsible for closing and reading the file
     """
-    fd, path = tempfile.mkstemp(dir=configuration.temp_folder_path)
+    fd, path = tempfile.mkstemp(dir=configuration.temp_folder_path if configuration else None)
     os.close(fd)
     os.remove(path)
 
@@ -1263,27 +1270,21 @@ def validate_and_convert_types(input_value, required_types_mixed, path_to_item,
     input_class_simple = get_simple_class(input_value)
     valid_type = is_valid_type(input_class_simple, valid_classes)
     if not valid_type:
-        if (configuration
-                or (input_class_simple == dict
-                    and dict not in valid_classes)):
-            # if input_value is not valid_type try to convert it
-            converted_instance = attempt_convert_item(
-                input_value,
-                valid_classes,
-                path_to_item,
-                configuration,
-                spec_property_naming,
-                key_type=False,
-                must_convert=True,
-                check_type=_check_type
-            )
-            return converted_instance
-        else:
-            raise get_type_error(input_value, path_to_item, valid_classes,
-                                 key_type=False)
+        # if input_value is not valid_type try to convert it
+        converted_instance = attempt_convert_item(
+            input_value,
+            valid_classes,
+            path_to_item,
+            configuration,
+            spec_property_naming,
+            key_type=False,
+            must_convert=True,
+            check_type=_check_type
+        )
+        return converted_instance
 
     # input_value's type is in valid_classes
-    if len(valid_classes) > 1 and configuration:
+    if len(valid_classes) > 1:
         # there are valid classes which are not the current class
         valid_classes_coercible = remove_uncoercible(
             valid_classes, input_value, spec_property_naming, must_convert=False)

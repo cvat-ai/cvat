@@ -27,6 +27,8 @@ class TestCLI:
     def setup(
         self,
         restore_db_per_function,  # force fixture call order to allow DB setup
+        restore_redis_inmem_per_function,
+        restore_redis_ondisk_per_function,
         fxt_stdout: io.StringIO,
         tmp_path: Path,
         admin_user: str,
@@ -347,3 +349,39 @@ class TestCLI:
 
         annotations = fxt_new_task.get_annotations()
         assert annotations.shapes
+
+    def test_auto_annotate_with_threshold(self, fxt_new_task: Task):
+        annotations = fxt_new_task.get_annotations()
+        assert not annotations.shapes
+
+        self.run_cli(
+            "auto-annotate",
+            str(fxt_new_task.id),
+            f"--function-module={__package__}.conf_threshold_function",
+            "--conf-threshold=0.75",
+        )
+
+        annotations = fxt_new_task.get_annotations()
+        assert annotations.shapes[0].points[0] == 0.75
+
+    def test_auto_annotate_with_cmtp(self, fxt_new_task: Task):
+        self.run_cli(
+            "auto-annotate",
+            str(fxt_new_task.id),
+            f"--function-module={__package__}.cmtp_function",
+            "--clear-existing",
+        )
+
+        annotations = fxt_new_task.get_annotations()
+        assert annotations.shapes[0].type.value == "mask"
+
+        self.run_cli(
+            "auto-annotate",
+            str(fxt_new_task.id),
+            f"--function-module={__package__}.cmtp_function",
+            "--clear-existing",
+            "--conv-mask-to-poly",
+        )
+
+        annotations = fxt_new_task.get_annotations()
+        assert annotations.shapes[0].type.value == "polygon"

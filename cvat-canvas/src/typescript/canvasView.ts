@@ -2877,6 +2877,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
             if (shapeView) shapeView.classList.remove(this.getHighlightClassname());
         });
+        const redrawMasks = (highlightedElements.elementsIDs.length !== 0 ||
+            this.highlightedElements.elementsIDs.length !== 0);
+
         if (highlightedElements.elementsIDs.length) {
             this.highlightedElements = { ...highlightedElements };
             this.canvas.classList.add('cvat-canvas-highlight-enabled');
@@ -2891,9 +2894,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             };
             this.canvas.classList.remove('cvat-canvas-highlight-enabled');
         }
-        const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
-        this.deleteObjects(masks);
-        this.addObjects(masks);
+        if (redrawMasks) {
+            const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
+            this.deleteObjects(masks);
+            this.addObjects(masks);
+        }
         if (this.highlightedElements.elementsIDs.length) {
             this.deactivate();
             const clientID = this.highlightedElements.elementsIDs[0];
