@@ -12,14 +12,16 @@ CVAT has the following features for automated quality control of annotations:
 - [Quality analytics](#how-to-check-task-quality-metrics)
 
 In this section we only highlight the key steps in quality estimation.
-Read the detailed guide on quality estimation in CVAT in the {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "Advanced section" >}}.
+Read the detailed guide on quality estimation in CVAT in the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "Advanced section" >}}.
 
 ## How to enable quality control for a new task
 
 1. Go to task creation
 1. Select the source media, configure other task parameters
 1. Scroll down to the **Quality Control** section
-1. Select one of the {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#validation-modes" "validation modes" >}} available
+1. Select one of the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#validation-modes" "validation modes" >}} available
 
 ![Create task with validation mode](/images/honeypot09.jpg)
 

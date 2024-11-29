@@ -17,7 +17,7 @@ and calculates annotation quality based on this comparison.
 > and compared on a per-frame basis with other tracks and shapes.
 
 > **Note** that quality estimation is currently available for tasks and jobs.
-> Quality estimation in projects is not implemented yet.
+> Quality estimation in projects is not supported.
 
 CVAT has the following features for automated quality control of annotations:
 - Validation set configuration for a task
@@ -36,6 +36,7 @@ See:
   - [Ground Truth](#ground-truth)
   - [Honeypots](#honeypots)
   - [Summary](#mode-summary)
+  - [Choosing the right mode](#choosing-the-right-mode)
 - [Quality management](#quality-management)
   - [Frames](#validation-set-management)
   - [Annotations](#annotation-management)
@@ -121,6 +122,8 @@ To delete the Ground Truth job, do the following:
 2. Click on three dots to open the menu.
 3. From the menu, select **Delete**.
 
+> Note: The Ground truth job in the "Honeypots" task validation mode cannot be deleted.
+
 ## Configuring quality estimation
 
 Quality estimation is configured on the Task level. There are 2 ways to enable it for a task.
@@ -190,8 +193,9 @@ stored in a [Ground Truth job](#ground-truth-jobs), where they can be managed.
 In this mode some of the task frames are selected into the validation set, represented as a
 separate Ground Truth job. The regular annotation jobs in the task are not affected in any way.
 
-Ground Truth jobs can be created and removed at the task creation automatically or
-manually, in any moment later. This validation mode is available for any tasks and annotations.
+Ground Truth jobs can be created at the task creation automatically or
+manually in any moment later. They can also be removed manually in any moment.
+This validation mode is available for any tasks and annotations.
 
 This is a flexible mode that can be enabled or disabled in any moment without any disruptions
 to the annotation process.
@@ -224,8 +228,8 @@ in each job, if possible.
 ### Honeypots
 
 In this mode some random frames of the task are selected into the validation set.
-Then, validation frames are randomly mixed into regular annotation jobs. It can also be
-called "Ground Truth pool", reflecting the way validation frames are used.
+Then, validation frames are randomly mixed into regular annotation jobs.
+This mode can also be called "Ground Truth pool", reflecting the way validation frames are used.
 This mode can only be used at task creation and cannot be changed later.
 
 The mode has some limitations on the compatible tasks:
@@ -237,6 +241,7 @@ and not for ordered sequences like videos.
 The validation set can be managed after the task is created - annotations can be edited,
 frames can be excluded and restored, and honeypot frames in the regular jobs can be changed.
 However, it's not possible to select new validation frames after the task is created.
+The Ground truth job created for this validation mode cannot be deleted.
 
 Parameters:
 - frame count per job (%) - the percent of job frames (segment size) to be **added** into each
@@ -246,17 +251,21 @@ This value must result in at least `frame count per job` * `segment size` frames
 
 ### Mode summary
 
-Here is a brief summary of the validation modes:
+Here is a brief comparison of the validation modes:
 
-| **Aspect**         | **Ground Truth**                                 | **Honeypots**                         |
+| **Aspect** | **Ground Truth** | **Honeypots** |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
-| When can be used        | any time                          | at task creation only |
-| Frame management options       | add, remove, exclude, restore     | exclude, restore, change honeypots in jobs |
-| Task frame requirements        | -                          | random ordering only |
-| Annotations    | any                                 | tracks are not supported |
-| Minimum validation frames count    | - `manual`, `random_uniform` - any</br>&nbsp;(but some jobs can get no validation frames)</br>- `random_per_job` - jobs count * GT frames per job        | not less than honeypots count per job |
+| When can be used | any time | at task creation only |
+| Frame management options | add, remove, exclude, restore | exclude, restore, change honeypots in jobs |
+| Task frame requirements | - | random ordering only |
+| Annotations | any | tracks are not supported |
+| Minimum validation frames count | - `manual`, `random_uniform` - any</br>&nbsp;(but some jobs can get no validation frames)</br>- `random_per_job` - jobs count * GT frames per job | not less than honeypots count per job |
 | Task annotation import | GT annotations and regular annotations do not affect each other | Annotations are imported both into the GT job and regular jobs. Annotations for validation frames are copied into corresponding honeypot frames. |
 | Task annotation export | GT annotations and regular annotations do not affect each other | Annotations for non-validation frames are exported as is. Annotations for validation frames are taken from the GT frames. Honeypot frames are skipped. |
+| Ground Truth job actions | create, delete | create |
+| Maximum Ground truth jobs | 1 | 1 |
+
+### Choosing the right mode
 
 Here are some examples on how to choose between these options. The general advice is to use
 Ground Truth for better flexibility, but keep in mind that it can require more resources for
@@ -414,14 +423,15 @@ The Analytics page has the following fields:
 
 <!--lint disable maximum-line-length-->
 
-| Field                   | Description                                                                                                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field | Description |
+| - | - |
 | Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
-| GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
-| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown.                                                                                                |
-| Quality report          | Quality report in JSON format.                                                                                                                                                                    |
-| Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
-| List of jobs            | List of all the jobs in the task                                                                                                                                                                  |
+| GT Conflicts | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset. |
+| Issues | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown. |
+| Quality report | Quality report in JSON format. |
+| Ground truth job data | Information about ground truth job, including date, time, and number of issues. |
+| List of jobs | List of all the jobs in the task  |
+
 <!--lint enable maximum-line-length-->
 
 ### GT conflicts in the CVAT interface
