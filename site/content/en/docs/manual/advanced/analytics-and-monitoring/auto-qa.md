@@ -254,9 +254,10 @@ The Ground truth job created for this validation mode cannot be deleted.
 
 Parameters:
 - frame count per job (%) - the percent of job frames (segment size) to be **added** into each
-annotation job from the validation set
+annotation job from the validation set. Can be specified in the `Overhead per job` field.
 - total frame count (%) - the percent of the task frames to be included into the validation set.
-This value must result in at least `frame count per job` * `segment size` frames.
+This value must result in at least `frame count per job` * `segment size` frames. Can be specified
+in the `Total honeypots` field.
 
 ### Mode summary
 
