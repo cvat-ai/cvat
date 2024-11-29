@@ -210,7 +210,12 @@ This is a simple method that selects frames into the validation set randomly,
 representing the [basic approach](#basics), described above.
 
 Parameters:
-- frame count (%) - the percent of the task frames to be used for validation
+- frame count - the number or percent of the task frames to be used for validation.
+Can be specified as an absolute number in the `Frame count` field or a percent in the `Quantity`
+field. If there are both fields on the page, they are linked, which means changing one of them
+will adjust the other one automatically.
+- random seed - a number to be used to initialize the random number generator. Can be useful if
+you want to create a reproducible sequence of frames.
 
 ##### Random per job
 
@@ -221,9 +226,13 @@ no validation frames, which makes it impossible to estimate quality in such jobs
 that using this method can result in increased total size of the validation set.
 
 Parameters:
-- frame count per job (%) - the percent of the job frames to be used for validation.
+- frame count per job - the percent of the job frames to be used for validation.
 This method uses segment size of the task to select the same number of validation frames
-in each job, if possible.
+in each job, if possible. Can be specified as an absolute number in the `Frame count`
+field or a percent in the `Quantity per job` field. If there are both fields on the page,
+they are linked, which means changing one of them will adjust the other one automatically.
+- random seed - a number to be used to initialize the random number generator. Can be useful if
+you want to create a reproducible sequence of frames.
 
 ### Honeypots
 
