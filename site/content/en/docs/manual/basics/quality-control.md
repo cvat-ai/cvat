@@ -51,7 +51,7 @@ Read the detailed guide on quality estimation in CVAT in the {{< ilink "/docs/ma
 ## How to enable immediate job feedback
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
-1. Set **Max validations per job** to above zero. 3 is a good staring number.
+1. Set **Max validations per job** to above zero. 3 is a good starting number.
 
 ![Configure job validations](/images/immediate-feedback-settings-validations.jpg)
 

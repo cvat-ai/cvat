@@ -123,7 +123,7 @@ To delete the Ground Truth job, do the following:
 
 ## Configuring quality estimation
 
-Quality estimation is configured on the Task level. There are 2 ways to enable for a task.
+Quality estimation is configured on the Task level. There are 2 ways to enable it for a task.
 
 ### How to enable quality control for a new task
 
@@ -156,10 +156,10 @@ Quality estimation is configured on the Task level. There are 2 ways to enable f
 
    - **Job type**: Use the default parameter **Ground truth**.
    - **Frame selection method**: Use the default parameter **Random**.
-   - **Quantity %**: Set the desired percentage of frames for the **Ground truth** job.
+   - **Quantity %**: Set the desired percentage of frames for the Ground truth job.
      <br>**Note** that when you use **Quantity %**, the **Frames** field will be autofilled.
-   - **Frame count**: Set the desired number of frames for the "ground truth" job.
-     <br>**Note** that when you use **Frames**, the **Quantity %** field will be will be autofilled.
+   - **Frame count**: Set the desired number of frames for the Ground truth job.
+     <br>**Note** that when you use **Frames**, the **Quantity %** field will be autofilled.
    - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
      It can be any integer number, the same value will yield the same random selection (given that the
      frame number is unchanged). <br> **Note** that if you want to use a
@@ -214,7 +214,7 @@ This method selects frames into the validation set randomly from each annotation
 
 It solves one of the issues with the simple Random method that some of the jobs can get
 no validation frames, which makes it impossible to estimate quality in such jobs. Note
-that using this methods can result in increased total size of the validation set.
+that using this method can result in increased total size of the validation set.
 
 Parameters:
 - frame count per job (%) - the percent of the job frames to be used for validation.
@@ -230,8 +230,8 @@ This mode can only be used at task creation and cannot be changed later.
 
 The mode has some limitations on the compatible tasks:
 - It's not possible to use it for an already existing task, the task has to be recreated.
-- This mode assumes random frame ordering, so it is only available for image annotation tasks a
-nd not for ordered sequences like videos.
+- This mode assumes random frame ordering, so it is only available for image annotation tasks
+and not for ordered sequences like videos.
 - Tracks are not supported in such tasks.
 
 The validation set can be managed after the task is created - annotations can be edited,
@@ -399,7 +399,7 @@ on the task **Quality Management** > **Analytics** page.
 
 ![Quality Analytics page - refresh button](/images/honeypot11.jpg)
 
-Once a quality metrics are computed, they are available for detailed review on this page.
+Once quality metrics are computed, they are available for detailed review on this page.
 Conflicts can be reviewed in the [Review mode of jobs](#gt-conflicts-in-the-cvat-interface).
 A job must have at least 1 validation frame (shown in the **Frame intersection** column) to
 be included in quality computation.
@@ -418,7 +418,7 @@ The Analytics page has the following fields:
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
 | GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
-| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, will show 0.                                                                                                |
+| Issues                  | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown.                                                                                                |
 | Quality report          | Quality report in JSON format.                                                                                                                                                                    |
 | Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
 | List of jobs            | List of all the jobs in the task                                                                                                                                                                  |
