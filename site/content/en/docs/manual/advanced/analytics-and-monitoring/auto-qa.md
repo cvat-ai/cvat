@@ -84,14 +84,14 @@ use auto-annotation features, and import annotations in this job. There can be n
 than 1 Ground Truth job in a task.
 
 To enable quality estimation in a task, you need to create a Ground truth job in the task,
-annotate it, and switch the job state to be `acceptance`-`completed`.
+annotate it, switch the job stage to `acceptance`, and set the job state to `completed`.
 Once the Ground Truth job is configured, CVAT will start using this job for quality estimation.
 
 ![Ground truth job actions](/images/honeypot04.jpg)
 
 ### Import annotations
 
-If you want to import annotations into the Ground truth job, do the following.
+If you want to import annotations into the Ground truth job, do the following:
 
 1. Open the task, and find the Ground truth job in the jobs list.
 2. Click on three dots to open the menu.
@@ -107,7 +107,7 @@ If you want to import annotations into the Ground truth job, do the following.
 
 ### Export annotations
 
-To export annotations from the Ground Truth job, do the following.
+To export annotations from the Ground Truth job, do the following:
 
 1. Open the task, and find a job in the jobs list.
 2. Click on three dots to open the menu.
@@ -115,7 +115,7 @@ To export annotations from the Ground Truth job, do the following.
 
 ### Delete
 
-To delete the Ground Truth job, do the following.
+To delete the Ground Truth job, do the following:
 
 1. Open the task, and find the Ground Truth job in the jobs list.
 2. Click on three dots to open the menu.
@@ -128,7 +128,7 @@ Quality estimation is configured on the Task level. There are 2 ways to enable f
 ### How to enable quality control for a new task
 
 1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
-2. Select the source media, configure other parameters
+2. Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated
 3. Scroll down to the **Quality Control** section below
 4. Select one of the [validation modes](#validation-modes) available
 
