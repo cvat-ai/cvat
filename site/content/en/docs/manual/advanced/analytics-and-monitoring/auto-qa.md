@@ -94,7 +94,7 @@ Once the Ground Truth job is configured, CVAT will start using this job for qual
 
 If you want to import annotations into the Ground truth job, do the following:
 
-1. Open the task, and find the Ground truth job in the jobs list.
+1. Open the task and find the Ground truth job in the jobs list.
 2. Click on three dots to open the menu.
 3. From the menu, select **Import annotations**.
 4. Select import format, and select file.
@@ -110,7 +110,7 @@ If you want to import annotations into the Ground truth job, do the following:
 
 To export annotations from the Ground Truth job, do the following:
 
-1. Open the task, and find a job in the jobs list.
+1. Open the task and find a job in the jobs list.
 2. Click on three dots to open the menu.
 3. From the menu, select **Export annotations**.
 
