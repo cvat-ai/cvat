@@ -13,9 +13,6 @@ and calculates annotation quality based on this comparison.
 > **Note** that quality estimation only supports
 > 2d tasks. It supports all the annotation types except 2d cuboids.
 
-> **Note** that tracks are considered separate shapes
-> and compared on a per-frame basis with other tracks and shapes.
-
 > **Note** that quality estimation is currently available for tasks and jobs.
 > Quality estimation in projects is not supported.
 
@@ -378,15 +375,16 @@ Annotation quality settings have the following parameters:
 | *Shape matching* | |
 | Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
 | Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects *Low overlap* warnings. It's supposed that *Min similarity threshold* <= *Low overlap threshold*. |
+| Match empty frames | Consider frames matched if there are no annotations both on GT and regular job frames |
 | | |
 | *Point and Skeleton matching* | |
-| OKS Sigma | Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the "side" is computed as a geometric mean of the width and height. Read more [here](https://cocodataset.org/#keypoints-eval). |
+| OKS Sigma | Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the "side" is computed as a geometric mean of the width and height. |
 | | |
 | *Point matching* | |
 | Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines matching area for each GT point based to the object size. The point size base parameter allows to configure how to determine the object size. If set to *image_size*, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to *group_bbox_size*, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
 | | |
 | *Polyline matching* | |
-| Relative thickness (frame side %) | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
+| Relative thickness | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
 | Check orientation | Indicates that polylines have direction. Used to produce *Mismatching direction* warnings |
 | Min similarity gain (%) | The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the *Check orientation* parameter. |
 | | |
@@ -400,6 +398,76 @@ Annotation quality settings have the following parameters:
 | Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
 
 <!--lint enable maximum-line-length-->
+
+## Comparisons
+
+### Tracks
+
+Tracks are split into separate shapes and compared on the per-frame basis with other tracks
+and shapes.
+
+### Tags
+
+The equality is used for matching.
+
+### Shapes
+
+A pair of shapes is considered matching, if both their shapes and labels match.
+For each shape, spatial parameters are matched first, then labels are matched.
+
+Each shape type can have their own spatial matching details. Specifically:
+- bounding box - [IoU](https://en.wikipedia.org/wiki/Jaccard_index) (including rotation).
+  For example, for a pair of bounding boxes it can be visualized this way:
+
+  ![Bbox IoU](/images/quality_comparison_bbox1.svg)
+
+  </br>`IoU = intersection area / union area`.</br>
+  The green part is the intersection, and green, yellow and red ones together are the union.
+
+- polygons, masks - IoU. Polygons and masks are considered interchangeable,
+  which means a mask can be matched with a polygon and vice versa. Polygons and masks in groups
+  are merged into a single object first.
+  If the [*Match only visible parts*](#annotation-quality-settings) option is enabled,
+  objects will be cut to only the visible (non-covered) parts only, which is determined by the
+  shape z order.
+- skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
+  dataset is used. Briefly, each skeleton point gets a circular area around,
+  determined by the *object size* (bounding box side) and *relative point size* (*sigma*) values,
+  where this point can be matched with the specified probability. If a bounding box is grouped
+  with the skeleton, it is used for object size computation, otherwise a bounding box of
+  visible points of the skeleton is used.
+
+  For example, consider a skeleton with 6 points and a square bounding box attached:
+
+  ![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
+
+  In this example, the *Sigma* parameter is `0.05` (5%) of the bbox side.
+  Areas shown in the green color cover ~68.2% (1 sigma) of the points,
+  corresponding to each GT point. A point on the boundary of such an area will have ~88% of
+  probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
+  for the corresponding GT point. A point on the boundary of such an area will have ~60% of
+  probability to be correct. These probabilities are then averaged over the visible points of the
+  skeleton, and the resulting values are compared against the *Min similarity threshold*
+  to determine whether the skeletons are matching. *Sigma* corresponds to one
+  from the [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution).
+
+- points - The OKS metric is used for each point group annotation. Same as for skeletons,
+  *OKS Sigma* determines relative point sizes. The *Point size base* setting allows
+  to configure whether points in point groups should use the group bounding box or the image space.
+  Using image space for object size can be useful if you want to treat each point
+  as a separate annotation.
+- polylines - A pair of lines is considered matching if all the points of one line lie within
+  a "hull" of the other one. The "hull" is determined as the area around the polyline, such as
+  if the line had some "thickness". For example, the black polyline can have a hull shown in
+  the green color:
+
+  ![Polyline thickness and hull](/images/quality_comparison_polylines1.png)
+
+  The line thickness can be configured via the *Relative thickness* setting.
+  The value is relative to the image side and determines a half of the hull width.
+- ovals - IoU.
+
+> **Note**: 2d cuboids are not supported
 
 ## Quality Analytics
 
