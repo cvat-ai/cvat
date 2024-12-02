@@ -138,10 +138,10 @@ In this mode some of the task frames are selected into the validation set, repre
 separate Ground Truth job. The regular annotation jobs in the task are not affected in any way.
 
 Ground Truth jobs can be created at the task creation automatically or
-manually in any moment later. They can also be removed manually in any moment.
+manually at any moment later. They can also be removed manually at any moment.
 This validation mode is available for any tasks and annotations.
 
-This is a flexible mode that can be enabled or disabled in any moment without any disruptions
+This is a flexible mode that can be enabled or disabled at any moment without any disruptions
 to the annotation process.
 
 #### Frame selection
@@ -403,7 +403,7 @@ Annotation quality settings have the following parameters:
 
 ## Quality Analytics
 
-> **Note**: quality analytics is a premium feature. Please check how to get access to this
+> **Note**: quality analytics is a paid feature. Please check how to get access to this
 > functionality in the {{< ilink "/docs/enterprise" "Paid features" >}} section of the site.
 
 Once the quality estimation is [enabled in a task](#configuring-quality-estimation)
@@ -430,7 +430,7 @@ be included in quality computation.
 
 ![Jobs list](/images/honeypot12.jpg)
 
-### Quality data
+### Quality Data
 
 The Analytics page has the following fields:
 
