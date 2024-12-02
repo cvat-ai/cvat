@@ -98,17 +98,17 @@ Quality estimation is configured on the Task level. There are 2 ways to enable i
 
   ![Configure job parameters](/images/honeypot02.jpg)
 
-  - **Job type**: Use the default parameter **Ground truth**.
-  - **Frame selection method**: Use the default parameter **Random**.
-  - **Quantity %**: Set the desired percentage of frames for the Ground truth job.
-    <br>**Note** that when you use **Quantity %**, the **Frames** field will be autofilled.
-  - **Frame count**: Set the desired number of frames for the Ground truth job.
-    <br>**Note** that when you use **Frames**, the **Quantity %** field will be autofilled.
-  - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
-    It can be any integer number, the same value will yield the same random selection (given that the
-    frame number is unchanged). <br> **Note** that if you want to use a
-    custom frame sequence, you can do this using the server API instead,
-    see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+- **Job type**: Use the default parameter **Ground truth**.
+- **Frame selection method**: Use the default parameter **Random**.
+- **Quantity %**: Set the desired percentage of frames for the Ground truth job.
+  <br>**Note** that when you use **Quantity %**, the **Frames** field will be autofilled.
+- **Frame count**: Set the desired number of frames for the Ground truth job.
+  <br>**Note** that when you use **Frames**, the **Quantity %** field will be autofilled.
+- **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
+  It can be any integer number, the same value will yield the same random selection (given that the
+  frame number is unchanged). <br> **Note** that if you want to use a
+  custom frame sequence, you can do this using the server API instead,
+  see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
 
@@ -365,36 +365,36 @@ Annotation quality settings have the following parameters:
 
 | **Parameter** | **Description** |
 | - | - |
-| *General reporting* |
+| _General reporting_ |
 | Target metric | The primary metric used for quality estimation. It affects which metric is displayed in UI and used for overall quality estimation. |
 | | |
-| *Immediate Feedback* | |
+| _Immediate Feedback_ | |
 | Max validations per job | Configures maximum job validations per assignment for the {{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}} feature. |
 | Target metric threshold | Defines the minimal quality requirements in terms of the selected target metric. Serves as an acceptance threshold for the {{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}} feature. |
 | | |
-| *Shape matching* | |
+| _Shape matching_ | |
 | Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
-| Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects *Low overlap* warnings. It's supposed that *Min similarity threshold* <= *Low overlap threshold*. |
+| Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects _Low overlap_ warnings. It's supposed that _Min similarity threshold_ <= _Low overlap threshold_. |
 | Match empty frames | Consider frames matched if there are no annotations both on GT and regular job frames |
 | | |
-| *Point and Skeleton matching* | |
+| _Point and Skeleton matching_ | |
 | OKS Sigma | Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the "side" is computed as a geometric mean of the width and height. |
 | | |
-| *Point matching* | |
-| Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines matching area for each GT point based to the object size. The point size base parameter allows to configure how to determine the object size. If set to *image_size*, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to *group_bbox_size*, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
+| _Point matching_ | |
+| Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines matching area for each GT point based to the object size. The point size base parameter allows to configure how to determine the object size. If set to _image_size_, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to _group_bbox_size_, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
 | | |
-| *Polyline matching* | |
+| _Polyline matching_ | |
 | Relative thickness | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
-| Check orientation | Indicates that polylines have direction. Used to produce *Mismatching direction* warnings |
-| Min similarity gain (%) | The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the *Check orientation* parameter. |
+| Check orientation | Indicates that polylines have direction. Used to produce _Mismatching direction_ warnings |
+| Min similarity gain (%) | The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the _Check orientation_ parameter. |
 | | |
-| *Group matching* | |
-| Compare groups | Enables or disables annotation group checks. This check will produce *Group mismatch* warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group. |
-| Min group match threshold | Minimal IoU for groups to be considered matching, used when *Compare groups* is enabled. |
+| _Group matching_ | |
+| Compare groups | Enables or disables annotation group checks. This check will produce _Group mismatch_ warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group. |
+| Min group match threshold | Minimal IoU for groups to be considered matching, used when _Compare groups_ is enabled. |
 | | |
-| *Mask and polygon matching* | |
+| _Mask and polygon matching_ | |
 | Check object visibility | Check for partially-covered annotations. Masks and polygons will be compared to each other. |
-| Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting *Covered annotation* warnings, useful with the *Check object visibility* option. |
+| Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting _Covered annotation_ warnings, useful with the _Check object visibility_ option. |
 | Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
 
 <!--lint enable maximum-line-length-->
@@ -427,12 +427,12 @@ Each shape type can have their own spatial matching details. Specifically:
 - polygons, masks - IoU. Polygons and masks are considered interchangeable,
   which means a mask can be matched with a polygon and vice versa. Polygons and masks in groups
   are merged into a single object first.
-  If the [*Match only visible parts*](#annotation-quality-settings) option is enabled,
+  If the [_Match only visible parts_](#annotation-quality-settings) option is enabled,
   objects will be cut to only the visible (non-covered) parts only, which is determined by the
   shape z order.
 - skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
   dataset is used. Briefly, each skeleton point gets a circular area around,
-  determined by the *object size* (bounding box side) and *relative point size* (*sigma*) values,
+  determined by the _object size_ (bounding box side) and _relative point size_ (_sigma_) values,
   where this point can be matched with the specified probability. If a bounding box is grouped
   with the skeleton, it is used for object size computation, otherwise a bounding box of
   visible points of the skeleton is used.
@@ -441,18 +441,18 @@ Each shape type can have their own spatial matching details. Specifically:
 
   ![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
 
-  In this example, the *Sigma* parameter is `0.05` (5%) of the bbox side.
+  In this example, the _Sigma_ parameter is `0.05` (5%) of the bbox side.
   Areas shown in the green color cover ~68.2% (1 sigma) of the points,
   corresponding to each GT point. A point on the boundary of such an area will have ~88% of
   probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
   for the corresponding GT point. A point on the boundary of such an area will have ~60% of
   probability to be correct. These probabilities are then averaged over the visible points of the
-  skeleton, and the resulting values are compared against the *Min similarity threshold*
-  to determine whether the skeletons are matching. *Sigma* corresponds to one
+  skeleton, and the resulting values are compared against the _Min similarity threshold_
+  to determine whether the skeletons are matching. _Sigma_ corresponds to one
   from the [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution).
 
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
-  *OKS Sigma* determines relative point sizes. The *Point size base* setting allows
+  _OKS Sigma_ determines relative point sizes. The _Point size base_ setting allows
   to configure whether points in point groups should use the group bounding box or the image space.
   Using image space for object size can be useful if you want to treat each point
   as a separate annotation.
@@ -463,7 +463,7 @@ Each shape type can have their own spatial matching details. Specifically:
 
   ![Polyline thickness and hull](/images/quality_comparison_polylines1.png)
 
-  The line thickness can be configured via the *Relative thickness* setting.
+  The line thickness can be configured via the _Relative thickness_ setting.
   The value is relative to the image side and determines a half of the hull width.
 - ovals - IoU.
 
@@ -506,7 +506,7 @@ The Analytics page has the following elements:
 
 | Field | Description |
 | - | - |
-| Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, and ground truth annotations, accuracy, precision, and recall. The currently selected *Target metric* is displayed as the primary score |
+| Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, and ground truth annotations, accuracy, precision, and recall. The currently selected _Target metric_ is displayed as the primary score |
 | GT Conflicts | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset. |
 | Issues | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown. |
 | Quality report | Quality report in JSON format. |
@@ -526,14 +526,14 @@ requirements.
 
 | **Problem** | **Type** | **Description** |
 | - | - | - |
-| Missing annotation | error | No matching annotation found in the regular job annotations. [Configured](#annotation-quality-settings) by *Min overlap threshold* and shape type-specific parameters. |
-| Extra annotation | error | No matching annotation found in the GT job annotations. [Configured](#annotation-quality-settings) by *Min overlap threshold* and shape type-specific parameters. |
+| Missing annotation | error | No matching annotation found in the regular job annotations. [Configured](#annotation-quality-settings) by _Min overlap threshold_ and shape type-specific parameters. |
+| Extra annotation | error | No matching annotation found in the GT job annotations. [Configured](#annotation-quality-settings) by _Min overlap threshold_ and shape type-specific parameters. |
 | Mismatching label | error | A GT and a regular job annotations match, but their labels are different. |
-| Low overlap | warning | A GT and a regular job annotations match, but the similarity is low. [Configured](#annotation-quality-settings) by *Low overlap threshold*. |
-| Mismatching direction | warning | A GT and a regular lines match, but the lines have different direction. [Configured](#annotation-quality-settings) by *Compare orientation*. |
-| Mismatching attributes | warning | A GT and a regular annotations match, but their attributes are different. [Configured](#annotation-quality-settings) by *Compare attributes*. |
-| Mismatching groups | warning | A GT and a regular annotation groups do not match. [Configured](#annotation-quality-settings) by *Compare groups*. |
-| Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified *z order*. [Configured](#annotation-quality-settings) by *Check object visibility*. |
+| Low overlap | warning | A GT and a regular job annotations match, but the similarity is low. [Configured](#annotation-quality-settings) by _Low overlap threshold_. |
+| Mismatching direction | warning | A GT and a regular lines match, but the lines have different direction. [Configured](#annotation-quality-settings) by _Compare orientation_. |
+| Mismatching attributes | warning | A GT and a regular annotations match, but their attributes are different. [Configured](#annotation-quality-settings) by _Compare attributes_. |
+| Mismatching groups | warning | A GT and a regular annotation groups do not match. [Configured](#annotation-quality-settings) by _Compare groups_. |
+| Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified _z order_. [Configured](#annotation-quality-settings) by _Check object visibility_. |
 
 ### Quality Reports
 
@@ -547,7 +547,7 @@ automatically in your scripts etc.
 
 Quality Reports contain quality metrics and conflicts, and include all the information
 available on the quality analytics page. You can find additional quality metrics in these reports,
-such as *mean_iou* for shapes, confusion matrices, per-label and per-frame quality estimations.
+such as _mean_iou_ for shapes, confusion matrices, per-label and per-frame quality estimations.
 
 Additional information on how to compute and use various metrics for dataset
 quality estimation is available [here](https://en.wikipedia.org/wiki/Confusion_matrix).
