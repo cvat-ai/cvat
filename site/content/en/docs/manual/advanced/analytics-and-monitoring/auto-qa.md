@@ -424,7 +424,7 @@ on the task **Quality Management** > **Analytics** page.
 ![Quality Analytics page - refresh button](/images/honeypot11.jpg)
 
 Once quality metrics are computed, they are available for detailed review on this page.
-Conflicts can be reviewed in the [Review mode of jobs](#gt-conflicts-in-the-cvat-interface).
+Conflicts can be reviewed in the [Review mode of jobs](#reviewing-gt-conflicts).
 A job must have at least 1 validation frame (shown in the **Frame intersection** column) to
 be included in quality computation.
 
@@ -467,26 +467,25 @@ requirements.
 | Mismatching groups | warning | A GT and a regular annotation groups do not match. [Configured](#annotation-quality-settings) by *Compare groups*. |
 | Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified *z order*. [Configured](#annotation-quality-settings) by *Check object visibility*. |
 
-### GT conflicts in the CVAT interface
+### Reviewing GT conflicts
 
 To see GT Conflicts in the CVAT interface, go to **Review** >
 **Issues** > **Show ground truth annotations and conflicts**.
 
-![GT conflict](/images/honeypot06.gif)
+![GT conflicts review - enable](/images/honeypot06.gif)
 
-The ground truth (GT) annotation is depicted as
-a dotted-line box with an associated label.
+Ground Truth annotations are displayed with a dotted-line border.
+The associated label and the `(Ground Truth)` marker are shown on hovering.
 
 Upon hovering over an issue on the right-side panel with your mouse,
-the corresponding GT Annotation gets highlighted.
+the corresponding annotations are highlighted.
 
 Use arrows in the Issue toolbar to move between GT conflicts.
 
-To create an issue related to the conflict,
-right-click on the bounding box and from the
+To create an issue related to the conflict, right-click on the bounding box and from the
 menu select the type of issue you want to create.
 
-![GT conflict](/images/honeypot07.jpg)
+![GT conflicts review - create issue](/images/honeypot07.jpg)
 
 ## Annotation quality & Honeypot video tutorial
 
