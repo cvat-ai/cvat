@@ -67,10 +67,11 @@ Read more about Ground Truth management [here](#ground-truth-job-management).
 
 ## Configuring quality estimation
 
-Quality estimation is configured on the Task level. There are 2 ways to enable it for a task.
+Quality estimation is configured on the Task level.
 
-### How to enable quality control for a new task
+{{< tabpane text=true >}}
 
+{{%tab header="In a new task" %}}
 1. Go to the {{< ilink "/docs/manual/basics/create_an_annotation_task" "task creation" >}} page
 2. Configure basic and advanced parameters according to your requirements, and attach a dataset to be annotated
 3. Scroll down to the **Quality Control** section below
@@ -80,12 +81,12 @@ Quality estimation is configured on the Task level. There are 2 ways to enable i
 
 5. Create the task and open the task page
 6. Upload or create Ground Truth annotations in the Ground Truth job in the task
-7. Switch the GT job into the `acceptance`-`completed` state
+7. Switch the Ground Truth job into the `acceptance` stage and `completed` state
 
   ![Set job status](/images/honeypot10.jpg)
+{{% /tab %}}
 
-### How to enable quality control for an already existing task
-
+{{%tab header="In an existing task" %}}
 > For already existing tasks only the Ground Truth validation mode is available. If you want
 > to use Honeypots for your task, you will need to recreate the task.
 
@@ -117,10 +118,17 @@ The **Ground truth** job will appear in the jobs list.
   ![Ground Truth job](/images/honeypot03.jpg)
 
 5. Annotate frames and save your work or upload annotations.
-6. Change the **Stage** of the job to **Acceptance**.
-7. Change the **Status** of the job to **Completed**.
+6. Switch the Ground Truth job into the `acceptance` stage and `completed` state
 
   ![Set job status](/images/honeypot10.jpg)
+{{% /tab %}}
+
+{{< /tabpane >}}
+
+> A **Ground truth** job is considered **configured**
+> if it is at the **acceptance** stage and in the **completed** state.
+
+A _configured_ Ground Truth job is required for all quality computations in CVAT.
 
 ## Validation modes
 
@@ -271,7 +279,7 @@ add more validation frames.
 
 ### Create
 
-A Ground Truth job can be [added manually](#how-to-enable-quality-control-for-an-already-existing-task)
+A Ground Truth job can be [added manually](#configuring-quality-estimation)
 in a task without a selected validation mode or in a task with the Ground Truth validation mode,
 after the existing Ground Truth job is [deleted manually](#delete).
 
@@ -477,9 +485,6 @@ Each shape type can have their own spatial matching details. Specifically:
 Once the quality estimation is [enabled in a task](#configuring-quality-estimation)
 and the Ground Truth job is configured, quality analytics becomes available
 for the task and its jobs.
-
-> A **Ground truth** job is considered **configured**
-> if it is at the **acceptance** stage and in the **completed** state.
 
 By default, CVAT computes quality metrics automatically at regular intervals.
 
