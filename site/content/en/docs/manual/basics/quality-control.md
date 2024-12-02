@@ -18,18 +18,18 @@ Read the detailed guide on quality estimation in CVAT in the
 ## How to enable quality control for a new task
 
 1. Go to task creation
-1. Select the source media, configure other task parameters
-1. Scroll down to the **Quality Control** section
-1. Select one of the
+2. Select the source media, configure other task parameters
+3. Scroll down to the **Quality Control** section
+4. Select one of the
 {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#validation-modes" "validation modes" >}} available
 
-![Create task with validation mode](/images/honeypot09.jpg)
+  ![Create task with validation mode](/images/honeypot09.jpg)
 
-1. Create the task
-1. Upload or create Ground Truth annotations in the Ground Truth job in the task
-1. Switch the Ground Truth job into the `acceptance`-`completed` state
+5. Create the task
+6. Upload or create Ground Truth annotations in the Ground Truth job in the task
+7. Switch the Ground Truth job into the `acceptance` stage and `completed` state
 
-![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.jpg)
 
 ## How to enable quality control for an already existing task
 
@@ -37,50 +37,50 @@ Read the detailed guide on quality estimation in CVAT in the
 > to use Honeypots for your task, you will need to recreate the task.
 
 1. Open the task page
-1. Click on the "+" button next to the job list
+2. Click the "+" button next to the job list
 
-![Create job](/images/honeypot01.jpg)
+  ![Create job](/images/honeypot01.jpg)
 
-1. Select Job Type **Ground truth** and configure the job parameters
+3. Select Job Type **Ground truth** and configure the job parameters
 
-![Configure job parameters](/images/honeypot02.jpg)
+  ![Configure job parameters](/images/honeypot02.jpg)
 
-1. Upload or create Ground Truth annotations in the Ground Truth job in the task
-1. Switch the Ground Truth job into the `acceptance`-`completed` state
+4. Upload or create Ground Truth annotations in the Ground Truth job in the task
+5. Switch the Ground Truth job into the `acceptance`stage and `completed` state
 
-![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.jpg)
 
 ## How to enable immediate job feedback
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
-1. Set **Max validations per job** to above zero. 3 is a good starting number.
+2. Set **Max validations per job** to above zero. 3 is a good starting number.
 
-![Configure job validations](/images/immediate-feedback-settings-validations.jpg)
+  ![Configure job validations](/images/immediate-feedback-settings-validations.jpg)
 
-1. Save the updated settings
-1. Assign an annotator to an annotation job
-1. Annotate the job
-1. Mark the job finished using the corresponding button in the menu
-1. Once the job is completed, you'll see the job validation dialog
+3. Save the updated settings
+4. Assign an annotator to an annotation job
+5. Annotate the job
+6. Mark the job finished using the corresponding button in the menu
+7. Once the job is completed, you'll see the job validation dialog
 
-![Job validation successful](/images/immediate-feedback-accept.png)
+  ![Job validation successful](/images/immediate-feedback-accept.png)
 
 Each assignee gets no more than the specified number of validation attempts.
 
 ## How to check task quality metrics
 
 1. Open the task **Actions** menu > **Quality control**
-1. (optional) Request quality metrics computation, wait for completion
-1. Review summaries or detailed reports
+2. (optional) Request quality metrics computation, wait for completion
+3. Review summaries or detailed reports
 
-![Quality Analytics page](/images/honeypot05.jpg)
+  ![Quality Analytics page](/images/honeypot05.jpg)
 
 ## How to review problems found
 
 1. Open the task **Actions** menu > **Quality control**
-1. Find an annotation job to be reviewed, it must have at least 1 validation frame
-1. Click the job link
-1. Switch to the **Review** mode
-1. Enable display of Ground Truth annotations and conflicts
+2. Find an annotation job to be reviewed, it must have at least 1 validation frame
+3. Click the job link
+4. Switch to the **Review** mode
+5. Enable display of Ground Truth annotations and conflicts
 
-![GT conflict](/images/honeypot06.gif)
+  ![GT conflict](/images/honeypot06.gif)

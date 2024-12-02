@@ -79,13 +79,13 @@ Quality estimation is configured on the Task level. There are 2 ways to enable i
 3. Scroll down to the **Quality Control** section below
 4. Select one of the [validation modes](#validation-modes) available
 
-![Create task with validation mode](/images/honeypot09.jpg)
+  ![Create task with validation mode](/images/honeypot09.jpg)
 
 5. Create the task and open the task page
 6. Upload or create Ground Truth annotations in the Ground Truth job in the task
 7. Switch the GT job into the `acceptance`-`completed` state
 
-![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.jpg)
 
 ### How to enable quality control for an already existing task
 
@@ -95,35 +95,35 @@ Quality estimation is configured on the Task level. There are 2 ways to enable i
 1. Open the task page
 2. Click **+**.
 
-   ![Create job](/images/honeypot01.jpg)
+  ![Create job](/images/honeypot01.jpg)
 
 3. In the **Add new job** window, fill in the following fields:
 
-   ![Configure job parameters](/images/honeypot02.jpg)
+  ![Configure job parameters](/images/honeypot02.jpg)
 
-   - **Job type**: Use the default parameter **Ground truth**.
-   - **Frame selection method**: Use the default parameter **Random**.
-   - **Quantity %**: Set the desired percentage of frames for the Ground truth job.
-     <br>**Note** that when you use **Quantity %**, the **Frames** field will be autofilled.
-   - **Frame count**: Set the desired number of frames for the Ground truth job.
-     <br>**Note** that when you use **Frames**, the **Quantity %** field will be autofilled.
-   - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
-     It can be any integer number, the same value will yield the same random selection (given that the
-     frame number is unchanged). <br> **Note** that if you want to use a
-     custom frame sequence, you can do this using the server API instead,
-     see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
+  - **Job type**: Use the default parameter **Ground truth**.
+  - **Frame selection method**: Use the default parameter **Random**.
+  - **Quantity %**: Set the desired percentage of frames for the Ground truth job.
+    <br>**Note** that when you use **Quantity %**, the **Frames** field will be autofilled.
+  - **Frame count**: Set the desired number of frames for the Ground truth job.
+    <br>**Note** that when you use **Frames**, the **Quantity %** field will be autofilled.
+  - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
+    It can be any integer number, the same value will yield the same random selection (given that the
+    frame number is unchanged). <br> **Note** that if you want to use a
+    custom frame sequence, you can do this using the server API instead,
+    see [Job API create()](https://docs.cvat.ai/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
 4. Click **Submit**.
 
 The **Ground truth** job will appear in the jobs list.
 
-![Ground Truth job](/images/honeypot03.jpg)
+  ![Ground Truth job](/images/honeypot03.jpg)
 
 5. Annotate frames and save your work or upload annotations.
 6. Change the **Stage** of the job to **Acceptance**.
 7. Change the **Status** of the job to **Completed**.
 
-![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.jpg)
 
 ## Validation modes
 
@@ -155,11 +155,11 @@ representing the [basic approach](#basics), described above.
 
 Parameters:
 - frame count - the number or percent of the task frames to be used for validation.
-Can be specified as an absolute number in the `Frame count` field or a percent in the `Quantity`
-field. If there are both fields on the page, they are linked, which means changing one of them
-will adjust the other one automatically.
+  Can be specified as an absolute number in the `Frame count` field or a percent in the `Quantity`
+  field. If there are both fields on the page, they are linked, which means changing one of them
+  will adjust the other one automatically.
 - random seed - a number to be used to initialize the random number generator. Can be useful if
-you want to create a reproducible sequence of frames.
+  you want to create a reproducible sequence of frames.
 
 ##### Random per job
 
@@ -171,12 +171,12 @@ that using this method can result in increased total size of the validation set.
 
 Parameters:
 - frame count per job - the percent of the job frames to be used for validation.
-This method uses segment size of the task to select the same number of validation frames
-in each job, if possible. Can be specified as an absolute number in the `Frame count`
-field or a percent in the `Quantity per job` field. If there are both fields on the page,
-they are linked, which means changing one of them will adjust the other one automatically.
+  This method uses segment size of the task to select the same number of validation frames
+  in each job, if possible. Can be specified as an absolute number in the `Frame count`
+  field or a percent in the `Quantity per job` field. If there are both fields on the page,
+  they are linked, which means changing one of them will adjust the other one automatically.
 - random seed - a number to be used to initialize the random number generator. Can be useful if
-you want to create a reproducible sequence of frames.
+  you want to create a reproducible sequence of frames.
 
 ### Honeypots
 
@@ -188,7 +188,7 @@ This mode can only be used at task creation and cannot be changed later.
 The mode has some limitations on the compatible tasks:
 - It's not possible to use it for an already existing task, the task has to be recreated.
 - This mode assumes random frame ordering, so it is only available for image annotation tasks
-and not for ordered sequences like videos.
+  and not for ordered sequences like videos.
 - Tracks are not supported in such tasks.
 
 The validation set can be managed after the task is created - annotations can be edited,
@@ -198,10 +198,10 @@ The Ground truth job created for this validation mode cannot be deleted.
 
 Parameters:
 - frame count per job (%) - the percent of job frames (segment size) to be **added** into each
-annotation job from the validation set. Can be specified in the `Overhead per job` field.
+  annotation job from the validation set. Can be specified in the `Overhead per job` field.
 - total frame count (%) - the percent of the task frames to be included into the validation set.
-This value must result in at least `frame count per job` * `segment size` frames. Can be specified
-in the `Total honeypots` field.
+  This value must result in at least `frame count per job` * `segment size` frames. Can be specified
+  in the `Total honeypots` field.
 
 ### Mode summary
 
