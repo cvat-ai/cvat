@@ -25,28 +25,6 @@ CVAT has the following features for automated quality control of annotations:
 - Review mode for problems found
 - Quality analytics
 
-See:
-
-- [Basics](#basics)
-- [Ground Truth jobs](#ground-truth-jobs)
-- [Configuration](#configuring-quality-estimation)
-  - [How to enable quality control in a new task](#how-to-enable-quality-control-for-a-new-task)
-  - [How to enable quality control in an existing task](#how-to-enable-quality-control-for-an-already-existing-task)
-- [Validation modes](#validation-modes)
-  - [Ground Truth](#ground-truth)
-  - [Honeypots](#honeypots)
-  - [Summary](#mode-summary)
-  - [Choosing the right mode](#choosing-the-right-mode)
-- [Quality management](#quality-management)
-  - [Frames](#validation-set-management)
-  - [Annotations](#annotation-management)
-  - [Ground Truth jobs](#ground-truth-job-management)
-  - [Annotation quality settings](#annotation-quality-settings)
-- [Quality analytics](#quality-analytics)
-  - [Quality data](#quality-data)
-  - [GT conflicts in the CVAT interface](#gt-conflicts-in-the-cvat-interface)
-- [Annotation quality \& Honeypot video tutorial](#annotation-quality--honeypot-video-tutorial)
-
 ## Basics
 
 There are several approaches to quality estimation used in the industry. In CVAT,
