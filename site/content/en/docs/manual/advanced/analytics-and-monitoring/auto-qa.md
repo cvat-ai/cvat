@@ -496,11 +496,9 @@ Conflicts can be reviewed in the [Review mode of jobs](#reviewing-gt-conflicts).
 A job must have at least 1 validation frame (shown in the **Frame intersection** column) to
 be included in quality computation.
 
-![Jobs list](/images/honeypot12.jpg)
+### Analytics page contents
 
-### Quality Data
-
-The Analytics page has the following fields:
+The Analytics page has the following elements:
 
 ![Quality Analytics page](/images/honeypot05.jpg)
 
@@ -508,7 +506,7 @@ The Analytics page has the following fields:
 
 | Field | Description |
 | - | - |
-| Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
+| Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, and ground truth annotations, accuracy, precision, and recall. The currently selected *Target metric* is displayed as the primary score |
 | GT Conflicts | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset. |
 | Issues | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown. |
 | Quality report | Quality report in JSON format. |
@@ -517,7 +515,9 @@ The Analytics page has the following fields:
 
 <!--lint enable maximum-line-length-->
 
-### Quality checks
+![Jobs list](/images/honeypot12.jpg)
+
+### Problem Reporting
 
 CVAT reports 2 possible error types: errors and warnings. Errors affect the resulting quality
 scores and highlight significant problems in annotations. Warnings do not affect the resulting
