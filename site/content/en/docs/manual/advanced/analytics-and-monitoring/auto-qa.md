@@ -406,8 +406,9 @@ Annotation quality settings have the following parameters:
 > **Note**: quality analytics is a premium feature. Please check how to get access to this
 > functionality in the {{< ilink "/docs/enterprise" "Paid features" >}} section of the site.
 
-Once the quality estimation is enabled in a task and the Ground Truth job is configured,
-quality analytics becomes available for the task and its jobs.
+Once the quality estimation is [enabled in a task](#configuring-quality-estimation)
+and the Ground Truth job is configured, quality analytics becomes available
+for the task and its jobs.
 
 > A **Ground truth** job is considered **configured**
 > if it is at the **acceptance** stage and in the **completed** state.
