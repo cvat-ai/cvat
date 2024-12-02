@@ -210,14 +210,13 @@ Here is a brief comparison of the validation modes:
 | **Aspect** | **Ground Truth** | **Honeypots** |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
 | When can be used | any time | at task creation only |
-| Frame management options | add, remove, exclude, restore | exclude, restore, change honeypots in jobs |
+| Frame management options | exclude, restore | exclude, restore, change honeypots in jobs |
+| Ground Truth job management options | create, delete | create |
 | Task frame requirements | - | random ordering only |
 | Annotations | any | tracks are not supported |
-| Minimum validation frames count | - `manual`, `random_uniform` - any</br>&nbsp;(but some jobs can get no validation frames)</br>- `random_per_job` - jobs count * GT frames per job | not less than honeypots count per job |
+| Minimum validation frames count | - `manual` and `random_uniform` - any</br>&nbsp;(but some jobs can get no validation frames)</br>- `random_per_job` - jobs count * GT frames per job | not less than honeypots count per job |
 | Task annotation import | GT annotations and regular annotations do not affect each other | Annotations are imported both into the GT job and regular jobs. Annotations for validation frames are copied into corresponding honeypot frames. |
 | Task annotation export | GT annotations and regular annotations do not affect each other | Annotations for non-validation frames are exported as is. Annotations for validation frames are taken from the GT frames. Honeypot frames are skipped. |
-| Ground Truth job actions | create, delete | create |
-| Maximum Ground truth jobs | 1 | 1 |
 
 ### Choosing the right mode
 
