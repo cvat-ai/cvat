@@ -6,6 +6,9 @@ function defaultTaskSpec({
     labelName,
     taskName,
     serverFiles,
+    startFrame,
+    frameFilter,
+    segmentSize,
     validationParams,
 }) {
     const taskSpec = {
@@ -18,6 +21,10 @@ function defaultTaskSpec({
         target_storage: { location: 'local' },
     };
 
+    if (segmentSize) {
+        taskSpec.segment_size = segmentSize;
+    }
+
     const dataSpec = {
         server_files: serverFiles,
         image_quality: 70,
@@ -25,6 +32,12 @@ function defaultTaskSpec({
         use_cache: true,
         sorting_method: (validationParams && validationParams.mode === 'gt_pool') ? 'random' : 'lexicographical',
     };
+    if (startFrame) {
+        dataSpec.start_frame = startFrame;
+    }
+    if (frameFilter) {
+        dataSpec.frame_filter = frameFilter;
+    }
 
     const extras = {};
     if (validationParams) {
