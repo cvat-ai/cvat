@@ -66,41 +66,7 @@ To enable quality estimation in a task, you need to create a Ground truth job in
 annotate it, switch the job stage to `acceptance`, and set the job state to `completed`.
 Once the Ground Truth job is configured, CVAT will start using this job for quality estimation.
 
-![Ground truth job actions](/images/honeypot04.jpg)
-
-### Import annotations
-
-If you want to import annotations into the Ground truth job, do the following:
-
-1. Open the task, and find the Ground truth job in the jobs list.
-2. Click on three dots to open the menu.
-3. From the menu, select **Import annotations**.
-4. Select import format, and select file.
-5. Click **OK**.
-
-> **Note** that if there are imported annotations for the frames that exist in the task,
-> but are not included in the **Ground truth** job, they will be ignored.
-> This way, you don't need to worry about "cleaning up" your Ground truth
-> annotations for the whole dataset before importing them.
-> Importing annotations for the frames that are not known in the task still raises errors.
-
-### Export annotations
-
-To export annotations from the Ground Truth job, do the following:
-
-1. Open the task, and find a job in the jobs list.
-2. Click on three dots to open the menu.
-3. From the menu, select **Export annotations**.
-
-### Delete
-
-To delete the Ground Truth job, do the following:
-
-1. Open the task, and find the Ground Truth job in the jobs list.
-2. Click on three dots to open the menu.
-3. From the menu, select **Delete**.
-
-> Note: The Ground truth job in the "Honeypots" task validation mode cannot be deleted.
+Read more about Ground Truth management [here](#ground-truth-job-management).
 
 ## Configuring quality estimation
 
@@ -297,13 +263,55 @@ using checkboxes, and click one of the buttons next to the table header.
 
 #### Ground Truth job management
 
-In the Ground Truth validation mode, there will be an option to remove the GT job from the task.
-It can be useful if you want to change validation set frames completely, add more frames,
-or remove some of the frames for any reason. This is available in the job Actions menu.
-Read more [here](#ground-truth-jobs).
+In the Ground Truth validation mode, there will be an option to remove the [Ground Truth job](#ground-truth-jobs)
+from the task. It can be useful if you want to change validation set frames completely,
+add more frames, or remove some of the frames for any reason. This is available in the job
+Actions menu.
 
 In the Honeypots mode, it's not possible to add or remove the GT job, so it's not possible to
 add more validation frames.
+
+![Ground truth job actions](/images/honeypot04.jpg)
+
+### Create
+
+A Ground Truth job can be [added manually](#how-to-enable-quality-control-for-an-already-existing-task)
+in a task without a selected validation mode or in a task with the Ground Truth validation mode,
+after the existing Ground Truth job is [deleted manually](#delete).
+
+### Delete
+
+To delete the Ground Truth job, do the following:
+
+1. Open the task, and find the Ground Truth job in the jobs list.
+2. Click on three dots to open the menu.
+3. From the menu, select **Delete**.
+
+> Note: The Ground truth job in the "Honeypots" task validation mode cannot be deleted.
+
+### Import annotations
+
+If you want to import annotations into the Ground truth job, do the following:
+
+1. Open the task, and find the Ground truth job in the jobs list.
+2. Click on three dots to open the menu.
+3. From the menu, select **Import annotations**.
+4. Select import format, and select file.
+5. Click **OK**.
+
+> **Note** that if there are imported annotations for the frames that exist in the task,
+> but are not included in the **Ground truth** job, they will be ignored.
+> This way, you don't need to worry about "cleaning up" your Ground truth
+> annotations for the whole dataset before importing them.
+> Importing annotations for the frames that are not known in the task still raises errors.
+
+### Export annotations
+
+To export annotations from the Ground Truth job, do the following:
+
+1. Open the task, and find a job in the jobs list.
+2. Click on three dots to open the menu.
+3. From the menu, select **Export annotations**.
 
 ### Annotation management
 
@@ -333,7 +341,7 @@ Import and export of Ground Truth **job** annotations works the same way in both
 Ground Truth jobs are included in task backups, so can be saved and restored this way.
 
 Import, Export, and Delete options are available from the Ground Truth job Actions menu.
-[Read more](#ground-truth-jobs).
+[Read more](#ground-truth-job-management).
 
 ### Annotation quality settings
 
