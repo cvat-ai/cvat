@@ -535,6 +535,23 @@ requirements.
 | Mismatching groups | warning | A GT and a regular annotation groups do not match. [Configured](#annotation-quality-settings) by *Compare groups*. |
 | Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified *z order*. [Configured](#annotation-quality-settings) by *Check object visibility*. |
 
+### Quality Reports
+
+For each job included in quality computation there is a quality report downloading button on
+the [Analytics page](#analytics-page-contents). There is also a button to download the aggregated
+task quality report. These buttons provide an option to download a Quality Report for a task or job
+in JSON format. Such reports can be useful if you want to process quality reported by CVAT
+automatically in your scripts etc.
+
+![Download report](/images/quality_download_report.png)
+
+Quality Reports contain quality metrics and conflicts, and include all the information
+available on the quality analytics page. You can find additional quality metrics in these reports,
+such as *mean_iou* for shapes, confusion matrices, per-label and per-frame quality estimations.
+
+Additional information on how to compute and use various metrics for dataset
+quality estimation is available [here](https://en.wikipedia.org/wiki/Confusion_matrix).
+
 ### Reviewing GT conflicts
 
 To see GT Conflicts in the CVAT interface, go to **Review** >
