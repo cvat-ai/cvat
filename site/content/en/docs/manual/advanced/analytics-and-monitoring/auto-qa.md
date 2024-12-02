@@ -148,7 +148,7 @@ to the annotation process.
 
 This validation mode can use several frame selection methods.
 
-##### Random (the default)
+##### Random
 
 This is a simple method that selects frames into the validation set randomly,
 representing the [basic approach](#basics), described above.
