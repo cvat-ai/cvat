@@ -367,19 +367,38 @@ Annotation quality settings have the following parameters:
 
 <!--lint disable maximum-line-length-->
 
-| Field                             | Description                                                                                                                                                    |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Min overlap threshold             | Min overlap threshold(IoU) is used for the distinction between matched / unmatched shapes.                                                                     |
-| Low overlap threshold             | Low overlap threshold is used for the distinction between strong/weak (low overlap) matches.                                                                   |
-| OKS Sigma                         | IoU threshold for points. The percent of the box area, used as the radius of the circle around the GT point, where the checked point is expected to be.        |
+| **Parameter** | **Description** |
+| - | - |
+| *General reporting* |
+| Target metric | The primary metric used for quality estimation. It affects which metric is displayed in UI and used for overall quality estimation. |
+| | |
+| *Immediate Feedback* | |
+| Max validations per job | Configures maximum job validations per assignment for the {{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}} feature. |
+| Target metric threshold | Defines the minimal quality requirements in terms of the selected target metric. Serves as an acceptance threshold for the {{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}} feature. |
+| | |
+| *Shape matching* | |
+| Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
+| Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects *Low overlap* warnings. It's supposed that *Min similarity threshold* <= *Low overlap threshold*. |
+| | |
+| *Point and Skeleton matching* | |
+| OKS Sigma | Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the "side" is computed as a geometric mean of the width and height. Read more [here](https://cocodataset.org/#keypoints-eval). |
+| | |
+| *Point matching* | |
+| Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines matching area for each GT point based to the object size. The point size base parameter allows to configure how to determine the object size. If set to *image_size*, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to *group_bbox_size*, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
+| | |
+| *Polyline matching* | |
 | Relative thickness (frame side %) | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
-| Check orientation                 | Indicates that polylines have direction.                                                                                                                       |
-| Min similarity gain (%)           | The minimal gain in the GT IoU between the given and reversed line directions to consider the line inverted. Only useful with the Check orientation parameter. |
-| Compare groups                    | Enables or disables annotation group checks.                                                                                                                   |
-| Min group match threshold         | Minimal IoU for groups to be considered matching, used when the Compare groups are enabled.                                                                    |
-| Check object visibility           | Check for partially-covered annotations. Masks and polygons will be compared to each other.                                                                    |
-| Min visibility threshold          | Minimal visible area percent of the spatial annotations (polygons, masks). For reporting covered annotations, useful with the Check object visibility option.  |
-| Match only visible parts          | Use only the visible part of the masks and polygons in comparisons.                                                                                            |
+| Check orientation | Indicates that polylines have direction. Used to produce *Mismatching direction* warnings |
+| Min similarity gain (%) | The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the *Check orientation* parameter. |
+| | |
+| *Group matching* | |
+| Compare groups | Enables or disables annotation group checks. This check will produce *Group mismatch* warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group. |
+| Min group match threshold | Minimal IoU for groups to be considered matching, used when *Compare groups* is enabled. |
+| | |
+| *Mask and polygon matching* | |
+| Check object visibility | Check for partially-covered annotations. Masks and polygons will be compared to each other. |
+| Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting *Covered annotation* warnings, useful with the *Check object visibility* option. |
+| Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
 
 <!--lint enable maximum-line-length-->
 
