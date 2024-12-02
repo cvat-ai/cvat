@@ -890,6 +890,7 @@ class TestGetTaskDataset:
 
     @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
@@ -1016,6 +1017,7 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -2725,8 +2727,9 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -3816,6 +3819,7 @@ class TestPatchTaskLabel:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
@@ -4696,7 +4700,7 @@ class TestGetTaskPreview:
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
 
 
-@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestUnequalJobs:
     @pytest.fixture(autouse=True)

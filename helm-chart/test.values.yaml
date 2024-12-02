@@ -21,6 +21,12 @@ cvat:
           subPath: share
       export:
         replicas: 1
+      chunks:
+        replicas: 1
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
     utils:
       additionalEnv:
         - name: DJANGO_SETTINGS_MODULE

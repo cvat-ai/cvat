@@ -28,7 +28,8 @@ class RQJobMetaField:
     # export specific fields
     RESULT_URL = 'result_url'
     FUNCTION_ID = 'function_id'
-
+    EXCEPTION_TYPE = 'exc_type'
+    EXCEPTION_ARGS = 'exc_args'
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return rq_job.meta.get(RQJobMetaField.USER, {}).get('id') == user_id
