@@ -430,6 +430,24 @@ The Analytics page has the following fields:
 
 <!--lint enable maximum-line-length-->
 
+### Quality checks
+
+CVAT reports 2 possible error types: errors and warnings. Errors affect the resulting quality
+scores and highlight significant problems in annotations. Warnings do not affect the resulting
+quality metrics, but they still can highlight significant problems, depending on the project
+requirements.
+
+| **Problem** | **Type** | **Description** |
+| - | - | - |
+| Missing annotation | error | No matching annotation found in the regular job annotations. [Configured](#annotation-quality-settings) by *Min overlap threshold* and shape type-specific parameters. |
+| Extra annotation | error | No matching annotation found in the GT job annotations. [Configured](#annotation-quality-settings) by *Min overlap threshold* and shape type-specific parameters. |
+| Mismatching label | error | A GT and a regular job annotations match, but their labels are different. |
+| Low overlap | warning | A GT and a regular job annotations match, but the similarity is low. [Configured](#annotation-quality-settings) by *Low overlap threshold*. |
+| Mismatching direction | warning | A GT and a regular lines match, but the lines have different direction. [Configured](#annotation-quality-settings) by *Compare orientation*. |
+| Mismatching attributes | warning | A GT and a regular annotations match, but their attributes are different. [Configured](#annotation-quality-settings) by *Compare attributes*. |
+| Mismatching groups | warning | A GT and a regular annotation groups do not match. [Configured](#annotation-quality-settings) by *Compare groups*. |
+| Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified *z order*. [Configured](#annotation-quality-settings) by *Check object visibility*. |
+
 ### GT conflicts in the CVAT interface
 
 To see GT Conflicts in the CVAT interface, go to **Review** >
