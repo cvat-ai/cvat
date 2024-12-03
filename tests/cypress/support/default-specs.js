@@ -4,6 +4,7 @@
 
 function defaultTaskSpec({
     labelName,
+    labelType,
     taskName,
     serverFiles,
     startFrame,
@@ -13,7 +14,7 @@ function defaultTaskSpec({
 }) {
     const taskSpec = {
         labels: [
-            { name: labelName, attributes: [], type: 'any' },
+            { name: labelName, attributes: [], type: labelType || 'any' },
         ],
         name: taskName,
         project_id: null,
