@@ -8,11 +8,9 @@ import os
 import os.path as osp
 import tempfile
 from datetime import timedelta
-import math
 
 import django_rq
 import rq
-import threading
 from django.conf import settings
 from django.utils import timezone
 from rq_scheduler import Scheduler
@@ -25,16 +23,13 @@ from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
-    LockNotAvailableError, ExtendLockError,
+    LockNotAvailableError,
     current_function_name, get_export_cache_lock,
     get_export_cache_dir, make_export_filename,
     parse_export_file_path
 )
 from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
-from pottery.redlock import Redlock
-from typing import Callable
 
-from time import sleep
 
 slogger = ServerLogManager(__name__)
 
@@ -59,9 +54,7 @@ TTL_CONSTS = {
 
 EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.DATASET_EXPORT_LOCKED_RETRY_INTERVAL)
-EXPORT_LOCK_TTL = settings.DATASET_EXPORT_LOCK_TTL
-
-EXPORT_LOCK_EXTEND_INTERVAL = settings.DATASET_EXPORT_LOCK_EXTEND_INTERVAL
+EXPORT_LOCK_TTL = timedelta(seconds=settings.DATASET_EXPORT_LOCK_TTL)
 
 
 def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
@@ -115,92 +108,6 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     setattr(current_rq_job, 'retry', _patched_retry)
     return current_rq_job
 
-
-class ExtendLockThread(threading.Thread):
-    def __init__(
-        self,
-        *,
-        lock: Redlock,
-        lock_extend_interval: int,
-        stop_event: threading.Event,
-    ):
-        super().__init__(target=self._extend_lock)
-
-        self.lock = lock
-        self.lock_extend_interval = lock_extend_interval
-        self.cur_sleep_interval = lock_extend_interval
-        self.stop_event = stop_event
-        self.logger = ServerLogManager(__name__)
-        self.max_retry_attempt_count = 3
-
-    def _reset(self):
-        self.cur_sleep_interval = self.lock_extend_interval
-
-    def _extend_lock(self):
-        """
-        Extend the lock's TTL every <lock_extend_interval> seconds until <stop_event> is set.
-        The stop event is checked every second to minimize waiting time when the export process is completed.
-        """
-
-        while not self.stop_event.is_set():
-            sleep(1)
-            self.cur_sleep_interval -= 1
-
-            if self.cur_sleep_interval:
-                continue
-
-            self.logger.glob.debug(
-                f"Extend lock {self.lock.key}, number of remaining extensions: "
-                f"{self.lock.num_extensions - self.lock._extension_num}"
-            )
-            for attempt_number in range(1, self.max_retry_attempt_count + 1):
-                try:
-                    self.lock.extend()
-                    self._reset()
-                except Exception as ex:
-                    self.logger.glob.exception(
-                        f"Attempt number: {attempt_number}, "
-                        f"an exception occurred during lock {self.lock.key} extension: ",
-                        str(ex),
-                    )
-                    if attempt_number == self.max_retry_attempt_count:
-                        self.stop_event.set()
-                        return
-
-
-class ExportThread(threading.Thread):
-    def __init__(
-        self,
-        cache_dir: str,
-        output_path: str,
-        instance_id: int,
-        export_fn: Callable[..., None],
-        server_url: str | None,
-        save_images: bool,
-        dst_format: str,
-    ):
-        super().__init__(target=self._export_dataset)
-        self.cache_dir = cache_dir
-        self.output_path = output_path
-        self.instance_id = instance_id
-        self.export_fn = export_fn
-        self.server_url = server_url
-        self.save_images = save_images
-        self.dst_format = dst_format
-
-    def _export_dataset(self):
-        with tempfile.TemporaryDirectory(dir=self.cache_dir) as temp_dir:
-            temp_file = osp.join(temp_dir, "result")
-            self.export_fn(
-                self.instance_id,
-                temp_file,
-                self.dst_format,
-                server_url=self.server_url,
-                save_images=self.save_images,
-            )
-            os.replace(temp_file, self.output_path)
-
-
 def export(
     *,
     dst_format: str,
@@ -246,47 +153,30 @@ def export(
 
         os.makedirs(cache_dir, exist_ok=True)
 
-        stop_event = threading.Event()
-
+        # acquire a lock 2 times instead of using one long lock:
+        # 1. to check whether the file exists or not
+        # 2. to create a file when it doesn't exist
         with get_export_cache_lock(
             output_path,
-            block=True,
-            acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
             ttl=EXPORT_LOCK_TTL,
-            num_extensions=math.ceil(rq.get_current_job().timeout / EXPORT_LOCK_EXTEND_INTERVAL),
-        ) as red_lock:
+            acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
+        ):
             if osp.exists(output_path):
                 # Update last update time to prolong the export lifetime
                 # and postpone the file deleting by the cleaning job
                 os.utime(output_path, None)
                 return output_path
 
-            extend_lock_thread = ExtendLockThread(
-                lock=red_lock,
-                lock_extend_interval=EXPORT_LOCK_EXTEND_INTERVAL,
-                stop_event=stop_event,
-            )
-            extend_lock_thread.start()
-
-            export_thread = ExportThread(
-                cache_dir,
+        with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
+            temp_file = osp.join(temp_dir, 'result')
+            export_fn(db_instance.id, temp_file, dst_format,
+                server_url=server_url, save_images=save_images)
+            with get_export_cache_lock(
                 output_path,
-                db_instance.id,
-                export_fn,
-                server_url,
-                save_images,
-                dst_format,
-            )
-            export_thread.start()
-
-            while export_thread.is_alive():
-                if stop_event.is_set():
-                    raise ExtendLockError("Export aborted because the lock extension failed.")
-                sleep(5)
-
-            export_thread.join()
-            stop_event.set()
-            extend_lock_thread.join()
+                ttl=EXPORT_LOCK_TTL,
+                acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
+            ):
+                os.replace(temp_file, output_path)
 
         scheduler: Scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
         cleaning_job = scheduler.enqueue_in(
@@ -354,7 +244,7 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
             file_path,
             block=True,
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
-            ttl=rq.get_current_job().timeout,
+            ttl=EXPORT_LOCK_TTL,
         ):
             if not osp.exists(file_path):
                 raise FileNotFoundError("Export cache file '{}' doesn't exist".format(file_path))

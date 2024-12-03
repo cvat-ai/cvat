@@ -52,6 +52,10 @@ from cvat.apps.events.handlers import handle_dataset_export
 
 slogger = ServerLogManager(__name__)
 
+REQUEST_TIMEOUT = 60
+# it's better to return LockNotAvailableError instead of 502 error TODO: (or 504?)
+LOCK_ACQUIRE_TIMEOUT = REQUEST_TIMEOUT - 2
+LOCK_TTL = REQUEST_TIMEOUT - 5
 
 class _ResourceExportManager(ABC):
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
@@ -226,7 +230,7 @@ class DatasetExportManager(_ResourceExportManager):
             return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < instance_update_time
 
         def handle_local_download() -> Response:
-            with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+            with dm.util.get_export_cache_lock(file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT):
                 if not osp.exists(file_path):
                     return Response(
                         "The exported file has expired, please retry exporting",
@@ -301,8 +305,6 @@ class DatasetExportManager(_ResourceExportManager):
         instance_update_time = self.get_instance_update_time()
         instance_timestamp = self.get_timestamp(instance_update_time)
 
-        REQUEST_TIMEOUT = 60
-
         if rq_job_status == RQJobStatus.FINISHED:
             if self.export_args.location == Location.CLOUD_STORAGE:
                 rq_job.delete()
@@ -319,7 +321,11 @@ class DatasetExportManager(_ResourceExportManager):
                 if action == "download":
                     return handle_local_download()
                 else:
-                    with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+                    with dm.util.get_export_cache_lock(
+                        file_path,
+                        ttl=LOCK_TTL,
+                        acquire_timeout=LOCK_ACQUIRE_TIMEOUT,
+                    ):
                         if osp.exists(file_path) and not is_result_outdated():
                             # Update last update time to prolong the export lifetime
                             # as the last access time is not available on every filesystem
