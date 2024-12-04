@@ -12,6 +12,7 @@ import serverProxy from './server-proxy';
 import { SerializedFramesMetaData } from './server-response-types';
 import { Exception, ArgumentError, DataError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
+import config from './config';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
@@ -597,8 +598,7 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
         throw new Error('Frame data cache is abscent');
     }
 
-    const META_DATA_RELOAD_PERIOD = 1 * 60 * 60 * 1000; // 1 hour
-    const isOutdated = (Date.now() - cached.metaFetchedTimestamp) > META_DATA_RELOAD_PERIOD;
+    const isOutdated = (Date.now() - cached.metaFetchedTimestamp) > config.jobMetaDataReloadPeriod;
 
     if (isOutdated) {
         // get metadata again if outdated
