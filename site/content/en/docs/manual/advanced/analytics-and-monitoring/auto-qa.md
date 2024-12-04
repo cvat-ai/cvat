@@ -375,32 +375,39 @@ Annotation quality settings have the following parameters:
 | - | - |
 | _General reporting_ |
 | Target metric | The primary metric used for quality estimation. It affects which metric is displayed in UI and used for overall quality estimation. |
-| | |
-| _Immediate Feedback_ | |
+
+| _Immediate feedback_ | |
+| - | - |
 | Max validations per job | Configures maximum job validations per assignment for the {{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}} feature. |
 | Target metric threshold | Defines the minimal quality requirements in terms of the selected target metric. Serves as an acceptance threshold for the {{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}} feature. |
-| | |
+
 | _Shape matching_ | |
+| - | - |
 | Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
 | Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects _Low overlap_ warnings. It's supposed that _Min similarity threshold_ <= _Low overlap threshold_. |
 | Match empty frames | Consider frames matched if there are no annotations both on GT and regular job frames |
-| | |
+
 | _Point and Skeleton matching_ | |
+| - | - |
 | OKS Sigma | Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the "side" is computed as a geometric mean of the width and height. |
-| | |
+
 | _Point matching_ | |
+| - | - |
 | Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines matching area for each GT point based to the object size. The point size base parameter allows to configure how to determine the object size. If set to _image_size_, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to _group_bbox_size_, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
-| | |
+
 | _Polyline matching_ | |
+| - | - |
 | Relative thickness | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
 | Check orientation | Indicates that polylines have direction. Used to produce _Mismatching direction_ warnings |
 | Min similarity gain (%) | The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the _Check orientation_ parameter. |
-| | |
+
 | _Group matching_ | |
+| - | - |
 | Compare groups | Enables or disables annotation group checks. This check will produce _Group mismatch_ warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group. |
 | Min group match threshold | Minimal IoU for groups to be considered matching, used when _Compare groups_ is enabled. |
-| | |
+
 | _Mask and polygon matching_ | |
+| - | - |
 | Check object visibility | Check for partially-covered annotations. Masks and polygons will be compared to each other. |
 | Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting _Covered annotation_ warnings, useful with the _Check object visibility_ option. |
 | Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
