@@ -473,7 +473,7 @@ Each shape type can have their own spatial matching details. Specifically:
 
   The line thickness can be configured via the _Relative thickness_ setting.
   The value is relative to the image side and determines a half of the hull width.
-- ovals - IoU.
+- ellipses - IoU, described in more detail above.
 
 > **Note**: 2d cuboids are not supported
 
@@ -511,7 +511,7 @@ The Analytics page has the following elements:
 
 | Field | Description |
 | - | - |
-| Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, and ground truth annotations, accuracy, precision, and recall. The currently selected _Target metric_ is displayed as the primary score |
+| Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, ground truth annotations, accuracy, precision, and recall. The currently selected _Target metric_ is displayed as the primary score. |
 | GT Conflicts | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset. |
 | Issues | Number of {{< ilink "/docs/manual/advanced/analytics-and-monitoring/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown. |
 | Quality report | Quality report in JSON format. |

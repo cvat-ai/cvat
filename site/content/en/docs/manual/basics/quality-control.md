@@ -37,7 +37,7 @@ Read the detailed guide on quality estimation in CVAT in the
 > to use Honeypots for your task, you will need to recreate the task.
 
 1. Open the task page
-2. Click the "+" button next to the job list
+2. Click the `+` button next to the job list
 
   ![Create job](/images/honeypot01.jpg)
 
