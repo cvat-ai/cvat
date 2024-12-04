@@ -1246,8 +1246,27 @@ def _create_thread(
 
         frames_per_job_count = min(len(pool_frames), frames_per_job_count)
 
-        non_pool_frames = list(set(all_frames).difference(pool_frames))
+        non_pool_frames = sorted(
+            # set() doesn't guarantee ordering,
+            # so sort additionally before shuffling to make results reproducible
+            set(all_frames).difference(pool_frames)
+        )
         rng.shuffle(non_pool_frames)
+
+        def _pool_generator():
+            # This approach guarantees that:
+            # - every GT frame is used
+            # - GT frames are used the same number of times each or at most min count + 1
+            # - GT frames are not repeated in jobs
+            # - honeypot sets are different in jobs
+            # - honeypot sets are random
+            # if possible (if the job and GT counts allow this).
+            while True:
+                pool = list(pool_frames)
+                rng.shuffle(pool)
+                yield from pool
+
+        pool_iter = iter(_pool_generator())
 
         # Don't use the same rng as for frame ordering to simplify random_seed maintenance in future
         # We still use the same seed, but in this case the frame selection rng is separate
@@ -1260,10 +1279,8 @@ def _create_thread(
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
         for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
-            job_validation_frames = rng.choice(
-                pool_frames, size=frames_per_job_count, replace=False
-            )
-            job_frames += job_validation_frames.tolist()
+            job_validation_frames = list(itertools.islice(pool_iter, frames_per_job_count))
+            job_frames += job_validation_frames
 
             job_frame_ordering_rng.shuffle(job_frames)
 
