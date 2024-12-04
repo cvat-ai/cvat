@@ -5,6 +5,12 @@ weight: 5
 description: 'This feature provides annotators with general feedback on their performance in a job.'
 ---
 
+> **Note**: This feature requires a configured validation set in the task. Read more
+> in the
+> {{< ilink "/docs/manual/basics/quality-control#how-to-enable-quality-control" "quality overview" >}}
+> section or in the
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
+
 When an annotator finishes a job, a dialog is displayed showing the quality of their annotations.
 The annotator can either agree or disagree with the feedback.
 If they disagree, they have the option to re-annotate the job and request feedback again.

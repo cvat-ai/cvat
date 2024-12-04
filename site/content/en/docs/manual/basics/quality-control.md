@@ -6,7 +6,7 @@ description: 'Overview of quality control features'
 ---
 
 CVAT has the following features for automated quality control of annotations:
-- [Validation set configuration for a task](#how-to-enable-quality-control-for-a-new-task)
+- [Validation set configuration for a task](#how-to-enable-quality-control)
 - Job validation on job finish ("{{< ilink "/docs/enterprise/immediate-feedback" "Immediate feedback" >}}")
 - [Review mode for problems found](#how-to-review-problems-found)
 - [Quality analytics](#how-to-check-task-quality-metrics)
@@ -15,7 +15,11 @@ In this section we only highlight the key steps in quality estimation.
 Read the detailed guide on quality estimation in CVAT in the
 {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa" "Advanced section" >}}.
 
-## How to enable quality control for a new task
+## How to enable quality control
+
+{{< tabpane text=true >}}
+
+{{%tab header="In a new task" %}}
 
 1. Go to task creation
 2. Select the source media, configure other task parameters
@@ -31,7 +35,9 @@ Read the detailed guide on quality estimation in CVAT in the
 
   ![Set job status](/images/honeypot10.jpg)
 
-## How to enable quality control for an already existing task
+{{% /tab %}}
+
+{{%tab header="In an existing task" %}}
 
 > For already existing tasks only the Ground Truth validation mode is available. If you want
 > to use Honeypots for your task, you will need to recreate the task.
@@ -50,7 +56,15 @@ Read the detailed guide on quality estimation in CVAT in the
 
   ![Set job status](/images/honeypot10.jpg)
 
+{{% /tab %}}
+
+{{< /tabpane >}}
+
 ## How to enable immediate job feedback
+
+> **Note**: This feature requires a configured validation set in the task. Read more
+> in [How to enable quality control](#how-to-enable-quality-control) and in the
+> {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#configuring-quality-estimation" "full guide" >}}.
 
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 2. Set **Max validations per job** to above zero. 3 is a good starting number.
@@ -67,6 +81,9 @@ Read the detailed guide on quality estimation in CVAT in the
 
 Each assignee gets no more than the specified number of validation attempts.
 
+Read more about this functionality in the
+{{< ilink "/docs/enterprise/immediate-feedback" "Immediate Feedback" >}} section.
+
 ## How to check task quality metrics
 
 1. Open the task **Actions** menu > **Quality control**
@@ -74,6 +91,9 @@ Each assignee gets no more than the specified number of validation attempts.
 3. Review summaries or detailed reports
 
   ![Quality Analytics page](/images/honeypot05.jpg)
+
+Read more about this functionality
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#quality-analytics" "here" >}}.
 
 ## How to review problems found
 
@@ -84,3 +104,6 @@ Each assignee gets no more than the specified number of validation attempts.
 5. Enable display of Ground Truth annotations and conflicts
 
   ![GT conflict](/images/honeypot06.gif)
+
+Read more about this functionality
+{{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#reviewing-gt-conflicts" "here" >}}.
