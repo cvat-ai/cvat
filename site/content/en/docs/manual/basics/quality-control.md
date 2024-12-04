@@ -69,7 +69,7 @@ Read the detailed guide on quality estimation in CVAT in the
 1. Open the task **Actions** menu > **Quality control** > **Settings**
 2. Set **Max validations per job** to above zero. 3 is a good starting number.
 
-  ![Configure job validations](/images/immediate-feedback-settings-validations.jpg)
+  ![Configure job validations](/images/immediate-feedback-quality-settings.png)
 
 3. Save the updated settings
 4. Assign an annotator to an annotation job
@@ -77,7 +77,7 @@ Read the detailed guide on quality estimation in CVAT in the
 6. Mark the job finished using the corresponding button in the menu
 7. Once the job is completed, you'll see the job validation dialog
 
-  ![Job validation successful](/images/immediate-feedback-accept.png)
+  <img src="/images/immediate-feedback-accept.png" style="max-width: 500px;">
 
 Each assignee gets no more than the specified number of validation attempts.
 
