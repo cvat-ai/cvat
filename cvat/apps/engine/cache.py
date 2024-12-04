@@ -91,7 +91,9 @@ def enqueue_create_chunk_job(
         with get_rq_lock_for_job(queue, rq_job_id, blocking_timeout=blocking_timeout):
             rq_job = queue.fetch_job(rq_job_id)
 
-            if not rq_job:
+            # Need to enqueue job in case of chunk been deleted but rq job is still exists
+            # This may happens in case of job with honey pots
+            if not rq_job or rq_job.get_status() == "finished":
                 rq_job = queue.enqueue(
                     create_callback,
                     job_id=rq_job_id,
