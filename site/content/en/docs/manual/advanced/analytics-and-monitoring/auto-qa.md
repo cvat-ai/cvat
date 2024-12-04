@@ -227,7 +227,7 @@ Here is a brief comparison of the validation modes:
 
 Here are some examples on how to choose between these options. The general advice is to use
 Ground Truth for better flexibility, but keep in mind that it can require more resources for
-validation set annotation. Honeypots, on the other side, can be beneficial if you want to
+validation set annotation. Honeypots, on the other hand, can be beneficial if you want to
 minimize the number of validation images required, but the downside here is that there are some
 limitations on where this mode can be used.
 
@@ -236,7 +236,7 @@ the Ground Truth mode, so just use it.
 
 Example: an image dataset annotation, image order is not important. Here you can use both options.
 You can choose Ground Truth for better flexibility in validation. This way, you will have the
-full control of validation frames in the task, annotations options won't be limited, and the
+full control of validation frames in the task, annotation options won't be limited, and the
 regular jobs will not be affected in any way. However, if you have a limited budget
 for the validation (for instance, you have only a small number of validation frames) or you want
 to allow more scalability (with this approach the number of validation frames doesn't depend on
@@ -258,7 +258,7 @@ number will be 1 for all frames. With Honeypots, these numbers can be 0, 1 or mo
 
 In both validation modes it's possible to exclude some of the validation frames
 from being used for validation. This can be useful if you find that some
-of the validation frames are "bad", extra, or it they have incorrect annotations,
+of the validation frames are "bad", extra, or if they have incorrect annotations,
 which you don't want to fix. Once a frame is marked "excluded", it will not be used
 for validation. There is also an option to restore a previously excluded frame if you decide so.
 
@@ -374,7 +374,7 @@ Annotation quality settings have the following parameters:
 | **Parameter** | **Description** |
 | - | - |
 | _General reporting_ |
-| Target metric | The primary metric used for quality estimation. It affects which metric is displayed in UI and used for overall quality estimation. |
+| Target metric | The primary metric used for quality estimation. It affects which metric is displayed in the UI and used for overall quality estimation. |
 
 | _Immediate feedback_ | |
 | - | - |
@@ -393,7 +393,7 @@ Annotation quality settings have the following parameters:
 
 | _Point matching_ | |
 | - | - |
-| Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines matching area for each GT point based to the object size. The point size base parameter allows to configure how to determine the object size. If set to _image_size_, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to _group_bbox_size_, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
+| Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines a matching area for each GT point based on the object size. The point size base parameter allows configuring how to determine the object size. If set to _image_size_, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to _group_bbox_size_, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
 
 | _Polyline matching_ | |
 | - | - |
@@ -415,11 +415,6 @@ Annotation quality settings have the following parameters:
 <!--lint enable maximum-line-length-->
 
 ## Comparisons
-
-### Tracks
-
-Tracks are split into separate shapes and compared on the per-frame basis with other tracks
-and shapes.
 
 ### Tags
 
@@ -468,7 +463,7 @@ Each shape type can have their own spatial matching details. Specifically:
 
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
   _OKS Sigma_ determines relative point sizes. The _Point size base_ setting allows
-  to configure whether points in point groups should use the group bounding box or the image space.
+  configuring whether points in point groups should use the group bounding box or the image space.
   Using image space for object size can be useful if you want to treat each point
   as a separate annotation.
 - polylines - A pair of lines is considered matching if all the points of one line lie within
@@ -484,6 +479,11 @@ Each shape type can have their own spatial matching details. Specifically:
 
 > **Note**: 2d cuboids are not supported
 
+### Tracks
+
+Tracks are split into separate shapes and compared on the per-frame basis with other tracks
+and shapes.
+
 ## Quality Analytics
 
 > **Note**: quality analytics is a paid feature. Please check how to get access to this
@@ -495,11 +495,12 @@ for the task and its jobs.
 
 By default, CVAT computes quality metrics automatically at regular intervals.
 
+If you want to refresh quality metrics (e.g. after the settings were changed),
+you can do this by pressing the **Refresh** button on the
+task **Quality Management** > **Analytics** page.
+
 > **Note** that the process of quality calculation may take up to several hours, depending on
 > the amount of data and labeled objects, and is **not updated immediately** after task updates.
-
-It you want request quality metrics update, you can do this by pressing the **Refresh** button
-on the task **Quality Management** > **Analytics** page.
 
 ![Quality Analytics page - refresh button](/images/honeypot11.jpg)
 
