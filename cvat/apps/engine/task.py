@@ -1256,7 +1256,7 @@ def _create_thread(
         def _pool_generator():
             # This approach guarantees that:
             # - every GT frame is used
-            # - GT frames are used the same number of times each or at most min count + 1
+            # - GT frames are used uniformly (at most min count + 1)
             # - GT frames are not repeated in jobs
             # - honeypot sets are different in jobs
             # - honeypot sets are random

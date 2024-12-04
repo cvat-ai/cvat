@@ -1078,13 +1078,32 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            # Guarantee uniformness by using a known distribution
-            # overall task honeypot distribution is not guaranteed though
+            # Use a known uniform distribution
             rng = random.Generator(random.MT19937())
-            requested_frames = rng.choice(
-                tuple(task_active_validation_frames), size=segment_honeypots_count,
-                shuffle=False, replace=False
-            ).tolist()
+
+            validation_frame_counts = {
+                validation_frame: 0 for validation_frame in task_active_validation_frames
+            }
+            for task_honeypot_frame in task_honeypot_frames:
+                validation_frame_counts[all_task_frames[task_honeypot_frame].real_frame] += 1
+
+            requested_frames = []
+            for _ in range(segment_honeypots_count):
+                # Select one of the least used frames. This will keep
+                # GT frame distribution in the task as close to uniform as possible
+                least_count = min(
+                    c for f, c in validation_frame_counts.values()
+                    if f not in requested_frames
+                )
+                least_used_frames = tuple(
+                    f for f, c in validation_frame_counts.items()
+                    if f not in requested_frames
+                    if c == least_count
+                )
+                selected_frame = rng.choice(least_used_frames, 1).item()
+                requested_frames.append(selected_frame)
+                validation_frame_counts[selected_frame] += 1
+
         else:
             assert False
 
@@ -1380,6 +1399,11 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     "Invalid size of 'honeypot_real_frames' array, "
                     f"expected {task_honeypot_frames_count}"
                 )
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            # Reset all honeypots in the task to produce a uniform distribution in the end
+            for db_image in instance.data.images:
+                if db_image.is_placeholder:
+                    db_image.real_frame = -1
 
         if frame_selection_method:
             for db_job in (
@@ -1388,6 +1412,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 .order_by("segment__start_frame")
                 .all()
             ):
+                db_job.segment.task = instance
+
                 job_serializer_params = {
                     'frame_selection_method': frame_selection_method
                 }
