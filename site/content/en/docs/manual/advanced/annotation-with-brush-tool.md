@@ -118,9 +118,9 @@ To do this, use the following {{< ilink "/docs/manual/advanced/ai-tools" "AI too
 
 ## Import and export
 
-For export, see {{< ilink "/docs/manual/advanced/import-datasets" "Export dataset" >}}
+For export, see {{< ilink "/docs/manual/advanced/export-import-datasets" "Export dataset" >}}
 
-Import follows the general {{< ilink "/docs/manual/advanced/import-datasets" "import dataset" >}} procedure,
+Import follows the general {{< ilink "/docs/manual/advanced/export-import-datasets" "import dataset" >}} procedure,
 with the additional option of converting masks to polygons.
 
 > **Note:** This option is available for formats that work with masks only.

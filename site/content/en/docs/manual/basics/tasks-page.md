@@ -12,16 +12,19 @@ Each element contains: task name, preview, progress bar, button `Open`, and menu
 Each button is responsible for a in menu `Actions` specific function:
 
 - `Export task dataset` — download annotations or annotations and images in a specific format.
-  More information is available in the {{< ilink "/docs/manual/advanced/import-datasets" "export/import datasets" >}}
+  More information is available in the
+  {{< ilink "/docs/manual/advanced/export-import-datasets" "export/import datasets" >}}
   section.
 - `Upload annotation` upload annotations in a specific format.
-  More information is available in the {{< ilink "/docs/manual/advanced/import-datasets" "export/import datasets" >}}
+  More information is available in the
+  {{< ilink "/docs/manual/advanced/export-import-datasets" "export/import datasets" >}}
   section.
 - `Automatic Annotation` — automatic annotation with OpenVINO toolkit.
   Presence depends on how you build the CVAT instance.
 - `Backup task` — make a backup of this task into a zip archive.
   Read more in the {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
-- `Move to project` — Moving a task to a project (you can move only a task which does not belong to any project).
+- `Move to project` — Moving a task to a project
+  (you can move only a task which does not belong to any project).
   In case of label mismatch, you can create or delete necessary labels in the project/task.
   Some task labels can be matched with the target project labels.
 - `Delete` — delete task.

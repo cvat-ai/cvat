@@ -69,7 +69,8 @@ Here you can do the following:
 1. Change the project's title.
 1. Open the `Actions` menu. Each button is responsible for a specific function in the `Actions` menu:
    - `Export dataset`/`Import dataset` - download/upload annotations or annotations and images in a specific format.
-     More information is available in the {{< ilink "/docs/manual/advanced/import-datasets" "export/import datasets" >}}
+     More information is available in the
+     {{< ilink "/docs/manual/advanced/export-import-datasets" "export/import datasets" >}}
      section.
    - `Backup project` - make a backup of the project read more in the
      {{< ilink "/docs/manual/advanced/backup" "backup" >}} section.
