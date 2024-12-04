@@ -24,3 +24,8 @@ CVAT_CHUNK_CREATE_CHECK_INTERVAL = 0.2
 """
 Sets the frequency of checking the readiness of the chunk
 """
+
+CVAT_CHUNK_LOCK_TIMEOUT = 50
+"""
+Maximum amount of time in seconds to spend trying to acquire the lock for chunk cache actions
+"""
