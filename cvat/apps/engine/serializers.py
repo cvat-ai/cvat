@@ -37,6 +37,7 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
+from cvat.apps.engine.quality_control import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
@@ -1078,9 +1079,6 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            # Use a known uniform distribution
-            rng = random.Generator(random.MT19937())
-
             validation_frame_counts = {
                 validation_frame: 0 for validation_frame in task_active_validation_frames
             }
@@ -1089,23 +1087,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 if real_frame in task_active_validation_frames:
                     validation_frame_counts[real_frame] += 1
 
-            requested_frames = []
-            for _ in range(segment_honeypots_count):
-                # Select one of the least used frames. This will keep
-                # GT frame distribution in the task as close to uniform as possible
-                least_count = min(
-                    c for f, c in validation_frame_counts.items()
-                    if f not in requested_frames
-                )
-                least_used_frames = tuple(
-                    f for f, c in validation_frame_counts.items()
-                    if f not in requested_frames
-                    if c == least_count
-                )
-                selected_frame = rng.choice(least_used_frames, 1).item()
-                requested_frames.append(selected_frame)
-                validation_frame_counts[selected_frame] += 1
-
+            frame_selector = HoneypotFrameSelector(validation_frame_counts)
+            requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
         else:
             assert False
 
