@@ -362,7 +362,7 @@ class TestCLI:
         )
 
         annotations = fxt_new_task.get_annotations()
-        assert annotations.shapes[0].points[0] == 0.75
+        assert annotations.shapes[0].points[0] == pytest.approx(0.75)
 
     def test_auto_annotate_with_cmtp(self, fxt_new_task: Task):
         self.run_cli(
