@@ -30,6 +30,7 @@ from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES, CachingMediaIterator, IMediaReader, ImageListReader,
     Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
@@ -1498,6 +1499,9 @@ def _create_thread(
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
+
+    # Prepare the preview image and save it in the cache
+    TaskFrameProvider(db_task=db_task).get_preview()
 
 def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
     @attrs.define
