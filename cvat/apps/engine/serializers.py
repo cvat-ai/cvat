@@ -1085,14 +1085,16 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 validation_frame: 0 for validation_frame in task_active_validation_frames
             }
             for task_honeypot_frame in task_honeypot_frames:
-                validation_frame_counts[all_task_frames[task_honeypot_frame].real_frame] += 1
+                real_frame = _to_rel_frame(all_task_frames[task_honeypot_frame].real_frame)
+                if real_frame in task_active_validation_frames:
+                    validation_frame_counts[real_frame] += 1
 
             requested_frames = []
             for _ in range(segment_honeypots_count):
                 # Select one of the least used frames. This will keep
                 # GT frame distribution in the task as close to uniform as possible
                 least_count = min(
-                    c for f, c in validation_frame_counts.values()
+                    c for f, c in validation_frame_counts.items()
                     if f not in requested_frames
                 )
                 least_used_frames = tuple(
@@ -1351,7 +1353,9 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout = getattr(instance.data, 'validation_layout', None)
+        validation_layout: Optional[models.ValidationLayout] = (
+            getattr(instance.data, 'validation_layout', None)
+        )
         if not validation_layout:
             raise serializers.ValidationError("Validation is not configured in the task")
 
@@ -1372,6 +1376,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             })
             gt_job_meta_serializer.is_valid(raise_exception=True)
             gt_job_meta_serializer.save()
+
+            validation_layout.refresh_from_db()
 
         frame_selection_method = validated_data.get('frame_selection_method')
         if frame_selection_method and not (
@@ -1400,9 +1406,15 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     f"expected {task_honeypot_frames_count}"
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            # Reset all honeypots in the task to produce a uniform distribution in the end
-            for db_image in instance.data.images:
-                if db_image.is_placeholder:
+            # Reset active honeypots in the task to produce a uniform distribution in the end
+            task_frame_provider = TaskFrameProvider(instance)
+            task_abs_disabled_validation_frames = set(
+                task_frame_provider.get_abs_frame_number(v)
+                for v in validation_layout.disabled_frames
+            )
+
+            for db_image in instance.data.images.filter(is_placeholder=True).all():
+                if db_image.real_frame not in task_abs_disabled_validation_frames:
                     db_image.real_frame = -1
 
         if frame_selection_method:
