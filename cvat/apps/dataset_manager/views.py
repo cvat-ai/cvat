@@ -11,6 +11,7 @@ from datetime import timedelta
 
 import django_rq
 import rq
+from os.path import exists as osp_exists
 from django.conf import settings
 from django.utils import timezone
 from rq_scheduler import Scheduler
@@ -161,7 +162,7 @@ def export(
             ttl=EXPORT_LOCK_TTL,
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
         ):
-            if osp.exists(output_path):
+            if osp_exists(output_path):
                 # Update last update time to prolong the export lifetime
                 # and postpone the file deleting by the cleaning job
                 os.utime(output_path, None)
