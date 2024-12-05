@@ -101,6 +101,21 @@ def image_size_within_orientation(img: Image.Image):
 def has_exif_rotation(img: Image.Image):
     return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
 
+
+def load_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
+    with Image.open(image[0]) as pil_img:
+        pil_img.load()
+
+        # current version of Pillow applies exif rotation immediately when TIFF image opened
+        # and it removes rotation tag after that
+        # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
+        # and original files will be added to the archive (without applied rotation)
+        # that is why we need the second part of the condition
+        if has_exif_rotation(pil_img) or pil_img.format == 'TIFF':
+            ImageOps.exif_transpose(pil_img, in_place=True)
+
+        return pil_img, image[1], image[2]
+
 _T = TypeVar("_T")
 
 
@@ -837,10 +852,9 @@ class IChunkWriter(ABC):
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
         elif isinstance(source_image, io.IOBase):
-            with Image.open(source_image) as _img:
-                image = ImageOps.exif_transpose(_img)
+            image = load_image(source_image)
         elif isinstance(source_image, Image.Image):
-            image = ImageOps.exif_transpose(source_image)
+            image = source_image
 
         assert image is not None
 
@@ -868,16 +882,16 @@ class IChunkWriter(ABC):
             image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
 
-        converted_image = image.convert('RGB')
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
 
         try:
             buf = io.BytesIO()
-            converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
+            image.save(buf, format='JPEG', quality=quality, optimize=True)
             buf.seek(0)
-            width, height = converted_image.size
-            return width, height, buf
+            return image.width, image.height, buf
         finally:
-            converted_image.close()
+            image.close()
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -905,31 +919,20 @@ class ZipChunkWriter(IChunkWriter):
                 ext = os.path.splitext(path)[1].replace('.', '')
 
                 if self._dimension == DimensionType.DIM_2D:
-                    # current version of Pillow applies exif rotation immediately when TIFF image opened
-                    # and it removes rotation tag after that
-                    # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
-                    # and original files will be added to the archive (without applied rotation)
-                    # that is why we need the second part of the condition
-                    if isinstance(image, Image.Image) and (
-                        has_exif_rotation(image) or image.format == 'TIFF'
-                    ):
+                    if isinstance(image, Image.Image):
                         output = io.BytesIO()
-                        rot_image = ImageOps.exif_transpose(image)
-                        try:
-                            if image.format == 'TIFF':
-                                # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                                # use lossless lzw compression for tiff images
-                                rot_image.save(output, format='TIFF', compression='tiff_lzw')
-                            else:
-                                rot_image.save(
-                                    output,
-                                    # use format from original image, https://github.com/python-pillow/Pillow/issues/5527
-                                    format=image.format if image.format else self.IMAGE_EXT,
-                                    quality=100,
-                                    subsampling=0
-                                )
-                        finally:
-                            rot_image.close()
+                        if image.format == 'TIFF':
+                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                            # use lossless lzw compression for tiff images
+                            image.save(output, format='TIFF', compression='tiff_lzw')
+                        else:
+                            image.save(
+                                output,
+                                # use format from original image, https://github.com/python-pillow/Pillow/issues/5527
+                                format=image.format if image.format else self.IMAGE_EXT,
+                                quality=100,
+                                subsampling=0
+                            )
                     elif isinstance(image, io.IOBase):
                         output = image
                     else:

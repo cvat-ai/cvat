@@ -374,10 +374,6 @@ def sendfile(
 
     return _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)
 
-def load_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
-    pil_img = Image.open(image[0])
-    pil_img.load()
-    return pil_img, image[1], image[2]
 
 def build_backup_file_name(
     *,

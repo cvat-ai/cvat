@@ -61,12 +61,12 @@ from cvat.apps.engine.media_extractors import (
     VideoReaderWithManifest,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
+    load_image,
 )
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
     get_rq_lock_for_job,
-    load_image,
     md5_hash,
 )
 from utils.dataset_manifest import ImageManifestManager
