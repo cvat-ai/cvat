@@ -983,8 +983,7 @@ def return_response(success_code=status.HTTP_200_OK):
                 data = str(err)
             except requests.HTTPError as err:
                 status_code = err.response.status_code
-                msg = err.response.text if hasattr(err, 'response') else str(err)
-                data = msg
+                data = str(err)
             except requests.Timeout as err:
                 status_code = status.HTTP_504_GATEWAY_TIMEOUT
                 data = str(err)
