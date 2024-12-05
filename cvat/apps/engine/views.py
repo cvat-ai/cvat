@@ -1783,6 +1783,24 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     "Validation must be initialized during task creation"
                 )
 
+            from cvat.apps.dataset_manager.task import JobAnnotation
+            task_query = models.Task.objects.prefetch_related(
+                Prefetch('data', queryset=models.Data.objects.prefetch_related(
+                    Prefetch('images', queryset=models.Image.objects.prefetch_related(
+                        Prefetch('related_files', queryset=models.RelatedFile.objects.order_by('id'))
+                    ).order_by('frame')),
+                )),
+                'segment_set',
+                Prefetch('segment_set__job_set', queryset=JobAnnotation.add_prefetch_info(
+                    models.Job.objects, prefetch_images=False
+                )),
+                'label_set',
+                'label_set__attributespec_set',
+                'label_set__sublabels__attributespec_set',
+            )
+
+            db_task = task_query.get(id=db_task.id)
+
             request_serializer = TaskValidationLayoutWriteSerializer(db_task, data=request.data)
             request_serializer.is_valid(raise_exception=True)
             validation_layout = request_serializer.save().data.validation_layout

@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import string
+from datumaro.util import take_by
 import django_rq
 import rq.defaults as rq_defaults
 
@@ -1101,13 +1102,19 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             assert db_segment_frame.is_placeholder
 
             old_honeypot_real_ids.append(_to_rel_frame(db_segment_frame.real_frame))
+            if db_segment_frame.real_frame == db_requested_frame.real_frame:
+                continue
 
             # Change image in the current segment honeypot frame
             db_segment_frame.path = db_requested_frame.path
             db_segment_frame.width = db_requested_frame.width
             db_segment_frame.height = db_requested_frame.height
             db_segment_frame.real_frame = db_requested_frame.frame
-            db_segment_frame.related_files.set(db_requested_frame.related_files.all())
+
+            old_related_files = db_segment_frame.related_files.all()
+            new_related_files = db_requested_frame.related_files.all()
+            if not (not old_related_files and not new_related_files):
+                db_segment_frame.related_files.set(new_related_files)
 
             updated_db_frames.append(db_segment_frame)
 
@@ -1124,7 +1131,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             )
 
             # Remove annotations on changed validation frames
-            job_annotation = JobAnnotation(db_job.id)
+            job_annotation = JobAnnotation(db_job.id, db_job=db_job)
             job_annotation.init_from_db()
             job_annotation_manager = AnnotationManager(
                 job_annotation.ir_data, dimension=db_task.dimension
@@ -1143,6 +1150,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
 
+            chunks_to_be_removed = []
             queue = django_rq.get_queue(settings.CVAT_QUEUES.CHUNKS.value)
             for chunk_id in sorted(updated_segment_chunk_ids):
                 chunk_frames = segment_frames[
@@ -1170,7 +1178,10 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                         )
                         wait_for_rq_job(rq_job)
 
-                    MediaCache().remove_segment_chunk(db_segment, chunk_id, quality=quality)
+                    chunks_to_be_removed.append({'db_segment': db_segment, 'chunk_number': chunk_id, 'quality': quality})
+
+            media_cache: MediaCache = self.context.get('media_cache', MediaCache())
+            media_cache.remove_segment_chunks(chunks_to_be_removed)
 
             db_segment.chunks_updated_date = timezone.now()
             db_segment.save(update_fields=['chunks_updated_date'])
@@ -1186,11 +1197,15 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
                 db_data.save(update_fields=['deleted_frames'])
 
-            db_job.touch()
-            db_segment.job_set.exclude(id=db_job.id).update(updated_date=timezone.now())
-            db_task.touch()
-            if db_task.project:
-                db_task.project.touch()
+            new_updated_date = timezone.now()
+            db_job.updated_date = new_updated_date
+
+            if not self.context.get('is_bulk'):
+                db_segment.job_set.update(updated_date=new_updated_date)
+
+                db_task.touch()
+                if db_task.project:
+                    db_task.project.touch()
 
         return instance
 
@@ -1401,12 +1416,33 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     db_image.real_frame = -1
 
         if frame_selection_method:
-            for db_job in (
-                models.Job.objects.select_related("segment")
-                .filter(segment__task_id=instance.id, type=models.JobType.ANNOTATION)
-                .order_by("segment__start_frame")
-                .all()
-            ):
+            from cvat.apps.engine.cache import MediaCache
+            class AccumulatingMediaCache(MediaCache):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+
+                    self._accumulated_segment_removes = []
+
+                def remove_segment_chunks(self, params):
+                    self._accumulated_segment_removes.extend(params)
+
+                def execute_remove_segment_chunks(self):
+                    return super().remove_segment_chunks(self._accumulated_segment_removes)
+
+            media_cache = AccumulatingMediaCache()
+
+            db_jobs = sorted(
+                [
+                    db_job
+                    for db_segment in instance.segment_set.all()
+                    for db_job in db_segment.job_set.all()
+                    if db_job.type == models.JobType.ANNOTATION
+                ],
+                key=lambda j: j.segment.start_frame
+            )
+
+            updated_jobs: list[models.Job] = []
+            for db_job in db_jobs:
                 db_job.segment.task = instance
 
                 job_serializer_params = {
@@ -1424,10 +1460,30 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     ]
 
                 job_validation_layout_serializer = JobValidationLayoutWriteSerializer(
-                    db_job, job_serializer_params
+                    db_job, job_serializer_params, context={
+                        'media_cache': media_cache, 'is_bulk': True
+                    }
                 )
                 job_validation_layout_serializer.is_valid(raise_exception=True)
+
+                old_updated_date = db_job.updated_date
                 job_validation_layout_serializer.save()
+                if db_job.updated_date != old_updated_date:
+                    updated_jobs.append(db_job)
+
+            if updated_jobs:
+                media_cache.execute_remove_segment_chunks()
+
+                updated_date = timezone.now()
+                for updated_jobs_batch in take_by(updated_jobs, count=1000):
+                    models.Job.objects.filter(
+                        segment_id__in=[j.segment_id for j in updated_jobs_batch]
+                    ).update(updated_date=updated_date)
+
+                instance.touch()
+                if instance.project:
+                    instance.project.touch()
+
 
         return instance
 

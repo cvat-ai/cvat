@@ -65,6 +65,7 @@ from cvat.apps.engine.media_extractors import (
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
+    format_list,
     get_rq_lock_for_job,
     load_image,
     md5_hash,
@@ -275,6 +276,15 @@ class MediaCache:
         except pickle.UnpicklingError:
             slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
 
+    def _bulk_delete_cache_items(self, keys: str):
+        try:
+            self._cache().delete_many(keys)
+            slogger.glob.info(f"Removed chunks from the cache: keys {format_list(keys)}")
+        except pickle.UnpicklingError:
+            slogger.glob.error(
+                f"Failed to remove items from the cache: keys {format_list(keys)}", exc_info=True
+            )
+
     def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
         try:
             item = self._cache().get(key)
@@ -467,6 +477,15 @@ class MediaCache:
         self._delete_cache_item(
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
+
+    def remove_segment_chunks(self, params: Sequence[dict[str, Any]]) -> None:
+        # TODO: maybe add a more generic version
+        keys_to_remove = []
+        for item_params in params:
+            db_obj = item_params.pop('db_segment')
+            keys_to_remove.append(self._make_chunk_key(db_obj, **item_params))
+
+        self._bulk_delete_cache_items(keys_to_remove)
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
         return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))

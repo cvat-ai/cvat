@@ -84,7 +84,7 @@ def merge_table_rows(rows, keys_for_merge, field_id):
 
 class JobAnnotation:
     @classmethod
-    def add_prefetch_info(cls, queryset: QuerySet, prefetch_images: bool = True):
+    def add_prefetch_info(cls, queryset: QuerySet[models.Job], prefetch_images: bool = True) -> QuerySet[models.Job]:
         assert issubclass(queryset.model, models.Job)
 
         label_qs = add_prefetch_fields(models.Label.objects.all(), [
