@@ -852,7 +852,7 @@ class IChunkWriter(ABC):
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
         elif isinstance(source_image, io.IOBase):
-            image = load_image(source_image)
+            image, _, _ = load_image((source_image, None, None))
         elif isinstance(source_image, Image.Image):
             image = source_image
 
@@ -891,7 +891,8 @@ class IChunkWriter(ABC):
             buf.seek(0)
             return image.width, image.height, buf
         finally:
-            image.close()
+            if image is not source_image:
+                image.close()
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):

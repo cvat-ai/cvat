@@ -64,11 +64,7 @@ from cvat.apps.engine.media_extractors import (
     load_image,
 )
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
-from cvat.apps.engine.utils import (
-    CvatChunkTimestampMismatchError,
-    get_rq_lock_for_job,
-    md5_hash,
-)
+from cvat.apps.engine.utils import CvatChunkTimestampMismatchError, get_rq_lock_for_job, md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
