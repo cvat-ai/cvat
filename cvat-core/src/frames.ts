@@ -570,7 +570,7 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
 }
 
 function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
-    frameMetaCache[jobID] = new Promise<FramesMetaData>((resolve) => {
+    frameMetaCache[jobID] = new Promise<FramesMetaData>((resolve, reject) => {
         serverProxy.frames.saveMeta('job', jobID, {
             deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
         }).then((serverMeta) => {
@@ -580,8 +580,8 @@ function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaDat
             });
             resolve(updatedMetaData);
         }).catch((error) => {
-            resolve(meta);
-            throw error;
+            frameMetaCache[jobID] = Promise.resolve(meta);
+            reject(error);
         });
     });
 
