@@ -848,7 +848,7 @@ export async function patchMeta(jobID: number): Promise<FramesMetaData> {
     const updatedFields = meta.getUpdated();
 
     if (Object.keys(updatedFields).length) {
-        frameMetaCache[jobID] = saveJobMeta(meta, jobID);
+        await saveJobMeta(meta, jobID);
     }
     const newMeta = await frameMetaCache[jobID];
     return newMeta;
