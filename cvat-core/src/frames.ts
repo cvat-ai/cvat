@@ -560,17 +560,21 @@ export async function getFramesMeta(type: 'job' | 'task', id: number, forceReloa
 }
 
 async function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
-    frameMetaCache[jobID] = serverProxy.frames.saveMeta('job', jobID, {
-        deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
-    })
-        .then((serverMeta) => new FramesMetaData({
-            ...serverMeta,
-            deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
-        }))
-        .catch((error) => {
-            delete frameMetaCache[jobID];
+    frameMetaCache[jobID] = new Promise<FramesMetaData>((resolve) => {
+        serverProxy.frames.saveMeta('job', jobID, {
+            deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
+        }).then((serverMeta) => {
+            const updatedMetaData = new FramesMetaData({
+                ...serverMeta,
+                deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+            });
+            resolve(updatedMetaData);
+        }).catch((error) => {
+            resolve(meta);
             throw error;
         });
+    });
+
     return frameMetaCache[jobID];
 }
 
