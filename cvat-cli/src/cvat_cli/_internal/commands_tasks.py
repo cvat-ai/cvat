@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import importlib
 import importlib.util
-import json
 import textwrap
 from collections.abc import Sequence
 from pathlib import Path
@@ -19,7 +18,7 @@ from cvat_sdk import Client, models
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .command_base import CommandGroup
+from .command_base import CommandGroup, GenericCommand, GenericDeleteCommand, GenericListCommand
 from .parsers import (
     BuildDictAction,
     parse_function_parameter,
@@ -31,26 +30,16 @@ from .parsers import (
 COMMANDS = CommandGroup(description="Perform operations on CVAT tasks.")
 
 
+class GenericTaskCommand(GenericCommand):
+    resource_type_str = "task"
+
+    def repo(self, client: Client):
+        return client.tasks
+
+
 @COMMANDS.command_class("ls")
-class TaskList:
-    description = "List all CVAT tasks in either basic or JSON format."
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument(
-            "--json",
-            dest="use_json_output",
-            default=False,
-            action="store_true",
-            help="output JSON data",
-        )
-
-    def execute(self, client: Client, *, use_json_output: bool = False):
-        results = client.tasks.list(return_json=use_json_output)
-        if use_json_output:
-            print(json.dumps(json.loads(results), indent=2))
-        else:
-            for r in results:
-                print(r.id)
+class TaskList(GenericListCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("create")
@@ -241,14 +230,8 @@ class TaskCreate:
 
 
 @COMMANDS.command_class("delete")
-class TaskDelete:
-    description = "Delete a list of tasks, ignoring those which don't exist."
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_ids", type=int, help="list of task IDs", nargs="+")
-
-    def execute(self, client: Client, *, task_ids: Sequence[int]) -> None:
-        client.tasks.remove_by_ids(task_ids=task_ids)
+class TaskDelete(GenericDeleteCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("frames")

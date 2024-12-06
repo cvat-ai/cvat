@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC
+from collections.abc import Sequence
 from copy import deepcopy
 from pathlib import Path
 from typing import (
@@ -160,6 +161,27 @@ class ModelListMixin(Generic[_EntityT]):
         if return_json:
             return json.dumps(results)
         return [self._entity_type(self._client, model) for model in results]
+
+
+class ModelBatchDeleteMixin(Repo):
+    def remove_by_ids(self, ids: Sequence[int], /) -> None:
+        """
+        Delete a list of objects from the server, ignoring those which don't exist.
+        """
+        type_name = self._entity_type.__name__
+
+        for object_id in ids:
+            (_, response) = self.api.destroy(object_id, _check_status=False)
+
+            if 200 <= response.status <= 299:
+                self._client.logger.info(f"{type_name} #{object_id} deleted")
+            elif response.status == 404:
+                self._client.logger.info(f"{type_name} #{object_id} not found")
+            else:
+                self._client.logger.error(
+                    f"Failed to delete {type_name} #{object_id}: "
+                    f"{response.msg} (status {response.status})"
+                )
 
 
 #### Entity mixins

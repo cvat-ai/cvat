@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
+import json
 import textwrap
 import types
-from collections.abc import Mapping
+from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping, Sequence
 from typing import Callable, Protocol
 
 from cvat_sdk import Client
@@ -76,3 +78,49 @@ class DeprecatedAlias:
     def execute(self, client: Client, **kwargs) -> None:
         client.logger.warning('This command is deprecated. Use "%s" instead.', self._replacement)
         self._command.execute(client, **kwargs)
+
+
+class GenericCommand(metaclass=ABCMeta):
+    @abstractmethod
+    def repo(self, client: Client): ...
+
+    @property
+    @abstractmethod
+    def resource_type_str(self) -> str: ...
+
+
+class GenericListCommand(GenericCommand):
+    @property
+    def description(self) -> str:
+        return f"List all CVAT {self.resource_type_str}s in either basic or JSON format."
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "--json",
+            dest="use_json_output",
+            default=False,
+            action="store_true",
+            help="output JSON data",
+        )
+
+    def execute(self, client: Client, *, use_json_output: bool = False):
+        results = self.repo(client).list(return_json=use_json_output)
+        if use_json_output:
+            print(json.dumps(json.loads(results), indent=2))
+        else:
+            for r in results:
+                print(r.id)
+
+
+class GenericDeleteCommand(GenericCommand):
+    @property
+    def description(self):
+        return f"Delete a list of {self.resource_type_str}s, ignoring those which don't exist."
+
+    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "ids", type=int, help=f"list of {self.resource_type_str} IDs", nargs="+"
+        )
+
+    def execute(self, client: Client, *, ids: Sequence[int]) -> None:
+        self.repo(client).remove_by_ids(ids)
