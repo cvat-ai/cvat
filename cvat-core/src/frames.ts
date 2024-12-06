@@ -569,7 +569,7 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
     return frameMetaCache[id];
 }
 
-async function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
+function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
     frameMetaCache[jobID] = new Promise<FramesMetaData>((resolve) => {
         serverProxy.frames.saveMeta('job', jobID, {
             deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
