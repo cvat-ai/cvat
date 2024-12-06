@@ -290,7 +290,7 @@ class TestTaskAutoAnnotation:
             conf_threshold=0.75,
         )
 
-        assert received_threshold == 0.75
+        assert received_threshold == 0.75  # python:S1244 NOSONAR
 
         cvataa.annotate_task(
             self.client,

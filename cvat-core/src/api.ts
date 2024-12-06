@@ -320,6 +320,12 @@ function build(): CVATCore {
             set requestsStatusDelay(value) {
                 config.requestsStatusDelay = value;
             },
+            get jobMetaDataReloadPeriod() {
+                return config.jobMetaDataReloadPeriod;
+            },
+            set jobMetaDataReloadPeriod(value) {
+                config.jobMetaDataReloadPeriod = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
