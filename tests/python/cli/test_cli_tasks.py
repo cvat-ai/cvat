@@ -63,6 +63,7 @@ class TestCliTasks(TestCliBase):
         files = generate_images(self.tmp_path, 5)
 
         stdout = self.run_cli(
+            "task",
             "create",
             "test_task",
             ResourceType.LOCAL.name,
@@ -84,6 +85,7 @@ class TestCliTasks(TestCliBase):
         frame_step = 3
 
         stdout = self.run_cli(
+            "task",
             "create",
             "test_task",
             ResourceType.LOCAL.name,
@@ -110,19 +112,19 @@ class TestCliTasks(TestCliBase):
         assert task.bug_tracker == "http://localhost/bug"
 
     def test_can_list_tasks_in_simple_format(self, fxt_new_task: Task):
-        output = self.run_cli("ls")
+        output = self.run_cli("task", "ls")
 
         results = output.split("\n")
         assert any(str(fxt_new_task.id) in r for r in results)
 
     def test_can_list_tasks_in_json_format(self, fxt_new_task: Task):
-        output = self.run_cli("ls", "--json")
+        output = self.run_cli("task", "ls", "--json")
 
         results = json.loads(output)
         assert any(r["id"] == fxt_new_task.id for r in results)
 
     def test_can_delete_task(self, fxt_new_task: Task):
-        self.run_cli("delete", str(fxt_new_task.id))
+        self.run_cli("task", "delete", str(fxt_new_task.id))
 
         with pytest.raises(exceptions.NotFoundException):
             fxt_new_task.fetch()
@@ -130,7 +132,8 @@ class TestCliTasks(TestCliBase):
     def test_can_download_task_annotations(self, fxt_new_task: Task):
         filename = self.tmp_path / "task_{fxt_new_task.id}-cvat.zip"
         self.run_cli(
-            "dump",
+            "task",
+            "export-dataset",
             str(fxt_new_task.id),
             str(filename),
             "--format",
@@ -146,7 +149,8 @@ class TestCliTasks(TestCliBase):
     def test_can_download_task_backup(self, fxt_new_task: Task):
         filename = self.tmp_path / "task_{fxt_new_task.id}-cvat.zip"
         self.run_cli(
-            "export",
+            "task",
+            "backup",
             str(fxt_new_task.id),
             str(filename),
             "--completion_verification_period",
@@ -159,6 +163,7 @@ class TestCliTasks(TestCliBase):
     def test_can_download_task_frames(self, fxt_new_task: Task, quality: str):
         out_dir = str(self.tmp_path / "downloads")
         self.run_cli(
+            "task",
             "frames",
             str(fxt_new_task.id),
             "0",
@@ -174,10 +179,17 @@ class TestCliTasks(TestCliBase):
         }
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
-        self.run_cli("upload", str(fxt_new_task.id), str(fxt_coco_file), "--format", "COCO 1.0")
+        self.run_cli(
+            "task",
+            "import-dataset",
+            str(fxt_new_task.id),
+            str(fxt_coco_file),
+            "--format",
+            "COCO 1.0",
+        )
 
     def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
-        stdout = self.run_cli("import", str(fxt_backup_file))
+        stdout = self.run_cli("task", "create-from-backup", str(fxt_backup_file))
 
         task_id = int(stdout.split()[-1])
         assert task_id
@@ -189,6 +201,7 @@ class TestCliTasks(TestCliBase):
         assert not annotations.shapes
 
         self.run_cli(
+            "task",
             "auto-annotate",
             str(fxt_new_task.id),
             f"--function-module={__package__}.example_function",
@@ -202,6 +215,7 @@ class TestCliTasks(TestCliBase):
         assert not annotations.shapes
 
         self.run_cli(
+            "task",
             "auto-annotate",
             str(fxt_new_task.id),
             f"--function-file={Path(__file__).with_name('example_function.py')}",
@@ -215,6 +229,7 @@ class TestCliTasks(TestCliBase):
         assert not annotations.shapes
 
         self.run_cli(
+            "task",
             "auto-annotate",
             str(fxt_new_task.id),
             f"--function-module={__package__}.example_parameterized_function",
@@ -232,6 +247,7 @@ class TestCliTasks(TestCliBase):
         assert not annotations.shapes
 
         self.run_cli(
+            "task",
             "auto-annotate",
             str(fxt_new_task.id),
             f"--function-module={__package__}.conf_threshold_function",
@@ -243,6 +259,7 @@ class TestCliTasks(TestCliBase):
 
     def test_auto_annotate_with_cmtp(self, fxt_new_task: Task):
         self.run_cli(
+            "task",
             "auto-annotate",
             str(fxt_new_task.id),
             f"--function-module={__package__}.cmtp_function",
@@ -253,6 +270,7 @@ class TestCliTasks(TestCliBase):
         assert annotations.shapes[0].type.value == "mask"
 
         self.run_cli(
+            "task",
             "auto-annotate",
             str(fxt_new_task.id),
             f"--function-module={__package__}.cmtp_function",

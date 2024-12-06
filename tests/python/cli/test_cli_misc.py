@@ -22,7 +22,7 @@ class TestCliMisc(TestCliBase):
         # We don't actually run a separate process in the tests here, so it works
         monkeypatch.setattr(Client, "get_server_version", mocked_version)
 
-        self.run_cli("ls")
+        self.run_cli("task", "ls")
 
         assert "Server version '0' is not compatible with SDK version" in caplog.text
 
@@ -39,6 +39,7 @@ class TestCliMisc(TestCliBase):
                 f"--auth={self.user}:{self.password}",
                 f"--server-host={proxy_url}",
                 *insecure_args,
+                "task",
                 "ls",
                 expected_code=1 if verify else 0,
             )
@@ -55,6 +56,7 @@ class TestCliMisc(TestCliBase):
         files = generate_images(self.tmp_path, 1)
 
         stdout = self.run_cli(
+            "task",
             "create",
             "personal_task",
             ResourceType.LOCAL.name,
@@ -67,6 +69,7 @@ class TestCliMisc(TestCliBase):
         personal_task_id = int(stdout.split()[-1])
 
         stdout = self.run_cli(
+            "task",
             "create",
             "org_task",
             ResourceType.LOCAL.name,
@@ -78,14 +81,14 @@ class TestCliMisc(TestCliBase):
 
         org_task_id = int(stdout.split()[-1])
 
-        personal_task_ids = list(map(int, self.run_cli("ls", organization="").split()))
+        personal_task_ids = list(map(int, self.run_cli("task", "ls", organization="").split()))
         assert personal_task_id in personal_task_ids
         assert org_task_id not in personal_task_ids
 
-        org_task_ids = list(map(int, self.run_cli("ls", organization=org).split()))
+        org_task_ids = list(map(int, self.run_cli("task", "ls", organization=org).split()))
         assert personal_task_id not in org_task_ids
         assert org_task_id in org_task_ids
 
-        all_task_ids = list(map(int, self.run_cli("ls").split()))
+        all_task_ids = list(map(int, self.run_cli("task", "ls").split()))
         assert personal_task_id in all_task_ids
         assert org_task_id in all_task_ids
