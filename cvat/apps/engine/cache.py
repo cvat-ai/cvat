@@ -83,12 +83,11 @@ def enqueue_create_chunk_job(
     rq_job_id: str,
     create_callback: Callback,
     *,
-    blocking_timeout: int = settings.CVAT_CHUNK_LOCK_ACQUISITION_TIMEOUT,
     rq_job_result_ttl: int = 60,
     rq_job_failure_ttl: int = 3600 * 24 * 14,  # 2 weeks
 ) -> rq.job.Job:
     try:
-        with get_rq_lock_for_job(queue, rq_job_id, blocking_timeout=blocking_timeout):
+        with get_rq_lock_for_job(queue, rq_job_id):
             rq_job = queue.fetch_job(rq_job_id)
 
             if not rq_job:
@@ -227,7 +226,6 @@ class MediaCache:
             with get_rq_lock_for_job(
                 cls._get_queue(),
                 key,
-                blocking_timeout=settings.CVAT_CHUNK_LOCK_ACQUISITION_TIMEOUT,
             ):
                 cached_item = cache.get(key)
                 if cached_item is not None and timestamp <= cached_item[3]:
