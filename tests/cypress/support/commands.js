@@ -178,6 +178,7 @@ Cypress.Commands.add(
         projectName = '',
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
+        qualityConfigurationParams = null,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -214,6 +215,9 @@ Cypress.Commands.add(
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
+            }
+            if (qualityConfigurationParams) {
+                cy.configureTaskQualityMode(qualityConfigurationParams);
             }
             cy.get('.cvat-submit-continue-task-button').scrollIntoView();
             cy.get('.cvat-submit-continue-task-button').click();
@@ -291,7 +295,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
+Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().then(async ($win) => {
         const task = new $win.cvat.classes.Task({
             ...taskSpec,
@@ -310,7 +314,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
             task.remoteFiles = dataSpec.remote_files;
         }
 
-        const result = await task.save();
+        const result = await task.save(extras || {});
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
@@ -894,6 +898,23 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
             cy.get('.cvat-search-target-storage-cloud-storage-field').click();
             cy.get('.cvat-cloud-storage-select-provider').last().click();
         }
+    }
+});
+
+Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
+    cy.contains('Quality').click();
+    if (qualityConfigurationParams.validationMode) {
+        cy.get('#validationMode').within(() => {
+            cy.contains(qualityConfigurationParams.validationMode).click();
+        });
+    }
+    if (qualityConfigurationParams.validationFramesPercent) {
+        cy.get('#validationFramesPercent').clear();
+        cy.get('#validationFramesPercent').type(qualityConfigurationParams.validationFramesPercent);
+    }
+    if (qualityConfigurationParams.validationFramesPerJobPercent) {
+        cy.get('#validationFramesPerJobPercent').clear();
+        cy.get('#validationFramesPerJobPercent').type(qualityConfigurationParams.validationFramesPerJobPercent);
     }
 });
 

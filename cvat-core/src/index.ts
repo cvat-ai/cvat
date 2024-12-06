@@ -34,7 +34,14 @@ import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
-import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
+import {
+    runAction,
+    callAction,
+    listActions,
+    registerAction,
+} from './annotations-actions/annotations-actions';
+import { BaseCollectionAction } from './annotations-actions/base-collection-action';
+import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
@@ -165,7 +172,8 @@ export default interface CVATCore {
     actions: {
         list: typeof listActions;
         register: typeof registerAction;
-        run: typeof runActions;
+        run: typeof runAction;
+        call: typeof callAction;
     };
     logger: typeof logger;
     config: {
@@ -179,6 +187,7 @@ export default interface CVATCore {
         onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
         requestsStatusDelay: typeof config.requestsStatusDelay;
+        jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
     },
     client: {
         version: string;
@@ -209,7 +218,8 @@ export default interface CVATCore {
         Organization: typeof Organization;
         Webhook: typeof Webhook;
         AnnotationGuide: typeof AnnotationGuide;
-        BaseSingleFrameAction: typeof BaseSingleFrameAction;
+        BaseShapesAction: typeof BaseShapesAction;
+        BaseCollectionAction: typeof BaseCollectionAction;
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;

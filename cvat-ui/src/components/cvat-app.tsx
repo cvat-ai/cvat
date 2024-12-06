@@ -65,7 +65,6 @@ import { Organization, getCore } from 'cvat-core-wrapper';
 import {
     ErrorState, NotificationState, NotificationsState, PluginsState,
 } from 'reducers';
-import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
@@ -142,7 +141,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, location, onChangeLocation } = this.props;
+        const { history, onChangeLocation } = this.props;
         const {
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
             SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
@@ -170,9 +169,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             }
         };
 
-        customWaViewHit(location.pathname, location.search, location.hash);
         history.listen((newLocation) => {
-            customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
             const { location: prevLocation } = this.props;
 
             onChangeLocation(prevLocation.pathname, newLocation.pathname);

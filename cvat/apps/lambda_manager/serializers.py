@@ -27,7 +27,8 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     max_distance = serializers.IntegerField(required=False)
     threshold = serializers.FloatField(required=False)
     cleanup = serializers.BooleanField(help_text="Whether existing annotations should be removed", default=False)
-    convMaskToPoly = serializers.BooleanField(default=False) # TODO: use lowercase naming
+    convMaskToPoly = serializers.BooleanField(required=False, source="conv_mask_to_poly", write_only=True, help_text="Deprecated; use conv_mask_to_poly instead")
+    conv_mask_to_poly = serializers.BooleanField(required=False, help_text="Convert mask shapes to polygons")
     mapping = serializers.DictField(child=LabelMappingEntrySerializer(), required=False,
         help_text="Label mapping from the model to the task labels"
     )
