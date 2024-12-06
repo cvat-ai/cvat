@@ -418,11 +418,12 @@ class TaskImport:
         )
 
     def execute(self, client: Client, *, filename: str, status_check_period: int) -> None:
-        client.tasks.create_from_backup(
+        task = client.tasks.create_from_backup(
             filename=filename,
             status_check_period=status_check_period,
             pbar=DeferredTqdmProgressReporter(),
         )
+        print(f"Created task ID", task.id)
 
 
 @COMMANDS.command_class("auto-annotate")
