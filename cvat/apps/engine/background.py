@@ -53,9 +53,9 @@ from cvat.apps.events.handlers import handle_dataset_export
 slogger = ServerLogManager(__name__)
 
 REQUEST_TIMEOUT = 60
-# it's better to return LockNotAvailableError instead of 502 error TODO: (or 504?)
-LOCK_ACQUIRE_TIMEOUT = REQUEST_TIMEOUT - 2
+# it's better to return LockNotAvailableError instead of response with 504 status
 LOCK_TTL = REQUEST_TIMEOUT - 5
+LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 class _ResourceExportManager(ABC):
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
@@ -230,7 +230,9 @@ class DatasetExportManager(_ResourceExportManager):
             return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < instance_update_time
 
         def handle_local_download() -> Response:
-            with dm.util.get_export_cache_lock(file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT):
+            with dm.util.get_export_cache_lock(
+                file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+            ):
                 if not osp.exists(file_path):
                     return Response(
                         "The exported file has expired, please retry exporting",

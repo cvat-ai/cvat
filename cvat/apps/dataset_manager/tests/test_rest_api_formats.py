@@ -1461,7 +1461,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=5),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT", new=10),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=10),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1498,7 +1498,7 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=5),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT", new=10),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=10),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1692,7 +1692,7 @@ class ExportBehaviorTest(_DbTestBase):
             from cvat.apps.dataset_manager.util import LockNotAvailableError
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT", new=3),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=3),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1924,7 +1924,7 @@ class ExportBehaviorTest(_DbTestBase):
             with (
                 patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=lock_ttl),
                 patch(
-                    "cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT",
+                    "cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
                     new=lock_acquire_timeout,
                 ),
                 patch(

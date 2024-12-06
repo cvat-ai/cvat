@@ -111,15 +111,17 @@ def get_export_cache_lock(
     *,
     ttl: int | timedelta,
     block: bool = True,
-    # endless waiting for the lock should be avoided at least by default
-    acquire_timeout: int | timedelta | None,
+    acquire_timeout: int | timedelta,
 ) -> Generator[Lock, Any, Any]:
+    if acquire_timeout is None:
+        raise ValueError("Endless waiting for the lock should be avoided")
+
     if isinstance(acquire_timeout, timedelta):
         acquire_timeout = acquire_timeout.total_seconds()
-    if acquire_timeout is not None and acquire_timeout < 0:
+
+    if acquire_timeout < 0:
         raise ValueError("acquire_timeout must be a non-negative number")
-    elif acquire_timeout is None:
-        acquire_timeout = -1
+
 
     if isinstance(ttl, timedelta):
         ttl = ttl.total_seconds()

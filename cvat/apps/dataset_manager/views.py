@@ -53,7 +53,7 @@ TTL_CONSTS = {
     'job': JOB_CACHE_TTL,
 }
 
-EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_ACQUIRE_TIMEOUT)
+EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_ACQUISITION_TIMEOUT)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.DATASET_EXPORT_LOCKED_RETRY_INTERVAL)
 EXPORT_LOCK_TTL = timedelta(seconds=settings.DATASET_EXPORT_LOCK_TTL)
 
@@ -160,10 +160,10 @@ def export(
         with get_export_cache_lock(
             output_path,
             ttl=EXPORT_LOCK_TTL,
-            acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
+            acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
         ):
             if osp_exists(output_path):
-                # Update last update time to prolong the export lifetime
+                # Update last modification time to prolong the export lifetime
                 # and postpone the file deleting by the cleaning job
                 os.utime(output_path, None)
                 return output_path
@@ -175,7 +175,7 @@ def export(
             with get_export_cache_lock(
                 output_path,
                 ttl=EXPORT_LOCK_TTL,
-                acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
+                acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ):
                 os.replace(temp_file, output_path)
 
@@ -244,7 +244,7 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
         with get_export_cache_lock(
             file_path,
             block=True,
-            acquire_timeout=EXPORT_CACHE_LOCK_ACQUIRE_TIMEOUT,
+            acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ttl=EXPORT_LOCK_TTL,
         ):
             if not osp.exists(file_path):
