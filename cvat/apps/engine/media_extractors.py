@@ -922,21 +922,23 @@ class ZipChunkWriter(IChunkWriter):
                     if isinstance(image, Image.Image) and (
                         has_exif_rotation(image) or image.format == 'TIFF'
                     ):
-                        image = ImageOps.exif_transpose(image)
-
                         output = io.BytesIO()
-                        if image.format == 'TIFF':
-                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                            # use lossless lzw compression for tiff images
-                            image.save(output, format='TIFF', compression='tiff_lzw')
-                        else:
-                            image.save(
-                                output,
-                                # use format from original image, https://github.com/python-pillow/Pillow/issues/5527
-                                format=image.format if image.format else self.IMAGE_EXT,
-                                quality=100,
-                                subsampling=0
-                            )
+                        rot_image = ImageOps.exif_transpose(image)
+                        try:
+                            if image.format == 'TIFF':
+                                # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                                # use lossless lzw compression for tiff images
+                                rot_image.save(output, format='TIFF', compression='tiff_lzw')
+                            else:
+                                rot_image.save(
+                                    output,
+                                    # use format from original image, https://github.com/python-pillow/Pillow/issues/5527
+                                    format=image.format if image.format else self.IMAGE_EXT,
+                                    quality=100,
+                                    subsampling=0
+                                )
+                        finally:
+                            rot_image.close()
                     elif isinstance(image, io.IOBase):
                         output = image
                     else:
