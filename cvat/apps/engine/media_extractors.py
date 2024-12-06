@@ -879,14 +879,11 @@ class IChunkWriter(ABC):
         if image.mode != 'RGB' and image.mode != 'L':
             image = image.convert('RGB')
 
-        try:
-            buf = io.BytesIO()
-            image.save(buf, format='JPEG', quality=quality, optimize=True)
-            buf.seek(0)
-            return image.width, image.height, buf
-        finally:
-            if image is not source_image:
-                image.close()
+        buf = io.BytesIO()
+        image.save(buf, format='JPEG', quality=quality, optimize=True)
+        buf.seek(0)
+
+        return image.width, image.height, buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
