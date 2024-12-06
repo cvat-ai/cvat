@@ -1,0 +1,54 @@
+# Copyright (C) 2022-2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+import json
+
+import pytest
+from cvat_sdk.api_client import exceptions
+from cvat_sdk.core.proxies.projects import Project
+
+from .util import TestCliBase
+
+
+class TestCliProjects(TestCliBase):
+    @pytest.fixture
+    def fxt_new_project(self):
+        project = self.client.projects.create(
+            spec={
+                "name": "test_project",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+        )
+
+        return project
+
+    def test_can_create_project(self):
+        stdout = self.run_cli(
+            "project",
+            "create",
+            "new_project",
+            "--labels",
+            json.dumps([{"name": "car"}, {"name": "person"}]),
+        )
+
+        project_id = int(stdout.split()[-1])
+        assert self.client.projects.retrieve(project_id).name == "new_project"
+
+    def test_can_list_projects_in_simple_format(self, fxt_new_project: Project):
+        output = self.run_cli("project", "ls")
+
+        results = output.split("\n")
+        assert any(str(fxt_new_project.id) in r for r in results)
+
+    def test_can_list_project_in_json_format(self, fxt_new_project: Project):
+        output = self.run_cli("project", "ls", "--json")
+
+        results = json.loads(output)
+        assert any(r["id"] == fxt_new_project.id for r in results)
+
+    def test_can_delete_project(self, fxt_new_project: Project):
+        self.run_cli("project", "delete", str(fxt_new_project.id))
+
+        with pytest.raises(exceptions.NotFoundException):
+            fxt_new_project.fetch()
