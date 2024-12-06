@@ -536,26 +536,36 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     writable: false,
 });
 
-export async function getFramesMeta(type: 'job' | 'task', id: number, forceReload = false): Promise<FramesMetaData> {
+export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = false): Promise<FramesMetaData> {
     if (type === 'task') {
         // we do not cache task meta currently. So, each new call will results to the server request
-        const result = await serverProxy.frames.getMeta('task', id);
-        return new FramesMetaData({
-            ...result,
-            deleted_frames: Object.fromEntries(result.deleted_frames.map((_frame) => [_frame, true])),
+        return serverProxy.frames.getMeta('task', id).then((serialized) => (
+            new FramesMetaData({
+                ...serialized,
+                deleted_frames: Object.fromEntries(serialized.deleted_frames.map((_frame) => [_frame, true])),
+            })
+        ));
+    }
+
+    if (!(id in frameMetaCache) || forceReload) {
+        const previousCache = frameMetaCache[id];
+        frameMetaCache[id] = new Promise((resolve, reject) => {
+            serverProxy.frames.getMeta('job', id).then((serialized) => {
+                const framesMetaData = new FramesMetaData({
+                    ...serialized,
+                    deleted_frames: Object.fromEntries(serialized.deleted_frames.map((_frame) => [_frame, true])),
+                });
+                resolve(framesMetaData);
+            }).catch((error: unknown) => {
+                delete frameMetaCache[id];
+                if (previousCache instanceof Promise) {
+                    frameMetaCache[id] = previousCache;
+                }
+                reject(error);
+            });
         });
     }
-    if (!(id in frameMetaCache) || forceReload) {
-        frameMetaCache[id] = serverProxy.frames.getMeta('job', id)
-            .then((serverMeta) => new FramesMetaData({
-                ...serverMeta,
-                deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
-            }))
-            .catch((error) => {
-                delete frameMetaCache[id];
-                throw error;
-            });
-    }
+
     return frameMetaCache[id];
 }
 
