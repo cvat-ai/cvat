@@ -210,7 +210,7 @@ def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int]
         )
     return nullcontext()
 
-def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: Optional[int] = 60, blocking_timeout: Optional[int] = None) -> Lock:
+def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: Optional[int] = 60, blocking_timeout: Optional[int] = 60) -> Lock:
     # lock timeout corresponds to the nginx request timeout (proxy_read_timeout)
     return queue.connection.lock(
         name=f'lock-for-job-{rq_id}'.lower(),
