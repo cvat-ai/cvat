@@ -37,6 +37,7 @@ import django_rq
 import PIL.Image
 import PIL.ImageOps
 import rq
+from rq.job import JobStatus as RQJobStatus
 from django.conf import settings
 from django.core.cache import caches
 from django.db import models as django_models
@@ -91,7 +92,12 @@ def enqueue_create_chunk_job(
         with get_rq_lock_for_job(queue, rq_job_id, blocking_timeout=blocking_timeout):
             rq_job = queue.fetch_job(rq_job_id)
 
-            if not rq_job:
+            if not rq_job or (
+                # Enqueue the job if the chunk was deleted but the RQ job still exists.
+                # This can happen in cases involving jobs with honeypots and
+                # if the job wasn't collected by the requesting process for any reason.
+                rq_job.get_status(refresh=False) in {RQJobStatus.FINISHED, RQJobStatus.FAILED, RQJobStatus.CANCELED}
+            ):
                 rq_job = queue.enqueue(
                     create_callback,
                     job_id=rq_job_id,
