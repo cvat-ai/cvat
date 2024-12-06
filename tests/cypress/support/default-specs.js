@@ -4,19 +4,27 @@
 
 function defaultTaskSpec({
     labelName,
+    labelType,
     taskName,
     serverFiles,
+    startFrame,
+    frameFilter,
+    segmentSize,
     validationParams,
 }) {
     const taskSpec = {
         labels: [
-            { name: labelName, attributes: [], type: 'any' },
+            { name: labelName, attributes: [], type: labelType || 'any' },
         ],
         name: taskName,
         project_id: null,
         source_storage: { location: 'local' },
         target_storage: { location: 'local' },
     };
+
+    if (segmentSize) {
+        taskSpec.segment_size = segmentSize;
+    }
 
     const dataSpec = {
         server_files: serverFiles,
@@ -25,6 +33,12 @@ function defaultTaskSpec({
         use_cache: true,
         sorting_method: (validationParams && validationParams.mode === 'gt_pool') ? 'random' : 'lexicographical',
     };
+    if (startFrame) {
+        dataSpec.start_frame = startFrame;
+    }
+    if (frameFilter) {
+        dataSpec.frame_filter = frameFilter;
+    }
 
     const extras = {};
     if (validationParams) {
