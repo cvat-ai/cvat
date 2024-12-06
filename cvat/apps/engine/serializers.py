@@ -3281,7 +3281,8 @@ class RequestSerializer(serializers.Serializer):
     def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
         representation = super().to_representation(rq_job)
 
-        if representation["status"] == RQJobStatus.DEFERRED:
+        # FUTURE-TODO: support such statuses on UI
+        if representation["status"] in (RQJobStatus.DEFERRED, RQJobStatus.SCHEDULED):
             representation["status"] = RQJobStatus.QUEUED
 
         if representation["status"] == RQJobStatus.FINISHED:
