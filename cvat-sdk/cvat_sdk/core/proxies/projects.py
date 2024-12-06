@@ -15,6 +15,7 @@ from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
     ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -97,6 +98,7 @@ class ProjectsRepo(
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Project
 

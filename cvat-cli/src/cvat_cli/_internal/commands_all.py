@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from .command_base import CommandGroup, DeprecatedAlias
+from .commands_projects import COMMANDS as COMMANDS_PROJECTS
 from .commands_tasks import COMMANDS as COMMANDS_TASKS
 
 COMMANDS = CommandGroup(description="Perform operations on CVAT resources.")
 
+COMMANDS.add_command("project", COMMANDS_PROJECTS)
 COMMANDS.add_command("task", COMMANDS_TASKS)
 
 _legacy_mapping = {
