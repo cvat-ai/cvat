@@ -6,6 +6,11 @@ comprehensive CVAT administration tool in the future.
 
 Overview of functionality:
 
+- Projects:
+  - Create a new project
+  - Delete projects
+  - List all projects
+
 - Tasks:
   - Create a new task
   - Create a task from a backup file

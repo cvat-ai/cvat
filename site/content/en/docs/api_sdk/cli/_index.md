@@ -13,6 +13,11 @@ comprehensive CVAT administration tool in the future.
 
 Overview of functionality:
 
+- Projects:
+  - Create a new project
+  - Delete projects
+  - List all projects
+
 - Tasks:
   - Create a new task
   - Create a task from a backup file
@@ -274,4 +279,36 @@ if it isn't there already.
   letting it import other modules from that directory.
   ```bash
   PYTHONPATH=path/to/my-project cvat-cli task auto-annotate 139 --function-module my_func
+  ```
+
+## Examples - projects
+
+### Create
+
+To create a project, you have to define its labels.
+The `project create` command accepts labels in the same format as the `task create` command;
+see that command's examples for more information.
+
+- Create a project named "new project" on the default server "localhost:8080",
+  with labels from the file "labels.json":
+  ```bash
+  cvat-cli project create "new project" --labels labels.json
+  ```
+
+### Delete
+
+- Delete projects with id "100", "101", "102":
+  ```bash
+  cvat-cli project delete 100 101 102
+  ```
+
+### List
+
+- List all projects:
+  ```bash
+  cvat-cli project ls
+  ```
+- Save list of all projects into file "list_of_projects.json":
+  ```bash
+  cvat-cli project ls --json > list_of_projects.json
   ```
