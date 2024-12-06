@@ -1507,11 +1507,11 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 for v in validation_layout.disabled_frames
             )
 
-        for db_image in instance.data.images.all():
-            if db_image.is_placeholder and (
-                db_image.real_frame not in task_abs_disabled_validation_frames
-            ):
-                db_image.real_frame = -1
+            for db_image in instance.data.images.all():
+                if db_image.is_placeholder and (
+                    db_image.real_frame not in task_abs_disabled_validation_frames
+                ):
+                    db_image.real_frame = -1
 
         db_jobs = sorted(
             (
