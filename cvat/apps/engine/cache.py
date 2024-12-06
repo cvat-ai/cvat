@@ -84,12 +84,11 @@ def enqueue_create_chunk_job(
     rq_job_id: str,
     create_callback: Callback,
     *,
-    blocking_timeout: int = 50,
     rq_job_result_ttl: int = 60,
     rq_job_failure_ttl: int = 3600 * 24 * 14,  # 2 weeks
 ) -> rq.job.Job:
     try:
-        with get_rq_lock_for_job(queue, rq_job_id, blocking_timeout=blocking_timeout):
+        with get_rq_lock_for_job(queue, rq_job_id):
             rq_job = queue.fetch_job(rq_job_id)
 
             if not rq_job or (
@@ -205,11 +204,13 @@ class MediaCache:
             cache_item_ttl=cache_item_ttl,
         )
 
-    def _get_queue(self) -> rq.Queue:
-        return django_rq.get_queue(self._QUEUE_NAME)
+    @classmethod
+    def _get_queue(cls) -> rq.Queue:
+        return django_rq.get_queue(cls._QUEUE_NAME)
 
-    def _make_queue_job_id(self, key: str) -> str:
-        return f"{self._QUEUE_JOB_PREFIX_TASK}{key}"
+    @classmethod
+    def _make_queue_job_id(cls, key: str) -> str:
+        return f"{cls._QUEUE_JOB_PREFIX_TASK}{key}"
 
     @staticmethod
     def _drop_return_value(func: Callable[..., DataWithMime], *args: Any, **kwargs: Any):
@@ -228,7 +229,15 @@ class MediaCache:
         item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes), timestamp)
         if item_data_bytes:
             cache = cls._cache()
-            cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+            with get_rq_lock_for_job(
+                cls._get_queue(),
+                key,
+            ):
+                cached_item = cache.get(key)
+                if cached_item is not None and timestamp <= cached_item[3]:
+                    item = cached_item
+                else:
+                    cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
         return item
 
@@ -239,22 +248,17 @@ class MediaCache:
         *,
         cache_item_ttl: Optional[int] = None,
     ) -> _CacheItem:
-
-        queue = self._get_queue()
-        rq_id = self._make_queue_job_id(key)
-
         slogger.glob.info(f"Starting to prepare chunk: key {key}")
         if _is_run_inside_rq():
-            with get_rq_lock_for_job(queue, rq_id, timeout=None, blocking_timeout=None):
-                item = self._create_and_set_cache_item(
-                    key,
-                    create_callback,
-                    cache_item_ttl=cache_item_ttl,
-                )
+            item = self._create_and_set_cache_item(
+                key,
+                create_callback,
+                cache_item_ttl=cache_item_ttl,
+            )
         else:
             rq_job = enqueue_create_chunk_job(
-                queue=queue,
-                rq_job_id=rq_id,
+                queue=self._get_queue(),
+                rq_job_id=self._make_queue_job_id(key),
                 create_callback=Callback(
                     callable=self._drop_return_value,
                     args=[
