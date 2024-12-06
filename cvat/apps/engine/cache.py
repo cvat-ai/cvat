@@ -482,7 +482,7 @@ class MediaCache:
         # TODO: maybe add a more generic version
         keys_to_remove = []
         for item_params in params:
-            db_obj = item_params.pop('db_segment')
+            db_obj = item_params.pop("db_segment")
             keys_to_remove.append(self._make_chunk_key(db_obj, **item_params))
 
         self._bulk_delete_cache_items(keys_to_remove)
