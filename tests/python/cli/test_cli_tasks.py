@@ -280,3 +280,11 @@ class TestCliTasks(TestCliBase):
 
         annotations = fxt_new_task.get_annotations()
         assert annotations.shapes[0].type.value == "polygon"
+
+    def test_legacy_alias(self, caplog):
+        # All legacy aliases are implemented the same way;
+        # no need to test every single one.
+        self.run_cli("ls")
+
+        assert "deprecated" in caplog.text
+        assert "task ls" in caplog.text
