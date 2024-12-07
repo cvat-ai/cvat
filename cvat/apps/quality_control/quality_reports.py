@@ -9,7 +9,6 @@ import math
 from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
-from datetime import timedelta
 from functools import cached_property, partial
 from typing import Any, Callable, Optional, Union, cast
 
@@ -22,7 +21,6 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 from django_rq.queues import DjangoRQ as RqQueue
 from rest_framework.request import Request
 from rq.job import Job as RqJob
@@ -61,7 +59,6 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
-from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 class _Serializable:
