@@ -493,9 +493,12 @@ Once the quality estimation is [enabled in a task](#configuring-quality-estimati
 and the Ground Truth job is configured, quality analytics becomes available
 for the task and its jobs.
 
-By default, CVAT computes quality metrics automatically at regular intervals.
+When you open the quality analytics page, you will see quality metrics from the last
+quality estimation. The first time the page is opened, there is no quality report to
+be displayed yet. You can find the last computation date next to the report downloading
+button.
 
-If you want to refresh quality metrics (e.g. after the settings were changed),
+If you want to request an update quality metrics in a task (e.g. after the settings were changed),
 you can do this by pressing the **Refresh** button on the
 task **Quality Management** > **Analytics** page.
 
