@@ -276,7 +276,7 @@ class MediaCache:
         except pickle.UnpicklingError:
             slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
 
-    def _bulk_delete_cache_items(self, keys: str):
+    def _bulk_delete_cache_items(self, keys: Sequence[str]):
         try:
             self._cache().delete_many(keys)
             slogger.glob.info(f"Removed chunks from the cache: keys {format_list(keys)}")
