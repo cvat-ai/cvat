@@ -8,6 +8,7 @@ from __future__ import annotations
 import os.path as osp
 import re
 import sys
+import uuid
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import reduce
@@ -1897,8 +1898,9 @@ def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str]
             return osp.extsep.join([image_name, ext])
         else:
             i = 1
+            uid = uuid.uuid4().hex
             while i < sys.maxsize:
-                new_image_name = f"{image_name}_{i}"
+                new_image_name = f"{image_name}_{uid}"
                 if not names[(subset, new_image_name)]:
                     names[(subset, name)] += 1
                     return osp.extsep.join([new_image_name, ext])
