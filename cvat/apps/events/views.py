@@ -7,6 +7,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 
@@ -15,8 +16,10 @@ from cvat.apps.events.permissions import EventsPermission
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
+from .event import record_server_event
 from .export import export
 from .handlers import handle_client_events_push
+from .serializers import EventSerializer
 
 
 class EventsViewSet(viewsets.ViewSet):
@@ -41,6 +44,23 @@ class EventsViewSet(viewsets.ViewSet):
                 'timestamp': str(event["timestamp"].timestamp())
             }).decode('UTF-8')
             vlogger.info(message)
+
+        return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(summary='Log external events',
+        description='Sends logs to the Clickhouse if it is connected',
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
+        responses={'201': EventSerializer()})
+    @action(
+        detail=False,
+        url_path='external',
+        methods=['POST'],
+        serializer_class=EventSerializer,
+    )
+    def external(self, request):
+        serializer = EventSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record_server_event(**serializer.validated_data)
 
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 

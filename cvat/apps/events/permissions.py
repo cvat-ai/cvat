@@ -10,10 +10,12 @@ from rest_framework.exceptions import PermissionDenied
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
 from cvat.utils.http import make_requests_session
 
+
 class EventsPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         SEND_EVENTS = 'send:events'
         DUMP_EVENTS = 'dump:events'
+        SEND_EXTERNAL_EVENTS = 'send-external:events'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -49,6 +51,7 @@ class EventsPermission(OpenPolicyAgentPermission):
         Scopes = __class__.Scopes
         return [{
             ('create', 'POST'): Scopes.SEND_EVENTS,
+            ('external', 'POST'): Scopes.SEND_EXTERNAL_EVENTS,
             ('list', 'GET'): Scopes.DUMP_EVENTS,
         }[(view.action, request.method)]]
 
