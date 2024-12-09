@@ -14,6 +14,8 @@ import rq
 from django.conf import settings
 from django.utils import timezone
 from rq_scheduler import Scheduler
+from pathlib import Path
+from contextlib import suppress
 
 import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
@@ -25,10 +27,9 @@ from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     LockNotAvailableError,
     current_function_name, get_export_cache_lock,
-    get_export_cache_dir, make_export_filename,
+    make_export_filename,
     parse_export_file_path
 )
-from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 
 slogger = ServerLogManager(__name__)
 
@@ -112,8 +113,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             db_instance = Job.objects.get(pk=job_id)
 
         cache_ttl = get_export_cache_ttl(db_instance)
-
-        cache_dir = get_export_cache_dir(db_instance)
+        cache_dir = db_instance.get_export_cache_directory()
 
         # As we're not locking the db object here, it can be updated by the time of actual export.
         # The file will be saved with the older timestamp.
@@ -205,10 +205,10 @@ def export_project_annotations(project_id, dst_format=None, server_url=None):
 class FileIsBeingUsedError(Exception):
     pass
 
-def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger) -> None:
-    # file_ctime is for backward compatibility with older RQ jobs, not needed now
-
+# TODO: write a migration to delete all clear_export_cache scheduled jobs from scheduler
+def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
     try:
+        # TODO: update after 8721
         with get_export_cache_lock(
             file_path,
             block=True,
@@ -216,36 +216,56 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
             ttl=rq.get_current_job().timeout,
         ):
             if not osp.exists(file_path):
-                raise FileNotFoundError("Export cache file '{}' doesn't exist".format(file_path))
+                logger.error("Export cache file '{}' doesn't exist".format(file_path))
 
             parsed_filename = parse_export_file_path(file_path)
             cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
             if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
-                # Need to retry later, the export is in use
-                _retry_current_rq_job(cache_ttl)
                 logger.info(
-                    "Export cache file '{}' is recently accessed, will retry in {}".format(
-                        file_path, cache_ttl
-                    )
+                    "Export cache file '{}' is recently accessed".format(file_path)
                 )
-                raise FileIsBeingUsedError # should be handled by the worker
+                raise FileIsBeingUsedError
 
-            # TODO: maybe remove all outdated exports
             os.remove(file_path)
-            logger.info("Export cache file '{}' successfully removed".format(file_path))
+            logger.debug("Export cache file '{}' successfully removed".format(file_path))
     except LockNotAvailableError:
-        # Need to retry later if the lock was not available
-        _retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
         logger.info(
-            "Failed to acquire export cache lock. Retrying in {}".format(
-                EXPORT_LOCKED_RETRY_INTERVAL
-            )
+            "Failed to acquire export cache lock for the file: {file_path}."
         )
         raise
     except Exception:
         log_exception(logger)
         raise
+
+
+def cron_job_to_clear_export_cache(Model: str) -> None:
+    import importlib
+    assert isinstance(Model, str)
+
+    module_name, Model = Model.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    Model = getattr(module, Model)
+
+    logger = ServerLogManager(__name__).glob
+
+    one_month_ago = timezone.now() - timedelta(days=30)
+    queryset = Model.objects.filter(last_export_date__gte=one_month_ago)
+
+    for instance in queryset:
+        try:
+            export_cache_dir_path = Path(instance.get_export_cache_directory())
+        except FileNotFoundError as ex:
+            logger.warning(str(ex))
+            continue
+
+        for child in export_cache_dir_path.iterdir():
+            if not child.is_file():
+                logger.exception(f'Unexpected file found in export cache: {child.name}')
+                continue
+
+            with suppress(Exception):
+                clear_export_cache(child, logger)
 
 def get_export_formats():
     return list(EXPORT_FORMATS.values())

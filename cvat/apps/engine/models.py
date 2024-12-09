@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import uuid
+from abc import ABCMeta, abstractmethod
 from enum import Enum
 from functools import cached_property
 from typing import Any, ClassVar, Collection, Dict, Optional
@@ -21,7 +22,9 @@ from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
 from django.db.models.fields import FloatField
+from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
@@ -424,6 +427,30 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+class ABCModelMeta(ABCMeta, ModelBase):
+    pass
+
+class _FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
+    class Meta:
+        abstract = True
+
+    @abstractmethod
+    def get_dirname(self) -> str:
+        ...
+
+    def get_tmp_dirname(self) -> str:
+        return os.path.join(self.get_dirname(), "tmp")
+
+    def get_export_cache_directory(self) -> str:
+        base_dir = os.path.abspath(self.get_dirname())
+
+        if os.path.isdir(base_dir):
+            return os.path.join(base_dir, settings.EXPORT_CACHE_DIR_NAME)
+
+        raise FileNotFoundError(
+            '{self.__class__.__name__}: dir {base_dir} does not exist'
+        )
+
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
     for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
@@ -436,7 +463,7 @@ def clear_annotations_in_jobs(job_ids):
         LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
-class Project(TimestampedModel):
+class Project(TimestampedModel, _FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -454,6 +481,12 @@ class Project(TimestampedModel):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    last_export_date = models.DateTimeField(null=True)
+
+    def touch_last_export_date(self):
+        self.last_export_date = timezone.now()
+        self.save(update_fields=["last_export_date"])
+
     def get_labels(self, prefetch=False):
         queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
         return queryset.prefetch_related(
@@ -462,9 +495,6 @@ class Project(TimestampedModel):
 
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), "tmp")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -514,7 +544,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(TimestampedModel):
+class Task(TimestampedModel, _FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -543,12 +573,17 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    last_export_date = models.DateTimeField(null=True)
 
     segment_set: models.manager.RelatedManager[Segment]
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
+
+    def touch_last_export_date(self):
+        self.last_export_date = timezone.now()
+        self.save(update_fields=["last_export_date"])
 
     def get_labels(self, prefetch=False):
         project = self.project
@@ -560,11 +595,8 @@ class Task(TimestampedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.TASKS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), "tmp")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -808,7 +840,7 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel):
+class Job(TimestampedModel, _FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -826,9 +858,13 @@ class Job(TimestampedModel):
         default=StageChoice.ANNOTATION)
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
-
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+    last_export_date = models.DateTimeField(null=True)
+
+    def touch_last_export_date(self):
+        self.last_export_date = timezone.now()
+        self.save(update_fields=["last_export_date"])
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
@@ -838,9 +874,6 @@ class Job(TimestampedModel):
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), 'tmp')
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):

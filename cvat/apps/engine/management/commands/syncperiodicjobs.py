@@ -71,6 +71,8 @@ class Command(BaseCommand):
                     cron_string=job_definition['cron_string'],
                     func=job_definition['func'],
                     id=job_id,
+                    args=job_definition.get('args'),
+                    kwargs=job_definition.get('kwargs'),
                 )
 
                 queue.connection.sadd(periodic_jobs_key, job_id)

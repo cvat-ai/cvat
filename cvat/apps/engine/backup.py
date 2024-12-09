@@ -49,7 +49,7 @@ from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.dataset_manager.views import get_export_cache_dir, log_exception
+from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 
 slogger = ServerLogManager(__name__)
@@ -1015,9 +1015,9 @@ def _import_project(filename, user, org_id):
     db_project = project_importer.import_project()
     return db_project.id
 
-def create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
+def create_backup(db_instance: models.Project | models.Task, Exporter, output_path, logger, cache_ttl):
     try:
-        cache_dir = get_export_cache_dir(db_instance)
+        cache_dir = db_instance.get_export_cache_directory()
         output_path = os.path.join(cache_dir, output_path)
 
         instance_time = timezone.localtime(db_instance.updated_date).timestamp()

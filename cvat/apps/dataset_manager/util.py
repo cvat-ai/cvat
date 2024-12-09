@@ -146,19 +146,6 @@ def get_export_cache_lock(
             lock.release()
 
 
-EXPORT_CACHE_DIR_NAME = 'export_cache'
-
-
-def get_export_cache_dir(db_instance: Project | Task | Job) -> str:
-    base_dir = osp.abspath(db_instance.get_dirname())
-
-    if osp.isdir(base_dir):
-        return osp.join(base_dir, EXPORT_CACHE_DIR_NAME)
-    else:
-        raise FileNotFoundError(
-            '{} dir {} does not exist'.format(db_instance.__class__.__name__, base_dir)
-        )
-
 
 def make_export_filename(
     dst_dir: str,
@@ -207,7 +194,7 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
     if not basename_match:
         raise ValueError(f"Couldn't parse filename components in '{basename}'")
 
-    dirname_match = re.search(rf'/(jobs|tasks|projects)/\d+/{EXPORT_CACHE_DIR_NAME}$', dirname)
+    dirname_match = re.search(rf'/(jobs|tasks|projects)/\d+/{settings.EXPORT_CACHE_DIR_NAME}$', dirname)
     if not dirname_match:
         raise ValueError(f"Couldn't parse instance type in '{dirname}'")
 

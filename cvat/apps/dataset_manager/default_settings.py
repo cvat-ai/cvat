@@ -12,3 +12,5 @@ DATASET_CACHE_LOCK_TIMEOUT = int(os.getenv("CVAT_DATASET_CACHE_LOCK_TIMEOUT", 10
 
 DATASET_EXPORT_LOCKED_RETRY_INTERVAL = int(os.getenv("CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL", 60))
 "Retry interval for cases the export cache lock was unavailable, in seconds"
+
+EXPORT_CACHE_DIR_NAME = "export_cache"

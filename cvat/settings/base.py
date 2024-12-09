@@ -353,6 +353,18 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.iam.utils.clean_up_sessions',
         'cron_string': '0 0 * * *',
     },
+    *(
+        {
+            'queue': CVAT_QUEUES.CLEANING.value,
+            'id': f'clear_{model.lower()}_export_cache',
+            'func': 'cvat.apps.dataset_manager.views.cron_job_to_clear_export_cache',
+            # Run once a day at midnight
+            'cron_string': '0 0 * * *',
+            # 'cron_string': '05 17 * * *',
+            'args': (f'cvat.apps.engine.models.{model.title()}',),
+        }
+        for model in ('project', 'task', 'job')
+    ),
 ]
 
 # JavaScript and CSS compression
