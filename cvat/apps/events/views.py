@@ -1,6 +1,7 @@
 # Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+import json
 
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
@@ -18,7 +19,7 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 from .event import record_server_event
 from .export import export
-from .handlers import handle_client_events_push
+from .handlers import handle_client_events_push, request_id
 from .serializers import EventSerializer
 
 
@@ -49,7 +50,6 @@ class EventsViewSet(viewsets.ViewSet):
 
     @extend_schema(summary='Log external events',
         description='Sends logs to the Clickhouse if it is connected',
-        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={'201': EventSerializer()})
     @action(
         detail=False,
@@ -60,7 +60,11 @@ class EventsViewSet(viewsets.ViewSet):
     def external(self, request):
         serializer = EventSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        record_server_event(**serializer.validated_data)
+        data = dict(
+            serializer.validated_data,
+            payload=json.loads(serializer.validated_data['payload']),
+        )
+        record_server_event(request_id=request_id(), **data)
 
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
