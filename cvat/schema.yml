@@ -1173,22 +1173,6 @@ paths:
       operationId: events_create_external
       description: Sends logs to the Clickhouse if it is connected
       summary: Log external events
-      parameters:
-      - in: header
-        name: X-Organization
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org
-        schema:
-          type: string
-        description: Organization unique slug
-      - in: query
-        name: org_id
-        schema:
-          type: integer
-        description: Organization identifier
       tags:
       - events
       requestBody:
