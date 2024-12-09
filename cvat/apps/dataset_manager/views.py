@@ -38,7 +38,7 @@ _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
 
 def log_exception(logger: logging.Logger | None = None, exc_info: bool = True):
     if logger is None:
-        logger = slogger
+        logger = slogger.glob
     logger.exception("[%s @ %s]: exception occurred" % \
             (_MODULE_NAME, current_function_name(2)),
         exc_info=exc_info)
