@@ -47,7 +47,7 @@ class ProjectCreate:
 
     def execute(self, client: Client, *, name: str, labels: dict, **kwargs) -> None:
         project = client.projects.create(
-            spec=models.ProjectWriteRequest(name=name, label=labels, **kwargs)
+            spec=models.ProjectWriteRequest(name=name, labels=labels, **kwargs)
         )
         print(f"Created project ID {project.id}")
 

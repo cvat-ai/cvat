@@ -33,7 +33,9 @@ class TestCliProjects(TestCliBase):
         )
 
         project_id = int(stdout.split()[-1])
-        assert self.client.projects.retrieve(project_id).name == "new_project"
+        created_project = self.client.projects.retrieve(project_id)
+        assert created_project.name == "new_project"
+        assert {label.name for label in created_project.get_labels()} == {"car", "person"}
 
     def test_can_list_projects_in_simple_format(self, fxt_new_project: Project):
         output = self.run_cli("project", "ls")
