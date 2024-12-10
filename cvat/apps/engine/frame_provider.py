@@ -31,7 +31,6 @@ from typing import (
 import av
 import cv2
 import numpy as np
-from datumaro.util import take_by
 from django.conf import settings
 from PIL import Image
 from rest_framework.exceptions import ValidationError
@@ -46,6 +45,7 @@ from cvat.apps.engine.media_extractors import (
     ZipReader,
 )
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.utils import take_by
 
 _T = TypeVar("_T")
 

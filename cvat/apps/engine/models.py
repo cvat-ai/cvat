@@ -12,7 +12,7 @@ import shutil
 import uuid
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Collection, Dict, Optional
+from typing import Any, ClassVar, Collection, Dict, Optional, Sequence
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -27,7 +27,7 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
-from cvat.apps.engine.utils import chunked_list, parse_specific_attributes
+from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
 
 
@@ -426,7 +426,7 @@ class TimestampedModel(models.Model):
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
-    for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
+    for job_ids_chunk in take_by(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
         LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
@@ -435,6 +435,30 @@ def clear_annotations_in_jobs(job_ids):
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+
+@transaction.atomic(savepoint=False)
+def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
+    if db_task.data.validation_mode != ValidationMode.GT_POOL:
+        # Tracks are prohibited in honeypot tasks
+        raise AssertionError
+
+    for frames_batch in take_by(frames, chunk_size=1000):
+        LabeledShapeAttributeVal.objects.filter(
+            shape__job_id__segment__task_id=db_task.id,
+            shape__frame__in=frames_batch,
+        ).delete()
+        LabeledShape.objects.filter(
+            job_id__segment__task_id=db_task.id,
+            frame__in=frames_batch,
+        ).delete()
+        LabeledImageAttributeVal.objects.filter(
+            image__job_id__segment__task_id=db_task.id,
+            image__frame__in=frames_batch,
+        ).delete()
+        LabeledImage.objects.filter(
+            job_id__segment__task_id=db_task.id,
+            frame__in=frames_batch,
+        ).delete()
 
 class Project(TimestampedModel):
     name = SafeCharField(max_length=256)

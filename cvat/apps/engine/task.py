@@ -21,7 +21,6 @@ from urllib import request as urlrequest
 import av
 import attrs
 import django_rq
-from datumaro.util import take_by
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -37,8 +36,8 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.utils import (
-    av_scan_paths, format_list,get_rq_job_meta,
-    define_dependent_job, get_rq_lock_by_user, load_image
+    av_scan_paths, format_list, get_rq_job_meta,
+    define_dependent_job, get_rq_lock_by_user, load_image, take_by
 )
 from cvat.apps.engine.quality_control import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQId
@@ -1267,7 +1266,7 @@ def _create_thread(
         new_db_images: list[models.Image] = []
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
-        for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
+        for job_frames in take_by(non_pool_frames, chunk_size=db_task.segment_size or db_data.size):
             job_validation_frames = list(frame_selector.select_next_frames(frames_per_job_count))
             job_frames += job_validation_frames
 
