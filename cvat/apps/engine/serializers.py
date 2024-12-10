@@ -993,7 +993,9 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
-        from cvat.apps.engine.cache import MediaCache, Callback, enqueue_create_chunk_job, wait_for_rq_job
+        from cvat.apps.engine.cache import (
+            MediaCache, Callback, enqueue_create_chunk_job, wait_for_rq_job
+        )
         from cvat.apps.engine.frame_provider import JobFrameProvider
 
         db_job = instance
