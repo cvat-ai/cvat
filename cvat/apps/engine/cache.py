@@ -270,20 +270,12 @@ class MediaCache:
         return item
 
     def _delete_cache_item(self, key: str):
-        try:
-            self._cache().delete(key)
-            slogger.glob.info(f"Removed chunk from the cache: key {key}")
-        except pickle.UnpicklingError:
-            slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
+        self._cache().delete(key)
+        slogger.glob.info(f"Removed chunk from the cache: key {key}")
 
-    def _bulk_delete_cache_items(self, keys: str):
-        try:
-            self._cache().delete_many(keys)
-            slogger.glob.info(f"Removed chunks from the cache: keys {format_list(keys)}")
-        except pickle.UnpicklingError:
-            slogger.glob.error(
-                f"Failed to remove items from the cache: keys {format_list(keys)}", exc_info=True
-            )
+    def _bulk_delete_cache_items(self, keys: Sequence[str]):
+        self._cache().delete_many(keys)
+        slogger.glob.info(f"Removed chunks from the cache: keys {format_list(keys)}")
 
     def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
         try:
