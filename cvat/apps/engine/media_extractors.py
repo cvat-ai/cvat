@@ -101,6 +101,12 @@ def image_size_within_orientation(img: Image.Image):
 def has_exif_rotation(img: Image.Image):
     return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
 
+
+def load_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
+    with Image.open(image[0]) as pil_img:
+        pil_img.load()
+        return pil_img, image[1], image[2]
+
 _T = TypeVar("_T")
 
 
@@ -837,12 +843,14 @@ class IChunkWriter(ABC):
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
         elif isinstance(source_image, io.IOBase):
-            with Image.open(source_image) as _img:
-                image = ImageOps.exif_transpose(_img)
+            image, _, _ = load_image((source_image, None, None))
         elif isinstance(source_image, Image.Image):
-            image = ImageOps.exif_transpose(source_image)
+            image = source_image
 
         assert image is not None
+
+        if has_exif_rotation(image):
+            image = ImageOps.exif_transpose(image)
 
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
@@ -868,16 +876,14 @@ class IChunkWriter(ABC):
             image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
 
-        converted_image = image.convert('RGB')
+        if image.mode != 'RGB' and image.mode != 'L':
+            image = image.convert('RGB')
 
-        try:
-            buf = io.BytesIO()
-            converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
-            buf.seek(0)
-            width, height = converted_image.size
-            return width, height, buf
-        finally:
-            converted_image.close()
+        buf = io.BytesIO()
+        image.save(buf, format='JPEG', quality=quality, optimize=True)
+        buf.seek(0)
+
+        return image.width, image.height, buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):

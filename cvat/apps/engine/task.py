@@ -29,15 +29,17 @@ from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES, CachingMediaIterator, IMediaReader, ImageListReader,
     Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
-    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort
+    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort,
+    load_image,
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.utils import (
     av_scan_paths, format_list, get_rq_job_meta,
-    define_dependent_job, get_rq_lock_by_user, load_image, take_by
+    define_dependent_job, get_rq_lock_by_user, take_by
 )
 from cvat.apps.engine.quality_control import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQId
@@ -1503,6 +1505,9 @@ def _create_thread(
         db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
     ):
         _create_static_chunks(db_task, media_extractor=extractor, upload_dir=upload_dir)
+
+    # Prepare the preview image and save it in the cache
+    TaskFrameProvider(db_task=db_task).get_preview()
 
 def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader, upload_dir: str):
     @attrs.define
