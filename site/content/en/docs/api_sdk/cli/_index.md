@@ -154,7 +154,7 @@ by using the {{< ilink "/docs/manual/basics/create_an_annotation_task#labels" "l
 
 ### Delete
 
-- Delete tasks with id "100", "101", "102" , the command will be executed from "user-1" having delete permissions:
+- Delete tasks with IDs "100", "101", "102" , the command will be executed from "user-1" having delete permissions:
   ```bash
   cvat-cli --auth user-1:password task delete 100 101 102
   ```
@@ -297,7 +297,7 @@ see that command's examples for more information.
 
 ### Delete
 
-- Delete projects with id "100", "101", "102":
+- Delete projects with IDs "100", "101", "102":
   ```bash
   cvat-cli project delete 100 101 102
   ```
