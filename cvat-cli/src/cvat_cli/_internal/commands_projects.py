@@ -40,7 +40,7 @@ class ProjectCreate:
         )
         parser.add_argument(
             "--labels",
-            required=True,
+            default=[],
             type=parse_label_arg,
             help="string or file containing JSON labels specification",
         )

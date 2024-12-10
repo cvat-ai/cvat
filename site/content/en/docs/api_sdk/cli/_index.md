@@ -285,7 +285,7 @@ if it isn't there already.
 
 ### Create
 
-To create a project, you have to define its labels.
+While creating a project, you may optionally define its labels.
 The `project create` command accepts labels in the same format as the `task create` command;
 see that command's examples for more information.
 
