@@ -11,23 +11,23 @@ A simple command line interface for working with CVAT. At the moment it
 implements a basic feature set but may serve as the starting point for a more
 comprehensive CVAT administration tool in the future.
 
-Overview of functionality:
+The following subcommands are supported:
 
 - Projects:
-  - Create a new project
-  - Delete projects
-  - List all projects
+  - `create` - create a new project
+  - `delete` - delete projects
+  - `ls` - list all projects
 
 - Tasks:
-  - Create a new task
-  - Create a task from a backup file
-  - Delete tasks
-  - List all tasks
-  - Download frames from a task
-  - Export a task as a dataset
-  - Import annotations into a task from a dataset
-  - Back up a task
-  - Automatically annotate a task using a local function
+  - `create` - create a new task
+  - `create-from-backup` - create a task from a backup file
+  - `delete` - delete tasks
+  - `ls` - list all tasks
+  - `frames` - download frames from a task
+  - `export-dataset` - export a task as a dataset
+  - `import-dataset` - import annotations into a task from a dataset
+  - `backup` - back up a task
+  - `auto-annotate` - automatically annotate a task using a local function
 
 ## Installation
 
