@@ -16,6 +16,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.23.1'></a>
+## \[2.23.1\] - 2024-12-09
+
+### Changed
+
+- \[CLI\] Log messages are now printed on stderr rather than stdout
+  (<https://github.com/cvat-ai/cvat/pull/8784>)
+
+### Fixed
+
+- Optimized memory consumption and reduced the number of database queries
+  when importing annotations to a task with a lot of jobs and images
+  (<https://github.com/cvat-ai/cvat/pull/8676>)
+
+- Incorrect display of validation frames on the task quality management page
+  (<https://github.com/cvat-ai/cvat/pull/8731>)
+
+- Player may navigate to removed frames when playing
+  (<https://github.com/cvat-ai/cvat/pull/8747>)
+
+- User may navigate forward with a keyboard when a modal opened
+  (<https://github.com/cvat-ai/cvat/pull/8748>)
+
+- fit:canvas event is not generated if to fit it from the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/8750>)
+
+- Color of 'Create object URL' button for a not saved on the server object
+  (<https://github.com/cvat-ai/cvat/pull/8752>)
+
+- Failed request for a chunk inside a job after it was recently modified by updating `validation_layout`
+  (<https://github.com/cvat-ai/cvat/pull/8772>)
+
+- Memory consumption during preparation of image chunks
+  (<https://github.com/cvat-ai/cvat/pull/8778>)
+
+- Possible endless lock acquisition for chunk preparation job
+  (<https://github.com/cvat-ai/cvat/pull/8769>)
+
+- Fixed issue: Cannot read properties of undefined (reading 'getUpdated')
+  (<https://github.com/cvat-ai/cvat/pull/8785>)
+
 <a id='changelog-2.23.0'></a>
 ## \[2.23.0\] - 2024-11-29
 
