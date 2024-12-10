@@ -1017,13 +1017,12 @@ def _import_project(filename, user, org_id):
 
 def create_backup(db_instance: models.Project | models.Task, Exporter, output_path, logger, cache_ttl):
     try:
-        cache_dir = db_instance.get_export_cache_directory()
+        cache_dir = db_instance.get_export_cache_directory(create=True)
         output_path = os.path.join(cache_dir, output_path)
 
         instance_time = timezone.localtime(db_instance.updated_date).timestamp()
         if not (os.path.exists(output_path) and \
                 instance_time <= os.path.getmtime(output_path)):
-            os.makedirs(cache_dir, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                 temp_file = os.path.join(temp_dir, 'dump')
                 exporter = Exporter(db_instance.id)

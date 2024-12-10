@@ -441,15 +441,25 @@ class _FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
     def get_tmp_dirname(self) -> str:
         return os.path.join(self.get_dirname(), "tmp")
 
-    def get_export_cache_directory(self) -> str:
+    def get_export_cache_directory(self, create: bool = False) -> str:
         base_dir = os.path.abspath(self.get_dirname())
+        cache_dir = os.path.join(base_dir, settings.EXPORT_CACHE_DIR_NAME)
 
-        if os.path.isdir(base_dir):
-            return os.path.join(base_dir, settings.EXPORT_CACHE_DIR_NAME)
+        if create:
+            os.makedirs(cache_dir, exist_ok=True)
 
-        raise FileNotFoundError(
-            '{self.__class__.__name__}: dir {base_dir} does not exist'
-        )
+        return cache_dir
+
+
+class _Exportable(models.Model):
+    class Meta:
+        abstract = True
+
+    last_export_date = models.DateTimeField(null=True)
+
+    def touch_last_export_date(self):
+        self.last_export_date = timezone.now()
+        self.save(update_fields=["last_export_date"])
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
@@ -463,7 +473,7 @@ def clear_annotations_in_jobs(job_ids):
         LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
-class Project(TimestampedModel, _FileSystemRelatedModel):
+class Project(TimestampedModel, _FileSystemRelatedModel, _Exportable):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -480,12 +490,6 @@ class Project(TimestampedModel, _FileSystemRelatedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-
-    last_export_date = models.DateTimeField(null=True)
-
-    def touch_last_export_date(self):
-        self.last_export_date = timezone.now()
-        self.save(update_fields=["last_export_date"])
 
     def get_labels(self, prefetch=False):
         queryset = self.label_set.filter(parent__isnull=True).select_related('skeleton')
@@ -544,7 +548,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(TimestampedModel, _FileSystemRelatedModel):
+class Task(TimestampedModel, _FileSystemRelatedModel, _Exportable):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -573,17 +577,12 @@ class Task(TimestampedModel, _FileSystemRelatedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    last_export_date = models.DateTimeField(null=True)
 
     segment_set: models.manager.RelatedManager[Segment]
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
-
-    def touch_last_export_date(self):
-        self.last_export_date = timezone.now()
-        self.save(update_fields=["last_export_date"])
 
     def get_labels(self, prefetch=False):
         project = self.project
@@ -840,7 +839,7 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel, _FileSystemRelatedModel):
+class Job(TimestampedModel, _FileSystemRelatedModel, _Exportable):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -860,11 +859,6 @@ class Job(TimestampedModel, _FileSystemRelatedModel):
         default=StateChoice.NEW)
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
-    last_export_date = models.DateTimeField(null=True)
-
-    def touch_last_export_date(self):
-        self.last_export_date = timezone.now()
-        self.save(update_fields=["last_export_date"])
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage

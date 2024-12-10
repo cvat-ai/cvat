@@ -23,8 +23,6 @@ from django.conf import settings
 from django.db import models
 from pottery import Redlock
 
-from cvat.apps.engine.models import Job, Project, Task
-
 
 def current_function_name(depth=1):
     return inspect.getouterframes(inspect.currentframe())[depth].function

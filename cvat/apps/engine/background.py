@@ -463,7 +463,6 @@ class DatasetExportManager(_ResourceExportManager):
             db_storage = None
             result_url = self.make_result_url()
 
-        # TODO: move into worker?
         self.db_instance.touch_last_export_date()
 
         with get_rq_lock_by_user(queue, user_id):

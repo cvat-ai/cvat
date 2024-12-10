@@ -9,6 +9,7 @@ import os.path as osp
 import tempfile
 from datetime import timedelta
 
+import importlib
 import django_rq
 import rq
 from django.conf import settings
@@ -23,6 +24,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.utils import get_rq_lock_by_user
 
+from django.db.models import QuerySet
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     LockNotAvailableError,
@@ -113,7 +115,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             db_instance = Job.objects.get(pk=job_id)
 
         cache_ttl = get_export_cache_ttl(db_instance)
-        cache_dir = db_instance.get_export_cache_directory()
+        cache_dir = db_instance.get_export_cache_directory(create=True)
 
         # As we're not locking the db object here, it can be updated by the time of actual export.
         # The file will be saved with the older timestamp.
@@ -239,33 +241,42 @@ def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
         raise
 
 
-def cron_job_to_clear_export_cache(Model: str) -> None:
-    import importlib
-    assert isinstance(Model, str)
+def cron_export_cache_cleanup(path_to_model: str) -> None:
+    assert isinstance(path_to_model, str)
 
-    module_name, Model = Model.rsplit('.', 1)
+    started_at = timezone.now()
+    module_name, model_name = path_to_model.rsplit('.', 1)
     module = importlib.import_module(module_name)
-    Model = getattr(module, Model)
+    ModelClass = getattr(module, model_name)
+    assert ModelClass in (Project, Task, Job)
 
     logger = ServerLogManager(__name__).glob
 
     one_month_ago = timezone.now() - timedelta(days=30)
-    queryset = Model.objects.filter(last_export_date__gte=one_month_ago)
+    queryset: QuerySet[Project | Task | Job] = ModelClass.objects.filter(last_export_date__gte=one_month_ago)
 
-    for instance in queryset:
-        try:
-            export_cache_dir_path = Path(instance.get_export_cache_directory())
-        except FileNotFoundError as ex:
-            logger.warning(str(ex))
+    for instance in queryset.iterator():
+        instance_dir_path = Path(instance.get_dirname())
+        export_cache_dir_path = Path(instance.get_export_cache_directory())
+
+        if not export_cache_dir_path.exists():
+            logger.debug(f"The {export_cache_dir_path.relative_to(instance_dir_path)} path does not exist, skipping...")
             continue
 
         for child in export_cache_dir_path.iterdir():
             if not child.is_file():
-                logger.exception(f'Unexpected file found in export cache: {child.name}')
+                logger.warning(f'Unexpected file found in export cache: {child.relative_to(instance_dir_path)}')
                 continue
 
             with suppress(Exception):
                 clear_export_cache(child, logger)
+
+    finished_at = timezone.now()
+    logger.info(
+        f"Clearing the {model_name}'s export cache has been successfully "
+        f"completed after {(finished_at - started_at).total_seconds()} seconds..."
+    )
+
 
 def get_export_formats():
     return list(EXPORT_FORMATS.values())
