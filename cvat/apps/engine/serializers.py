@@ -1434,6 +1434,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             gt_job_meta_serializer.save()
 
             validation_layout.refresh_from_db()
+            instance.data.refresh_from_db()
 
         frame_selection_method = validated_data.get('frame_selection_method')
         if frame_selection_method and not (

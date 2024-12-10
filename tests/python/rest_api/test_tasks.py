@@ -4524,22 +4524,15 @@ class TestWorkWithHoneypotTasks:
 
             if frame_selection_method == "manual":
                 requested_honeypot_real_frames = [
-                    active_gt_set[(old_real_frame + 1) % len(active_gt_set)]
-                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
-                ]
+                    next(f for f in gt_frame_set if f not in active_gt_set)
+                ] * old_validation_layout["honeypot_count"]
 
                 params["honeypot_real_frames"] = requested_honeypot_real_frames
 
                 _, response = api_client.tasks_api.partial_update_validation_layout(
                     task["id"],
                     patched_task_validation_layout_write_request=(
-                        models.PatchedTaskValidationLayoutWriteRequest(
-                            frame_selection_method="manual",
-                            honeypot_real_frames=[
-                                next(f for f in gt_frame_set if f not in active_gt_set)
-                            ]
-                            * old_validation_layout["honeypot_count"],
-                        )
+                        models.PatchedTaskValidationLayoutWriteRequest(**params)
                     ),
                     _parse_response=False,
                     _check_status=False,
@@ -4561,6 +4554,75 @@ class TestWorkWithHoneypotTasks:
             assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
             assert all(f in active_gt_set for f in new_honeypot_real_frames)
 
+            assert all(
+                [
+                    honeypots_per_job
+                    == len(
+                        set(
+                            new_honeypot_real_frames[
+                                j * honeypots_per_job : (j + 1) * honeypots_per_job
+                            ]
+                        ).intersection(active_gt_set)
+                    )
+                    for j in range(len(annotation_jobs))
+                ]
+            ), new_honeypot_real_frames
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("frame_selection_method", ["manual", "random_uniform"])
+    def test_can_restore_and_change_honeypot_frames_in_task_in_the_same_request(
+        self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            old_validation_layout = json.loads(
+                api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
+            )
+
+            honeypots_per_job = old_validation_layout["frames_per_job_count"]
+
+            gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            active_gt_set = gt_frame_set[:honeypots_per_job]
+
+            api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=[f for f in gt_frame_set if f not in active_gt_set]
+                ),
+            )
+
+            active_gt_set = gt_frame_set
+
+            params = {
+                "frame_selection_method": frame_selection_method,
+                "disabled_frames": [],  # restore all validation frames
+            }
+
+            if frame_selection_method == "manual":
+                requested_honeypot_real_frames = [
+                    active_gt_set[(old_real_frame + 1) % len(active_gt_set)]
+                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                ]
+
+                params["honeypot_real_frames"] = requested_honeypot_real_frames
+
+            new_validation_layout = json.loads(
+                api_client.tasks_api.partial_update_validation_layout(
+                    task["id"],
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(**params)
+                    ),
+                )[1].data
+            )
+
+            new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+            assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
+            assert sorted(new_validation_layout["disabled_frames"]) == sorted(
+                params["disabled_frames"]
+            )
+
             if frame_selection_method == "manual":
                 assert new_honeypot_real_frames == requested_honeypot_real_frames
             else:
@@ -4572,10 +4634,10 @@ class TestWorkWithHoneypotTasks:
                                 new_honeypot_real_frames[
                                     j * honeypots_per_job : (j + 1) * honeypots_per_job
                                 ]
-                            )
+                            ).intersection(active_gt_set)
                         )
-                        for j in range(len(annotation_jobs))
                     ]
+                    for j in range(len(annotation_jobs))
                 ), new_honeypot_real_frames
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
