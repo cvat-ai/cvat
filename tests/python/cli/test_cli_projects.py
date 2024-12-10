@@ -30,11 +30,14 @@ class TestCliProjects(TestCliBase):
             "new_project",
             "--labels",
             json.dumps([{"name": "car"}, {"name": "person"}]),
+            "--bug_tracker",
+            "https://bugs.example/",
         )
 
         project_id = int(stdout.split()[-1])
         created_project = self.client.projects.retrieve(project_id)
         assert created_project.name == "new_project"
+        assert created_project.bug_tracker == "https://bugs.example/"
         assert {label.name for label in created_project.get_labels()} == {"car", "person"}
 
     def test_can_list_projects_in_simple_format(self, fxt_new_project: Project):
