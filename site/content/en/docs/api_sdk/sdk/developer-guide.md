@@ -39,8 +39,8 @@ the repository. To get the full package, one need to generate missing package fi
    If you want to edit package files, install them with `-e`:
 
    ```bash
-   pip install -e ./cvat-sdk/
-   pip install -e ./cvat-cli/
+   pip install -e ./cvat-sdk
+   pip install -e ./cvat-cli
    ```
 
 ## How to edit templates
