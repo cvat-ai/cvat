@@ -4524,15 +4524,22 @@ class TestWorkWithHoneypotTasks:
 
             if frame_selection_method == "manual":
                 requested_honeypot_real_frames = [
-                    next(f for f in gt_frame_set if f not in active_gt_set)
-                ] * old_validation_layout["honeypot_count"]
+                    active_gt_set[(old_real_frame + 1) % len(active_gt_set)]
+                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                ]
 
                 params["honeypot_real_frames"] = requested_honeypot_real_frames
 
                 _, response = api_client.tasks_api.partial_update_validation_layout(
                     task["id"],
                     patched_task_validation_layout_write_request=(
-                        models.PatchedTaskValidationLayoutWriteRequest(**params)
+                        models.PatchedTaskValidationLayoutWriteRequest(
+                            frame_selection_method="manual",
+                            honeypot_real_frames=[
+                                next(f for f in gt_frame_set if f not in active_gt_set)
+                            ]
+                            * old_validation_layout["honeypot_count"],
+                        )
                     ),
                     _parse_response=False,
                     _check_status=False,
@@ -4554,19 +4561,22 @@ class TestWorkWithHoneypotTasks:
             assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
             assert all(f in active_gt_set for f in new_honeypot_real_frames)
 
-            assert all(
-                [
-                    honeypots_per_job
-                    == len(
-                        set(
-                            new_honeypot_real_frames[
-                                j * honeypots_per_job : (j + 1) * honeypots_per_job
-                            ]
-                        ).intersection(active_gt_set)
-                    )
-                    for j in range(len(annotation_jobs))
-                ]
-            ), new_honeypot_real_frames
+            if frame_selection_method == "manual":
+                assert new_honeypot_real_frames == requested_honeypot_real_frames
+            else:
+                assert all(
+                    [
+                        honeypots_per_job
+                        == len(
+                            set(
+                                new_honeypot_real_frames[
+                                    j * honeypots_per_job : (j + 1) * honeypots_per_job
+                                ]
+                            )
+                        )
+                        for j in range(len(annotation_jobs))
+                    ]
+                ), new_honeypot_real_frames
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
     @parametrize("frame_selection_method", ["manual", "random_uniform"])
@@ -4634,7 +4644,7 @@ class TestWorkWithHoneypotTasks:
                                 new_honeypot_real_frames[
                                     j * honeypots_per_job : (j + 1) * honeypots_per_job
                                 ]
-                            ).intersection(active_gt_set)
+                            )
                         )
                     ]
                     for j in range(len(annotation_jobs))
