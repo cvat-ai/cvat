@@ -20,14 +20,16 @@ the server calling REST API directly (as it done by users).
 ## How to run?
 **Initial steps**
 
-1. Follow [this guide](../../site/content/en/docs/api_sdk/sdk/developer-guide.md) to prepare
-   `cvat-sdk` and `cvat-cli` source code
-1. Install all necessary requirements before running REST API tests:
+1. On Debian/Ubuntu, make sure that your ```$USER``` is in ```docker``` group:
+   ```
+   sudo usermod -aG docker $USER
+   ```
+1. Install ```pytest``` and the required plugins:
    ```
    pip install -r ./tests/python/requirements.txt
-   pip install -e ./cvat-sdk
-   pip install -e ./cvat-cli
    ```
+1. Follow [this guide](../../site/content/en/docs/api_sdk/sdk/developer-guide.md) to prepare
+   `cvat-sdk` and `cvat-cli` source code
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system.
 
