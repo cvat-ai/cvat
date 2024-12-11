@@ -294,6 +294,10 @@ see that command's examples for more information.
   ```bash
   cvat-cli project create "new project" --labels labels.json
   ```
+- Create a project from a dataset in the COCO format:
+  ```bash
+  cvat-cli project create "new project" --dataset_file coco.zip --dataset_format "COCO 1.0"
+  ```
 
 ### Delete
 

@@ -29,7 +29,7 @@ class ProjectList(GenericListCommand, GenericProjectCommand):
 class ProjectCreate:
     description = textwrap.dedent(
         """\
-        Create a new CVAT project.
+        Create a new CVAT project, optionally importing a dataset.
         """
     )
 
@@ -44,10 +44,42 @@ class ProjectCreate:
             type=parse_label_arg,
             help="string or file containing JSON labels specification",
         )
+        parser.add_argument(
+            "--dataset_path",
+            default="",
+            type=str,
+            help="path to the dataset file to import",
+        )
+        parser.add_argument(
+            "--dataset_format",
+            default="CVAT 1.1",
+            type=str,
+            help="format of the dataset file being uploaded, e.g. CVAT 1.1",
+        )
+        parser.add_argument(
+            "--completion_verification_period",
+            dest="status_check_period",
+            default=2,
+            type=float,
+            help="period between status checks (only applies when --dataset_path is specified)",
+        )
 
-    def execute(self, client: Client, *, name: str, labels: dict, **kwargs) -> None:
-        project = client.projects.create(
-            spec=models.ProjectWriteRequest(name=name, labels=labels, **kwargs)
+    def execute(
+        self,
+        client: Client,
+        *,
+        name: str,
+        labels: dict,
+        dataset_path: str,
+        dataset_format: str,
+        status_check_period: int,
+        **kwargs,
+    ) -> None:
+        project = client.projects.create_from_dataset(
+            spec=models.ProjectWriteRequest(name=name, labels=labels, **kwargs),
+            dataset_path=dataset_path,
+            dataset_format=dataset_format,
+            status_check_period=status_check_period,
         )
         print(f"Created project ID {project.id}")
 

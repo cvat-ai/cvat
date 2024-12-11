@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import json
+import os
 
 import pytest
 from cvat_sdk.api_client import exceptions
@@ -39,6 +40,23 @@ class TestCliProjects(TestCliBase):
         assert created_project.name == "new_project"
         assert created_project.bug_tracker == "https://bugs.example/"
         assert {label.name for label in created_project.get_labels()} == {"car", "person"}
+
+    def test_can_create_project_from_dataset(self, fxt_coco_dataset):
+        stdout = self.run_cli(
+            "project",
+            "create",
+            "new_project",
+            "--dataset_path",
+            os.fspath(fxt_coco_dataset),
+            "--dataset_format",
+            "COCO 1.0",
+        )
+
+        project_id = int(stdout.split()[-1])
+        created_project = self.client.projects.retrieve(project_id)
+        assert created_project.name == "new_project"
+        assert {label.name for label in created_project.get_labels()} == {"car", "person"}
+        assert created_project.tasks.count == 1
 
     def test_can_list_projects_in_simple_format(self, fxt_new_project: Project):
         output = self.run_cli("project", "ls")
