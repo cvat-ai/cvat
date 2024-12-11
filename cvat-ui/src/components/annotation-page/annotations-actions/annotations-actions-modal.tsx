@@ -114,6 +114,7 @@ function updateLatestActions(name: string, parameters: Record<string, string> = 
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
         const { actions } = action.payload;
+
         const list = state.targetObjectState ? actions
             .filter((_action) => _action.isApplicableForObject(state.targetObjectState as ObjectState)) : actions;
 
@@ -129,12 +130,20 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             }
         }
 
-        return {
+        const updatedState = {
             ...state,
             actions: list,
             activeAction: activeAction ?? list[0] ?? null,
             actionParameters: activeActionParameters,
         };
+
+        if (updatedState.activeAction instanceof BaseCollectionAction) {
+            const currentFrame = getCVATStore().getState().annotation.player.frame.number;
+            updatedState.frameFrom = currentFrame;
+            updatedState.frameTo = currentFrame;
+        }
+
+        return updatedState;
     }
 
     if (action.type === ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION) {
