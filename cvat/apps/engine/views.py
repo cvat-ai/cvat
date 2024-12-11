@@ -1746,6 +1746,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         summary="Allows getting current validation configuration",
         responses={
             '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
+            '204': OpenApiResponse(description="No validation layout is associated with a task"),
         })
     @extend_schema(
         methods=["PATCH"],
@@ -1753,6 +1754,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         request=TaskValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
+            '400': OpenApiResponse(description="Bad request"),
         },
         examples=[
             OpenApiExample("set honeypots to random validation frames", {
@@ -1774,22 +1776,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def validation_layout(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
 
-        validation_layout = getattr(db_task.data, 'validation_layout', None)
-
         if request.method == "PATCH":
-            if not validation_layout:
-                return ValidationError(
-                    "Task has no validation setup configured. "
-                    "Validation must be initialized during task creation"
-                )
-
+            # TODO: probably it should take validation_layout instead of task
             request_serializer = TaskValidationLayoutWriteSerializer(db_task, data=request.data)
             request_serializer.is_valid(raise_exception=True)
-            validation_layout = request_serializer.save().data.validation_layout
+            updated_task = request_serializer.save()
+            validation_layout = updated_task.data.validation_layout
+        else:
+            validation_layout = db_task.data.validation_layout
 
-        if not validation_layout:
-            response_serializer = TaskValidationLayoutReadSerializer(SimpleNamespace(mode=None))
-            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        if validation_layout is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         response_serializer = TaskValidationLayoutReadSerializer(validation_layout)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
@@ -2352,6 +2349,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         summary="Allows getting current validation configuration",
         responses={
             '200': OpenApiResponse(JobValidationLayoutReadSerializer),
+            '204': OpenApiResponse(description="No validation layout is associated with a job"),
         })
     @extend_schema(
         methods=["PATCH"],
@@ -2359,6 +2357,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         request=JobValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(JobValidationLayoutReadSerializer),
+            '400': OpenApiResponse(description="Bad request"),
         },
         examples=[
             OpenApiExample("set honeypots to random validation frames", {
@@ -2394,7 +2393,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             db_job = request_serializer.save()
 
         response_serializer = JobValidationLayoutReadSerializer(db_job)
-        return Response(response_serializer.data, status=status.HTTP_200_OK)
+        content = response_serializer.data
+
+        if content:
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(

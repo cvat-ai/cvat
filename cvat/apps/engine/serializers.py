@@ -991,10 +991,15 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         db_task = db_segment.task
         db_data = db_task.data
 
-        if not (
-            hasattr(db_job.segment.task.data, 'validation_layout') and
-            db_job.segment.task.data.validation_layout.mode == models.ValidationMode.GT_POOL
-        ):
+        db_task_validation_layout = db_data.validation_layout
+
+        if not db_task_validation_layout:
+            raise serializers.ValidationError(
+                "Task has no validation layout configured. "
+                "Validation must be initialized during a task creation"
+            )
+
+        if db_task_validation_layout.mode != models.ValidationMode.GT_POOL:
             raise serializers.ValidationError(
                 "Honeypots can only be modified if the task "
                 f"validation mode is '{models.ValidationMode.GT_POOL}'"
@@ -1254,7 +1259,7 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
     )
 
     def to_representation(self, instance: models.Job):
-        validation_layout = getattr(instance.segment.task.data, 'validation_layout', None)
+        validation_layout = instance.segment.task.data.validation_layout
         if not validation_layout:
             return {}
 
@@ -1332,9 +1337,13 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout = getattr(instance.data, 'validation_layout', None)
+        validation_layout = instance.data.validation_layout
+
         if not validation_layout:
-            raise serializers.ValidationError("Validation is not configured in the task")
+            raise serializers.ValidationError(
+                "Task has no validation layout configured. "
+                "Validation must be initialized during a task creation"
+            )
 
         if 'disabled_frames' in validated_data:
             requested_disabled_frames = validated_data['disabled_frames']
