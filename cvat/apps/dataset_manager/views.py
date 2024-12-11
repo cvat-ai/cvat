@@ -203,6 +203,7 @@ def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
             if not osp.exists(file_path):
                 logger.error("Export cache file '{}' doesn't exist".format(file_path))
 
+            # TODO: update for backups
             parsed_filename = parse_export_file_path(file_path)
             cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
@@ -213,17 +214,17 @@ def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
                 raise FileIsBeingUsedError
 
             os.remove(file_path)
-            logger.debug("Export cache file '{}' successfully removed".format(file_path))
+            logger.debug(f"Export cache file {file_path!r} successfully removed")
     except LockNotAvailableError:
         logger.info(
-            "Failed to acquire export cache lock for the file: {file_path}."
+            f"Failed to acquire export cache lock for the file: {file_path}."
         )
         raise
     except Exception:
         log_exception(logger)
         raise
 
-
+# todo: move into engine
 def cron_export_cache_cleanup(path_to_model: str) -> None:
     assert isinstance(path_to_model, str)
 
@@ -247,8 +248,9 @@ def cron_export_cache_cleanup(path_to_model: str) -> None:
             continue
 
         for child in export_cache_dir_path.iterdir():
+            # export cache dir may contain temporary directories
             if not child.is_file():
-                logger.warning(f'Unexpected file found in export cache: {child.relative_to(instance_dir_path)}')
+                logger.warning(f'The {child.relative_to(instance_dir_path)} is not a file, skipping...')
                 continue
 
             with suppress(Exception):

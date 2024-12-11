@@ -1029,6 +1029,7 @@ def create_backup(db_instance: models.Project | models.Task, Exporter, output_pa
                 exporter.export_to(temp_file)
                 os.replace(temp_file, output_path)
 
+            # TODO: move into cron job
             archive_ctime = os.path.getctime(output_path)
             scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
@@ -1192,6 +1193,7 @@ def import_task(request, queue_name, filename=None):
         filename=filename
     )
 
+# TODO: delete function
 def _clear_export_cache(file_path: str, file_ctime: float, logger: Logger) -> None:
     try:
         if os.path.exists(file_path) and os.path.getctime(file_path) == file_ctime:
