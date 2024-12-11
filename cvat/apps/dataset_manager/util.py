@@ -113,8 +113,7 @@ def get_export_cache_lock(
     block: bool = True,
     acquire_timeout: int | timedelta,
 ) -> Generator[Lock, Any, Any]:
-    if acquire_timeout is None:
-        raise ValueError("Endless waiting for the lock should be avoided")
+    assert acquire_timeout is not None, "Endless waiting for the lock should be avoided"
 
     if isinstance(acquire_timeout, timedelta):
         acquire_timeout = acquire_timeout.total_seconds()
@@ -236,3 +235,9 @@ def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
         format_repr=basename_match.group('format_tag'),
         file_ext=basename_match.group('file_ext'),
     )
+
+def extend_export_file_lifetime(file_path: str):
+    # Update the last modification time to extend the export's lifetime,
+    # as the last access time is not available on every filesystem.
+    # As a result, file deletion by the cleaning job will be postponed.
+    os.utime(file_path, None)

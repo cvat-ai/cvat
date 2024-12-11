@@ -27,7 +27,7 @@ from .util import (
     LockNotAvailableError,
     current_function_name, get_export_cache_lock,
     get_export_cache_dir, make_export_filename,
-    parse_export_file_path
+    parse_export_file_path, extend_export_file_lifetime
 )
 from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 
@@ -163,9 +163,7 @@ def export(
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
         ):
             if osp_exists(output_path):
-                # Update last modification time to prolong the export lifetime
-                # and postpone the file deleting by the cleaning job
-                os.utime(output_path, None)
+                extend_export_file_lifetime(output_path)
                 return output_path
 
         with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
@@ -193,7 +191,7 @@ def export(
             "and available for downloading for the next {}. "
             "Export cache cleaning job is enqueued, id '{}'".format(
                 db_instance.__class__.__name__.lower(),
-                db_instance.name if isinstance(db_instance, (Project, Task)) else db_instance.id,
+                db_instance.id,
                 dst_format,
                 output_path,
                 cache_ttl,

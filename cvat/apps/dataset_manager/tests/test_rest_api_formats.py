@@ -1483,7 +1483,6 @@ class ExportBehaviorTest(_DbTestBase):
                     original_exists,
                     side_effect(set_condition, export_checked_the_file),
                     side_effect(wait_condition, clear_process_has_run),
-                    side_effect(sleep, 1),
                 )
 
                 mock_rq_get_current_job.return_value = MagicMock(timeout=5)
@@ -1517,16 +1516,16 @@ class ExportBehaviorTest(_DbTestBase):
             ):
                 mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
-                set_condition(clear_process_has_run)
-                file_is_been_used_error_raised = False
+                file_is_being_used_error_raised = False
                 try:
+                    set_condition(clear_process_has_run)
                     clear_export_cache(
                         file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
                     )
                 except FileIsBeingUsedError:
-                    file_is_been_used_error_raised = True
+                    file_is_being_used_error_raised = True
 
-                assert file_is_been_used_error_raised
+                assert file_is_being_used_error_raised
                 mock_os_remove.assert_not_called()
 
         # The problem checked is TOCTOU / race condition for file existence check and
@@ -1538,7 +1537,7 @@ class ExportBehaviorTest(_DbTestBase):
         # 4. remove removes the actual export file
         # Thus, we have no exported file after the successful export.
 
-        # note: it is not possibel to achive a situation
+        # note: it is not possible to achieve the situation
         # when clear process deletes newly "re-created by export process"
         # file instead of the checked one since file names contain a timestamp.
 

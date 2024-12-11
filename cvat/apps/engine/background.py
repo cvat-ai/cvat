@@ -329,9 +329,7 @@ class DatasetExportManager(_ResourceExportManager):
                         acquire_timeout=LOCK_ACQUIRE_TIMEOUT,
                     ):
                         if osp.exists(file_path) and not is_result_outdated():
-                            # Update last update time to prolong the export lifetime
-                            # as the last access time is not available on every filesystem
-                            os.utime(file_path, None)
+                            dm.util.extend_export_file_lifetime(file_path)
 
                             return Response(status=status.HTTP_201_CREATED)
 
