@@ -42,7 +42,7 @@ class ProjectCreate:
             "--labels",
             default=[],
             type=parse_label_arg,
-            help="string or file containing JSON labels specification",
+            help="string or file containing JSON labels specification (default: %(default)s)",
         )
         parser.add_argument(
             "--dataset_path",
@@ -54,14 +54,16 @@ class ProjectCreate:
             "--dataset_format",
             default="CVAT 1.1",
             type=str,
-            help="format of the dataset file being uploaded, e.g. CVAT 1.1",
+            help="format of the dataset file being uploaded"
+            " (only applies when --dataset_path is specified; default: %(default)s)",
         )
         parser.add_argument(
             "--completion_verification_period",
             dest="status_check_period",
             default=2,
             type=float,
-            help="period between status checks (only applies when --dataset_path is specified)",
+            help="period between status checks"
+            " (only applies when --dataset_path is specified; default: %(default)s)",
         )
 
     def execute(
