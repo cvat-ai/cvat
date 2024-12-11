@@ -1482,7 +1482,7 @@ class ExportBehaviorTest(_DbTestBase):
                 mock_os_replace.assert_called_once()
 
 
-        def _clear(*_, file_path: str, file_ctime: str):
+        def _clear(*_, file_path: str):
             from os import remove as original_remove
             from cvat.apps.dataset_manager.util import LockNotAvailableError
 
@@ -1508,7 +1508,7 @@ class ExportBehaviorTest(_DbTestBase):
                 exited_by_timeout = False
                 try:
                     clear_export_cache(
-                        file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
+                        file_path=file_path, logger=MagicMock()
                     )
                 except LockNotAvailableError:
                     # should come from waiting for get_export_cache_lock
@@ -1546,8 +1546,6 @@ class ExportBehaviorTest(_DbTestBase):
 
             first_export_path = export(dst_format=format_name, task_id=task_id)
 
-        export_instance_timestamp = parse_export_file_path(first_export_path).instance_timestamp
-
         self._create_annotations(task, f'{format_name} many jobs', "default")
 
         processes_finished_correctly = False
@@ -1570,7 +1568,7 @@ class ExportBehaviorTest(_DbTestBase):
                     export_checked_the_file, export_created_the_file,
                     export_file_path, clear_removed_the_file,
                 ),
-                kwargs=dict(file_path=first_export_path, file_ctime=export_instance_timestamp),
+                kwargs=dict(file_path=first_export_path),
             )))
 
             export_process.start()
@@ -1689,7 +1687,7 @@ class ExportBehaviorTest(_DbTestBase):
 
                 mock_osp_exists.assert_called()
 
-        def _clear(*_, file_path: str, file_ctime: str):
+        def _clear(*_, file_path: str):
             from os import remove as original_remove
             from cvat.apps.dataset_manager.util import LockNotAvailableError
 
@@ -1714,7 +1712,7 @@ class ExportBehaviorTest(_DbTestBase):
                 exited_by_timeout = False
                 try:
                     clear_export_cache(
-                        file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
+                        file_path=file_path, logger=MagicMock()
                     )
                 except LockNotAvailableError:
                     # should come from waiting for get_export_cache_lock
@@ -1755,8 +1753,6 @@ class ExportBehaviorTest(_DbTestBase):
             response = self._get_request_with_data(download_url, download_params, self.admin)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        export_instance_time = parse_export_file_path(export_path).instance_timestamp
-
         download_params["action"] = "download"
 
         processes_finished_correctly = False
@@ -1771,7 +1767,7 @@ class ExportBehaviorTest(_DbTestBase):
             clear_process = es.enter_context(process_closing(multiprocessing.Process(
                 target=_clear,
                 args=(download_checked_the_file, clear_removed_the_file, export_cache_lock),
-                kwargs=dict(file_path=export_path, file_ctime=export_instance_time),
+                kwargs=dict(file_path=export_path),
             )))
 
             download_process.start()
@@ -1809,7 +1805,7 @@ class ExportBehaviorTest(_DbTestBase):
 
         self.assertFalse(clear_removed_the_file.get())
 
-    def test_export_can_create_file_and_cleanup_job(self):
+    def test_export_can_create_file(self):
         format_name = "CVAT for images 1.1"
         images = self._generate_task_images(3)
         task = self._create_task(tasks["main"], images)
@@ -1818,19 +1814,14 @@ class ExportBehaviorTest(_DbTestBase):
 
         with (
             patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
-            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler') as mock_rq_get_scheduler,
             patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
         ):
             mock_rq_job = MagicMock(timeout=5)
             mock_rq_get_current_job.return_value = mock_rq_job
 
-            mock_rq_scheduler = MagicMock()
-            mock_rq_get_scheduler.return_value = mock_rq_scheduler
-
             export_path = export(dst_format=format_name, task_id=task_id)
 
         self.assertTrue(osp.isfile(export_path))
-        mock_rq_scheduler.enqueue_in.assert_called_once()
 
     def test_export_cache_lock_can_raise_on_releasing_expired_lock(self):
         from pottery import ReleaseUnlockedLock
@@ -1918,8 +1909,7 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_get_current_job.return_value = MagicMock(timeout=5)
 
             export_path = export(dst_format=format_name, task_id=task_id)
-            file_ctime = parse_export_file_path(export_path).instance_timestamp
-            clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
+            clear_export_cache(file_path=export_path, logger=MagicMock())
 
         self.assertFalse(osp.isfile(export_path))
 
@@ -1951,8 +1941,7 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_job = MagicMock(timeout=5)
             mock_rq_get_current_job.return_value = mock_rq_job
 
-            file_ctime = parse_export_file_path(export_path).instance_timestamp
-            clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
+            clear_export_cache(file_path=export_path, logger=MagicMock())
 
         mock_get_export_cache_lock.assert_called()
         self.assertEqual(mock_rq_job.retries_left, 1)
@@ -1967,7 +1956,7 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_job = MagicMock(timeout=5)
             mock_rq_get_current_job.return_value = mock_rq_job
 
-            clear_export_cache(file_path="non existent file path", file_ctime=0, logger=MagicMock())
+            clear_export_cache(file_path="non existent file path", logger=MagicMock())
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
         format_name = "CVAT for images 1.1"
@@ -1994,54 +1983,10 @@ class ExportBehaviorTest(_DbTestBase):
             mock_rq_get_current_job.return_value = mock_rq_job
 
             export_path = export(dst_format=format_name, task_id=task_id)
-            file_ctime = parse_export_file_path(export_path).instance_timestamp
-            clear_export_cache(file_path=export_path, file_ctime=file_ctime, logger=MagicMock())
+            clear_export_cache(file_path=export_path, logger=MagicMock())
 
         self.assertEqual(mock_rq_job.retries_left, 1)
         self.assertTrue(osp.isfile(export_path))
-
-    def test_cleanup_can_be_called_with_old_signature_and_values(self):
-        # Test RQ jobs for backward compatibility of API prior to the PR
-        # https://github.com/cvat-ai/cvat/pull/7864
-        # Jobs referring to the old API can exist in the redis queues after the server is updated
-
-        format_name = "CVAT for images 1.1"
-        images = self._generate_task_images(3)
-        task = self._create_task(tasks["main"], images)
-        self._create_annotations(task, f'{format_name} many jobs', "default")
-        task_id = task["id"]
-
-        with (
-            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
-            patch('cvat.apps.dataset_manager.views.django_rq.get_scheduler'),
-        ):
-            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
-
-            new_export_path = export(dst_format=format_name, task_id=task_id)
-
-        file_ctime = parse_export_file_path(new_export_path).instance_timestamp
-
-        old_export_path = osp.join(
-            osp.dirname(new_export_path), "annotations_cvat-for-images-11.ZIP"
-        )
-        shutil.move(new_export_path, old_export_path)
-
-        old_kwargs = {
-            'file_path': old_export_path,
-            'file_ctime': file_ctime,
-            'logger': MagicMock(),
-        }
-
-        with (
-            patch('cvat.apps.dataset_manager.views.rq.get_current_job') as mock_rq_get_current_job,
-            patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
-        ):
-            mock_rq_get_current_job.return_value = MagicMock(timeout=5)
-
-            clear_export_cache(**old_kwargs)
-
-        self.assertFalse(osp.isfile(old_export_path))
-
 
 class ProjectDumpUpload(_DbTestBase):
     def _get_download_project_dataset_response(self, url, user, dump_format_name, edata):

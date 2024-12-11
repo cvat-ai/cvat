@@ -148,27 +148,10 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                         server_url=server_url, save_images=save_images)
                     os.replace(temp_file, output_path)
 
-                scheduler: Scheduler = django_rq.get_scheduler(
-                    settings.CVAT_QUEUES.EXPORT_DATA.value
-                )
-                cleaning_job = scheduler.enqueue_in(
-                    time_delta=cache_ttl,
-                    func=clear_export_cache,
-                    file_path=output_path,
-                    file_ctime=instance_update_time.timestamp(),
-                    logger=logger
-                )
                 logger.info(
-                    "The {} '{}' is exported as '{}' at '{}' "
-                    "and available for downloading for the next {}. "
-                    "Export cache cleaning job is enqueued, id '{}'".format(
-                        db_instance.__class__.__name__.lower(),
-                        db_instance.name if isinstance(
-                            db_instance, (Project, Task)
-                        ) else db_instance.id,
-                        dst_format, output_path, cache_ttl,
-                        cleaning_job.id
-                    )
+                    f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is exported "
+                    f"as {dst_format!r} at {output_path!r} and available for downloading for the next "
+                    f"{cache_ttl.total_seconds()} seconds. "
                 )
 
         return output_path
