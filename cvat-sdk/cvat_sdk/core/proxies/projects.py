@@ -52,7 +52,7 @@ class Project(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Import dataset for a project in the specified format (e.g. 'YOLO ZIP 1.0').
+        Import dataset for a project in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)

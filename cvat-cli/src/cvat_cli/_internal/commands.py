@@ -295,7 +295,7 @@ class TaskFrames:
 class TaskDump:
     description = textwrap.dedent(
         """\
-        Download annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
+        Download annotations for a task in the specified format (e.g. 'YOLO 1.1').
         """
     )
 
@@ -348,7 +348,7 @@ class TaskUpload:
     description = textwrap.dedent(
         """\
         Upload annotations for a task in the specified format
-        (e.g. 'YOLO ZIP 1.0').
+        (e.g. 'YOLO 1.1').
         """
     )
 
