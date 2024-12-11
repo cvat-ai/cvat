@@ -2416,7 +2416,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
                 )
             )
 
-        validation_layout = getattr(instance, 'validation_layout', None)
+        validation_layout = instance.validation_layout
         if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
             gt_frame_set = set(validation_layout.frames)
             changed_deleted_frames = requested_deleted_frames_set.difference(instance.deleted_frames)

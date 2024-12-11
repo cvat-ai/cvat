@@ -463,7 +463,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 data['custom_segments'] = True
 
             if (
-                (validation_layout := getattr(self._db_data, 'validation_layout', None)) and
+                (validation_layout := self._db_data.validation_layout) and
                 validation_layout.mode == models.ValidationMode.GT_POOL
             ):
                 validation_params_serializer = ValidationParamsSerializer({

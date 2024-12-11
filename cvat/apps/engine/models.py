@@ -275,7 +275,7 @@ class ValidationLayout(models.Model):
     "Represents validation configuration in a task"
 
     task_data = NullableOneToOneField(
-        'Data', on_delete=models.CASCADE, related_name="validation_layout",
+        'Data', on_delete=models.CASCADE, related_name="validation_layout"
     )
 
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())
@@ -400,7 +400,7 @@ class Data(models.Model):
 
     @property
     def validation_mode(self) -> Optional[ValidationMode]:
-        return getattr(getattr(self, 'validation_layout', None), 'mode', None)
+        return getattr(self.validation_layout, 'mode', None)
 
 
 class Video(models.Model):
