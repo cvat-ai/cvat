@@ -25,10 +25,12 @@ import { getCVATStore } from 'cvat-store';
 import {
     BaseCollectionAction, BaseAction, Job, getCore,
     ObjectState,
+    ActionParameterType,
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 import { clamp } from 'utils/math';
+import { Switch } from 'antd/lib';
 
 const core = getCore();
 
@@ -248,7 +250,7 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
 
     const computedValues = typeof values === 'function' ? values({ instance: job }) : values;
 
-    if (type === 'select') {
+    if (type === ActionParameterType.SELECT) {
         return (
             <Select value={value} onChange={setValue}>
                 {computedValues.map((_value: string) => (
@@ -258,8 +260,18 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
         );
     }
 
-    const [min, max, step] = computedValues.map((val) => +val);
+    if (type === ActionParameterType.CHECKBOX) {
+        return (
+            <Switch
+                checked={value.toLowerCase() === 'true'}
+                onChange={(val: boolean) => {
+                    setValue(String(val));
+                }}
+            />
+        );
+    }
 
+    const [min, max, step] = computedValues.map((val) => +val);
     return (
         <InputNumber
             value={+value}
