@@ -2664,6 +2664,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobValidationLayoutRead'
           description: ''
+        '204':
+          description: No validation layout is associated with a job
     patch:
       operationId: jobs_partial_update_validation_layout
       summary: Allows updating current validation configuration
@@ -2707,6 +2709,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobValidationLayoutRead'
           description: ''
+        '400':
+          description: Bad request
   /api/labels:
     get:
       operationId: labels_list
@@ -6147,6 +6151,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaskValidationLayoutRead'
           description: ''
+        '204':
+          description: No validation layout is associated with a task
     patch:
       operationId: tasks_partial_update_validation_layout
       summary: Allows updating current validation configuration
@@ -6201,6 +6207,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaskValidationLayoutRead'
           description: ''
+        '400':
+          description: Bad request
   /api/tasks/backup/:
     post:
       operationId: tasks_create_backup
