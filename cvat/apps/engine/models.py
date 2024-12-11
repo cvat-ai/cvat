@@ -16,11 +16,12 @@ from typing import Any, ClassVar, Collection, Dict, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
 from django.db.models.fields import FloatField
+from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -259,11 +260,22 @@ class ValidationFrame(models.Model):
     )
     path = models.CharField(max_length=1024, default='')
 
+class ReverseNullableOneToOneDescriptor(ReverseOneToOneDescriptor):
+    def __get__(self, instance: models.Model, cls=None):
+        try:
+            return super().__get__(instance=instance, cls=cls)
+        except ObjectDoesNotExist:
+            return None
+
+class NullableOneToOneField(models.OneToOneField):
+    related_accessor_class = ReverseNullableOneToOneDescriptor
+
+
 class ValidationLayout(models.Model):
     "Represents validation configuration in a task"
 
-    task_data = models.OneToOneField(
-        'Data', on_delete=models.CASCADE, related_name="validation_layout"
+    task_data = NullableOneToOneField(
+        'Data', on_delete=models.CASCADE, related_name="validation_layout",
     )
 
     mode = models.CharField(max_length=32, choices=ValidationMode.choices())
@@ -298,7 +310,7 @@ class Data(models.Model):
     images: models.manager.RelatedManager[Image]
     video: MaybeUndefined[Video]
     related_files: models.manager.RelatedManager[RelatedFile]
-    validation_layout: MaybeUndefined[ValidationLayout]
+    validation_layout: ValidationLayout | None
 
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
