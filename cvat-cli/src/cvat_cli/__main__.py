@@ -10,7 +10,7 @@ import sys
 import urllib3.exceptions
 from cvat_sdk import exceptions
 
-from ._internal.commands import COMMANDS
+from ._internal.commands_all import COMMANDS
 from ._internal.common import build_client, configure_common_arguments, configure_logger
 from ._internal.utils import popattr
 
