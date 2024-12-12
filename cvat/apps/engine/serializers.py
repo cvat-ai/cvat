@@ -36,8 +36,8 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
-from cvat.apps.engine.quality_control import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
