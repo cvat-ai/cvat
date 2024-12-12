@@ -34,7 +34,8 @@ To deploy the feature, simply run:
 ### Kubernetes
 
 - You need to deploy the Nuclio function manually.
-Note that this function requires a Redis client to store the tracking state.
+Note that this function requires a Redis storage configured to keep the tracking state.
+You may use the same storage as `cvat_redis_ondisk` uses.
 When running the `nuclio deploy` command, make sure to provide the necessary arguments.
 The minimal command is:
 
