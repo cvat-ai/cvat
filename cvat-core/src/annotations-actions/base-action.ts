@@ -9,6 +9,7 @@ import { Job, Task } from '../session';
 export enum ActionParameterType {
     SELECT = 'select',
     NUMBER = 'number',
+    CHECKBOX = 'checkbox',
 }
 
 // For SELECT values should be a list of possible options

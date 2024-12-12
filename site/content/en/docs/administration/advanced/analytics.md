@@ -69,7 +69,7 @@ docker compose up -d
 ### Ports settings
 
 If you cannot access analytics on
-development environnement,
+development environment,
 see {{< ilink "/docs/contributing/development-environment#cvat-analytics-ports" "Analytics Ports" >}}
 
 ### Events log structure

@@ -15,6 +15,7 @@ from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
     ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -52,7 +53,7 @@ class Project(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Import dataset for a project in the specified format (e.g. 'YOLO ZIP 1.0').
+        Import dataset for a project in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -97,6 +98,7 @@ class ProjectsRepo(
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Project
 

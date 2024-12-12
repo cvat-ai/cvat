@@ -36,7 +36,8 @@ from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.quality_control import HoneypotFrameSelector
+from cvat.apps.engine.task_validation import HoneypotFrameSelector
+from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 from cvat.apps.engine.utils import (
     format_list, parse_exception_message, CvatChunkTimestampMismatchError,
@@ -1411,7 +1412,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout: Optional[models.ValidationLayout] = (
+        validation_layout: models.ValidationLayout | None = (
             getattr(instance.data, 'validation_layout', None)
         )
         if not validation_layout:
@@ -1499,14 +1500,12 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             task_frame_provider = TaskFrameProvider(instance)
             task_abs_disabled_validation_frames = set(
                 task_frame_provider.get_abs_frame_number(v)
-                for v in validation_layout.disabled_frames
+                for v in disabled_frames
             )
-
-            for db_image in instance.data.images.all():
-                if db_image.is_placeholder and (
-                    db_image.real_frame not in task_abs_disabled_validation_frames
-                ):
-                    db_image.real_frame = -1
+            for honeypot in task_honeypot_frames:
+                db_image = task_frames[honeypot]
+                if db_image.real_frame not in task_abs_disabled_validation_frames:
+                    db_image.real_frame = 0
 
         # Could be done using Django ORM, but using order_by() and filter()
         # would result in an extra DB request
