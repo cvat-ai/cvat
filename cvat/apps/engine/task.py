@@ -41,7 +41,6 @@ from cvat.apps.engine.utils import (
     av_scan_paths, format_list, get_rq_job_meta,
     define_dependent_job, get_rq_lock_by_user, take_by
 )
-from cvat.apps.engine.quality_control import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
