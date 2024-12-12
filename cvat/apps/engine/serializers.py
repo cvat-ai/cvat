@@ -1471,7 +1471,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             frame_provider.get_rel_frame_number(db_image.frame): db_image
             for db_image in instance.data.images.all()
         }
-        task_honeypot_frames = [f for f, v in task_frames.items() if v.is_placeholder]
+        task_honeypot_frames = sorted(f for f, v in task_frames.items() if v.is_placeholder)
         disabled_frames = set(validation_layout.disabled_frames)
         task_all_validation_frames = validation_layout.frames
         task_active_validation_frames = sorted(set(task_all_validation_frames) - disabled_frames)
