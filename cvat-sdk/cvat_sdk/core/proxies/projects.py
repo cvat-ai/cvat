@@ -49,6 +49,7 @@ class Project(
         format_name: str,
         filename: StrPath,
         *,
+        conv_mask_to_poly: Optional[bool] = None,
         status_check_period: Optional[int] = None,
         pbar: Optional[ProgressReporter] = None,
     ):
@@ -63,6 +64,7 @@ class Project(
             filename,
             format_name,
             url_params={"id": self.id},
+            conv_mask_to_poly: Optional[bool] = None,
             pbar=pbar,
             status_check_period=status_check_period,
         )
@@ -110,6 +112,7 @@ class ProjectsRepo(
         dataset_format: str = "CVAT XML 1.1",
         status_check_period: int = None,
         pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: Optional[bool] = None,
     ) -> Project:
         """
         Create a new project with the given name and labels JSON and
