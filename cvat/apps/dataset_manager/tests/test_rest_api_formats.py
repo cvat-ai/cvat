@@ -1910,11 +1910,25 @@ class ExportBehaviorTest(_DbTestBase):
         side_effect = self.side_effect
         chain_side_effects = self.chain_side_effects
         process_closing = self.process_closing
+        wait_condition = self.wait_condition
+        set_condition = self.set_condition
+
+        export_fn_started_by_1st_process = self.SharedBool()
+        export_fn_finished_by_1st_process = self.SharedBool()
+        export_fn_started_by_2nd_process = self.SharedBool()
+        export_fn_finished_by_2nd_process = self.SharedBool()
+
 
         format_name = "CVAT for images 1.1"
 
         def _export(
-            *_, task_id: int, result_queue: multiprocessing.Queue, sleep_on_export: bool = False
+            *_,
+            task_id: int,
+            result_queue: multiprocessing.Queue,
+            export_fn_started: self.SharedBool,
+            export_fn_finished: self.SharedBool | None = None,
+            wait_before_fn_finish: self.SharedBool | None = None,
+            wait_before_replace: self.SharedBool | None = None,
         ):
             from os import replace as original_replace
 
@@ -1934,22 +1948,24 @@ class ExportBehaviorTest(_DbTestBase):
                     new=self.patched_get_export_cache_lock,
                 ),
                 patch("cvat.apps.dataset_manager.views.os.replace") as mock_os_replace,
-                patch(
-                    "cvat.apps.dataset_manager.views.rq.get_current_job"
-                ) as mock_rq_get_current_job,
+                patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
                 patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
-                patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_task_func,
             ):
-                mock_export_task_func.side_effect = chain_side_effects(
+                mock_export_fn.side_effect = chain_side_effects(
+                    side_effect(set_condition, export_fn_started),
                     original_export_task,
-                    side_effect(sleep, lock_acquire_timeout + 1 if sleep_on_export else 0),
+                    *((side_effect(wait_condition, wait_before_fn_finish),) if wait_before_fn_finish is not None else []),
+                    *((side_effect(set_condition, export_fn_finished),) if export_fn_finished is not None else []),
                 )
-                mock_os_replace.side_effect = original_replace
 
-                mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+                mock_os_replace.side_effect = chain_side_effects(
+                    *((side_effect(wait_condition, wait_before_replace),) if wait_before_replace is not None else []),
+                    original_replace
+                )
                 result_file_path = export(dst_format=format_name, task_id=task_id)
                 result_queue.put(result_file_path)
 
+                mock_export_fn.assert_called_once()
                 mock_os_replace.assert_called_once()
 
         task = self._setup_task_with_annotations(format_name=format_name)
@@ -1962,7 +1978,12 @@ class ExportBehaviorTest(_DbTestBase):
                     multiprocessing.Process(
                         target=_export,
                         kwargs=dict(
-                            task_id=task["id"], result_queue=result_queue, sleep_on_export=True
+                            task_id=task["id"],
+                            result_queue=result_queue,
+                            export_fn_started=export_fn_started_by_1st_process,
+                            wait_before_fn_finish=export_fn_started_by_2nd_process,
+                            export_fn_finished=export_fn_finished_by_1st_process,
+                            wait_before_replace=export_fn_finished_by_2nd_process,
                         ),
                     )
                 )
@@ -1971,12 +1992,19 @@ class ExportBehaviorTest(_DbTestBase):
                 process_closing(
                     multiprocessing.Process(
                         target=_export,
-                        kwargs=dict(task_id=task["id"], result_queue=result_queue),
+                        kwargs=dict(
+                            task_id=task["id"],
+                            result_queue=result_queue,
+                            export_fn_started=export_fn_started_by_2nd_process,
+                            export_fn_finished=export_fn_finished_by_2nd_process,
+                        ),
                     )
                 )
             )
 
             export_process_1.start()
+            wait_condition(export_fn_started_by_1st_process)
+
             export_process_2.start()
             export_process_2.join(timeout=10)
             export_process_1.join(timeout=10)
