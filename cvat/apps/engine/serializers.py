@@ -1426,7 +1426,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             )
             if unknown_requested_disabled_frames:
                 raise serializers.ValidationError(
-                    "Unknown frames requested for exclusion from the validation set {}".format(
+                    "Unknown frames requested for exclusion from the validation set: {}".format(
                         format_list(tuple(map(str, sorted(unknown_requested_disabled_frames))))
                     )
                 )
