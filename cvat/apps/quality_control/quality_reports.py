@@ -9,7 +9,6 @@ import math
 from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
-from datetime import timedelta
 from functools import cached_property, partial
 from typing import Any, Callable, Optional, Union, cast
 
@@ -22,7 +21,6 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 from django_rq.queues import DjangoRQ as RqQueue
 from rest_framework.request import Request
 from rq.job import Job as RqJob
@@ -61,7 +59,6 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
-from cvat.utils.background_jobs import schedule_job_with_throttling
 
 
 class _Serializable:
@@ -2180,14 +2177,9 @@ class DatasetComparator:
 
 
 class QualityReportUpdateManager:
-    _QUEUE_AUTOUPDATE_JOB_PREFIX = "update-quality-metrics-"
     _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
-
-    @classmethod
-    def _get_quality_check_job_delay(cls) -> timedelta:
-        return timedelta(seconds=settings.QUALITY_CHECK_JOB_DELAY)
 
     def _get_scheduler(self) -> RqScheduler:
         return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
@@ -2195,22 +2187,12 @@ class QualityReportUpdateManager:
     def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_queue_job_id_base(self, task: Task) -> str:
-        return f"{self._QUEUE_AUTOUPDATE_JOB_PREFIX}task-{task.id}"
-
     def _make_custom_quality_check_job_id(self, task_id: int, user_id: int) -> str:
         # FUTURE-TODO: it looks like job ID template should not include user_id because:
         # 1. There is no need to compute quality reports several times for different users
         # 2. Each user (not only rq job owner) that has permission to access a task should
         # be able to check the status of the computation process
         return f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}-user-{user_id}"
-
-    @classmethod
-    def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
-        report = models.QualityReport.objects.filter(task=task).order_by("-created_date").first()
-        if report:
-            return report.created_date
-        return None
 
     class QualityReportsNotAvailable(Exception):
         pass
@@ -2228,33 +2210,6 @@ class QualityReportUpdateManager:
                 f"at the {StageChoice.ACCEPTANCE} stage "
                 f"and in the {StatusChoice.COMPLETED} state"
             )
-
-    def _should_update(self, task: Task) -> bool:
-        try:
-            self._check_quality_reporting_available(task)
-            return True
-        except self.QualityReportsNotAvailable:
-            return False
-
-    def schedule_quality_autoupdate_job(self, task: Task):
-        """
-        This function schedules a quality report autoupdate job
-        """
-
-        if not self._should_update(task):
-            return
-
-        now = timezone.now()
-        delay = self._get_quality_check_job_delay()
-        next_job_time = now.utcnow() + delay
-
-        schedule_job_with_throttling(
-            settings.CVAT_QUEUES.QUALITY_REPORTS.value,
-            self._make_queue_job_id_base(task),
-            next_job_time,
-            self._check_task_quality,
-            task_id=task.id,
-        )
 
     class JobAlreadyExists(QualityReportsNotAvailable):
         def __str__(self):
@@ -2403,15 +2358,6 @@ class QualityReportUpdateManager:
             try:
                 Task.objects.get(id=task_id)
             except Task.DoesNotExist:
-                return
-
-            last_report_time = self._get_last_report_time(task)
-            if not self.is_custom_quality_check_job(self._get_current_job()) and (
-                last_report_time
-                and timezone.now() < last_report_time + self._get_quality_check_job_delay()
-            ):
-                # Discard this report as it has probably been computed in parallel
-                # with another one
                 return
 
             job_quality_reports = {}
