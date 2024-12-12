@@ -1023,12 +1023,15 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // frame_step
 
+        def _to_abs_frame(rel_frame: int) -> int:
+            return rel_frame * frame_step + db_data.start_frame
+
         bulk_context = self._bulk_context
         if bulk_context:
-            all_task_frames = bulk_context.task_frames
-            task_honeypot_frames = set(bulk_context.task_honeypot_frames)
-            task_all_validation_frames = set(bulk_context.task_all_validation_frames)
-            task_active_validation_frames = set(bulk_context.task_active_validation_frames)
+            all_task_frames = bulk_context.all_db_frames
+            task_honeypot_frames = set(bulk_context.honeypot_frames)
+            task_all_validation_frames = set(bulk_context.all_validation_frames)
+            task_active_validation_frames = set(bulk_context.active_validation_frames)
         else:
             all_task_frames: dict[int, models.Image] = {
                 _to_rel_frame(frame.frame): frame
@@ -1098,16 +1101,20 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            validation_frame_counts = {
-                validation_frame: 0 for validation_frame in task_active_validation_frames
-            }
-            for task_honeypot_frame in task_honeypot_frames:
-                real_frame = _to_rel_frame(all_task_frames[task_honeypot_frame].real_frame)
-                if real_frame in task_active_validation_frames:
-                    validation_frame_counts[real_frame] += 1
+            if self._bulk_context:
+                active_validation_frame_counts = bulk_context.active_validation_frame_counts
+            else:
+                active_validation_frame_counts = {
+                    validation_frame: 0 for validation_frame in task_active_validation_frames
+                }
+                for task_honeypot_frame in task_honeypot_frames:
+                    real_frame = _to_rel_frame(all_task_frames[task_honeypot_frame].real_frame)
+                    if real_frame in task_active_validation_frames:
+                        active_validation_frame_counts[real_frame] += 1
 
-            frame_selector = HoneypotFrameSelector(validation_frame_counts)
+            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
             requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
+            requested_frames = list(map(_to_abs_frame, requested_frames))
         else:
             assert False
 
@@ -1357,20 +1364,22 @@ class _TaskValidationLayoutBulkUpdateContext:
         self,
         *,
         media_cache: _AccumulatingMediaCache,
-        task_frames: dict[int, models.Image],
-        task_honeypot_frames: list[int],
-        task_all_validation_frames: list[int],
-        task_active_validation_frames: list[int],
+        all_db_frames: dict[int, models.Image],
+        honeypot_frames: list[int],
+        all_validation_frames: list[int],
+        active_validation_frames: list[int],
+        validation_frame_counts: dict[int, int] | None = None
     ):
         self.updated_honeypots: dict[int, models.Image] = {}
         self.updated_segments: list[int] = []
         self.segments_with_updated_chunks: list[int] = []
 
         self.media_cache = media_cache
-        self.task_frames = task_frames
-        self.task_honeypot_frames = task_honeypot_frames
-        self.task_all_validation_frames = task_all_validation_frames
-        self.task_active_validation_frames = task_active_validation_frames
+        self.all_db_frames = all_db_frames
+        self.honeypot_frames = honeypot_frames
+        self.all_validation_frames = all_validation_frames
+        self.active_validation_frames = active_validation_frames
+        self.active_validation_frame_counts = validation_frame_counts
 
 class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     disabled_frames = serializers.ListField(
@@ -1412,16 +1421,16 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout: models.ValidationLayout | None = (
+        db_validation_layout: models.ValidationLayout | None = (
             getattr(instance.data, 'validation_layout', None)
         )
-        if not validation_layout:
+        if not db_validation_layout:
             raise serializers.ValidationError("Validation is not configured in the task")
 
         if 'disabled_frames' in validated_data:
             requested_disabled_frames = validated_data['disabled_frames']
             unknown_requested_disabled_frames = (
-                set(requested_disabled_frames).difference(validation_layout.frames)
+                set(requested_disabled_frames).difference(db_validation_layout.frames)
             )
             if unknown_requested_disabled_frames:
                 raise serializers.ValidationError(
@@ -1436,12 +1445,12 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             gt_job_meta_serializer.is_valid(raise_exception=True)
             gt_job_meta_serializer.save()
 
-            validation_layout.refresh_from_db()
+            db_validation_layout.refresh_from_db()
             instance.data.refresh_from_db()
 
         frame_selection_method = validated_data.get('frame_selection_method')
         if frame_selection_method and not (
-            validation_layout and
+            db_validation_layout and
             instance.data.validation_layout.mode == models.ValidationMode.GT_POOL
         ):
             raise serializers.ValidationError(
@@ -1466,42 +1475,40 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             pass
 
         frame_provider = TaskFrameProvider(instance)
-        task_frames = {
+        db_frames = {
             frame_provider.get_rel_frame_number(db_image.frame): db_image
             for db_image in instance.data.images.all()
         }
-        task_honeypot_frames = sorted(f for f, v in task_frames.items() if v.is_placeholder)
-        disabled_frames = set(validation_layout.disabled_frames)
-        task_all_validation_frames = validation_layout.frames
-        task_active_validation_frames = sorted(set(task_all_validation_frames) - disabled_frames)
+        honeypot_frames = sorted(f for f, v in db_frames.items() if v.is_placeholder)
+        disabled_validation_frames = set(db_validation_layout.disabled_frames)
+        all_validation_frames = db_validation_layout.frames
+        active_validation_frames = sorted(set(all_validation_frames) - disabled_validation_frames)
 
         bulk_context = _TaskValidationLayoutBulkUpdateContext(
-            task_frames=task_frames,
-            task_honeypot_frames=task_honeypot_frames,
-            task_all_validation_frames=task_all_validation_frames,
-            task_active_validation_frames=task_active_validation_frames,
+            all_db_frames=db_frames,
+            honeypot_frames=honeypot_frames,
+            all_validation_frames=all_validation_frames,
+            active_validation_frames=active_validation_frames,
             media_cache=_AccumulatingTaskMediaCache(),
         )
 
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             requested_honeypot_real_frames = validated_data['honeypot_real_frames']
-            task_honeypot_frames_count = len(task_honeypot_frames)
+            task_honeypot_frames_count = len(honeypot_frames)
             if task_honeypot_frames_count != len(requested_honeypot_real_frames):
                 raise serializers.ValidationError(
                     "Invalid size of 'honeypot_real_frames' array, "
                     f"expected {task_honeypot_frames_count}"
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            # Reset active honeypots in the task to produce a uniform distribution in the end
-            task_frame_provider = TaskFrameProvider(instance)
-            task_abs_disabled_validation_frames = set(
-                task_frame_provider.get_abs_frame_number(v)
-                for v in disabled_frames
-            )
-            for honeypot in task_honeypot_frames:
-                db_image = task_frames[honeypot]
-                if db_image.real_frame not in task_abs_disabled_validation_frames:
-                    db_image.real_frame = 0
+            active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            for honeypot in honeypot_frames:
+                db_image = db_frames[honeypot]
+                real_frame = frame_provider.get_rel_frame_number(db_image.real_frame)
+                if real_frame in active_validation_frames:
+                    active_validation_frame_counts[real_frame] += 1
+
+            bulk_context.active_validation_frame_counts = active_validation_frame_counts
 
         # Could be done using Django ORM, but using order_by() and filter()
         # would result in an extra DB request
@@ -1524,7 +1531,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 job_serializer_params['honeypot_real_frames'] = [
                     requested_frame
                     for rel_frame, requested_frame in zip(
-                        task_honeypot_frames, requested_honeypot_real_frames
+                        honeypot_frames, requested_honeypot_real_frames
                     )
                     if frame_provider.get_abs_frame_number(rel_frame) in segment_frame_set
                 ]
@@ -1612,7 +1619,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         related_files_m2m_objects = (
             models.RelatedFile.images.through.objects
             .filter(image_id__in=[
-                bulk_context.task_frames[f].id for f in db_task.data.validation_layout.frames
+                bulk_context.all_db_frames[f].id for f in db_task.data.validation_layout.frames
             ])
             .all()
         )
@@ -1621,7 +1628,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         ):
             new_m2m_objects.extend(
                 models.RelatedFile.images.through(
-                    image_id=bulk_context.task_frames[honeypot_frame].id,
+                    image_id=bulk_context.all_db_frames[honeypot_frame].id,
                     related_file_id=related_file_m2m_obj.related_file_id
                 )
                 for honeypot_frame in validation_frame_uses
