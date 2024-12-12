@@ -1651,12 +1651,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
             this.controller.fit();
-            this.canvas.dispatchEvent(
-                new CustomEvent('canvas.fit', {
-                    bubbles: false,
-                    cancelable: true,
-                }),
-            );
             e.preventDefault();
         });
 
@@ -1896,6 +1890,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }),
             );
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
+            if (reason === UpdateReasons.IMAGE_FITTED) {
+                this.canvas.dispatchEvent(
+                    new CustomEvent('canvas.fit', {
+                        bubbles: false,
+                        cancelable: true,
+                    }),
+                );
+            }
+
             this.moveCanvas();
             this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_ROTATED) {

@@ -203,7 +203,7 @@ You can change this using the following constructor parameters:
     will be included.
 
 Both parameters can be set,
-in which case tasks must fulfull both criteria to be included.
+in which case tasks must fulfill both criteria to be included.
 
 ### Caching
 

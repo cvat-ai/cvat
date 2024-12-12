@@ -653,7 +653,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { state, duration } = event.detail;
         const isDrawnFromScratch = !state.label;
 
-        state.objectType = state.objectType || activeObjectType;
+        state.objectType = state.shapeType === ShapeType.MASK ?
+            ObjectType.SHAPE : state.objectType ?? activeObjectType;
         state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.frame = frame;
         state.rotation = state.rotation || 0;

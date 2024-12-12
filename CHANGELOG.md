@@ -16,6 +16,153 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.23.1'></a>
+## \[2.23.1\] - 2024-12-09
+
+### Changed
+
+- \[CLI\] Log messages are now printed on stderr rather than stdout
+  (<https://github.com/cvat-ai/cvat/pull/8784>)
+
+### Fixed
+
+- Optimized memory consumption and reduced the number of database queries
+  when importing annotations to a task with a lot of jobs and images
+  (<https://github.com/cvat-ai/cvat/pull/8676>)
+
+- Incorrect display of validation frames on the task quality management page
+  (<https://github.com/cvat-ai/cvat/pull/8731>)
+
+- Player may navigate to removed frames when playing
+  (<https://github.com/cvat-ai/cvat/pull/8747>)
+
+- User may navigate forward with a keyboard when a modal opened
+  (<https://github.com/cvat-ai/cvat/pull/8748>)
+
+- fit:canvas event is not generated if to fit it from the controls sidebar
+  (<https://github.com/cvat-ai/cvat/pull/8750>)
+
+- Color of 'Create object URL' button for a not saved on the server object
+  (<https://github.com/cvat-ai/cvat/pull/8752>)
+
+- Failed request for a chunk inside a job after it was recently modified by updating `validation_layout`
+  (<https://github.com/cvat-ai/cvat/pull/8772>)
+
+- Memory consumption during preparation of image chunks
+  (<https://github.com/cvat-ai/cvat/pull/8778>)
+
+- Possible endless lock acquisition for chunk preparation job
+  (<https://github.com/cvat-ai/cvat/pull/8769>)
+
+- Fixed issue: Cannot read properties of undefined (reading 'getUpdated')
+  (<https://github.com/cvat-ai/cvat/pull/8785>)
+
+<a id='changelog-2.23.0'></a>
+## \[2.23.0\] - 2024-11-29
+
+### Added
+
+- Support for direct .json file import in Datumaro format
+  (<https://github.com/opencv/cvat/pull/7125>)
+
+- \[SDK, CLI\] Added a `conf_threshold` parameter to
+  `cvat_sdk.auto_annotation.annotate_task`, which is passed as-is to the AA
+  function object via the context. The CLI equivalent is `auto-annotate
+  --conf-threshold`. This makes it easier to write and use AA functions that
+  support object filtering based on confidence levels
+  (<https://github.com/cvat-ai/cvat/pull/8688>)
+
+- \[SDK\] Built-in auto-annotation functions now support object filtering by
+  confidence level
+  (<https://github.com/cvat-ai/cvat/pull/8688>)
+
+- New events (create|update|delete):(membership|webhook) and (create|delete):invitation
+  (<https://github.com/cvat-ai/cvat/pull/8616>)
+
+- \[SDK\] Added new auto-annotation helpers (`mask`, `polygon`, `encode_mask`)
+  to support AA functions that return masks or polygons
+  (<https://github.com/cvat-ai/cvat/pull/8724>)
+
+- \[SDK\] Added a new built-in auto-annotation function,
+  `torchvision_instance_segmentation`
+  (<https://github.com/cvat-ai/cvat/pull/8724>)
+
+- \[SDK, CLI\] Added a new auto-annotation parameter, `conv_mask_to_poly`
+  (`--conv-mask-to-poly` in the CLI)
+  (<https://github.com/cvat-ai/cvat/pull/8724>)
+
+- A user may undo or redo changes, made by an annotations actions using general approach (e.g. Ctrl+Z, Ctrl+Y)
+  (<https://github.com/cvat-ai/cvat/pull/8727>)
+
+- Basically, annotations actions now support any kinds of objects (shapes, tracks, tags)
+  (<https://github.com/cvat-ai/cvat/pull/8727>)
+
+- A user may run annotations actions on a certain object (added corresponding object menu item)
+  (<https://github.com/cvat-ai/cvat/pull/8727>)
+
+- A shortcut to open annotations actions modal for a currently selected object
+  (<https://github.com/cvat-ai/cvat/pull/8727>)
+
+- A default role if IAM_TYPE='LDAP' and if the user is not a member of any group in 'DJANGO_AUTH_LDAP_GROUPS' (<https://github.com/cvat-ai/cvat/pull/8708>)
+
+- The `POST /api/lambda/requests` endpoint now has a `conv_mask_to_poly`
+  parameter with the same semantics as the old `convMaskToPoly` parameter
+  (<https://github.com/cvat-ai/cvat/pull/8743>)
+
+- \[SDK\] Model instances can now be pickled
+  (<https://github.com/cvat-ai/cvat/pull/8746>)
+
+### Changed
+
+- Chunks are now prepared in a separate worker process
+  (<https://github.com/cvat-ai/cvat/pull/8618>)
+
+- \[Helm\] Traefik sticky sessions for the backend service are disabled
+  (<https://github.com/cvat-ai/cvat/pull/8659>)
+
+- Payload for events (create|update|delete):(shapes|tags|tracks) does not include frame and attributes anymore
+  (<https://github.com/cvat-ai/cvat/pull/8616>)
+
+### Deprecated
+
+- The `convMaskToPoly` parameter of the `POST /api/lambda/requests` endpoint
+  is deprecated; use `conv_mask_to_poly` instead
+  (<https://github.com/cvat-ai/cvat/pull/8743>)
+
+### Removed
+
+- It it no longer possible to run lambda functions on compressed images;
+  original images will always be used
+  (<https://github.com/cvat-ai/cvat/pull/8683>)
+
+### Fixed
+
+- Export without images in Datumaro format should include image info
+  (<https://github.com/opencv/cvat/pull/7125>)
+
+- Inconsistent zOrder behavior on job open
+  (<https://github.com/cvat-ai/cvat/pull/8669>)
+
+- Ground truth annotations can be shown in standard mode
+  (<https://github.com/cvat-ai/cvat/pull/8675>)
+
+- Keybinds in UI allow drawing disabled shape types
+  (<https://github.com/cvat-ai/cvat/pull/8685>)
+
+- Style issues on the Quality page when browser zoom is applied
+  (<https://github.com/cvat-ai/cvat/pull/8698>)
+- Flickering of masks in review mode, even when no conflicts are highlighted
+  (<https://github.com/cvat-ai/cvat/pull/8698>)
+
+- Fixed security header duplication in HTTP responses from the backend
+  (<https://github.com/cvat-ai/cvat/pull/8726>)
+
+- The error occurs when trying to copy/paste a mask on a video after opening the job
+  (<https://github.com/cvat-ai/cvat/pull/8728>)
+
+- Attributes do not get copied when copy/paste a mask
+  (<https://github.com/cvat-ai/cvat/pull/8728>)
+
 <a id='changelog-2.22.0'></a>
 ## \[2.22.0\] - 2024-11-11
 

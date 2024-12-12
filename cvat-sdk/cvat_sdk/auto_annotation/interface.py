@@ -68,6 +68,16 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         If the function is not able to estimate confidence levels, it can ignore this value.
         """
 
+    @property
+    @abc.abstractmethod
+    def conv_mask_to_poly(self) -> bool:
+        """
+        If this is true, the function must convert any mask shapes to polygon shapes
+        before returning them.
+
+        If the function does not return any mask shapes, then it can ignore this value.
+        """
+
 
 class DetectionFunction(Protocol):
     """
@@ -166,6 +176,21 @@ def shape(label_id: int, **kwargs) -> models.LabeledShapeRequest:
 def rectangle(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShapeRequest:
     """Helper factory function for LabeledShapeRequest with frame=0 and type="rectangle"."""
     return shape(label_id, type="rectangle", points=points, **kwargs)
+
+
+def polygon(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShapeRequest:
+    """Helper factory function for LabeledShapeRequest with frame=0 and type="polygon"."""
+    return shape(label_id, type="polygon", points=points, **kwargs)
+
+
+def mask(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShapeRequest:
+    """
+    Helper factory function for LabeledShapeRequest with frame=0 and type="mask".
+
+    It's recommended to use the cvat.masks.encode_mask function to build the
+    points argument.
+    """
+    return shape(label_id, type="mask", points=points, **kwargs)
 
 
 def skeleton(

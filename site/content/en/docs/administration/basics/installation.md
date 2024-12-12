@@ -460,7 +460,7 @@ export CVAT_HOST=<YOUR_DOMAIN>
 ### Share path
 
 You can use shared storage for uploading data when you create a task.
-To do that, you must mount the shared storage to the CVAT docker container. Example of
+To do that, you need to mount the shared storage to the CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
@@ -475,6 +475,9 @@ services:
     volumes:
       - cvat_share:/home/django/share:ro
   cvat_worker_annotation:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_chunks:
     volumes:
       - cvat_share:/home/django/share:ro
 

@@ -276,6 +276,7 @@ class CVAT_QUEUES(Enum):
     QUALITY_REPORTS = 'quality_reports'
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
+    CHUNKS = 'chunks'
 
 redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
@@ -320,6 +321,10 @@ RQ_QUEUES = {
     CVAT_QUEUES.CLEANING.value: {
         **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
+    },
+    CVAT_QUEUES.CHUNKS.value: {
+        **shared_queue_settings,
+        'DEFAULT_TIMEOUT': '5m',
     },
 }
 
@@ -539,14 +544,20 @@ redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6666)
 redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
 
+# Sets the timeout for the expiration of data chunk in redis_ondisk
+CVAT_CHUNK_CACHE_TTL = 3600 * 24  # 1 day
+
+# Sets the timeout for the expiration of preview image in redis_ondisk
+CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
+
 CACHES = {
-   'default': {
+    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
     'media': {
-       'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
-       "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
-       'TIMEOUT' : 3600 * 24, # 1 day
+        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
+        "LOCATION": f'redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}',
+        'TIMEOUT' : CVAT_CHUNK_CACHE_TTL,
     }
 }
 

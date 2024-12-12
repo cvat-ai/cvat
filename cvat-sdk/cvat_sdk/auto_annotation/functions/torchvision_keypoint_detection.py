@@ -5,20 +5,14 @@
 from functools import cached_property
 
 import PIL.Image
-import torchvision.models
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.models as models
 
+from ._torchvision import TorchvisionFunction
 
-class _TorchvisionKeypointDetectionFunction:
-    def __init__(self, model_name: str, weights_name: str = "DEFAULT", **kwargs) -> None:
-        weights_enum = torchvision.models.get_model_weights(model_name)
-        self._weights = weights_enum[weights_name]
-        self._transforms = self._weights.transforms()
-        self._model = torchvision.models.get_model(model_name, weights=self._weights, **kwargs)
-        self._model.eval()
 
+class _TorchvisionKeypointDetectionFunction(TorchvisionFunction):
     @cached_property
     def spec(self) -> cvataa.DetectionFunctionSpec:
         return cvataa.DetectionFunctionSpec(

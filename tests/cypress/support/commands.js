@@ -908,6 +908,14 @@ Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) =>
             cy.contains(qualityConfigurationParams.validationMode).click();
         });
     }
+    if (qualityConfigurationParams.validationFramesPercent) {
+        cy.get('#validationFramesPercent').clear();
+        cy.get('#validationFramesPercent').type(qualityConfigurationParams.validationFramesPercent);
+    }
+    if (qualityConfigurationParams.validationFramesPerJobPercent) {
+        cy.get('#validationFramesPerJobPercent').clear();
+        cy.get('#validationFramesPerJobPercent').type(qualityConfigurationParams.validationFramesPerJobPercent);
+    }
 });
 
 Cypress.Commands.add('removeAnnotations', () => {
