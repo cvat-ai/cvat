@@ -106,7 +106,7 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip install onnxruntime-gpu=='1.20.*' opencv-python-headless pillow pyyaml
+          value: pip install onnxruntime-gpu=='1.20.*' opencv-python-headless pillow pyyaml numpy=='2.2.*'
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
