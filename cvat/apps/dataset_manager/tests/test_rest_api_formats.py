@@ -1437,8 +1437,10 @@ class ExportBehaviorTest(_DbTestBase):
 
         format_name = "CVAT for images 1.1"
 
+        export_file_path = self.SharedString()
         export_checked_the_file = self.SharedBool()
         clear_process_has_run = self.SharedBool()
+        clear_removed_the_file = self.SharedBool()
         export_outdated_after = timedelta(seconds=1)
 
         def _export(*_, task_id: int):
@@ -1473,10 +1475,6 @@ class ExportBehaviorTest(_DbTestBase):
                 patch(
                     "cvat.apps.dataset_manager.views.os.replace", side_effect=original_replace
                 ) as mock_os_replace,
-                patch(
-                    "cvat.apps.dataset_manager.views.rq.get_current_job"
-                ) as mock_rq_get_current_job,
-                patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
                 patch("cvat.apps.dataset_manager.views.log_exception", new=patched_log_exception),
             ):
                 mock_osp_exists.side_effect = chain_side_effects(
@@ -1484,10 +1482,8 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, export_checked_the_file),
                     side_effect(wait_condition, clear_process_has_run),
                 )
-
-                mock_rq_get_current_job.return_value = MagicMock(timeout=5)
-
-                export(dst_format=format_name, task_id=task_id)
+                result_file = export(dst_format=format_name, task_id=task_id)
+                set_condition(export_file_path, result_file)
                 mock_os_replace.assert_not_called()
 
         def _clear(*_, file_path: str, file_ctime: str):
@@ -1503,7 +1499,7 @@ class ExportBehaviorTest(_DbTestBase):
                     new=self.patched_get_export_cache_lock,
                 ),
                 patch(
-                    "cvat.apps.dataset_manager.views.os.remove", side_effect=original_remove
+                    "cvat.apps.dataset_manager.views.os.remove"
                 ) as mock_os_remove,
                 patch(
                     "cvat.apps.dataset_manager.views.rq.get_current_job"
@@ -1515,6 +1511,10 @@ class ExportBehaviorTest(_DbTestBase):
                 ),
             ):
                 mock_rq_get_current_job.return_value = MagicMock(timeout=5)
+                mock_os_remove.side_effect = chain_side_effects(
+                    original_remove,
+                    side_effect(set_condition, clear_removed_the_file),
+                )
 
                 file_is_being_used_error_raised = False
                 try:
@@ -1563,7 +1563,6 @@ class ExportBehaviorTest(_DbTestBase):
 
             # create a file in the export cache
             first_export_path = export(dst_format=format_name, task_id=task_id)
-            self.assertTrue(osp.isfile(first_export_path))
 
             initial_file_modfication_time = os.path.getmtime(first_export_path)
             # make sure that a file in the export cache is outdated by timeout
@@ -1613,8 +1612,6 @@ class ExportBehaviorTest(_DbTestBase):
             # clear() must wait for the export cache lock release (acquired by export()).
             # It must be finished by a timeout, as export() holds it, waiting
             clear_process.join(timeout=10)
-
-            # export() must wait for the clear() file existence check and fail because of timeout
             export_process.join(timeout=10)
 
             self.assertFalse(export_process.is_alive())
@@ -1628,6 +1625,12 @@ class ExportBehaviorTest(_DbTestBase):
             processes_finished_correctly = True
 
         self.assertTrue(processes_finished_correctly)
+        self.assertFalse(clear_removed_the_file.get())
+
+        new_export_path = export_file_path.get()
+        self.assertGreater(len(new_export_path), 0)
+        self.assertTrue(osp.isfile(new_export_path))
+        self.assertTrue(osp.isfile(first_export_path))
         self.assertGreater(os.path.getmtime(first_export_path), initial_file_modfication_time)
 
         # terminate() may break the locks, don't try to acquire
