@@ -33,6 +33,7 @@ class EventsViewSet(viewsets.ViewSet):
     def create(self, request):
         serializer = ClientEventsSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+
         handle_client_events_push(request, serializer.validated_data)
         for event in serializer.validated_data["events"]:
             message = JSONRenderer().render({
