@@ -1391,14 +1391,13 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset active honeypots in the task to produce a uniform distribution in the end
             task_frame_provider = TaskFrameProvider(instance)
-            task_abs_disabled_validation_frames = set(
+            task_abs_disabled_validation_frames = [
                 task_frame_provider.get_abs_frame_number(v)
                 for v in validation_layout.disabled_frames
-            )
-
-            for db_image in instance.data.images.filter(is_placeholder=True).all():
-                if db_image.real_frame not in task_abs_disabled_validation_frames:
-                    db_image.real_frame = -1
+            ]
+            instance.data.images.filter(is_placeholder=True).exclude(
+                real_frame__in=task_abs_disabled_validation_frames
+            ).update(real_frame=0)
 
         if frame_selection_method:
             for db_job in (
