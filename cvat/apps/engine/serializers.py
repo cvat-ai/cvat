@@ -1336,7 +1336,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout: Optional[models.ValidationLayout] = (
+        validation_layout: models.ValidationLayout | None = (
             getattr(instance.data, 'validation_layout', None)
         )
         if not validation_layout:
