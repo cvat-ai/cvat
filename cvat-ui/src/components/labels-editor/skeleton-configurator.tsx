@@ -864,7 +864,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                             }
                                         }
 
-                                        if (!Array.from(svg.children).filter((child) => child.tagName === 'circle').length) {
+                                        if (!Array.from(svg.children).some((child) => child.tagName === 'circle')) {
                                             throw Error();
                                         }
 
