@@ -27,20 +27,23 @@ class EventSerializer(serializers.Serializer):
     org_slug = serializers.CharField(required=False, allow_null=True)
     payload = serializers.CharField(required=False, allow_null=True)
 
+
 class ClientEventsSerializer(serializers.Serializer):
-    ALLOWED_SCOPES = frozenset((
-        'load:cvat', 'load:job', 'save:job','load:workspace',
-        'upload:annotations', # TODO: remove in next releases
-        'lock:object', # TODO: remove in next releases
-        'change:attribute', # TODO: remove in next releases
-        'change:label', # TODO: remove in next releases
-        'send:exception', 'join:objects', 'change:frame',
-        'draw:object', 'paste:object', 'copy:object', 'propagate:object',
-        'drag:object', 'resize:object', 'delete:object',
-        'merge:objects', 'split:objects', 'group:objects', 'slice:object',
-        'zoom:image', 'fit:image', 'rotate:image', 'action:undo', 'action:redo',
-        'debug:info', 'run:annotations_action', 'click:element'
-    ))
+    ALLOWED_SCOPES = {
+        'client': frozenset((
+            'load:cvat', 'load:job', 'save:job','load:workspace',
+            'upload:annotations', # TODO: remove in next releases
+            'lock:object', # TODO: remove in next releases
+            'change:attribute', # TODO: remove in next releases
+            'change:label', # TODO: remove in next releases
+            'send:exception', 'join:objects', 'change:frame',
+            'draw:object', 'paste:object', 'copy:object', 'propagate:object',
+            'drag:object', 'resize:object', 'delete:object',
+            'merge:objects', 'split:objects', 'group:objects', 'slice:object',
+            'zoom:image', 'fit:image', 'rotate:image', 'action:undo', 'action:redo',
+            'debug:info', 'run:annotations_action', 'click:element',
+        )),
+    }
 
     events = EventSerializer(many=True, default=[])
     previous_event = EventSerializer(default=None, allow_null=True, write_only=True)
@@ -62,8 +65,9 @@ class ClientEventsSerializer(serializers.Serializer):
 
         for event in data["events"]:
             scope = event["scope"]
-            if scope not in ClientEventsSerializer.ALLOWED_SCOPES:
-                raise serializers.ValidationError({ "scope": f"Event scope **{scope}** is not allowed from client" })
+            source = event.get("source", "client")
+            if scope not in ClientEventsSerializer.ALLOWED_SCOPES.get(source, []):
+                raise serializers.ValidationError({"scope": f"Event scope **{scope}** is not allowed from {source}"})
 
             try:
                 payload = json.loads(event.get("payload", "{}"))
@@ -72,12 +76,12 @@ class ClientEventsSerializer(serializers.Serializer):
 
             event.update({
                 "timestamp": event["timestamp"] + time_correction,
-                "source": "client",
-                "org_id": org_id,
-                "org_slug": org_slug,
-                "user_id": request.user.id,
-                "user_name": request.user.username,
-                "user_email": request.user.email,
+                "source": source,
+                "org_id": event.get("org_id", org_id),
+                "org_slug": event.get("org_slug", org_slug),
+                "user_id": event.get("user_id", request.user.id),
+                "user_name": event.get("user_name", request.user.username),
+                "user_email": event.get("user_email", request.user.email),
                 "payload": json.dumps(payload),
             })
 

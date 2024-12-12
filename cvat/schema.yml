@@ -1168,32 +1168,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientEvents'
           description: ''
-  /api/events/external:
-    post:
-      operationId: events_create_external
-      description: Sends logs to the Clickhouse if it is connected
-      summary: Log external events
-      tags:
-      - events
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventRequest'
-        required: true
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '201':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/Event'
-          description: ''
   /api/guides:
     post:
       operationId: guides_create
