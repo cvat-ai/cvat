@@ -38,7 +38,6 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 from cvat.apps.engine.utils import (
     format_list, parse_exception_message, CvatChunkTimestampMismatchError,
