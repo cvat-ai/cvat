@@ -24,6 +24,7 @@ import django_rq
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from django.db.models import prefetch_related_objects, Prefetch
 from django.utils import timezone
 from numpy import random
 from rest_framework import serializers, exceptions
@@ -1453,7 +1454,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             return instance
 
         # Populate the prefetch cache for required objects
-        from django.db.models import prefetch_related_objects, Prefetch
         prefetch_related_objects([instance],
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame')),
             'segment_set',
