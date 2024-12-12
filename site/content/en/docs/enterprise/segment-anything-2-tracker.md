@@ -46,7 +46,7 @@ nuctl deploy "path/to/the/function"
   --env CVAT_FUNCTIONS_REDIS_PASSWORD="<redis_password>" # if applicable
 ```
 
-## Running the tracker on an object
+## Running on an object
 
 The tracker can be applied to any polygons and masks. To run the tracker on an object, open the object menu and click
 "Run annotation action".
@@ -68,7 +68,7 @@ Once the process is complete, the modal window closes. You can review how the ob
 If you notice that the tracked shape deteriorates at some point,
 you can adjust the object coordinates and run the tracker again from that frame.
 
-## Running the tracker on multiple objects
+## Running on multiple objects
 
 Instead of tracking each object individually, you can track multiple objects
 simultaneously. To do this, click the **Menu** button in the annotation view and select the **Run Actions** option:
