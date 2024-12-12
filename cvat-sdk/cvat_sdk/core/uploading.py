@@ -288,7 +288,7 @@ class DatasetUploader(Uploader):
         url = self._client.api_map.make_endpoint_url(upload_endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
 
-        if conv_mask_top_poly is not None:
+        if conv_mask_to_poly is not None:
             value = "true" if conv_mask_to_poly else "false"
             params["conv_mask_to_poly"] = value
 

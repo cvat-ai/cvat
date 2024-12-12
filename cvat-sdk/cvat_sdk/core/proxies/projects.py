@@ -64,7 +64,7 @@ class Project(
             filename,
             format_name,
             url_params={"id": self.id},
-            conv_mask_to_poly: Optional[bool] = None,
+            conv_mask_to_poly=conv_mask_to_poly,
             pbar=pbar,
             status_check_period=status_check_period,
         )
