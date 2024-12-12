@@ -111,7 +111,6 @@ export async function run(
         await instance.annotations.commit(created, deleted, frame);
         event.close();
     } finally {
-        wrappedOnProgress('Finalizing', 100);
         await action.destroy();
     }
 }
