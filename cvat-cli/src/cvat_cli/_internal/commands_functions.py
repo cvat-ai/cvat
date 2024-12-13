@@ -121,11 +121,18 @@ class FunctionRunAgent:
 
         configure_function_implementation_arguments(parser)
 
+        parser.add_argument(
+            "--burst",
+            action="store_true",
+            help="process all pending requests and then exit",
+        )
+
     def execute(
         self,
         client: Client,
         *,
         function_id: int,
         function_loader: FunctionLoader,
+        burst: bool,
     ) -> None:
-        run_agent(client, function_loader, function_id)
+        run_agent(client, function_loader, function_id, burst=burst)

@@ -11,6 +11,7 @@ import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Optional
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.datasets as cvatds
@@ -159,12 +160,19 @@ class _Agent:
                     + f"label {remote_label['name']!r} has attributes, which is not supported."
                 )
 
-    def run(self):
-        while True:
-            self._process_one_request()
+    def run(self, *, burst: bool) -> None:
+        if burst:
+            while ar := self._poll_for_ar():
+                self._process_ar(ar)
+            self._client.logger.info("No annotation requests left in queue; exiting.")
+        else:
+            while True:
+                if ar := self._poll_for_ar():
+                    self._process_ar(ar)
+                else:
+                    time.sleep(_POLLING_INTERVAL.total_seconds())
 
-    def _process_one_request(self):
-        ar = self._poll_for_ar()
+    def _process_ar(self, ar: dict) -> None:
         self._client.logger.info("Got agent request: %r", ar)
 
         try:
@@ -220,7 +228,7 @@ class _Agent:
             else:
                 self._client.logger.info("AR %r aborted", ar["id"])
 
-    def _poll_for_ar(self) -> dict:
+    def _poll_for_ar(self) -> Optional[dict]:
         while True:
             self._client.logger.info("Trying to acquire an annotation request...")
             try:
@@ -230,6 +238,7 @@ class _Agent:
                     path_params={"queue_id": f"function:{self._function_id}"},
                     body={"agent_id": self._agent_id, "request_category": "batch"},
                 )
+                break
             except (urllib3.exceptions.HTTPError, ApiException) as ex:
                 if isinstance(ex, ApiException) and ex.status and 400 <= ex.status < 500:
                     # We did something wrong; no point in retrying.
@@ -237,15 +246,9 @@ class _Agent:
 
                 self._client.logger.error("Acquire request failed; will retry", exc_info=True)
                 time.sleep(_POLLING_INTERVAL.total_seconds())
-                continue
 
-            response_data = json.loads(response.data)
-            agent_request = response_data["agent_request"]
-
-            if agent_request:
-                return agent_request
-
-            time.sleep(_POLLING_INTERVAL.total_seconds())
+        response_data = json.loads(response.data)
+        return response_data["agent_request"]
 
     def _calculate_result_for_detection_ar(
         self,
@@ -320,7 +323,9 @@ class _Agent:
         )
 
 
-def run_agent(client: Client, function_loader: FunctionLoader, function_id: int) -> None:
+def run_agent(
+    client: Client, function_loader: FunctionLoader, function_id: int, *, burst: bool
+) -> None:
     with (
         _RecoverableExecutor(initializer=_worker_init, initargs=[function_loader]) as executor,
         tempfile.TemporaryDirectory() as cache_dir,
@@ -329,4 +334,4 @@ def run_agent(client: Client, function_loader: FunctionLoader, function_id: int)
         client.logger.info("Will store cache at %s", client.config.cache_dir)
 
         agent = _Agent(client, executor, function_id)
-        agent.run()
+        agent.run(burst=burst)
