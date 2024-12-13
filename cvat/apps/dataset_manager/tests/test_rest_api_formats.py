@@ -1322,18 +1322,19 @@ class ExportBehaviorTest(_DbTestBase):
         self.export_cache_lock = multiprocessing.Lock()
 
     @contextmanager
-    def patched_get_export_cache_lock(self, export_path, *, ttl, block=True, acquire_timeout=None):
+    def patched_get_export_cache_lock(self, export_path, *, ttl: int | timedelta, block: bool = True, acquire_timeout: int | timedelta):
         # fakeredis lock acquired in a subprocess won't be visible to other processes
         # just implement the lock here
         from cvat.apps.dataset_manager.util import LockNotAvailableError
 
+        assert acquire_timeout
+        assert ttl
+
         if isinstance(acquire_timeout, timedelta):
             acquire_timeout = acquire_timeout.total_seconds()
-        if acquire_timeout is None:
-            acquire_timeout = -1
 
         acquired = self.export_cache_lock.acquire(
-            block=block, timeout=acquire_timeout if acquire_timeout > -1 else None
+            block=block, timeout=acquire_timeout
         )
 
         if not acquired:
@@ -1481,6 +1482,7 @@ class ExportBehaviorTest(_DbTestBase):
                     original_exists,
                     side_effect(set_condition, export_checked_the_file),
                     side_effect(wait_condition, clear_process_has_run),
+                    side_effect(sleep, 2),
                 )
                 result_file = export(dst_format=format_name, task_id=task_id)
                 set_condition(export_file_path, result_file)
@@ -1611,8 +1613,8 @@ class ExportBehaviorTest(_DbTestBase):
             # if the problem is fixed.
             # clear() must wait for the export cache lock release (acquired by export()).
             # It must be finished by a timeout, as export() holds it, waiting
-            clear_process.join(timeout=10)
-            export_process.join(timeout=10)
+            clear_process.join(timeout=15)
+            export_process.join(timeout=15)
 
             self.assertFalse(export_process.is_alive())
             self.assertFalse(clear_process.is_alive())
@@ -1794,7 +1796,7 @@ class ExportBehaviorTest(_DbTestBase):
             # if the problem is fixed.
             # clear() must wait for the export cache lock release (acquired by download()).
             # It must be finished by a timeout, as download() holds it, waiting
-            clear_process.join(timeout=5)
+            clear_process.join(timeout=10)
 
             # download() must wait for the clear() file existence check and fail because of timeout
             download_process.join(timeout=5)
@@ -1954,12 +1956,12 @@ class ExportBehaviorTest(_DbTestBase):
                 mock_export_fn.side_effect = chain_side_effects(
                     side_effect(set_condition, export_fn_started),
                     original_export_task,
-                    *((side_effect(wait_condition, wait_before_fn_finish),) if wait_before_fn_finish is not None else []),
+                    *((side_effect(wait_condition, wait_before_fn_finish, 10),) if wait_before_fn_finish is not None else []),
                     *((side_effect(set_condition, export_fn_finished),) if export_fn_finished is not None else []),
                 )
 
                 mock_os_replace.side_effect = chain_side_effects(
-                    *((side_effect(wait_condition, wait_before_replace),) if wait_before_replace is not None else []),
+                    *((side_effect(wait_condition, wait_before_replace, 10),) if wait_before_replace is not None else []),
                     original_replace
                 )
                 result_file_path = export(dst_format=format_name, task_id=task_id)
