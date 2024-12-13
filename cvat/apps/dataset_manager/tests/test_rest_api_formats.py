@@ -1367,7 +1367,7 @@ class ExportBehaviorTest(_DbTestBase):
     @classmethod
     def wait_condition(cls, var: SharedBase, timeout: Optional[int] = 5):
         with var.condition:
-            if not var.condition.wait(timeout):
+            if not var.get() and not var.condition.wait(timeout):
                 raise cls._LockTimeoutError
 
     @staticmethod
