@@ -1501,14 +1501,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     f"expected {task_honeypot_frames_count}"
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
-            active_validation_frame_counts = { f: 0 for f in active_validation_frames }
-            for honeypot in honeypot_frames:
-                db_image = db_frames[honeypot]
-                real_frame = frame_provider.get_rel_frame_number(db_image.real_frame)
-                if real_frame in active_validation_frames:
-                    active_validation_frame_counts[real_frame] += 1
-
-            bulk_context.active_validation_frame_counts = active_validation_frame_counts
+            # Reset distribution for active validation frames
+            bulk_context.active_validation_frame_counts = { f: 0 for f in active_validation_frames }
 
         # Could be done using Django ORM, but using order_by() and filter()
         # would result in an extra DB request

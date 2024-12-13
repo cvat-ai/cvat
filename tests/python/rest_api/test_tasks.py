@@ -84,6 +84,15 @@ def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Op
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
 
+def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> dict[int, int]:
+    use_counts = {f: 0 for f in included_frames}
+    for f in data:
+        if f in included_frames:
+            use_counts[f] += 1
+
+    return use_counts
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths="", **kwargs):
@@ -4451,6 +4460,15 @@ class TestWorkWithHoneypotTasks:
                 api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
             )
 
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [gt_frame_set[0]],
+                ),
+            )
+
             params = {"frame_selection_method": frame_selection_method}
 
             if frame_selection_method == "manual":
@@ -4479,10 +4497,10 @@ class TestWorkWithHoneypotTasks:
                 assert new_honeypot_real_frames == requested_honeypot_real_frames
             elif frame_selection_method == "random_uniform":
                 # Test distribution
-                validation_frame_counts = {f: 0 for f in new_validation_layout["validation_frames"]}
-                for f in new_honeypot_real_frames:
-                    validation_frame_counts[f] += 1
-
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames,
+                    included_frames=new_validation_layout["validation_frames"],
+                )
                 assert max(validation_frame_counts.values()) <= 1 + min(
                     validation_frame_counts.values()
                 )
@@ -4513,10 +4531,13 @@ class TestWorkWithHoneypotTasks:
             gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
             active_gt_set = gt_frame_set[:honeypots_per_job]
 
-            api_client.jobs_api.partial_update_data_meta(
-                gt_job["id"],
-                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
-                    deleted_frames=[f for f in gt_frame_set if f not in active_gt_set]
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    disabled_frames=[f for f in gt_frame_set if f not in active_gt_set],
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [active_gt_set[0]],
                 ),
             )
 
@@ -4559,7 +4580,7 @@ class TestWorkWithHoneypotTasks:
             new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
 
             assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
-            assert all(f in active_gt_set for f in new_honeypot_real_frames)
+            assert all([f in active_gt_set for f in new_honeypot_real_frames])
 
             if frame_selection_method == "manual":
                 assert new_honeypot_real_frames == requested_honeypot_real_frames
@@ -4578,6 +4599,14 @@ class TestWorkWithHoneypotTasks:
                     ]
                 ), new_honeypot_real_frames
 
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames, included_frames=active_gt_set
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
+
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
     @parametrize("frame_selection_method", ["manual", "random_uniform"])
     def test_can_restore_and_change_honeypot_frames_in_task_in_the_same_request(
@@ -4595,10 +4624,13 @@ class TestWorkWithHoneypotTasks:
             gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
             active_gt_set = gt_frame_set[:honeypots_per_job]
 
-            api_client.jobs_api.partial_update_data_meta(
-                gt_job["id"],
-                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
-                    deleted_frames=[f for f in gt_frame_set if f not in active_gt_set]
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    disabled_frames=[f for f in gt_frame_set if f not in active_gt_set],
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [active_gt_set[0]],
                 ),
             )
 
@@ -4649,6 +4681,14 @@ class TestWorkWithHoneypotTasks:
                     ]
                     for j in range(len(annotation_jobs))
                 ), new_honeypot_real_frames
+
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames, included_frames=active_gt_set
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
     @parametrize("frame_selection_method", ["manual", "random_uniform"])
