@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+name: cvat
+
 x-backend-env: &backend-env
   CVAT_POSTGRES_HOST: cvat_db
   CVAT_REDIS_INMEM_HOST: cvat_redis_inmem

@@ -5,16 +5,19 @@
 
 import contextlib
 import http.server
+import io
 import ssl
 import threading
 import unittest
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
+import pytest
 import requests
+from cvat_sdk import make_client
 
-from shared.utils.config import BASE_URL
+from shared.utils.config import BASE_URL, USER_PASS
 from shared.utils.helpers import generate_image_file
 
 
@@ -84,3 +87,48 @@ class _ProxyHttpRequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         # Need to use raw here to prevent requests from handling Content-Encoding.
         self.wfile.write(response.raw.read())
+
+
+class TestCliBase:
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        restore_db_per_function,  # force fixture call order to allow DB setup
+        restore_redis_inmem_per_function,
+        restore_redis_ondisk_per_function,
+        fxt_stdout: io.StringIO,
+        tmp_path: Path,
+        admin_user: str,
+    ):
+        self.tmp_path = tmp_path
+        self.stdout = fxt_stdout
+        self.host, self.port = BASE_URL.rsplit(":", maxsplit=1)
+        self.user = admin_user
+        self.password = USER_PASS
+        self.client = make_client(
+            host=self.host, port=self.port, credentials=(self.user, self.password)
+        )
+        self.client.config.status_check_period = 0.01
+
+        yield
+
+    def run_cli(
+        self, cmd: str, *args: str, expected_code: int = 0, organization: Optional[str] = None
+    ) -> str:
+        common_args = [
+            f"--auth={self.user}:{self.password}",
+            f"--server-host={self.host}",
+            f"--server-port={self.port}",
+        ]
+
+        if organization is not None:
+            common_args.append(f"--organization={organization}")
+
+        run_cli(
+            self,
+            *common_args,
+            cmd,
+            *args,
+            expected_code=expected_code,
+        )
+        return self.stdout.getvalue()

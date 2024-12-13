@@ -6,11 +6,30 @@ from __future__ import annotations
 
 import attrs
 
-from typing import Optional, Union
+from typing import Optional, Union, Any
 from uuid import UUID
 from rq.job import Job as RQJob
 
 from .models import RequestAction, RequestTarget, RequestSubresource
+
+class RQMeta:
+    @staticmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+        return [
+            RQJobMetaField.FORMATTED_EXCEPTION,
+            RQJobMetaField.PROGRESS,
+            RQJobMetaField.TASK_PROGRESS,
+            RQJobMetaField.STATUS
+        ]
+
+    @classmethod
+    def reset_meta_on_retry(cls, meta_to_update: dict[RQJobMetaField, Any]) -> dict[RQJobMetaField, Any]:
+        resettable_fields = cls.get_resettable_fields()
+
+        return {
+            k: v for k, v in meta_to_update.items() if k not in resettable_fields
+        }
 
 class RQJobMetaField:
     # common fields
