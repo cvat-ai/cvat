@@ -1013,16 +1013,16 @@ class TestGetTaskDataset:
                         assert tuple(related_image["size"]) > (0, 0)
 
     @pytest.mark.parametrize(
-            "format_name, num_frames, frame_step, expected_frames",
-            [
-                ("Datumaro 1.0", 100, 5, 20),
-                ("COCO 1.0", 100, 5, 20),
-                ("CVAT for video 1.1", 100, 5, 20), # no remainder
-                ("CVAT for video 1.1", 97, 5, 20), # prime
-                ("CVAT for video 1.1", 97, 2, 49),
-                ("CVAT for video 1.1", 100, 3, 34), # three
-                    # we assert that expected frames are ceil(frames / step)
-            ]
+        "format_name, num_frames, frame_step, expected_frames",
+        [
+            ("Datumaro 1.0", 100, 5, 20),
+            ("COCO 1.0", 100, 5, 20),
+            ("CVAT for video 1.1", 100, 5, 20),  # no remainder
+            ("CVAT for video 1.1", 97, 5, 20),  # prime
+            ("CVAT for video 1.1", 97, 2, 49),
+            ("CVAT for video 1.1", 100, 3, 34),  # three
+            # we assert that expected frames are ceil(frames / step)
+        ],
     )
     def test_export_with_non_default_frame_step(
         self,
@@ -1036,23 +1036,23 @@ class TestGetTaskDataset:
         expected_frames: int,
     ):
         # parameter validation
-        assert expected_frames == math.ceil(num_frames / frame_step), 'Test params are wrong'
+        assert expected_frames == math.ceil(num_frames / frame_step), "Test params are wrong"
 
         spec = {
-            'name': f"test_video_frames_in_{format_name}_after_export",
-            "labels": [{"name": "goofy ahh car"}]
+            "name": f"test_video_frames_in_{format_name}_after_export",
+            "labels": [{"name": "goofy ahh car"}],
         }
 
         data = {
-            'image_quality': 70,
-            'client_files': [generate_video_file(num_frames)],
-            'frame_filter': f"step={frame_step}"
+            "image_quality": 70,
+            "client_files": [generate_video_file(num_frames)],
+            "frame_filter": f"step={frame_step}",
         }
 
         # create a task and get its instance
         (task_id, _) = create_task(admin_user, spec, data)
         with make_sdk_client(admin_user) as client:
-            task_obj: Task  = client.tasks.retrieve(task_id)
+            task_obj: Task = client.tasks.retrieve(task_id)
 
         # export the video
         dataset_file = tmp_path / "dataset.zip"
@@ -1060,10 +1060,10 @@ class TestGetTaskDataset:
 
         def get_png_index(zinfo: zipfile.ZipInfo) -> int:
             name = PurePosixPath(zinfo.filename)
-            if name.suffix.lower() != '.png':
+            if name.suffix.lower() != ".png":
                 return -1
             name = os.path.basename(name).removesuffix(name.suffix)
-            idx = name[name.rfind('_') + 1:]
+            idx = name[name.rfind("_") + 1 :]
             assert idx.isnumeric()
             return int(idx)
 
@@ -1072,10 +1072,8 @@ class TestGetTaskDataset:
             frames = [png_idx for png_idx in map(get_png_index, dataset.filelist) if png_idx != -1]
             frames.sort()
 
-
-        assert len(frames) == expected_frames, 'Some frames were lost'
-        assert frames == list(range(0, num_frames, frame_step)), 'Some frames are wrong'
-
+        assert len(frames) == expected_frames, "Some frames were lost"
+        assert frames == list(range(0, num_frames, frame_step)), "Some frames are wrong"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
