@@ -53,8 +53,13 @@ class ClientEventsSerializer(serializers.Serializer):
         data = super().to_internal_value(data)
         request = self.context.get("request")
         org = request.iam_context["organization"]
-        org_id = getattr(org, "id", None)
-        org_slug = getattr(org, "slug", None)
+        user_and_org_data = {
+            "org_id": getattr(org, "id", None),
+            "org_slug": getattr(org, "slug", None),
+            "user_id": request.user.id,
+            "user_name": request.user.username,
+            "user_email": request.user.email,
+        }
 
         send_time = data["timestamp"]
         receive_time = datetime.datetime.now(datetime.timezone.utc)
@@ -77,12 +82,8 @@ class ClientEventsSerializer(serializers.Serializer):
             event.update({
                 "timestamp": event["timestamp"] + time_correction,
                 "source": source,
-                "org_id": event.get("org_id", org_id),
-                "org_slug": event.get("org_slug", org_slug),
-                "user_id": event.get("user_id", request.user.id),
-                "user_name": event.get("user_name", request.user.username),
-                "user_email": event.get("user_email", request.user.email),
                 "payload": json.dumps(payload),
+                **(user_and_org_data if source == 'client' else {})
             })
 
         return data
