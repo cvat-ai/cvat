@@ -1916,7 +1916,7 @@ class ExportBehaviorTest(_DbTestBase):
         set_condition = self.set_condition
 
         export_fn_started_by_1st_process = self.SharedBool()
-        export_fn_finished_by_1st_process = self.SharedBool()
+        file_replacement_by_1st_process = self.SharedBool()
         export_fn_started_by_2nd_process = self.SharedBool()
         export_fn_finished_by_2nd_process = self.SharedBool()
 
@@ -1931,12 +1931,13 @@ class ExportBehaviorTest(_DbTestBase):
             export_fn_finished: self.SharedBool | None = None,
             wait_before_fn_finish: self.SharedBool | None = None,
             wait_before_replace: self.SharedBool | None = None,
+            file_replacement: self.SharedBool | None = None,
         ):
             from os import replace as original_replace
 
             from cvat.apps.dataset_manager.task import export_task as original_export_task
 
-            lock_ttl = 2
+            lock_ttl = 4
             lock_acquire_timeout = lock_ttl * 2
 
             with (
@@ -1956,13 +1957,14 @@ class ExportBehaviorTest(_DbTestBase):
                 mock_export_fn.side_effect = chain_side_effects(
                     side_effect(set_condition, export_fn_started),
                     original_export_task,
-                    *((side_effect(wait_condition, wait_before_fn_finish, 10),) if wait_before_fn_finish is not None else []),
                     *((side_effect(set_condition, export_fn_finished),) if export_fn_finished is not None else []),
+                    *((side_effect(wait_condition, wait_before_fn_finish, 10),) if wait_before_fn_finish is not None else []),
                 )
 
                 mock_os_replace.side_effect = chain_side_effects(
                     *((side_effect(wait_condition, wait_before_replace, 10),) if wait_before_replace is not None else []),
-                    original_replace
+                    original_replace,
+                    *((side_effect(set_condition, file_replacement),) if file_replacement is not None else []),
                 )
                 result_file_path = export(dst_format=format_name, task_id=task_id)
                 result_queue.put(result_file_path)
@@ -1984,8 +1986,8 @@ class ExportBehaviorTest(_DbTestBase):
                             result_queue=result_queue,
                             export_fn_started=export_fn_started_by_1st_process,
                             wait_before_fn_finish=export_fn_started_by_2nd_process,
-                            export_fn_finished=export_fn_finished_by_1st_process,
                             wait_before_replace=export_fn_finished_by_2nd_process,
+                            file_replacement=file_replacement_by_1st_process,
                         ),
                     )
                 )
@@ -1999,6 +2001,7 @@ class ExportBehaviorTest(_DbTestBase):
                             result_queue=result_queue,
                             export_fn_started=export_fn_started_by_2nd_process,
                             export_fn_finished=export_fn_finished_by_2nd_process,
+                            wait_before_fn_finish=file_replacement_by_1st_process,
                         ),
                     )
                 )
@@ -2008,8 +2011,8 @@ class ExportBehaviorTest(_DbTestBase):
             wait_condition(export_fn_started_by_1st_process)
 
             export_process_2.start()
-            export_process_2.join(timeout=10)
-            export_process_1.join(timeout=10)
+            export_process_2.join(timeout=20)
+            export_process_1.join(timeout=20)
 
             self.assertFalse(export_process_1.is_alive())
             self.assertFalse(export_process_2.is_alive())
