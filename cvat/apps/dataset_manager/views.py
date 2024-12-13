@@ -23,6 +23,7 @@ import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.utils import get_rq_lock_by_user
+from cvat.apps.engine.rq_job_handler import RQMeta
 
 from django.db.models import QuerySet
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
@@ -87,7 +88,7 @@ def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
                 *current_rq_job.args,
                 **current_rq_job.kwargs,
                 job_id=current_rq_job.id,
-                meta=current_rq_job.meta,
+                meta=RQMeta.reset_meta_on_retry(current_rq_job.meta),
                 job_ttl=current_rq_job.ttl,
                 job_result_ttl=current_rq_job.result_ttl,
                 job_description=current_rq_job.description,

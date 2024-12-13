@@ -2265,6 +2265,15 @@ class TestPostTaskData:
             validation_frames
         )
 
+        if frame_selection_method == "random_uniform":
+            # Test distribution
+            validation_frame_counts = {
+                f: annotation_job_frame_counts.get(f, 0) + 1 for f in validation_frames
+            }
+            assert max(validation_frame_counts.values()) <= 1 + min(
+                validation_frame_counts.values()
+            )
+
         # each job must have the specified number of validation frames
         for job_meta in annotation_job_metas:
             assert (
@@ -4468,6 +4477,15 @@ class TestWorkWithHoneypotTasks:
 
             if frame_selection_method == "manual":
                 assert new_honeypot_real_frames == requested_honeypot_real_frames
+            elif frame_selection_method == "random_uniform":
+                # Test distribution
+                validation_frame_counts = {f: 0 for f in new_validation_layout["validation_frames"]}
+                for f in new_honeypot_real_frames:
+                    validation_frame_counts[f] += 1
+
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
 
             assert (
                 DeepDiff(

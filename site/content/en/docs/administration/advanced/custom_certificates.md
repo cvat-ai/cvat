@@ -48,7 +48,7 @@ tls:
         keyFile: /certs/key.pem
 ```
 
-Edit the `docker-compose.https.yml` file and change the traefik servise configuration as follows:
+Edit the `docker-compose.https.yml` file and change the traefik service configuration as follows:
 
 ```yaml
   traefik:

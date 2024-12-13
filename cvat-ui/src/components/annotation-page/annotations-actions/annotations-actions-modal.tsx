@@ -4,9 +4,11 @@
 
 import './styles.scss';
 
-import React, {
-    useEffect, useReducer, useRef, useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createStore } from 'redux';
+import {
+    Provider, shallowEqual, useDispatch, useSelector,
+} from 'react-redux';
 import { createRoot } from 'react-dom/client';
 import Button from 'antd/lib/button';
 import { Col, Row } from 'antd/lib/grid';
@@ -17,14 +19,14 @@ import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import InputNumber from 'antd/lib/input-number';
+import Switch from 'antd/lib/switch';
 
 import config from 'config';
-import { useIsMounted } from 'utils/hooks';
 import { createAction, ActionUnion } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
 import {
     BaseCollectionAction, BaseAction, Job, getCore,
-    ObjectState,
+    ObjectState, ActionParameterType,
 } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
@@ -35,18 +37,20 @@ const core = getCore();
 interface State {
     actions: BaseAction[];
     activeAction: BaseAction | null;
+    initialized: boolean;
     fetching: boolean;
     progress: number | null;
     progressMessage: string | null;
     cancelled: boolean;
     frameFrom: number;
     frameTo: number;
-    actionParameters: Record<string, string>;
+    actionParameters: Record<string, Record<string, string>>;
     modalVisible: boolean;
     targetObjectState?: ObjectState | null;
 }
 
 enum ReducerActionType {
+    SET_INITIALIZED = 'SET_INITIALIZED',
     SET_ANNOTATIONS_ACTIONS = 'SET_ANNOTATIONS_ACTIONS',
     SET_ACTIVE_ANNOTATIONS_ACTION = 'SET_ACTIVE_ANNOTATIONS_ACTION',
     UPDATE_PROGRESS = 'UPDATE_PROGRESS',
@@ -55,11 +59,15 @@ enum ReducerActionType {
     CANCEL_ACTION = 'CANCEL_ACTION',
     UPDATE_FRAME_FROM = 'UPDATE_FRAME_FROM',
     UPDATE_FRAME_TO = 'UPDATE_FRAME_TO',
+    UPDATE_TARGET_OBJECT_STATE = 'UPDATE_TARGET_OBJECT_STATE',
     UPDATE_ACTION_PARAMETER = 'UPDATE_ACTION_PARAMETER',
     SET_VISIBLE = 'SET_VISIBLE',
 }
 
 export const reducerActions = {
+    setInitialized: (initialized: boolean) => (
+        createAction(ReducerActionType.SET_INITIALIZED, { initialized })
+    ),
     setAnnotationsActions: (actions: BaseAction[]) => (
         createAction(ReducerActionType.SET_ANNOTATIONS_ACTIONS, { actions })
     ),
@@ -84,6 +92,9 @@ export const reducerActions = {
     updateFrameTo: (frameTo: number) => (
         createAction(ReducerActionType.UPDATE_FRAME_TO, { frameTo })
     ),
+    updateTargetObjectState: (targetObjectState: ObjectState | null) => (
+        createAction(ReducerActionType.UPDATE_TARGET_OBJECT_STATE, { targetObjectState })
+    ),
     updateActionParameter: (name: string, value: string) => (
         createAction(ReducerActionType.UPDATE_ACTION_PARAMETER, { name, value })
     ),
@@ -92,70 +103,54 @@ export const reducerActions = {
     ),
 };
 
-const KEEP_LATEST = 5;
-let lastSelectedActions: [string, Record<string, string>][] = [];
-function updateLatestActions(name: string, parameters: Record<string, string> = {}): void {
-    const idx = lastSelectedActions.findIndex((el) => el[0] === name);
-    if (idx === -1) {
-        lastSelectedActions = [[name, parameters], ...lastSelectedActions];
-    } else {
-        lastSelectedActions = [
-            [name, parameters],
-            ...lastSelectedActions.slice(0, idx),
-            ...lastSelectedActions.slice(idx + 1),
-        ];
-    }
+const defaultState = {
+    actions: [],
+    initialized: false,
+    fetching: false,
+    activeAction: null,
+    progress: null,
+    progressMessage: null,
+    cancelled: false,
+    frameFrom: 0,
+    frameTo: 0,
+    actionParameters: {},
+    modalVisible: true,
+    targetObjectState: null,
+};
 
-    lastSelectedActions = lastSelectedActions.slice(-KEEP_LATEST);
-}
-
-const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
-    if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
-        const { actions } = action.payload;
-        const list = state.targetObjectState ? actions
-            .filter((_action) => _action.isApplicableForObject(state.targetObjectState as ObjectState)) : actions;
-
-        let activeAction = null;
-        let activeActionParameters = {};
-        for (const item of lastSelectedActions) {
-            const [actionName, actionParameters] = item;
-            const candidate = list.find((el) => el.name === actionName);
-            if (candidate) {
-                activeAction = candidate;
-                activeActionParameters = actionParameters;
-                break;
-            }
-        }
-
+const reducer = (state: State = { ...defaultState }, action: ActionUnion<typeof reducerActions>): State => {
+    if (action.type === ReducerActionType.SET_INITIALIZED) {
         return {
             ...state,
-            actions: list,
-            activeAction: activeAction ?? list[0] ?? null,
-            actionParameters: activeActionParameters,
+            initialized: action.payload.initialized,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
+        const { actions } = action.payload;
+        const { targetObjectState } = state;
+
+        const filteredActions = targetObjectState ? actions
+            .filter((_action) => _action.isApplicableForObject(targetObjectState)) : actions;
+        return {
+            ...state,
+            actions,
+            activeAction: filteredActions[0] ?? null,
         };
     }
 
     if (action.type === ReducerActionType.SET_ACTIVE_ANNOTATIONS_ACTION) {
         const { activeAction } = action.payload;
-        updateLatestActions(activeAction.name, {});
+        const { targetObjectState } = state;
 
-        if (action.payload.activeAction instanceof BaseCollectionAction) {
-            const storage = getCVATStore();
-            const currentFrame = storage.getState().annotation.player.frame.number;
+        if (!targetObjectState || activeAction.isApplicableForObject(targetObjectState)) {
             return {
                 ...state,
-                frameFrom: currentFrame,
-                frameTo: currentFrame,
-                activeAction: action.payload.activeAction,
-                actionParameters: {},
+                activeAction,
             };
         }
 
-        return {
-            ...state,
-            activeAction: action.payload.activeAction,
-            actionParameters: {},
-        };
+        return state;
     }
 
     if (action.type === ReducerActionType.UPDATE_PROGRESS) {
@@ -208,16 +203,16 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     }
 
     if (action.type === ReducerActionType.UPDATE_ACTION_PARAMETER) {
-        const updatedActionParameters = {
-            ...state.actionParameters,
-            [action.payload.name]: action.payload.value,
-        };
-
-        updateLatestActions((state.activeAction as BaseAction).name, updatedActionParameters);
-
+        const currentActionName = (state.activeAction as BaseAction).name;
         return {
             ...state,
-            actionParameters: updatedActionParameters,
+            actionParameters: {
+                ...state.actionParameters,
+                [currentActionName]: {
+                    ...state.actionParameters[currentActionName] ?? {},
+                    [action.payload.name]: action.payload.value,
+                },
+            },
         };
     }
 
@@ -228,10 +223,41 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.UPDATE_TARGET_OBJECT_STATE) {
+        const { targetObjectState } = action.payload;
+        let { activeAction } = state;
+
+        if (activeAction && targetObjectState && !activeAction.isApplicableForObject(targetObjectState)) {
+            const filtered = state.actions.filter((_action) => _action.isApplicableForObject(targetObjectState));
+            activeAction = filtered[0] ?? null;
+        }
+
+        return {
+            ...state,
+            activeAction,
+            targetObjectState: action.payload.targetObjectState,
+        };
+    }
+
     return state;
 };
 
 type ActionParameterProps = NonNullable<BaseAction['parameters']>[keyof BaseAction['parameters']];
+
+const componentStorage = createStore(reducer, {
+    actions: [],
+    initialized: false,
+    fetching: false,
+    activeAction: null,
+    progress: null,
+    progressMessage: null,
+    cancelled: false,
+    frameFrom: 0,
+    frameTo: 0,
+    actionParameters: {},
+    modalVisible: true,
+    targetObjectState: null,
+});
 
 function ActionParameterComponent(props: ActionParameterProps & { onChange: (value: string) => void }): JSX.Element {
     const {
@@ -248,7 +274,7 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
 
     const computedValues = typeof values === 'function' ? values({ instance: job }) : values;
 
-    if (type === 'select') {
+    if (type === ActionParameterType.SELECT) {
         return (
             <Select value={value} onChange={setValue}>
                 {computedValues.map((_value: string) => (
@@ -258,8 +284,18 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
         );
     }
 
-    const [min, max, step] = computedValues.map((val) => +val);
+    if (type === ActionParameterType.CHECKBOX) {
+        return (
+            <Switch
+                checked={value.toLowerCase() === 'true'}
+                onChange={(val: boolean) => {
+                    setValue(String(val));
+                }}
+            />
+        );
+    }
 
+    const [min, max, step] = computedValues.map((val) => +val);
     return (
         <InputNumber
             value={+value}
@@ -287,39 +323,34 @@ interface Props {
 
 function AnnotationsActionsModalContent(props: Props): JSX.Element {
     const { onClose, targetObjectState: defaultTargetObjectState } = props;
-    const isMounted = useIsMounted();
+    const dispatch = useDispatch();
     const storage = getCVATStore();
     const cancellationRef = useRef<boolean>(false);
-    const jobInstance = storage.getState().annotation.job.instance as Job;
+    const {
+        initialized, actions, activeAction, fetching, targetObjectState, cancelled,
+        progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
+    } = useSelector((state: State) => ({ ...state }), shallowEqual);
 
-    const [state, dispatch] = useReducer(reducer, {
-        actions: [],
-        fetching: false,
-        activeAction: null,
-        progress: null,
-        progressMessage: null,
-        cancelled: false,
-        frameFrom: jobInstance.startFrame,
-        frameTo: jobInstance.stopFrame,
-        actionParameters: {},
-        modalVisible: true,
-        targetObjectState: defaultTargetObjectState ?? null,
-    });
+    const filteredActions = targetObjectState ? actions
+        .filter((_action) => _action.isApplicableForObject(targetObjectState)) : actions;
+    const jobInstance = storage.getState().annotation.job.instance as Job;
+    const currentFrameAction = activeAction instanceof BaseCollectionAction || targetObjectState !== null;
 
     useEffect(() => {
-        core.actions.list().then((list: BaseAction[]) => {
-            if (isMounted()) {
-                dispatch(reducerActions.setAnnotationsActions(list));
-            }
-        });
+        dispatch(reducerActions.setVisible(true));
+        dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
+        dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
+        dispatch(reducerActions.updateTargetObjectState(defaultTargetObjectState ?? null));
     }, []);
 
-    const {
-        actions, activeAction, fetching, targetObjectState,
-        progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
-    } = state;
-
-    const currentFrameAction = activeAction instanceof BaseCollectionAction || targetObjectState !== null;
+    useEffect(() => {
+        if (!initialized) {
+            core.actions.list().then((list: BaseAction[]) => {
+                dispatch(reducerActions.setAnnotationsActions(list));
+                dispatch(reducerActions.setInitialized(true));
+            });
+        }
+    }, [initialized]);
 
     return (
         <Modal
@@ -368,14 +399,14 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                             <Select
                                 value={activeAction?.name}
                                 onChange={(newActiveActionName: string) => {
-                                    const newActiveAction = actions
+                                    const newActiveAction = filteredActions
                                         .find((action) => action.name === newActiveActionName);
                                     if (newActiveAction) {
                                         dispatch(reducerActions.setActiveAnnotationsAction(newActiveAction));
                                     }
                                 }}
                             >
-                                {actions.map(
+                                {filteredActions.map(
                                     (annotationFunction: BaseAction): JSX.Element => (
                                         <Select.Option
                                             value={annotationFunction.name}
@@ -500,13 +531,17 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                             </Col>
                             {Object.entries(activeAction.parameters)
                                 .map(([name, { defaultValue, type, values }], idx) => (
-                                    <Col key={idx} span={24} className='cvat-action-runner-action-parameter'>
+                                    <Col
+                                        key={`${activeAction.name}_${idx}`}
+                                        span={24}
+                                        className='cvat-action-runner-action-parameter'
+                                    >
                                         <Text>{name}</Text>
                                         <ActionParameterComponent
                                             onChange={(value: string) => {
                                                 dispatch(reducerActions.updateActionParameter(name, value));
                                             }}
-                                            defaultValue={actionParameters[name] ?? defaultValue}
+                                            defaultValue={actionParameters[activeAction.name]?.[name] ?? defaultValue}
                                             type={type}
                                             values={values}
                                         />
@@ -529,7 +564,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                 <Col span={24} className='cvat-action-runner-buttons'>
                     <Button
                         className='cvat-action-runner-cancel-btn'
-                        loading={state.cancelled}
+                        loading={cancelled}
                         onClick={() => {
                             if (fetching) {
                                 dispatch(reducerActions.cancelAction());
@@ -555,25 +590,24 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 cancellationRef.current = false;
                                 dispatch(reducerActions.resetBeforeRun());
                                 const updateProgressWrapper = (_message: string, _progress: number): void => {
-                                    if (isMounted()) {
-                                        dispatch(reducerActions.updateProgress(_progress, _message));
-                                    }
+                                    dispatch(reducerActions.updateProgress(_progress, _message));
                                 };
 
+                                const currentFrame = storage.getState().annotation.player.frame.number;
                                 const actionPromise = targetObjectState ? core.actions.call(
                                     jobInstance,
                                     activeAction,
-                                    actionParameters,
-                                    storage.getState().annotation.player.frame.number,
+                                    actionParameters[activeAction.name],
+                                    currentFrame,
                                     [targetObjectState],
                                     updateProgressWrapper,
                                     () => cancellationRef.current,
                                 ) : core.actions.run(
                                     jobInstance,
                                     activeAction,
-                                    actionParameters,
-                                    frameFrom,
-                                    frameTo,
+                                    actionParameters[activeAction.name],
+                                    currentFrameAction ? currentFrame : frameFrom,
+                                    currentFrameAction ? currentFrame : frameTo,
                                     storage.getState().annotation.annotations.filters,
                                     updateProgressWrapper,
                                     () => cancellationRef.current,
@@ -583,16 +617,12 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                     if (!cancellationRef.current) {
                                         canvasInstance.setup(frameData, []);
                                         storage.dispatch(fetchAnnotationsAsync());
-                                        if (isMounted()) {
-                                            if (targetObjectState !== null) {
-                                                onClose();
-                                            }
+                                        if (targetObjectState !== null) {
+                                            onClose();
                                         }
                                     }
                                 }).finally(() => {
-                                    if (isMounted()) {
-                                        dispatch(reducerActions.resetAfterRun());
-                                    }
+                                    dispatch(reducerActions.resetAfterRun());
                                 }).catch((error: unknown) => {
                                     if (error instanceof Error) {
                                         notification.error({
@@ -618,12 +648,14 @@ export function openAnnotationsActionModal(objectState?: ObjectState): void {
     window.document.body.append(div);
     const root = createRoot(div);
     root.render(
-        <MemoizedAnnotationsActionsModalContent
-            targetObjectState={objectState}
-            onClose={() => {
-                root.unmount();
-                div.remove();
-            }}
-        />,
+        <Provider store={componentStorage}>
+            <MemoizedAnnotationsActionsModalContent
+                targetObjectState={objectState}
+                onClose={() => {
+                    root.unmount();
+                    div.remove();
+                }}
+            />
+        </Provider>,
     );
 }
