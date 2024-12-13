@@ -49,6 +49,8 @@ yarn-error.log*
 
 # Ignore all the installed packages
 node_modules
+venv/
+.venv/
 
 # Ignore all js dists
 cvat-data/dist
