@@ -4402,7 +4402,7 @@ custom-error-instance@2.1.1:
     three "^0.156.1"
 
 "cvat-canvas@link:./cvat-canvas":
-  version "2.20.9"
+  version "2.20.10"
   dependencies:
     "@types/polylabel" "^1.0.5"
     polylabel "^1.1.0"
@@ -4413,7 +4413,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "15.2.0"
+  version "15.3.1"
   dependencies:
     axios "^1.7.4"
     axios-retry "^4.0.0"
@@ -8802,9 +8802,9 @@ nan@^2.17.0:
   integrity sha512-nO1xXxfh/RWNxfd/XPfbIfFk5vgLsAxUR9y5O0cHMJu/AW9U95JLXqthYHjEp+8gQ5p96K9jUp8nbVOxCdRbtw==
 
 nanoid@^3.3.7:
-  version "3.3.7"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.7.tgz#d0c301a691bc8d54efa0a2226ccf3fe2fd656bd8"
-  integrity sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==
+  version "3.3.8"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.8.tgz#b1be3030bee36aaff18bacb375e5cce521684baf"
+  integrity sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==
 
 natural-compare@^1.4.0:
   version "1.4.0"
