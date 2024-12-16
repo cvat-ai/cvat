@@ -1012,6 +1012,8 @@ class TestGetTaskDataset:
                     if "size" in related_image:
                         assert tuple(related_image["size"]) > (0, 0)
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @pytest.mark.parametrize(
         "format_name, num_frames, frame_step, expected_frames",
         [
@@ -1060,7 +1062,7 @@ class TestGetTaskDataset:
 
         def get_png_index(zinfo: zipfile.ZipInfo) -> int:
             name = PurePosixPath(zinfo.filename)
-            if name.suffix.lower() != ".png":
+            if name.suffix.lower() != ".png": # png is usually for video
                 return -1
             name = os.path.basename(name).removesuffix(name.suffix)
             idx = name[name.rfind("_") + 1 :]
