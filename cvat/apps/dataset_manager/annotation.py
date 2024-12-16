@@ -7,7 +7,7 @@ from copy import copy, deepcopy
 
 import math
 from collections.abc import Container, Sequence
-from typing import Optional
+from typing import Collection, Optional
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
@@ -199,12 +199,14 @@ class AnnotationManager:
             # Tracks are not expected in the cases this function is supposed to be used
             raise AssertionError("Partial annotation cleanup is not supported for tracks")
 
-    def to_shapes(self,
+    def to_shapes(
+        self,
         end_frame: int,
         *,
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
+        deleted_frames: Optional[Collection[int]] = None,
     ) -> list:
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
@@ -212,9 +214,12 @@ class AnnotationManager:
         if included_frames is not None:
             shapes = [s for s in shapes if s["frame"] in included_frames]
 
-        return shapes + tracks.to_shapes(end_frame,
-            included_frames=included_frames, include_outside=include_outside,
-            use_server_track_ids=use_server_track_ids
+        return shapes + tracks.to_shapes(
+            end_frame,
+            included_frames=included_frames,
+            include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids,
+            deleted_frames=deleted_frames,
         )
 
     def to_tracks(self):
@@ -460,14 +465,21 @@ class ShapeManager(ObjectManager):
     def _modify_unmatched_object(self, obj, end_frame):
         pass
 
+
 class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame: int, *,
+    def to_shapes(
+        self,
+        end_frame: int,
+        *,
         included_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
+        deleted_frames: Optional[Collection[int]] = None,
     ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
+            if deleted_frames is not None:
+                track = dict(track, shapes=list(filter(lambda sh: sh['frame'] not in deleted_frames, track['shapes'])))
             track_id = track["id"] if use_server_track_ids else idx
             track_shapes = {}
 
@@ -497,10 +509,12 @@ class TrackManager(ObjectManager):
                 element_included_frames = set(track_shapes.keys())
                 if included_frames is not None:
                     element_included_frames = element_included_frames.intersection(included_frames)
-                element_shapes = track_elements.to_shapes(end_frame,
+                element_shapes = track_elements.to_shapes(
+                    end_frame,
                     included_frames=element_included_frames,
                     include_outside=True, # elements are controlled by the parent shape
-                    use_server_track_ids=use_server_track_ids
+                    use_server_track_ids=use_server_track_ids,
+                    deleted_frames=deleted_frames,
                 )
 
                 for shape in element_shapes:

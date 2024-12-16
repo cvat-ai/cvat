@@ -320,7 +320,7 @@ class CommonData(InstanceLabelData):
         return d
 
     def _init_frame_info(self):
-        self._deleted_frames = { k: True for k in self._db_data.deleted_frames }
+        self._deleted_frames = { k for k in self._db_data.deleted_frames }
 
         self._excluded_frames = set()
 
@@ -499,7 +499,8 @@ class CommonData(InstanceLabelData):
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
                 include_outside=False,
-                use_server_track_ids=self._use_server_track_ids
+                use_server_track_ids=self._use_server_track_ids,
+                deleted_frames=self.deleted_frames,
             ),
             key=lambda shape: shape.get("z_order", 0)
         ):
@@ -695,7 +696,7 @@ class CommonData(InstanceLabelData):
         return self._frame_info
 
     @property
-    def deleted_frames(self):
+    def deleted_frames(self) -> set[int]:
         return self._deleted_frames
 
     @property
@@ -1298,7 +1299,8 @@ class ProjectData(InstanceLabelData):
                     task.data.size,
                     included_frames=task_included_frames,
                     include_outside=False,
-                    use_server_track_ids=self._use_server_track_ids
+                    use_server_track_ids=self._use_server_track_ids,
+                    deleted_frames=task_data.deleted_frames,
                 ),
                 key=lambda shape: shape.get("z_order", 0)
             ):
