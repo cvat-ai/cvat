@@ -35,7 +35,7 @@ class TestCliProjects(TestCliBase):
             "https://bugs.example/",
         )
 
-        project_id = int(stdout.split()[-1])
+        project_id = int(stdout.rstrip("\n"))
         created_project = self.client.projects.retrieve(project_id)
         assert created_project.name == "new_project"
         assert created_project.bug_tracker == "https://bugs.example/"
@@ -52,7 +52,7 @@ class TestCliProjects(TestCliBase):
             "COCO 1.0",
         )
 
-        project_id = int(stdout.split()[-1])
+        project_id = int(stdout.rstrip("\n"))
         created_project = self.client.projects.retrieve(project_id)
         assert created_project.name == "new_project"
         assert {label.name for label in created_project.get_labels()} == {"car", "person"}

@@ -83,7 +83,7 @@ class ProjectCreate:
             dataset_format=dataset_format,
             status_check_period=status_check_period,
         )
-        print(f"Created project ID {project.id}")
+        print(project.id)
 
 
 @COMMANDS.command_class("delete")
