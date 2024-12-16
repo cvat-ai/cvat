@@ -1062,7 +1062,7 @@ class TestGetTaskDataset:
 
         def get_png_index(zinfo: zipfile.ZipInfo) -> int:
             name = PurePosixPath(zinfo.filename)
-            if name.suffix.lower() != ".png": # png is usually for video
+            if name.suffix.lower() != ".png":  # png is usually for video
                 return -1
             name = os.path.basename(name).removesuffix(name.suffix)
             idx = name[name.rfind("_") + 1 :]
