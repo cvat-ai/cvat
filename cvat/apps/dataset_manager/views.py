@@ -30,8 +30,7 @@ from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     LockNotAvailableError,
     current_function_name, get_export_cache_lock,
-    make_export_filename,
-    parse_export_file_path
+    ExportCacheManager
 )
 
 slogger = ServerLogManager(__name__)
@@ -64,7 +63,7 @@ def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
 
     return TTL_CONSTS[db_instance.lower()]
 
-def _retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
+def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     # TODO: implement using retries once we move from rq_scheduler to builtin RQ scheduler
     # for better reliability and error reporting
 
@@ -130,8 +129,9 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
             ))
             instance_update_time = max(tasks_update + [instance_update_time])
 
-        output_path = make_export_filename(
-            cache_dir, save_images, instance_update_time.timestamp(), dst_format
+        output_path = ExportCacheManager.make_dataset_file_path(
+            cache_dir, save_images=save_images, instance_timestamp=instance_update_time.timestamp(),
+            format_name=dst_format
         )
 
         os.makedirs(cache_dir, exist_ok=True)
@@ -158,7 +158,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
         return output_path
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
-        _retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
+        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
         logger.info(
             "Failed to acquire export cache lock. Retrying in {}".format(
                 EXPORT_LOCKED_RETRY_INTERVAL
@@ -204,13 +204,12 @@ def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
             if not osp.exists(file_path):
                 logger.error("Export cache file '{}' doesn't exist".format(file_path))
 
-            # TODO: update for backups
-            parsed_filename = parse_export_file_path(file_path)
+            parsed_filename = ExportCacheManager.parse_file_path(file_path)
             cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
             if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
                 logger.info(
-                    "Export cache file '{}' is recently accessed".format(file_path)
+                    "Cache file '{}' is recently accessed".format(file_path)
                 )
                 raise FileIsBeingUsedError
 

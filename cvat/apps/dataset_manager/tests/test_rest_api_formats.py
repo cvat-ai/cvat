@@ -36,7 +36,7 @@ from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskD
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
-from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
+from cvat.apps.dataset_manager.views import clear_export_cache, export
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
 

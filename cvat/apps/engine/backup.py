@@ -10,11 +10,14 @@ import re
 import shutil
 import tempfile
 import uuid
+from abc import ABCMeta, abstractmethod
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Collection, Dict, Iterable, Optional, Union
+from typing import Any, Collection, Dict, Iterable, Optional, Union, Type
 from zipfile import ZipFile
+import logging
+from datetime import timedelta
 
 import django_rq
 from django.conf import settings
@@ -28,6 +31,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.util import ExportCacheManager, get_export_cache_lock, LockNotAvailableError
+from cvat.apps.dataset_manager.views import EXPORT_LOCKED_RETRY_INTERVAL, retry_current_rq_job
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, JobWriteSerializer,
@@ -307,7 +312,7 @@ class _TaskBackupBase(_BackupBase):
             return db_jobs
         return ()
 
-class _ExporterBase():
+class _ExporterBase(metaclass=ABCMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -334,6 +339,10 @@ class _ExporterBase():
                     files=(os.path.join(root, f) for f in files if not exclude_files or f not in exclude_files),
                     target_dir=target_dir,
                 )
+
+    @abstractmethod
+    def export_to(self, file: str | ZipFile, **kwargs):
+        ...
 
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
@@ -521,7 +530,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_annotations(zip_obj, target_dir)
         self._write_annotation_guide(zip_obj, target_dir)
 
-    def export_to(self, file, target_dir=None):
+    def export_to(self, file: str | ZipFile, target_dir: str | None = None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
                 self._db_task.data.storage == StorageChoice.SHARE:
             raise Exception('The task cannot be exported because it does not contain any raw data')
@@ -933,8 +942,8 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
         zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(project))
 
-    def export_to(self, filename):
-        with ZipFile(filename, 'w') as output_file:
+    def export_to(self, file: str):
+        with ZipFile(file, 'w') as output_file:
             self._write_annotation_guide(output_file)
             self._write_manifest(output_file)
             self._write_tasks(output_file)
@@ -1015,37 +1024,64 @@ def _import_project(filename, user, org_id):
     db_project = project_importer.import_project()
     return db_project.id
 
-def create_backup(db_instance: models.Project | models.Task, Exporter, output_path, logger, cache_ttl):
+
+def create_backup(
+    # FUTURE-FIXME: there db_instance_id should be passed
+    db_instance: models.Project | models.Task,
+    Exporter: Type[ProjectExporter | TaskExporter],
+    logger: logging.Logger,
+    cache_ttl: timedelta,
+):
     try:
         cache_dir = db_instance.get_export_cache_directory(create=True)
-        output_path = os.path.join(cache_dir, output_path)
+        db_instance.refresh_from_db(fields=['updated_date'])
+        instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 
-        instance_time = timezone.localtime(db_instance.updated_date).timestamp()
-        if not (os.path.exists(output_path) and \
-                instance_time <= os.path.getmtime(output_path)):
-            with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
-                temp_file = os.path.join(temp_dir, 'dump')
-                exporter = Exporter(db_instance.id)
-                exporter.export_to(temp_file)
+        output_path = ExportCacheManager.make_backup_file_path(cache_dir, instance_timestamp=instance_timestamp)
+
+        with get_export_cache_lock(
+            output_path,
+            block=True,
+            # TODO: update after merging #8721 (DATASET_CACHE_LOCK_ACQUISITION_TIMEOUT, DATASET_EXPORT_LOCK_TTL)
+            acquire_timeout=60,
+            ttl=30,
+        ):
+            # output_path includes timestamp of the last update
+            if os.path.exists(output_path):
+                # TODO: update after merging #8721
+                # extend_export_file_lifetime(output_path)
+                return output_path
+
+        with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
+            temp_file = os.path.join(temp_dir, 'dump')
+            exporter = Exporter(db_instance.id)
+            exporter.export_to(temp_file)
+
+            with get_export_cache_lock(
+                output_path,
+                block=True,
+                # TODO: update after merging #8721 (DATASET_CACHE_LOCK_ACQUISITION_TIMEOUT, DATASET_EXPORT_LOCK_TTL)
+                acquire_timeout=60,
+                ttl=30,
+            ):
                 os.replace(temp_file, output_path)
 
-            # TODO: move into cron job
-            archive_ctime = os.path.getctime(output_path)
-            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
-            cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
-                func=_clear_export_cache,
-                file_path=output_path,
-                file_ctime=archive_ctime,
-                logger=logger)
             logger.info(
-                "The {} '{}' is backuped at '{}' "
-                "and available for downloading for the next {}. "
-                "Export cache cleaning job is enqueued, id '{}'".format(
-                    "project" if isinstance(db_instance, Project) else 'task',
-                    db_instance.name, output_path, cache_ttl,
-                    cleaning_job.id))
+                f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
+                f"and available for downloading for the next {cache_ttl}."
+            )
 
         return output_path
+    except LockNotAvailableError:
+        # Need to retry later if the lock was not available
+        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
+        logger.info(
+            "Failed to acquire export cache lock. Retrying in {}".format(
+                EXPORT_LOCKED_RETRY_INTERVAL
+            )
+        )
+        raise
+
     except Exception:
         log_exception(logger)
         raise

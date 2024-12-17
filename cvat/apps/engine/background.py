@@ -463,8 +463,6 @@ class DatasetExportManager(_ResourceExportManager):
             db_storage = None
             result_url = self.make_result_url()
 
-        self.db_instance.touch_last_export_date()
-
         with get_rq_lock_by_user(queue, user_id):
             queue.enqueue_call(
                 func=func,
@@ -477,6 +475,8 @@ class DatasetExportManager(_ResourceExportManager):
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),
             )
+
+        self.db_instance.touch_last_export_date()
 
     def get_v1_endpoint_view_name(self) -> str:
         """
@@ -531,6 +531,10 @@ class BackupExportManager(_ResourceExportManager):
         rq_job: Optional[RQJob],
         queue: DjangoRQ,
     ) -> Optional[Response]:
+
+        def is_result_outdated() -> bool:
+            return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < last_instance_update_time
+
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
 
@@ -590,25 +594,34 @@ class BackupExportManager(_ResourceExportManager):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                elif not os.path.exists(file_path):
-                    return Response(
-                        "The export result is not found",
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
                 if action == "download":
-                    filename = self.export_args.filename or build_backup_file_name(
-                        class_name=self.resource,
-                        identifier=self.db_instance.name,
-                        timestamp=timestamp,
-                        extension=os.path.splitext(file_path)[1],
-                    )
+                    # TODO: update after 8721
+                    with dm.util.get_export_cache_lock(file_path, ttl=55, acquire_timeout=50):
+                        if not os.path.exists(file_path):
+                            return Response(
+                                "The backup file has been expired, please retry backing up",
+                                status=status.HTTP_404_NOT_FOUND,
+                            )
 
-                    rq_job.delete()
-                    return sendfile(
-                        self.request, file_path, attachment=True, attachment_filename=filename
-                    )
+                        filename = self.export_args.filename or build_backup_file_name(
+                            class_name=self.resource,
+                            identifier=self.db_instance.name,
+                            timestamp=timestamp,
+                            extension=os.path.splitext(file_path)[1],
+                        )
 
-                return Response(status=status.HTTP_201_CREATED)
+                        rq_job.delete()
+                        return sendfile(
+                            self.request, file_path, attachment=True, attachment_filename=filename
+                        )
+                # TODO: update after 8721
+                with dm.util.get_export_cache_lock(file_path, ttl=55, acquire_timeout=50):
+                    if osp.exists(file_path) and not is_result_outdated():
+                        # extend_export_file_lifetime(file_path)
+                        return Response(status=status.HTTP_201_CREATED)
+
+                cancel_and_delete(rq_job)
+                return None
             else:
                 raise NotImplementedError(
                     f"Export to {self.export_args.location} location is not implemented yet"
@@ -685,7 +698,6 @@ class BackupExportManager(_ResourceExportManager):
         func_args = (
             self.db_instance,
             Exporter,
-            "{}_backup.zip".format(self.resource),
             logger,
             cache_ttl,
         )
@@ -738,6 +750,8 @@ class BackupExportManager(_ResourceExportManager):
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),
             )
+
+        self.db_instance.touch_last_export_date()
 
     def get_v1_endpoint_view_name(self) -> str:
         """Get view name of the endpoint for the first API version"""

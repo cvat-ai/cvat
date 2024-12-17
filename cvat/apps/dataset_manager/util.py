@@ -12,6 +12,7 @@ from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
+from enum import Enum
 from threading import Lock
 from typing import Any, Optional
 
@@ -39,7 +40,7 @@ def make_zip_archive(src_path, dst_path):
 def bulk_create(db_model, objects, flt_param):
     if objects:
         if flt_param:
-            if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
+            if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
                 return db_model.objects.bulk_create(objects)
             else:
                 ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
@@ -51,8 +52,10 @@ def bulk_create(db_model, objects, flt_param):
 
     return []
 
+
 def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
     return field in queryset._prefetch_related_lookups
+
 
 def add_prefetch_fields(queryset: models.QuerySet, fields: Sequence[str]) -> models.QuerySet:
     for field in fields:
@@ -60,6 +63,7 @@ def add_prefetch_fields(queryset: models.QuerySet, fields: Sequence[str]) -> mod
             queryset = queryset.prefetch_related(field)
 
     return queryset
+
 
 def get_cached(queryset: models.QuerySet, pk: int) -> models.Model:
     """
@@ -79,6 +83,7 @@ def get_cached(queryset: models.QuerySet, pk: int) -> models.Model:
         result = queryset.get(id=pk)
 
     return result
+
 
 def faster_deepcopy(v):
     "A slightly optimized version of the default deepcopy, can be used as a drop-in replacement."
@@ -144,77 +149,132 @@ def get_export_cache_lock(
             lock.release()
 
 
-
-def make_export_filename(
-    dst_dir: str,
-    save_images: bool,
-    instance_timestamp: float,
-    format_name: str,
-) -> str:
-    from .formats.registry import EXPORT_FORMATS
-    file_ext = EXPORT_FORMATS[format_name].EXT
-
-    filename = '%s-instance%f-%s.%s' % (
-        'dataset' if save_images else 'annotations',
-        # store the instance timestamp in the file name to reliably get this information
-        # ctime / mtime do not return file creation time on linux
-        # mtime is used for file usage checks
-        instance_timestamp,
-        make_file_name(to_snake_case(format_name)),
-        file_ext,
-    )
-    return osp.join(dst_dir, filename)
+class ExportFileType(str, Enum):
+    ANNOTATIONS = "annotations"
+    BACKUP = "backup"
+    DATASET = "dataset"
 
 
-@attrs.define
-class ParsedExportFilename:
-    instance_type: str
-    has_images: bool
-    instance_timestamp: Optional[float]
-    format_repr: str
+@attrs.frozen
+class _ParsedExportFilename:
+    file_type: ExportFileType
     file_ext: str
+    instance_type: str
+    instance_timestamp: float
 
 
-def parse_export_file_path(file_path: os.PathLike[str]) -> ParsedExportFilename:
-    file_path = osp.normpath(file_path)
-    dirname, basename = osp.split(file_path)
+@attrs.frozen
+class ParsedDatasetFilename(_ParsedExportFilename):
+    format_repr: str
 
-    basename_match = re.fullmatch(
-        (
-            r'(?P<export_mode>dataset|annotations)'
-            # optional for backward compatibility
-            r'(?:-instance(?P<instance_timestamp>\d+\.\d+)-|_)'
-            r'(?P<format_tag>.+)'
-            r'\.(?P<file_ext>.+)'
-        ),
-        basename
-    )
-    if not basename_match:
-        raise ValueError(f"Couldn't parse filename components in '{basename}'")
 
-    dirname_match = re.search(rf'/(jobs|tasks|projects)/\d+/{settings.EXPORT_CACHE_DIR_NAME}$', dirname)
-    if not dirname_match:
-        raise ValueError(f"Couldn't parse instance type in '{dirname}'")
+@attrs.frozen
+class ParsedBackupFilename(_ParsedExportFilename):
+    pass
 
-    match dirname_match.group(1):
-        case 'jobs':
-            instance_type_name = 'job'
-        case 'tasks':
-            instance_type_name = 'task'
-        case 'projects':
-            instance_type_name = 'project'
-        case _:
-            assert False
 
-    if instance_timestamp_str := basename_match.groupdict().get('instance_timestamp'):
-        instance_timestamp = float(instance_timestamp_str)
-    else:
-        instance_timestamp = None
+class ExportCacheManager:
+    # store the instance timestamp in the file name to reliably get this information
+    # ctime / mtime do not return file creation time on linux
+    # mtime is used for file usage checks
+    BASE_FILE_NAME_TEMPLATE = "{file_type}-instance{instance_timestamp}{optional_suffix}.{file_ext}"
 
-    return ParsedExportFilename(
-        instance_type=instance_type_name,
-        has_images=basename_match.group('export_mode') == 'dataset',
-        instance_timestamp=instance_timestamp,
-        format_repr=basename_match.group('format_tag'),
-        file_ext=basename_match.group('file_ext'),
-    )
+    @classmethod
+    def make_dataset_file_path(
+        cls,
+        cache_dir: str,
+        *,
+        save_images: bool,
+        instance_timestamp: float,
+        format_name: str,
+    ) -> str:
+        from .formats.registry import EXPORT_FORMATS
+
+        file_ext = EXPORT_FORMATS[format_name].EXT
+
+        file_type = ExportFileType.DATASET if save_images else ExportFileType.ANNOTATIONS
+
+        normalized_format_name = make_file_name(to_snake_case(format_name))
+        filename = cls.BASE_FILE_NAME_TEMPLATE.format_map(
+            {
+                "file_type": file_type,
+                "instance_timestamp": instance_timestamp,
+                "optional_suffix": "-" + normalized_format_name,
+                "file_ext": file_ext,
+            }
+        )
+
+        return osp.join(cache_dir, filename)
+
+    @classmethod
+    def make_backup_file_path(
+        cls,
+        cache_dir: str,
+        *,
+        instance_timestamp: float,
+    ) -> str:
+        filename = cls.BASE_FILE_NAME_TEMPLATE.format_map(
+            {
+                "file_type": ExportFileType.BACKUP,
+                "instance_timestamp": instance_timestamp,
+                "optional_suffix": "",
+                "file_ext": "zip",
+            }
+        )
+        return osp.join(cache_dir, filename)
+
+    @staticmethod
+    def parse_file_path(
+        file_path: os.PathLike[str],
+    ) -> ParsedDatasetFilename | ParsedBackupFilename:
+        file_path = osp.normpath(file_path)
+        dirname, basename = osp.split(file_path)
+
+        # handle directory
+        dirname_match = re.search(
+            rf"/(jobs|tasks|projects)/\d+/{settings.EXPORT_CACHE_DIR_NAME}$", dirname
+        )
+        if not dirname_match:
+            raise ValueError(f"Couldn't parse instance type in '{dirname}'")
+
+        instance_type_names = dirname_match.group(1)
+        assert instance_type_names in {"projects", "tasks", "jobs"}
+        instance_type_name = instance_type_names[:-1]
+
+        # handle file name
+        file_type, non_parsed_basename = basename.split("-", maxsplit=1)
+        file_type = ExportFileType(file_type)
+
+        if file_type in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
+            basename_match = re.fullmatch(
+                (
+                    # optional for backward compatibility
+                    r"(?:instance(?P<instance_timestamp>\d+\.\d+)-|_)"
+                    r"(?P<format_repr>.+)"  # TODO: convert back?
+                    r"\.(?P<file_ext>.+)"
+                ),
+                non_parsed_basename,
+            )
+            ParsedFileNameClass = ParsedDatasetFilename
+        elif file_type == ExportFileType.BACKUP:
+            basename_match = re.fullmatch(
+                (r"(?:instance(?P<instance_timestamp>\d+\.\d+)-|_)" r"\.(?P<file_ext>.+)"),
+                non_parsed_basename,
+            )
+            ParsedFileNameClass = ParsedBackupFilename
+        else:
+            raise ValueError(f"Unsupported file type: {file_type!r}")
+
+        if not basename_match:
+            raise ValueError(f"Couldn't parse filename components in '{basename}'")
+
+        fragments = basename_match.groupdict()
+
+        if fragments.get("instance_timestamp"):
+            fragments["instance_timestamp"] = float(fragments["instance_timestamp"])
+
+        return ParsedFileNameClass(
+            file_type=file_type.value,
+            instance_type=instance_type_name,
+            **fragments,
+        )
