@@ -1013,7 +1013,6 @@ class TestGetTaskDataset:
                         assert tuple(related_image["size"]) > (0, 0)
 
 
-
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
@@ -6359,7 +6358,7 @@ class TestImportWithComplexFilenames:
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPatchExportFrames(TestTaskData):
 
-    @fixture(scope='class')
+    @fixture(scope="class")
     @parametrize("media_type", [_SourceDataType.images, _SourceDataType.video])
     @parametrize("step", [5])
     @parametrize("frame_count", [20])
@@ -6372,33 +6371,22 @@ class TestPatchExportFrames(TestTaskData):
         frame_count: int,
         start_frame: Optional[int],
     ) -> Generator[tuple[_TaskSpec, Task, str], None, None]:
-        args = dict(
-            request=request,
-            frame_count=frame_count,
-            step=step,
-            start_frame=start_frame
-        )
+        args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
 
-        match media_type:
-            case _SourceDataType.images:
-                (spec, task_id) = next(self._uploaded_images_task_fxt_base(**args))
-            case _SourceDataType.video:
-                (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))
+        if media_type == _SourceDataType.images:
+            (spec, task_id) = next(self._uploaded_images_task_fxt_base(**args))
+        else:
+            (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))
 
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)
 
         yield (spec, task, f"CVAT for {media_type} 1.1")
 
-
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])
     def test_export_with_non_default_frame_step(
-        self,
-        tmp_path: Path,
-        spec: _TaskSpec,
-        task: Task,
-        format_name: str
+        self, tmp_path: Path, spec: _TaskSpec, task: Task, format_name: str
     ):
 
         dataset_file = tmp_path / "dataset.zip"
@@ -6412,12 +6400,22 @@ class TestPatchExportFrames(TestTaskData):
 
         # get frames and sort them
         with zipfile.ZipFile(dataset_file) as dataset:
-            frames = np.array([png_idx for png_idx in map(get_img_index, dataset.filelist) if png_idx != -1])
+            frames = np.array(
+                [png_idx for png_idx in map(get_img_index, dataset.filelist) if png_idx != -1]
+            )
             frames.sort()
 
         task_meta = task.get_meta()
-        (src_start_frame, src_stop_frame, src_frame_step) = task_meta['start_frame'], task_meta['stop_frame'], spec.frame_step
-        src_end_frame = src_stop_frame - ((src_stop_frame - src_start_frame) % src_frame_step) + src_frame_step
+        (src_start_frame, src_stop_frame, src_frame_step) = (
+            task_meta["start_frame"],
+            task_meta["stop_frame"],
+            spec.frame_step,
+        )
+        src_end_frame = (
+            src_stop_frame - ((src_stop_frame - src_start_frame) % src_frame_step) + src_frame_step
+        ) # taken from TestTaskData._compute_annotation_segment_params
 
-        assert len(frames) == spec.size == task_meta['size'], "Some frames were lost"
-        assert np.all(frames == np.arange(src_start_frame, src_end_frame, src_frame_step)), "Some frames are wrong"
+        assert len(frames) == spec.size == task_meta["size"], "Some frames were lost"
+        assert np.all(
+            frames == np.arange(src_start_frame, src_end_frame, src_frame_step)
+        ), "Some frames are wrong"
