@@ -1012,70 +1012,6 @@ class TestGetTaskDataset:
                     if "size" in related_image:
                         assert tuple(related_image["size"]) > (0, 0)
 
-    @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-    @pytest.mark.parametrize(
-        "format_name, num_frames, frame_step, expected_frames",
-        [
-            ("Datumaro 1.0", 100, 5, 20),
-            ("COCO 1.0", 100, 5, 20),
-            ("CVAT for video 1.1", 100, 5, 20),  # no remainder
-            ("CVAT for video 1.1", 97, 5, 20),  # prime
-            ("CVAT for video 1.1", 97, 2, 49),
-            ("CVAT for video 1.1", 100, 3, 34),  # three
-            # we assert that expected frames are ceil(frames / step)
-        ],
-    )
-    def test_export_with_non_default_frame_step(
-        self,
-        # fixtures
-        tmp_path: Path,
-        admin_user: str,
-        # params
-        format_name: str,
-        num_frames: int,
-        frame_step: int,
-        expected_frames: int,
-    ):
-        # parameter validation
-        assert expected_frames == math.ceil(num_frames / frame_step), "Test params are wrong"
-
-        spec = {
-            "name": f"test_video_frames_in_{format_name}_after_export",
-            "labels": [{"name": "goofy ahh car"}],
-        }
-
-        data = {
-            "image_quality": 70,
-            "client_files": [generate_video_file(num_frames)],
-            "frame_filter": f"step={frame_step}",
-        }
-
-        # create a task and get its instance
-        (task_id, _) = create_task(admin_user, spec, data)
-        with make_sdk_client(admin_user) as client:
-            task_obj: Task = client.tasks.retrieve(task_id)
-
-        # export the video
-        dataset_file = tmp_path / "dataset.zip"
-        task_obj.export_dataset(format_name, dataset_file, include_images=True)
-
-        def get_png_index(zinfo: zipfile.ZipInfo) -> int:
-            name = PurePosixPath(zinfo.filename)
-            if name.suffix.lower() != ".png":  # png is usually for video
-                return -1
-            name = os.path.basename(name).removesuffix(name.suffix)
-            idx = name[name.rfind("_") + 1 :]
-            assert idx.isnumeric()
-            return int(idx)
-
-        # get frames and sort them
-        with zipfile.ZipFile(dataset_file) as dataset:
-            frames = [png_idx for png_idx in map(get_png_index, dataset.filelist) if png_idx != -1]
-            frames.sort()
-
-        assert len(frames) == expected_frames, "Some frames were lost"
-        assert frames == list(range(0, num_frames, frame_step)), "Some frames are wrong"
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2964,6 +2900,7 @@ class TestTaskData:
 
     @fixture(scope="class")
     def fxt_uploaded_images_task_with_honeypots_and_segments(
+
         self, request: pytest.FixtureRequest
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_with_honeypots_and_segments_base(request)
@@ -6414,3 +6351,73 @@ class TestImportWithComplexFilenames:
         check_element_outside_count(1, 0, 1)
         check_element_outside_count(1, 1, 2)
         check_element_outside_count(1, 2, 2)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+class TestPatchExportFrames(TestTaskData):
+
+    @fixture(scope='class')
+    @parametrize("media_type", [_SourceDataType.images, _SourceDataType.video])
+    @parametrize("step", [5])
+    @parametrize("frame_count", [20])
+    @parametrize("start_frame", [None, 3])
+    def fxt_uploaded_media_task(
+        self,
+        request: pytest.FixtureRequest,
+        media_type: _SourceDataType,
+        step: int,
+        frame_count: int,
+        start_frame: Optional[int],
+    ) -> Generator[tuple[_TaskSpec, Task, str], None, None]:
+        args = dict(
+            request=request,
+            frame_count=frame_count,
+            step=step,
+            start_frame=start_frame
+        )
+
+        match media_type:
+            case _SourceDataType.images:
+                (spec, task_id) = next(self._uploaded_images_task_fxt_base(**args))
+            case _SourceDataType.video:
+                (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))
+
+        with make_sdk_client(self._USERNAME) as client:
+            task = client.tasks.retrieve(task_id)
+
+        yield (spec, task, f"CVAT for {media_type} 1.1")
+
+
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])
+    def test_export_with_non_default_frame_step(
+        self,
+        tmp_path: Path,
+        spec: _TaskSpec,
+        task: Task,
+        format_name: str
+    ):
+
+        dataset_file = tmp_path / "dataset.zip"
+        task.export_dataset(format_name, dataset_file, include_images=True)
+
+        def get_img_index(zinfo: zipfile.ZipInfo) -> int:
+            name = PurePosixPath(zinfo.filename)
+            if name.suffix.lower() not in (".png", ".jpg", ".jpeg"):
+                return -1
+            return int(name.stem.rsplit("_", maxsplit=1)[-1])
+
+        # get frames and sort them
+        with zipfile.ZipFile(dataset_file) as dataset:
+            frames = np.array([png_idx for png_idx in map(get_img_index, dataset.filelist) if png_idx != -1])
+            frames.sort()
+
+        task_meta = task.get_meta()
+        (src_start_frame, src_stop_frame, src_frame_step) = task_meta['start_frame'], task_meta['stop_frame'], spec.frame_step
+        src_end_frame = src_stop_frame - ((src_stop_frame - src_start_frame) % src_frame_step) + src_frame_step
+
+        assert len(frames) == spec.size == task_meta['size'], "Some frames were lost"
+        assert np.all(frames == np.arange(src_start_frame, src_end_frame, src_frame_step)), "Some frames are wrong"
