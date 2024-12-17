@@ -2,7 +2,7 @@
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
 weight: 3
-description: 'Social accounts authentication for Self-Hosted solution'
+description: 'Social accounts authentication for a Self-Hosted solution'
 ---
 
 > **Note:** This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
