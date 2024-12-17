@@ -12,7 +12,6 @@ import multiprocessing
 import av
 import numpy as np
 import random
-import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 from contextlib import ExitStack, contextmanager

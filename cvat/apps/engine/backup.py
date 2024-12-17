@@ -47,7 +47,7 @@ from cvat.apps.engine.utils import (
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Project, Location,
+    StorageChoice, StorageMethodChoice, DataChoice, Location,
     RequestAction, RequestTarget, RequestSubresource,
 )
 from cvat.apps.engine.task import JobFileMapping, _create_thread
@@ -341,7 +341,7 @@ class _ExporterBase(metaclass=ABCMeta):
                 )
 
     @abstractmethod
-    def export_to(self, file: str | ZipFile, **kwargs):
+    def export_to(self, file: str | ZipFile, target_dir: str | None = None):
         ...
 
 class TaskExporter(_ExporterBase, _TaskBackupBase):
@@ -942,7 +942,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
         zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(project))
 
-    def export_to(self, file: str):
+    def export_to(self, file: str, target_dir: str | None = None):
         with ZipFile(file, 'w') as output_file:
             self._write_annotation_guide(output_file)
             self._write_manifest(output_file)
