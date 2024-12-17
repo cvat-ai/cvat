@@ -2899,7 +2899,6 @@ class TestTaskData:
 
     @fixture(scope="class")
     def fxt_uploaded_images_task_with_honeypots_and_segments(
-
         self, request: pytest.FixtureRequest
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
         yield from self._uploaded_images_task_with_honeypots_and_segments_base(request)
@@ -6413,7 +6412,7 @@ class TestPatchExportFrames(TestTaskData):
         )
         src_end_frame = (
             src_stop_frame - ((src_stop_frame - src_start_frame) % src_frame_step) + src_frame_step
-        ) # taken from TestTaskData._compute_annotation_segment_params
+        )  # taken from TestTaskData._compute_annotation_segment_params
 
         assert len(frames) == spec.size == task_meta["size"], "Some frames were lost"
         assert np.all(
