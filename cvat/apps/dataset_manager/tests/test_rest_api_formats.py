@@ -1440,9 +1440,12 @@ class ExportBehaviorTest(_DbTestBase):
 
         export_file_path = self.SharedString()
         export_checked_the_file = self.SharedBool()
-        clear_process_has_run = self.SharedBool()
+        clear_has_been_finished = self.SharedBool()
         clear_removed_the_file = self.SharedBool()
         export_outdated_after = timedelta(seconds=1)
+
+        EXPORT_LOCK_TTL = 4
+        EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = EXPORT_LOCK_TTL + 1
 
         def _export(*_, task_id: int):
             import sys
@@ -1463,8 +1466,9 @@ class ExportBehaviorTest(_DbTestBase):
                 original_log_exception(logger, exc_info)
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=5),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=10),
+                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=EXPORT_LOCK_TTL),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
+                      new=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1481,8 +1485,7 @@ class ExportBehaviorTest(_DbTestBase):
                 mock_osp_exists.side_effect = chain_side_effects(
                     original_exists,
                     side_effect(set_condition, export_checked_the_file),
-                    side_effect(wait_condition, clear_process_has_run),
-                    side_effect(sleep, 2),
+                    side_effect(wait_condition, clear_has_been_finished),
                 )
                 result_file = export(dst_format=format_name, task_id=task_id)
                 set_condition(export_file_path, result_file)
@@ -1491,11 +1494,11 @@ class ExportBehaviorTest(_DbTestBase):
         def _clear(*_, file_path: str, file_ctime: str):
             from os import remove as original_remove
 
-            from cvat.apps.dataset_manager.views import FileIsBeingUsedError
+            from cvat.apps.dataset_manager.views import LockNotAvailableError
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=5),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=10),
+                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=EXPORT_LOCK_TTL),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_LOCK_TTL - 1),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1518,16 +1521,13 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                file_is_being_used_error_raised = False
                 try:
-                    set_condition(clear_process_has_run)
                     clear_export_cache(
                         file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
                     )
-                except FileIsBeingUsedError:
-                    file_is_being_used_error_raised = True
+                except LockNotAvailableError:
+                    set_condition(clear_has_been_finished)
 
-                assert file_is_being_used_error_raised
                 mock_os_remove.assert_not_called()
 
         # The problem checked is TOCTOU / race condition for file existence check and
@@ -1915,36 +1915,33 @@ class ExportBehaviorTest(_DbTestBase):
         wait_condition = self.wait_condition
         set_condition = self.set_condition
 
-        export_fn_started_by_1st_process = self.SharedBool()
-        file_replacement_by_1st_process = self.SharedBool()
-        export_fn_started_by_2nd_process = self.SharedBool()
-        export_fn_finished_by_2nd_process = self.SharedBool()
+        export_1_checked_file = self.SharedBool()
+        export_1_made_export = self.SharedBool()
+        export_1_replaced_file = self.SharedBool()
 
+        export_2_checked_file = self.SharedBool()
+        export_2_made_export = self.SharedBool()
+        export_2_replaced_file = self.SharedBool()
 
         format_name = "CVAT for images 1.1"
 
-        def _export(
+        LOCK_TTL = 4
+        LOCK_ACQUISITION_TIMEOUT = LOCK_TTL * 2
+
+        def _export_1(
             *_,
             task_id: int,
             result_queue: multiprocessing.Queue,
-            export_fn_started: self.SharedBool,
-            export_fn_finished: self.SharedBool | None = None,
-            wait_before_fn_finish: self.SharedBool | None = None,
-            wait_before_replace: self.SharedBool | None = None,
-            file_replacement: self.SharedBool | None = None,
         ):
             from os import replace as original_replace
 
             from cvat.apps.dataset_manager.task import export_task as original_export_task
 
-            lock_ttl = 4
-            lock_acquire_timeout = lock_ttl * 2
-
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=lock_ttl),
+                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=LOCK_TTL),
                 patch(
                     "cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
-                    new=lock_acquire_timeout,
+                    new=LOCK_ACQUISITION_TIMEOUT,
                 ),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
@@ -1955,16 +1952,55 @@ class ExportBehaviorTest(_DbTestBase):
                 patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
             ):
                 mock_export_fn.side_effect = chain_side_effects(
-                    side_effect(set_condition, export_fn_started),
+                    side_effect(set_condition, export_1_checked_file),
                     original_export_task,
-                    *((side_effect(set_condition, export_fn_finished),) if export_fn_finished is not None else []),
-                    *((side_effect(wait_condition, wait_before_fn_finish, 10),) if wait_before_fn_finish is not None else []),
+                    side_effect(wait_condition, export_2_checked_file),
+                    side_effect(set_condition, export_1_made_export),
                 )
 
                 mock_os_replace.side_effect = chain_side_effects(
-                    *((side_effect(wait_condition, wait_before_replace, 10),) if wait_before_replace is not None else []),
                     original_replace,
-                    *((side_effect(set_condition, file_replacement),) if file_replacement is not None else []),
+                    side_effect(set_condition, export_1_replaced_file),
+                )
+                result_file_path = export(dst_format=format_name, task_id=task_id)
+                result_queue.put(result_file_path)
+
+                mock_export_fn.assert_called_once()
+                mock_os_replace.assert_called_once()
+
+        def _export_2(
+            *_,
+            task_id: int,
+            result_queue: multiprocessing.Queue,
+        ):
+            from os import replace as original_replace
+
+            from cvat.apps.dataset_manager.task import export_task as original_export_task
+
+            with (
+                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=LOCK_TTL),
+                patch(
+                    "cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
+                    new=LOCK_ACQUISITION_TIMEOUT,
+                ),
+                patch(
+                    "cvat.apps.dataset_manager.views.get_export_cache_lock",
+                    new=self.patched_get_export_cache_lock,
+                ),
+                patch("cvat.apps.dataset_manager.views.os.replace") as mock_os_replace,
+                patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
+                patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
+            ):
+                mock_export_fn.side_effect = chain_side_effects(
+                    side_effect(set_condition, export_2_checked_file),
+                    original_export_task,
+                    side_effect(wait_condition, export_1_replaced_file),
+                    side_effect(set_condition, export_2_made_export),
+                )
+
+                mock_os_replace.side_effect = chain_side_effects(
+                    original_replace,
+                    side_effect(set_condition, export_2_replaced_file),
                 )
                 result_file_path = export(dst_format=format_name, task_id=task_id)
                 result_queue.put(result_file_path)
@@ -1980,14 +2016,10 @@ class ExportBehaviorTest(_DbTestBase):
             export_process_1 = es.enter_context(
                 process_closing(
                     multiprocessing.Process(
-                        target=_export,
+                        target=_export_1,
                         kwargs=dict(
                             task_id=task["id"],
                             result_queue=result_queue,
-                            export_fn_started=export_fn_started_by_1st_process,
-                            wait_before_fn_finish=export_fn_started_by_2nd_process,
-                            wait_before_replace=export_fn_finished_by_2nd_process,
-                            file_replacement=file_replacement_by_1st_process,
                         ),
                     )
                 )
@@ -1995,20 +2027,17 @@ class ExportBehaviorTest(_DbTestBase):
             export_process_2 = es.enter_context(
                 process_closing(
                     multiprocessing.Process(
-                        target=_export,
+                        target=_export_2,
                         kwargs=dict(
                             task_id=task["id"],
                             result_queue=result_queue,
-                            export_fn_started=export_fn_started_by_2nd_process,
-                            export_fn_finished=export_fn_finished_by_2nd_process,
-                            wait_before_fn_finish=file_replacement_by_1st_process,
                         ),
                     )
                 )
             )
 
             export_process_1.start()
-            wait_condition(export_fn_started_by_1st_process)
+            wait_condition(export_1_checked_file)
 
             export_process_2.start()
             export_process_2.join(timeout=20)
@@ -2025,6 +2054,12 @@ class ExportBehaviorTest(_DbTestBase):
             self.assertTrue(len(paths) == 1)
             self.assertNotEqual(paths, {None})
             self.assertTrue(osp.isfile(list(paths)[0]))
+
+            for cond in (
+                export_1_checked_file, export_1_made_export, export_1_replaced_file,
+                export_2_checked_file, export_2_made_export, export_2_replaced_file
+            ):
+                self.assertTrue(cond.get())
 
     def test_cleanup_can_remove_file(self):
         format_name = "CVAT for images 1.1"
