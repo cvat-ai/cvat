@@ -36,6 +36,7 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 
@@ -1078,13 +1079,16 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            # Guarantee uniformness by using a known distribution
-            # overall task honeypot distribution is not guaranteed though
-            rng = random.Generator(random.MT19937())
-            requested_frames = rng.choice(
-                tuple(task_active_validation_frames), size=segment_honeypots_count,
-                shuffle=False, replace=False
-            ).tolist()
+            validation_frame_counts = {
+                validation_frame: 0 for validation_frame in task_active_validation_frames
+            }
+            for task_honeypot_frame in task_honeypot_frames:
+                real_frame = _to_rel_frame(all_task_frames[task_honeypot_frame].real_frame)
+                if real_frame in task_active_validation_frames:
+                    validation_frame_counts[real_frame] += 1
+
+            frame_selector = HoneypotFrameSelector(validation_frame_counts)
+            requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
         else:
             assert False
 
@@ -1332,7 +1336,9 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout = getattr(instance.data, 'validation_layout', None)
+        validation_layout: models.ValidationLayout | None = (
+            getattr(instance.data, 'validation_layout', None)
+        )
         if not validation_layout:
             raise serializers.ValidationError("Validation is not configured in the task")
 
@@ -1353,6 +1359,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             })
             gt_job_meta_serializer.is_valid(raise_exception=True)
             gt_job_meta_serializer.save()
+
+            validation_layout.refresh_from_db()
 
         frame_selection_method = validated_data.get('frame_selection_method')
         if frame_selection_method and not (
@@ -1380,6 +1388,16 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     "Invalid size of 'honeypot_real_frames' array, "
                     f"expected {task_honeypot_frames_count}"
                 )
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            # Reset active honeypots in the task to produce a uniform distribution in the end
+            task_frame_provider = TaskFrameProvider(instance)
+            task_abs_disabled_validation_frames = [
+                task_frame_provider.get_abs_frame_number(v)
+                for v in validation_layout.disabled_frames
+            ]
+            instance.data.images.filter(is_placeholder=True).exclude(
+                real_frame__in=task_abs_disabled_validation_frames
+            ).update(real_frame=0)
 
         if frame_selection_method:
             for db_job in (
@@ -1388,6 +1406,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 .order_by("segment__start_frame")
                 .all()
             ):
+                db_job.segment.task = instance
+
                 job_serializer_params = {
                     'frame_selection_method': frame_selection_method
                 }

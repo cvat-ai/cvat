@@ -43,6 +43,7 @@ from cvat.apps.engine.utils import (
     define_dependent_job, get_rq_lock_by_user
 )
 from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -1248,8 +1249,15 @@ def _create_thread(
 
         frames_per_job_count = min(len(pool_frames), frames_per_job_count)
 
-        non_pool_frames = list(set(all_frames).difference(pool_frames))
+        non_pool_frames = sorted(
+            # set() doesn't guarantee ordering,
+            # so sort additionally before shuffling to make results reproducible
+            set(all_frames).difference(pool_frames)
+        )
         rng.shuffle(non_pool_frames)
+
+        validation_frame_counts = {f: 0 for f in pool_frames}
+        frame_selector = HoneypotFrameSelector(validation_frame_counts, rng=rng)
 
         # Don't use the same rng as for frame ordering to simplify random_seed maintenance in future
         # We still use the same seed, but in this case the frame selection rng is separate
@@ -1262,10 +1270,8 @@ def _create_thread(
         validation_frames: list[int] = []
         frame_idx_map: dict[int, int] = {} # new to original id
         for job_frames in take_by(non_pool_frames, count=db_task.segment_size or db_data.size):
-            job_validation_frames = rng.choice(
-                pool_frames, size=frames_per_job_count, replace=False
-            )
-            job_frames += job_validation_frames.tolist()
+            job_validation_frames = list(frame_selector.select_next_frames(frames_per_job_count))
+            job_frames += job_validation_frames
 
             job_frame_ordering_rng.shuffle(job_frames)
 

@@ -30,6 +30,7 @@ for paths in \
     "cvat/apps/engine/default_settings.py" \
     "cvat/apps/engine/field_validation.py" \
     "cvat/apps/engine/model_utils.py" \
+    "cvat/apps/engine/task_validation.py" \
     "cvat/apps/dataset_manager/tests/test_annotation.py" \
     "cvat/apps/dataset_manager/tests/utils.py" \
     "cvat/apps/events/signals.py" \

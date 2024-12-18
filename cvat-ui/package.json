@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@ant-design/compatible": "^5.1.2",
-    "@ant-design/icons": "^4.6.3",
+    "@ant-design/icons": "^5.5.2",
     "@react-awesome-query-builder/antd": "^6.5.2",
     "@types/json-logic-js": "^2.0.2",
     "@types/lru-cache": "^7.10.10",

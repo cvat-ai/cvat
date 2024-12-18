@@ -74,7 +74,7 @@ class TestCliTasks(TestCliBase):
             "0.01",
         )
 
-        task_id = int(stdout.split()[-1])
+        task_id = int(stdout.rstrip("\n"))
         assert self.client.tasks.retrieve(task_id).size == 5
 
     def test_can_create_task_from_local_images_with_parameters(self):
@@ -102,7 +102,7 @@ class TestCliTasks(TestCliBase):
             "http://localhost/bug",
         )
 
-        task_id = int(stdout.split()[-1])
+        task_id = int(stdout.rstrip("\n"))
         task = self.client.tasks.retrieve(task_id)
         frames = task.get_frames_info()
         assert [f.name for f in frames] == [
@@ -191,7 +191,7 @@ class TestCliTasks(TestCliBase):
     def test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         stdout = self.run_cli("task", "create-from-backup", str(fxt_backup_file))
 
-        task_id = int(stdout.split()[-1])
+        task_id = int(stdout.rstrip("\n"))
         assert task_id
         assert task_id != fxt_new_task.id
         assert self.client.tasks.retrieve(task_id).size == fxt_new_task.size
