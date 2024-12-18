@@ -321,12 +321,6 @@ context('Requests page', () => {
             });
 
             cy.getJobIDFromIdx(0).then((jobID) => {
-                const closeExportNotification = () => {
-                    cy.contains('Export is finished').should('be.visible');
-                    cy.contains('Export is finished').parents('.ant-notification-notice')
-                        .find('span[aria-label="close"]').click();
-                };
-
                 const exportParams = {
                     type: 'dataset',
                     format: exportFormat,
@@ -342,9 +336,6 @@ context('Requests page', () => {
                 };
                 cy.exportJob(newExportParams);
 
-                closeExportNotification();
-                closeExportNotification();
-
                 cy.contains('.cvat-header-button', 'Requests').should('be.visible').click();
                 cy.url().should('include', '/requests');
 
@@ -355,6 +346,10 @@ context('Requests page', () => {
                             cy.get('.cvat-request-item-progress-success').should('exist');
                         });
                     });
+
+                cy.get('.ant-notification-notice').each((notification) => {
+                    cy.wrap(notification).find('span[aria-label="close"]').click();
+                });
             });
         });
 
