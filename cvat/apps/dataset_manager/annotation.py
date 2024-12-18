@@ -469,8 +469,6 @@ class TrackManager(ObjectManager):
     ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
-            if included_frames is not None:
-                track = dict(track, shapes=list(filter(lambda sh: sh['frame'] in included_frames, track['shapes'])))
             track_id = track["id"] if use_server_track_ids else idx
             track_shapes = {}
 
@@ -932,6 +930,8 @@ class TrackManager(ObjectManager):
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
+            if included_frames is not None and curr_frame not in included_frames:
+                continue
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
                 # we still need to interpolate up to the next keyframe,
