@@ -35,7 +35,7 @@ EXPORT_CACHE_LOCK_TTL = os.getenv("CVAT_DATASET_EXPORT_LOCK_TTL")
 if EXPORT_CACHE_LOCK_TTL is not None:
     EXPORT_CACHE_LOCK_TTL = int(EXPORT_CACHE_LOCK_TTL)
     warnings.warn(
-        "The CVAT_DATASET_EXPORT_LOCK_TTL is deprecated, " "use CVAT_EXPORT_CACHE_LOCK_TTL instead",
+        "The CVAT_DATASET_EXPORT_LOCK_TTL is deprecated, use CVAT_EXPORT_CACHE_LOCK_TTL instead",
         DeprecationWarning,
     )
 else:
