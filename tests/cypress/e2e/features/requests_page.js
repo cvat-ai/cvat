@@ -309,7 +309,7 @@ context('Requests page', () => {
             cy.deleteProjectViaActions(projectName);
         });
     });
-    // rin ci 1
+    // rin ci 2
     describe('Regression tests', () => {
         beforeEach(openTask);
 
