@@ -276,6 +276,11 @@ class ValidationLayout(models.Model):
     disabled_frames = IntArrayField(store_sorted=True, unique_values=True)
     "Stores task frame numbers of the disabled (deleted) validation frames"
 
+    @property
+    def active_frames(self) -> Sequence[int]:
+        "An ordered sequence of active (non-disabled) validation frames"
+        return set(self.frames).difference(self.disabled_frames)
+
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 

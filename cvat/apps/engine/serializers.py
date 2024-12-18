@@ -1043,9 +1043,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 if frame.is_placeholder
             )
             task_all_validation_frames = set(db_data.validation_layout.frames)
-            task_active_validation_frames = task_all_validation_frames.difference(
-                db_data.validation_layout.disabled_frames
-            )
+            task_active_validation_frames = set(db_data.validation_layout.active_frames)
 
         segment_frame_set = set(map(_to_rel_frame, db_segment.frame_set))
         segment_honeypots = sorted(segment_frame_set & task_honeypot_frames)
@@ -1478,9 +1476,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             for db_image in instance.data.images.all()
         }
         honeypot_frames = sorted(f for f, v in db_frames.items() if v.is_placeholder)
-        disabled_validation_frames = set(db_validation_layout.disabled_frames)
         all_validation_frames = db_validation_layout.frames
-        active_validation_frames = sorted(set(all_validation_frames) - disabled_validation_frames)
+        active_validation_frames = db_validation_layout.active_frames
 
         bulk_context = _TaskValidationLayoutBulkUpdateContext(
             all_db_frames=db_frames,
