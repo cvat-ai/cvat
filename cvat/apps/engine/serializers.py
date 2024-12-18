@@ -1548,7 +1548,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         if not updated_segments:
             return
 
-        self._update_frames_in_bulk(db_task, bulk_context)
+        self._update_frames_in_bulk(db_task, bulk_context=bulk_context)
 
         # Update segments
         updated_date = timezone.now()
