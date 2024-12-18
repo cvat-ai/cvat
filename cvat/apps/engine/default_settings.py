@@ -27,6 +27,18 @@ CVAT_CHUNK_CREATE_CHECK_INTERVAL = 0.2
 Sets the frequency of checking the readiness of the chunk
 """
 
+EXPORT_CACHE_TTL = os.getenv("CVAT_DATASET_CACHE_TTL")
+"Base lifetime for cached export files, in seconds"
+
+if EXPORT_CACHE_TTL is not None:
+    EXPORT_CACHE_TTL = int(EXPORT_CACHE_TTL)
+    warnings.warn(
+        "The CVAT_DATASET_CACHE_TTL is deprecated, use CVAT_EXPORT_CACHE_TTL instead",
+        DeprecationWarning,
+    )
+else:
+    EXPORT_CACHE_TTL = int(os.getenv("CVAT_EXPORT_CACHE_TTL", 60 * 60 * 24))
+
 default_export_cache_lock_ttl = 30
 
 EXPORT_CACHE_LOCK_TTL = os.getenv("CVAT_DATASET_EXPORT_LOCK_TTL")
