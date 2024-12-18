@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-from abc import ABCMeta
 from contextlib import closing
 import warnings
 from copy import copy
@@ -1199,14 +1198,12 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
 
             if bulk_context:
-                media_cache = bulk_context.media_cache
-            else:
-                media_cache = MediaCache()
-            media_cache.remove_segment_chunks(chunks_to_be_removed)
-
-            if bulk_context:
+                bulk_context.chunks_to_be_removed.extend(chunks_to_be_removed)
                 bulk_context.segments_with_updated_chunks.append(db_segment.id)
             else:
+                media_cache = MediaCache()
+                media_cache.remove_segment_chunks(chunks_to_be_removed)
+
                 db_segment.chunks_updated_date = timezone.now()
                 db_segment.save(update_fields=['chunks_updated_date'])
 
@@ -1342,24 +1339,10 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
 
         return super().to_representation(data)
 
-# Can't inherit from MediaCache because of circular import
-class _AccumulatingMediaCache(metaclass=ABCMeta):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self._accumulated_segment_removes = []
-
-    def remove_segment_chunks(self, *args, **kwargs):
-        self._accumulated_segment_removes.extend(*args, **kwargs)
-
-    def execute_remove_segment_chunks(self):
-        return super().remove_segment_chunks(self._accumulated_segment_removes)
-
 class _TaskValidationLayoutBulkUpdateContext:
     def __init__(
         self,
         *,
-        media_cache: _AccumulatingMediaCache,
         all_db_frames: dict[int, models.Image],
         honeypot_frames: list[int],
         all_validation_frames: list[int],
@@ -1368,9 +1351,9 @@ class _TaskValidationLayoutBulkUpdateContext:
     ):
         self.updated_honeypots: dict[int, models.Image] = {}
         self.updated_segments: list[int] = []
+        self.chunks_to_be_removed: list[dict[str, Any]] = []
         self.segments_with_updated_chunks: list[int] = []
 
-        self.media_cache = media_cache
         self.all_db_frames = all_db_frames
         self.honeypot_frames = honeypot_frames
         self.all_validation_frames = all_validation_frames
@@ -1464,12 +1447,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             'segment_set__job_set',
         )
 
-        # Import it here to avoid circular import
-        from cvat.apps.engine.cache import MediaCache
-
-        class _AccumulatingTaskMediaCache(_AccumulatingMediaCache, MediaCache):
-            pass
-
         frame_provider = TaskFrameProvider(instance)
         db_frames = {
             frame_provider.get_rel_frame_number(db_image.frame): db_image
@@ -1484,7 +1461,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             honeypot_frames=honeypot_frames,
             all_validation_frames=all_validation_frames,
             active_validation_frames=active_validation_frames,
-            media_cache=_AccumulatingTaskMediaCache(),
         )
 
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
@@ -1547,6 +1523,11 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
         self._update_frames_in_bulk(db_task, bulk_context=bulk_context)
 
+        # Import it here to avoid circular import
+        from cvat.apps.engine.cache import MediaCache
+        media_cache = MediaCache()
+        media_cache.remove_segment_chunks(bulk_context.chunks_to_be_removed)
+
         # Update segments
         updated_date = timezone.now()
         for updated_segments_batch in take_by(updated_segments, chunk_size=1000):
@@ -1572,8 +1553,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         *,
         bulk_context: _TaskValidationLayoutBulkUpdateContext,
     ):
-        bulk_context.media_cache.execute_remove_segment_chunks()
-
         self._clear_annotations_on_frames(db_task, bulk_context.updated_honeypots)
 
         # The django generated bulk_update() query is too slow, so we use bulk_create() instead
