@@ -282,11 +282,11 @@ class MediaCache:
 
     def _delete_cache_item(self, key: str):
         self._cache().delete(key)
-        slogger.glob.info(f"Removed chunk from the cache: key {key}")
+        slogger.glob.info(f"Removed the cache key {key}")
 
     def _bulk_delete_cache_items(self, keys: Sequence[str]):
         self._cache().delete_many(keys)
-        slogger.glob.info(f"Removed chunks from the cache: keys {format_list(keys)}")
+        slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
     def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
         try:
