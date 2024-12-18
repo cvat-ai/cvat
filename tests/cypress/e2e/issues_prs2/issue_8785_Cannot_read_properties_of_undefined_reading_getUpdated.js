@@ -27,27 +27,31 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
                 cy.get('button').contains('Save').click({ force: true });
                 cy.get('button').contains('Save').trigger('mouseout');
             }
-            function middleware(request, response) {
+            function middleware() {
                 let calls = 0;
-                const responseStub = { statusCode: 502, body: 'Network error' };
+                const badResponseStub = { statusCode: 502, body: 'Network error' };
                 function handle(req, res) {
                     if (calls === 0) {
+                        console.log(calls);
                         calls++;
-                        res.send(responseStub);
+                        res.send(badResponseStub);
                     } else {
-                        req.continue();
+                        console.log(calls);
+                        req.continue({ statusCode: 200, body: 'OK' });
                     }
                 }
-                handle(request, response);
+                return handle;
             }
-            cy.intercept('PATCH', '/api/jobs/**/data/meta**', middleware);
+            cy.intercept('PATCH', '/api/jobs/**/data/meta**', middleware()).as('patchMeta');
             clickDelete();
             clickSave();
+            cy.contains('button', 'Restore').should('be.visible');
+            cy.wait('@patchMeta').its('response.body').should('eq', 502);
+            cy.wait('@patchMeta').its('response.body').should('eq', 200);
 
-            cy.wait('@patchMeta');
+            // TODO: refactor saveJob with necessary status
 
             // Check that frame is deleted
-            cy.contains('button', 'Restore').should('be.visible');
 
             /**
              * FIXME: this just asserts 502
