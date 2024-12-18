@@ -1445,12 +1445,13 @@ class ExportBehaviorTest(_DbTestBase):
         export_outdated_after = timedelta(seconds=1)
 
         EXPORT_CACHE_LOCK_TTL = 4
-        EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = EXPORT_CACHE_LOCK_TTL + 1
+        EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = EXPORT_CACHE_LOCK_TTL * 2
 
         def _export(*_, task_id: int):
             import sys
             from os import replace as original_replace
             from os.path import exists as original_exists
+            from cvat.apps.dataset_manager.task import export_task as original_export_task
 
             from cvat.apps.dataset_manager.views import log_exception as original_log_exception
 
@@ -1481,10 +1482,14 @@ class ExportBehaviorTest(_DbTestBase):
                     "cvat.apps.dataset_manager.views.os.replace", side_effect=original_replace
                 ) as mock_os_replace,
                 patch("cvat.apps.dataset_manager.views.log_exception", new=patched_log_exception),
+                patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
             ):
                 mock_osp_exists.side_effect = chain_side_effects(
                     original_exists,
                     side_effect(set_condition, export_checked_the_file),
+                )
+                mock_export_fn.side_effect = chain_side_effects(
+                    original_export_task,
                     side_effect(wait_condition, clear_has_been_finished),
                 )
                 result_file = export(dst_format=format_name, task_id=task_id)
@@ -1494,11 +1499,11 @@ class ExportBehaviorTest(_DbTestBase):
         def _clear(*_, file_path: str, file_ctime: str):
             from os import remove as original_remove
 
-            from cvat.apps.dataset_manager.views import LockNotAvailableError
+            from cvat.apps.dataset_manager.views import FileIsBeingUsedError
 
             with (
                 patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TTL", new=EXPORT_CACHE_LOCK_TTL),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_CACHE_LOCK_TTL - 1),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1525,7 +1530,7 @@ class ExportBehaviorTest(_DbTestBase):
                     clear_export_cache(
                         file_path=file_path, file_ctime=file_ctime, logger=MagicMock()
                     )
-                except LockNotAvailableError:
+                except FileIsBeingUsedError:
                     set_condition(clear_has_been_finished)
 
                 mock_os_remove.assert_not_called()
