@@ -1101,7 +1101,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            if self._bulk_context:
+            if bulk_context:
                 active_validation_frame_counts = bulk_context.active_validation_frame_counts
             else:
                 active_validation_frame_counts = {
@@ -1543,6 +1543,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     def _perform_bulk_updates(
         self,
         db_task: models.Task,
+        *,
         bulk_context: _TaskValidationLayoutBulkUpdateContext,
     ):
         updated_segments = bulk_context.updated_segments
@@ -1573,6 +1574,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     def _update_frames_in_bulk(
         self,
         db_task: models.Task,
+        *,
         bulk_context: _TaskValidationLayoutBulkUpdateContext,
     ):
         bulk_context.media_cache.execute_remove_segment_chunks()
