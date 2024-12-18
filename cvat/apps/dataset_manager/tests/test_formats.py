@@ -28,6 +28,7 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection, ForceLogin, generate_image_file, ApiTestBase
 )
 
+
 class _DbTestBase(ApiTestBase):
     def setUp(self):
         super().setUp()
@@ -86,6 +87,7 @@ class _DbTestBase(ApiTestBase):
             task = response.data
 
         return task
+
 
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
@@ -520,6 +522,72 @@ class TaskExportTest(_DbTestBase):
             self.assertTrue(frame.frame in range(6, 10))
         self.assertEqual(i + 1, 4)
 
+    def _delete_job_frames(self, job_id: int, deleted_frames: list[int]):
+        with ForceLogin(self.user, self.client):
+            response = self.client.patch(
+                f"/api/jobs/{job_id}/data/meta?org=",
+                data=dict(deleted_frames=deleted_frames),
+                format="json"
+            )
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+
+    def test_track_keyframes_on_deleted_frames_do_not_affect_later_frames(self):
+        images = self._generate_task_images(4)
+        task = self._generate_task(images)
+        job = self._get_task_jobs(task["id"])[0]
+
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1, 2, 3, 4],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [],
+                        },
+                        {
+                            "frame": 1,
+                            "points": [5, 6, 7, 8],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": True,
+                            "attributes": [],
+                        },
+                        {
+                            "frame": 2,
+                            "points": [9, 10, 11, 12],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [],
+                        },
+                    ]
+                },
+            ]
+        }
+        self._put_api_v2_job_id_annotations(job["id"], annotations)
+        self._delete_job_frames(job["id"], [2])
+
+        task_ann = TaskAnnotation(task["id"])
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
+        extractor = CvatTaskOrJobDataExtractor(task_data)
+        dm_dataset = Dataset.from_extractors(extractor)
+
+        assert len(dm_dataset.get("image_3").annotations) == 0
+
+
 class FrameMatchingTest(_DbTestBase):
     def _generate_task_images(self, paths): # pylint: disable=no-self-use
         f = BytesIO()
@@ -611,6 +679,7 @@ class FrameMatchingTest(_DbTestBase):
 
                 root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
+
 
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
