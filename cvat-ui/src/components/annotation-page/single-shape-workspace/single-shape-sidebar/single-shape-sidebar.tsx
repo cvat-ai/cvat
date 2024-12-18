@@ -261,7 +261,7 @@ function SingleShapeSidebar(): JSX.Element {
             appDispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeLabelID: state.label.id,
-                activeShapeType: labelShapeType(state.label),
+                activeShapeType: labelShapeType(state.labelType),
             }));
 
             canvas.draw({
@@ -317,7 +317,7 @@ function SingleShapeSidebar(): JSX.Element {
                 savingRef.current = false;
             });
         }
-    }, [state.saveOnFinish, state.nextFrame, jobInstance]);
+    }, [state.saveOnFinish, state.nextFrame, jobInstance, activeControl]);
 
     useEffect(() => {
         const defaultLabelInstance = defaultLabel ? state.labels
