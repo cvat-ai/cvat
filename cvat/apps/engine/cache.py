@@ -482,7 +482,12 @@ class MediaCache:
         )
 
     def remove_segment_chunks(self, params: Sequence[dict[str, Any]]) -> None:
-        # TODO: maybe add a more generic version
+        """
+        Removes several segment chunks from the cache.
+
+        The function expects a sequence of remove_segment_chunk() parameters as dicts.
+        """
+
         keys_to_remove = []
         for item_params in params:
             db_obj = item_params.pop("db_segment")
