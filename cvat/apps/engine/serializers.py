@@ -1028,18 +1028,18 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
         bulk_context = self._bulk_context
         if bulk_context:
-            all_task_frames = bulk_context.all_db_frames
+            db_frames = bulk_context.all_db_frames
             task_honeypot_frames = set(bulk_context.honeypot_frames)
             task_all_validation_frames = set(bulk_context.all_validation_frames)
             task_active_validation_frames = set(bulk_context.active_validation_frames)
         else:
-            all_task_frames: dict[int, models.Image] = {
+            db_frames: dict[int, models.Image] = {
                 _to_rel_frame(frame.frame): frame
                 for frame in db_data.images.all()
             }
             task_honeypot_frames = set(
                 _to_rel_frame(frame_id)
-                for frame_id, frame in all_task_frames.items()
+                for frame_id, frame in db_frames.items()
                 if frame.is_placeholder
             )
             task_all_validation_frames = set(db_data.validation_layout.frames)
@@ -1108,7 +1108,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     validation_frame: 0 for validation_frame in task_active_validation_frames
                 }
                 for task_honeypot_frame in task_honeypot_frames:
-                    real_frame = _to_rel_frame(all_task_frames[task_honeypot_frame].real_frame)
+                    real_frame = _to_rel_frame(db_frames[task_honeypot_frame].real_frame)
                     if real_frame in task_active_validation_frames:
                         active_validation_frame_counts[real_frame] += 1
 
@@ -1121,8 +1121,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         # Replace validation frames in the job
         updated_honeypots = {}
         for frame, requested_validation_frame in zip(segment_honeypots, requested_frames):
-            db_requested_frame = all_task_frames[requested_validation_frame]
-            db_segment_frame = all_task_frames[frame]
+            db_requested_frame = db_frames[requested_validation_frame]
+            db_segment_frame = db_frames[frame]
             assert db_segment_frame.is_placeholder
 
             if db_segment_frame.real_frame == db_requested_frame.real_frame:
@@ -1150,9 +1150,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 ).delete()
 
                 for updated_honeypot in updated_honeypots.values():
-                    validation_frame = frame = all_task_frames[
-                        _to_rel_frame(updated_honeypot.real_frame)
-                    ]
+                    validation_frame = db_frames[_to_rel_frame(updated_honeypot.real_frame)]
                     updated_honeypot.related_files.set(validation_frame.related_files.all())
 
                 # Remove annotations on changed validation frames
@@ -1189,7 +1187,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                                     chunk_frames,
                                     quality,
                                     {
-                                        chunk_frame: all_task_frames[chunk_frame].path
+                                        chunk_frame: db_frames[chunk_frame].path
                                         for chunk_frame in chunk_frames
                                     },
                                     segment_frame_map,
