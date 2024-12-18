@@ -24,8 +24,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { CombinedState } from 'reducers';
 import {
-    updateCurrentJobAsync,
-    finishCurrentJobAsync,
+    updateCurrentJobAsync, finishCurrentJobAsync,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
@@ -71,29 +70,23 @@ function AnnotationMenuComponent(): JSX.Element {
         dispatch(importActions.openImportDatasetModal(jobInstance));
     }, [jobInstance]);
 
-    const changeState = useCallback(
-        (state: JobState) => {
-            dispatch(updateCurrentJobAsync({ state })).then(() => {
-                message.info('Job state updated', 2);
-                setJobState(jobInstance.state);
-            });
-        },
-        [jobInstance],
-    );
+    const changeState = useCallback((state: JobState) => {
+        dispatch(updateCurrentJobAsync({ state })).then(() => {
+            message.info('Job state updated', 2);
+            setJobState(jobInstance.state);
+        });
+    }, [jobInstance]);
 
-    const changeJobState = useCallback(
-        (state: JobState) => () => {
-            Modal.confirm({
-                title: 'Would you like to update current job state?',
-                content: `Job state will be switched to "${state}"`,
-                okText: 'Continue',
-                cancelText: 'Cancel',
-                className: 'cvat-modal-content-change-job-state',
-                onOk: () => changeState(state),
-            });
-        },
-        [changeState],
-    );
+    const changeJobState = useCallback((state: JobState) => () => {
+        Modal.confirm({
+            title: 'Would you like to update current job state?',
+            content: `Job state will be switched to "${state}"`,
+            okText: 'Continue',
+            cancelText: 'Cancel',
+            className: 'cvat-modal-content-change-job-state',
+            onOk: () => changeState(state),
+        });
+    }, [changeState]);
 
     const computeClassName = (menuItemState: string): string => {
         if (menuItemState === jobState) return 'cvat-submenu-current-job-state-item';
@@ -131,43 +124,41 @@ function AnnotationMenuComponent(): JSX.Element {
                         <br />
                         <Collapse
                             bordered={false}
-                            items={[
-                                {
-                                    key: 1,
-                                    label: <Text>Select Range</Text>,
-                                    children: (
-                                        <>
-                                            <Text>From: </Text>
-                                            <InputNumber
-                                                min={0}
-                                                max={stopFrame}
-                                                onChange={(value) => {
-                                                    removeFrom = value;
+                            items={[{
+                                key: 1,
+                                label: <Text>Select Range</Text>,
+                                children: (
+                                    <>
+                                        <Text>From: </Text>
+                                        <InputNumber
+                                            min={0}
+                                            max={stopFrame}
+                                            onChange={(value) => {
+                                                removeFrom = value;
+                                            }}
+                                        />
+                                        <Text>  To: </Text>
+                                        <InputNumber
+                                            min={0}
+                                            max={stopFrame}
+                                            onChange={(value) => {
+                                                removeUpTo = value;
+                                            }}
+                                        />
+                                        <CVATTooltip title='Applicable only for annotations in range'>
+                                            <br />
+                                            <br />
+                                            <Checkbox
+                                                onChange={(check) => {
+                                                    removeOnlyKeyframes = check.target.checked;
                                                 }}
-                                            />
-                                            <Text> To: </Text>
-                                            <InputNumber
-                                                min={0}
-                                                max={stopFrame}
-                                                onChange={(value) => {
-                                                    removeUpTo = value;
-                                                }}
-                                            />
-                                            <CVATTooltip title='Applicable only for annotations in range'>
-                                                <br />
-                                                <br />
-                                                <Checkbox
-                                                    onChange={(check) => {
-                                                        removeOnlyKeyframes = check.target.checked;
-                                                    }}
-                                                >
-                                                    Delete only keyframes for tracks
-                                                </Checkbox>
-                                            </CVATTooltip>
-                                        </>
-                                    ),
-                                },
-                            ]}
+                                            >
+                                                Delete only keyframes for tracks
+                                            </Checkbox>
+                                        </CVATTooltip>
+                                    </>
+                                ),
+                            }]}
                         />
                     </div>
                 ),
@@ -202,32 +193,27 @@ function AnnotationMenuComponent(): JSX.Element {
         key: 'job-state-submenu',
         popupClassName: 'cvat-annotation-menu-job-state-submenu',
         label: 'Change job state',
-        children: [
-            {
-                key: `state:${JobState.NEW}`,
-                label: JobState.NEW,
-                className: computeClassName(JobState.NEW),
-                onClick: changeJobState(JobState.NEW),
-            },
-            {
-                key: `state:${JobState.IN_PROGRESS}`,
-                label: JobState.IN_PROGRESS,
-                className: computeClassName(JobState.IN_PROGRESS),
-                onClick: changeJobState(JobState.IN_PROGRESS),
-            },
-            {
-                key: `state:${JobState.REJECTED}`,
-                label: JobState.REJECTED,
-                className: computeClassName(JobState.REJECTED),
-                onClick: changeJobState(JobState.REJECTED),
-            },
-            {
-                key: `state:${JobState.COMPLETED}`,
-                label: JobState.COMPLETED,
-                className: computeClassName(JobState.COMPLETED),
-                onClick: changeJobState(JobState.COMPLETED),
-            },
-        ],
+        children: [{
+            key: `state:${JobState.NEW}`,
+            label: JobState.NEW,
+            className: computeClassName(JobState.NEW),
+            onClick: changeJobState(JobState.NEW),
+        }, {
+            key: `state:${JobState.IN_PROGRESS}`,
+            label: JobState.IN_PROGRESS,
+            className: computeClassName(JobState.IN_PROGRESS),
+            onClick: changeJobState(JobState.IN_PROGRESS),
+        }, {
+            key: `state:${JobState.REJECTED}`,
+            label: JobState.REJECTED,
+            className: computeClassName(JobState.REJECTED),
+            onClick: changeJobState(JobState.REJECTED),
+        }, {
+            key: `state:${JobState.COMPLETED}`,
+            label: JobState.COMPLETED,
+            className: computeClassName(JobState.COMPLETED),
+            onClick: changeJobState(JobState.COMPLETED),
+        }],
     });
 
     menuItems.push({
