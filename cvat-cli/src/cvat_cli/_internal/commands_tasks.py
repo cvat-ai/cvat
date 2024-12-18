@@ -226,7 +226,7 @@ class TaskCreate:
             status_check_period=status_check_period,
             pbar=DeferredTqdmProgressReporter(),
         )
-        print("Created task id", task.id)
+        print(task.id)
 
 
 @COMMANDS.command_class("delete")
@@ -406,7 +406,7 @@ class TaskCreateFromBackup:
             status_check_period=status_check_period,
             pbar=DeferredTqdmProgressReporter(),
         )
-        print(f"Created task ID", task.id)
+        print(task.id)
 
 
 @COMMANDS.command_class("auto-annotate")
