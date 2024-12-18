@@ -88,6 +88,12 @@ context('Requests page', () => {
         cy.openTask(taskName);
     }
 
+    function closeAllNotifications() {
+        cy.get('.ant-notification-notice').each((notification) => {
+            cy.wrap(notification).find('span[aria-label="close"]').click();
+        });
+    }
+
     before(() => {
         cy.visit('/auth/login');
         cy.login();
@@ -347,9 +353,7 @@ context('Requests page', () => {
                         });
                     });
 
-                cy.get('.ant-notification-notice').each((notification) => {
-                    cy.wrap(notification).find('span[aria-label="close"]').click();
-                });
+                closeAllNotifications();
             });
         });
 
