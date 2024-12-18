@@ -88,13 +88,6 @@ context('Requests page', () => {
         cy.openTask(taskName);
     }
 
-    function closeAllNotifications() {
-        cy.get('.ant-notification-notice').each((notification) => {
-            cy.wrap(notification).find('span[aria-label="close"]').click();
-        });
-        cy.get('.ant-notification-notice').should('not.exist');
-    }
-
     before(() => {
         cy.visit('/auth/login');
         cy.login();
@@ -328,6 +321,14 @@ context('Requests page', () => {
             });
 
             cy.getJobIDFromIdx(0).then((jobID) => {
+                const closeExportNotification = () => {
+                    cy.get('.ant-notification-notice').first().within((notification) => {
+                        cy.contains('Export is finished').should('be.visible');
+                        cy.get('span[aria-label="close"]').click();
+                        cy.wrap(notification).should('not.exist');
+                    });
+                };
+
                 const exportParams = {
                     type: 'dataset',
                     format: exportFormat,
@@ -343,6 +344,9 @@ context('Requests page', () => {
                 };
                 cy.exportJob(newExportParams);
 
+                closeExportNotification();
+                closeExportNotification();
+
                 cy.contains('.cvat-header-button', 'Requests').should('be.visible').click();
                 cy.url().should('include', '/requests');
 
@@ -353,8 +357,6 @@ context('Requests page', () => {
                             cy.get('.cvat-request-item-progress-success').should('exist');
                         });
                     });
-
-                closeAllNotifications();
             });
         });
 
