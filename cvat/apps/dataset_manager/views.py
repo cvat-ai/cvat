@@ -54,9 +54,9 @@ TTL_CONSTS = {
     'job': JOB_CACHE_TTL,
 }
 
-EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = timedelta(seconds=settings.DATASET_CACHE_LOCK_ACQUISITION_TIMEOUT)
-EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.DATASET_EXPORT_LOCKED_RETRY_INTERVAL)
-EXPORT_LOCK_TTL = timedelta(seconds=settings.DATASET_EXPORT_LOCK_TTL)
+EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = timedelta(seconds=settings.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT)
+EXPORT_CACHE_LOCK_TTL = timedelta(seconds=settings.EXPORT_CACHE_LOCK_TTL)
+EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.EXPORT_LOCKED_RETRY_INTERVAL)
 
 
 def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
@@ -160,7 +160,7 @@ def export(
         # 2. to create a file when it doesn't exist
         with get_export_cache_lock(
             output_path,
-            ttl=EXPORT_LOCK_TTL,
+            ttl=EXPORT_CACHE_LOCK_TTL,
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
         ):
             if osp_exists(output_path):
@@ -173,7 +173,7 @@ def export(
                 server_url=server_url, save_images=save_images)
             with get_export_cache_lock(
                 output_path,
-                ttl=EXPORT_LOCK_TTL,
+                ttl=EXPORT_CACHE_LOCK_TTL,
                 acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ):
                 os.replace(temp_file, output_path)
@@ -244,7 +244,7 @@ def clear_export_cache(file_path: str, file_ctime: float, logger: logging.Logger
             file_path,
             block=True,
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
-            ttl=EXPORT_LOCK_TTL,
+            ttl=EXPORT_CACHE_LOCK_TTL,
         ):
             if not osp.exists(file_path):
                 raise FileNotFoundError("Export cache file '{}' doesn't exist".format(file_path))

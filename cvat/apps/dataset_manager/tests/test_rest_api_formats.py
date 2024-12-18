@@ -1444,8 +1444,8 @@ class ExportBehaviorTest(_DbTestBase):
         clear_removed_the_file = self.SharedBool()
         export_outdated_after = timedelta(seconds=1)
 
-        EXPORT_LOCK_TTL = 4
-        EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = EXPORT_LOCK_TTL + 1
+        EXPORT_CACHE_LOCK_TTL = 4
+        EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = EXPORT_CACHE_LOCK_TTL + 1
 
         def _export(*_, task_id: int):
             import sys
@@ -1466,7 +1466,7 @@ class ExportBehaviorTest(_DbTestBase):
                 original_log_exception(logger, exc_info)
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=EXPORT_LOCK_TTL),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TTL", new=EXPORT_CACHE_LOCK_TTL),
                 patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
                       new=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT),
                 patch(
@@ -1497,8 +1497,8 @@ class ExportBehaviorTest(_DbTestBase):
             from cvat.apps.dataset_manager.views import LockNotAvailableError
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=EXPORT_LOCK_TTL),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_LOCK_TTL - 1),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TTL", new=EXPORT_CACHE_LOCK_TTL),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_CACHE_LOCK_TTL - 1),
                 patch(
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
@@ -1938,7 +1938,7 @@ class ExportBehaviorTest(_DbTestBase):
             from cvat.apps.dataset_manager.task import export_task as original_export_task
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=LOCK_TTL),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TTL", new=LOCK_TTL),
                 patch(
                     "cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
                     new=LOCK_ACQUISITION_TIMEOUT,
@@ -1978,7 +1978,7 @@ class ExportBehaviorTest(_DbTestBase):
             from cvat.apps.dataset_manager.task import export_task as original_export_task
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_LOCK_TTL", new=LOCK_TTL),
+                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TTL", new=LOCK_TTL),
                 patch(
                     "cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
                     new=LOCK_ACQUISITION_TIMEOUT,
