@@ -1201,8 +1201,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 bulk_context.chunks_to_be_removed.extend(chunks_to_be_removed)
                 bulk_context.segments_with_updated_chunks.append(db_segment.id)
             else:
-                media_cache = MediaCache()
-                media_cache.remove_segment_chunks(chunks_to_be_removed)
+                MediaCache().remove_segment_chunks(chunks_to_be_removed)
 
                 db_segment.chunks_updated_date = timezone.now()
                 db_segment.save(update_fields=['chunks_updated_date'])
@@ -1525,8 +1524,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
         # Import it here to avoid circular import
         from cvat.apps.engine.cache import MediaCache
-        media_cache = MediaCache()
-        media_cache.remove_segment_chunks(bulk_context.chunks_to_be_removed)
+        MediaCache().remove_segment_chunks(bulk_context.chunks_to_be_removed)
 
         # Update segments
         updated_date = timezone.now()
