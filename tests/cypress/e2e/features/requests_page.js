@@ -92,6 +92,7 @@ context('Requests page', () => {
         cy.get('.ant-notification-notice').each((notification) => {
             cy.wrap(notification).find('span[aria-label="close"]').click();
         });
+        cy.get('.ant-notification-notice').should('not.exist');
     }
 
     before(() => {
