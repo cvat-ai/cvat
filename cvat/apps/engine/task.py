@@ -1465,7 +1465,7 @@ def _create_thread(
         ))
 
     # TODO: refactor
-    if db_data.validation_layout:
+    if db_data.nullable_validation_layout:
         if db_data.validation_layout.mode == models.ValidationMode.GT:
             def _to_abs_frame(rel_frame: int) -> int:
                 return rel_frame * db_data.get_frame_step() + db_data.start_frame

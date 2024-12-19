@@ -1783,7 +1783,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             updated_task = request_serializer.save()
             validation_layout = updated_task.data.validation_layout
         else:
-            validation_layout = db_task.data.validation_layout
+            validation_layout = db_task.data.nullable_validation_layout
 
         if validation_layout is None:
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -1917,11 +1917,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     @transaction.atomic
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Job):
         if instance.type != JobType.GROUND_TRUTH:
             raise ValidationError("Only ground truth jobs can be removed")
 
-        validation_layout: Optional[models.ValidationLayout] = instance.segment.task.data.validation_layout
+        validation_layout: Optional[models.ValidationLayout] = instance.segment.task.data.nullable_validation_layout
         if (validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL):
             raise ValidationError(
                 'GT jobs cannot be removed when task validation mode is "{}"'.format(

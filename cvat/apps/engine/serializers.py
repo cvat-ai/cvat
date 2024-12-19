@@ -991,7 +991,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         db_task = db_segment.task
         db_data = db_task.data
 
-        db_task_validation_layout = db_data.validation_layout
+        db_task_validation_layout = db_data.nullable_validation_layout
 
         if not db_task_validation_layout:
             raise serializers.ValidationError(
@@ -1259,7 +1259,7 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
     )
 
     def to_representation(self, instance: models.Job):
-        validation_layout = instance.segment.task.data.validation_layout
+        validation_layout = instance.segment.task.data.nullable_validation_layout
         if not validation_layout:
             return {}
 
@@ -1337,7 +1337,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout = instance.data.validation_layout
+        validation_layout = instance.data.nullable_validation_layout
 
         if not validation_layout:
             raise serializers.ValidationError(
@@ -2416,7 +2416,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
                 )
             )
 
-        validation_layout = instance.validation_layout
+        validation_layout = instance.nullable_validation_layout
         if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
             gt_frame_set = set(validation_layout.frames)
             changed_deleted_frames = requested_deleted_frames_set.difference(instance.deleted_frames)
