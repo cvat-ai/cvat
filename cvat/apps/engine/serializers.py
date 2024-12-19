@@ -39,7 +39,7 @@ from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 from cvat.apps.engine.utils import (
-    format_list, parse_exception_message, CvatChunkTimestampMismatchError,
+    format_list, grouped, parse_exception_message, CvatChunkTimestampMismatchError,
     parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse, take_by
 )
 
@@ -1570,39 +1570,48 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
         # Update related images in 2 steps: remove all m2m for honeypots, then add (copy) new ones
         # 1. remove
-        for updated_honeypots_batch in take_by(bulk_context.updated_honeypots, chunk_size=1000):
+        for updated_honeypots_batch in take_by(
+            bulk_context.updated_honeypots.values(), chunk_size=1000
+        ):
             models.RelatedFile.images.through.objects.filter(
-                image_id__in=updated_honeypots_batch
+                image_id__in=(db_honeypot.id for db_honeypot in updated_honeypots_batch)
             ).delete()
 
-        # 2. batched add (copy), collect all the new records and insert
+        # 2. batched add (copy): collect all the new records and insert
         frame_provider = TaskFrameProvider(db_task)
-        validation_frame_uses_with_related_files: dict[int, list[int]] = {}
-        for honeypot_frame, db_honeypot in bulk_context.updated_honeypots.items():
-            validation_frame_uses_with_related_files.setdefault(
-                frame_provider.get_rel_frame_number(db_honeypot.real_frame), []
-            ).append(honeypot_frame)
+        honeypots_by_validation_frame = grouped(
+            bulk_context.updated_honeypots,
+            key=lambda honeypot_frame: frame_provider.get_rel_frame_number(
+                bulk_context.updated_honeypots[honeypot_frame].real_frame
+            )
+        ) # validation frame -> [honeypot_frame, ...]
 
         new_m2m_objects = []
-        related_files_m2m_objects = (
+        m2m_objects_by_validation_image_id = grouped(
             models.RelatedFile.images.through.objects
-            .filter(image_id__in=[
-                bulk_context.all_db_frames[f].id for f in db_task.data.validation_layout.frames
-            ])
-            .all()
+            .filter(image_id__in=(
+                bulk_context.all_db_frames[validation_frame].id
+                for validation_frame in honeypots_by_validation_frame
+            ))
+            .all(),
+            key=lambda m2m_obj: m2m_obj.image_id
         )
-        for validation_frame, validation_frame_uses in (
-            validation_frame_uses_with_related_files.items()
-        ):
-            new_m2m_objects.extend(
-                models.RelatedFile.images.through(
-                    image_id=bulk_context.all_db_frames[honeypot_frame].id,
-                    related_file_id=related_file_m2m_obj.related_file_id
-                )
-                for honeypot_frame in validation_frame_uses
-                for related_file_m2m_obj in related_files_m2m_objects
-                if related_file_m2m_obj.image_id == validation_frame
+        for validation_frame, validation_frame_honeypots in honeypots_by_validation_frame.items():
+            validation_frame_m2m_objects = m2m_objects_by_validation_image_id.get(
+                bulk_context.all_db_frames[validation_frame].id
             )
+            if not validation_frame_m2m_objects:
+                continue
+
+            # Copy validation frame m2m objects to corresponding honeypots
+            for honeypot_frame in validation_frame_honeypots:
+                new_m2m_objects.extend(
+                    models.RelatedFile.images.through(
+                        image_id=bulk_context.all_db_frames[honeypot_frame].id,
+                        related_file_id=m2m_obj.related_file_id
+                    )
+                    for m2m_obj in validation_frame_m2m_objects
+                )
 
         models.RelatedFile.images.through.objects.bulk_create(new_m2m_objects, batch_size=1000)
 
