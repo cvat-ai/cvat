@@ -73,6 +73,7 @@ from .utils import (
     export_task_dataset,
     parse_frame_step,
     wait_until_task_is_created,
+    calc_end_frame,
 )
 
 
@@ -3111,7 +3112,7 @@ class TestTaskData:
         stop_frame = getattr(task_spec, "stop_frame", None) or (
             start_frame + (task_spec.size - 1) * frame_step
         )
-        end_frame = stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step
+        end_frame = calc_end_frame(start_frame, stop_frame, frame_step)
 
         validation_params = getattr(task_spec, "validation_params", None)
         if validation_params and validation_params.mode.value == "gt_pool":
@@ -6410,10 +6411,7 @@ class TestPatchExportFrames(TestTaskData):
             task_meta["stop_frame"],
             spec.frame_step,
         )
-        src_end_frame = (
-            src_stop_frame - ((src_stop_frame - src_start_frame) % src_frame_step) + src_frame_step
-        )  # taken from TestTaskData._compute_annotation_segment_params
-
+        src_end_frame = calc_end_frame(src_start_frame, src_stop_frame, src_frame_step)
         assert len(frames) == spec.size == task_meta["size"], "Some frames were lost"
         assert np.all(
             frames == np.arange(src_start_frame, src_end_frame, src_frame_step)
