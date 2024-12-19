@@ -26,6 +26,10 @@ CVAT_CHUNK_CREATE_CHECK_INTERVAL = 0.2
 """
 Sets the frequency of checking the readiness of the chunk
 """
+default_export_cache_ttl = 60 * 60 * 24
+default_export_cache_lock_ttl = 30
+default_export_cache_lock_acquisition_timeout = 50
+default_export_locked_retry_interval = 60
 
 EXPORT_CACHE_TTL = os.getenv("CVAT_DATASET_CACHE_TTL")
 "Base lifetime for cached export files, in seconds"
@@ -37,9 +41,8 @@ if EXPORT_CACHE_TTL is not None:
         DeprecationWarning,
     )
 else:
-    EXPORT_CACHE_TTL = int(os.getenv("CVAT_EXPORT_CACHE_TTL", 60 * 60 * 24))
+    EXPORT_CACHE_TTL = int(os.getenv("CVAT_EXPORT_CACHE_TTL", default_export_cache_ttl))
 
-default_export_cache_lock_ttl = 30
 
 EXPORT_CACHE_LOCK_TTL = os.getenv("CVAT_DATASET_EXPORT_LOCK_TTL")
 "Default lifetime for the export cache lock, in seconds."
@@ -66,10 +69,10 @@ if EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT is not None:
         DeprecationWarning,
     )
 else:
-    default_export_cache_lock_acquire_timeout = 50
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = int(
         os.getenv(
-            "CVAT_EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", default_export_cache_lock_acquire_timeout
+            "CVAT_EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT",
+            default_export_cache_lock_acquisition_timeout,
         )
     )
 
@@ -87,4 +90,6 @@ if EXPORT_LOCKED_RETRY_INTERVAL is not None:
         DeprecationWarning,
     )
 else:
-    EXPORT_LOCKED_RETRY_INTERVAL = int(os.getenv("CVAT_EXPORT_LOCKED_RETRY_INTERVAL", 60))
+    EXPORT_LOCKED_RETRY_INTERVAL = int(
+        os.getenv("CVAT_EXPORT_LOCKED_RETRY_INTERVAL", default_export_locked_retry_interval)
+    )
