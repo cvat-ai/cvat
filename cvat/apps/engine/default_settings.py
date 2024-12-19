@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging as log
 import os
-import warnings
 
 from attrs.converters import to_bool
 from django.core.exceptions import ImproperlyConfigured
+
+logger = log.getLogger("cvat")
 
 MEDIA_CACHE_ALLOW_STATIC_CACHE = to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False))
 """
@@ -36,9 +38,8 @@ EXPORT_CACHE_TTL = os.getenv("CVAT_DATASET_CACHE_TTL")
 
 if EXPORT_CACHE_TTL is not None:
     EXPORT_CACHE_TTL = int(EXPORT_CACHE_TTL)
-    warnings.warn(
+    logger.warning(
         "The CVAT_DATASET_CACHE_TTL is deprecated, use CVAT_EXPORT_CACHE_TTL instead",
-        DeprecationWarning,
     )
 else:
     EXPORT_CACHE_TTL = int(os.getenv("CVAT_EXPORT_CACHE_TTL", default_export_cache_ttl))
@@ -49,9 +50,8 @@ EXPORT_CACHE_LOCK_TTL = os.getenv("CVAT_DATASET_EXPORT_LOCK_TTL")
 
 if EXPORT_CACHE_LOCK_TTL is not None:
     EXPORT_CACHE_LOCK_TTL = int(EXPORT_CACHE_LOCK_TTL)
-    warnings.warn(
+    logger.warning(
         "The CVAT_DATASET_EXPORT_LOCK_TTL is deprecated, use CVAT_EXPORT_CACHE_LOCK_TTL instead",
-        DeprecationWarning,
     )
 else:
     EXPORT_CACHE_LOCK_TTL = int(
@@ -63,10 +63,9 @@ EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = os.getenv("CVAT_DATASET_CACHE_LOCK_TIMEO
 
 if EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT is not None:
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = int(EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT)
-    warnings.warn(
+    logger.warning(
         "The CVAT_DATASET_CACHE_LOCK_TIMEOUT is deprecated, "
         "use CVAT_EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT instead",
-        DeprecationWarning,
     )
 else:
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = int(
@@ -84,10 +83,9 @@ EXPORT_LOCKED_RETRY_INTERVAL = os.getenv("CVAT_DATASET_EXPORT_LOCKED_RETRY_INTER
 
 if EXPORT_LOCKED_RETRY_INTERVAL is not None:
     EXPORT_LOCKED_RETRY_INTERVAL = int(EXPORT_LOCKED_RETRY_INTERVAL)
-    warnings.warn(
+    logger.warning(
         "The CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL is deprecated, "
         "use CVAT_EXPORT_LOCKED_RETRY_INTERVAL instead",
-        DeprecationWarning,
     )
 else:
     EXPORT_LOCKED_RETRY_INTERVAL = int(

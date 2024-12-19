@@ -7,6 +7,3 @@ from django.apps import AppConfig
 
 class DatasetManagerConfig(AppConfig):
     name = "cvat.apps.dataset_manager"
-
-    def ready(self) -> None:
-        from django.conf import settings
