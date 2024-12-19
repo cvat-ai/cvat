@@ -66,6 +66,7 @@ from shared.utils.helpers import (
 from .utils import (
     DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
+    calc_end_frame,
     compare_annotations,
     create_task,
     export_dataset,
@@ -73,7 +74,6 @@ from .utils import (
     export_task_dataset,
     parse_frame_step,
     wait_until_task_is_created,
-    calc_end_frame,
 )
 
 
