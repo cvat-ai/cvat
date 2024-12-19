@@ -357,8 +357,8 @@ class MediaCache:
     ) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_task_chunk_{chunk_number}_{quality}"
 
-    def _make_context_image_preview_key(self, db_data: models.Data, frame_number: int) -> str:
-        return f"context_image_{db_data.id}_{frame_number}_preview"
+    def _make_frame_context_images_chunk_key(self, db_data: models.Data, frame_number: int) -> str:
+        return f"context_images_{db_data.id}_{frame_number}"
 
     @overload
     def _to_data_with_mime(self, cache_item: _CacheItem) -> DataWithMime: ...
@@ -515,7 +515,7 @@ class MediaCache:
     ) -> DataWithMime:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
-                self._make_context_image_preview_key(db_data, frame_number),
+                self._make_frame_context_images_chunk_key(db_data, frame_number),
                 Callback(
                     callable=self.prepare_context_images_chunk,
                     args=[db_data, frame_number],
