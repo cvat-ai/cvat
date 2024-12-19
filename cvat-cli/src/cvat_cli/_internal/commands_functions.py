@@ -10,7 +10,7 @@ from collections.abc import Sequence
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client
 
-from .agent import run_agent
+from .agent import FUNCTION_KIND_DETECTOR, FUNCTION_PROVIDER_NATIVE, run_agent
 from .command_base import CommandGroup
 from .common import FunctionLoader, configure_function_implementation_arguments
 
@@ -43,12 +43,12 @@ class FunctionCreateNative:
         function = function_loader.load()
 
         remote_function = {
-            "provider": "native",
+            "provider": FUNCTION_PROVIDER_NATIVE,
             "name": name,
         }
 
         if isinstance(function.spec, cvataa.DetectionFunctionSpec):
-            remote_function["kind"] = "detector"
+            remote_function["kind"] = FUNCTION_KIND_DETECTOR
             remote_function["labels_v2"] = []
 
             for label_spec in function.spec.labels:

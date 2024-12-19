@@ -27,6 +27,9 @@ from cvat_sdk.exceptions import ApiException
 
 from .common import CriticalError, FunctionLoader
 
+FUNCTION_PROVIDER_NATIVE = "native"
+FUNCTION_KIND_DETECTOR = "detector"
+
 _POLLING_INTERVAL = timedelta(seconds=60)
 
 _UPDATE_INTERVAL = timedelta(seconds=30)
@@ -110,10 +113,10 @@ class _Agent:
     def _validate_function_compatibility(self, remote_function: dict) -> None:
         function_id = remote_function["id"]
 
-        if remote_function["provider"] != "native":
+        if remote_function["provider"] != FUNCTION_PROVIDER_NATIVE:
             raise CriticalError(
                 f"Function #{function_id} has provider {remote_function['provider']!r}. "
-                "Agents can only be run for functions with provider 'native'."
+                f"Agents can only be run for functions with provider {FUNCTION_PROVIDER_NATIVE!r}."
             )
 
         if isinstance(self._function_spec, cvataa.DetectionFunctionSpec):
@@ -129,9 +132,10 @@ class _Agent:
             f"Function #{remote_function['id']} is incompatible with function object: "
         )
 
-        if remote_function["kind"] != "detector":
+        if remote_function["kind"] != FUNCTION_KIND_DETECTOR:
             raise CriticalError(
-                incompatible_msg + f"kind is {remote_function['kind']!r} (expected 'detector')."
+                incompatible_msg
+                + f"kind is {remote_function['kind']!r} (expected {FUNCTION_KIND_DETECTOR!r})."
             )
 
         labels_by_name = {label.name: label for label in self._function_spec.labels}
