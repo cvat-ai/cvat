@@ -1122,14 +1122,15 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             db_segment_frame = db_frames[frame]
             assert db_segment_frame.is_placeholder
 
-            if db_segment_frame.real_frame == db_requested_frame.real_frame:
+            if db_segment_frame.real_frame == db_requested_frame.frame:
                 continue
 
             # Change image in the current segment honeypot frame
+            db_segment_frame.real_frame = db_requested_frame.frame
+
             db_segment_frame.path = db_requested_frame.path
             db_segment_frame.width = db_requested_frame.width
             db_segment_frame.height = db_requested_frame.height
-            db_segment_frame.real_frame = db_requested_frame.frame
 
             updated_honeypots[frame] = db_segment_frame
 
