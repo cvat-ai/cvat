@@ -1198,11 +1198,20 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                         {'db_segment': db_segment, 'chunk_number': chunk_id, 'quality': quality}
                     )
 
+            context_image_chunks_to_be_removed = [
+                {"db_data": db_data, "frame_number": f} for f in updated_honeypots
+            ]
+
             if bulk_context:
                 bulk_context.chunks_to_be_removed.extend(chunks_to_be_removed)
+                bulk_context.context_image_chunks_to_be_removed.extend(
+                    context_image_chunks_to_be_removed
+                )
                 bulk_context.segments_with_updated_chunks.append(db_segment.id)
             else:
-                MediaCache().remove_segment_chunks(chunks_to_be_removed)
+                media_cache = MediaCache()
+                media_cache.remove_segments_chunks(chunks_to_be_removed)
+                media_cache.remove_context_images_chunks(context_image_chunks_to_be_removed)
 
                 db_segment.chunks_updated_date = timezone.now()
                 db_segment.save(update_fields=['chunks_updated_date'])
@@ -1352,6 +1361,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         self.updated_honeypots: dict[int, models.Image] = {}
         self.updated_segments: list[int] = []
         self.chunks_to_be_removed: list[dict[str, Any]] = []
+        self.context_image_chunks_to_be_removed: list[dict[str, Any]] = []
         self.segments_with_updated_chunks: list[int] = []
 
         self.all_db_frames = all_db_frames
@@ -1525,7 +1535,9 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
         # Import it here to avoid circular import
         from cvat.apps.engine.cache import MediaCache
-        MediaCache().remove_segment_chunks(bulk_context.chunks_to_be_removed)
+        media_cache = MediaCache()
+        media_cache.remove_segments_chunks(bulk_context.chunks_to_be_removed)
+        media_cache.remove_context_images_chunks(bulk_context.context_image_chunks_to_be_removed)
 
         # Update segments
         updated_date = timezone.now()

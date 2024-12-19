@@ -481,17 +481,42 @@ class MediaCache:
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
-    def remove_segment_chunks(self, params: Sequence[dict[str, Any]]) -> None:
+    def remove_context_images_chunk(self, db_data: models.Data, frame_number: str) -> None:
+        self._delete_cache_item(
+            self._make_frame_context_images_chunk_key(db_data, frame_number=frame_number)
+        )
+
+    def remove_segments_chunks(self, params: Sequence[dict[str, Any]]) -> None:
         """
         Removes several segment chunks from the cache.
 
         The function expects a sequence of remove_segment_chunk() parameters as dicts.
         """
+        # TODO: add a version of this function
+        # that removes related cache elements as well (context images, previews, ...)
+        # to provide encapsulation
+
+        # TODO: add a generic bulk cleanup function for different objects, including related ones
+        # (likely a bulk key aggregator should be used inside to reduce requests count)
 
         keys_to_remove = []
         for item_params in params:
             db_obj = item_params.pop("db_segment")
             keys_to_remove.append(self._make_chunk_key(db_obj, **item_params))
+
+        self._bulk_delete_cache_items(keys_to_remove)
+
+    def remove_context_images_chunks(self, params: Sequence[dict[str, Any]]) -> None:
+        """
+        Removes several context image chunks from the cache.
+
+        The function expects a sequence of remove_context_images_chunk() parameters as dicts.
+        """
+
+        keys_to_remove = []
+        for item_params in params:
+            db_obj = item_params.pop("db_data")
+            keys_to_remove.append(self._make_frame_context_images_chunk_key(db_obj, **item_params))
 
         self._bulk_delete_cache_items(keys_to_remove)
 
