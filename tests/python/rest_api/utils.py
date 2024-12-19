@@ -601,3 +601,7 @@ DATUMARO_FORMAT_FOR_DIMENSION = {
 
 def parse_frame_step(frame_filter: str) -> int:
     return int((frame_filter or "step=1").split("=")[1])
+
+
+def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
+    return stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step

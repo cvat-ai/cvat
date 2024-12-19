@@ -444,6 +444,8 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
+                "--verbose",
+                "--no-cov", // vscode debugger might not work otherwise
                 "tests/python/rest_api/"
             ],
             "cwd": "${workspaceFolder}",
