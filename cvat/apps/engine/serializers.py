@@ -1608,7 +1608,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 new_m2m_objects.extend(
                     models.RelatedFile.images.through(
                         image_id=bulk_context.all_db_frames[honeypot_frame].id,
-                        related_file_id=m2m_obj.related_file_id
+                        relatedfile_id=m2m_obj.relatedfile_id
                     )
                     for m2m_obj in validation_frame_m2m_objects
                 )
