@@ -5,6 +5,7 @@
 import concurrent.futures
 import json
 import multiprocessing
+import random
 import secrets
 import shutil
 import tempfile
@@ -30,7 +31,8 @@ from .common import CriticalError, FunctionLoader
 FUNCTION_PROVIDER_NATIVE = "native"
 FUNCTION_KIND_DETECTOR = "detector"
 
-_POLLING_INTERVAL = timedelta(seconds=60)
+_POLLING_INTERVAL_MEAN = timedelta(seconds=60)
+_POLLING_INTERVAL_MAX_OFFSET = timedelta(seconds=10)
 
 _UPDATE_INTERVAL = timedelta(seconds=30)
 
@@ -88,6 +90,8 @@ def _worker_job_detect(context, image):
 
 class _Agent:
     def __init__(self, client: Client, executor: _RecoverableExecutor, function_id: int):
+        self._rng = random.Random()  # nosec
+
         self._client = client
         self._executor = executor
         self._function_id = function_id
@@ -164,6 +168,12 @@ class _Agent:
                     + f"label {remote_label['name']!r} has attributes, which is not supported."
                 )
 
+    def _wait_between_polls(self):
+        # offset the interval randomly to avoid synchronization between workers
+        max_offset_sec = _POLLING_INTERVAL_MAX_OFFSET.total_seconds()
+        offset_sec = self._rng.uniform(-max_offset_sec, max_offset_sec)
+        time.sleep(_POLLING_INTERVAL_MEAN.total_seconds() + offset_sec)
+
     def run(self, *, burst: bool) -> None:
         if burst:
             while ar := self._poll_for_ar():
@@ -174,7 +184,7 @@ class _Agent:
                 if ar := self._poll_for_ar():
                     self._process_ar(ar)
                 else:
-                    time.sleep(_POLLING_INTERVAL.total_seconds())
+                    self._wait_between_polls()
 
     def _process_ar(self, ar: dict) -> None:
         self._client.logger.info("Got agent request: %r", ar)
@@ -249,7 +259,7 @@ class _Agent:
                     raise
 
                 self._client.logger.error("Acquire request failed; will retry", exc_info=True)
-                time.sleep(_POLLING_INTERVAL.total_seconds())
+                self._wait_between_polls()
 
         response_data = json.loads(response.data)
         return response_data["agent_request"]
