@@ -27,29 +27,26 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
                 cy.get('button').contains('Save').click({ force: true });
                 cy.get('button').contains('Save').trigger('mouseout');
             }
+            const badStatusCode = 502;
             function middleware() {
+                const badResponseStub = { statusCode: badStatusCode, body: 'Network error' };
                 let calls = 0;
-                const badResponseStub = { statusCode: 502, body: 'Network error' };
                 function handle(req, res) {
                     if (calls === 0) {
-                        console.log(calls);
                         calls++;
                         res.send(badResponseStub);
                     } else {
-                        console.log(calls);
-                        req.continue({ statusCode: 200, body: 'OK' });
+                        req.continue();
                     }
                 }
                 return handle;
             }
             cy.intercept('PATCH', '/api/jobs/**/data/meta**', middleware()).as('patchMeta');
             clickDelete();
-            clickSave();
             cy.contains('button', 'Restore').should('be.visible');
-            cy.wait('@patchMeta').its('response.body').should('eq', 502);
-            cy.wait('@patchMeta').its('response.body').should('eq', 200);
-
-            // TODO: refactor saveJob with necessary status
+            clickSave();
+            cy.wait('@patchMeta').its('response.status').should('eq', badStatusCode);
+            cy.wait('@patchMeta').its('response.status').should('eq', 200);
 
             // Check that frame is deleted
 
@@ -66,12 +63,6 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
              * since it already does an intercept of the same request
              *
              * */
-
-            // Send bad PATCH
-            cy.saveJob('PATCH', 502);
-
-            // Send again
-            cy.saveJob('PATCH', 200);
         });
     });
 });
