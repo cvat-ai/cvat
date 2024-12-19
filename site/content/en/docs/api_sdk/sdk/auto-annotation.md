@@ -163,7 +163,7 @@ The same logic is used for sub-label IDs.
 ### Helper factory functions
 
 The CVAT API model types used in the AA function protocol are somewhat unwieldy to work with,
-so it's recommented to use the helper factory functions provided by this layer.
+so it's recommended to use the helper factory functions provided by this layer.
 These helpers instantiate an object of their corresponding model type,
 passing their arguments to the model constructor
 and sometimes setting some attributes to fixed values.

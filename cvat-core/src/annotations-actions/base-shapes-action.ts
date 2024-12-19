@@ -142,7 +142,6 @@ export async function run(
 
         event.close();
     } finally {
-        throttledOnProgress('Finalizing', 100);
         await action.destroy();
     }
 }

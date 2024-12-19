@@ -9,7 +9,6 @@ from rq import Worker
 
 import cvat.utils.remote_debugger as debug
 
-
 DefaultWorker = Worker
 
 

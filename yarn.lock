@@ -10,13 +10,6 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@ant-design/colors@^6.0.0":
-  version "6.0.0"
-  resolved "https://registry.yarnpkg.com/@ant-design/colors/-/colors-6.0.0.tgz#9b9366257cffcc47db42b9d0203bb592c13c0298"
-  integrity sha512-qAZRvPzfdWHtfameEGP2Qvuf838NhergR35o+EuVyB5XvSA98xod5r4utvi4TJ3ywmevm290g9nsCG5MryrdWQ==
-  dependencies:
-    "@ctrl/tinycolor" "^3.4.0"
-
 "@ant-design/colors@^7.0.0", "@ant-design/colors@^7.0.2":
   version "7.0.2"
   resolved "https://registry.yarnpkg.com/@ant-design/colors/-/colors-7.0.2.tgz#c5c753a467ce8d86ba7ca4736d2c01f599bb5492"
@@ -55,31 +48,19 @@
     rc-util "^5.35.0"
     stylis "^4.0.13"
 
-"@ant-design/icons-svg@^4.3.0", "@ant-design/icons-svg@^4.4.0":
+"@ant-design/icons-svg@^4.4.0":
   version "4.4.2"
   resolved "https://registry.yarnpkg.com/@ant-design/icons-svg/-/icons-svg-4.4.2.tgz#ed2be7fb4d82ac7e1d45a54a5b06d6cecf8be6f6"
   integrity sha512-vHbT+zJEVzllwP+CM+ul7reTEfBR0vgxFe7+lREAsAA7YGsYpboiq2sQNeQeRvh09GfQgs/GyFEvZpJ9cLXpXA==
 
-"@ant-design/icons@^4.6.3":
-  version "4.8.3"
-  resolved "https://registry.yarnpkg.com/@ant-design/icons/-/icons-4.8.3.tgz#41555408ed5e9b0c3d53f3f24fe6a73abfcf4000"
-  integrity sha512-HGlIQZzrEbAhpJR6+IGdzfbPym94Owr6JZkJ2QCCnOkPVIWMO2xgIVcOKnl8YcpijIo39V7l2qQL5fmtw56cMw==
-  dependencies:
-    "@ant-design/colors" "^6.0.0"
-    "@ant-design/icons-svg" "^4.3.0"
-    "@babel/runtime" "^7.11.2"
-    classnames "^2.2.6"
-    lodash "^4.17.15"
-    rc-util "^5.9.4"
-
-"@ant-design/icons@^5.3.7":
-  version "5.3.7"
-  resolved "https://registry.yarnpkg.com/@ant-design/icons/-/icons-5.3.7.tgz#d9f3654bf7934ee5faba43f91b5a187f5309ec68"
-  integrity sha512-bCPXTAg66f5bdccM4TT21SQBDO1Ek2gho9h3nO9DAKXJP4sq+5VBjrQMSxMVXSB3HyEz+cUbHQ5+6ogxCOpaew==
+"@ant-design/icons@^5.3.7", "@ant-design/icons@^5.5.2":
+  version "5.5.2"
+  resolved "https://registry.yarnpkg.com/@ant-design/icons/-/icons-5.5.2.tgz#c4567943cc2b7c6dbe9cae68c06ffa35f755dc0d"
+  integrity sha512-xc53rjVBl9v2BqFxUjZGti/RfdDeA8/6KYglmInM2PNqSXc/WfuGDTifJI/ZsokJK0aeKvOIbXc9y2g8ILAhEA==
   dependencies:
     "@ant-design/colors" "^7.0.0"
     "@ant-design/icons-svg" "^4.4.0"
-    "@babel/runtime" "^7.11.2"
+    "@babel/runtime" "^7.24.8"
     classnames "^2.2.6"
     rc-util "^5.31.1"
 
@@ -1134,17 +1115,10 @@
   resolved "https://registry.yarnpkg.com/@babel/regjsgen/-/regjsgen-0.8.0.tgz#f0ba69b075e1f05fb2825b7fad991e7adbb18310"
   integrity sha512-x/rqGMdzj+fWZvCOYForTghzbtqPDZ5gPwaoNGHdgDfF2QA/XZbCBp4Moo5scrkAMPhB7z26XM/AaHuIJdgauA==
 
-"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.1", "@babel/runtime@^7.10.4", "@babel/runtime@^7.11.1", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.14.6", "@babel/runtime@^7.16.7", "@babel/runtime@^7.17.2", "@babel/runtime@^7.18.0", "@babel/runtime@^7.18.3", "@babel/runtime@^7.2.0", "@babel/runtime@^7.20.0", "@babel/runtime@^7.20.7", "@babel/runtime@^7.21.0", "@babel/runtime@^7.22.5", "@babel/runtime@^7.23.2", "@babel/runtime@^7.23.6", "@babel/runtime@^7.23.9", "@babel/runtime@^7.24.4", "@babel/runtime@^7.24.5", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2":
-  version "7.24.5"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.24.5.tgz#230946857c053a36ccc66e1dd03b17dd0c4ed02c"
-  integrity sha512-Nms86NXrsaeU9vbBJKni6gXiEXZ4CVpYVzEjDH9Sb8vmZ3UljyA1GSOJl/6LGPO8EHLuSF9H+IxNXHPX8QHJ4g==
-  dependencies:
-    regenerator-runtime "^0.14.0"
-
-"@babel/runtime@^7.24.7":
-  version "7.24.7"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.24.7.tgz#f4f0d5530e8dbdf59b3451b9b3e594b6ba082e12"
-  integrity sha512-UwgBRMjJP+xv857DCngvqXI3Iq6J4v0wXmwc6sapg+zyhbwmQX67LUEFrkK5tbyJ30jGuG3ZvWpBiB9LCy1kWw==
+"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.1", "@babel/runtime@^7.10.4", "@babel/runtime@^7.11.1", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.1", "@babel/runtime@^7.12.13", "@babel/runtime@^7.12.5", "@babel/runtime@^7.14.6", "@babel/runtime@^7.16.7", "@babel/runtime@^7.17.2", "@babel/runtime@^7.18.0", "@babel/runtime@^7.18.3", "@babel/runtime@^7.2.0", "@babel/runtime@^7.20.0", "@babel/runtime@^7.20.7", "@babel/runtime@^7.21.0", "@babel/runtime@^7.22.5", "@babel/runtime@^7.23.2", "@babel/runtime@^7.23.6", "@babel/runtime@^7.23.9", "@babel/runtime@^7.24.4", "@babel/runtime@^7.24.5", "@babel/runtime@^7.24.7", "@babel/runtime@^7.24.8", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2":
+  version "7.26.0"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.26.0.tgz#8600c2f595f277c60815256418b85356a65173c1"
+  integrity sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==
   dependencies:
     regenerator-runtime "^0.14.0"
 
@@ -1481,7 +1455,7 @@
   resolved "https://registry.yarnpkg.com/@csstools/utilities/-/utilities-1.0.0.tgz#42f3c213f2fb929324d465684ab9f46a0febd4bb"
   integrity sha512-tAgvZQe/t2mlvpNosA4+CkMiZ2azISW5WPAcdSalZlEjQvUfghHxfQcrCiK/7/CrfAWVxyM88kGFYO82heIGDg==
 
-"@ctrl/tinycolor@^3.4.0", "@ctrl/tinycolor@^3.6.1":
+"@ctrl/tinycolor@^3.6.1":
   version "3.6.1"
   resolved "https://registry.yarnpkg.com/@ctrl/tinycolor/-/tinycolor-3.6.1.tgz#b6c75a56a1947cc916ea058772d666a2c8932f31"
   integrity sha512-SITSV6aIXsuVNV3f3O0f2n/cgyEDWoSqtZMYiAmcsYHydcKrOz3gUxB/iXd/Qf08+IZX4KpgNbvUdMBmWz+kcA==
@@ -4236,9 +4210,9 @@ create-react-class@^15.5.3:
     object-assign "^4.1.1"
 
 cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
-  version "7.0.3"
-  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.3.tgz#f73a85b9d5d41d045551c177e2882d4ac85728a6"
-  integrity sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==
+  version "7.0.6"
+  resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.6.tgz#8a58fe78f00dcd70c370451759dfbfaf03e8ee9f"
+  integrity sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==
   dependencies:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
@@ -4402,7 +4376,7 @@ custom-error-instance@2.1.1:
     three "^0.156.1"
 
 "cvat-canvas@link:./cvat-canvas":
-  version "2.20.9"
+  version "2.20.10"
   dependencies:
     "@types/polylabel" "^1.0.5"
     polylabel "^1.1.0"
@@ -4413,7 +4387,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "15.2.0"
+  version "15.3.1"
   dependencies:
     axios "^1.7.4"
     axios-retry "^4.0.0"
@@ -8802,9 +8776,9 @@ nan@^2.17.0:
   integrity sha512-nO1xXxfh/RWNxfd/XPfbIfFk5vgLsAxUR9y5O0cHMJu/AW9U95JLXqthYHjEp+8gQ5p96K9jUp8nbVOxCdRbtw==
 
 nanoid@^3.3.7:
-  version "3.3.7"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.7.tgz#d0c301a691bc8d54efa0a2226ccf3fe2fd656bd8"
-  integrity sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==
+  version "3.3.8"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.8.tgz#b1be3030bee36aaff18bacb375e5cce521684baf"
+  integrity sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==
 
 natural-compare@^1.4.0:
   version "1.4.0"
@@ -10438,7 +10412,7 @@ rc-util@^4.15.3:
     react-lifecycles-compat "^3.0.4"
     shallowequal "^1.1.0"
 
-rc-util@^5.0.1, rc-util@^5.16.1, rc-util@^5.17.0, rc-util@^5.18.1, rc-util@^5.2.0, rc-util@^5.20.1, rc-util@^5.21.0, rc-util@^5.24.4, rc-util@^5.24.5, rc-util@^5.25.2, rc-util@^5.27.0, rc-util@^5.28.0, rc-util@^5.30.0, rc-util@^5.31.1, rc-util@^5.32.2, rc-util@^5.34.1, rc-util@^5.35.0, rc-util@^5.36.0, rc-util@^5.37.0, rc-util@^5.38.0, rc-util@^5.38.1, rc-util@^5.39.3, rc-util@^5.9.4:
+rc-util@^5.0.1, rc-util@^5.16.1, rc-util@^5.17.0, rc-util@^5.18.1, rc-util@^5.2.0, rc-util@^5.20.1, rc-util@^5.21.0, rc-util@^5.24.4, rc-util@^5.24.5, rc-util@^5.25.2, rc-util@^5.27.0, rc-util@^5.28.0, rc-util@^5.30.0, rc-util@^5.31.1, rc-util@^5.32.2, rc-util@^5.34.1, rc-util@^5.35.0, rc-util@^5.36.0, rc-util@^5.37.0, rc-util@^5.38.0, rc-util@^5.38.1, rc-util@^5.39.3:
   version "5.39.3"
   resolved "https://registry.yarnpkg.com/rc-util/-/rc-util-5.39.3.tgz#79c7253cff7c71175b772e8242ca66459c1512eb"
   integrity sha512-j9wOELkLQ8gC/NkUg3qg9mHZcJf+5mYYv40JrDHqnaf8VSycji4pCf7kJ5fdTXQPDIF0vr5zpb/T2HdrMs9rWA==
