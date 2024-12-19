@@ -50,7 +50,7 @@ class InstanceLabelData:
         value: Any
 
     @classmethod
-    def add_prefetch_info(cls, queryset: QuerySet):
+    def add_prefetch_info(cls, queryset: QuerySet[Label]) -> QuerySet[Label]:
         assert issubclass(queryset.model, Label)
 
         return add_prefetch_fields(queryset, [
