@@ -21,6 +21,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
 from django.db.models.fields import FloatField
+from django.db.models.fields.reverse_related import OneToOneRel
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
@@ -259,10 +260,32 @@ class ValidationFrame(models.Model):
     )
     path = models.CharField(max_length=1024, default='')
 
+
+class NullableOneToOneField(models.OneToOneField):
+    NULLABLE_PREFIX = "nullable"
+
+    @classmethod
+    def _make_nullable_property(cls, property_name: str):
+        return f"{cls.NULLABLE_PREFIX}_{property_name}"
+
+    def contribute_to_related_class(self, cls: models.Model, related: OneToOneRel):
+        super().contribute_to_related_class(cls, related)
+
+        property_name = related.get_accessor_name()
+        nullable_property_name = self._make_nullable_property(property_name)
+
+        if not hasattr(cls, nullable_property_name):
+            def _fget(instance: models.Model):
+                return getattr(instance, property_name, None)
+
+            # todo: cls._meta.concrete_model?
+            setattr(cls, nullable_property_name, property(_fget))
+
+
 class ValidationLayout(models.Model):
     "Represents validation configuration in a task"
 
-    task_data = models.OneToOneField(
+    task_data = NullableOneToOneField(
         'Data', on_delete=models.CASCADE, related_name="validation_layout"
     )
 
@@ -299,6 +322,7 @@ class Data(models.Model):
     video: MaybeUndefined[Video]
     related_files: models.manager.RelatedManager[RelatedFile]
     validation_layout: MaybeUndefined[ValidationLayout]
+    nullable_validation_layout: ValidationLayout | None
 
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
@@ -388,7 +412,7 @@ class Data(models.Model):
 
     @property
     def validation_mode(self) -> Optional[ValidationMode]:
-        return getattr(getattr(self, 'validation_layout', None), 'mode', None)
+        return getattr(self.nullable_validation_layout, 'mode', None)
 
 
 class Video(models.Model):
