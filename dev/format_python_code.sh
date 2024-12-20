@@ -27,6 +27,7 @@ for paths in \
     "cvat/apps/engine/background.py" \
     "cvat/apps/engine/frame_provider.py" \
     "cvat/apps/engine/cache.py" \
+    "cvat/apps/engine/cron.py" \
     "cvat/apps/engine/default_settings.py" \
     "cvat/apps/engine/field_validation.py" \
     "cvat/apps/engine/model_utils.py" \
