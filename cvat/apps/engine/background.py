@@ -49,6 +49,7 @@ from cvat.apps.engine.utils import (
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export
+from cvat.apps.dataset_manager.util import extend_export_file_lifetime
 
 slogger = ServerLogManager(__name__)
 
@@ -330,7 +331,7 @@ class DatasetExportManager(_ResourceExportManager):
                         acquire_timeout=LOCK_ACQUIRE_TIMEOUT,
                     ):
                         if osp.exists(file_path) and not is_result_outdated():
-                            dm.util.extend_export_file_lifetime(file_path)
+                            extend_export_file_lifetime(file_path)
 
                             return Response(status=status.HTTP_201_CREATED)
 
@@ -611,8 +612,7 @@ class BackupExportManager(_ResourceExportManager):
                     )
 
                 if action == "download":
-                    # TODO: update after 8721
-                    with dm.util.get_export_cache_lock(file_path, ttl=55, acquire_timeout=50):
+                    with dm.util.get_export_cache_lock(file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT):
                         if not os.path.exists(file_path):
                             return Response(
                                 "The backup file has been expired, please retry backing up",
@@ -630,10 +630,9 @@ class BackupExportManager(_ResourceExportManager):
                         return sendfile(
                             self.request, file_path, attachment=True, attachment_filename=filename
                         )
-                # TODO: update after 8721
-                with dm.util.get_export_cache_lock(file_path, ttl=55, acquire_timeout=50):
+                with dm.util.get_export_cache_lock(file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT):
                     if osp.exists(file_path) and not is_result_outdated():
-                        # extend_export_file_lifetime(file_path)
+                        extend_export_file_lifetime(file_path)
                         return Response(status=status.HTTP_201_CREATED)
 
                 cancel_and_delete(rq_job)

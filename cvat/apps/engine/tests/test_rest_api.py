@@ -3088,31 +3088,32 @@ class TaskImportExportAPITestCase(ApiTestBase):
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
 
-    def test_can_remove_export_cache_automatically_after_successful_export(self):
-        self._create_tasks()
-        task_id = self.tasks[0]["id"]
-        user = self.admin
+    # TODO: add another test that checks running cron job
+    # def test_can_remove_export_cache_automatically_after_successful_export(self):
+    #     self._create_tasks()
+    #     task_id = self.tasks[0]["id"]
+    #     user = self.admin
 
-        with mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(hours=10)):
-            response = self._run_api_v2_tasks_id_export(task_id, user)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+    #     with mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(hours=10)):
+    #         response = self._run_api_v2_tasks_id_export(task_id, user)
+    #         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-            response = self._run_api_v2_tasks_id_export(task_id, user)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    #         response = self._run_api_v2_tasks_id_export(task_id, user)
+    #         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
-        scheduled_jobs = list(scheduler.get_jobs())
-        cleanup_job = next(
-            j for j in scheduled_jobs if j.func_name.endswith('.engine.backup._clear_export_cache')
-        )
+    #     scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
+    #     scheduled_jobs = list(scheduler.get_jobs())
+    #     cleanup_job = next(
+    #         j for j in scheduled_jobs if j.func_name.endswith('.engine.backup._clear_export_cache')
+    #     )
 
-        export_path = cleanup_job.kwargs['file_path']
-        self.assertTrue(os.path.isfile(export_path))
+    #     export_path = cleanup_job.kwargs['file_path']
+    #     self.assertTrue(os.path.isfile(export_path))
 
-        from cvat.apps.engine.backup import _clear_export_cache
-        _clear_export_cache(**cleanup_job.kwargs)
+    #     from cvat.apps.engine.backup import _clear_export_cache
+    #     _clear_export_cache(**cleanup_job.kwargs)
 
-        self.assertFalse(os.path.isfile(export_path))
+    #     self.assertFalse(os.path.isfile(export_path))
 
 
 def generate_random_image_file(filename):

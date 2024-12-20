@@ -56,6 +56,8 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
+from cvat.apps.dataset_manager.views import EXPORT_CACHE_LOCK_TTL, EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT
+from cvat.apps.dataset_manager.util import extend_export_file_lifetime
 
 slogger = ServerLogManager(__name__)
 
@@ -1042,14 +1044,12 @@ def create_backup(
         with get_export_cache_lock(
             output_path,
             block=True,
-            # TODO: update after merging #8721 (DATASET_CACHE_LOCK_ACQUISITION_TIMEOUT, DATASET_EXPORT_LOCK_TTL)
-            acquire_timeout=60,
-            ttl=30,
+            acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+            ttl=EXPORT_CACHE_LOCK_TTL,
         ):
             # output_path includes timestamp of the last update
             if os.path.exists(output_path):
-                # TODO: update after merging #8721
-                # extend_export_file_lifetime(output_path)
+                extend_export_file_lifetime(output_path)
                 return output_path
 
         with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
@@ -1060,9 +1060,8 @@ def create_backup(
             with get_export_cache_lock(
                 output_path,
                 block=True,
-                # TODO: update after merging #8721 (DATASET_CACHE_LOCK_ACQUISITION_TIMEOUT, DATASET_EXPORT_LOCK_TTL)
-                acquire_timeout=60,
-                ttl=30,
+                acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+                ttl=EXPORT_CACHE_LOCK_TTL,
             ):
                 os.replace(temp_file, output_path)
 
@@ -1228,16 +1227,3 @@ def import_task(request, queue_name, filename=None):
         location_conf=location_conf,
         filename=filename
     )
-
-# TODO: delete function
-def _clear_export_cache(file_path: str, file_ctime: float, logger: Logger) -> None:
-    try:
-        if os.path.exists(file_path) and os.path.getctime(file_path) == file_ctime:
-            os.remove(file_path)
-
-            logger.info(
-                "Export cache file '{}' successfully removed" \
-                .format(file_path))
-    except Exception:
-        log_exception(logger)
-        raise
