@@ -9,60 +9,71 @@ import { taskName } from '../../support/const';
 context('When saving after deleting a frame, job metadata is inconsistent.', () => {
     const issueId = '8785';
 
+    function checkDeletedFrameVisibility() {
+        cy.openSettings();
+        cy.get('.cvat-workspace-settings-show-deleted').within(() => {
+            cy.get('[type="checkbox"]').should('not.be.checked').check();
+        });
+        cy.closeSettings();
+    }
+    function clickDelete() {
+        cy.get('.cvat-player-delete-frame').click();
+        cy.get('.cvat-modal-delete-frame').within(() => {
+            cy.contains('button', 'Delete').click();
+        });
+    }
+    function clickSave() {
+        cy.get('button').contains('Save').click({ force: true });
+        cy.get('button').contains('Save').trigger('mouseout');
+    }
+
     before(() => {
+        checkDeletedFrameVisibility();
         cy.openTaskJob(taskName);
-        cy.goToNextFrame(4);
+        cy.goToNextFrame(1);
     });
 
     describe(`Testing issue ${issueId}`, () => {
         it('Crash on Save job. Save again.', () => {
-            // cy.deleteFrame(); // FIXME: does normal saving with 200, better to just push a button
-            function clickDelete() {
-                cy.get('.cvat-player-delete-frame').click();
-                cy.get('.cvat-modal-delete-frame').within(() => {
-                    cy.contains('button', 'Delete').click();
-                });
-            }
-            function clickSave() {
-                cy.get('button').contains('Save').click({ force: true });
-                cy.get('button').contains('Save').trigger('mouseout');
-            }
-            const badStatusCode = 502;
-            function middleware() {
-                const badResponseStub = { statusCode: badStatusCode, body: 'Network error' };
+            const badResponse = { statusCode: 502, body: 'A horrible network error' };
+
+            cy.on('uncaught:exception', (err) => {
+                expect(err.message).to.include(badResponse.body);
+                expect(err.code).to.equal(badResponse.statusCode);
+                return false;
+            });
+
+            function createHandler() {
                 let calls = 0;
-                function handle(req, res) {
+                function handle(req) {
                     if (calls === 0) {
                         calls++;
-                        res.send(badResponseStub);
+                        req.continue((res) => {
+                            res.send(badResponse);
+                        });
                     } else {
                         req.continue();
                     }
                 }
                 return handle;
             }
-            cy.intercept('PATCH', '/api/jobs/**/data/meta**', middleware()).as('patchMeta');
+
+            const routeMatcher = {
+                url: '/api/jobs/**/data/meta**',
+                method: 'PATCH',
+                times: 1, // cancels the intercept
+            };
+            const routeHandler = createHandler();
+
+            cy.intercept(routeMatcher, routeHandler).as('patchError');
+
             clickDelete();
-            cy.contains('button', 'Restore').should('be.visible');
+            cy.get('.cvat-player-restore-frame').should('be.visible');
+
             clickSave();
-            cy.wait('@patchMeta').its('response.status').should('eq', badStatusCode);
-            cy.wait('@patchMeta').its('response.status').should('eq', 200);
+            cy.wait('@patchError').its('response.statusCode').should('eq', badResponse.statusCode);
 
-            // Check that frame is deleted
-
-            /**
-             * FIXME: this just asserts 502
-             *
-             * Here you have an example job endpoint response stubbing
-             * Response is then intercepted and stubbed with 502 status code
-             *
-             * flow is like this: press a button directly + intercept
-             *
-             * Cypress works worse with double intercepts
-             * Intercepting saveJob not gonna work
-             * since it already does an intercept of the same request
-             *
-             * */
+            cy.saveJob();
         });
     });
 });
