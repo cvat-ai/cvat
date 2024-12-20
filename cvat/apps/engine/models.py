@@ -10,9 +10,10 @@ import os
 import re
 import shutil
 import uuid
+from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Collection, Dict, Optional, Sequence
+from typing import Any, ClassVar, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -824,7 +825,7 @@ class JobQuerySet(models.QuerySet):
 
         return super().update_or_create(*args, **kwargs)
 
-    def _validate_constraints(self, obj: Dict[str, Any]):
+    def _validate_constraints(self, obj: dict[str, Any]):
         if 'type' not in obj:
             return
 

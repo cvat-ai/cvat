@@ -16,8 +16,9 @@ from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from PIL import Image
 from types import SimpleNamespace
-from typing import Optional, Any, Dict, List, Union, cast, Callable, Mapping, Iterable
+from typing import Optional, Any, Union, cast, Callable
 from collections import namedtuple
+from collections.abc import Mapping, Iterable
 from copy import copy
 from datetime import datetime
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -1076,7 +1077,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filename = self._prepare_upload_info_entry(filename)
         task_data.client_files.get_or_create(file=filename)
 
-    def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
+    def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
         task_data.client_files.bulk_create([
@@ -1084,7 +1085,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             for cf in client_files
         ])
 
-    def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
+    def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
         Applies file ordering for the "predefined" file sorting method of the task creation.
 
@@ -3568,7 +3569,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
-    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(queue.get_job_ids() +
             queue.started_job_registry.get_job_ids() +
             queue.finished_job_registry.get_job_ids() +
@@ -3588,7 +3589,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         return jobs
 
 
-    def _get_rq_jobs(self, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs(self, user_id: int) -> list[RQJob]:
         """
         Get all RQ jobs for a specific user and return them as a list of RQJob objects.
 
