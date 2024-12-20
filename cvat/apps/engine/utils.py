@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import ast
+from itertools import islice
 import cv2 as cv
 from collections import namedtuple
 import hashlib
@@ -11,7 +12,9 @@ import importlib
 import sys
 import traceback
 from contextlib import suppress, nullcontext
-from typing import Any, Dict, Optional, Callable, Sequence, Union
+from typing import (
+    Any, Callable, Dict, Generator, Iterable, Iterator, Optional, Mapping, Sequence, TypeVar, Union
+)
 import subprocess
 import os
 import urllib.parse
@@ -424,10 +427,22 @@ def directory_tree(path, max_depth=None) -> str:
 def is_dataset_export(request: HttpRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
+_T = TypeVar('_T')
 
-def chunked_list(lst, chunk_size):
-    for i in range(0, len(lst), chunk_size):
-        yield lst[i:i + chunk_size]
+def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None, None]:
+    """
+    Returns elements from the input iterable by batches of N items.
+    ('abcdefg', 3) -> ['a', 'b', 'c'], ['d', 'e', 'f'], ['g']
+    """
+    # can be changed to itertools.batched after migration to python3.12
+
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, chunk_size))
+        if len(batch) == 0:
+            break
+
+        yield batch
 
 
 FORMATTED_LIST_DISPLAY_THRESHOLD = 10
@@ -446,3 +461,34 @@ def format_list(
         separator.join(items[:max_items]),
         f" (and {remainder_count} more)" if 0 < remainder_count else "",
     )
+
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+def grouped(
+    items: Iterator[_V] | Iterable[_V], *, key: Callable[[_V], _K]
+) -> Mapping[_K, Sequence[_V]]:
+    """
+    Returns a mapping with input iterable elements grouped by key, for example:
+
+    grouped(
+        [("apple1", "red"), ("apple2", "green"), ("apple3", "red")],
+        key=lambda v: v[1]
+    )
+    ->
+    {
+        "red": [("apple1", "red"), ("apple3", "red")],
+        "green": [("apple2", "green")]
+    }
+
+    Similar to itertools.groupby, but allows reiteration on resulting groups.
+    """
+
+    # Can be implemented with itertools.groupby, but it requires extra sorting for input elements
+    grouped_items = {}
+    for item in items:
+        grouped_items.setdefault(key(item), []).append(item)
+
+    return grouped_items

@@ -148,7 +148,7 @@ Each context image has the following elements:
 | 1       | **Full screen**. Click to expand the contextual image in to the full screen mode. <p>Click again to revert contextual image to windowed mode. |
 | 2       | **Move contextual image**. Hold and move contextual image to the other place on the screen. <p>![contex_images_3](/images/context_img_03.gif) |
 | 3       | **Name**. Unique contextual image name                                                                                                     |
-| 4       | **Select contextual image**. Click to open a horisontal listview of all available contextual images. <p>Click on one to select.               |
+| 4       | **Select contextual image**. Click to open a horizontal listview of all available contextual images. <p>Click on one to select.               |
 | 5       | **Close**. Click to remove image from contextual images menu.                                                         |
 | 6       | **Extend** Hold and pull to extend the image.                                                                                           |
 

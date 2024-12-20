@@ -21,7 +21,6 @@ from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
-from datumaro.util import take_by # can be changed to itertools.batched after migration to python3.12
 from django.conf import settings
 from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
@@ -32,7 +31,7 @@ from rest_framework.exceptions import (NotFound, PermissionDenied,
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
-from cvat.apps.engine.utils import get_cpu_number
+from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 
 class NamedBytesIO(BytesIO):
@@ -242,7 +241,7 @@ class _CloudStorage(ABC):
         threads_number = normalize_threads_number(threads_number, len(files))
 
         with ThreadPoolExecutor(max_workers=threads_number) as executor:
-            for batch_links in take_by(files, count=threads_number):
+            for batch_links in take_by(files, chunk_size=threads_number):
                 yield from executor.map(func, batch_links)
 
     def bulk_download_to_dir(

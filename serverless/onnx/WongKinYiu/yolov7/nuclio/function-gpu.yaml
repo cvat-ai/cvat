@@ -95,7 +95,7 @@ spec:
   eventTimeout: 30s
   build:
     image: cvat.onnx.wongkinyiu.yolov7:latest-gpu
-    baseImage: nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+    baseImage: nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
     directives:
       preCopy:
@@ -106,7 +106,7 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip install onnxruntime-gpu=='1.16.*' opencv-python-headless pillow pyyaml
+          value: pip install onnxruntime-gpu=='1.20.*' opencv-python-headless pillow pyyaml
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN

@@ -2,7 +2,7 @@
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
 weight: 3
-description: 'Social accounts authentication for Self-Hosted solution'
+description: 'Social accounts authentication for a Self-Hosted solution'
 ---
 
 > **Note:** This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
@@ -51,7 +51,7 @@ To enable authentication, do the following:
    configure: **Application name**, **Authorized JavaScript origins**, **Authorized redirect URIs**.
    <br> For example, if you plan to deploy CVAT instance on `https://localhost:8080`, add `https://localhost:8080`
    to authorized JS origins and `https://localhost:8080/api/auth/social/goolge/login/callback/` to redirect URIs.
-8. Create conпiguration file in CVAT:
+8. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
@@ -81,7 +81,7 @@ There are 2 basic steps to enable GitHub account authentication.
    <br>For more information, see [Creating an OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app)
 3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
    and authentication callback URL (for example: `https://localhost:8080/api/auth/social/github/login/callback/`).
-4. Create conпiguration file in CVAT:
+4. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
@@ -114,7 +114,7 @@ To enable authentication, do the following:
    see [Amazon Cognito user pools](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)
 2. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
    and authentication callback URL (for example: `https://localhost:8080/api/auth/social/amazon-cognito/login/callback/`).
-3. Create conпiguration file in CVAT:
+3. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
