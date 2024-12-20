@@ -493,8 +493,6 @@ class DatasetExportManager(_ResourceExportManager):
                 failure_ttl=cache_ttl.total_seconds(),
             )
 
-        self.db_instance.touch_last_export_date()
-
     def get_v1_endpoint_view_name(self) -> str:
         """
         Get view name of the endpoint for the first API version
@@ -765,8 +763,6 @@ class BackupExportManager(_ResourceExportManager):
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),
             )
-
-        self.db_instance.touch_last_export_date()
 
     def get_v1_endpoint_view_name(self) -> str:
         """Get view name of the endpoint for the first API version"""

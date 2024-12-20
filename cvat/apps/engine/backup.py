@@ -16,7 +16,6 @@ from logging import Logger
 from tempfile import NamedTemporaryFile
 from typing import Any, Collection, Dict, Iterable, Optional, Union, Type
 from zipfile import ZipFile
-import logging
 from datetime import timedelta
 
 import django_rq
@@ -1031,11 +1030,12 @@ def create_backup(
     # FUTURE-FIXME: there db_instance_id should be passed
     db_instance: models.Project | models.Task,
     Exporter: Type[ProjectExporter | TaskExporter],
-    logger: logging.Logger,
+    logger: Logger,
     cache_ttl: timedelta,
 ):
     try:
         cache_dir = db_instance.get_export_cache_directory(create=True)
+        db_instance.touch_last_export_date()
         db_instance.refresh_from_db(fields=['updated_date'])
         instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 

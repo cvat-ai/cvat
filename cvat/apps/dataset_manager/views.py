@@ -135,6 +135,8 @@ def export(
             export_fn = task.export_job
             db_instance = Job.objects.get(pk=job_id)
 
+        db_instance.touch_last_export_date()
+
         cache_ttl = get_export_cache_ttl(db_instance)
         cache_dir = db_instance.get_export_cache_directory(create=True)
 
