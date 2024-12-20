@@ -52,6 +52,7 @@ function AnnotationMenuComponent(): JSX.Element {
 
     const finishJob = useCallback(() => {
         dispatch(finishCurrentJobAsync()).then(() => {
+            setJobState(JobState.COMPLETED);
             message.open({
                 duration: 1,
                 type: 'success',
