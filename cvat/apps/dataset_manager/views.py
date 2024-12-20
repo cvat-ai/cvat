@@ -225,7 +225,6 @@ class FileIsBeingUsedError(Exception):
 # TODO: write a migration to delete all clear_export_cache scheduled jobs from scheduler
 def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
     try:
-        # TODO: update after 8721
         with get_export_cache_lock(
             file_path,
             block=True,
@@ -233,7 +232,7 @@ def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
             ttl=EXPORT_CACHE_LOCK_TTL,
         ):
             if not osp.exists(file_path):
-                logger.error("Export cache file '{}' doesn't exist".format(file_path))
+                raise FileNotFoundError(f"Export cache file {file_path} doesn't exist")
 
             parsed_filename = ExportCacheManager.parse_file_path(file_path)
             cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
