@@ -1772,7 +1772,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
     def validation_layout(self, request, pk):
-        db_task = self.get_object() # call check_object_permissions as well
+        db_task = cast(models.Task, self.get_object()) # call check_object_permissions as well
 
         validation_layout = getattr(db_task.data, 'validation_layout', None)
 
