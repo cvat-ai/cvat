@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Row, Col } from 'antd/es/grid';
 
 import {
@@ -29,9 +29,28 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
         onDeleteFrames, onRestoreFrames,
     } = props;
 
+    const tableRef = useRef(null);
+    const [pageWidth, setPageWidth] = useState(0);
+
     const totalCount = validationLayout.validationFrames.length;
     const excludedCount = validationLayout.disabledFrames.length;
     const activeCount = totalCount - excludedCount;
+
+    useLayoutEffect(() => {
+        const resize = (): void => {
+            if (tableRef?.current) {
+                const { clientWidth } = tableRef.current;
+                setPageWidth(clientWidth);
+            }
+        };
+
+        resize();
+        window.addEventListener('resize', resize);
+
+        return () => {
+            window.removeEventListener('resize', resize);
+        };
+    }, []);
 
     return (
         <div className='cvat-quality-control-management-tab'>
@@ -46,7 +65,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                 </Col>
             </Row>
             <Row>
-                <Col span={24}>
+                <Col span={24} ref={tableRef}>
                     <AllocationTable
                         task={task}
                         gtJobId={gtJobId}
@@ -55,6 +74,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                         qualitySettings={qualitySettings}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
+                        pageWidth={pageWidth}
                     />
                 </Col>
             </Row>

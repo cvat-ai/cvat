@@ -27,6 +27,7 @@ interface Props {
     gtJobMeta: FramesMetaData;
     validationLayout: TaskValidationLayout;
     qualitySettings: QualitySettings;
+    pageWidth: number;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
@@ -37,10 +38,12 @@ interface RowData {
     active: boolean;
 }
 
+const COLUMNS_OFFSET_PERCENT = 0.30;
+
 function AllocationTable(props: Readonly<Props>): JSX.Element {
     const {
         task, gtJobId, gtJobMeta, validationLayout,
-        onDeleteFrames, onRestoreFrames,
+        onDeleteFrames, onRestoreFrames, pageWidth,
     } = props;
 
     const history = useHistory();
@@ -61,12 +64,13 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         active: !disabledFrames.includes(frame),
     }));
 
+    const frameNameWidth = pageWidth - COLUMNS_OFFSET_PERCENT * pageWidth;
+
     const columns = [
         {
             title: 'Frame',
             dataIndex: 'frame',
             key: 'frame',
-            width: 50,
             sorter: sorter('frame'),
             render: (frame: number): JSX.Element => (
                 <div>
@@ -87,29 +91,34 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
-            width: 300,
             sorter: sorter('name'),
-            render: (name: string, record: RowData) => (
-                <CVATTooltip title={name}>
-                    <Button
-                        className='cvat-open-frame-button'
-                        type='link'
-                        onClick={(e: React.MouseEvent): void => {
-                            e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJobId}?frame=${record.frame}`);
-                        }}
-                    >
-                        {name}
-                    </Button>
-                </CVATTooltip>
-            ),
+            width: frameNameWidth,
+            render: (name: string, record: RowData) => {
+                const link = `/tasks/${task.id}/jobs/${gtJobId}?frame=${record.frame}`;
+                return (
+                    <CVATTooltip title={name}>
+                        <Button
+                            style={{ width: frameNameWidth }}
+                            className='cvat-open-frame-button'
+                            type='link'
+                            onClick={(e: React.MouseEvent): void => {
+                                e.preventDefault();
+                                history.push(link);
+                            }}
+                            href={link}
+                        >
+                            {name}
+                        </Button>
+                    </CVATTooltip>
+                );
+            }
+            ,
         },
         {
             title: 'Actions',
             dataIndex: 'active',
             key: 'actions',
             align: 'center' as const,
-            width: 20,
             filters: [
                 { text: 'Active', value: true },
                 { text: 'Excluded', value: false },
