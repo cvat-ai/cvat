@@ -357,13 +357,15 @@ PERIODIC_RQ_JOBS = [
         {
             'queue': CVAT_QUEUES.CLEANING.value,
             'id': f'cron_{model.lower()}_export_cache_cleanup',
-            'func': 'cvat.apps.dataset_manager.views.cron_export_cache_cleanup',
+            'func': 'cvat.apps.engine.cron.cron_export_cache_cleanup',
             # Run once a day at midnight
-            'cron_string': '0 0 * * *',
-            # 'cron_string': '05 17 * * *',
+            'cron_string': cron_string,
             'args': (f'cvat.apps.engine.models.{model.title()}',),
         }
-        for model in ('project', 'task', 'job')
+        for model, cron_string in zip(
+            ('project', 'task', 'job'),
+            ('0 0 * * *', '0 6 * * *', '0 12 * * *')
+        )
     ),
 ]
 
