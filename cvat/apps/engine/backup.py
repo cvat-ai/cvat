@@ -10,10 +10,11 @@ import re
 import shutil
 import tempfile
 import uuid
+from collections.abc import Collection, Iterable
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Collection, Dict, Iterable, Optional, Union
+from typing import Any, Optional, Union
 from zipfile import ZipFile
 
 import django_rq
@@ -650,7 +651,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return segment_size, overlap
 
     @staticmethod
-    def _parse_segment_frames(*, jobs: Dict[str, Any]) -> JobFileMapping:
+    def _parse_segment_frames(*, jobs: dict[str, Any]) -> JobFileMapping:
         segments = []
 
         for i, segment in enumerate(jobs):

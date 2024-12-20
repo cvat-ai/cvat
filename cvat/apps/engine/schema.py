@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from typing import Type
 
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from drf_spectacular.plumbing import build_basic_type, force_instance
@@ -15,7 +14,7 @@ from rest_framework import serializers
 def _copy_serializer(
     instance: serializers.Serializer,
     *,
-    _new_type: Type[serializers.Serializer] = None,
+    _new_type: type[serializers.Serializer] = None,
     **kwargs
 ) -> serializers.Serializer:
     _new_type = _new_type or type(instance)
