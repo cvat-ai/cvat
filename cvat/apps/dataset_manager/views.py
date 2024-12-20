@@ -9,15 +9,12 @@ import os.path as osp
 import tempfile
 from datetime import timedelta
 
-import importlib
 import django_rq
 import rq
 from os.path import exists as osp_exists
 from django.conf import settings
 from django.utils import timezone
 from rq_scheduler import Scheduler
-from pathlib import Path
-from contextlib import suppress
 
 import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
@@ -26,7 +23,6 @@ from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.engine.rq_job_handler import RQMeta
 
-from django.db.models import QuerySet
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     LockNotAvailableError,
@@ -219,81 +215,6 @@ def export_project_as_dataset(project_id: int, dst_format: str, *, server_url: s
 
 def export_project_annotations(project_id: int, dst_format: str, *, server_url: str | None = None):
     return export(dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=False)
-
-
-class FileIsBeingUsedError(Exception):
-    pass
-
-# TODO: write a migration to delete all clear_export_cache scheduled jobs from scheduler
-def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
-    try:
-        with get_export_cache_lock(
-            file_path,
-            block=True,
-            acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
-            ttl=EXPORT_CACHE_LOCK_TTL,
-        ):
-            if not osp.exists(file_path):
-                raise FileNotFoundError(f"Export cache file {file_path} doesn't exist")
-
-            parsed_filename = ExportCacheManager.parse_file_path(file_path)
-            cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
-
-            if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
-                logger.info(
-                    "Cache file '{}' is recently accessed".format(file_path)
-                )
-                raise FileIsBeingUsedError
-
-            os.remove(file_path)
-            logger.debug(f"Export cache file {file_path!r} successfully removed")
-    except LockNotAvailableError:
-        logger.info(
-            f"Failed to acquire export cache lock for the file: {file_path}."
-        )
-        raise
-    except Exception:
-        log_exception(logger)
-        raise
-
-# todo: move into engine
-def cron_export_cache_cleanup(path_to_model: str) -> None:
-    assert isinstance(path_to_model, str)
-
-    started_at = timezone.now()
-    module_name, model_name = path_to_model.rsplit('.', 1)
-    module = importlib.import_module(module_name)
-    ModelClass = getattr(module, model_name)
-    assert ModelClass in (Project, Task, Job)
-
-    logger = ServerLogManager(__name__).glob
-
-    one_month_ago = timezone.now() - timedelta(days=30)
-    queryset: QuerySet[Project | Task | Job] = ModelClass.objects.filter(last_export_date__gte=one_month_ago)
-
-    for instance in queryset.iterator():
-        instance_dir_path = Path(instance.get_dirname())
-        export_cache_dir_path = Path(instance.get_export_cache_directory())
-
-        if not export_cache_dir_path.exists():
-            logger.debug(f"The {export_cache_dir_path.relative_to(instance_dir_path)} path does not exist, skipping...")
-            continue
-
-        for child in export_cache_dir_path.iterdir():
-            # export cache dir may contain temporary directories
-            if not child.is_file():
-                logger.warning(f'The {child.relative_to(instance_dir_path)} is not a file, skipping...')
-                continue
-
-            with suppress(Exception):
-                clear_export_cache(child, logger)
-
-    finished_at = timezone.now()
-    logger.info(
-        f"Clearing the {model_name}'s export cache has been successfully "
-        f"completed after {(finished_at - started_at).total_seconds()} seconds..."
-    )
-
 
 def get_export_formats():
     return list(EXPORT_FORMATS.values())

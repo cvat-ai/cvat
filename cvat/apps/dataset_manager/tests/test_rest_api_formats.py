@@ -35,9 +35,10 @@ from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskD
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
-from cvat.apps.dataset_manager.views import clear_export_cache, export
+from cvat.apps.dataset_manager.views import export
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
+from cvat.apps.engine.cron import clear_export_cache
 
 projects_path = osp.join(osp.dirname(__file__), 'assets', 'projects.json')
 with open(projects_path) as file:
@@ -1498,13 +1499,13 @@ class ExportBehaviorTest(_DbTestBase):
         def _clear(*_, file_path: str):
             from os import remove as original_remove
 
-            from cvat.apps.dataset_manager.views import FileIsBeingUsedError
+            from cvat.apps.engine.cron import FileIsBeingUsedError
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_TTL", new=EXPORT_CACHE_LOCK_TTL),
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT),
+                patch("cvat.apps.engine.cron.EXPORT_CACHE_LOCK_TTL", new=EXPORT_CACHE_LOCK_TTL),
+                patch("cvat.apps.engine.cron.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT),
                 patch(
-                    "cvat.apps.dataset_manager.views.get_export_cache_lock",
+                    "cvat.apps.engine.cron.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
                 patch(
@@ -1686,12 +1687,12 @@ class ExportBehaviorTest(_DbTestBase):
             from cvat.apps.dataset_manager.util import LockNotAvailableError
 
             with (
-                patch("cvat.apps.dataset_manager.views.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=3),
+                patch("cvat.apps.engine.cron.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=3),
                 patch(
-                    "cvat.apps.dataset_manager.views.get_export_cache_lock",
+                    "cvat.apps.engine.cron.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.dataset_manager.views.os.remove") as mock_os_remove,
+                patch("cvat.apps.engine.cron.os.remove") as mock_os_remove,
                 patch(
                     "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}
                 ),
@@ -2049,7 +2050,7 @@ class ExportBehaviorTest(_DbTestBase):
 
         export_path = export(dst_format=format_name, task_id=task_id)
 
-        from cvat.apps.dataset_manager.views import FileIsBeingUsedError
+        from cvat.apps.engine.cron import FileIsBeingUsedError
 
         with (
             patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(hours=1)}),
@@ -2061,7 +2062,7 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_cron_job_can_delete_cached_files(self):
-        from cvat.apps.dataset_manager.views import cron_export_cache_cleanup
+        from cvat.apps.engine.cron import cron_export_cache_cleanup
 
         def _get_project_task_job_ids():
             project = self._create_project(projects["main"])
@@ -2096,7 +2097,7 @@ class ExportBehaviorTest(_DbTestBase):
                         new={resource: timedelta(seconds=0)},
                     ),
                     patch(
-                        "cvat.apps.dataset_manager.views.clear_export_cache",
+                        "cvat.apps.engine.cron.clear_export_cache",
                         side_effect=clear_export_cache,
                     ) as mock_clear_export_cache,
                 ):
