@@ -16,6 +16,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.24.0'></a>
+## \[2.24.0\] - 2024-12-20
+
+### Added
+
+- \[CLI\] Added new commands: `project create`, `project delete`, `project ls`
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+- \[SDK\] You can now use `client.projects.remove_by_ids` to remove multiple
+  projects
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+- Support for boolean parameters in annotations actions
+  (<https://github.com/cvat-ai/cvat/pull/8798>)
+
+### Changed
+
+- Improved uniformity of validation frames distribution in honeypot tasks and
+  random honeypot rerolls
+  (<https://github.com/cvat-ai/cvat/pull/8776>)
+
+- \[CLI\] Switched to a new subcommand hierarchy; now CLI subcommands
+  have the form `cvat-cli <resource> <action>`
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+- \[CLI\] The output of the `task create`, `task create-from-backup` and
+  `project create` commands is now just the created resource ID,
+  making it machine-readable
+  (<https://github.com/cvat-ai/cvat/pull/8833>)
+
+- /api/events can now be used to receive events from several sources
+  (<https://github.com/cvat-ai/cvat/pull/8799>)
+
+### Deprecated
+
+- \[CLI\] All existing CLI commands of the form `cvat-cli <action>`
+  are now deprecated. Use `cvat-cli task <action>` instead
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+### Removed
+
+- Automatic calculation of quality reports in tasks
+  (<https://github.com/cvat-ai/cvat/pull/8790>)
+
+### Fixed
+
+- Uploading a skeleton template in configurator does not work
+  (<https://github.com/cvat-ai/cvat/pull/8822>)
+
+- Installation of YOLOv7 on GPU
+  (<https://github.com/cvat-ai/cvat/pull/8824>)
+
+- \[Server API\] Significantly improved preformance of honeypot changes in tasks
+  (<https://github.com/cvat-ai/cvat/pull/8789>)
+- \[Server API\] `PATCH tasks/id/validation_layout` responses now include correct
+  `disabled_frames` and handle simultaneous updates of
+  `disabled_frames` and honeypot frames correctly
+  (<https://github.com/cvat-ai/cvat/pull/8789>)
+
+- Fixed handling of tracks keyframes from deleted frames on export
+  (<https://github.com/cvat-ai/cvat/pull/8834>)
+
+- Exporting datasets could start significantly later than expected, both for 1
+  and several users in the same project/task/job (<https://github.com/cvat-ai/cvat/pull/8721>)
+- Scheduled RQ jobs could not be restarted due to incorrect RQ job status
+  updating and handling (<https://github.com/cvat-ai/cvat/pull/8721>)
+
 <a id='changelog-2.23.1'></a>
 ## \[2.23.1\] - 2024-12-09
 

@@ -37,13 +37,13 @@ import django_rq
 import PIL.Image
 import PIL.ImageOps
 import rq
-from rq.job import JobStatus as RQJobStatus
 from django.conf import settings
 from django.core.cache import caches
 from django.db import models as django_models
 from django.utils import timezone as django_tz
 from redis.exceptions import LockError
 from rest_framework.exceptions import NotFound, ValidationError
+from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import (
@@ -65,7 +65,12 @@ from cvat.apps.engine.media_extractors import (
     load_image,
 )
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
-from cvat.apps.engine.utils import CvatChunkTimestampMismatchError, get_rq_lock_for_job, md5_hash
+from cvat.apps.engine.utils import (
+    CvatChunkTimestampMismatchError,
+    format_list,
+    get_rq_lock_for_job,
+    md5_hash,
+)
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -91,7 +96,8 @@ def enqueue_create_chunk_job(
                 # Enqueue the job if the chunk was deleted but the RQ job still exists.
                 # This can happen in cases involving jobs with honeypots and
                 # if the job wasn't collected by the requesting process for any reason.
-                rq_job.get_status(refresh=False) in {RQJobStatus.FINISHED, RQJobStatus.FAILED, RQJobStatus.CANCELED}
+                rq_job.get_status(refresh=False)
+                in {RQJobStatus.FINISHED, RQJobStatus.FAILED, RQJobStatus.CANCELED}
             ):
                 rq_job = queue.enqueue(
                     create_callback,
@@ -275,11 +281,12 @@ class MediaCache:
         return item
 
     def _delete_cache_item(self, key: str):
-        try:
-            self._cache().delete(key)
-            slogger.glob.info(f"Removed chunk from the cache: key {key}")
-        except pickle.UnpicklingError:
-            slogger.glob.error(f"Failed to remove item from the cache: key {key}", exc_info=True)
+        self._cache().delete(key)
+        slogger.glob.info(f"Removed the cache key {key}")
+
+    def _bulk_delete_cache_items(self, keys: Sequence[str]):
+        self._cache().delete_many(keys)
+        slogger.glob.info(f"Removed the cache keys {format_list(keys)}")
 
     def _get_cache_item(self, key: str) -> Optional[_CacheItem]:
         try:
@@ -350,8 +357,8 @@ class MediaCache:
     ) -> str:
         return f"{self._make_cache_key_prefix(db_obj)}_task_chunk_{chunk_number}_{quality}"
 
-    def _make_context_image_preview_key(self, db_data: models.Data, frame_number: int) -> str:
-        return f"context_image_{db_data.id}_{frame_number}_preview"
+    def _make_frame_context_images_chunk_key(self, db_data: models.Data, frame_number: int) -> str:
+        return f"context_images_{db_data.id}_{frame_number}"
 
     @overload
     def _to_data_with_mime(self, cache_item: _CacheItem) -> DataWithMime: ...
@@ -474,6 +481,45 @@ class MediaCache:
             self._make_chunk_key(db_segment, chunk_number=chunk_number, quality=quality)
         )
 
+    def remove_context_images_chunk(self, db_data: models.Data, frame_number: str) -> None:
+        self._delete_cache_item(
+            self._make_frame_context_images_chunk_key(db_data, frame_number=frame_number)
+        )
+
+    def remove_segments_chunks(self, params: Sequence[dict[str, Any]]) -> None:
+        """
+        Removes several segment chunks from the cache.
+
+        The function expects a sequence of remove_segment_chunk() parameters as dicts.
+        """
+        # TODO: add a version of this function
+        # that removes related cache elements as well (context images, previews, ...)
+        # to provide encapsulation
+
+        # TODO: add a generic bulk cleanup function for different objects, including related ones
+        # (likely a bulk key aggregator should be used inside to reduce requests count)
+
+        keys_to_remove = []
+        for item_params in params:
+            db_obj = item_params.pop("db_segment")
+            keys_to_remove.append(self._make_chunk_key(db_obj, **item_params))
+
+        self._bulk_delete_cache_items(keys_to_remove)
+
+    def remove_context_images_chunks(self, params: Sequence[dict[str, Any]]) -> None:
+        """
+        Removes several context image chunks from the cache.
+
+        The function expects a sequence of remove_context_images_chunk() parameters as dicts.
+        """
+
+        keys_to_remove = []
+        for item_params in params:
+            db_obj = item_params.pop("db_data")
+            keys_to_remove.append(self._make_frame_context_images_chunk_key(db_obj, **item_params))
+
+        self._bulk_delete_cache_items(keys_to_remove)
+
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
         return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))
 
@@ -494,7 +540,7 @@ class MediaCache:
     ) -> DataWithMime:
         return self._to_data_with_mime(
             self._get_or_set_cache_item(
-                self._make_context_image_preview_key(db_data, frame_number),
+                self._make_frame_context_images_chunk_key(db_data, frame_number),
                 Callback(
                     callable=self.prepare_context_images_chunk,
                     args=[db_data, frame_number],
