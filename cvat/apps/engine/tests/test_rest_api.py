@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 from contextlib import ExitStack
-from datetime import timedelta
 import io
 from itertools import product
 import os
@@ -25,7 +24,6 @@ import copy
 import json
 
 import av
-import django_rq
 import numpy as np
 from pdf2image import convert_from_bytes
 from pyunpack import Archive

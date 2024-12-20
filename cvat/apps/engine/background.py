@@ -23,6 +23,7 @@ from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.util import extend_export_file_lifetime
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
@@ -49,7 +50,6 @@ from cvat.apps.engine.utils import (
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export
-from cvat.apps.dataset_manager.util import extend_export_file_lifetime
 
 slogger = ServerLogManager(__name__)
 
@@ -610,7 +610,9 @@ class BackupExportManager(_ResourceExportManager):
                     )
 
                 if action == "download":
-                    with dm.util.get_export_cache_lock(file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT):
+                    with dm.util.get_export_cache_lock(
+                        file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                    ):
                         if not os.path.exists(file_path):
                             return Response(
                                 "The backup file has been expired, please retry backing up",
@@ -628,7 +630,9 @@ class BackupExportManager(_ResourceExportManager):
                         return sendfile(
                             self.request, file_path, attachment=True, attachment_filename=filename
                         )
-                with dm.util.get_export_cache_lock(file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT):
+                with dm.util.get_export_cache_lock(
+                    file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                ):
                     if osp.exists(file_path) and not is_result_outdated():
                         extend_export_file_lifetime(file_path)
                         return Response(status=status.HTTP_201_CREATED)

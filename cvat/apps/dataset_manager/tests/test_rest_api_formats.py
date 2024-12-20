@@ -2060,6 +2060,52 @@ class ExportBehaviorTest(_DbTestBase):
 
         self.assertTrue(osp.isfile(export_path))
 
+    def test_cleanup_cron_job_can_delete_cached_files(self):
+        from cvat.apps.dataset_manager.views import cron_export_cache_cleanup
+
+        def _get_project_task_job_ids():
+            project = self._create_project(projects["main"])
+            project_id = project["id"]
+
+            images = self._generate_task_images(3)
+            task = self._create_task(
+                data=tasks["task in project #1"],
+                image_data=images,
+            )
+            task_id = task["id"]
+            job_id = self._get_jobs(task_id)[0]["id"]
+            return project_id, task_id, job_id
+
+        # remove chunks from the cache
+        self._clear_temp_data()
+        project_id, task_id, job_id = _get_project_task_job_ids()
+
+        for resource, rid in zip(("project", "task", "job"), (project_id, task_id, job_id)):
+            for save_images in (True, False):
+                export_path = export(
+                    dst_format="CVAT for images 1.1",
+                    save_images=save_images,
+                    **{resource + "_id": rid},
+                )
+                self.assertTrue(osp.isfile(export_path))
+                self.assertTrue(resource in export_path)
+
+                with (
+                    patch(
+                        "cvat.apps.dataset_manager.views.TTL_CONSTS",
+                        new={resource: timedelta(seconds=0)},
+                    ),
+                    patch(
+                        "cvat.apps.dataset_manager.views.clear_export_cache",
+                        side_effect=clear_export_cache,
+                    ) as mock_clear_export_cache,
+                ):
+                    cron_export_cache_cleanup(f"cvat.apps.engine.models.{resource.title()}")
+                    mock_clear_export_cache.assert_called_once()
+
+                self.assertFalse(osp.exists(export_path))
+
+
 class ProjectDumpUpload(_DbTestBase):
     def _get_download_project_dataset_response(self, url, user, dump_format_name, edata):
         data = {
