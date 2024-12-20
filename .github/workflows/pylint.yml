@@ -19,11 +19,11 @@ jobs:
           CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            pipx install $(egrep "^pylint==" ./cvat/requirements/development.txt)
+            pipx install $(grep "^pylint==" ./dev/requirements.txt)
 
             pipx inject pylint \
-              $(egrep "^pylint-.+==" ./cvat/requirements/development.txt) \
-              $(egrep "^django==" ./cvat/requirements/base.txt)
+              $(grep "^pylint-.\+==" ./dev/requirements.txt) \
+              $(grep "^django==" ./cvat/requirements/base.txt)
 
             echo "Pylint version: "$(pylint --version | head -1)
             echo "The files will be checked: "$(echo $CHANGED_FILES)
