@@ -1101,7 +1101,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
             if bulk_context:
-                active_validation_frame_counts = bulk_context.active_validation_frame_counts
+                frame_selector = bulk_context.honeypot_frame_selector
             else:
                 active_validation_frame_counts = {
                     validation_frame: 0 for validation_frame in task_active_validation_frames
@@ -1111,7 +1111,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     if real_frame in task_active_validation_frames:
                         active_validation_frame_counts[real_frame] += 1
 
-            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+                frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+
             requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
             requested_frames = list(map(_to_abs_frame, requested_frames))
         else:
@@ -1358,7 +1359,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         honeypot_frames: list[int],
         all_validation_frames: list[int],
         active_validation_frames: list[int],
-        validation_frame_counts: dict[int, int] | None = None
+        honeypot_frame_selector: HoneypotFrameSelector | None = None
     ):
         self.updated_honeypots: dict[int, models.Image] = {}
         self.updated_segments: list[int] = []
@@ -1370,7 +1371,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         self.honeypot_frames = honeypot_frames
         self.all_validation_frames = all_validation_frames
         self.active_validation_frames = active_validation_frames
-        self.active_validation_frame_counts = validation_frame_counts
+        self.honeypot_frame_selector = honeypot_frame_selector
 
 class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     disabled_frames = serializers.ListField(
@@ -1485,7 +1486,9 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset distribution for active validation frames
-            bulk_context.active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+            bulk_context.honeypot_frame_selector = frame_selector
 
         # Could be done using Django ORM, but using order_by() and filter()
         # would result in an extra DB request
