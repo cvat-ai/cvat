@@ -148,7 +148,7 @@ $excluded-background: #d9d9d973;
     .ant-tabs-tabpane {
         @extend .cvat-quality-scrollbar;
 
-        height: calc(100vh - $grid-unit-size * 32);
+        height: calc(100vh - $grid-unit-size * 30);
     }
 }
 
@@ -163,4 +163,8 @@ $excluded-background: #d9d9d973;
 
 .cvat-quality-control-validation-mode-hint {
     padding: $grid-unit-size 0;
+}
+
+.cvat-quality-page-header {
+    margin-top: $grid-unit-size * 2;
 }

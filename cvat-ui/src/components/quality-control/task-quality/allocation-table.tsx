@@ -124,8 +124,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                         </Button>
                     </CVATTooltip>
                 );
-            }
-            ,
+            },
         },
         {
             title: 'Actions',

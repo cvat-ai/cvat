@@ -361,7 +361,7 @@ function QualityControlPage(): JSX.Element {
     if (instance) {
         title = (
             <Col>
-                <Title level={4} className='cvat-text-color'>
+                <Title level={4} className='cvat-text-color cvat-quality-page-header'>
                     Quality control for
                     <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
                 </Title>
