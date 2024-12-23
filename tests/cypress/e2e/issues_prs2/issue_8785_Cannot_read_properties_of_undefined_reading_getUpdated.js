@@ -16,7 +16,7 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
         });
         cy.closeSettings();
     }
-    function clickDelete() {
+    function clickDeleteFrame() {
         cy.get('.cvat-player-delete-frame').click();
         cy.get('.cvat-modal-delete-frame').within(() => {
             cy.contains('button', 'Delete').click();
