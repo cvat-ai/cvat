@@ -5,7 +5,7 @@
 @import 'base';
 
 .cvat-quality-scrollbar {
-    overflow-y: auto;
+    overflow: hidden auto;
 
     &::-webkit-scrollbar {
         background-color: #fff;
@@ -67,7 +67,6 @@ $excluded-background: #d9d9d973;
 .cvat-frame-allocation-list {
     width: 100%;
     height: auto;
-    margin-top: $grid-unit-size * 2;
     overflow: hidden;
 
     td.ant-table-column-sort {
@@ -137,7 +136,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-frame-allocation-table .ant-table-container {
-    max-height: calc(100vh - $grid-unit-size * 61);
+    max-height: calc(100vh - $grid-unit-size * 60);
     overflow-y: auto;
 
     .ant-table-tbody .ant-table-cell {
@@ -149,6 +148,19 @@ $excluded-background: #d9d9d973;
     .ant-tabs-tabpane {
         @extend .cvat-quality-scrollbar;
 
-        height: calc(100vh - $grid-unit-size * 33);
+        height: calc(100vh - $grid-unit-size * 32);
     }
+}
+
+.cvat-quality-control-management-tab-summary {
+    margin-left: - $grid-unit-size;
+    margin-right: - $grid-unit-size;
+
+    >.ant-col {
+        padding: 0 $grid-unit-size;
+    }
+}
+
+.cvat-quality-control-validation-mode-hint {
+    padding: $grid-unit-size 0;
 }
