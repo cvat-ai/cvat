@@ -11,10 +11,11 @@ import shutil
 import tempfile
 import uuid
 from abc import ABCMeta, abstractmethod
+from collections.abc import Collection, Iterable
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Collection, Dict, Iterable, Optional, Union, Type
+from typing import Any, Optional, Union, Type
 from zipfile import ZipFile
 from datetime import timedelta
 
@@ -660,7 +661,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return segment_size, overlap
 
     @staticmethod
-    def _parse_segment_frames(*, jobs: Dict[str, Any]) -> JobFileMapping:
+    def _parse_segment_frames(*, jobs: dict[str, Any]) -> JobFileMapping:
         segments = []
 
         for i, segment in enumerate(jobs):

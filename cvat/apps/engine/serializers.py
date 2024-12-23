@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
+from collections.abc import Iterable, Sequence
 from contextlib import closing
 import warnings
 from copy import copy
@@ -17,7 +19,7 @@ import shutil
 import string
 from tempfile import NamedTemporaryFile
 import textwrap
-from typing import Any, Dict, Iterable, Optional, OrderedDict, Sequence, Union
+from typing import Any, Optional, Union
 
 import django_rq
 from django.conf import settings
@@ -367,9 +369,9 @@ class LabelSerializer(SublabelSerializer):
     @transaction.atomic
     def update_label(
         cls,
-        validated_data: Dict[str, Any],
+        validated_data: dict[str, Any],
         svg: str,
-        sublabels: Iterable[Dict[str, Any]],
+        sublabels: Iterable[dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -483,7 +485,7 @@ class LabelSerializer(SublabelSerializer):
     @classmethod
     @transaction.atomic
     def create_labels(cls,
-        labels: Iterable[Dict[str, Any]],
+        labels: Iterable[dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -534,7 +536,7 @@ class LabelSerializer(SublabelSerializer):
     @classmethod
     @transaction.atomic
     def update_labels(cls,
-        labels: Iterable[Dict[str, Any]],
+        labels: Iterable[dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -3270,7 +3272,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
 def _update_related_storages(
     instance: Union[models.Project, models.Task],
-    validated_data: Dict[str, Any],
+    validated_data: dict[str, Any],
 ) -> None:
     for storage_type in ('source_storage', 'target_storage'):
         new_conf = validated_data.pop(storage_type, None)
@@ -3325,7 +3327,7 @@ def _update_related_storages(
         storage_instance.cloud_storage_id = new_cloud_storage_id
         storage_instance.save()
 
-def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Optional[models.Storage]]:
+def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:
     storages = {
         'source_storage': None,
         'target_storage': None,
@@ -3418,7 +3420,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
 
-    def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
+    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
 
         return {
@@ -3459,7 +3461,7 @@ class RequestSerializer(serializers.Serializer):
     result_id = serializers.IntegerField(required=False, allow_null=True)
 
     @extend_schema_field(UserIdentifiersSerializer())
-    def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:
+    def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
         return UserIdentifiersSerializer(rq_job.meta[RQJobMetaField.USER]).data
 
     @extend_schema_field(
@@ -3499,7 +3501,7 @@ class RequestSerializer(serializers.Serializer):
 
         return message
 
-    def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
+    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         representation = super().to_representation(rq_job)
 
         # FUTURE-TODO: support such statuses on UI

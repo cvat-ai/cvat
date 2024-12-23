@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Generic, Mapping, Sequence, TypeVar
+from collections.abc import Mapping, Sequence
+from typing import Generic, TypeVar
 
 import numpy as np
 

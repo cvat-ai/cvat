@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from typing import Any, Dict, Union, Optional
+from typing import Any, Union, Optional
 
 from cvat.apps.engine.models import Location, Project, Task, Job
 
@@ -15,11 +15,11 @@ class StorageType(str, Enum):
         return self.value
 
 def get_location_configuration(
-    query_params: Dict[str, Any],
+    query_params: dict[str, Any],
     field_name: str,
     *,
     db_instance: Optional[Union[Project, Task, Job]] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     location = query_params.get('location')
 
     # handle resource import
