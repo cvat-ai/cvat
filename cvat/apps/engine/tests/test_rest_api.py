@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from contextlib import ExitStack
+import django_rq
 import io
 from itertools import product
 import os
@@ -27,6 +28,7 @@ import av
 import numpy as np
 from pdf2image import convert_from_bytes
 from pyunpack import Archive
+from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
@@ -34,6 +36,8 @@ from PIL import Image
 from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient
+from rq.job import Job as RQJob
+from rq.queue import Queue as RQQueue
 
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
@@ -3086,32 +3090,43 @@ class TaskImportExportAPITestCase(ApiTestBase):
     def test_api_v2_tasks_id_export_no_auth(self):
         self._run_api_v2_tasks_id_export_import(None)
 
-    # TODO: add another test that checks running cron job
-    # def test_can_remove_export_cache_automatically_after_successful_export(self):
-    #     self._create_tasks()
-    #     task_id = self.tasks[0]["id"]
-    #     user = self.admin
+    def test_can_remove_export_cache_automatically_after_successful_export(self):
+        from cvat.apps.engine.cron import cron_export_cache_cleanup, clear_export_cache
+        self._create_tasks()
+        task_id = self.tasks[0]["id"]
+        user = self.admin
 
-    #     with mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(hours=10)):
-    #         response = self._run_api_v2_tasks_id_export(task_id, user)
-    #         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        TASK_CACHE_TTL = timedelta(seconds=5)
+        with (
+            mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=TASK_CACHE_TTL),
+            mock.patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': TASK_CACHE_TTL}),
+            mock.patch(
+                "cvat.apps.engine.cron.clear_export_cache",
+                side_effect=clear_export_cache,
+            ) as mock_clear_export_cache,
+        ):
+            cron_export_cache_cleanup(f"cvat.apps.engine.models.Task")
+            mock_clear_export_cache.assert_not_called()
 
-    #         response = self._run_api_v2_tasks_id_export(task_id, user)
-    #         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            response = self._run_api_v2_tasks_id_export(task_id, user)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-    #     scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    #     scheduled_jobs = list(scheduler.get_jobs())
-    #     cleanup_job = next(
-    #         j for j in scheduled_jobs if j.func_name.endswith('.engine.backup._clear_export_cache')
-    #     )
+            response = self._run_api_v2_tasks_id_export(task_id, user)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    #     export_path = cleanup_job.kwargs['file_path']
-    #     self.assertTrue(os.path.isfile(export_path))
+            queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+            rq_job_ids = queue.finished_job_registry.get_job_ids()
+            self.assertEqual(len(rq_job_ids), 1)
+            job: RQJob | None = queue.fetch_job(rq_job_ids[0])
+            self.assertFalse(job is None)
+            file_path = job.return_value()
+            self.assertTrue(os.path.isfile(file_path))
 
-    #     from cvat.apps.engine.backup import _clear_export_cache
-    #     _clear_export_cache(**cleanup_job.kwargs)
+            sleep(TASK_CACHE_TTL.total_seconds() + 1)
 
-    #     self.assertFalse(os.path.isfile(export_path))
+            cron_export_cache_cleanup(f"cvat.apps.engine.models.Task")
+            mock_clear_export_cache.assert_called_once()
+            self.assertFalse(os.path.exists(file_path))
 
 
 def generate_random_image_file(filename):

@@ -527,7 +527,7 @@ class Project(TimestampedModel, _FileSystemRelatedModel, _Exportable):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
     def is_job_staff(self, user_id):
@@ -896,7 +896,7 @@ class Job(TimestampedModel, _FileSystemRelatedModel, _Exportable):
     def get_source_storage(self) -> Optional[Storage]:
         return self.segment.task.source_storage
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.JOBS_ROOT, str(self.id))
 
     @extend_schema_field(OpenApiTypes.INT)

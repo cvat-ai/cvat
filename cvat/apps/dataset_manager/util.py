@@ -249,18 +249,13 @@ class ExportCacheManager:
 
         if file_type in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
             basename_match = re.fullmatch(
-                (
-                    # optional for backward compatibility
-                    r"(?:instance(?P<instance_timestamp>\d+\.\d+)-|_)"
-                    r"(?P<format_repr>.+)"  # TODO: convert back?
-                    r"\.(?P<file_ext>.+)"
-                ),
+                r"instance(?P<instance_timestamp>\d+\.\d+)(?P<format_repr>.+)\.(?P<file_ext>.+)",
                 non_parsed_basename,
             )
             ParsedFileNameClass = ParsedDatasetFilename
         elif file_type == ExportFileType.BACKUP:
             basename_match = re.fullmatch(
-                r"(?:instance(?P<instance_timestamp>\d+\.\d+)-|_)" r"\.(?P<file_ext>.+)",
+                r"instance(?P<instance_timestamp>\d+\.\d+)\.(?P<file_ext>.+)",
                 non_parsed_basename,
             )
             ParsedFileNameClass = ParsedBackupFilename
