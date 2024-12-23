@@ -38,42 +38,28 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
             const badResponse = { statusCode: 502, body: 'A horrible network error' };
 
             cy.on('uncaught:exception', (err) => {
-                expect(err.message).to.include(badResponse.body);
                 expect(err.code).to.equal(badResponse.statusCode);
                 return false;
-            });
-
-            function createHandler() {
-                let calls = 0;
-                function handle(req) {
-                    if (calls === 0) {
-                        calls++;
-                        req.continue((res) => {
-                            res.send(badResponse);
-                        });
-                    } else {
-                        req.continue();
-                    }
-                }
-                return handle;
-            }
+            }); // On 502, Cypres always triggers a Node exception
 
             const routeMatcher = {
                 url: '/api/jobs/**/data/meta**',
                 method: 'PATCH',
-                times: 1, // cancels the intercept
+                times: 1, // cancels the intercept without retries
             };
-            const routeHandler = createHandler();
 
-            cy.intercept(routeMatcher, routeHandler).as('patchError');
+            cy.intercept(routeMatcher, badResponse).as('patchError');
 
             clickDelete();
             cy.get('.cvat-player-restore-frame').should('be.visible');
 
             clickSave();
-            cy.wait('@patchError').its('response.statusCode').should('eq', badResponse.statusCode);
+            cy.wait('@patchError').then((intercept) => {
+                expect(intercept.response.body).to.equal(badResponse.body);
+                expect(intercept.response.statusCode).to.equal(badResponse.statusCode);
+            });
 
-            cy.saveJob();
+            cy.saveJob('PATCH', 200);
         });
     });
 });
