@@ -9,13 +9,6 @@ import { taskName } from '../../support/const';
 context('The UI remains stable even when the metadata request fails.', () => {
     const issueId = '8785';
 
-    function checkDeletedFrameVisibility() {
-        cy.openSettings();
-        cy.get('.cvat-workspace-settings-show-deleted').within(() => {
-            cy.get('[type="checkbox"]').should('not.be.checked').check();
-        });
-        cy.closeSettings();
-    }
     function clickDeleteFrame() {
         cy.get('.cvat-player-delete-frame').click();
         cy.get('.cvat-modal-delete-frame').within(() => {
@@ -28,7 +21,7 @@ context('The UI remains stable even when the metadata request fails.', () => {
     }
 
     before(() => {
-        checkDeletedFrameVisibility();
+        cy.checkDeletedFrameVisibility();
         cy.openTaskJob(taskName);
         cy.goToNextFrame(1);
     });

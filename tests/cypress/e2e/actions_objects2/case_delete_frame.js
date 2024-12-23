@@ -41,11 +41,7 @@ context('Delete frame from job.', () => {
         });
 
         it('Change deleted frame visability.', () => {
-            cy.openSettings();
-            cy.get('.cvat-workspace-settings-show-deleted').within(() => {
-                cy.get('[type="checkbox"]').should('not.be.checked').check();
-            });
-            cy.closeSettings();
+            cy.checkDeletedFrameVisibility();
         });
 
         it('Check previous frame available and deleted.', () => {
