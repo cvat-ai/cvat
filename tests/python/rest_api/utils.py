@@ -44,7 +44,7 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
 def wait_and_download_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     download_result: bool = True,
     **kwargs,
@@ -75,7 +75,7 @@ def wait_and_download_v1(
 def export_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -115,7 +115,7 @@ def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     download_result: bool = True,
 ) -> Optional[bytes]:
@@ -153,7 +153,7 @@ def wait_and_download_v2(
 def export_v2(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -196,7 +196,7 @@ def export_dataset(
     ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     save_images: bool,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
@@ -278,7 +278,7 @@ def export_backup(
         int, tuple[int]
     ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     **kwargs,
 ) -> Optional[bytes]:
@@ -326,7 +326,7 @@ def export_task_backup(
 def import_resource(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -372,7 +372,7 @@ def import_resource(
 def import_backup(
     api: Union[ProjectsApi, TasksApi],
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     **kwargs,
 ) -> None:
@@ -601,3 +601,7 @@ DATUMARO_FORMAT_FOR_DIMENSION = {
 
 def parse_frame_step(frame_filter: str) -> int:
     return int((frame_filter or "step=1").split("=")[1])
+
+
+def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
+    return stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step

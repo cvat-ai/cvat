@@ -20,7 +20,7 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.utils import chunked_list
+from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
@@ -84,7 +84,7 @@ def merge_table_rows(rows, keys_for_merge, field_id):
 
 class JobAnnotation:
     @classmethod
-    def add_prefetch_info(cls, queryset: QuerySet, prefetch_images: bool = True):
+    def add_prefetch_info(cls, queryset: QuerySet[models.Job], prefetch_images: bool = True) -> QuerySet[models.Job]:
         assert issubclass(queryset.model, models.Job)
 
         label_qs = add_prefetch_fields(models.Label.objects.all(), [
@@ -530,13 +530,13 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, chunk_size=1000):
+            for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
-            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, chunk_size=1000):
+            for labeledshape_ids_chunk in take_by(labeledshape_ids, chunk_size=1000):
                 self._delete_job_labeledshapes(labeledshape_ids_chunk)
 
-            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, chunk_size=1000):
+            for labeledtrack_ids_chunk in take_by(labeledtrack_ids, chunk_size=1000):
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {

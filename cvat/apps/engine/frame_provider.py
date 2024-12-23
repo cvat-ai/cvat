@@ -11,6 +11,7 @@ import math
 from abc import ABCMeta, abstractmethod
 from bisect import bisect
 from collections import OrderedDict
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
@@ -18,11 +19,7 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Iterator,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -31,7 +28,6 @@ from typing import (
 import av
 import cv2
 import numpy as np
-from datumaro.util import take_by
 from django.conf import settings
 from PIL import Image
 from rest_framework.exceptions import ValidationError
@@ -46,6 +42,7 @@ from cvat.apps.engine.media_extractors import (
     ZipReader,
 )
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.utils import take_by
 
 _T = TypeVar("_T")
 
@@ -53,7 +50,7 @@ _T = TypeVar("_T")
 class _ChunkLoader(metaclass=ABCMeta):
     def __init__(
         self,
-        reader_class: Type[IMediaReader],
+        reader_class: type[IMediaReader],
         *,
         reader_params: Optional[dict] = None,
     ) -> None:
@@ -62,7 +59,7 @@ class _ChunkLoader(metaclass=ABCMeta):
         self.reader_class = reader_class
         self.reader_params = reader_params
 
-    def load(self, chunk_id: int) -> RandomAccessIterator[Tuple[Any, str, int]]:
+    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str, int]]:
         if self.chunk_id != chunk_id:
             self.unload()
 
@@ -88,7 +85,7 @@ class _ChunkLoader(metaclass=ABCMeta):
 class _FileChunkLoader(_ChunkLoader):
     def __init__(
         self,
-        reader_class: Type[IMediaReader],
+        reader_class: type[IMediaReader],
         get_chunk_path_callback: Callable[[int], str],
         *,
         reader_params: Optional[dict] = None,
@@ -108,7 +105,7 @@ class _FileChunkLoader(_ChunkLoader):
 class _BufferChunkLoader(_ChunkLoader):
     def __init__(
         self,
-        reader_class: Type[IMediaReader],
+        reader_class: type[IMediaReader],
         get_chunk_callback: Callable[[int], DataWithMime],
         *,
         reader_params: Optional[dict] = None,
@@ -154,7 +151,7 @@ class IFrameProvider(metaclass=ABCMeta):
         return BytesIO(result.tobytes())
 
     def _convert_frame(
-        self, frame: Any, reader_class: Type[IMediaReader], out_type: FrameOutputType
+        self, frame: Any, reader_class: type[IMediaReader], out_type: FrameOutputType
     ) -> AnyFrame:
         if out_type == FrameOutputType.BUFFER:
             return (
@@ -451,7 +448,7 @@ class SegmentFrameProvider(IFrameProvider):
 
         db_data = db_segment.task.data
 
-        reader_class: dict[models.DataChoice, Tuple[Type[IMediaReader], Optional[dict]]] = {
+        reader_class: dict[models.DataChoice, tuple[type[IMediaReader], Optional[dict]]] = {
             models.DataChoice.IMAGESET: (ZipReader, None),
             models.DataChoice.VIDEO: (
                 VideoReader,
@@ -523,7 +520,7 @@ class SegmentFrameProvider(IFrameProvider):
 
         return frame_index
 
-    def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
+    def validate_frame_number(self, frame_number: int) -> tuple[int, int, int]:
         frame_index = self.get_frame_index(frame_number)
         if frame_index is None:
             raise ValidationError(f"Incorrect requested frame number: {frame_number}")
@@ -576,7 +573,7 @@ class SegmentFrameProvider(IFrameProvider):
         frame_number: int,
         *,
         quality: FrameQuality = FrameQuality.ORIGINAL,
-    ) -> Tuple[Any, str, Type[IMediaReader]]:
+    ) -> tuple[Any, str, type[IMediaReader]]:
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
         chunk_reader = loader.load(chunk_number)

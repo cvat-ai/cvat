@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Generic, Mapping, Sequence, TypeVar
+from collections.abc import Mapping, Sequence
+from typing import Generic, TypeVar
 
 import numpy as np
 
@@ -16,8 +17,7 @@ class HoneypotFrameSelector(Generic[_T]):
         self.validation_frame_counts = validation_frame_counts
 
         if not rng:
-            # Use a known uniform distribution
-            rng = np.random.Generator(np.random.MT19937())
+            rng = np.random.default_rng()
 
         self.rng = rng
 
@@ -31,7 +31,7 @@ class HoneypotFrameSelector(Generic[_T]):
         # if possible (if the job and GT counts allow this).
         pick = []
 
-        for _ in range(count):
+        for random_number in self.rng.random(count):
             least_count = min(c for f, c in self.validation_frame_counts.items() if f not in pick)
             least_used_frames = tuple(
                 f
@@ -40,7 +40,7 @@ class HoneypotFrameSelector(Generic[_T]):
                 if c == least_count
             )
 
-            selected_item = self.rng.choice(range(len(least_used_frames)), 1).item()
+            selected_item = int(random_number * len(least_used_frames))
             selected_frame = least_used_frames[selected_item]
             pick.append(selected_frame)
             self.validation_frame_counts[selected_frame] += 1
