@@ -7,14 +7,13 @@ import ast
 from itertools import islice
 import cv2 as cv
 from collections import namedtuple
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 import hashlib
 import importlib
 import sys
 import traceback
 from contextlib import suppress, nullcontext
-from typing import (
-    Any, Callable, Dict, Generator, Iterable, Iterator, Optional, Mapping, Sequence, TypeVar, Union
-)
+from typing import Any, Callable, Optional, TypeVar, Union
 import subprocess
 import os
 import urllib.parse
@@ -264,7 +263,7 @@ def get_rq_job_meta(
     return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
-    query_params: Optional[Dict[str, str]] = None,
+    query_params: Optional[dict[str, str]] = None,
     request: Optional[HttpRequest] = None,
 ) -> str:
     """
@@ -283,7 +282,7 @@ def reverse(viewname, *, args=None, kwargs=None,
 def get_server_url(request: HttpRequest) -> str:
     return request.build_absolute_uri('/')
 
-def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
+def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.
     """

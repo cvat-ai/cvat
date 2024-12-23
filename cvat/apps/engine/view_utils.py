@@ -4,7 +4,7 @@
 
 # NOTE: importing in the utils.py header leads to circular importing
 
-from typing import Optional, Type
+from typing import Optional
 
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
@@ -23,9 +23,9 @@ def make_paginated_response(
     queryset: QuerySet,
     *,
     viewset: GenericViewSet,
-    response_type: Optional[Type[HttpResponse]] = None,
-    serializer_type: Optional[Type[Serializer]] = None,
-    request: Optional[Type[HttpRequest]] = None,
+    response_type: Optional[type[HttpResponse]] = None,
+    serializer_type: Optional[type[Serializer]] = None,
+    request: Optional[type[HttpRequest]] = None,
     **serializer_params
 ):
     # Adapted from the mixins.ListModelMixin.list()
@@ -54,7 +54,7 @@ def make_paginated_response(
 
     return response_type(serializer.data)
 
-def list_action(serializer_class: Type[Serializer], **kwargs):
+def list_action(serializer_class: type[Serializer], **kwargs):
     params = dict(
         detail=True,
         methods=["GET"],
