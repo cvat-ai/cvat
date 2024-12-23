@@ -13,22 +13,11 @@ import tempfile
 import time
 import zipfile
 import zlib
+from collections.abc import Collection, Generator, Iterator, Sequence
 from contextlib import ExitStack, closing
 from datetime import datetime, timezone
 from itertools import groupby, pairwise
-from typing import (
-    Any,
-    Callable,
-    Collection,
-    Generator,
-    Iterator,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    overload,
-)
+from typing import Any, Callable, Optional, Union, overload
 
 import attrs
 import av
@@ -76,8 +65,8 @@ from utils.dataset_manifest import ImageManifestManager
 slogger = ServerLogManager(__name__)
 
 
-DataWithMime = Tuple[io.BytesIO, str]
-_CacheItem = Tuple[io.BytesIO, str, int, Union[datetime, None]]
+DataWithMime = tuple[io.BytesIO, str]
+_CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
 
 def enqueue_create_chunk_job(
@@ -636,7 +625,7 @@ class MediaCache:
     @staticmethod
     def _read_raw_frames(
         db_task: Union[models.Task, int], frame_ids: Sequence[int]
-    ) -> Generator[Tuple[Union[av.VideoFrame, PIL.Image.Image], str, str], None, None]:
+    ) -> Generator[tuple[Union[av.VideoFrame, PIL.Image.Image], str, str], None, None]:
         if isinstance(db_task, int):
             db_task = models.Task.objects.get(pk=db_task)
 
@@ -962,7 +951,7 @@ def prepare_preview_image(image: PIL.Image.Image) -> DataWithMime:
 
 
 def prepare_chunk(
-    task_chunk_frames: Iterator[Tuple[Any, str, int]],
+    task_chunk_frames: Iterator[tuple[Any, str, int]],
     *,
     quality: FrameQuality,
     db_task: models.Task,
@@ -972,7 +961,7 @@ def prepare_chunk(
 
     db_data = db_task.data
 
-    writer_classes: dict[FrameQuality, Type[IChunkWriter]] = {
+    writer_classes: dict[FrameQuality, type[IChunkWriter]] = {
         FrameQuality.COMPRESSED: (
             Mpeg4CompressedChunkWriter
             if db_data.compressed_chunk_type == models.DataChoice.VIDEO
@@ -1005,7 +994,7 @@ def prepare_chunk(
     return buffer, get_chunk_mime_type_for_writer(writer_class)
 
 
-def get_chunk_mime_type_for_writer(writer: Union[IChunkWriter, Type[IChunkWriter]]) -> str:
+def get_chunk_mime_type_for_writer(writer: Union[IChunkWriter, type[IChunkWriter]]) -> str:
     if isinstance(writer, IChunkWriter):
         writer_class = type(writer)
     else:
