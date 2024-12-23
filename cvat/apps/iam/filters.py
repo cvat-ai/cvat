@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework.filters import BaseFilterBackend
-from django.db.models import Q
 from collections.abc import Iterable
 
+from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter
+from rest_framework.filters import BaseFilterBackend
 
 ORGANIZATION_OPEN_API_PARAMETERS = [
     OpenApiParameter(

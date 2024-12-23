@@ -11,26 +11,40 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
-from cvat.apps.engine.models import (CloudStorage, Comment, Issue, Job, Label,
-                                     Project, ShapeType, Task, User)
-from cvat.apps.engine.serializers import (BasicUserSerializer,
-                                          CloudStorageReadSerializer,
-                                          CommentReadSerializer,
-                                          IssueReadSerializer,
-                                          JobReadSerializer, LabelSerializer,
-                                          ProjectReadSerializer,
-                                          TaskReadSerializer)
-from cvat.apps.organizations.models import Invitation, Membership, Organization
-from cvat.apps.organizations.serializers import (InvitationReadSerializer,
-                                                 MembershipReadSerializer,
-                                                 OrganizationReadSerializer)
+from cvat.apps.engine.models import (
+    CloudStorage,
+    Comment,
+    Issue,
+    Job,
+    Label,
+    Project,
+    ShapeType,
+    Task,
+    User,
+)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.serializers import (
+    BasicUserSerializer,
+    CloudStorageReadSerializer,
+    CommentReadSerializer,
+    IssueReadSerializer,
+    JobReadSerializer,
+    LabelSerializer,
+    ProjectReadSerializer,
+    TaskReadSerializer,
+)
+from cvat.apps.organizations.models import Invitation, Membership, Organization
+from cvat.apps.organizations.serializers import (
+    InvitationReadSerializer,
+    MembershipReadSerializer,
+    OrganizationReadSerializer,
+)
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
-from .event import event_scope, record_server_event
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
+from .event import event_scope, record_server_event
 from .utils import compute_working_time_per_ids
 
 

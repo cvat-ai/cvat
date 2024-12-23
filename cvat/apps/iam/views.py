@@ -5,30 +5,33 @@
 
 import functools
 
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework import views, serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny
-from django.conf import settings
-from django.http import HttpResponse
-from django.views.decorators.http import etag as django_etag
-from rest_framework.response import Response
+from allauth.account import app_settings as allauth_settings
+from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
+from allauth.account.views import ConfirmEmailView
 from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
 from dj_rest_auth.utils import jwt_encode
 from dj_rest_auth.views import LoginView
-from allauth.account import app_settings as allauth_settings
-from allauth.account.views import ConfirmEmailView
-from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
-
-from furl import furl
-
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from django.conf import settings
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.views.decorators.http import etag as django_etag
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from furl import furl
+from rest_framework import serializers, views
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from .authentication import Signer
 from .utils import get_opa_bundle
+
 
 @extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(

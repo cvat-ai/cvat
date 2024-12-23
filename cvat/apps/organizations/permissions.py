@@ -9,6 +9,7 @@ from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
 
 from .models import Membership
 
+
 class OrganizationPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         LIST = 'list'

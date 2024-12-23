@@ -5,14 +5,14 @@
 
 import functools
 import json
-import os
 import math
+import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_EXCEPTION
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
-from typing import Optional, Any, Callable, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -27,13 +27,13 @@ from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
-from rest_framework.exceptions import (NotFound, PermissionDenied,
-                                       ValidationError)
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+
 
 class NamedBytesIO(BytesIO):
     @property

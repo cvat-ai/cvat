@@ -1,11 +1,14 @@
+import csv
 import os
 import re
-import csv
 from io import StringIO
-from PIL import Image
-from django.db import migrations
+
 from django.conf import settings
+from django.db import migrations
+from PIL import Image
+
 from cvat.apps.engine.media_extractors import get_mime
+
 
 def parse_attribute(value):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', value)
