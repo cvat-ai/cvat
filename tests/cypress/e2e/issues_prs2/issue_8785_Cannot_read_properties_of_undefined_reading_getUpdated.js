@@ -6,7 +6,7 @@
 
 import { taskName } from '../../support/const';
 
-context('When saving after deleting a frame, job metadata is inconsistent.', () => {
+context('The UI remains stable even when the metadata request fails.', () => {
     const issueId = '8785';
 
     function checkDeletedFrameVisibility() {
@@ -39,8 +39,9 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
 
             cy.on('uncaught:exception', (err) => {
                 expect(err.code).to.equal(badResponse.statusCode);
+                expect(err.message).to.include(`> ${badResponse.body}`);
                 return false;
-            }); // On 502, Cypres always triggers a Node exception
+            });
 
             const routeMatcher = {
                 url: '/api/jobs/**/data/meta**',
@@ -50,7 +51,7 @@ context('When saving after deleting a frame, job metadata is inconsistent.', () 
 
             cy.intercept(routeMatcher, badResponse).as('patchError');
 
-            clickDelete();
+            clickDeleteFrame();
             cy.get('.cvat-player-restore-frame').should('be.visible');
 
             clickSave();
