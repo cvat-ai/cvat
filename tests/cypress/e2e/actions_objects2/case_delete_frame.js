@@ -40,7 +40,7 @@ context('Delete frame from job.', () => {
             cy.checkFrameNum(frame + 1);
         });
 
-        it('Change deleted frame visability.', () => {
+        it('Change deleted frame visibility.', () => {
             cy.checkDeletedFrameVisibility();
         });
 
