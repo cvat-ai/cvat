@@ -3,6 +3,11 @@ profile = "black"
 forced_separate = ["tests"]
 line_length = 100
 skip_gitignore = true # align tool behavior with Black
+extend_skip=[
+    # Correctly ordering the imports in serverless functions would
+    # require a pyproject.toml in every function; don't bother with it for now.
+    "serverless",
+]
 
 [tool.black]
 line-length = 100
