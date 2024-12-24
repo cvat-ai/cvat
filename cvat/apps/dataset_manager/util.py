@@ -103,6 +103,9 @@ def faster_deepcopy(v):
 class LockNotAvailableError(Exception):
     pass
 
+class CacheFilePathParseError(Exception):
+    pass
+
 
 def make_export_cache_lock_key(filename: os.PathLike[str]) -> str:
     return f"export_lock:{os.fspath(filename)}"
@@ -237,7 +240,7 @@ class ExportCacheManager:
             rf"/(jobs|tasks|projects)/\d+/{settings.EXPORT_CACHE_DIR_NAME}$", dirname
         )
         if not dirname_match:
-            raise ValueError(f"Couldn't parse instance type in '{dirname}'")
+            raise CacheFilePathParseError(f"Couldn't parse instance type in '{dirname}'")
 
         instance_type_names = dirname_match.group(1)
         assert instance_type_names in {"projects", "tasks", "jobs"}
@@ -260,10 +263,10 @@ class ExportCacheManager:
             )
             ParsedFileNameClass = ParsedBackupFilename
         else:
-            raise ValueError(f"Unsupported file type: {file_type!r}")
+            raise CacheFilePathParseError(f"Unsupported file type: {file_type!r}")
 
         if not basename_match:
-            raise ValueError(f"Couldn't parse filename components in '{basename}'")
+            raise CacheFilePathParseError(f"Couldn't parse filename components in '{basename}'")
 
         fragments = basename_match.groupdict()
 

@@ -1499,8 +1499,6 @@ class ExportBehaviorTest(_DbTestBase):
         def _clear(*_, file_path: str):
             from os import remove as original_remove
 
-            from cvat.apps.engine.cron import FileIsBeingUsedError
-
             with (
                 patch("cvat.apps.engine.cron.EXPORT_CACHE_LOCK_TTL", new=EXPORT_CACHE_LOCK_TTL),
                 patch("cvat.apps.engine.cron.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT", new=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT),
@@ -1521,12 +1519,10 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                try:
-                    clear_export_cache(
-                        file_path=file_path, logger=MagicMock()
-                    )
-                except FileIsBeingUsedError:
-                    set_condition(clear_has_been_finished)
+                clear_export_cache(
+                    file_path=file_path, logger=MagicMock()
+                )
+                set_condition(clear_has_been_finished)
 
                 mock_os_remove.assert_not_called()
 
@@ -2040,24 +2036,25 @@ class ExportBehaviorTest(_DbTestBase):
 
 
     def test_cleanup_can_fail_if_no_file(self):
-        with self.assertRaises(FileNotFoundError):
+        from cvat.apps.dataset_manager.util import CacheFilePathParseError
+        with self.assertRaises(CacheFilePathParseError):
             clear_export_cache(file_path="non existent file path", logger=MagicMock())
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
+        from os import remove as original_remove
         format_name = "CVAT for images 1.1"
         task = self._setup_task_with_annotations(format_name=format_name)
         task_id = task["id"]
 
         export_path = export(dst_format=format_name, task_id=task_id)
 
-        from cvat.apps.engine.cron import FileIsBeingUsedError
-
         with (
             patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(hours=1)}),
-            self.assertRaises(FileIsBeingUsedError),
+            patch("cvat.apps.engine.cron.os.remove", side_effect=original_remove) as mock_os_remove,
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
             clear_export_cache(file_path=export_path, logger=MagicMock())
+            mock_os_remove.assert_not_called()
 
         self.assertTrue(osp.isfile(export_path))
 
