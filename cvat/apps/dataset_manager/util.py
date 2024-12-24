@@ -247,36 +247,38 @@ class ExportCacheManager:
         instance_type_name = instance_type_names[:-1]
 
         # handle file name
-        file_type, non_parsed_basename = basename.split("-", maxsplit=1)
+        file_type, unparsed = basename.split("-", maxsplit=1)
         file_type = ExportFileType(file_type)
 
+        unparsed, file_ext = osp.splitext(unparsed)
+        unparsed = unparsed[len('instance'):]
+        specific_params = {}
+
         if file_type in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
-            basename_match = re.fullmatch(
-                r"instance(?P<instance_timestamp>\d+\.\d+)(?P<format_repr>.+)\.(?P<file_ext>.+)",
-                non_parsed_basename,
-            )
+            try:
+                instance_timestamp, format_repr = unparsed.split("-", maxsplit=1)
+            except ValueError:
+                raise CacheFilePathParseError(f"Couldn't parse file name: '{basename}'")
+
+            specific_params["format_repr"] = format_repr
             ParsedFileNameClass = ParsedDatasetFilename
         elif file_type == ExportFileType.BACKUP:
-            basename_match = re.fullmatch(
-                r"instance(?P<instance_timestamp>\d+\.\d+)\.(?P<file_ext>.+)",
-                non_parsed_basename,
-            )
+            instance_timestamp = unparsed
             ParsedFileNameClass = ParsedBackupFilename
         else:
             raise CacheFilePathParseError(f"Unsupported file type: {file_type!r}")
 
-        if not basename_match:
-            raise CacheFilePathParseError(f"Couldn't parse filename components in '{basename}'")
-
-        fragments = basename_match.groupdict()
-
-        if fragments.get("instance_timestamp"):
-            fragments["instance_timestamp"] = float(fragments["instance_timestamp"])
+        try:
+            instance_timestamp = float(instance_timestamp)
+        except ValueError:
+            raise CacheFilePathParseError(f"Couldn't parse instance timestamp: '{instance_timestamp}'")
 
         return ParsedFileNameClass(
             file_type=file_type.value,
+            file_ext=file_ext,
             instance_type=instance_type_name,
-            **fragments,
+            instance_timestamp=instance_timestamp,
+            **specific_params,
         )
 
 

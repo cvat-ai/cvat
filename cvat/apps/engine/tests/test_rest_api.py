@@ -3105,7 +3105,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
                 side_effect=clear_export_cache,
             ) as mock_clear_export_cache,
         ):
-            cron_export_cache_cleanup(f"cvat.apps.engine.models.Task")
+            cron_export_cache_cleanup()
             mock_clear_export_cache.assert_not_called()
 
             response = self._run_api_v2_tasks_id_export(task_id, user)
@@ -3124,7 +3124,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
 
             sleep(TASK_CACHE_TTL.total_seconds() + 1)
 
-            cron_export_cache_cleanup(f"cvat.apps.engine.models.Task")
+            cron_export_cache_cleanup()
             mock_clear_export_cache.assert_called_once()
             self.assertFalse(os.path.exists(file_path))
 

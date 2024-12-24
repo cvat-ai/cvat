@@ -2098,7 +2098,7 @@ class ExportBehaviorTest(_DbTestBase):
                         side_effect=clear_export_cache,
                     ) as mock_clear_export_cache,
                 ):
-                    cron_export_cache_cleanup(f"cvat.apps.engine.models.{resource.title()}")
+                    cron_export_cache_cleanup()
                     mock_clear_export_cache.assert_called_once()
 
                 self.assertFalse(osp.exists(export_path))
