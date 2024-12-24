@@ -1519,9 +1519,7 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                clear_export_cache(
-                    file_path=file_path, logger=MagicMock()
-                )
+                clear_export_cache(file_path=file_path)
                 set_condition(clear_has_been_finished)
 
                 mock_os_remove.assert_not_called()
@@ -1700,9 +1698,7 @@ class ExportBehaviorTest(_DbTestBase):
 
                 exited_by_timeout = False
                 try:
-                    clear_export_cache(
-                        file_path=file_path, logger=MagicMock()
-                    )
+                    clear_export_cache(file_path=file_path)
                 except LockNotAvailableError:
                     # should come from waiting for get_export_cache_lock
                     exited_by_timeout = True
@@ -2030,7 +2026,7 @@ class ExportBehaviorTest(_DbTestBase):
             patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}),
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=export_path, logger=MagicMock())
+            clear_export_cache(file_path=export_path)
 
         self.assertFalse(osp.isfile(export_path))
 
@@ -2038,7 +2034,7 @@ class ExportBehaviorTest(_DbTestBase):
     def test_cleanup_can_fail_if_no_file(self):
         from cvat.apps.dataset_manager.util import CacheFilePathParseError
         with self.assertRaises(CacheFilePathParseError):
-            clear_export_cache(file_path="non existent file path", logger=MagicMock())
+            clear_export_cache(file_path="non existent file path")
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
         from os import remove as original_remove
@@ -2053,7 +2049,7 @@ class ExportBehaviorTest(_DbTestBase):
             patch("cvat.apps.engine.cron.os.remove", side_effect=original_remove) as mock_os_remove,
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=export_path, logger=MagicMock())
+            clear_export_cache(file_path=export_path)
             mock_os_remove.assert_not_called()
 
         self.assertTrue(osp.isfile(export_path))

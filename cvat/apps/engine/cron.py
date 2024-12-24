@@ -71,7 +71,7 @@ def cron_export_cache_cleanup() -> None:
                     continue
 
                 try:
-                    clear_export_cache(child, logger)
+                    clear_export_cache(child)
                 except Exception:
                     log_exception(logger)
 
