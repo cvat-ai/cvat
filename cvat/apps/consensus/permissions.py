@@ -161,7 +161,6 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
                 else:
                     assert False
 
-
             if task and task.project_id:
                 project = task.project
                 organization = project.organization
