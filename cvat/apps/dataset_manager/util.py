@@ -179,10 +179,15 @@ class ParsedBackupFilename(_ParsedExportFilename):
 
 
 class ExportCacheManager:
-    # store the instance timestamp in the file name to reliably get this information
-    # ctime / mtime do not return file creation time on linux
-    # mtime is used for file usage checks
-    BASE_FILE_NAME_TEMPLATE = "{file_type}-instance{instance_timestamp}{optional_suffix}.{file_ext}"
+    SPLITTER = "-"
+    INSTANCE_PREFIX = "instance"
+    FILE_NAME_TEMPLATE = SPLITTER.join([
+        "{file_type}", INSTANCE_PREFIX +
+        # store the instance timestamp in the file name to reliably get this information
+        # ctime / mtime do not return file creation time on linux
+        # mtime is used for file usage checks
+        "{instance_timestamp}{optional_suffix}.{file_ext}"
+    ])
 
     @classmethod
     def make_dataset_file_path(
@@ -200,11 +205,11 @@ class ExportCacheManager:
         file_type = ExportFileType.DATASET if save_images else ExportFileType.ANNOTATIONS
 
         normalized_format_name = make_file_name(to_snake_case(format_name))
-        filename = cls.BASE_FILE_NAME_TEMPLATE.format_map(
+        filename = cls.FILE_NAME_TEMPLATE.format_map(
             {
                 "file_type": file_type,
                 "instance_timestamp": instance_timestamp,
-                "optional_suffix": "-" + normalized_format_name,
+                "optional_suffix": cls.SPLITTER + normalized_format_name,
                 "file_ext": file_ext,
             }
         )
@@ -218,7 +223,7 @@ class ExportCacheManager:
         *,
         instance_timestamp: float,
     ) -> str:
-        filename = cls.BASE_FILE_NAME_TEMPLATE.format_map(
+        filename = cls.FILE_NAME_TEMPLATE.format_map(
             {
                 "file_type": ExportFileType.BACKUP,
                 "instance_timestamp": instance_timestamp,
@@ -228,9 +233,9 @@ class ExportCacheManager:
         )
         return osp.join(cache_dir, filename)
 
-    @staticmethod
+    @classmethod
     def parse_file_path(
-        file_path: os.PathLike[str],
+        cls, file_path: os.PathLike[str],
     ) -> ParsedDatasetFilename | ParsedBackupFilename:
         file_path = osp.normpath(file_path)
         dirname, basename = osp.split(file_path)
@@ -247,16 +252,16 @@ class ExportCacheManager:
         instance_type_name = instance_type_names[:-1]
 
         # handle file name
-        file_type, unparsed = basename.split("-", maxsplit=1)
+        file_type, unparsed = basename.split(cls.SPLITTER, maxsplit=1)
         file_type = ExportFileType(file_type)
 
         unparsed, file_ext = osp.splitext(unparsed)
-        unparsed = unparsed[len('instance'):]
+        unparsed = unparsed[len(cls.INSTANCE_PREFIX):]
         specific_params = {}
 
         if file_type in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
             try:
-                instance_timestamp, format_repr = unparsed.split("-", maxsplit=1)
+                instance_timestamp, format_repr = unparsed.split(cls.SPLITTER, maxsplit=1)
             except ValueError:
                 raise CacheFilePathParseError(f"Couldn't parse file name: '{basename}'")
 

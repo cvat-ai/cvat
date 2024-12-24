@@ -34,11 +34,11 @@ def clear_export_cache(file_path: str) -> None:
         cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
         if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
-            logger.info("Cache file '{}' is recently accessed".format(file_path))
+            logger.debug(f"Export cache file {file_path!r} was recently accessed".format(file_path))
             return
 
         os.remove(file_path)
-        logger.debug(f"Export cache file {file_path!r} successfully removed")
+        logger.debug(f"Export cache file {file_path!r} was successfully removed")
 
 
 def cron_export_cache_cleanup() -> None:
@@ -60,7 +60,6 @@ def cron_export_cache_cleanup() -> None:
                 continue
 
             for child in export_cache_dir_path.iterdir():
-                # TODO: write into a file about each file that should be removed manually or separately
                 # export cache dir may contain temporary directories
                 if not child.is_file():
                     logger.debug(
