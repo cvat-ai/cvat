@@ -6,7 +6,8 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Match, Pattern
+from re import Match, Pattern
+from typing import Callable
 
 
 SUCCESS_CHAR = "\u2714"
