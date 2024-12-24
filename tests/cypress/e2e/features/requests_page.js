@@ -322,9 +322,11 @@ context('Requests page', () => {
 
             cy.getJobIDFromIdx(0).then((jobID) => {
                 const closeExportNotification = () => {
-                    cy.contains('Export is finished').should('be.visible');
-                    cy.contains('Export is finished').parents('.ant-notification-notice')
-                        .find('span[aria-label="close"]').click();
+                    cy.get('.ant-notification-notice').first().within((notification) => {
+                        cy.contains('Export is finished').should('be.visible');
+                        cy.get('span[aria-label="close"]').click();
+                        cy.wrap(notification).should('not.exist');
+                    });
                 };
 
                 const exportParams = {
@@ -356,6 +358,25 @@ context('Requests page', () => {
                         });
                     });
             });
+        });
+
+        it('Export task. Request for status fails, UI is not crushing', () => {
+            cy.intercept('GET', '/api/requests/**', {
+                statusCode: 500,
+                body: 'Network error',
+            });
+
+            cy.exportTask({
+                type: 'annotations',
+                format: exportFormat,
+                archiveCustomName: annotationsArchiveNameLocal,
+            });
+
+            cy.contains('Could not export dataset').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-error');
+
+            cy.contains('.cvat-header-button', 'Requests').should('be.visible').click();
+            cy.get('.cvat-requests-page').should('be.visible');
         });
     });
 });

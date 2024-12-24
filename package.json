@@ -51,7 +51,7 @@
     "html-webpack-plugin": "^5.5.0",
     "husky": "^6.0.0",
     "lint-staged": "^13.0.3",
-    "micromatch": "^4.0.2",
+    "micromatch": "^4.0.8",
     "nodemon": "^3.0.1",
     "nyc": "^15.1.0",
     "postcss": "8",

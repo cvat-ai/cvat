@@ -4,23 +4,7 @@
 
 @import 'base';
 
-.cvat-quality-control-inner {
-    background: $background-color-1;
-    padding: $grid-unit-size * 4;
-    padding-bottom: $grid-unit-size;
-    padding-top: 0;
-    border-radius: $border-radius-base;
-}
-
-.cvat-quality-settings-title {
-    margin-bottom: $grid-unit-size * 2;
-    align-items: center;
-}
-
-.cvat-quality-settings-form {
-    display: block;
-    position: relative;
-    height: calc(100vh - $grid-unit-size * 32);
+.cvat-quality-scrollbar {
     overflow-y: auto;
 
     &::-webkit-scrollbar {
@@ -37,6 +21,24 @@
         border-radius: $border-radius-base * 2;
         border: 6px solid #fff;
     }
+}
+
+.cvat-quality-control-inner {
+    background: $background-color-1;
+    padding: $grid-unit-size * 4;
+    padding-bottom: $grid-unit-size;
+    padding-top: 0;
+    border-radius: $border-radius-base;
+}
+
+.cvat-quality-settings-title {
+    margin-bottom: $grid-unit-size * 2;
+    align-items: center;
+}
+
+.cvat-quality-settings-form {
+    display: block;
+    position: relative;
 
     .cvat-quality-settings-save-btn {
         position: sticky;
@@ -71,18 +73,6 @@ $excluded-background: #d9d9d973;
     td.ant-table-column-sort {
         background: none;
     }
-
-    .react-resizable-handle {
-        position: absolute;
-        right: -28px;
-        bottom: 0;
-        z-index: 1;
-        width: 10px;
-        height: 100%;
-        cursor: ew-resize;
-        display: grid;
-        place-content: center;
-      }
 }
 
 .cvat-frame-allocation-actions {
@@ -94,7 +84,6 @@ $excluded-background: #d9d9d973;
         cursor: pointer;
     }
 }
-
 
 .cvat-frame-allocation-header {
     margin-bottom: 0;
@@ -115,10 +104,11 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-quality-control-loading {
+.cvat-quality-control-loading, .cvat-quality-control-page-error {
     position: absolute;
-    right: 50%;
-    margin-top: 20%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .cvat-quality-control-overview-tab {
@@ -141,6 +131,14 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-frame-allocation-table .ant-table-container {
-    max-height: calc(100vh - $grid-unit-size * 60);
+    max-height: calc(100vh - $grid-unit-size * 61);
     overflow-y: auto;
+}
+
+.cvat-task-control-tabs {
+    .ant-tabs-tabpane {
+        @extend .cvat-quality-scrollbar;
+
+        height: calc(100vh - $grid-unit-size * 33);
+    }
 }

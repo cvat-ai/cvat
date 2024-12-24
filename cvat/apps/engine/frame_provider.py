@@ -9,6 +9,9 @@ import io
 import itertools
 import math
 from abc import ABCMeta, abstractmethod
+from bisect import bisect
+from collections import OrderedDict
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
@@ -16,11 +19,7 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Iterator,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -29,13 +28,12 @@ from typing import (
 import av
 import cv2
 import numpy as np
-from datumaro.util import take_by
 from django.conf import settings
 from PIL import Image
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.cache import DataWithMime, MediaCache, prepare_chunk
+from cvat.apps.engine.cache import Callback, DataWithMime, MediaCache, prepare_chunk
 from cvat.apps.engine.media_extractors import (
     FrameQuality,
     IMediaReader,
@@ -44,6 +42,7 @@ from cvat.apps.engine.media_extractors import (
     ZipReader,
 )
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.utils import take_by
 
 _T = TypeVar("_T")
 
@@ -51,7 +50,7 @@ _T = TypeVar("_T")
 class _ChunkLoader(metaclass=ABCMeta):
     def __init__(
         self,
-        reader_class: Type[IMediaReader],
+        reader_class: type[IMediaReader],
         *,
         reader_params: Optional[dict] = None,
     ) -> None:
@@ -60,7 +59,7 @@ class _ChunkLoader(metaclass=ABCMeta):
         self.reader_class = reader_class
         self.reader_params = reader_params
 
-    def load(self, chunk_id: int) -> RandomAccessIterator[Tuple[Any, str, int]]:
+    def load(self, chunk_id: int) -> RandomAccessIterator[tuple[Any, str, int]]:
         if self.chunk_id != chunk_id:
             self.unload()
 
@@ -86,7 +85,7 @@ class _ChunkLoader(metaclass=ABCMeta):
 class _FileChunkLoader(_ChunkLoader):
     def __init__(
         self,
-        reader_class: Type[IMediaReader],
+        reader_class: type[IMediaReader],
         get_chunk_path_callback: Callable[[int], str],
         *,
         reader_params: Optional[dict] = None,
@@ -106,7 +105,7 @@ class _FileChunkLoader(_ChunkLoader):
 class _BufferChunkLoader(_ChunkLoader):
     def __init__(
         self,
-        reader_class: Type[IMediaReader],
+        reader_class: type[IMediaReader],
         get_chunk_callback: Callable[[int], DataWithMime],
         *,
         reader_params: Optional[dict] = None,
@@ -152,7 +151,7 @@ class IFrameProvider(metaclass=ABCMeta):
         return BytesIO(result.tobytes())
 
     def _convert_frame(
-        self, frame: Any, reader_class: Type[IMediaReader], out_type: FrameOutputType
+        self, frame: Any, reader_class: type[IMediaReader], out_type: FrameOutputType
     ) -> AnyFrame:
         if out_type == FrameOutputType.BUFFER:
             return (
@@ -289,10 +288,12 @@ class TaskFrameProvider(IFrameProvider):
             [
                 s
                 for s in self._db_task.segment_set.all()
-                if s.type == models.SegmentType.RANGE
                 if not task_chunk_frame_set.isdisjoint(s.frame_set)
             ],
-            key=lambda s: s.start_frame,
+            key=lambda s: (
+                s.type != models.SegmentType.RANGE,  # prioritize RANGE segments,
+                s.start_frame,
+            ),
         )
         assert matching_segments
 
@@ -307,37 +308,59 @@ class TaskFrameProvider(IFrameProvider):
                 # The requested frames match one of the job chunks, we can use it directly
                 return segment_frame_provider.get_chunk(matching_chunk_index, quality=quality)
 
-        def _set_callback() -> DataWithMime:
-            # Create and return a joined / cleaned chunk
-            task_chunk_frames = {}
-            for db_segment in matching_segments:
-                segment_frame_provider = SegmentFrameProvider(db_segment)
-                segment_frame_set = db_segment.frame_set
-
-                for task_chunk_frame_id in sorted(task_chunk_frame_set):
-                    if (
-                        task_chunk_frame_id not in segment_frame_set
-                        or task_chunk_frame_id in task_chunk_frames
-                    ):
-                        continue
-
-                    frame, frame_name, _ = segment_frame_provider._get_raw_frame(
-                        self.get_rel_frame_number(task_chunk_frame_id), quality=quality
-                    )
-                    task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
-
-            return prepare_chunk(
-                task_chunk_frames.values(),
-                quality=quality,
-                db_task=self._db_task,
-                dump_unchanged=True,
-            )
-
         buffer, mime_type = cache.get_or_set_task_chunk(
-            self._db_task, chunk_number, quality=quality, set_callback=_set_callback
+            self._db_task,
+            chunk_number,
+            quality=quality,
+            set_callback=Callback(
+                callable=self._get_chunk_create_callback,
+                args=[
+                    self._db_task,
+                    matching_segments,
+                    {f: self.get_rel_frame_number(f) for f in task_chunk_frame_set},
+                    quality,
+                ],
+            ),
         )
 
         return return_type(data=buffer, mime=mime_type)
+
+    @staticmethod
+    def _get_chunk_create_callback(
+        db_task: Union[models.Task, int],
+        matching_segments: list[models.Segment],
+        task_chunk_frames_with_rel_numbers: dict[int, int],
+        quality: FrameQuality,
+    ) -> DataWithMime:
+        # Create and return a joined / cleaned chunk
+        task_chunk_frames = OrderedDict()
+        for db_segment in matching_segments:
+            if isinstance(db_segment, int):
+                db_segment = models.Segment.objects.get(pk=db_segment)
+            segment_frame_provider = SegmentFrameProvider(db_segment)
+            segment_frame_set = db_segment.frame_set
+
+            for task_chunk_frame_id in sorted(task_chunk_frames_with_rel_numbers.keys()):
+                if (
+                    task_chunk_frame_id not in segment_frame_set
+                    or task_chunk_frame_id in task_chunk_frames
+                ):
+                    continue
+
+                frame, frame_name, _ = segment_frame_provider._get_raw_frame(
+                    task_chunk_frames_with_rel_numbers[task_chunk_frame_id], quality=quality
+                )
+                task_chunk_frames[task_chunk_frame_id] = (frame, frame_name, None)
+
+        if isinstance(db_task, int):
+            db_task = models.Task.objects.get(pk=db_task)
+
+        return prepare_chunk(
+            task_chunk_frames.values(),
+            quality=quality,
+            db_task=db_task,
+            dump_unchanged=True,
+        )
 
     def get_frame(
         self,
@@ -366,7 +389,7 @@ class TaskFrameProvider(IFrameProvider):
         quality: FrameQuality = FrameQuality.ORIGINAL,
         out_type: FrameOutputType = FrameOutputType.BUFFER,
     ) -> Iterator[DataWithMeta[AnyFrame]]:
-        frame_range = itertools.count(start_frame, self._db_task.data.get_frame_step())
+        frame_range = itertools.count(start_frame)
         if stop_frame:
             frame_range = itertools.takewhile(lambda x: x <= stop_frame, frame_range)
 
@@ -374,7 +397,10 @@ class TaskFrameProvider(IFrameProvider):
         db_segment_frame_set = None
         db_segment_frame_provider = None
         for idx in frame_range:
-            if db_segment and idx not in db_segment_frame_set:
+            if (
+                db_segment
+                and self._get_abs_frame_number(self._db_task.data, idx) not in db_segment_frame_set
+            ):
                 db_segment = None
                 db_segment_frame_set = None
                 db_segment_frame_provider = None
@@ -392,12 +418,24 @@ class TaskFrameProvider(IFrameProvider):
 
         abs_frame_number = self.get_abs_frame_number(validated_frame_number)
 
-        return next(
-            s
-            for s in self._db_task.segment_set.all()
-            if s.type == models.SegmentType.RANGE
-            if abs_frame_number in s.frame_set
+        segment = next(
+            (
+                s
+                for s in sorted(
+                    self._db_task.segment_set.all(),
+                    key=lambda s: s.type != models.SegmentType.RANGE,  # prioritize RANGE segments
+                )
+                if abs_frame_number in s.frame_set
+            ),
+            None,
         )
+        if segment is None:
+            raise AssertionError(
+                f"Can't find a segment with frame {validated_frame_number} "
+                f"in task {self._db_task.id}"
+            )
+
+        return segment
 
     def _get_segment_frame_provider(self, frame_number: int) -> SegmentFrameProvider:
         return SegmentFrameProvider(self._get_segment(self.validate_frame_number(frame_number)))
@@ -410,7 +448,7 @@ class SegmentFrameProvider(IFrameProvider):
 
         db_data = db_segment.task.data
 
-        reader_class: dict[models.DataChoice, Tuple[Type[IMediaReader], Optional[dict]]] = {
+        reader_class: dict[models.DataChoice, tuple[type[IMediaReader], Optional[dict]]] = {
             models.DataChoice.IMAGESET: (ZipReader, None),
             models.DataChoice.VIDEO: (
                 VideoReader,
@@ -470,20 +508,28 @@ class SegmentFrameProvider(IFrameProvider):
     def __len__(self):
         return self._db_segment.frame_count
 
-    def validate_frame_number(self, frame_number: int) -> Tuple[int, int, int]:
-        frame_sequence = list(self._db_segment.frame_set)
+    def get_frame_index(self, frame_number: int) -> Optional[int]:
+        segment_frames = sorted(self._db_segment.frame_set)
         abs_frame_number = self._get_abs_frame_number(self._db_segment.task.data, frame_number)
-        if abs_frame_number not in frame_sequence:
+        frame_index = bisect(segment_frames, abs_frame_number) - 1
+        if not (
+            0 <= frame_index < len(segment_frames)
+            and segment_frames[frame_index] == abs_frame_number
+        ):
+            return None
+
+        return frame_index
+
+    def validate_frame_number(self, frame_number: int) -> tuple[int, int, int]:
+        frame_index = self.get_frame_index(frame_number)
+        if frame_index is None:
             raise ValidationError(f"Incorrect requested frame number: {frame_number}")
 
-        # TODO: maybe optimize search
-        chunk_number, frame_position = divmod(
-            frame_sequence.index(abs_frame_number), self._db_segment.task.data.chunk_size
-        )
+        chunk_number, frame_position = divmod(frame_index, self._db_segment.task.data.chunk_size)
         return frame_number, chunk_number, frame_position
 
     def get_chunk_number(self, frame_number: int) -> int:
-        return int(frame_number) // self._db_segment.task.data.chunk_size
+        return self.get_frame_index(frame_number) // self._db_segment.task.data.chunk_size
 
     def find_matching_chunk(self, frames: Sequence[int]) -> Optional[int]:
         return next(
@@ -527,7 +573,7 @@ class SegmentFrameProvider(IFrameProvider):
         frame_number: int,
         *,
         quality: FrameQuality = FrameQuality.ORIGINAL,
-    ) -> Tuple[Any, str, Type[IMediaReader]]:
+    ) -> tuple[Any, str, type[IMediaReader]]:
         _, chunk_number, frame_offset = self.validate_frame_number(frame_number)
         loader = self._loaders[quality]
         chunk_reader = loader.load(chunk_number)
@@ -638,34 +684,54 @@ class JobFrameProvider(SegmentFrameProvider):
         if matching_chunk is not None:
             return self.get_chunk(matching_chunk, quality=quality)
 
-        def _set_callback() -> DataWithMime:
-            # Create and return a joined / cleaned chunk
-            segment_chunk_frame_ids = sorted(
-                task_chunk_frame_set.intersection(self._db_segment.frame_set)
-            )
-
-            if self._db_segment.type == models.SegmentType.RANGE:
-                return cache.prepare_custom_range_segment_chunk(
-                    db_task=self._db_segment.task,
-                    frame_ids=segment_chunk_frame_ids,
-                    quality=quality,
-                )
-            elif self._db_segment.type == models.SegmentType.SPECIFIC_FRAMES:
-                return cache.prepare_custom_masked_range_segment_chunk(
-                    db_task=self._db_segment.task,
-                    frame_ids=segment_chunk_frame_ids,
-                    chunk_number=chunk_number,
-                    quality=quality,
-                    insert_placeholders=True,
-                )
-            else:
-                assert False
+        segment_chunk_frame_ids = sorted(
+            task_chunk_frame_set.intersection(self._db_segment.frame_set)
+        )
 
         buffer, mime_type = cache.get_or_set_segment_task_chunk(
-            self._db_segment, chunk_number, quality=quality, set_callback=_set_callback
+            self._db_segment,
+            chunk_number,
+            quality=quality,
+            set_callback=Callback(
+                callable=self._get_chunk_create_callback,
+                args=[
+                    self._db_segment,
+                    segment_chunk_frame_ids,
+                    chunk_number,
+                    quality,
+                ],
+            ),
         )
 
         return return_type(data=buffer, mime=mime_type)
+
+    @staticmethod
+    def _get_chunk_create_callback(
+        db_segment: Union[models.Segment, int],
+        segment_chunk_frame_ids: list[int],
+        chunk_number: int,
+        quality: FrameQuality,
+    ) -> DataWithMime:
+        # Create and return a joined / cleaned chunk
+        if isinstance(db_segment, int):
+            db_segment = models.Segment.objects.get(pk=db_segment)
+
+        if db_segment.type == models.SegmentType.RANGE:
+            return MediaCache.prepare_custom_range_segment_chunk(
+                db_task=db_segment.task,
+                frame_ids=segment_chunk_frame_ids,
+                quality=quality,
+            )
+        elif db_segment.type == models.SegmentType.SPECIFIC_FRAMES:
+            return MediaCache.prepare_custom_masked_range_segment_chunk(
+                db_task=db_segment.task,
+                frame_ids=segment_chunk_frame_ids,
+                chunk_number=chunk_number,
+                quality=quality,
+                insert_placeholders=True,
+            )
+        else:
+            assert False
 
 
 @overload

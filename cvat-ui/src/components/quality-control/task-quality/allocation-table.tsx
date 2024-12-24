@@ -4,6 +4,8 @@
 
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
@@ -12,16 +14,19 @@ import { Key } from 'antd/lib/table/interface';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
 
 import { RestoreIcon } from 'icons';
-import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
+import {
+    Task, FramesMetaData, TaskValidationLayout, QualitySettings,
+} from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { sorter } from 'utils/quality';
-import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 
 interface Props {
     task: Task;
-    gtJob: Job;
+    gtJobId: number;
     gtJobMeta: FramesMetaData;
+    validationLayout: TaskValidationLayout;
+    qualitySettings: QualitySettings;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
@@ -34,7 +39,7 @@ interface RowData {
 
 function AllocationTable(props: Readonly<Props>): JSX.Element {
     const {
-        task, gtJob, gtJobMeta,
+        task, gtJobId, gtJobMeta, validationLayout,
         onDeleteFrames, onRestoreFrames,
     } = props;
 
@@ -44,11 +49,16 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         selectedRows: [],
     });
 
-    const data = gtJobMeta.includedFrames.map((frameID: number) => ({
-        key: frameID,
-        frame: frameID,
-        name: gtJobMeta.frames[frameID]?.name ?? gtJobMeta.frames[0].name,
-        active: !(frameID in gtJobMeta.deletedFrames),
+    const { disabledFrames } = validationLayout;
+    const data = validationLayout.validationFrames.map((frame: number, index: number) => ({
+        key: frame,
+        frame,
+        name: gtJobMeta.frames[
+            // - gt job meta starts from the 0 task frame;
+            // - honeypot gt job meta starts from the job start frame;
+            (validationLayout.mode === ValidationMode.GT) ? frame : index
+        ]?.name ?? gtJobMeta.frames[0].name,
+        active: !disabledFrames.includes(frame),
     }));
 
     const columns = [
@@ -65,7 +75,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${frame}`);
+                            history.push(`/tasks/${task.id}/jobs/${gtJobId}?frame=${frame}`);
                         }}
                     >
                         {`#${frame}`}
@@ -86,7 +96,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${record.frame}`);
+                            history.push(`/tasks/${task.id}/jobs/${gtJobId}?frame=${record.frame}`);
                         }}
                     >
                         {name}

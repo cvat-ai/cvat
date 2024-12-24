@@ -33,7 +33,7 @@ export enum ProjectsActionTypes {
 }
 
 const projectActions = {
-    getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
+    getProjects: (fetchingTimestamp: number) => createAction(ProjectsActionTypes.GET_PROJECTS, { fetchingTimestamp }),
     getProjectsSuccess: (array: any[], count: number) => (
         createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
     ),
@@ -86,8 +86,13 @@ export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): Thun
 export function getProjectsAsync(
     query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {},
 ): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        dispatch(projectActions.getProjects());
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const requestedOn = Date.now();
+        const isRequestRelevant = (): boolean => (
+            getState().projects.fetchingTimestamp === requestedOn
+        );
+
+        dispatch(projectActions.getProjects(requestedOn));
         dispatch(projectActions.updateProjectsGettingQuery(query, tasksQuery));
 
         // Clear query object from null fields
@@ -100,20 +105,22 @@ export function getProjectsAsync(
         try {
             result = await cvat.projects.get(filteredQuery);
         } catch (error) {
-            dispatch(projectActions.getProjectsFailed(error));
+            if (isRequestRelevant()) {
+                dispatch(projectActions.getProjectsFailed(error));
+            }
             return;
         }
 
-        const array = Array.from(result);
-
-        dispatch(projectActions.getProjectsSuccess(array, result.count));
-
-        // Appropriate tasks fetching process needs with retrieving only a single project
-        if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
-            dispatch(getProjectTasksAsync({
-                ...tasksQuery,
-                projectId: filteredQuery.id,
-            }));
+        if (isRequestRelevant()) {
+            const array = Array.from(result);
+            dispatch(projectActions.getProjectsSuccess(array, result.count));
+            // Appropriate tasks fetching process needs with retrieving only a single project
+            if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
+                dispatch(getProjectTasksAsync({
+                    ...tasksQuery,
+                    projectId: filteredQuery.id,
+                }));
+            }
         }
     };
 }

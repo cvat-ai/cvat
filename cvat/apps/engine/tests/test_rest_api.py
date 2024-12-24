@@ -37,7 +37,8 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datumaro.util.test_utils import current_function_name, TestDir
+from cvat.apps.dataset_manager.tests.utils import TestDir
+from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
@@ -53,7 +54,6 @@ logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
-    (group_business, _) = Group.objects.get_or_create(name="business")
     (group_user, _) = Group.objects.get_or_create(name="user")
     (group_annotator, _) = Group.objects.get_or_create(name="worker")
     (group_somebody, _) = Group.objects.get_or_create(name="somebody")
@@ -62,7 +62,7 @@ def create_db_users(cls):
         password="admin")
     user_admin.groups.add(group_admin)
     user_owner = User.objects.create_user(username="user1", password="user1")
-    user_owner.groups.add(group_business)
+    user_owner.groups.add(group_user)
     user_assignee = User.objects.create_user(username="user2", password="user2")
     user_assignee.groups.add(group_annotator)
     user_annotator = User.objects.create_user(username="user3", password="user3")
@@ -86,6 +86,12 @@ def create_db_task(data):
     }
 
     db_data = Data.objects.create(**data_settings)
+
+    if db_data.stop_frame == 0:
+        frame_step = int((db_data.frame_filter or 'step=1').split('=')[-1])
+        db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * frame_step
+        db_data.save()
+
     shutil.rmtree(db_data.get_data_dirname(), ignore_errors=True)
     os.makedirs(db_data.get_data_dirname())
     os.makedirs(db_data.get_upload_dirname())
@@ -378,9 +384,14 @@ class JobPartialUpdateAPITestCase(ApiTestBase):
         self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
     def test_api_v2_jobs_id_admin_partial(self):
-        data = {"assignee_id": self.user.id}
-        response = self._run_api_v2_jobs_id(self.job.id, self.owner, data)
+        data = {"assignee": self.user.id}
+        response = self._run_api_v2_jobs_id(self.job.id, self.admin, data)
         self._check_request(response, data)
+
+    def test_api_v2_jobs_id_unknown_field(self):
+        data = {"foo": "bar"}
+        response = self._run_api_v2_jobs_id(self.job.id, self.admin, data)
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class JobUpdateAPITestCase(ApiTestBase):
     def setUp(self):
@@ -435,16 +446,24 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
 
     def _check_api_v1_jobs_data_meta_id(self, user, data):
         response = self._run_api_v1_jobs_data_meta_id(self.job.id, user, data)
+
         if user is None:
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        elif user == self.job.segment.task.owner or user == self.job.segment.task.assignee or user == self.job.assignee or user.is_superuser:
+        elif (
+            user == self.job.segment.task.owner or
+            user == self.job.segment.task.assignee or
+            user == self.job.assignee or
+            user.is_superuser
+        ):
             self._check_response(response, self.job.segment.task.data, data)
         else:
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_api_v1_jobss_data_meta(self):
+    def test_api_v1_jobs_data_meta(self):
         data = {
-            "deleted_frames": [1,2,3]
+            "deleted_frames": list(
+                range(self.job.segment.start_frame, self.job.segment.stop_frame + 1)
+            )
         }
         self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
@@ -618,6 +637,8 @@ class UserAPITestCase(ApiTestBase):
         extra_check("is_active", data)
         extra_check("last_login", data)
         extra_check("date_joined", data)
+        extra_check("has_analytics_access", data)
+
 
 class UserListAPITestCase(UserAPITestCase):
     def _run_api_v2_users(self, user):
@@ -652,6 +673,7 @@ class UserListAPITestCase(UserAPITestCase):
         response = self._run_api_v2_users(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
 class UserSelfAPITestCase(UserAPITestCase):
     def _run_api_v2_users_self(self, user):
         with ForceLogin(user, self.client):
@@ -678,6 +700,7 @@ class UserSelfAPITestCase(UserAPITestCase):
     def test_api_v2_users_self_no_auth(self):
         response = self._run_api_v2_users_self(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
@@ -720,6 +743,7 @@ class UserGetAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_no_auth(self):
         response = self._run_api_v2_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id, data):
@@ -766,6 +790,7 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
         data = {"username": "user12"}
         response = self._run_api_v2_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserDeleteAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
@@ -1127,6 +1152,11 @@ class ProjectPartialUpdateAPITestCase(ApiTestBase):
             "name": "new name for the project",
         }
         self._check_api_v2_projects_id(None, data)
+
+    def test_api_v2_projects_id_unknown_field(self):
+        data = {"foo": "bar"}
+        response = self._run_api_v2_projects_id(self.projects[0].id, self.admin, data)
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class UpdateLabelsAPITestCase(ApiTestBase):
     def assertLabelsEqual(self, label1, label2):
@@ -2224,6 +2254,11 @@ class TaskPartialUpdateAPITestCase(ApiTestBase):
             }]
         }
         self._check_api_v2_tasks_id(None, data)
+
+    def test_api_v2_tasks_id_unknown_field(self):
+        data = {"foo": "bar"}
+        response = self._run_api_v2_tasks_id(self.tasks[0].id, self.admin, data)
+        self.assertEquals(response.status_code, status.HTTP_403_FORBIDDEN, response)
 
 class TaskDataMetaPartialUpdateAPITestCase(ApiTestBase):
     @classmethod

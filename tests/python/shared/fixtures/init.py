@@ -10,7 +10,7 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
-from typing import List, Union
+from typing import Union
 
 import pytest
 import requests
@@ -158,13 +158,13 @@ def docker_exec(container, command, capture_output=True):
     return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
-def docker_exec_cvat(command: Union[List[str], str]):
+def docker_exec_cvat(command: Union[list[str], str]):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def kube_exec_cvat(command: Union[List[str], str]):
+def kube_exec_cvat(command: Union[list[str], str]):
     pod_name = _kube_get_server_pod_name()
     base = f"kubectl exec {pod_name} --"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
@@ -239,12 +239,32 @@ def kube_restore_clickhouse_db():
     )
 
 
+def _get_redis_inmem_keys_to_keep():
+    return ("rq:worker:", "rq:workers", "rq:scheduler_instance:", "rq:queues:")
+
+
 def docker_restore_redis_inmem():
-    docker_exec_redis_inmem(["redis-cli", "-e", "flushall"])
+    docker_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            'redis-cli -e --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            "xargs -r redis-cli -e del",
+        ]
+    )
 
 
 def kube_restore_redis_inmem():
-    kube_exec_redis_inmem(["sh", "-c", 'redis-cli -e -a "${REDIS_PASSWORD}" flushall'])
+    kube_exec_redis_inmem(
+        [
+            "sh",
+            "-c",
+            'redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del',
+        ]
+    )
 
 
 def docker_restore_redis_ondisk():
@@ -280,9 +300,10 @@ def dump_db():
 
 def create_compose_files(container_name_files):
     for filename in container_name_files:
-        with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
-            filename, "w"
-        ) as ndcf:
+        with (
+            open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf,
+            open(filename, "w") as ndcf,
+        ):
             dc_config = yaml.safe_load(dcf)
 
             for service_name, service_config in dc_config["services"].items():
@@ -566,6 +587,15 @@ def restore_cvat_data_per_function(request):
         kube_restore_data_volumes()
 
 
+@pytest.fixture(scope="class")
+def restore_cvat_data_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_data_volumes()
+    else:
+        kube_restore_data_volumes()
+
+
 @pytest.fixture(scope="function")
 def restore_clickhouse_db_per_function(request):
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
@@ -619,6 +649,17 @@ def restore_redis_ondisk_per_function(request):
 
 @pytest.fixture(scope="class")
 def restore_redis_ondisk_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_after_class(request):
+    yield
+
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()

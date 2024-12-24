@@ -7,7 +7,7 @@ weight: 6
 ### Cutting holes in polygons
 
 Currently, CVAT does not support cutting transparent holes in polygons. However,
-it is poissble to generate holes in exported instance and class masks.
+it is possible to generate holes in exported instance and class masks.
 To do this, one needs to define a background class in the task and draw holes
 with it as additional shapes above the shapes needed to have holes:
 

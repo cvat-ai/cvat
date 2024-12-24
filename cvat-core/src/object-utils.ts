@@ -60,7 +60,7 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
     angleDiff = ((angleDiff + 180) % 360) - 180;
     if (Math.abs(angleDiff) >= 180) {
         // if the main arc is bigger than 180, go another arc
-        // to find it, just substract absolute value from 360 and inverse sign
+        // to find it, just subtract absolute value from 360 and inverse sign
         angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
     }
     return angleDiff;
@@ -360,7 +360,7 @@ export function rle2Mask(rle: number[], width: number, height: number): number[]
 }
 
 export function propagateShapes<T extends SerializedShape | ObjectState>(
-    shapes: T[], from: number, to: number,
+    shapes: T[], from: number, to: number, frameNumbers: number[],
 ): T[] {
     const getCopy = (shape: T): SerializedShape | SerializedData => {
         if (shape instanceof ObjectState) {
@@ -397,9 +397,18 @@ export function propagateShapes<T extends SerializedShape | ObjectState>(
         };
     };
 
+    const targetFrameNumbers = frameNumbers.filter(
+        (frameNumber: number) => frameNumber >= Math.min(from, to) &&
+            frameNumber <= Math.max(from, to) &&
+            frameNumber !== from,
+    );
+
     const states: T[] = [];
-    const sign = Math.sign(to - from);
-    for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
+    for (const frame of targetFrameNumbers) {
+        if (frame === from) {
+            continue;
+        }
+
         for (const shape of shapes) {
             const copy = getCopy(shape);
 

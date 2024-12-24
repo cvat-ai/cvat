@@ -9,7 +9,6 @@ from rq import Worker
 
 import cvat.utils.remote_debugger as debug
 
-
 DefaultWorker = Worker
 
 
@@ -42,12 +41,14 @@ class SimpleWorker(Worker):
         # errors during debugging
         # https://stackoverflow.com/questions/8242837/django-multiprocessing-and-database-connections/10684672#10684672
         from django import db
+
         db.connections.close_all()
 
         return self.perform_job(*args, **kwargs)
 
 
 if debug.is_debugging_enabled():
+
     class RemoteDebugWorker(SimpleWorker):
         """
         Support for VS code debugger
@@ -68,6 +69,7 @@ if debug.is_debugging_enabled():
 
 if os.environ.get("COVERAGE_PROCESS_START"):
     import coverage
+
     default_exit = os._exit
 
     def coverage_exit(*args, **kwargs):

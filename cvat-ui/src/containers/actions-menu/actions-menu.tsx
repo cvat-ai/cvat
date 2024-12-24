@@ -18,6 +18,7 @@ import {
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeTaskConsensusJobsAsync } from 'actions/consensus-actions';
+import { RQStatus } from 'cvat-core-wrapper';
 
 interface OwnProps {
     taskInstance: any;
@@ -49,9 +50,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         formats: { annotationFormats },
     } = state;
 
+    const inference = state.models.inferences[tid];
+
     return {
         annotationFormats,
-        inferenceIsActive: tid in state.models.inferences,
+        inferenceIsActive: inference &&
+            ![RQStatus.FAILED, RQStatus.FINISHED].includes(inference.status),
     };
 }
 

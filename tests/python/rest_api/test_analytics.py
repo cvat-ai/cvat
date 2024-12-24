@@ -35,11 +35,17 @@ class TestGetAnalytics:
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize(
-        "privilege, is_allow",
-        [("admin", True), ("business", True), ("worker", False), ("user", False)],
+        "conditions, is_allow",
+        [
+            (dict(privilege="admin"), True),
+            (dict(privilege="worker", has_analytics_access=False), False),
+            (dict(privilege="worker", has_analytics_access=True), True),
+            (dict(privilege="user", has_analytics_access=False), False),
+            (dict(privilege="user", has_analytics_access=True), True),
+        ],
     )
-    def test_can_see(self, privilege, is_allow, find_users):
-        user = find_users(privilege=privilege)[0]["username"]
+    def test_can_see(self, conditions, is_allow, find_users):
+        user = find_users(**conditions)[0]["username"]
 
         if is_allow:
             self._test_can_see(user)
@@ -59,7 +65,7 @@ class TestGetAuditEvents:
         return project.id, response.headers.get("X-Request-Id")
 
     @pytest.fixture(autouse=True)
-    def setup(self, restore_clickhouse_db_per_function):
+    def setup(self, restore_clickhouse_db_per_function, restore_redis_inmem_per_function):
         project_spec = {
             "name": f"Test project created by {self._USERNAME}",
             "labels": [

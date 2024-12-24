@@ -7,7 +7,7 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -15,6 +15,7 @@ from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
     ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -52,7 +53,7 @@ class Project(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Import dataset for a project in the specified format (e.g. 'YOLO ZIP 1.0').
+        Import dataset for a project in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -72,7 +73,7 @@ class Project(
         (annotations, _) = self.api.retrieve_annotations(self.id)
         return annotations
 
-    def get_tasks(self) -> List[Task]:
+    def get_tasks(self) -> list[Task]:
         return [
             Task(self._client, m)
             for m in get_paginated_collection(
@@ -80,7 +81,7 @@ class Project(
             )
         ]
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, project_id=self.id
         )
@@ -97,6 +98,7 @@ class ProjectsRepo(
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Project
 

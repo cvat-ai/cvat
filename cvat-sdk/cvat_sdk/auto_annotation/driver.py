@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from typing import List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import attrs
 
@@ -98,9 +99,11 @@ class _AnnotationMapper:
         ds_labels: Sequence[models.ILabel],
         *,
         allow_unmatched_labels: bool,
+        conv_mask_to_poly: bool,
     ) -> None:
         self._logger = logger
         self._allow_unmatched_labels = allow_unmatched_labels
+        self._conv_mask_to_poly = conv_mask_to_poly
 
         ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
 
@@ -119,7 +122,7 @@ class _AnnotationMapper:
                 fun_label, ds_labels_by_name
             )
 
-    def validate_and_remap(self, shapes: List[models.LabeledShapeRequest], ds_frame: int) -> None:
+    def validate_and_remap(self, shapes: list[models.LabeledShapeRequest], ds_frame: int) -> None:
         new_shapes = []
 
         for shape in shapes:
@@ -216,12 +219,19 @@ class _AnnotationMapper:
                 if getattr(shape, "elements", None):
                     raise BadFunctionError("function output non-skeleton shape with elements")
 
+                if shape.type.value == "mask" and self._conv_mask_to_poly:
+                    raise BadFunctionError(
+                        "function output mask shape despite conv_mask_to_poly=True"
+                    )
+
         shapes[:] = new_shapes
 
 
-@attrs.frozen
+@attrs.frozen(kw_only=True)
 class _DetectionFunctionContextImpl(DetectionFunctionContext):
     frame_name: str
+    conf_threshold: Optional[float] = None
+    conv_mask_to_poly: bool = False
 
 
 def annotate_task(
@@ -232,6 +242,8 @@ def annotate_task(
     pbar: Optional[ProgressReporter] = None,
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
+    conf_threshold: Optional[float] = None,
+    conv_mask_to_poly: bool = False,
 ) -> None:
     """
     Downloads data for the task with the given ID, applies the given function to it
@@ -263,10 +275,20 @@ def annotate_task(
     function declares a label in its spec that has no corresponding label in the task.
     If it's set to true, then such labels are allowed, and any annotations returned by the
     function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
+
+    The conf_threshold parameter must be None or a number between 0 and 1. It will be passed
+    to the AA function as the conf_threshold attribute of the context object.
+
+    The conv_mask_to_poly parameter will be passed to the AA function as the conv_mask_to_poly
+    attribute of the context object. If it's true, and the AA function returns any mask shapes,
+    BadFunctionError will be raised.
     """
 
     if pbar is None:
         pbar = NullProgressReporter()
+
+    if conf_threshold is not None and not 0 <= conf_threshold <= 1:
+        raise ValueError("conf_threshold must be None or a number between 0 and 1")
 
     dataset = TaskDataset(client, task_id, load_annotations=False)
 
@@ -277,6 +299,7 @@ def annotate_task(
         function.spec.labels,
         dataset.labels,
         allow_unmatched_labels=allow_unmatched_labels,
+        conv_mask_to_poly=conv_mask_to_poly,
     )
 
     shapes = []
@@ -284,12 +307,17 @@ def annotate_task(
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
             frame_shapes = function.detect(
-                _DetectionFunctionContextImpl(sample.frame_name), sample.media.load_image()
+                _DetectionFunctionContextImpl(
+                    frame_name=sample.frame_name,
+                    conf_threshold=conf_threshold,
+                    conv_mask_to_poly=conv_mask_to_poly,
+                ),
+                sample.media.load_image(),
             )
             mapper.validate_and_remap(frame_shapes, sample.frame_index)
             shapes.extend(frame_shapes)
 
-    client.logger.info("Uploading annotations to task %d", task_id)
+    client.logger.info("Uploading annotations to task %d...", task_id)
 
     if clear_existing:
         client.tasks.api.update_annotations(
@@ -301,3 +329,5 @@ def annotate_task(
             task_id,
             patched_labeled_data_request=models.PatchedLabeledDataRequest(shapes=shapes),
         )
+
+    client.logger.info("Upload complete")

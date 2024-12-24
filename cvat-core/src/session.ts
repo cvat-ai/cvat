@@ -28,6 +28,8 @@ import { Request } from './request';
 import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
+import { UpdateStatusData } from './core-types';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -167,6 +169,17 @@ function buildDuplicatedAPI(prototype) {
 
                 async export() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.export);
+                    return result;
+                },
+
+                async commit(added, removed, frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.commit,
+                        added,
+                        removed,
+                        frame,
+                    );
                     return result;
                 },
 
@@ -330,7 +343,7 @@ export class Session {
             delTrackKeyframesOnly?: boolean;
         }) => Promise<void>;
         save: (
-            onUpdate ?: (message: string) => void,
+            onUpdate?: (message: string) => void,
         ) => Promise<void>;
         search: (
             frameFrom: number,
@@ -359,6 +372,11 @@ export class Session {
         }>;
         import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
         export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        commit: (
+            added: Omit<SerializedCollection, 'version'>,
+            removed: Omit<SerializedCollection, 'version'>,
+            frame: number,
+        ) => Promise<void>;
         statistics: () => Promise<Statistics>;
         hasUnsavedChanges: () => boolean;
         exportDataset: (
@@ -371,8 +389,8 @@ export class Session {
     };
 
     public actions: {
-        undo: (count: number) => Promise<number[]>;
-        redo: (count: number) => Promise<number[]>;
+        undo: (count?: number) => Promise<number[]>;
+        redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
@@ -401,8 +419,8 @@ export class Session {
     public logger: {
         log: (
             scope: Parameters<typeof logger.log>[0],
-            payload: Parameters<typeof logger.log>[1],
-            wait: Parameters<typeof logger.log>[2],
+            payload?: Parameters<typeof logger.log>[1],
+            wait?: Parameters<typeof logger.log>[2],
         ) => ReturnType<typeof logger.log>;
     };
 
@@ -429,6 +447,7 @@ export class Session {
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
             statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
             hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
@@ -461,7 +480,7 @@ export class Session {
     }
 }
 
-type InitializerType = Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>;
+type InitializerType = Readonly<Partial<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>>;
 
 export class Job extends Session {
     #data: {
@@ -691,6 +710,11 @@ export class Job extends Session {
         return result;
     }
 
+    async validationLayout(): Promise<JobValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.validationLayout);
+        return result;
+    }
+
     async openIssue(issue: Issue, message: string): Promise<Issue> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
@@ -749,9 +773,9 @@ export class Task extends Session {
     public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
 
-    public readonly validationMethod: string;
+    public readonly validationMode: string | null;
     public readonly validationFramesPercent: number;
-    public readonly validationFramesPerJob: number;
+    public readonly validationFramesPerJobPercent: number;
     public readonly frameSelectionMethod: string;
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
@@ -799,7 +823,8 @@ export class Task extends Session {
             sorting_method: undefined,
             files: undefined,
             consensus_jobs_per_regular_job: undefined,
-            quality_settings: undefined,
+
+            validation_mode: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -1131,6 +1156,9 @@ export class Task extends Session {
                 progress: {
                     get: () => data.progress,
                 },
+                validationMode: {
+                    get: () => data.validation_mode,
+                },
                 _internalData: {
                     get: () => data,
                 },
@@ -1148,7 +1176,7 @@ export class Task extends Session {
 
     async save(
         fields: Record<string, any> = {},
-        options?: { requestStatusCallback?: (request: Request) => void },
+        options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;
@@ -1195,6 +1223,11 @@ export class Task extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<TaskValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.validationLayout);
         return result;
     }
 }

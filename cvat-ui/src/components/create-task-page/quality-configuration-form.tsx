@@ -7,27 +7,30 @@ import Input from 'antd/lib/input';
 import Form, { FormInstance } from 'antd/lib/form';
 import { PercentageOutlined } from '@ant-design/icons';
 import Radio from 'antd/lib/radio';
-import { FrameSelectionMethod } from 'components/create-job-page/job-form';
 import { Col, Row } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 
+import { FrameSelectionMethod } from 'components/create-job-page/job-form';
+
 export interface QualityConfiguration {
-    validationMethod: ValidationMethod;
-    validationFramesPercent: number;
-    validationFramesPerJob: number;
+    validationMode: ValidationMode;
+    validationFramesPercent?: number;
+    validationFramesPerJobPercent?: number;
     frameSelectionMethod: FrameSelectionMethod;
 }
 
 interface Props {
-    onSubmit(values: QualityConfiguration): Promise<void>;
     initialValues: QualityConfiguration;
-    validationMethod: ValidationMethod;
-    onChangeValidationMethod: (method: ValidationMethod) => void;
+    frameSelectionMethod: FrameSelectionMethod;
+    validationMode: ValidationMode;
+    onSubmit(values: QualityConfiguration): Promise<void>;
+    onChangeFrameSelectionMethod: (method: FrameSelectionMethod) => void;
+    onChangeValidationMode: (method: ValidationMode) => void;
 }
 
-export enum ValidationMethod {
+export enum ValidationMode {
     NONE = 'none',
-    GT = 'gt_job',
+    GT = 'gt',
     HONEYPOTS = 'gt_pool',
 }
 
@@ -42,19 +45,30 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     public submit(): Promise<void> {
         const { onSubmit } = this.props;
         if (this.formRef.current) {
-            return this.formRef.current.validateFields().then((values: QualityConfiguration) => {
-                onSubmit(values);
-            });
+            return this.formRef.current.validateFields().then((values: QualityConfiguration) => onSubmit({
+                ...values,
+                frameSelectionMethod: values.validationMode === ValidationMode.HONEYPOTS ?
+                    FrameSelectionMethod.RANDOM : values.frameSelectionMethod,
+                ...(typeof values.validationFramesPercent === 'number' ? {
+                    validationFramesPercent: values.validationFramesPercent / 100,
+                } : {}),
+                ...(typeof values.validationFramesPerJobPercent === 'number' ? {
+                    validationFramesPerJobPercent: values.validationFramesPerJobPercent / 100,
+                } : {}),
+            }),
+            );
         }
 
         return Promise.reject(new Error('Quality form ref is empty'));
     }
 
     public resetFields(): void {
-        this.formRef.current?.resetFields(['validationFramesPercent', 'validationFramesPerJob', 'frameSelectionMethod']);
+        this.formRef.current?.resetFields(['validationFramesPercent', 'validationFramesPerJobPercent', 'frameSelectionMethod']);
     }
 
     private gtParamsBlock(): JSX.Element {
+        const { frameSelectionMethod, onChangeFrameSelectionMethod } = this.props;
+
         return (
             <>
                 <Col>
@@ -63,33 +77,66 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                         label='Frame selection method'
                         rules={[{ required: true, message: 'Please, specify frame selection method' }]}
                     >
-                        <Select className='cvat-select-frame-selection-method'>
+                        <Select
+                            className='cvat-select-frame-selection-method'
+                            onChange={onChangeFrameSelectionMethod}
+                        >
                             <Select.Option value={FrameSelectionMethod.RANDOM}>Random</Select.Option>
                             <Select.Option value={FrameSelectionMethod.RANDOM_PER_JOB}>Random per job</Select.Option>
                         </Select>
                     </Form.Item>
                 </Col>
-                <Col span={7}>
-                    <Form.Item
-                        label='Quantity (%)'
-                        name='validationFramesPercent'
-                        normalize={(value) => +value}
-                        rules={[
-                            { required: true, message: 'The field is required' },
-                            {
-                                type: 'number', min: 0, max: 100, message: 'Value is not valid',
-                            },
-                        ]}
-                    >
-                        <Input
-                            size='large'
-                            type='number'
-                            min={0}
-                            max={100}
-                            suffix={<PercentageOutlined />}
-                        />
-                    </Form.Item>
-                </Col>
+
+                {
+                    frameSelectionMethod === FrameSelectionMethod.RANDOM && (
+                        <Col span={7}>
+                            <Form.Item
+                                label='Quantity'
+                                name='validationFramesPercent'
+                                normalize={(value) => +value}
+                                rules={[
+                                    { required: true, message: 'The field is required' },
+                                    {
+                                        type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={0}
+                                    max={100}
+                                    suffix={<PercentageOutlined />}
+                                />
+                            </Form.Item>
+                        </Col>
+                    )
+                }
+                {
+                    frameSelectionMethod === FrameSelectionMethod.RANDOM_PER_JOB && (
+                        <Col span={7}>
+                            <Form.Item
+                                label='Quantity per job'
+                                name='validationFramesPerJobPercent'
+                                normalize={(value) => +value}
+                                rules={[
+                                    { required: true, message: 'The field is required' },
+                                    {
+                                        type: 'number', min: 0, max: 100, message: 'Value is not valid',
+                                    },
+                                ]}
+                            >
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={0}
+                                    max={100}
+                                    suffix={<PercentageOutlined />}
+                                />
+                            </Form.Item>
+                        </Col>
+                    )
+                }
             </>
         );
     }
@@ -99,8 +146,8 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
             <Row>
                 <Col span={7}>
                     <Form.Item
-                        label='Overhead per job (%)'
-                        name='validationFramesPerJob'
+                        label='Total honeypots'
+                        name='validationFramesPercent'
                         normalize={(value) => +value}
                         rules={[
                             { required: true, message: 'The field is required' },
@@ -114,8 +161,8 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 </Col>
                 <Col span={7} offset={1}>
                     <Form.Item
-                        label='Total honeypots (%)'
-                        name='validationFramesPercent'
+                        label='Overhead per job'
+                        name='validationFramesPerJobPercent'
                         normalize={(value) => +value}
                         rules={[
                             { required: true, message: 'The field is required' },
@@ -132,12 +179,12 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
     }
 
     public render(): JSX.Element {
-        const { initialValues, validationMethod, onChangeValidationMethod } = this.props;
+        const { initialValues, validationMode, onChangeValidationMode } = this.props;
 
         let paramsBlock: JSX.Element | null = null;
-        if (validationMethod === ValidationMethod.GT) {
+        if (validationMode === ValidationMode.GT) {
             paramsBlock = this.gtParamsBlock();
-        } else if (validationMethod === ValidationMethod.HONEYPOTS) {
+        } else if (validationMode === ValidationMode.HONEYPOTS) {
             paramsBlock = this.honeypotsParamsBlock();
         }
 
@@ -148,23 +195,23 @@ export default class QualityConfigurationForm extends React.PureComponent<Props>
                 ref={this.formRef}
             >
                 <Form.Item
-                    label='Validation method'
-                    name='validationMethod'
+                    label='Validation mode'
+                    name='validationMode'
                     rules={[{ required: true }]}
                 >
                     <Radio.Group
                         buttonStyle='solid'
                         onChange={(e) => {
-                            onChangeValidationMethod(e.target.value);
+                            onChangeValidationMode(e.target.value);
                         }}
                     >
-                        <Radio.Button value={ValidationMethod.NONE} key={ValidationMethod.NONE}>
+                        <Radio.Button value={ValidationMode.NONE} key={ValidationMode.NONE}>
                             None
                         </Radio.Button>
-                        <Radio.Button value={ValidationMethod.GT} key={ValidationMethod.GT}>
+                        <Radio.Button value={ValidationMode.GT} key={ValidationMode.GT}>
                             Ground Truth
                         </Radio.Button>
-                        <Radio.Button value={ValidationMethod.HONEYPOTS} key={ValidationMethod.HONEYPOTS}>
+                        <Radio.Button value={ValidationMode.HONEYPOTS} key={ValidationMode.HONEYPOTS}>
                             Honeypots
                         </Radio.Button>
                     </Radio.Group>
