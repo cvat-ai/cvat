@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import importlib
-import logging
 import os
 import os.path as osp
 from datetime import timedelta
