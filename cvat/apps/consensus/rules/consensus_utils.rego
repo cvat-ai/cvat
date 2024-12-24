@@ -1,4 +1,4 @@
-package quality_utils
+package consensus_utils
 
 import rego.v1
 

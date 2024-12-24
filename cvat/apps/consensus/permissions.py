@@ -7,7 +7,7 @@ from typing import Optional, Union, cast
 from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import JobPermission, TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
@@ -16,7 +16,9 @@ from .models import AssigneeConsensusReport, ConsensusConflict, ConsensusReport,
 
 class ConsensusReportPermission(OpenPolicyAgentPermission):
     obj: Optional[ConsensusReport]
-    job_owner_id: Optional[int]
+    rq_job_owner_id: Optional[int]
+    job_id: Optional[int]
+    task_id: Optional[int]
 
     class Scopes(StrEnum):
         LIST = "list"
@@ -28,7 +30,7 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
     def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
-        return cls(**iam_context, scope="view:status", job_owner_id=job_owner_id)
+        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, job_owner_id=job_owner_id)
 
     @classmethod
     def create_scope_view(cls, request, report: Union[int, ConsensusReport], iam_context=None):
@@ -58,12 +60,53 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
                 elif scope == Scopes.CREATE:
-                    if task_id := request.data.get("task_id"):
-                        permissions.append(TaskPermission.create_scope_view(request, task_id))
-                    elif job_id := request.data.get("job_id"):
-                        permissions.append(JobPermission.create_scope_view(request, job_id))
+                    job_id = None
+                    task_id = None
 
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
+                    if request.data.get("task_id"):
+                        # TODO: refactor duplicated code
+
+                        task_id = request.data.get("task_id")
+
+                        # The request may have a different org or org unset
+                        # Here we need to retrieve iam_context for this user, based on the task_id
+                        try:
+                            task = Task.objects.get(id=task_id)
+                        except Task.DoesNotExist:
+                            raise ValidationError("The specified task does not exist")
+
+                        iam_context = get_iam_context(request, task)
+
+                        permissions.append(
+                            TaskPermission.create_scope_view(request, task, iam_context=iam_context)
+                        )
+                    elif request.data.get("job_id"):
+                        job_id = request.data.get("job_id")
+
+                        # The request may have a different org or org unset
+                        # Here we need to retrieve iam_context for this user, based on the task_id
+                        try:
+                            job = Job.objects.get(id=job_id)
+                        except JobPermission.DoesNotExist:
+                            raise ValidationError("The specified job does not exist")
+
+                        iam_context = get_iam_context(request, job)
+
+                        permissions.append(
+                            JobPermission.create_scope_view(request, job, iam_context=iam_context)
+                        )
+
+                    permissions.append(
+                        cls.create_base_perm(
+                            request,
+                            view,
+                            scope,
+                            iam_context,
+                            obj,
+                            task_id=task_id,
+                            job_id=job_id,
+                        )
+                    )
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
@@ -71,7 +114,7 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         if "job_owner_id" in kwargs:
-            self.job_owner_id = int(kwargs.pop("job_owner_id"))
+            self.rq_job_owner_id = int(kwargs.pop("job_owner_id"))
 
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/consensus_reports/allow"
@@ -91,16 +134,50 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = None
 
-        if self.obj:
-            task = self.obj.get_task()
-            if task.project:
-                organization = task.project.organization
+        if self.obj or self.scope == self.Scopes.CREATE:
+            job: Optional[Job] = None
+            task: Optional[Task] = None
+            project: Optional[Project] = None
+            obj_id: Optional[int] = None
+
+            if self.obj:
+                obj_id = self.obj.id
+                job = self.obj.job
+                task = self.obj.get_task()
+            elif self.scope == self.Scopes.CREATE:
+                if self.job_id:
+                    try:
+                        job = Job.objects.get(id=self.job_id)
+                    except Job.DoesNotExist:
+                        raise ValidationError("The specified job does not exist")
+
+                    self.task_id = job.get_task_id()
+
+                if self.task_id:
+                    try:
+                        task = Task.objects.get(id=self.task_id)
+                    except Task.DoesNotExist:
+                        raise ValidationError("The specified task does not exist")
+                else:
+                    assert False
+
+
+            if task and task.project_id:
+                project = task.project
+                organization = project.organization
             else:
-                organization = task.organization
+                organization = getattr(task, "organization", None)
 
             data = {
-                "id": self.obj.id,
+                "id": obj_id,
                 "organization": {"id": getattr(organization, "id", None)},
+                "job": (
+                    {
+                        "assignee": {"id": getattr(job.assignee, "id", None)},
+                    }
+                    if job
+                    else None
+                ),
                 "task": (
                     {
                         "owner": {"id": getattr(task.owner, "id", None)},
@@ -111,13 +188,15 @@ class ConsensusReportPermission(OpenPolicyAgentPermission):
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": getattr(project.owner, "id", None)},
+                        "assignee": {"id": getattr(project.assignee, "id", None)},
                     }
-                    if task.project
+                    if project
                     else None
                 ),
             }
+        elif self.scope == self.Scopes.VIEW_STATUS:
+            data = {"owner": {"id": self.rq_job_owner_id}}
 
         return data
 
