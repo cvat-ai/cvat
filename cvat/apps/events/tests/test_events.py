@@ -12,13 +12,14 @@ from django.test import RequestFactory
 
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.organizations.models import Organization
+from cvat.apps.events.const import TIME_THRESHOLD, WORKING_TIME_RESOLUTION
 
 class WorkingTimeTestCase(unittest.TestCase):
     _START_TIMESTAMP = datetime(2024, 1, 1, 12)
-    _SHORT_GAP = ClientEventsSerializer._TIME_THRESHOLD - timedelta(milliseconds=1)
-    _SHORT_GAP_INT = _SHORT_GAP / ClientEventsSerializer._WORKING_TIME_RESOLUTION
-    _LONG_GAP = ClientEventsSerializer._TIME_THRESHOLD
-    _LONG_GAP_INT = _LONG_GAP / ClientEventsSerializer._WORKING_TIME_RESOLUTION
+    _SHORT_GAP = TIME_THRESHOLD - timedelta(milliseconds=1)
+    _SHORT_GAP_INT = _SHORT_GAP / WORKING_TIME_RESOLUTION
+    _LONG_GAP = TIME_THRESHOLD
+    _LONG_GAP_INT = _LONG_GAP / WORKING_TIME_RESOLUTION
 
     @staticmethod
     def _instant_event(timestamp: datetime) -> dict:
@@ -33,11 +34,11 @@ class WorkingTimeTestCase(unittest.TestCase):
         return {
             "scope": "change:frame",
             "timestamp": timestamp.isoformat(),
-            "duration": duration // ClientEventsSerializer._WORKING_TIME_RESOLUTION,
+            "duration": duration // WORKING_TIME_RESOLUTION,
         }
 
     @staticmethod
-    def _working_time(event: dict) -> int:
+    def _working_time_event(event: dict) -> int:
         payload = json.loads(event["payload"])
         return payload["working_time"]
 

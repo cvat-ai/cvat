@@ -31,6 +31,7 @@ from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
+from .const import TIME_THRESHOLD, WORKING_TIME_RESOLUTION
 
 
 def project_id(instance):
@@ -620,9 +621,7 @@ def handle_viewset_exception(exc, context):
     return response
 
 def handle_client_events_push(request, data: dict):
-    TIME_THRESHOLD = datetime.timedelta(seconds=100)
     WORKING_TIME_SCOPE = 'send:working_time'
-    WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
     org = request.iam_context["organization"]
 
