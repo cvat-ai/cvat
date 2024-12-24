@@ -25,7 +25,7 @@ from cvat.apps.engine.models import Job, Project, Task
 logger = ServerLogManager(__name__).glob
 
 
-def clear_export_cache(file_path: str, logger: logging.Logger) -> None:
+def clear_export_cache(file_path: str) -> None:
     with get_export_cache_lock(
         file_path,
         block=True,
