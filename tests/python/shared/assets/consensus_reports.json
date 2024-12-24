@@ -1,0 +1,96 @@
+{
+  "count": 5,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": null,
+      "consensus_score": 73,
+      "created_date": "2024-11-04T22:40:08.222000Z",
+      "id": 1,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 0,
+        "conflicts_by_type": {},
+        "frame_count": 2
+      },
+      "target": "task",
+      "target_last_updated": "2024-11-04T22:40:08.217000Z",
+      "task_id": 29
+    },
+    {
+      "assignee": null,
+      "consensus_score": 73,
+      "created_date": "2024-11-04T22:40:08.224000Z",
+      "id": 2,
+      "job_id": 38,
+      "parent_id": 1,
+      "summary": {
+        "conflict_count": 0,
+        "conflicts_by_type": {},
+        "frame_count": 2
+      },
+      "target": "job",
+      "target_last_updated": "2024-11-04T22:39:16.198000Z",
+      "task_id": 29
+    },
+    {
+      "assignee": null,
+      "consensus_score": 26,
+      "created_date": "2024-11-04T22:42:53.113000Z",
+      "id": 3,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 24,
+        "conflicts_by_type": {
+          "failed_label_voting": 12,
+          "no_matching_annotation": 12
+        },
+        "frame_count": 3
+      },
+      "target": "task",
+      "target_last_updated": "2024-11-04T22:42:53.107000Z",
+      "task_id": 30
+    },
+    {
+      "assignee": null,
+      "consensus_score": 0,
+      "created_date": "2024-11-04T22:42:53.115000Z",
+      "id": 4,
+      "job_id": 45,
+      "parent_id": 3,
+      "summary": {
+        "conflict_count": 16,
+        "conflicts_by_type": {
+          "failed_label_voting": 8,
+          "no_matching_annotation": 8
+        },
+        "frame_count": 1
+      },
+      "target": "job",
+      "target_last_updated": "2024-11-04T22:40:51.447000Z",
+      "task_id": 30
+    },
+    {
+      "assignee": null,
+      "consensus_score": 52,
+      "created_date": "2024-11-04T22:42:53.115000Z",
+      "id": 5,
+      "job_id": 41,
+      "parent_id": 3,
+      "summary": {
+        "conflict_count": 12,
+        "conflicts_by_type": {
+          "failed_label_voting": 4,
+          "no_matching_annotation": 4
+        },
+        "frame_count": 2
+      },
+      "target": "job",
+      "target_last_updated": "2024-11-04T22:40:51.376000Z",
+      "task_id": 30
+    }
+  ]
+}

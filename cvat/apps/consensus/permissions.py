@@ -131,7 +131,7 @@ class ConsensusConflictPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "conflicts":
+        if view.basename == "consensus_conflicts":
             for scope in cls.get_scopes(request, view, obj):
                 if scope == cls.Scopes.LIST and isinstance(obj, ConsensusReport):
                     permissions.append(
@@ -148,7 +148,7 @@ class ConsensusConflictPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + "/conflicts/allow"
+        self.url = settings.IAM_OPA_DATA_URL + "/consensus_conflicts/allow"
 
     @staticmethod
     def get_scopes(request, view, obj):
@@ -271,7 +271,6 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         LIST = "list"
         VIEW = "view"
-        VIEW_STATUS = "view:status"
 
     @classmethod
     def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
@@ -280,7 +279,9 @@ class AssigneeConsensusReportPermission(OpenPolicyAgentPermission):
         return cls(**iam_context, scope="view:status", job_owner_id=job_owner_id)
 
     @classmethod
-    def create_scope_view(cls, request, report: Union[int, ConsensusReport], iam_context=None):
+    def create_scope_view(
+        cls, request, report: Union[int, AssigneeConsensusReport], iam_context=None
+    ):
         if isinstance(report, int):
             try:
                 report = AssigneeConsensusReport.objects.get(id=report)

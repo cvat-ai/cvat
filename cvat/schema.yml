@@ -7421,6 +7421,9 @@ components:
     AssigneeConsensusReport:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         task_id:
           type: integer
           nullable: true

@@ -635,6 +635,11 @@ class SkeletonMatcher(_ShapeMatcher):
     instance_map = {}
     skeleton_map = {}
 
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.skeleton_map = {}
+        self.instance_map = {}
+
     def _distance_func(self, a, b):
         matcher = KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
         if isinstance(a, dm.Skeleton) and isinstance(b, dm.Skeleton):
@@ -712,8 +717,9 @@ class SkeletonMatcher(_ShapeMatcher):
         if self.return_distances:
             distances = self._distance
             for p_a_id, p_b_id in list(distances.keys()):
-                dist = distances.pop((p_a_id, p_b_id))
-                distances.set((id(points_map[p_a_id]), id(points_map[p_b_id])), dist)
+                if p_a_id in points_map and p_b_id in points_map:
+                    dist = distances.pop((p_a_id, p_b_id))
+                    distances.set((id(points_map[p_a_id]), id(points_map[p_b_id])), dist)
 
         return [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in results[0]]
 
