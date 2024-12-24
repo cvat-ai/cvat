@@ -43,7 +43,7 @@ simple_rules = read_rules(NAME)
 SCOPES = list({rule["scope"] for rule in simple_rules})
 CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["project:owner", "project:assignee", "owner", "assignee", "none"]
-GROUPS = ["admin", "business", "user", "worker", "none"]
+GROUPS = ["admin", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 SAME_ORG = [True, False]
 

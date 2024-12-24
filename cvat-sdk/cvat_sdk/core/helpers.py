@@ -7,7 +7,8 @@ from __future__ import annotations
 import io
 import json
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Union
+from collections.abc import Iterable
+from typing import Any, Optional, Union
 
 import tqdm
 import urllib3
@@ -19,7 +20,7 @@ from cvat_sdk.core.progress import BaseProgressReporter, ProgressReporter
 
 def get_paginated_collection(
     endpoint: Endpoint, *, return_json: bool = False, **kwargs
-) -> Union[List, List[Dict[str, Any]]]:
+) -> Union[list, list[dict[str, Any]]]:
     """
     Accumulates results from all the pages
     """

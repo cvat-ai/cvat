@@ -6,19 +6,16 @@ from __future__ import annotations
 
 import json
 from abc import ABC
+from collections.abc import Sequence
 from copy import deepcopy
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
     Literal,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -96,15 +93,15 @@ class Repo(ModelProxy[ModelType, ApiType]):
     Implements group and management operations for entities.
     """
 
-    _entity_type: Type[Entity[ModelType, ApiType]]
+    _entity_type: type[Entity[ModelType, ApiType]]
 
 
 ### Utilities
 
 
 def build_model_bases(
-    mt: Type[ModelType], at: Type[ApiType], *, api_member_name: Optional[str] = None
-) -> Tuple[Type[Entity[ModelType, ApiType]], Type[Repo[ModelType, ApiType]]]:
+    mt: type[ModelType], at: type[ApiType], *, api_member_name: Optional[str] = None
+) -> tuple[type[Entity[ModelType, ApiType]], type[Repo[ModelType, ApiType]]]:
     """
     Helps to remove code duplication in declarations of derived classes
     """
@@ -128,7 +125,7 @@ _EntityT = TypeVar("_EntityT", bound=Entity)
 
 
 class ModelCreateMixin(Generic[_EntityT, IModel]):
-    def create(self: Repo, spec: Union[Dict[str, Any], IModel]) -> _EntityT:
+    def create(self: Repo, spec: Union[dict[str, Any], IModel]) -> _EntityT:
         """
         Creates a new object on the server and returns the corresponding local object
         """
@@ -149,12 +146,12 @@ class ModelRetrieveMixin(Generic[_EntityT]):
 
 class ModelListMixin(Generic[_EntityT]):
     @overload
-    def list(self: Repo, *, return_json: Literal[False] = False) -> List[_EntityT]: ...
+    def list(self: Repo, *, return_json: Literal[False] = False) -> list[_EntityT]: ...
 
     @overload
-    def list(self: Repo, *, return_json: Literal[True] = False) -> List[Any]: ...
+    def list(self: Repo, *, return_json: Literal[True] = False) -> list[Any]: ...
 
-    def list(self: Repo, *, return_json: bool = False) -> List[Union[_EntityT, Any]]:
+    def list(self: Repo, *, return_json: bool = False) -> list[Union[_EntityT, Any]]:
         """
         Retrieves all objects from the server and returns them in basic or JSON format.
         """
@@ -166,6 +163,27 @@ class ModelListMixin(Generic[_EntityT]):
         return [self._entity_type(self._client, model) for model in results]
 
 
+class ModelBatchDeleteMixin(Repo):
+    def remove_by_ids(self, ids: Sequence[int], /) -> None:
+        """
+        Delete a list of objects from the server, ignoring those which don't exist.
+        """
+        type_name = self._entity_type.__name__
+
+        for object_id in ids:
+            (_, response) = self.api.destroy(object_id, _check_status=False)
+
+            if 200 <= response.status <= 299:
+                self._client.logger.info(f"{type_name} #{object_id} deleted")
+            elif response.status == 404:
+                self._client.logger.info(f"{type_name} #{object_id} not found")
+            else:
+                self._client.logger.error(
+                    f"Failed to delete {type_name} #{object_id}: "
+                    f"{response.msg} (status {response.status})"
+                )
+
+
 #### Entity mixins
 
 
@@ -174,8 +192,8 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
     def _model_partial_update_arg(self: Entity) -> str: ...
 
     def _export_update_fields(
-        self: Entity, overrides: Optional[Union[Dict[str, Any], IModel]] = None
-    ) -> Dict[str, Any]:
+        self: Entity, overrides: Optional[Union[dict[str, Any], IModel]] = None
+    ) -> dict[str, Any]:
         # TODO: support field conversion and assignment updating
         # fields = to_json(self._model)
 
@@ -194,7 +212,7 @@ class ModelUpdateMixin(ABC, Generic[IModel]):
         (self._model, _) = self.api.retrieve(id=getattr(self, self._model_id_field))
         return self
 
-    def update(self: Entity, values: Union[Dict[str, Any], IModel]) -> Self:
+    def update(self: Entity, values: Union[dict[str, Any], IModel]) -> Self:
         """
         Commits model changes to the server
 
@@ -304,7 +322,7 @@ class ExportDatasetMixin(_ExportMixin):
         cloud_storage_id: Optional[int] = None,
     ) -> None:
         """
-        Export a dataset in the specified format (e.g. 'YOLO ZIP 1.0').
+        Export a dataset in the specified format (e.g. 'YOLO 1.1').
         By default, a result file will be downloaded based on the default configuration.
         To force file downloading, pass `location=Location.LOCAL`.
         To save a file to a specific cloud storage, use the `location` and `cloud_storage_id` arguments.

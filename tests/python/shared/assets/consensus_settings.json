@@ -215,7 +215,7 @@
       "id": 24,
       "iou_threshold": 0.5,
       "line_thickness": 0.01,
-      "quorum": 1,
+      "quorum": 0,
       "sigma": 0.1,
       "task_id": 29
     },

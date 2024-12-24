@@ -60,6 +60,9 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- $probeArgs := list "webhooks" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}

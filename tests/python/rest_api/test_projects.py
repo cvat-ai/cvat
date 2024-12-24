@@ -6,18 +6,20 @@
 import io
 import itertools
 import json
+import operator
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
+from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
 from operator import itemgetter
 from time import sleep
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import pytest
-from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -32,8 +34,16 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
+from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase, export_project_backup, export_project_dataset
+from .utils import (
+    DATUMARO_FORMAT_FOR_DIMENSION,
+    CollectionSimpleFilterTestBase,
+    create_task,
+    export_dataset,
+    export_project_backup,
+    export_project_dataset,
+)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -369,19 +379,27 @@ class TestGetPostProjectBackup:
         self._test_can_get_project_backup("admin1", project["id"], api_version=api_version)
 
     @pytest.mark.parametrize("api_version", (1, 2))
-    def test_can_get_backup_project_when_all_tasks_have_no_data(self, api_version: int):
-        project = next((p for p in self.projects if 0 == p["tasks"]["count"]))
+    def test_can_get_backup_project_when_all_tasks_have_no_data(
+        self, api_version: int, filter_projects
+    ):
+        project = filter_projects(tasks__count=0)[0]
 
         # add empty tasks to empty project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task1", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task2", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_can_get_project_backup("admin1", project["id"], api_version=api_version)
 
@@ -437,7 +455,7 @@ class TestPostProjects:
         spec = {"name": f"test {username} tries to create a project"}
         self._test_create_project_403(username, spec)
 
-    @pytest.mark.parametrize("privilege", ("admin", "business", "user"))
+    @pytest.mark.parametrize("privilege", ("admin", "user"))
     def test_if_user_can_create_project(self, find_users, privilege):
         privileged_users = find_users(privilege=privilege)
         assert len(privileged_users)
@@ -488,7 +506,7 @@ class TestPostProjects:
         return json.loads(response.data)
 
     @classmethod
-    def _create_org(cls, api_client: ApiClient, members: Optional[Dict[str, str]] = None) -> str:
+    def _create_org(cls, api_client: ApiClient, members: Optional[dict[str, str]] = None) -> str:
         with api_client:
             (_, response) = api_client.organizations_api.create(
                 models.OrganizationWriteRequest(slug="test_org_roles"), _parse_response=False
@@ -601,6 +619,7 @@ def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestImportExportDatasetProject:
 
     @pytest.fixture(autouse=True)
@@ -612,7 +631,7 @@ class TestImportExportDatasetProject:
         username: str,
         pid: int,
         *,
-        api_version: Union[int, Tuple[int]],
+        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
@@ -761,7 +780,7 @@ class TestImportExportDatasetProject:
         "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
     )
     def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
-        self, admin_user: str, filter_projects, api_version: Tuple[int], local_download: bool
+        self, admin_user: str, filter_projects, api_version: tuple[int], local_download: bool
     ):
         filter_ = "target_storage__location"
         if local_download:
@@ -894,7 +913,13 @@ class TestImportExportDatasetProject:
 
         # add empty task to project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {
+                "name": "empty_task",
+                "project_id": project["id"],
+            },
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
         assert response.status_code == HTTPStatus.CREATED
 
@@ -915,14 +940,20 @@ class TestImportExportDatasetProject:
 
         # add empty tasks to empty project
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task1", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         response = post_method(
-            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+            "admin1",
+            "tasks",
+            {"name": "empty_task2", "project_id": project["id"]},
+            **({"org_id": project["organization"]} if project["organization"] else {}),
         )
-        assert response.status_code == HTTPStatus.CREATED
+        assert response.status_code == HTTPStatus.CREATED, response.text
 
         self._test_export_dataset(
             "admin1",
@@ -961,6 +992,68 @@ class TestImportExportDatasetProject:
             }
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+
+    @pytest.mark.parametrize(
+        "dimension, format_name",
+        [
+            *DATUMARO_FORMAT_FOR_DIMENSION.items(),
+            ("2d", "CVAT 1.1"),
+            ("3d", "CVAT 1.1"),
+            ("2d", "COCO 1.0"),
+        ],
+    )
+    def test_cant_import_annotations_as_project(self, admin_user, tasks, format_name, dimension):
+        task = next(t for t in tasks if t.get("size") if t["dimension"] == dimension)
+
+        def _export_task(task_id: int, format_name: str) -> io.BytesIO:
+            with make_api_client(admin_user) as api_client:
+                return io.BytesIO(
+                    export_dataset(
+                        api_client.tasks_api,
+                        api_version=2,
+                        id=task_id,
+                        format=format_name,
+                        save_images=False,
+                    )
+                )
+
+        if format_name in list(DATUMARO_FORMAT_FOR_DIMENSION.values()):
+            with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
+                annotations = zip_file.read("annotations/default.json")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.json"
+        elif format_name == "CVAT 1.1":
+            with zipfile.ZipFile(_export_task(task["id"], "CVAT for images 1.1")) as zip_file:
+                annotations = zip_file.read("annotations.xml")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.xml"
+        elif format_name == "COCO 1.0":
+            with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
+                annotations = zip_file.read("annotations/instances_default.json")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.json"
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            project, _ = api_client.projects_api.create(
+                project_write_request=models.ProjectWriteRequest(
+                    name=f"test_annotations_import_as_project {format_name}"
+                )
+            )
+
+            import_data = {"dataset_file": dataset_file}
+
+            with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
+                self._test_import_project(
+                    admin_user,
+                    project.id,
+                    format_name=format_name,
+                    data=import_data,
+                )
 
     @pytest.mark.parametrize(
         "export_format, subset_path_template",
@@ -1016,10 +1109,62 @@ class TestImportExportDatasetProject:
                     len([f for f in zip_file.namelist() if f.startswith(folder_prefix)]) > 0
                 ), f"No {folder_prefix} in {zip_file.namelist()}"
 
+    def test_export_project_with_honeypots(self, admin_user: str):
+        project_spec = {
+            "name": "Project with honeypots",
+            "labels": [{"name": "cat"}],
+        }
+
+        with make_api_client(admin_user) as api_client:
+            project, _ = api_client.projects_api.create(project_spec)
+
+        image_files = generate_image_files(3)
+        image_names = [i.name for i in image_files]
+
+        task_params = {
+            "name": "Task with honeypots",
+            "segment_size": 1,
+            "project_id": project.id,
+        }
+
+        data_params = {
+            "image_quality": 70,
+            "client_files": image_files,
+            "sorting_method": "random",
+            "validation_params": {
+                "mode": "gt_pool",
+                "frame_selection_method": "manual",
+                "frames_per_job_count": 1,
+                "frames": [image_files[-1].name],
+            },
+        }
+
+        create_task(admin_user, spec=task_params, data=data_params)
+
+        dataset = export_project_dataset(
+            admin_user, api_version=2, save_images=True, id=project.id, format="COCO 1.0"
+        )
+
+        with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
+            subset_path = "images/default"
+            assert (
+                sorted(
+                    [
+                        f[len(subset_path) + 1 :]
+                        for f in zip_file.namelist()
+                        if f.startswith(subset_path)
+                    ]
+                )
+                == image_names
+            )
+            with zip_file.open("annotations/instances_default.json") as anno_file:
+                annotations = json.load(anno_file)
+                assert sorted([a["file_name"] for a in annotations["images"]]) == image_names
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
-    def _get_project_labels(self, pid, user, **kwargs) -> List[models.Label]:
+    def _get_project_labels(self, pid, user, **kwargs) -> list[models.Label]:
         kwargs.setdefault("return_json", True)
         with make_api_client(user) as api_client:
             return get_paginated_collection(
@@ -1389,10 +1534,17 @@ class TestPatchProject:
                 project["id"], patched_project_write_request={"assignee_id": new_assignee_id}
             )
 
-            if new_assignee_id == old_assignee_id:
-                assert updated_project.assignee_updated_date == project["assignee_updated_date"]
+            op = operator.eq if new_assignee_id == old_assignee_id else operator.ne
+
+            # FUTURE-TODO: currently it is possible to have a project with an assignee but with assignee_updated_date == None
+            # because there was no migration to set some assignee_updated_date for projects/tasks/jobs with assignee != None
+            if isinstance(updated_project.assignee_updated_date, datetime):
+                assert op(
+                    str(updated_project.assignee_updated_date.isoformat()).replace("+00:00", "Z"),
+                    project["assignee_updated_date"],
+                )
             else:
-                assert updated_project.assignee_updated_date != project["assignee_updated_date"]
+                assert op(updated_project.assignee_updated_date, project["assignee_updated_date"])
 
             if new_assignee_id:
                 assert updated_project.assignee.id == new_assignee_id
@@ -1407,3 +1559,119 @@ class TestPatchProject:
         with make_api_client(regular_lonely_user) as api_client:
             with pytest.raises(ForbiddenException):
                 api_client.projects_api.partial_update(project["id"])
+
+    @staticmethod
+    def _test_patch_linked_storage(
+        user: str, project_id: int, *, expected_status: HTTPStatus = HTTPStatus.OK
+    ) -> None:
+        with make_api_client(user) as api_client:
+            for associated_storage in ("source_storage", "target_storage"):
+                patch_data = {
+                    associated_storage: {
+                        "location": "local",
+                    }
+                }
+                (_, response) = api_client.projects_api.partial_update(
+                    project_id,
+                    patched_project_write_request=patch_data,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == expected_status, response.status
+
+    @pytest.mark.parametrize(
+        "is_project_assignee", [True, False]
+    )  # being a project assignee must not change anything
+    @pytest.mark.parametrize(
+        "role, is_allow",
+        [
+            ("owner", True),
+            ("maintainer", True),
+            ("supervisor", False),
+            ("worker", False),
+        ],
+    )
+    def test_org_update_project_associated_storage(
+        self,
+        is_project_assignee: bool,
+        role: str,
+        is_allow: bool,
+        projects,
+        find_users,
+    ):
+        project_id: Optional[int] = None
+        username: Optional[str] = None
+
+        for project in projects:
+            if project_id is not None:
+                break
+            for user in find_users(role=role, exclude_privilege="admin"):
+                is_user_project_assignee = (project["assignee"] or {}).get("id") == user["id"]
+                if (
+                    project["organization"] == user["org"]
+                    and project["owner"]["id"] != user["id"]
+                    and (
+                        is_project_assignee
+                        and is_user_project_assignee
+                        or not (is_project_assignee or is_user_project_assignee)
+                    )
+                ):
+                    project_id = project["id"]
+                    username = user["username"]
+                    break
+
+        assert project_id is not None
+
+        self._test_patch_linked_storage(
+            username,
+            project_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )
+
+    @pytest.mark.parametrize(
+        "is_owner, is_assignee, is_allow",
+        [
+            (True, False, True),
+            (False, True, False),
+            (False, False, False),
+        ],
+    )
+    def test_sandbox_update_project_associated_storage(
+        self,
+        is_owner: bool,
+        is_assignee: str,
+        is_allow: bool,
+        find_users,
+        filter_projects,
+    ):
+        username: Optional[str] = None
+        project_id: Optional[int] = None
+
+        projects = filter_projects(organization=None)
+        users = find_users(exclude_privilege="admin")
+
+        for project in projects:
+            if project_id is not None:
+                break
+            for user in users:
+                is_user_project_owner = project["owner"]["id"] == user["id"]
+                is_user_project_assignee = (project["assignee"] or {}).get("id") == user["id"]
+
+                if (
+                    (is_owner and is_user_project_owner)
+                    or (is_assignee and not is_user_project_owner and is_user_project_assignee)
+                    or not any(
+                        [is_owner, is_assignee, is_user_project_owner, is_user_project_assignee]
+                    )
+                ):
+                    project_id = project["id"]
+                    username = user["username"]
+                    break
+
+        assert project_id is not None
+
+        self._test_patch_linked_storage(
+            username,
+            project_id,
+            expected_status=HTTPStatus.OK if is_allow else HTTPStatus.FORBIDDEN,
+        )

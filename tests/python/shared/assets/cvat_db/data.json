@@ -11,21 +11,13 @@
   "model": "auth.group",
   "pk": 2,
   "fields": {
-    "name": "business",
-    "permissions": []
-  }
-},
-{
-  "model": "auth.group",
-  "pk": 3,
-  "fields": {
     "name": "user",
     "permissions": []
   }
 },
 {
   "model": "auth.group",
-  "pk": 4,
+  "pk": 3,
   "fields": {
     "name": "worker",
     "permissions": []
@@ -36,7 +28,7 @@
   "pk": 1,
   "fields": {
     "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-    "last_login": "2024-11-04T22:42:47.942Z",
+    "last_login": "2024-04-03T09:51:04.664Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -80,7 +72,7 @@
   "pk": 3,
   "fields": {
     "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
-    "last_login": "2024-11-04T22:40:33.954Z",
+    "last_login": "2022-09-28T12:19:33.698Z",
     "is_superuser": false,
     "username": "user2",
     "first_name": "User",
@@ -236,16 +228,16 @@
     "password": "md5$6TyZJsUJ2hAbICwZHKp4p0$961841748b31d28bcaf3094e549d2bd5",
     "last_login": "2022-09-28T12:17:51.373Z",
     "is_superuser": false,
-    "username": "business1",
-    "first_name": "Business",
-    "last_name": "First",
-    "email": "business1@cvat.org",
+    "username": "user7",
+    "first_name": "User",
+    "last_name": "Seventh",
+    "email": "user7@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:33:06Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -258,16 +250,16 @@
     "password": "md5$oLNLFFMdjViRqnAw1th3Zl$d816d16307053866451da43fb4443b66",
     "last_login": "2022-03-17T07:22:55.930Z",
     "is_superuser": false,
-    "username": "business2",
-    "first_name": "Business",
-    "last_name": "Second",
-    "email": "business2@cvat.org",
+    "username": "user8",
+    "first_name": "User",
+    "last_name": "Eighth",
+    "email": "user8@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:34:01Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -280,16 +272,16 @@
     "password": "md5$7ETBhORLrHl45WPL9CkxnN$af77496152b60ffc73ef877c99807385",
     "last_login": null,
     "is_superuser": false,
-    "username": "business3",
-    "first_name": "Business",
-    "last_name": "Third",
-    "email": "business3@cvat.org",
+    "username": "user9",
+    "first_name": "User",
+    "last_name": "Nineth",
+    "email": "user9@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:34:34Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -302,16 +294,16 @@
     "password": "md5$9huaZ72ncQGfmxUqU3Hwnz$6b010216eea87409f0aca7126bd80bbd",
     "last_login": null,
     "is_superuser": false,
-    "username": "business4",
-    "first_name": "Business",
-    "last_name": "Fourth",
-    "email": "business4@cvat.org",
+    "username": "user10",
+    "first_name": "User",
+    "last_name": "Tenth",
+    "email": "user10@cvat.org",
     "is_staff": false,
     "is_active": true,
     "date_joined": "2021-12-14T18:35:15Z",
     "groups": [
       [
-        "business"
+        "user"
       ]
     ],
     "user_permissions": []
@@ -475,14 +467,6 @@
       ]
     ],
     "user_permissions": []
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "3ibifpwt06gp1afx0jzyetl8bylt5fuu",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hBwgIJL9z0DGZipVA0kpV0Z765NutDtf-_9l4i4rSVunZc4k7gILU6_W8L84LoDumO9NZlbXZc5yV2RB-1ybMTP6-H-HRTs5VubzCqjxsEBBBuIPDvngazXLoELgUkphDOQscp7nDKRC8YSpMkM6MX7A9lUN7Y:1t85mZ:lJJfebIL-fiaqHCxUD4mIjicI3bidygKbgfbidKoBb4",
-    "expire_date": "2024-11-18T22:42:47.950Z"
   }
 },
 {
@@ -729,10 +713,20 @@
 },
 {
   "model": "authtoken.token",
+  "pk": "2dcf8d2ff5032c3cf7d276549af3a50edb4f11c8",
+  "fields": {
+    "user": [
+      "admin1"
+    ],
+    "created": "2022-12-05T07:46:24.792Z"
+  }
+},
+{
+  "model": "authtoken.token",
   "pk": "53da3ff9e514d84b56b5170059ff0f595c34157b",
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "created": "2022-03-17T07:22:55.921Z"
   }
@@ -749,20 +743,10 @@
 },
 {
   "model": "authtoken.token",
-  "pk": "7de3771f3363fde1d6b6d0803d968fc7352404a1",
-  "fields": {
-    "user": [
-      "admin1"
-    ],
-    "created": "2024-11-04T22:42:47.925Z"
-  }
-},
-{
-  "model": "authtoken.token",
   "pk": "c051fe19df24a0ac4c6bec5e635034271c9549dc",
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "created": "2023-05-01T08:42:48.127Z"
   }
@@ -841,7 +825,7 @@
       "email": "org2@cvat.org"
     },
     "owner": [
-      "business1"
+      "user7"
     ]
   }
 },
@@ -889,7 +873,7 @@
   "pk": 4,
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "organization": 1,
     "is_active": true,
@@ -902,7 +886,7 @@
   "pk": 5,
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
     "organization": 2,
     "is_active": true,
@@ -915,7 +899,7 @@
   "pk": 6,
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "organization": 2,
     "is_active": true,
@@ -1032,7 +1016,7 @@
   "pk": 15,
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
     "organization": 1,
     "is_active": true,
@@ -1047,7 +1031,7 @@
     "created_date": "2022-01-19T13:54:42.005Z",
     "sent_date": "2022-01-19T13:54:42.005Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 10
   }
@@ -1059,7 +1043,7 @@
     "created_date": "2021-12-14T19:54:46.172Z",
     "sent_date": "2021-12-14T19:54:46.172Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 7
   }
@@ -1071,7 +1055,7 @@
     "created_date": "2022-01-19T13:54:42.015Z",
     "sent_date": "2022-01-19T13:54:42.015Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 11
   }
@@ -1107,7 +1091,7 @@
     "created_date": "2021-12-14T19:54:33.591Z",
     "sent_date": "2021-12-14T19:54:33.591Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 6
   }
@@ -1155,7 +1139,7 @@
     "created_date": "2021-12-14T19:55:13.745Z",
     "sent_date": "2021-12-14T19:55:13.745Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 9
   }
@@ -1179,7 +1163,7 @@
     "created_date": "2021-12-14T19:54:56.431Z",
     "sent_date": "2021-12-14T19:54:56.431Z",
     "owner": [
-      "business1"
+      "user7"
     ],
     "membership": 8
   }
@@ -1194,6 +1178,39 @@
       "user1"
     ],
     "membership": 15
+  }
+},
+{
+  "model": "engine.validationlayout",
+  "pk": 1,
+  "fields": {
+    "task_data": 21,
+    "mode": "gt",
+    "frames_per_job_count": null,
+    "frames": "0,1,2",
+    "disabled_frames": "[]"
+  }
+},
+{
+  "model": "engine.validationlayout",
+  "pk": 2,
+  "fields": {
+    "task_data": 22,
+    "mode": "gt",
+    "frames_per_job_count": null,
+    "frames": "4,5,7",
+    "disabled_frames": "[]"
+  }
+},
+{
+  "model": "engine.validationlayout",
+  "pk": 3,
+  "fields": {
+    "task_data": 28,
+    "mode": "gt_pool",
+    "frames_per_job_count": 3,
+    "frames": "23,24,25,26,27,28",
+    "disabled_frames": "[]"
   }
 },
 {
@@ -1618,11 +1635,11 @@
   "model": "engine.data",
   "pk": 28,
   "fields": {
-    "chunk_size": 72,
-    "size": 2,
+    "chunk_size": 3,
+    "size": 29,
     "image_quality": 70,
     "start_frame": 0,
-    "stop_frame": 1,
+    "stop_frame": 28,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -1638,10 +1655,10 @@
   "pk": 29,
   "fields": {
     "chunk_size": 72,
-    "size": 3,
+    "size": 2,
     "image_quality": 70,
     "start_frame": 0,
-    "stop_frame": 2,
+    "stop_frame": 1,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -1680,7 +1697,9 @@
     "path": "118.png",
     "frame": 0,
     "width": 940,
-    "height": 805
+    "height": 805,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1691,7 +1710,9 @@
     "path": "119.png",
     "frame": 1,
     "width": 693,
-    "height": 357
+    "height": 357,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1702,7 +1723,9 @@
     "path": "120.png",
     "frame": 2,
     "width": 254,
-    "height": 301
+    "height": 301,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1713,7 +1736,9 @@
     "path": "121.png",
     "frame": 3,
     "width": 918,
-    "height": 334
+    "height": 334,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1724,7 +1749,9 @@
     "path": "122.png",
     "frame": 4,
     "width": 619,
-    "height": 115
+    "height": 115,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1735,7 +1762,9 @@
     "path": "123.png",
     "frame": 5,
     "width": 599,
-    "height": 738
+    "height": 738,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1746,7 +1775,9 @@
     "path": "124.png",
     "frame": 6,
     "width": 306,
-    "height": 355
+    "height": 355,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1757,7 +1788,9 @@
     "path": "125.png",
     "frame": 7,
     "width": 838,
-    "height": 507
+    "height": 507,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1768,7 +1801,9 @@
     "path": "126.png",
     "frame": 8,
     "width": 885,
-    "height": 211
+    "height": 211,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1779,7 +1814,9 @@
     "path": "127.png",
     "frame": 9,
     "width": 553,
-    "height": 522
+    "height": 522,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1790,7 +1827,9 @@
     "path": "128.png",
     "frame": 10,
     "width": 424,
-    "height": 826
+    "height": 826,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1801,7 +1840,9 @@
     "path": "129.png",
     "frame": 11,
     "width": 264,
-    "height": 984
+    "height": 984,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1812,7 +1853,9 @@
     "path": "130.png",
     "frame": 12,
     "width": 698,
-    "height": 387
+    "height": 387,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1823,7 +1866,9 @@
     "path": "131.png",
     "frame": 13,
     "width": 781,
-    "height": 901
+    "height": 901,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1834,7 +1879,9 @@
     "path": "132.png",
     "frame": 14,
     "width": 144,
-    "height": 149
+    "height": 149,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1845,7 +1892,9 @@
     "path": "133.png",
     "frame": 15,
     "width": 989,
-    "height": 131
+    "height": 131,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1856,7 +1905,9 @@
     "path": "134.png",
     "frame": 16,
     "width": 661,
-    "height": 328
+    "height": 328,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1867,7 +1918,9 @@
     "path": "135.png",
     "frame": 17,
     "width": 333,
-    "height": 811
+    "height": 811,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1878,7 +1931,9 @@
     "path": "136.png",
     "frame": 18,
     "width": 292,
-    "height": 497
+    "height": 497,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1889,7 +1944,9 @@
     "path": "137.png",
     "frame": 19,
     "width": 886,
-    "height": 238
+    "height": 238,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1900,7 +1957,9 @@
     "path": "138.png",
     "frame": 20,
     "width": 759,
-    "height": 179
+    "height": 179,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1911,7 +1970,9 @@
     "path": "139.png",
     "frame": 21,
     "width": 769,
-    "height": 746
+    "height": 746,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1922,7 +1983,9 @@
     "path": "140.png",
     "frame": 22,
     "width": 749,
-    "height": 833
+    "height": 833,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1933,7 +1996,9 @@
     "path": "test_pointcloud_pcd/pointcloud/000001.pcd",
     "frame": 0,
     "width": 100,
-    "height": 1
+    "height": 1,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1944,7 +2009,9 @@
     "path": "0.png",
     "frame": 0,
     "width": 827,
-    "height": 983
+    "height": 983,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1955,7 +2022,9 @@
     "path": "1.png",
     "frame": 1,
     "width": 467,
-    "height": 547
+    "height": 547,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1966,7 +2035,9 @@
     "path": "10.png",
     "frame": 2,
     "width": 598,
-    "height": 202
+    "height": 202,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1977,7 +2048,9 @@
     "path": "2.png",
     "frame": 3,
     "width": 449,
-    "height": 276
+    "height": 276,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1988,7 +2061,9 @@
     "path": "3.png",
     "frame": 4,
     "width": 170,
-    "height": 999
+    "height": 999,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -1999,7 +2074,9 @@
     "path": "4.png",
     "frame": 5,
     "width": 473,
-    "height": 471
+    "height": 471,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2010,7 +2087,9 @@
     "path": "5.png",
     "frame": 6,
     "width": 607,
-    "height": 745
+    "height": 745,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2021,7 +2100,9 @@
     "path": "6.png",
     "frame": 7,
     "width": 853,
-    "height": 578
+    "height": 578,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2032,7 +2113,9 @@
     "path": "7.png",
     "frame": 8,
     "width": 823,
-    "height": 270
+    "height": 270,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2043,7 +2126,9 @@
     "path": "8.png",
     "frame": 9,
     "width": 545,
-    "height": 179
+    "height": 179,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2054,7 +2139,9 @@
     "path": "9.png",
     "frame": 10,
     "width": 827,
-    "height": 932
+    "height": 932,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2065,7 +2152,9 @@
     "path": "0.png",
     "frame": 0,
     "width": 836,
-    "height": 636
+    "height": 636,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2076,7 +2165,9 @@
     "path": "1.png",
     "frame": 1,
     "width": 396,
-    "height": 350
+    "height": 350,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2087,7 +2178,9 @@
     "path": "10.png",
     "frame": 2,
     "width": 177,
-    "height": 862
+    "height": 862,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2098,7 +2191,9 @@
     "path": "11.png",
     "frame": 3,
     "width": 318,
-    "height": 925
+    "height": 925,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2109,7 +2204,9 @@
     "path": "12.png",
     "frame": 4,
     "width": 734,
-    "height": 832
+    "height": 832,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2120,7 +2217,9 @@
     "path": "13.png",
     "frame": 5,
     "width": 925,
-    "height": 934
+    "height": 934,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2131,7 +2230,9 @@
     "path": "14.png",
     "frame": 6,
     "width": 851,
-    "height": 270
+    "height": 270,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2142,7 +2243,9 @@
     "path": "2.png",
     "frame": 7,
     "width": 776,
-    "height": 610
+    "height": 610,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2153,7 +2256,9 @@
     "path": "3.png",
     "frame": 8,
     "width": 293,
-    "height": 265
+    "height": 265,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2164,7 +2269,9 @@
     "path": "4.png",
     "frame": 9,
     "width": 333,
-    "height": 805
+    "height": 805,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2175,7 +2282,9 @@
     "path": "6.png",
     "frame": 10,
     "width": 403,
-    "height": 478
+    "height": 478,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2186,7 +2295,9 @@
     "path": "7.png",
     "frame": 11,
     "width": 585,
-    "height": 721
+    "height": 721,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2197,7 +2308,9 @@
     "path": "8.png",
     "frame": 12,
     "width": 639,
-    "height": 570
+    "height": 570,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2208,7 +2321,9 @@
     "path": "9.png",
     "frame": 13,
     "width": 894,
-    "height": 278
+    "height": 278,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2219,7 +2334,9 @@
     "path": "52.png",
     "frame": 0,
     "width": 220,
-    "height": 596
+    "height": 596,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2230,7 +2347,9 @@
     "path": "53.png",
     "frame": 1,
     "width": 749,
-    "height": 967
+    "height": 967,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2241,7 +2360,9 @@
     "path": "54.png",
     "frame": 2,
     "width": 961,
-    "height": 670
+    "height": 670,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2252,7 +2373,9 @@
     "path": "55.png",
     "frame": 3,
     "width": 393,
-    "height": 736
+    "height": 736,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2263,7 +2386,9 @@
     "path": "56.png",
     "frame": 4,
     "width": 650,
-    "height": 140
+    "height": 140,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2274,7 +2399,9 @@
     "path": "57.png",
     "frame": 5,
     "width": 199,
-    "height": 710
+    "height": 710,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2285,7 +2412,9 @@
     "path": "58.png",
     "frame": 6,
     "width": 948,
-    "height": 659
+    "height": 659,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2296,7 +2425,9 @@
     "path": "59.png",
     "frame": 7,
     "width": 837,
-    "height": 367
+    "height": 367,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2307,7 +2438,9 @@
     "path": "60.png",
     "frame": 8,
     "width": 257,
-    "height": 265
+    "height": 265,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2318,7 +2451,9 @@
     "path": "61.png",
     "frame": 9,
     "width": 104,
-    "height": 811
+    "height": 811,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2329,7 +2464,9 @@
     "path": "62.png",
     "frame": 10,
     "width": 665,
-    "height": 512
+    "height": 512,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2340,7 +2477,9 @@
     "path": "63.png",
     "frame": 11,
     "width": 234,
-    "height": 975
+    "height": 975,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2351,7 +2490,9 @@
     "path": "64.png",
     "frame": 12,
     "width": 809,
-    "height": 350
+    "height": 350,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2362,7 +2503,9 @@
     "path": "65.png",
     "frame": 13,
     "width": 359,
-    "height": 943
+    "height": 943,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2373,7 +2516,9 @@
     "path": "66.png",
     "frame": 14,
     "width": 782,
-    "height": 383
+    "height": 383,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2384,7 +2529,9 @@
     "path": "67.png",
     "frame": 15,
     "width": 571,
-    "height": 945
+    "height": 945,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2395,7 +2542,9 @@
     "path": "68.png",
     "frame": 16,
     "width": 414,
-    "height": 212
+    "height": 212,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2406,7 +2555,9 @@
     "path": "69.png",
     "frame": 17,
     "width": 680,
-    "height": 583
+    "height": 583,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2417,7 +2568,9 @@
     "path": "70.png",
     "frame": 18,
     "width": 779,
-    "height": 877
+    "height": 877,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2428,7 +2581,9 @@
     "path": "71.png",
     "frame": 19,
     "width": 411,
-    "height": 672
+    "height": 672,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2439,7 +2594,9 @@
     "path": "30.png",
     "frame": 0,
     "width": 810,
-    "height": 399
+    "height": 399,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2450,7 +2607,9 @@
     "path": "31.png",
     "frame": 1,
     "width": 916,
-    "height": 158
+    "height": 158,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2461,7 +2620,9 @@
     "path": "32.png",
     "frame": 2,
     "width": 936,
-    "height": 182
+    "height": 182,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2472,7 +2633,9 @@
     "path": "33.png",
     "frame": 3,
     "width": 783,
-    "height": 433
+    "height": 433,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2483,7 +2646,9 @@
     "path": "34.png",
     "frame": 4,
     "width": 231,
-    "height": 121
+    "height": 121,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2494,7 +2659,9 @@
     "path": "35.png",
     "frame": 5,
     "width": 721,
-    "height": 705
+    "height": 705,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2505,7 +2672,9 @@
     "path": "36.png",
     "frame": 6,
     "width": 631,
-    "height": 225
+    "height": 225,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2516,7 +2685,9 @@
     "path": "37.png",
     "frame": 7,
     "width": 540,
-    "height": 167
+    "height": 167,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2527,7 +2698,9 @@
     "path": "38.png",
     "frame": 8,
     "width": 203,
-    "height": 211
+    "height": 211,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2538,7 +2711,9 @@
     "path": "39.png",
     "frame": 9,
     "width": 677,
-    "height": 144
+    "height": 144,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2549,7 +2724,9 @@
     "path": "40.png",
     "frame": 10,
     "width": 697,
-    "height": 954
+    "height": 954,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2560,7 +2737,9 @@
     "path": "0.png",
     "frame": 0,
     "width": 974,
-    "height": 452
+    "height": 452,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2571,7 +2750,9 @@
     "path": "1.png",
     "frame": 1,
     "width": 783,
-    "height": 760
+    "height": 760,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2582,7 +2763,9 @@
     "path": "2.png",
     "frame": 2,
     "width": 528,
-    "height": 458
+    "height": 458,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2593,7 +2776,9 @@
     "path": "3.png",
     "frame": 3,
     "width": 520,
-    "height": 350
+    "height": 350,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2604,7 +2789,9 @@
     "path": "4.png",
     "frame": 4,
     "width": 569,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2615,7 +2802,9 @@
     "path": "1.png",
     "frame": 0,
     "width": 783,
-    "height": 760
+    "height": 760,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2626,7 +2815,9 @@
     "path": "2.png",
     "frame": 1,
     "width": 528,
-    "height": 458
+    "height": 458,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2637,7 +2828,9 @@
     "path": "3.png",
     "frame": 2,
     "width": 520,
-    "height": 350
+    "height": 350,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2648,7 +2841,9 @@
     "path": "4.png",
     "frame": 3,
     "width": 569,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2659,7 +2854,9 @@
     "path": "5.png",
     "frame": 4,
     "width": 514,
-    "height": 935
+    "height": 935,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2670,7 +2867,9 @@
     "path": "6.png",
     "frame": 5,
     "width": 502,
-    "height": 705
+    "height": 705,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2681,7 +2880,9 @@
     "path": "7.png",
     "frame": 6,
     "width": 541,
-    "height": 825
+    "height": 825,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2692,7 +2893,9 @@
     "path": "8.png",
     "frame": 7,
     "width": 883,
-    "height": 208
+    "height": 208,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2703,7 +2906,9 @@
     "path": "0.png",
     "frame": 0,
     "width": 974,
-    "height": 452
+    "height": 452,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2714,7 +2919,9 @@
     "path": "1.png",
     "frame": 1,
     "width": 783,
-    "height": 760
+    "height": 760,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2725,7 +2932,9 @@
     "path": "2.png",
     "frame": 2,
     "width": 528,
-    "height": 458
+    "height": 458,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2736,7 +2945,9 @@
     "path": "3.png",
     "frame": 3,
     "width": 520,
-    "height": 350
+    "height": 350,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2747,7 +2958,9 @@
     "path": "4.png",
     "frame": 4,
     "width": 569,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2758,7 +2971,9 @@
     "path": "12.png",
     "frame": 0,
     "width": 607,
-    "height": 668
+    "height": 668,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2769,7 +2984,9 @@
     "path": "13.png",
     "frame": 1,
     "width": 483,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2780,7 +2997,9 @@
     "path": "15.png",
     "frame": 0,
     "width": 982,
-    "height": 376
+    "height": 376,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2791,7 +3010,9 @@
     "path": "16.png",
     "frame": 1,
     "width": 565,
-    "height": 365
+    "height": 365,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2802,7 +3023,9 @@
     "path": "33.png",
     "frame": 0,
     "width": 339,
-    "height": 351
+    "height": 351,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2813,7 +3036,9 @@
     "path": "34.png",
     "frame": 1,
     "width": 944,
-    "height": 271
+    "height": 271,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2824,7 +3049,9 @@
     "path": "0.png",
     "frame": 0,
     "width": 865,
-    "height": 401
+    "height": 401,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2835,7 +3062,9 @@
     "path": "1.png",
     "frame": 1,
     "width": 912,
-    "height": 346
+    "height": 346,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2846,7 +3075,9 @@
     "path": "2.png",
     "frame": 2,
     "width": 681,
-    "height": 460
+    "height": 460,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2857,7 +3088,9 @@
     "path": "3.png",
     "frame": 3,
     "width": 844,
-    "height": 192
+    "height": 192,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2868,7 +3101,9 @@
     "path": "4.png",
     "frame": 4,
     "width": 462,
-    "height": 252
+    "height": 252,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2879,7 +3114,9 @@
     "path": "5.png",
     "frame": 5,
     "width": 191,
-    "height": 376
+    "height": 376,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2890,7 +3127,9 @@
     "path": "6.png",
     "frame": 6,
     "width": 333,
-    "height": 257
+    "height": 257,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2901,7 +3140,9 @@
     "path": "7.png",
     "frame": 7,
     "width": 474,
-    "height": 619
+    "height": 619,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2912,7 +3153,9 @@
     "path": "8.png",
     "frame": 8,
     "width": 809,
-    "height": 543
+    "height": 543,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2923,7 +3166,9 @@
     "path": "9.png",
     "frame": 9,
     "width": 993,
-    "height": 151
+    "height": 151,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2934,7 +3179,9 @@
     "path": "30.png",
     "frame": 0,
     "width": 810,
-    "height": 399
+    "height": 399,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2945,7 +3192,9 @@
     "path": "31.png",
     "frame": 1,
     "width": 916,
-    "height": 158
+    "height": 158,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2956,7 +3205,9 @@
     "path": "32.png",
     "frame": 2,
     "width": 936,
-    "height": 182
+    "height": 182,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2967,7 +3218,9 @@
     "path": "33.png",
     "frame": 3,
     "width": 783,
-    "height": 433
+    "height": 433,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2978,7 +3231,9 @@
     "path": "34.png",
     "frame": 4,
     "width": 231,
-    "height": 121
+    "height": 121,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -2989,7 +3244,9 @@
     "path": "35.png",
     "frame": 5,
     "width": 721,
-    "height": 705
+    "height": 705,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3000,7 +3257,9 @@
     "path": "36.png",
     "frame": 6,
     "width": 631,
-    "height": 225
+    "height": 225,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3011,7 +3270,9 @@
     "path": "37.png",
     "frame": 7,
     "width": 540,
-    "height": 167
+    "height": 167,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3022,7 +3283,9 @@
     "path": "38.png",
     "frame": 8,
     "width": 203,
-    "height": 211
+    "height": 211,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3033,7 +3296,9 @@
     "path": "39.png",
     "frame": 9,
     "width": 677,
-    "height": 144
+    "height": 144,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3044,7 +3309,9 @@
     "path": "40.png",
     "frame": 10,
     "width": 697,
-    "height": 954
+    "height": 954,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3055,7 +3322,9 @@
     "path": "0.png",
     "frame": 0,
     "width": 549,
-    "height": 360
+    "height": 360,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3066,7 +3335,9 @@
     "path": "1.png",
     "frame": 1,
     "width": 172,
-    "height": 230
+    "height": 230,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3077,7 +3348,9 @@
     "path": "10.png",
     "frame": 2,
     "width": 936,
-    "height": 820
+    "height": 820,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3088,7 +3361,9 @@
     "path": "2.png",
     "frame": 3,
     "width": 145,
-    "height": 735
+    "height": 735,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3099,7 +3374,9 @@
     "path": "3.png",
     "frame": 4,
     "width": 318,
-    "height": 729
+    "height": 729,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3110,7 +3387,9 @@
     "path": "4.png",
     "frame": 5,
     "width": 387,
-    "height": 168
+    "height": 168,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3121,7 +3400,9 @@
     "path": "5.png",
     "frame": 6,
     "width": 395,
-    "height": 401
+    "height": 401,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3132,7 +3413,9 @@
     "path": "6.png",
     "frame": 7,
     "width": 293,
-    "height": 443
+    "height": 443,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3143,7 +3426,9 @@
     "path": "7.png",
     "frame": 8,
     "width": 500,
-    "height": 276
+    "height": 276,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3154,7 +3439,9 @@
     "path": "8.png",
     "frame": 9,
     "width": 309,
-    "height": 162
+    "height": 162,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3165,7 +3452,9 @@
     "path": "9.png",
     "frame": 10,
     "width": 134,
-    "height": 452
+    "height": 452,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3176,7 +3465,9 @@
     "path": "img.png",
     "frame": 0,
     "width": 10,
-    "height": 10
+    "height": 10,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3187,7 +3478,9 @@
     "path": "img.png",
     "frame": 0,
     "width": 10,
-    "height": 10
+    "height": 10,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3198,7 +3491,9 @@
     "path": "1.png",
     "frame": 0,
     "width": 569,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3209,7 +3504,9 @@
     "path": "1.png",
     "frame": 0,
     "width": 569,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3220,7 +3517,9 @@
     "path": "1.png",
     "frame": 0,
     "width": 569,
-    "height": 483
+    "height": 483,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3228,10 +3527,12 @@
   "pk": 494,
   "fields": {
     "data": 28,
-    "path": "0.png",
+    "path": "image_1.png",
     "frame": 0,
-    "width": 774,
-    "height": 220
+    "width": 55,
+    "height": 36,
+    "is_placeholder": true,
+    "real_frame": 23
   }
 },
 {
@@ -3239,43 +3540,389 @@
   "pk": 495,
   "fields": {
     "data": 28,
-    "path": "1.png",
+    "path": "image_14.png",
     "frame": 1,
-    "width": 198,
-    "height": 186
+    "width": 43,
+    "height": 64,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
   "model": "engine.image",
   "pk": 496,
   "fields": {
-    "data": 29,
-    "path": "0.png",
-    "frame": 0,
-    "width": 679,
-    "height": 530
+    "data": 28,
+    "path": "image_11.png",
+    "frame": 2,
+    "width": 91,
+    "height": 97,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
   "model": "engine.image",
   "pk": 497,
   "fields": {
-    "data": 29,
-    "path": "1.png",
-    "frame": 1,
-    "width": 994,
-    "height": 440
+    "data": 28,
+    "path": "image_7.png",
+    "frame": 3,
+    "width": 76,
+    "height": 71,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
   "model": "engine.image",
   "pk": 498,
   "fields": {
+    "data": 28,
+    "path": "image_4.png",
+    "frame": 4,
+    "width": 60,
+    "height": 100,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 499,
+  "fields": {
+    "data": 28,
+    "path": "image_2.png",
+    "frame": 5,
+    "width": 55,
+    "height": 72,
+    "is_placeholder": true,
+    "real_frame": 24
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 500,
+  "fields": {
+    "data": 28,
+    "path": "image_15.png",
+    "frame": 6,
+    "width": 60,
+    "height": 59,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 501,
+  "fields": {
+    "data": 28,
+    "path": "image_6.png",
+    "frame": 7,
+    "width": 70,
+    "height": 53,
+    "is_placeholder": true,
+    "real_frame": 26
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 502,
+  "fields": {
+    "data": 28,
+    "path": "image_1.png",
+    "frame": 8,
+    "width": 55,
+    "height": 36,
+    "is_placeholder": true,
+    "real_frame": 23
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 503,
+  "fields": {
+    "data": 28,
+    "path": "image_6.png",
+    "frame": 9,
+    "width": 70,
+    "height": 53,
+    "is_placeholder": true,
+    "real_frame": 26
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 504,
+  "fields": {
+    "data": 28,
+    "path": "image_10.png",
+    "frame": 10,
+    "width": 66,
+    "height": 96,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 505,
+  "fields": {
+    "data": 28,
+    "path": "image_18.png",
+    "frame": 11,
+    "width": 54,
+    "height": 89,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 506,
+  "fields": {
+    "data": 28,
+    "path": "image_0.png",
+    "frame": 12,
+    "width": 45,
+    "height": 92,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 507,
+  "fields": {
+    "data": 28,
+    "path": "image_3.png",
+    "frame": 13,
+    "width": 76,
+    "height": 52,
+    "is_placeholder": true,
+    "real_frame": 25
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 508,
+  "fields": {
+    "data": 28,
+    "path": "image_17.png",
+    "frame": 14,
+    "width": 65,
+    "height": 57,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 509,
+  "fields": {
+    "data": 28,
+    "path": "image_8.png",
+    "frame": 15,
+    "width": 31,
+    "height": 41,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 510,
+  "fields": {
+    "data": 28,
+    "path": "image_2.png",
+    "frame": 16,
+    "width": 55,
+    "height": 72,
+    "is_placeholder": true,
+    "real_frame": 24
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 511,
+  "fields": {
+    "data": 28,
+    "path": "image_16.png",
+    "frame": 17,
+    "width": 96,
+    "height": 58,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 512,
+  "fields": {
+    "data": 28,
+    "path": "image_13.png",
+    "frame": 18,
+    "width": 54,
+    "height": 63,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 513,
+  "fields": {
+    "data": 28,
+    "path": "image_5.png",
+    "frame": 19,
+    "width": 91,
+    "height": 100,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 514,
+  "fields": {
+    "data": 28,
+    "path": "image_12.png",
+    "frame": 20,
+    "width": 60,
+    "height": 32,
+    "is_placeholder": true,
+    "real_frame": 28
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 515,
+  "fields": {
+    "data": 28,
+    "path": "image_19.png",
+    "frame": 21,
+    "width": 97,
+    "height": 88,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 516,
+  "fields": {
+    "data": 28,
+    "path": "image_3.png",
+    "frame": 22,
+    "width": 76,
+    "height": 52,
+    "is_placeholder": true,
+    "real_frame": 25
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 517,
+  "fields": {
+    "data": 28,
+    "path": "image_1.png",
+    "frame": 23,
+    "width": 55,
+    "height": 36,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 518,
+  "fields": {
+    "data": 28,
+    "path": "image_2.png",
+    "frame": 24,
+    "width": 55,
+    "height": 72,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 519,
+  "fields": {
+    "data": 28,
+    "path": "image_3.png",
+    "frame": 25,
+    "width": 76,
+    "height": 52,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 520,
+  "fields": {
+    "data": 28,
+    "path": "image_6.png",
+    "frame": 26,
+    "width": 70,
+    "height": 53,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 521,
+  "fields": {
+    "data": 28,
+    "path": "image_9.png",
+    "frame": 27,
+    "width": 74,
+    "height": 92,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 522,
+  "fields": {
+    "data": 28,
+    "path": "image_12.png",
+    "frame": 28,
+    "width": 60,
+    "height": 32,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 523,
+  "fields": {
     "data": 29,
-    "path": "2.png",
-    "frame": 2,
-    "width": 431,
-    "height": 148
+    "path": "0.png",
+    "frame": 0,
+    "width": 774,
+    "height": 220,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 524,
+  "fields": {
+    "data": 29,
+    "path": "1.png",
+    "frame": 1,
+    "width": 198,
+    "height": 186,
+    "is_placeholder": false,
+    "real_frame": 0
   }
 },
 {
@@ -3286,7 +3933,7 @@
     "updated_date": "2022-11-03T13:57:25.895Z",
     "name": "project1",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "user6"
@@ -3307,7 +3954,7 @@
     "updated_date": "2022-06-30T08:56:45.601Z",
     "name": "project2",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "user2"
@@ -3390,7 +4037,7 @@
       "user1"
     ],
     "assignee": [
-      "business4"
+      "user10"
     ],
     "assignee_updated_date": null,
     "bug_tracker": "",
@@ -3569,7 +4216,7 @@
       "admin1"
     ],
     "assignee": [
-      "business1"
+      "user7"
     ],
     "assignee_updated_date": "2024-09-23T08:09:45.461Z",
     "bug_tracker": "",
@@ -3674,7 +4321,7 @@
     "name": "task_2_org2",
     "mode": "annotation",
     "owner": [
-      "business2"
+      "user8"
     ],
     "assignee": [
       "worker2"
@@ -3732,7 +4379,7 @@
     "name": "task1_in_project1",
     "mode": "annotation",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "admin1"
@@ -3761,7 +4408,7 @@
     "name": "task1_in_project2",
     "mode": "annotation",
     "owner": [
-      "business1"
+      "user7"
     ],
     "assignee": [
       "user5"
@@ -4148,7 +4795,7 @@
       "user3"
     ],
     "assignee": [
-      "business1"
+      "user7"
     ],
     "assignee_updated_date": "2024-09-23T10:51:45.525Z",
     "bug_tracker": "",
@@ -4224,10 +4871,10 @@
   "model": "engine.task",
   "pk": 29,
   "fields": {
-    "created_date": "2024-11-04T22:39:15.967Z",
-    "updated_date": "2024-11-04T22:40:08.217Z",
+    "created_date": "2024-10-01T12:36:21.364Z",
+    "updated_date": "2024-10-01T12:38:26.883Z",
     "project": null,
-    "name": "task with consensus jobs",
+    "name": "task with honeypots",
     "mode": "annotation",
     "owner": [
       "admin1"
@@ -4236,28 +4883,28 @@
     "assignee_updated_date": null,
     "bug_tracker": "",
     "overlap": 0,
-    "segment_size": 2,
-    "status": "completed",
+    "segment_size": 0,
+    "status": "annotation",
     "data": 28,
     "dimension": "2d",
     "subset": "",
-    "organization": null,
+    "organization": 2,
     "source_storage": null,
     "target_storage": null,
-    "consensus_jobs_per_regular_job": 2
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
   "model": "engine.task",
   "pk": 30,
   "fields": {
-    "created_date": "2024-11-04T22:40:51.104Z",
-    "updated_date": "2024-11-04T22:42:53.107Z",
+    "created_date": "2024-12-24T17:20:09.731Z",
+    "updated_date": "2024-12-24T17:21:49.968Z",
     "project": null,
     "name": "task with consensus jobs",
     "mode": "annotation",
     "owner": [
-      "user2"
+      "user1"
     ],
     "assignee": null,
     "assignee_updated_date": null,
@@ -4268,10 +4915,10 @@
     "data": 29,
     "dimension": "2d",
     "subset": "",
-    "organization": 2,
+    "organization": 1,
     "source_storage": null,
     "target_storage": null,
-    "consensus_jobs_per_regular_job": 3
+    "consensus_jobs_per_regular_job": 2
   }
 },
 {
@@ -5208,7 +5855,9 @@
   "fields": {
     "data": 6,
     "path": "/home/django/data/data/6/raw/test_pointcloud_pcd/related_images/000001_pcd/000001.png",
-    "primary_image": 360
+    "images": [
+      360
+    ]
   }
 },
 {
@@ -5218,6 +5867,7 @@
     "task": 2,
     "start_frame": 0,
     "stop_frame": 22,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5229,6 +5879,7 @@
     "task": 5,
     "start_frame": 0,
     "stop_frame": 24,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5240,6 +5891,7 @@
     "task": 6,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5251,6 +5903,7 @@
     "task": 7,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5262,6 +5915,7 @@
     "task": 8,
     "start_frame": 0,
     "stop_frame": 13,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5273,6 +5927,7 @@
     "task": 9,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5284,6 +5939,7 @@
     "task": 9,
     "start_frame": 5,
     "stop_frame": 9,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5295,6 +5951,7 @@
     "task": 9,
     "start_frame": 10,
     "stop_frame": 14,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5306,6 +5963,7 @@
     "task": 9,
     "start_frame": 15,
     "stop_frame": 19,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5317,6 +5975,7 @@
     "task": 11,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5328,6 +5987,7 @@
     "task": 13,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5339,6 +5999,7 @@
     "task": 14,
     "start_frame": 0,
     "stop_frame": 7,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5350,6 +6011,7 @@
     "task": 15,
     "start_frame": 0,
     "stop_frame": 24,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5361,6 +6023,7 @@
     "task": 17,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5372,6 +6035,7 @@
     "task": 18,
     "start_frame": 0,
     "stop_frame": 1,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5383,6 +6047,7 @@
     "task": 19,
     "start_frame": 0,
     "stop_frame": 1,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5394,6 +6059,7 @@
     "task": 20,
     "start_frame": 0,
     "stop_frame": 1,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5405,6 +6071,7 @@
     "task": 21,
     "start_frame": 0,
     "stop_frame": 5,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5416,6 +6083,7 @@
     "task": 21,
     "start_frame": 6,
     "stop_frame": 9,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5427,6 +6095,7 @@
     "task": 22,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5438,6 +6107,7 @@
     "task": 22,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "specific_frames",
     "frames": "0,1,2"
   }
@@ -5449,6 +6119,7 @@
     "task": 23,
     "start_frame": 0,
     "stop_frame": 4,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5460,6 +6131,7 @@
     "task": 23,
     "start_frame": 5,
     "stop_frame": 9,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5471,6 +6143,7 @@
     "task": 23,
     "start_frame": 10,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5482,6 +6155,7 @@
     "task": 23,
     "start_frame": 0,
     "stop_frame": 10,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "specific_frames",
     "frames": "4,5,7"
   }
@@ -5493,6 +6167,7 @@
     "task": 24,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5504,6 +6179,7 @@
     "task": 25,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5515,6 +6191,7 @@
     "task": 26,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5526,6 +6203,7 @@
     "task": 27,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5537,6 +6215,7 @@
     "task": 28,
     "start_frame": 0,
     "stop_frame": 0,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5547,7 +6226,8 @@
   "fields": {
     "task": 29,
     "start_frame": 0,
-    "stop_frame": 1,
+    "stop_frame": 7,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5556,9 +6236,10 @@
   "model": "engine.segment",
   "pk": 39,
   "fields": {
-    "task": 30,
-    "start_frame": 0,
-    "stop_frame": 1,
+    "task": 29,
+    "start_frame": 8,
+    "stop_frame": 15,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
     "type": "range",
     "frames": "[]"
   }
@@ -5567,9 +6248,34 @@
   "model": "engine.segment",
   "pk": 40,
   "fields": {
+    "task": 29,
+    "start_frame": 16,
+    "stop_frame": 22,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 41,
+  "fields": {
+    "task": 29,
+    "start_frame": 23,
+    "stop_frame": 28,
+    "chunks_updated_date": "2024-10-02T08:13:16.623Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 42,
+  "fields": {
     "task": 30,
-    "start_frame": 2,
-    "stop_frame": 2,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "chunks_updated_date": "2024-12-24T17:20:09.877Z",
     "type": "range",
     "frames": "[]"
   }
@@ -6068,12 +6774,12 @@
   "model": "engine.job",
   "pk": 38,
   "fields": {
-    "created_date": "2024-11-04T22:39:16.089Z",
-    "updated_date": "2024-11-04T22:40:08.216Z",
+    "created_date": "2024-10-01T12:36:21.476Z",
+    "updated_date": "2024-10-01T12:36:21.606Z",
     "segment": 38,
     "assignee": null,
     "assignee_updated_date": null,
-    "status": "completed",
+    "status": "annotation",
     "stage": "annotation",
     "state": "new",
     "type": "annotation",
@@ -6084,44 +6790,8 @@
   "model": "engine.job",
   "pk": 39,
   "fields": {
-    "created_date": "2024-11-04T22:39:16.095Z",
-    "updated_date": "2024-11-04T22:40:00.678Z",
-    "segment": 38,
-    "assignee": [
-      "dummy2"
-    ],
-    "assignee_updated_date": "2024-11-04T22:40:00.663Z",
-    "status": "completed",
-    "stage": "acceptance",
-    "state": "completed",
-    "type": "consensus",
-    "parent_job": 38
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 40,
-  "fields": {
-    "created_date": "2024-11-04T22:39:16.099Z",
-    "updated_date": "2024-11-04T22:40:02.933Z",
-    "segment": 38,
-    "assignee": [
-      "dummy1"
-    ],
-    "assignee_updated_date": "2024-11-04T22:40:02.920Z",
-    "status": "completed",
-    "stage": "acceptance",
-    "state": "completed",
-    "type": "consensus",
-    "parent_job": 38
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 41,
-  "fields": {
-    "created_date": "2024-11-04T22:40:51.214Z",
-    "updated_date": "2024-11-04T22:42:53.105Z",
+    "created_date": "2024-10-01T12:36:21.484Z",
+    "updated_date": "2024-10-01T12:36:21.628Z",
     "segment": 39,
     "assignee": null,
     "assignee_updated_date": null,
@@ -6129,6 +6799,38 @@
     "stage": "annotation",
     "state": "new",
     "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 40,
+  "fields": {
+    "created_date": "2024-10-01T12:36:21.491Z",
+    "updated_date": "2024-10-01T12:36:21.651Z",
+    "segment": 40,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 41,
+  "fields": {
+    "created_date": "2024-10-01T12:36:21.511Z",
+    "updated_date": "2024-10-01T12:38:26.967Z",
+    "segment": 41,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "ground_truth",
     "parent_job": null
   }
 },
@@ -6136,66 +6838,14 @@
   "model": "engine.job",
   "pk": 42,
   "fields": {
-    "created_date": "2024-11-04T22:40:51.221Z",
-    "updated_date": "2024-11-04T22:42:00.438Z",
-    "segment": 39,
+    "created_date": "2024-12-24T17:20:09.881Z",
+    "updated_date": "2024-12-24T17:21:49.958Z",
+    "segment": 42,
     "assignee": [
-      "worker3"
+      "user7"
     ],
-    "assignee_updated_date": "2024-11-04T22:41:21.453Z",
+    "assignee_updated_date": "2024-12-24T17:20:29.498Z",
     "status": "completed",
-    "stage": "acceptance",
-    "state": "completed",
-    "type": "consensus",
-    "parent_job": 41
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 43,
-  "fields": {
-    "created_date": "2024-11-04T22:40:51.225Z",
-    "updated_date": "2024-11-04T22:42:02.566Z",
-    "segment": 39,
-    "assignee": [
-      "worker2"
-    ],
-    "assignee_updated_date": "2024-11-04T22:41:24.769Z",
-    "status": "completed",
-    "stage": "acceptance",
-    "state": "completed",
-    "type": "consensus",
-    "parent_job": 41
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 44,
-  "fields": {
-    "created_date": "2024-11-04T22:40:51.230Z",
-    "updated_date": "2024-11-04T22:42:04.885Z",
-    "segment": 39,
-    "assignee": [
-      "user3"
-    ],
-    "assignee_updated_date": "2024-11-04T22:41:27.581Z",
-    "status": "completed",
-    "stage": "acceptance",
-    "state": "completed",
-    "type": "consensus",
-    "parent_job": 41
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 45,
-  "fields": {
-    "created_date": "2024-11-04T22:40:51.235Z",
-    "updated_date": "2024-11-04T22:42:53.009Z",
-    "segment": 40,
-    "assignee": null,
-    "assignee_updated_date": null,
-    "status": "annotation",
     "stage": "annotation",
     "state": "new",
     "type": "annotation",
@@ -6204,56 +6854,38 @@
 },
 {
   "model": "engine.job",
-  "pk": 46,
+  "pk": 43,
   "fields": {
-    "created_date": "2024-11-04T22:40:51.239Z",
-    "updated_date": "2024-11-04T22:41:38.856Z",
-    "segment": 40,
-    "assignee": [
-      "user5"
-    ],
-    "assignee_updated_date": "2024-11-04T22:41:10.805Z",
-    "status": "completed",
-    "stage": "acceptance",
-    "state": "completed",
-    "type": "consensus",
-    "parent_job": 45
-  }
-},
-{
-  "model": "engine.job",
-  "pk": 47,
-  "fields": {
-    "created_date": "2024-11-04T22:40:51.243Z",
-    "updated_date": "2024-11-04T22:41:40.791Z",
-    "segment": 40,
+    "created_date": "2024-12-24T17:20:09.889Z",
+    "updated_date": "2024-12-24T17:20:41.226Z",
+    "segment": 42,
     "assignee": [
       "worker2"
     ],
-    "assignee_updated_date": "2024-11-04T22:41:14.393Z",
-    "status": "completed",
-    "stage": "acceptance",
+    "assignee_updated_date": "2024-12-24T17:20:32.968Z",
+    "status": "annotation",
+    "stage": "annotation",
     "state": "completed",
     "type": "consensus",
-    "parent_job": 45
+    "parent_job": 42
   }
 },
 {
   "model": "engine.job",
-  "pk": 48,
+  "pk": 44,
   "fields": {
-    "created_date": "2024-11-04T22:40:51.247Z",
-    "updated_date": "2024-11-04T22:41:42.888Z",
-    "segment": 40,
+    "created_date": "2024-12-24T17:20:09.893Z",
+    "updated_date": "2024-12-24T17:20:39.362Z",
+    "segment": 42,
     "assignee": [
-      "worker3"
+      "worker1"
     ],
-    "assignee_updated_date": "2024-11-04T22:41:17.206Z",
-    "status": "completed",
-    "stage": "acceptance",
+    "assignee_updated_date": "2024-12-24T17:20:35.006Z",
+    "status": "annotation",
+    "stage": "annotation",
     "state": "completed",
     "type": "consensus",
-    "parent_job": 45
+    "parent_job": 42
   }
 },
 {
@@ -7090,6 +7722,18 @@
   "fields": {
     "task": 29,
     "project": null,
+    "name": "label",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 78,
+  "fields": {
+    "task": 30,
+    "project": null,
     "name": "human",
     "color": "#c080e0",
     "type": "skeleton",
@@ -7098,108 +7742,96 @@
 },
 {
   "model": "engine.label",
-  "pk": 78,
+  "pk": 79,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
     "name": "1",
     "color": "#d12345",
     "type": "points",
-    "parent": 77
-  }
-},
-{
-  "model": "engine.label",
-  "pk": 79,
-  "fields": {
-    "task": 29,
-    "project": null,
-    "name": "2",
-    "color": "#350dea",
-    "type": "points",
-    "parent": 77
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 80,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "3",
-    "color": "#479ffe",
+    "name": "2",
+    "color": "#350dea",
     "type": "points",
-    "parent": 77
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 81,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "4",
-    "color": "#4a649f",
+    "name": "3",
+    "color": "#479ffe",
     "type": "points",
-    "parent": 77
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 82,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "5",
-    "color": "#478144",
+    "name": "4",
+    "color": "#4a649f",
     "type": "points",
-    "parent": 77
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 83,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "6",
-    "color": "#57236b",
+    "name": "5",
+    "color": "#478144",
     "type": "points",
-    "parent": 77
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 84,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "7",
-    "color": "#1cdda5",
+    "name": "6",
+    "color": "#57236b",
     "type": "points",
-    "parent": 77
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 85,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "cat",
-    "color": "#6080c0",
-    "type": "any",
-    "parent": null
+    "name": "7",
+    "color": "#1cdda5",
+    "type": "points",
+    "parent": 78
   }
 },
 {
   "model": "engine.label",
   "pk": 86,
   "fields": {
-    "task": 29,
+    "task": 30,
     "project": null,
-    "name": "dog",
-    "color": "#406040",
+    "name": "cat",
+    "color": "#6080c0",
     "type": "any",
     "parent": null
   }
@@ -7212,18 +7844,6 @@
     "project": null,
     "name": "dog",
     "color": "#406040",
-    "type": "any",
-    "parent": null
-  }
-},
-{
-  "model": "engine.label",
-  "pk": 88,
-  "fields": {
-    "task": 30,
-    "project": null,
-    "name": "cat",
-    "color": "#6080c0",
     "type": "any",
     "parent": null
   }
@@ -7288,8 +7908,8 @@
   "model": "engine.skeleton",
   "pk": 8,
   "fields": {
-    "root": 77,
-    "svg": "<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"28.118427276611328\" y2=\"34.79792022705078\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"2\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"41.1402587890625\" y2=\"24.113340377807617\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"1\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"59.003536224365234\" y2=\"34.464027404785156\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"3\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"42.97666931152344\" y2=\"35.29875946044922\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"6\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"57.000179290771484\" y2=\"55.16539764404297\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"33.460716247558594\" y1=\"54.998451232910156\" x2=\"43.14361572265625\" y2=\"44.64776611328125\" data-type=\"edge\" data-node-from=\"4\" data-node-to=\"7\"></line>\n<circle r=\"0.75\" cx=\"41.1402587890625\" cy=\"24.113340377807617\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"78\"></circle>\n<circle r=\"0.75\" cx=\"28.118427276611328\" cy=\"34.79792022705078\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"59.003536224365234\" cy=\"34.464027404785156\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"33.460716247558594\" cy=\"54.998451232910156\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"57.000179290771484\" cy=\"55.16539764404297\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"82\"></circle>\n<circle r=\"0.75\" cx=\"42.97666931152344\" cy=\"35.29875946044922\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"83\"></circle>\n<circle r=\"0.75\" cx=\"43.14361572265625\" cy=\"44.64776611328125\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"84\"></circle>"
+    "root": 78,
+    "svg": "<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"28.118427276611328\" y2=\"34.79792022705078\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"2\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"41.1402587890625\" y2=\"24.113340377807617\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"1\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"59.003536224365234\" y2=\"34.464027404785156\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"3\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"42.97666931152344\" y2=\"35.29875946044922\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"6\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"57.000179290771484\" y2=\"55.16539764404297\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"33.460716247558594\" y1=\"54.998451232910156\" x2=\"43.14361572265625\" y2=\"44.64776611328125\" data-type=\"edge\" data-node-from=\"4\" data-node-to=\"7\"></line>\n<circle r=\"0.75\" cx=\"41.1402587890625\" cy=\"24.113340377807617\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"28.118427276611328\" cy=\"34.79792022705078\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"59.003536224365234\" cy=\"34.464027404785156\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"33.460716247558594\" cy=\"54.998451232910156\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"82\"></circle>\n<circle r=\"0.75\" cx=\"57.000179290771484\" cy=\"55.16539764404297\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"83\"></circle>\n<circle r=\"0.75\" cx=\"42.97666931152344\" cy=\"35.29875946044922\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"84\"></circle>\n<circle r=\"0.75\" cx=\"43.14361572265625\" cy=\"44.64776611328125\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"85\"></circle>"
   }
 },
 {
@@ -7446,6 +8066,18 @@
     "input_type": "radio",
     "default_value": "1",
     "values": "1\n2"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 15,
+  "fields": {
+    "label": 77,
+    "name": "id",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "",
+    "values": ""
   }
 },
 {
@@ -10126,10 +10758,406 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 191,
+  "pk": 169,
+  "fields": {
+    "job": 38,
+    "label": 77,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.650000000003274,13.100000000002183,31.850000000004002,18.900000000001455",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 170,
+  "fields": {
+    "job": 38,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.650000000003274,10.500000000001819,28.650000000003274,15.200000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 171,
+  "fields": {
+    "job": 38,
+    "label": 77,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.850000000002183,19.50000000000182,27.05000000000291,24.900000000001455",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 172,
+  "fields": {
+    "job": 38,
+    "label": 77,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.25000000000182,16.50000000000182,40.95000000000255,23.900000000001455",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 173,
   "fields": {
     "job": 39,
-    "label": 86,
+    "label": 77,
+    "frame": 8,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "14.650000000003274,10.000000000001819,25.750000000003638,17.30000000000109",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 174,
+  "fields": {
+    "job": 39,
+    "label": 77,
+    "frame": 8,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "30.350000000002183,18.700000000002547,43.05000000000291,26.400000000003274",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 175,
+  "fields": {
+    "job": 39,
+    "label": 77,
+    "frame": 9,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "9.200000000002547,34.35000000000218,21.900000000003274,38.55000000000291",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 176,
+  "fields": {
+    "job": 39,
+    "label": 77,
+    "frame": 9,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "40.900390625,29.0498046875,48.80000000000291,30.350000000002183,45.10000000000218,39.25000000000182,45.70000000000255,24.450000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 177,
+  "fields": {
+    "job": 39,
+    "label": 77,
+    "frame": 12,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "16.791015625,32.8505859375,27.858705213058784,37.01258996859542,21.633141273523506,39.77950727505595",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 178,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 16,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "29.0498046875,14.2998046875,30.350000000002183,22.00000000000182,20.650000000003274,21.600000000002183,20.650000000003274,11.30000000000291",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 179,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 17,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "51.2001953125,10.900390625,56.60000000000218,15.700000000002547,48.400000000003274,20.400000000003274",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 180,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 20,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "37.2998046875,7.7001953125,42.400000000003274,11.900000000003274,35.80000000000291,17.200000000002547,28.400000000003274,8.80000000000291,37.400000000003274,12.100000000002183",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 181,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 20,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.600000000002183,14.900000000003274,27.200000000002547,21.600000000004002",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 182,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 21,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "43.15465253950242,24.59525439814206,55.395253809205315,35.071444674014856",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 183,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 22,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "38.50000000000182,9.600000000002183,51.80000000000109,17.100000000002183",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 184,
+  "fields": {
+    "job": 40,
+    "label": 77,
+    "frame": 22,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "52.10000000000218,17.30000000000291,59.400000000001455,21.500000000003638",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 185,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 23,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 186,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 24,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 187,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 24,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 188,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 25,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 189,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 27,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 190,
+  "fields": {
+    "job": 41,
+    "label": 77,
+    "frame": 27,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 213,
+  "fields": {
+    "job": 43,
+    "label": 87,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10144,28 +11172,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 192,
+  "pk": 214,
   "fields": {
-    "job": 39,
+    "job": 43,
     "label": 86,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "ellipse",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "605.1826171875,58.802734375,692.0869140625,24.93359375",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 193,
-  "fields": {
-    "job": 39,
-    "label": 85,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10180,28 +11190,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 194,
+  "pk": 215,
   "fields": {
-    "job": 39,
-    "label": 77,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "skeleton",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 195,
-  "fields": {
-    "job": 39,
-    "label": 85,
+    "job": 43,
+    "label": 86,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10216,10 +11208,46 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 196,
+  "pk": 216,
   "fields": {
-    "job": 39,
+    "job": 43,
     "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 217,
+  "fields": {
+    "job": 43,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "605.1826171875,58.802734375,692.0869140625,24.93359375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 218,
+  "fields": {
+    "job": 43,
+    "label": 79,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10229,33 +11257,15 @@
     "z_order": 0,
     "points": "352.4950283371236,40.1455078125",
     "rotation": 0.0,
-    "parent": 194
+    "parent": 216
   }
 },
 {
   "model": "engine.labeledshape",
-  "pk": 197,
+  "pk": 219,
   "fields": {
-    "job": 39,
-    "label": 79,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "300.91015625,90.73596507347065",
-    "rotation": 0.0,
-    "parent": 194
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 198,
-  "fields": {
-    "job": 39,
-    "label": 80,
+    "job": 43,
+    "label": 81,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10265,69 +11275,15 @@
     "z_order": 0,
     "points": "423.2588744731893,89.15501469517767",
     "rotation": 0.0,
-    "parent": 194
+    "parent": 216
   }
 },
 {
   "model": "engine.labeledshape",
-  "pk": 199,
+  "pk": 220,
   "fields": {
-    "job": 39,
-    "label": 81,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "322.0731772087074,186.38353520916098",
-    "rotation": 0.0,
-    "parent": 194
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 200,
-  "fields": {
-    "job": 39,
-    "label": 82,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "415.3227472805229,187.17401039830838",
-    "rotation": 0.0,
-    "parent": 194
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 201,
-  "fields": {
-    "job": 39,
-    "label": 83,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "359.769811597067,93.10739064091285",
-    "rotation": 0.0,
-    "parent": 194
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 202,
-  "fields": {
-    "job": 39,
-    "label": 84,
+    "job": 43,
+    "label": 85,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10337,33 +11293,87 @@
     "z_order": 0,
     "points": "360.43115552979,137.37403735759472",
     "rotation": 0.0,
-    "parent": 194
+    "parent": 216
   }
 },
 {
   "model": "engine.labeledshape",
-  "pk": 203,
+  "pk": 221,
   "fields": {
-    "job": 40,
-    "label": 86,
+    "job": 43,
+    "label": 80,
     "frame": 0,
     "group": 0,
-    "source": "consensus",
-    "type": "rectangle",
+    "source": "manual",
+    "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "23.66,23.87,132.88,88.45",
+    "points": "300.91015625,90.73596507347065",
     "rotation": 0.0,
-    "parent": null
+    "parent": 216
   }
 },
 {
   "model": "engine.labeledshape",
-  "pk": 204,
+  "pk": 222,
   "fields": {
-    "job": 40,
-    "label": 86,
+    "job": 43,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.3227472805229,187.17401039830838",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 223,
+  "fields": {
+    "job": 43,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.0731772087074,186.38353520916098",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 224,
+  "fields": {
+    "job": 43,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.769811597067,93.10739064091285",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 225,
+  "fields": {
+    "job": 44,
+    "label": 87,
     "frame": 0,
     "group": 0,
     "source": "consensus",
@@ -10378,388 +11388,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 205,
-  "fields": {
-    "job": 40,
-    "label": 85,
-    "frame": 0,
-    "group": 0,
-    "source": "consensus",
-    "type": "polygon",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 206,
-  "fields": {
-    "job": 40,
-    "label": 77,
-    "frame": 0,
-    "group": 0,
-    "source": "consensus",
-    "type": "skeleton",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 207,
-  "fields": {
-    "job": 40,
-    "label": 85,
-    "frame": 0,
-    "group": 0,
-    "source": "consensus",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 208,
-  "fields": {
-    "job": 40,
-    "label": 77,
-    "frame": 1,
-    "group": 0,
-    "source": "consensus",
-    "type": "skeleton",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "[]",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 209,
-  "fields": {
-    "job": 40,
-    "label": 85,
-    "frame": 1,
-    "group": 0,
-    "source": "consensus",
-    "type": "polyline",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "143.08,46.81,109.55,46.81,74.54,50.82,74.54,85.61,56.41,95.95,80.45,110.71,98.37,106.28",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 210,
-  "fields": {
-    "job": 40,
-    "label": 86,
-    "frame": 1,
-    "group": 0,
-    "source": "consensus",
-    "type": "polyline",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "19.37,27.18,67.67,27.6,94.24,48.9,82.43,64.29,70.83,87.7,36.03,78.63,13.26,71.46",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 211,
-  "fields": {
-    "job": 40,
-    "label": 78,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "352.5,40.15",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 212,
-  "fields": {
-    "job": 40,
-    "label": 79,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "300.91,90.74",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 213,
-  "fields": {
-    "job": 40,
-    "label": 80,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "423.26,89.16",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 214,
-  "fields": {
-    "job": 40,
-    "label": 81,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "322.07,186.38",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 215,
-  "fields": {
-    "job": 40,
-    "label": 82,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "415.32,187.17",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 216,
-  "fields": {
-    "job": 40,
-    "label": 83,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "359.77,93.11",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 217,
-  "fields": {
-    "job": 40,
-    "label": 84,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "360.43,137.37",
-    "rotation": 0.0,
-    "parent": 206
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 218,
-  "fields": {
-    "job": 40,
-    "label": 79,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "0.52,135.44",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 219,
-  "fields": {
-    "job": 40,
-    "label": 84,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "31.91,157.85",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 220,
-  "fields": {
-    "job": 40,
-    "label": 82,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "60.87,181.78",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 221,
-  "fields": {
-    "job": 40,
-    "label": 80,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "65.05,134.68",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 222,
-  "fields": {
-    "job": 40,
-    "label": 83,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "31.57,136.58",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 223,
-  "fields": {
-    "job": 40,
-    "label": 81,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "11.68,181.4",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 224,
-  "fields": {
-    "job": 40,
-    "label": 78,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "27.73,111.13",
-    "rotation": 0.0,
-    "parent": 208
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 225,
-  "fields": {
-    "job": 38,
-    "label": 86,
-    "frame": 0,
-    "group": 0,
-    "source": "consensus",
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "23.66,23.87,132.88,88.45",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
   "pk": 226,
   "fields": {
-    "job": 38,
-    "label": 85,
+    "job": 44,
+    "label": 86,
     "frame": 0,
     "group": 0,
     "source": "consensus",
@@ -10776,8 +11408,26 @@
   "model": "engine.labeledshape",
   "pk": 227,
   "fields": {
-    "job": 38,
-    "label": 85,
+    "job": 44,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.66,23.87,132.88,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 228,
+  "fields": {
+    "job": 44,
+    "label": 86,
     "frame": 0,
     "group": 0,
     "source": "consensus",
@@ -10792,10 +11442,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 228,
+  "pk": 229,
   "fields": {
-    "job": 38,
-    "label": 77,
+    "job": 44,
+    "label": 78,
     "frame": 0,
     "group": 0,
     "source": "consensus",
@@ -10810,28 +11460,10 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 229,
-  "fields": {
-    "job": 38,
-    "label": 86,
-    "frame": 0,
-    "group": 0,
-    "source": "consensus",
-    "type": "mask",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "75,31,139,52,122,67,108,79,97,89,88,97,80,105,73,111,66,118,61,123,55,129,50,133,46,138,40,142,37,146,34,149,30,153,27,156,23,159,20,162,18,165,15,167,13,169,11,171,10,171,9,173,7,175,5,177,4,177,3,179,2,179,2,179,1,1267,1,179,2,179,2,179,3,177,5,175,6,175,7,173,9,171,10,171,11,169,13,167,15,165,17,162,21,159,23,157,26,153,30,149,33,146,37,142,42,138,45,133,50,129,55,123,60,118,67,111,73,105,80,97,88,89,97,79,108,67,121,52,140,31,75,514,25,694,95",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
   "pk": 230,
   "fields": {
-    "job": 38,
-    "label": 77,
+    "job": 44,
+    "label": 78,
     "frame": 1,
     "group": 0,
     "source": "consensus",
@@ -10848,8 +11480,8 @@
   "model": "engine.labeledshape",
   "pk": 231,
   "fields": {
-    "job": 38,
-    "label": 85,
+    "job": 44,
+    "label": 86,
     "frame": 1,
     "group": 0,
     "source": "consensus",
@@ -10866,8 +11498,8 @@
   "model": "engine.labeledshape",
   "pk": 232,
   "fields": {
-    "job": 38,
-    "label": 86,
+    "job": 44,
+    "label": 87,
     "frame": 1,
     "group": 0,
     "source": "consensus",
@@ -10884,62 +11516,8 @@
   "model": "engine.labeledshape",
   "pk": 233,
   "fields": {
-    "job": 38,
-    "label": 78,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "352.5,40.15",
-    "rotation": 0.0,
-    "parent": 228
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 234,
-  "fields": {
-    "job": 38,
+    "job": 44,
     "label": 80,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "423.26,89.16",
-    "rotation": 0.0,
-    "parent": 228
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 235,
-  "fields": {
-    "job": 38,
-    "label": 84,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "360.43,137.37",
-    "rotation": 0.0,
-    "parent": 228
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 236,
-  "fields": {
-    "job": 38,
-    "label": 79,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10949,33 +11527,15 @@
     "z_order": 0,
     "points": "300.91,90.74",
     "rotation": 0.0,
-    "parent": 228
+    "parent": 229
   }
 },
 {
   "model": "engine.labeledshape",
-  "pk": 237,
+  "pk": 234,
   "fields": {
-    "job": 38,
+    "job": 44,
     "label": 82,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "points",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "415.32,187.17",
-    "rotation": 0.0,
-    "parent": 228
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 238,
-  "fields": {
-    "job": 38,
-    "label": 81,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -10985,15 +11545,69 @@
     "z_order": 0,
     "points": "322.07,186.38",
     "rotation": 0.0,
-    "parent": 228
+    "parent": 229
   }
 },
 {
   "model": "engine.labeledshape",
-  "pk": 239,
+  "pk": 235,
   "fields": {
-    "job": 38,
+    "job": 44,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.26,89.16",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 236,
+  "fields": {
+    "job": 44,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.5,40.15",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 237,
+  "fields": {
+    "job": 44,
     "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.32,187.17",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 238,
+  "fields": {
+    "job": 44,
+    "label": 84,
     "frame": 0,
     "group": 0,
     "source": "manual",
@@ -11003,15 +11617,33 @@
     "z_order": 0,
     "points": "359.77,93.11",
     "rotation": 0.0,
-    "parent": 228
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 239,
+  "fields": {
+    "job": 44,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43,137.37",
+    "rotation": 0.0,
+    "parent": 229
   }
 },
 {
   "model": "engine.labeledshape",
   "pk": 240,
   "fields": {
-    "job": 38,
-    "label": 84,
+    "job": 44,
+    "label": 85,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11028,8 +11660,8 @@
   "model": "engine.labeledshape",
   "pk": 241,
   "fields": {
-    "job": 38,
-    "label": 79,
+    "job": 44,
+    "label": 80,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11046,8 +11678,8 @@
   "model": "engine.labeledshape",
   "pk": 242,
   "fields": {
-    "job": 38,
-    "label": 81,
+    "job": 44,
+    "label": 82,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11064,8 +11696,8 @@
   "model": "engine.labeledshape",
   "pk": 243,
   "fields": {
-    "job": 38,
-    "label": 80,
+    "job": 44,
+    "label": 81,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11082,8 +11714,8 @@
   "model": "engine.labeledshape",
   "pk": 244,
   "fields": {
-    "job": 38,
-    "label": 83,
+    "job": 44,
+    "label": 84,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11100,8 +11732,8 @@
   "model": "engine.labeledshape",
   "pk": 245,
   "fields": {
-    "job": 38,
-    "label": 82,
+    "job": 44,
+    "label": 83,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11118,8 +11750,8 @@
   "model": "engine.labeledshape",
   "pk": 246,
   "fields": {
-    "job": 38,
-    "label": 78,
+    "job": 44,
+    "label": 79,
     "frame": 1,
     "group": 0,
     "source": "manual",
@@ -11134,18 +11766,90 @@
 },
 {
   "model": "engine.labeledshape",
-  "pk": 251,
+  "pk": 247,
   "fields": {
-    "job": 46,
-    "label": 87,
-    "frame": 2,
+    "job": 42,
+    "label": 86,
+    "frame": 0,
     "group": 0,
-    "source": "manual",
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 248,
+  "fields": {
+    "job": 42,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.66,23.87,132.88,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 249,
+  "fields": {
+    "job": 42,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "11.1064453125,18.1533203125,38.59236982132461,18.73829921660399,51.45804149448668,36.282396952734416,65.20091805445554,53.24169143099425,74.26536855145605,24.586331795313527,84.79182719313394,40.37601975783036,98.5347037531028,16.10668455618361,102.62832655820057,21.66231550595876",
+    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 250,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 251,
+  "fields": {
+    "job": 42,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "75,31,139,52,122,67,108,79,97,89,88,97,80,105,73,111,66,118,61,123,55,129,50,133,46,138,40,142,37,146,34,149,30,153,27,156,23,159,20,162,18,165,15,167,13,169,11,171,10,171,9,173,7,175,5,177,4,177,3,179,2,179,2,179,1,1267,1,179,2,179,2,179,3,177,5,175,6,175,7,173,9,171,10,171,11,169,13,167,15,165,17,162,21,159,23,157,26,153,30,149,33,146,37,142,42,138,45,133,50,129,55,123,60,118,67,111,73,105,80,97,88,89,97,79,108,67,121,52,140,31,75,514,25,694,95",
     "rotation": 0.0,
     "parent": null
   }
@@ -11154,126 +11858,126 @@
   "model": "engine.labeledshape",
   "pk": 252,
   "fields": {
-    "job": 46,
-    "label": 88,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "ellipse",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "189.4755859375,100.900390625,222.224609375,78.677734375",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 253,
-  "fields": {
-    "job": 46,
-    "label": 88,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "polyline",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "167.541015625,46.5166015625,186.25519243375675,60.55173215438117,204.96889668562835,44.177240933991925,224.26740419537236,57.6277158650264,240.3494937868254,36.5747985816688,259.063198038697,51.48728165738066,273.0984762276021,34.235585550184624,280.7009185799252,45.63924907867113",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 254,
-  "fields": {
-    "job": 46,
-    "label": 87,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "polygon",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "317.2509765625,63.18359375,299.1222212028624,74.58701034328624,299.707024460733,89.49949341899628,322.5143515177024,92.71591133728725,327.48517920960694,79.55783803518898",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 255,
-  "fields": {
-    "job": 47,
-    "label": 87,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "polyline",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "180.4072265625,50.3173828125,196.78165107543464,61.13653541225176,208.4777162328537,45.34684744973492,234.79386283705026,61.13653541225176,241.51910030256659,45.05444582079872,269.8820583093111,52.65688817312184,276.02249251695685,43.592437676121335,295.61340165563524,47.3936588522829",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 256,
-  "fields": {
-    "job": 47,
-    "label": 87,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "ellipse",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "192.5458984375,106.017578125,231.8740234375,81.89453125",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 257,
-  "fields": {
-    "job": 47,
-    "label": 88,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "polygon",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "330.1171875,47.978515625,313.15749939176567,59.674527267574376,319.5903352283476,72.54019894073645,351.1697111533831,79.85023966412518,351.1697111533831,57.6277158650264",
-    "rotation": 0.0,
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 258,
-  "fields": {
-    "job": 47,
-    "label": 88,
-    "frame": 2,
+    "job": 42,
+    "label": 79,
+    "frame": 0,
     "group": 0,
     "source": "manual",
     "type": "points",
     "occluded": false,
     "outside": false,
     "z_order": 0,
-    "points": "11.1064453125,16.984375,35.66835353196984,17.276291071926607,41.20000000000073,46.20000000000073,57.0,72.80000000000109,72.5,33.900000000001455,90.10000000000036,50.600000000000364,102.92072818713677,15.814282927249224,107.89155587903952,19.90790573234517",
+    "points": "352.5,40.15",
     "rotation": 0.0,
-    "parent": null
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 253,
+  "fields": {
+    "job": 42,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91,90.74",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 254,
+  "fields": {
+    "job": 42,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.77,93.11",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 255,
+  "fields": {
+    "job": 42,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.26,89.16",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 256,
+  "fields": {
+    "job": 42,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.32,187.17",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 257,
+  "fields": {
+    "job": 42,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43,137.37",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 258,
+  "fields": {
+    "job": 42,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.07,186.38",
+    "rotation": 0.0,
+    "parent": 250
   }
 },
 {
@@ -12420,6 +13124,204 @@
   }
 },
 {
+  "model": "engine.labeledshapeattributeval",
+  "pk": 128,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame1 n1",
+    "shape": 169
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 129,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame2 n1",
+    "shape": 170
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 130,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame2 n2",
+    "shape": 171
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 131,
+  "fields": {
+    "spec": 15,
+    "value": "j1 frame6 n1",
+    "shape": 172
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 132,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame1 n1",
+    "shape": 173
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 133,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame1 n2",
+    "shape": 174
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 134,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame2 n1",
+    "shape": 175
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 135,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame2 n2",
+    "shape": 176
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 136,
+  "fields": {
+    "spec": 15,
+    "value": "j2 frame5 n1",
+    "shape": 177
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 137,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame1 n1",
+    "shape": 178
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 138,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame2 n1",
+    "shape": 179
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 139,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame5 n1",
+    "shape": 180
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 140,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame5 n2",
+    "shape": 181
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 141,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame6 n1",
+    "shape": 182
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 142,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame7 n1",
+    "shape": 183
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 143,
+  "fields": {
+    "spec": 15,
+    "value": "j3 frame7 n2",
+    "shape": 184
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 144,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame1 n1",
+    "shape": 185
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 145,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame2 n2",
+    "shape": 186
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 147,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame3 n1",
+    "shape": 188
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 148,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame5 n1",
+    "shape": 189
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 149,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame5 n2",
+    "shape": 190
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 150,
+  "fields": {
+    "spec": 15,
+    "value": "gt frame2 n1",
+    "shape": 187
+  }
+},
+{
   "model": "engine.labeledtrack",
   "pk": 1,
   "fields": {
@@ -12597,66 +13499,6 @@
     "group": 0,
     "source": "manual",
     "parent": 11
-  }
-},
-{
-  "model": "engine.labeledtrack",
-  "pk": 18,
-  "fields": {
-    "job": 42,
-    "label": 87,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledtrack",
-  "pk": 19,
-  "fields": {
-    "job": 42,
-    "label": 88,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledtrack",
-  "pk": 20,
-  "fields": {
-    "job": 43,
-    "label": 87,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledtrack",
-  "pk": 21,
-  "fields": {
-    "job": 43,
-    "label": 88,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "parent": null
-  }
-},
-{
-  "model": "engine.labeledtrack",
-  "pk": 22,
-  "fields": {
-    "job": 41,
-    "label": 87,
-    "frame": 0,
-    "group": 0,
-    "source": "consensus",
-    "parent": null
   }
 },
 {
@@ -12958,83 +13800,14 @@
   }
 },
 {
-  "model": "engine.trackedshape",
-  "pk": 23,
-  "fields": {
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "24.645527629965727,46.27817962033987,177.87681256178075,160.45050956953492",
-    "rotation": 0.0,
-    "track": 18,
-    "frame": 0
-  }
-},
-{
-  "model": "engine.trackedshape",
-  "pk": 24,
-  "fields": {
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "147.23055557541738,206.11944154921366,266.21014152247335,308.2736315037564",
-    "rotation": 0.0,
-    "track": 19,
-    "frame": 0
-  }
-},
-{
-  "model": "engine.trackedshape",
-  "pk": 25,
-  "fields": {
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "15.631922633976501,29.452783627826648,148.4323695748826,140.019671578626",
-    "rotation": 0.0,
-    "track": 20,
-    "frame": 0
-  }
-},
-{
-  "model": "engine.trackedshape",
-  "pk": 26,
-  "fields": {
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "96.75436759787954,179.6795335609786,226.55027954012257,292.0491425109758",
-    "rotation": 0.0,
-    "track": 21,
-    "frame": 0
-  }
-},
-{
-  "model": "engine.trackedshape",
-  "pk": 27,
-  "fields": {
-    "type": "rectangle",
-    "occluded": false,
-    "outside": false,
-    "z_order": 0,
-    "points": "24.65,46.28,177.88,160.45",
-    "rotation": 0.0,
-    "track": 22,
-    "frame": 0
-  }
-},
-{
   "model": "engine.profile",
   "pk": 1,
   "fields": {
     "user": [
       "admin1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": true
   }
 },
 {
@@ -13044,7 +13817,8 @@
     "user": [
       "user1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13054,7 +13828,8 @@
     "user": [
       "user2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13064,7 +13839,8 @@
     "user": [
       "user3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13074,7 +13850,8 @@
     "user": [
       "user4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": true
   }
 },
 {
@@ -13084,7 +13861,8 @@
     "user": [
       "worker1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13094,7 +13872,8 @@
     "user": [
       "worker2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13104,7 +13883,8 @@
     "user": [
       "worker3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13114,7 +13894,8 @@
     "user": [
       "worker4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": true
   }
 },
 {
@@ -13122,9 +13903,10 @@
   "pk": 10,
   "fields": {
     "user": [
-      "business1"
+      "user7"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13132,9 +13914,10 @@
   "pk": 11,
   "fields": {
     "user": [
-      "business2"
+      "user8"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13142,9 +13925,10 @@
   "pk": 12,
   "fields": {
     "user": [
-      "business3"
+      "user9"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13152,9 +13936,10 @@
   "pk": 13,
   "fields": {
     "user": [
-      "business4"
+      "user10"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13164,7 +13949,8 @@
     "user": [
       "dummy1"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13174,7 +13960,8 @@
     "user": [
       "dummy2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13184,7 +13971,8 @@
     "user": [
       "dummy3"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13194,7 +13982,8 @@
     "user": [
       "dummy4"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13204,7 +13993,8 @@
     "user": [
       "admin2"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": true
   }
 },
 {
@@ -13214,7 +14004,8 @@
     "user": [
       "user5"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13224,7 +14015,8 @@
     "user": [
       "user6"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13234,7 +14026,8 @@
     "user": [
       "lonely_user"
     ],
-    "rating": 0.0
+    "rating": 0.0,
+    "has_analytics_access": false
   }
 },
 {
@@ -13263,7 +14056,7 @@
     "position": "98.48046875, 696.72265625, 326.1220703125, 841.5859375",
     "job": 9,
     "owner": [
-      "business2"
+      "user8"
     ],
     "assignee": null,
     "resolved": false
@@ -13279,7 +14072,7 @@
     "position": "108.1845703125, 235.0, 720.0087890625, 703.3505859375",
     "job": 16,
     "owner": [
-      "business2"
+      "user8"
     ],
     "assignee": null,
     "resolved": false
@@ -13353,7 +14146,7 @@
     "updated_date": "2022-03-16T11:07:22.173Z",
     "issue": 2,
     "owner": [
-      "business2"
+      "user8"
     ],
     "message": "Something should be here"
   }
@@ -13366,7 +14159,7 @@
     "updated_date": "2022-03-16T11:08:18.370Z",
     "issue": 3,
     "owner": [
-      "business2"
+      "user8"
     ],
     "message": "Another one issue"
   }
@@ -13450,7 +14243,7 @@
     "resource": "private",
     "display_name": "Bucket 2",
     "owner": [
-      "business2"
+      "user8"
     ],
     "credentials": "minio_access_key minio_secret_key",
     "credentials_type": "KEY_SECRET_KEY_PAIR",
@@ -13914,7 +14707,7 @@
     "is_active": true,
     "enable_ssl": true,
     "owner": [
-      "business1"
+      "user7"
     ],
     "project": 1,
     "organization": null
@@ -14033,9 +14826,9 @@
         "user": {
           "id": 11,
           "url": "http://localhost:8080/api/users/11",
-          "username": "business2",
-          "last_name": "Second",
-          "first_name": "Business"
+          "username": "user8",
+          "last_name": "Eighth",
+          "first_name": "User"
         },
         "owner": {
           "id": 2,
@@ -14122,9 +14915,9 @@
         "user": {
           "id": 11,
           "url": "http://localhost:8080/api/users/11",
-          "username": "business2",
-          "last_name": "Second",
-          "first_name": "Business"
+          "username": "user8",
+          "last_name": "Eighth",
+          "first_name": "User"
         },
         "is_active": true,
         "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
@@ -14138,6 +14931,1657 @@
       }
     },
     "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n"
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 5,
+  "fields": {
+    "created_date": "2024-12-24T17:20:10.533Z",
+    "updated_date": "2024-12-24T17:20:10.534Z",
+    "webhook": 6,
+    "event": "create:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "",
+        "name": "task with consensus jobs",
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.731500Z",
+        "source_storage": null,
+        "target_storage": null,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "create:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 6,
+  "fields": {
+    "created_date": "2024-12-24T17:20:10.842Z",
+    "updated_date": "2024-12-24T17:20:10.842Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,data_chunk_size,data_compressed_chunk_type,data_original_chunk_type,size,image_quality,data",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "",
+        "name": "task with consensus jobs",
+        "size": 0,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.855506Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "data": null,
+        "size": null,
+        "updated_date": "2024-12-24T17:20:09.731500Z",
+        "image_quality": null,
+        "data_chunk_size": null,
+        "data_original_chunk_type": null,
+        "data_compressed_chunk_type": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 7,
+  "fields": {
+    "created_date": "2024-12-24T17:20:11.259Z",
+    "updated_date": "2024-12-24T17:20:11.259Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "mode,updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.910573Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "mode": "",
+        "updated_date": "2024-12-24T17:20:09.855506Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 8,
+  "fields": {
+    "created_date": "2024-12-24T17:20:11.559Z",
+    "updated_date": "2024-12-24T17:20:11.559Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.926417Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:09.910573Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 9,
+  "fields": {
+    "created_date": "2024-12-24T17:20:12.112Z",
+    "updated_date": "2024-12-24T17:20:12.112Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,status",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.995794Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:09.926417Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 10,
+  "fields": {
+    "created_date": "2024-12-24T17:20:12.482Z",
+    "updated_date": "2024-12-24T17:20:12.482Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:09.979112Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.881183Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 11,
+  "fields": {
+    "created_date": "2024-12-24T17:20:12.802Z",
+    "updated_date": "2024-12-24T17:20:12.802Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.010431Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.889170Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 12,
+  "fields": {
+    "created_date": "2024-12-24T17:20:13.088Z",
+    "updated_date": "2024-12-24T17:20:13.088Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,status",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.029970Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.995794Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 13,
+  "fields": {
+    "created_date": "2024-12-24T17:20:13.504Z",
+    "updated_date": "2024-12-24T17:20:13.505Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.020983Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.893322Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 14,
+  "fields": {
+    "created_date": "2024-12-24T17:20:13.810Z",
+    "updated_date": "2024-12-24T17:20:13.810Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.067846Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:09.979112Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 15,
+  "fields": {
+    "created_date": "2024-12-24T17:20:14.221Z",
+    "updated_date": "2024-12-24T17:20:14.221Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.074192Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.029970Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 16,
+  "fields": {
+    "created_date": "2024-12-24T17:20:14.621Z",
+    "updated_date": "2024-12-24T17:20:14.622Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.097974Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.010431Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 17,
+  "fields": {
+    "created_date": "2024-12-24T17:20:14.939Z",
+    "updated_date": "2024-12-24T17:20:14.939Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.103936Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.074192Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 18,
+  "fields": {
+    "created_date": "2024-12-24T17:20:15.246Z",
+    "updated_date": "2024-12-24T17:20:15.246Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.130238Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.020983Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 19,
+  "fields": {
+    "created_date": "2024-12-24T17:20:15.551Z",
+    "updated_date": "2024-12-24T17:20:15.551Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.136501Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.103936Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 20,
+  "fields": {
+    "created_date": "2024-12-24T17:20:29.855Z",
+    "updated_date": "2024-12-24T17:20:29.855Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "assignee,updated_date,assignee_updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "http://localhost:8080/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=42",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=42"
+        },
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 10,
+          "url": "http://localhost:8080/api/users/10",
+          "username": "user7",
+          "last_name": "Seventh",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:29.536255Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:29.498066Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "assignee": null,
+        "updated_date": "2024-12-24T17:20:10.067846Z",
+        "assignee_updated_date": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 21,
+  "fields": {
+    "created_date": "2024-12-24T17:20:33.369Z",
+    "updated_date": "2024-12-24T17:20:33.369Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "assignee,updated_date,assignee_updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "http://localhost:8080/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=43",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=43"
+        },
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 7,
+          "url": "http://localhost:8080/api/users/7",
+          "username": "worker2",
+          "last_name": "Second",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:33.007730Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:32.968395Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "assignee": null,
+        "updated_date": "2024-12-24T17:20:10.097974Z",
+        "assignee_updated_date": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 22,
+  "fields": {
+    "created_date": "2024-12-24T17:20:35.418Z",
+    "updated_date": "2024-12-24T17:20:35.418Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "assignee,updated_date,assignee_updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "http://localhost:8080/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=44",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=44"
+        },
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 6,
+          "url": "http://localhost:8080/api/users/6",
+          "username": "worker1",
+          "last_name": "First",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:35.045835Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:35.006519Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "assignee": null,
+        "updated_date": "2024-12-24T17:20:10.130238Z",
+        "assignee_updated_date": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 23,
+  "fields": {
+    "created_date": "2024-12-24T17:20:39.720Z",
+    "updated_date": "2024-12-24T17:20:39.720Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,status",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "http://localhost:8080/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": "http://localhost:8080/api/jobs?task_id=30",
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "http://localhost:8080/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?task_id=30"
+        },
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:39.386055Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:10.136501Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 24,
+  "fields": {
+    "created_date": "2024-12-24T17:20:40.025Z",
+    "updated_date": "2024-12-24T17:20:40.025Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,state,updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "http://localhost:8080/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "completed",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=44",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=44"
+        },
+        "status": "annotation",
+        "task_id": 30,
+        "assignee": {
+          "id": 6,
+          "url": "http://localhost:8080/api/users/6",
+          "username": "worker1",
+          "last_name": "First",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:39.362453Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:35.006519Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "state": "new",
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:35.045835Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 25,
+  "fields": {
+    "created_date": "2024-12-24T17:20:41.665Z",
+    "updated_date": "2024-12-24T17:20:41.665Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,state,updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "http://localhost:8080/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "completed",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=43",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=43"
+        },
+        "status": "annotation",
+        "task_id": 30,
+        "assignee": {
+          "id": 7,
+          "url": "http://localhost:8080/api/users/7",
+          "username": "worker2",
+          "last_name": "Second",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:41.226063Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:32.968395Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "state": "new",
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:33.007730Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 26,
+  "fields": {
+    "created_date": "2024-12-24T17:21:50.272Z",
+    "updated_date": "2024-12-24T17:21:50.272Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "user7",
+          "last_name": "Seventh",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:21:49.891722Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:29.498066Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:29.536255Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 27,
+  "fields": {
+    "created_date": "2024-12-24T17:21:50.494Z",
+    "updated_date": "2024-12-24T17:21:50.494Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:21:49.905944Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:39.386055Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 28,
+  "fields": {
+    "created_date": "2024-12-24T17:21:50.887Z",
+    "updated_date": "2024-12-24T17:21:50.887Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "user7",
+          "last_name": "Seventh",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:21:49.958525Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:29.498066Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:21:49.891722Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 29,
+  "fields": {
+    "created_date": "2024-12-24T17:21:51.197Z",
+    "updated_date": "2024-12-24T17:21:51.197Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:21:49.968750Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:21:49.905944Z"
+      }
+    },
+    "response": ""
   }
 },
 {
@@ -18523,6 +20967,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18531,6 +20976,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18545,6 +20991,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18553,6 +21000,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18567,6 +21015,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18575,6 +21024,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18589,6 +21039,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18597,6 +21048,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18611,6 +21063,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18619,6 +21072,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18633,6 +21087,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18641,6 +21096,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18655,6 +21111,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18663,6 +21120,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18677,6 +21135,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18685,6 +21144,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18699,6 +21159,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18707,6 +21168,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18721,6 +21183,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18729,6 +21192,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18743,6 +21207,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18751,6 +21216,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18765,6 +21231,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18773,6 +21240,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18787,6 +21255,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18795,6 +21264,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18809,6 +21279,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18817,6 +21288,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18831,6 +21303,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18839,6 +21312,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18853,6 +21327,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18861,6 +21336,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18875,6 +21351,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18883,6 +21360,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18897,6 +21375,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18905,6 +21384,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18919,6 +21399,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18927,6 +21408,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18941,6 +21423,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18949,6 +21432,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18963,6 +21447,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18971,6 +21456,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18985,6 +21471,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -18993,6 +21480,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -19007,6 +21495,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -19015,6 +21504,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -19029,6 +21519,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -19037,6 +21528,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -19051,6 +21543,7 @@
     "oks_sigma": 0.09,
     "line_thickness": 0.01,
     "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
     "compare_line_orientation": true,
     "line_orientation_threshold": 0.1,
     "compare_groups": true,
@@ -19059,6 +21552,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
+    "match_empty_frames": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -19346,7 +21840,7 @@
   "fields": {
     "task": 29,
     "agreement_score_threshold": 0.0,
-    "quorum": 1,
+    "quorum": 0,
     "iou_threshold": 0.5,
     "sigma": 0.1,
     "line_thickness": 0.01
@@ -19368,427 +21862,66 @@
   "model": "consensus.consensusreport",
   "pk": 1,
   "fields": {
-    "task": 29,
+    "task": 30,
     "job": null,
-    "created_date": "2024-11-04T22:40:08.222Z",
-    "target_last_updated": "2024-11-04T22:40:08.217Z",
-    "consensus_score": 73,
+    "created_date": "2024-12-24T17:21:49.978Z",
+    "target_last_updated": "2024-12-24T17:21:49.968Z",
+    "consensus_score": 48,
     "assignee": null,
     "parent": null,
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":1,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":0,\"conflicts_by_type\":{},\"frame_count\":2,\"mean_conflict_count\":0.0},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[],\"consensus_score\":0.5,\"conflict_count\":0,\"conflicts_by_type\":{}}},\"consensus_score\":73.0}"
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":3,\"conflicts_by_type\":{\"failed_label_voting\":3},\"frame_count\":2,\"mean_conflict_count\":1.5},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":3,\"conflicts_by_type\":{\"failed_label_voting\":3}}},\"consensus_score\":48.0}"
   }
 },
 {
   "model": "consensus.consensusreport",
   "pk": 2,
   "fields": {
-    "task": 29,
-    "job": 38,
-    "created_date": "2024-11-04T22:40:08.224Z",
-    "target_last_updated": "2024-11-04T22:39:16.198Z",
-    "consensus_score": 73,
-    "assignee": null,
+    "task": 30,
+    "job": 42,
+    "created_date": "2024-12-24T17:21:49.981Z",
+    "target_last_updated": "2024-12-24T17:20:29.536Z",
+    "consensus_score": 48,
+    "assignee": [
+      "user7"
+    ],
     "parent": 1,
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":1,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":0,\"conflicts_by_type\":{},\"frame_count\":2,\"mean_conflict_count\":0.0},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[],\"consensus_score\":0.5,\"conflict_count\":0,\"conflicts_by_type\":{}}},\"consensus_score\":73.0}"
-  }
-},
-{
-  "model": "consensus.consensusreport",
-  "pk": 3,
-  "fields": {
-    "task": 30,
-    "job": null,
-    "created_date": "2024-11-04T22:42:53.113Z",
-    "target_last_updated": "2024-11-04T22:42:53.107Z",
-    "consensus_score": 26,
-    "assignee": null,
-    "parent": null,
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1,2],\"conflict_count\":24,\"conflicts_by_type\":{\"no_matching_annotation\":12,\"failed_label_voting\":12},\"frame_count\":3,\"mean_conflict_count\":8.0},\"frame_results\":{\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":255,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":253,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":258,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":251,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":256,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":252,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":257,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":254,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":8,\"failed_label_voting\":8}},\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}}},\"consensus_score\":35.0}"
-  }
-},
-{
-  "model": "consensus.consensusreport",
-  "pk": 4,
-  "fields": {
-    "task": 30,
-    "job": 45,
-    "created_date": "2024-11-04T22:42:53.115Z",
-    "target_last_updated": "2024-11-04T22:40:51.447Z",
-    "consensus_score": 0,
-    "assignee": null,
-    "parent": 3,
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[2],\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":8,\"failed_label_voting\":8},\"frame_count\":1,\"mean_conflict_count\":16.0},\"frame_results\":{\"2\":{\"conflicts\":[{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":255,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":253,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polyline\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":258,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":251,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"points\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":256,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":252,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"ellipse\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":257,\"job_id\":47,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":254,\"job_id\":46,\"type\":\"shape\",\"shape_type\":\"polygon\"}]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":2,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":16,\"conflicts_by_type\":{\"no_matching_annotation\":8,\"failed_label_voting\":8}}},\"consensus_score\":0.0}"
-  }
-},
-{
-  "model": "consensus.consensusreport",
-  "pk": 5,
-  "fields": {
-    "task": 30,
-    "job": 41,
-    "created_date": "2024-11-04T22:42:53.115Z",
-    "target_last_updated": "2024-11-04T22:40:51.376Z",
-    "consensus_score": 52,
-    "assignee": null,
-    "parent": 3,
-    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":12,\"conflicts_by_type\":{\"no_matching_annotation\":4,\"failed_label_voting\":4},\"frame_count\":2,\"mean_conflict_count\":6.0},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":0,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":21,\"job_id\":43,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"no_matching_annotation\",\"annotation_ids\":[{\"obj_id\":19,\"job_id\":42,\"type\":\"track\",\"shape_type\":\"rectangle\"}]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.5213160673225687,\"conflict_count\":4,\"conflicts_by_type\":{\"no_matching_annotation\":2,\"failed_label_voting\":2}}},\"consensus_score\":52.0}"
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":8,\"conflicts_by_type\":{\"failed_label_voting\":3},\"frame_count\":2,\"mean_conflict_count\":4.0},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":3,\"conflicts_by_type\":{\"failed_label_voting\":3}}},\"consensus_score\":48.0}"
   }
 },
 {
   "model": "consensus.consensusconflict",
   "pk": 1,
   "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
+    "report": 2,
+    "frame": 1,
+    "type": "failed_label_voting"
   }
 },
 {
   "model": "consensus.consensusconflict",
   "pk": 2,
   "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
+    "report": 2,
+    "frame": 1,
+    "type": "failed_label_voting"
   }
 },
 {
   "model": "consensus.consensusconflict",
   "pk": 3,
   "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 4,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 5,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 6,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 7,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 8,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 9,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 10,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 11,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 12,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 13,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 14,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 15,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 16,
-  "fields": {
-    "report": 4,
-    "frame": 2,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 17,
-  "fields": {
-    "report": 5,
-    "frame": 0,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 18,
-  "fields": {
-    "report": 5,
-    "frame": 0,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 19,
-  "fields": {
-    "report": 5,
-    "frame": 0,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 20,
-  "fields": {
-    "report": 5,
-    "frame": 0,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 21,
-  "fields": {
-    "report": 5,
-    "frame": 1,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 22,
-  "fields": {
-    "report": 5,
-    "frame": 1,
-    "type": "no_matching_annotation"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 23,
-  "fields": {
-    "report": 5,
+    "report": 2,
     "frame": 1,
     "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.consensusconflict",
-  "pk": 24,
-  "fields": {
-    "report": 5,
-    "frame": 1,
-    "type": "failed_label_voting"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 1,
-  "fields": {
-    "conflict": 1,
-    "obj_id": 255,
-    "job_id": 47,
-    "type": "shape",
-    "shape_type": "polyline"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 2,
-  "fields": {
-    "conflict": 2,
-    "obj_id": 253,
-    "job_id": 46,
-    "type": "shape",
-    "shape_type": "polyline"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 3,
-  "fields": {
-    "conflict": 5,
-    "obj_id": 258,
-    "job_id": 47,
-    "type": "shape",
-    "shape_type": "points"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 4,
-  "fields": {
-    "conflict": 6,
-    "obj_id": 251,
-    "job_id": 46,
-    "type": "shape",
-    "shape_type": "points"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 5,
-  "fields": {
-    "conflict": 9,
-    "obj_id": 256,
-    "job_id": 47,
-    "type": "shape",
-    "shape_type": "ellipse"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 6,
-  "fields": {
-    "conflict": 10,
-    "obj_id": 252,
-    "job_id": 46,
-    "type": "shape",
-    "shape_type": "ellipse"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 7,
-  "fields": {
-    "conflict": 13,
-    "obj_id": 257,
-    "job_id": 47,
-    "type": "shape",
-    "shape_type": "polygon"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 8,
-  "fields": {
-    "conflict": 14,
-    "obj_id": 254,
-    "job_id": 46,
-    "type": "shape",
-    "shape_type": "polygon"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 9,
-  "fields": {
-    "conflict": 17,
-    "obj_id": 21,
-    "job_id": 43,
-    "type": "track",
-    "shape_type": "rectangle"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 10,
-  "fields": {
-    "conflict": 18,
-    "obj_id": 19,
-    "job_id": 42,
-    "type": "track",
-    "shape_type": "rectangle"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 11,
-  "fields": {
-    "conflict": 21,
-    "obj_id": 21,
-    "job_id": 43,
-    "type": "track",
-    "shape_type": "rectangle"
-  }
-},
-{
-  "model": "consensus.annotationid",
-  "pk": 12,
-  "fields": {
-    "conflict": 22,
-    "obj_id": 19,
-    "job_id": 42,
-    "type": "track",
-    "shape_type": "rectangle"
   }
 },
 {
   "model": "consensus.assigneeconsensusreport",
   "pk": 1,
   "fields": {
-    "task": 29,
+    "task": 30,
     "assignee": [
-      "dummy2"
+      "worker2"
     ],
     "consensus_score": 89,
     "conflict_count": 0,
@@ -19799,65 +21932,13 @@
   "model": "consensus.assigneeconsensusreport",
   "pk": 2,
   "fields": {
-    "task": 29,
+    "task": 30,
     "assignee": [
-      "dummy1"
+      "worker1"
     ],
     "consensus_score": 100,
     "conflict_count": 0,
     "consensus_report_id": 1
-  }
-},
-{
-  "model": "consensus.assigneeconsensusreport",
-  "pk": 3,
-  "fields": {
-    "task": 30,
-    "assignee": [
-      "worker3"
-    ],
-    "consensus_score": 50,
-    "conflict_count": 2,
-    "consensus_report_id": 3
-  }
-},
-{
-  "model": "consensus.assigneeconsensusreport",
-  "pk": 4,
-  "fields": {
-    "task": 30,
-    "assignee": [
-      "worker2"
-    ],
-    "consensus_score": 28,
-    "conflict_count": 6,
-    "consensus_report_id": 3
-  }
-},
-{
-  "model": "consensus.assigneeconsensusreport",
-  "pk": 5,
-  "fields": {
-    "task": 30,
-    "assignee": [
-      "user5"
-    ],
-    "consensus_score": 0,
-    "conflict_count": 4,
-    "consensus_report_id": 3
-  }
-},
-{
-  "model": "consensus.assigneeconsensusreport",
-  "pk": 6,
-  "fields": {
-    "task": 30,
-    "assignee": [
-      "user3"
-    ],
-    "consensus_score": 0,
-    "conflict_count": 0,
-    "consensus_report_id": 3
   }
 },
 {
@@ -20179,7 +22260,7 @@
       "user"
     ],
     "object_id": "10",
-    "object_repr": "business1",
+    "object_repr": "user7",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -20197,7 +22278,7 @@
       "user"
     ],
     "object_id": "10",
-    "object_repr": "business1",
+    "object_repr": "user7",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
   }
@@ -20215,7 +22296,7 @@
       "user"
     ],
     "object_id": "10",
-    "object_repr": "business1",
+    "object_repr": "user7",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"Last name\", \"Email address\", \"Groups\"]}}]"
   }
@@ -20233,7 +22314,7 @@
       "user"
     ],
     "object_id": "11",
-    "object_repr": "business2",
+    "object_repr": "user8",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -20251,7 +22332,7 @@
       "user"
     ],
     "object_id": "11",
-    "object_repr": "business2",
+    "object_repr": "user8",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
   }
@@ -20269,7 +22350,7 @@
       "user"
     ],
     "object_id": "12",
-    "object_repr": "business3",
+    "object_repr": "user9",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -20287,7 +22368,7 @@
       "user"
     ],
     "object_id": "12",
-    "object_repr": "business3",
+    "object_repr": "user9",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
   }
@@ -20305,7 +22386,7 @@
       "user"
     ],
     "object_id": "13",
-    "object_repr": "business4",
+    "object_repr": "user10",
     "action_flag": 1,
     "change_message": "[{\"added\": {}}]"
   }
@@ -20323,7 +22404,7 @@
       "user"
     ],
     "object_id": "13",
-    "object_repr": "business4",
+    "object_repr": "user10",
     "action_flag": 2,
     "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
   }

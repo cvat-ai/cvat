@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import os
+from collections.abc import Mapping
 from tempfile import TemporaryDirectory
 import rq
-from typing import Any, Callable, List, Mapping, Tuple
+from typing import Any, Callable
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
@@ -102,14 +103,14 @@ class ProjectAnnotationAndData:
         data['stop_frame'] = None
         data['server_files'] = list(map(split_name, data['server_files']))
 
-        create_task(db_task, data, isDatasetImport=True)
+        create_task(db_task, data, is_dataset_import=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).exclude(data=None).order_by('id')
         self.init_from_db()
         if project_data is not None:
             project_data.new_tasks.add(db_task.id)
             project_data.init()
 
-    def add_labels(self, labels: List[models.Label], attributes: List[Tuple[str, models.AttributeSpec]] = None):
+    def add_labels(self, labels: list[models.Label], attributes: list[tuple[str, models.AttributeSpec]] = None):
         for label in labels:
             label.project = self.db_project
             # We need label_id here, so we can't use bulk_create here

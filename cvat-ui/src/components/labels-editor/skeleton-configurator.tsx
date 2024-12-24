@@ -642,7 +642,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         if (elements !== sublabels.length) {
             throw new Error(
-                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length}` +
+                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length} ` +
                 `differs from number of elements ${elements}`,
             );
         }
@@ -837,43 +837,46 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                             accept='.svg'
                             beforeUpload={(file: RcFile) => {
                                 file.text().then((result) => {
-                                    const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                    // eslint-disable-next-line no-unsanitized/property
-                                    tmpSvg.innerHTML = result;
-
-                                    if (tmpSvg.children[0]?.tagName === 'svg') {
+                                    try {
+                                        const parent = window.document.createElement('div');
                                         // eslint-disable-next-line no-unsanitized/property
-                                        tmpSvg.innerHTML = tmpSvg.children[0].innerHTML;
-                                    }
+                                        parent.innerHTML = result;
 
-                                    let isSVG = true;
-                                    for (let c = tmpSvg.childNodes, i = c.length; i--;) {
-                                        isSVG = isSVG && c[i].nodeType === 1;
-                                    }
+                                        if (parent.children[0]?.tagName !== 'svg' || parent.children.length > 1) {
+                                            throw Error();
+                                        }
 
-                                    if (isSVG) {
-                                        let labels = {};
-                                        const desc = Array.from(tmpSvg.children)
+                                        const svg = parent.children[0];
+                                        const desc = Array.from(svg.children)
                                             .find((child: Element): boolean => (
                                                 child.tagName === 'desc' &&
                                                 child.getAttribute('data-description-type') === 'labels-specification'
                                             ));
-                                        if (desc) {
-                                            try {
-                                                labels = JSON.parse(desc.textContent || '{}');
-                                                desc.remove();
-                                            } catch (_) {
-                                                // ignore
+                                        if (!desc) {
+                                            throw Error();
+                                        }
+
+                                        const labels = JSON.parse(desc.textContent || '{}');
+
+                                        for (const child of svg.children) {
+                                            if (child.nodeType !== 1 || !['line', 'circle'].includes(child.tagName)) {
+                                                child.remove();
                                             }
                                         }
 
-                                        this.setupSkeleton(tmpSvg.innerHTML, labels as Record<string, LabelOptColor>);
-                                    } else {
+                                        if (!Array.from(svg.children).some((child) => child.tagName === 'circle')) {
+                                            throw Error();
+                                        }
+
+                                        this.labels = {};
+                                        this.setupSkeleton(svg.innerHTML, labels as Record<string, LabelOptColor>);
+                                    } catch (_: unknown) {
                                         notification.error({
                                             message: 'Wrong skeleton structure',
                                         });
                                     }
                                 });
+
                                 return false;
                             }}
                         >

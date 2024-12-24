@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
-from typing import ClassVar, List
+from typing import ClassVar
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -40,7 +40,7 @@ class TestGetMemberships:
         )
 
     def test_non_admin_can_see_only_self_memberships(self, memberships):
-        non_admins = ["business1", "user1", "dummy1", "worker2"]
+        non_admins = ["user1", "dummy1", "worker2"]
         for username in non_admins:
             data = [obj for obj in memberships if obj["user"]["username"] == username]
             self._test_can_see_memberships(username, data)
@@ -80,7 +80,7 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchMemberships:
     _ORG: ClassVar[int] = 1
-    ROLES: ClassVar[List[str]] = ["worker", "supervisor", "maintainer", "owner"]
+    ROLES: ClassVar[list[str]] = ["worker", "supervisor", "maintainer", "owner"]
 
     def _test_can_change_membership(self, user, membership_id, new_role):
         response = patch_method(
@@ -146,6 +146,15 @@ class TestPatchMemberships:
         with make_api_client(regular_lonely_user) as api_client:
             with pytest.raises(ForbiddenException):
                 api_client.memberships_api.partial_update(membership["id"])
+
+    def test_user_cannot_update_unknown_field(self, admin_user, memberships):
+        membership = next(iter(memberships))
+
+        response = patch_method(
+            admin_user, f"memberships/{membership['id']}", {"foo": "bar"}, org_id=self._ORG
+        )
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

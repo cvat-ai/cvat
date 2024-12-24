@@ -1,11 +1,5 @@
 FROM node:lts-slim AS cvat-ui
 
-ARG WA_PAGE_VIEW_HIT
-ARG UI_APP_CONFIG
-ARG CLIENT_PLUGINS
-ARG DISABLE_SOURCE_MAPS
-ARG SOURCE_MAPS_TOKEN
-
 ENV TERM=xterm \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
@@ -29,6 +23,12 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
+
+ARG UI_APP_CONFIG
+ARG CLIENT_PLUGINS
+ARG DISABLE_SOURCE_MAPS
+ARG SOURCE_MAPS_TOKEN
+
 RUN CLIENT_PLUGINS="${CLIENT_PLUGINS}" \
 DISABLE_SOURCE_MAPS="${DISABLE_SOURCE_MAPS}" \
 UI_APP_CONFIG="${UI_APP_CONFIG}" \

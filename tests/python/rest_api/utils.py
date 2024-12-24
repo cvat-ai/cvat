@@ -4,10 +4,11 @@
 
 import json
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import requests
 from cvat_sdk.api_client import apis, models
@@ -43,7 +44,7 @@ def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **k
 def wait_and_download_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     download_result: bool = True,
     **kwargs,
@@ -74,7 +75,7 @@ def wait_and_download_v1(
 def export_v1(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -114,7 +115,7 @@ def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     download_result: bool = True,
 ) -> Optional[bytes]:
@@ -152,7 +153,7 @@ def wait_and_download_v2(
 def export_v2(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -191,11 +192,11 @@ def export_v2(
 def export_dataset(
     api: Union[ProjectsApi, TasksApi, JobsApi],
     api_version: Union[
-        int, Tuple[int]
+        int, tuple[int]
     ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     save_images: bool,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
@@ -251,21 +252,21 @@ def export_dataset(
 
 # FUTURE-TODO: support username: optional, api_client: optional
 def export_project_dataset(
-    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+    username: str, api_version: Union[int, tuple[int]], *args, **kwargs
 ) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.projects_api, api_version, *args, **kwargs)
 
 
 def export_task_dataset(
-    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+    username: str, api_version: Union[int, tuple[int]], *args, **kwargs
 ) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.tasks_api, api_version, *args, **kwargs)
 
 
 def export_job_dataset(
-    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+    username: str, api_version: Union[int, tuple[int]], *args, **kwargs
 ) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_dataset(api_client.jobs_api, api_version, *args, **kwargs)
@@ -274,10 +275,10 @@ def export_job_dataset(
 def export_backup(
     api: Union[ProjectsApi, TasksApi],
     api_version: Union[
-        int, Tuple[int]
+        int, tuple[int]
     ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     **kwargs,
 ) -> Optional[bytes]:
@@ -309,14 +310,14 @@ def export_backup(
 
 
 def export_project_backup(
-    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+    username: str, api_version: Union[int, tuple[int]], *args, **kwargs
 ) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_backup(api_client.projects_api, api_version, *args, **kwargs)
 
 
 def export_task_backup(
-    username: str, api_version: Union[int, Tuple[int]], *args, **kwargs
+    username: str, api_version: Union[int, tuple[int]], *args, **kwargs
 ) -> Optional[bytes]:
     with make_api_client(username) as api_client:
         return export_backup(api_client.tasks_api, api_version, *args, **kwargs)
@@ -325,7 +326,7 @@ def export_task_backup(
 def import_resource(
     endpoint: Endpoint,
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -371,7 +372,7 @@ def import_resource(
 def import_backup(
     api: Union[ProjectsApi, TasksApi],
     *,
-    max_retries: int = 30,
+    max_retries: int = 50,
     interval: float = 0.1,
     **kwargs,
 ) -> None:
@@ -379,12 +380,12 @@ def import_backup(
     return import_resource(endpoint, max_retries=max_retries, interval=interval, **kwargs)
 
 
-def import_project_backup(username: str, data: Dict, **kwargs) -> None:
+def import_project_backup(username: str, data: dict, **kwargs) -> None:
     with make_api_client(username) as api_client:
         return import_backup(api_client.projects_api, project_file_request=deepcopy(data), **kwargs)
 
 
-def import_task_backup(username: str, data: Dict, **kwargs) -> None:
+def import_task_backup(username: str, data: dict, **kwargs) -> None:
     with make_api_client(username) as api_client:
         return import_backup(api_client.tasks_api, task_file_request=deepcopy(data), **kwargs)
 
@@ -395,20 +396,20 @@ FieldPath = Sequence[Union[str, Callable]]
 class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
     # These fields need to be defined in the subclass
     user: str
-    samples: List[Dict[str, Any]]
-    field_lookups: Dict[str, FieldPath] = None
-    cmp_ignore_keys: List[str] = ["updated_date"]
+    samples: list[dict[str, Any]]
+    field_lookups: dict[str, FieldPath] = None
+    cmp_ignore_keys: list[str] = ["updated_date"]
 
     @abstractmethod
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint: ...
 
-    def _retrieve_collection(self, **kwargs) -> List:
+    def _retrieve_collection(self, **kwargs) -> list:
         kwargs["return_json"] = True
         with make_api_client(self.user) as api_client:
             return get_paginated_collection(self._get_endpoint(api_client), **kwargs)
 
     @classmethod
-    def _get_field(cls, d: Dict[str, Any], path: Union[str, FieldPath]) -> Optional[Any]:
+    def _get_field(cls, d: dict[str, Any], path: Union[str, FieldPath]) -> Optional[Any]:
         assert path
         for key in path:
             if isinstance(d, dict):
@@ -428,7 +429,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
 
     @classmethod
     def _find_valid_field_value(
-        cls, samples: Iterator[Dict[str, Any]], field_path: FieldPath
+        cls, samples: Iterator[dict[str, Any]], field_path: FieldPath
     ) -> Any:
         value = None
         for sample in samples:
@@ -439,7 +440,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
         assert value, f"Failed to find a sample for the '{'.'.join(field_path)}' field"
         return value
 
-    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
         field_path = self._map_field(field)
         field_value = self._find_valid_field_value(self.samples, field_path)
 
@@ -463,7 +464,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
         assert diff == {}, diff
 
     def _test_can_use_simple_filter_for_object_list(
-        self, field: str, field_values: Optional[List[Any]] = None
+        self, field: str, field_values: Optional[list[Any]] = None
     ):
         gt_objects = []
         field_path = self._map_field(field)
@@ -485,12 +486,12 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
             self._compare_results(gt_objects, received_items)
 
 
-def get_attrs(obj: Any, attributes: Sequence[str]) -> Tuple[Any, ...]:
+def get_attrs(obj: Any, attributes: Sequence[str]) -> tuple[Any, ...]:
     """Returns 1 or more object attributes as a tuple"""
     return (getattr(obj, attr) for attr in attributes)
 
 
-def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> List[str]:
+def build_exclude_paths_expr(ignore_fields: Iterator[str]) -> list[str]:
     exclude_expr_parts = []
     for key in ignore_fields:
         if "." in key:
@@ -572,7 +573,7 @@ def create_task(username, spec, data, content_type="application/json", **kwargs)
     return task.id, response_.headers.get("X-Request-Id")
 
 
-def compare_annotations(a, b):
+def compare_annotations(a: dict, b: dict) -> dict:
     def _exclude_cb(obj, path):
         return path.endswith("['elements']") and not obj
 
@@ -580,11 +581,27 @@ def compare_annotations(a, b):
         a,
         b,
         ignore_order=True,
+        significant_digits=2,  # annotations are stored with 2 decimal digit precision
         exclude_obj_callback=_exclude_cb,
         exclude_regex_paths=[
             r"root\['version|updated_date'\]",
             r"root(\['\w+'\]\[\d+\])+\['id'\]",
             r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
             r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['source'\]",
         ],
     )
+
+
+DATUMARO_FORMAT_FOR_DIMENSION = {
+    "2d": "Datumaro 1.0",
+    "3d": "Datumaro 3D 1.0",
+}
+
+
+def parse_frame_step(frame_filter: str) -> int:
+    return int((frame_filter or "step=1").split("=")[1])
+
+
+def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
+    return stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step

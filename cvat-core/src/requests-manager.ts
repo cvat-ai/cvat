@@ -34,7 +34,7 @@ class RequestsManager {
         requestDelayIdx: number | null,
         request: Request | null,
         timeout: number | null;
-        promise?: Promise<Request>;
+        promise: Promise<Request>;
     }>;
 
     private requestStack: number[];
@@ -71,10 +71,11 @@ class RequestsManager {
             }
             return this.listening[requestID].promise;
         }
+
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = async (): Promise<void> => {
                 // We make sure that no more than REQUESTS_COUNT requests are sent simultaneously
-                // If thats the case, we re-schedule the timeout
+                // If that's the case, we re-schedule the timeout
                 const timestamp = Date.now();
                 if (this.requestStack.length >= REQUESTS_COUNT) {
                     const timestampToCheck = this.requestStack[this.requestStack.length - 1];
@@ -122,35 +123,38 @@ class RequestsManager {
                     }
                 } catch (error) {
                     if (requestID in this.listening) {
-                        const { onUpdate } = this.listening[requestID];
+                        const { onUpdate, request } = this.listening[requestID];
+                        if (request) {
+                            onUpdate
+                                .forEach((update) => update(new Request({
+                                    ...request.toJSON(),
+                                    status: RQStatus.FAILED,
+                                    message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                                })));
+                        }
 
-                        onUpdate
-                            .forEach((update) => update(new Request({
-                                id: requestID,
-                                status: RQStatus.FAILED,
-                                message: `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                            })));
+                        delete this.listening[requestID];
                         reject(error);
                     }
                 }
             };
 
-            if (initialRequest?.status === RQStatus.FAILED) {
-                reject(new RequestError(initialRequest?.message));
-            } else {
-                this.listening[requestID] = {
-                    onUpdate: callback ? [callback] : [],
-                    timeout: window.setTimeout(timeoutCallback),
-                    request: initialRequest,
-                    requestDelayIdx: 0,
-                };
-            }
+            Promise.resolve().then(() => {
+                // running as microtask to make sure "promise" was initialized
+                if (initialRequest?.status === RQStatus.FAILED) {
+                    reject(new RequestError(initialRequest?.message));
+                } else {
+                    this.listening[requestID] = {
+                        onUpdate: callback ? [callback] : [],
+                        timeout: window.setTimeout(timeoutCallback),
+                        request: initialRequest,
+                        requestDelayIdx: 0,
+                        promise,
+                    };
+                }
+            });
         });
 
-        this.listening[requestID] = {
-            ...this.listening[requestID],
-            promise,
-        };
         return promise;
     }
 

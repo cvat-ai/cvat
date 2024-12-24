@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sdk.fixtures import fxt_client  # pylint: disable=unused-import
+from sdk.fixtures import *  # pylint: disable=unused-import

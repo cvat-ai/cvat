@@ -38,6 +38,10 @@
         .cvat-project-search-field {
             width: 100%;
         }
+
+        .cvat-task-name-field-has-tooltip {
+            margin-bottom: $grid-unit-size;
+        }
     }
 
     .cvat-settings-switch {

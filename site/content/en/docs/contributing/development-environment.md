@@ -80,7 +80,7 @@ description: 'Installing a development environment for different operating syste
   python3 -m venv .env
   . .env/bin/activate
   pip install -U pip wheel setuptools
-  pip install -r cvat/requirements/development.txt
+  pip install -r cvat/requirements/development.txt -r dev/requirements.txt
   ```
 
   Note that the `.txt` files in the `cvat/requirements` directory
@@ -168,6 +168,7 @@ description: 'Installing a development environment for different operating syste
   ```bash
   python manage.py migrate
   python manage.py collectstatic
+  python manage.py syncperiodicjobs
   python manage.py createsuperuser
   ```
 

@@ -12,26 +12,24 @@ import shutil
 import sys
 import textwrap
 from glob import iglob
-from typing import Callable, List
+from typing import Callable
 
 from inflection import underscore
 
 
 class Processor:
-    _reference_files: List[str]
+    _reference_files: list[str]
 
     def __init__(self, *, input_dir: str, site_root: str) -> None:
         self._input_dir = input_dir
         self._site_root = site_root
 
         self._content_dir = osp.join(self._site_root, "content")
-        self._sdk_reference_dir = osp.join(
-            self._content_dir, "en/docs/api_sdk/sdk/reference"
-        )
+        self._sdk_reference_dir = osp.join(self._content_dir, "en/docs/api_sdk/sdk/reference")
         self._templates_dir = osp.join(self._site_root, "templates")
 
     @staticmethod
-    def _copy_files(src_dir: str, glob_pattern: str, dst_dir: str) -> List[str]:
+    def _copy_files(src_dir: str, glob_pattern: str, dst_dir: str) -> list[str]:
         copied_files = []
 
         for src_path in iglob(osp.join(src_dir, glob_pattern), recursive=True):
@@ -97,9 +95,7 @@ class Processor:
         apis_index_filename = osp.join(
             osp.relpath(self._sdk_reference_dir, self._content_dir), "apis/_index.md"
         )
-        apis_index_path = osp.join(
-            self._templates_dir, apis_index_filename + ".template"
-        )
+        apis_index_path = osp.join(self._templates_dir, apis_index_filename + ".template")
         with open(apis_index_path) as f:
             contents = f.read()
 
@@ -126,9 +122,7 @@ class Processor:
             os.rename(src_path, dst_path)
             mapping[src_filename] = dst_filename
 
-        self._reference_files = [
-            osp.join(self._sdk_reference_dir, p) for p in mapping.values()
-        ]
+        self._reference_files = [osp.join(self._sdk_reference_dir, p) for p in mapping.values()]
 
         for p in iglob(self._sdk_reference_dir + "/**/*.md", recursive=True):
             with open(p) as f:
@@ -146,9 +140,7 @@ class Processor:
             with open(p, "w") as f:
                 f.write(contents)
 
-    def _process_non_code_blocks(
-        self, text: str, handlers: List[Callable[[str], str]]
-    ) -> str:
+    def _process_non_code_blocks(self, text: str, handlers: list[Callable[[str], str]]) -> str:
         """
         Allows to process Markdown documents with passed callbacks. Callbacks are only
         executed outside code blocks.

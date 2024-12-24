@@ -173,11 +173,9 @@ class MembershipPermission(OpenPolicyAgentPermission):
         }[view.action]
 
         if scope == Scopes.UPDATE:
-            # user should have permissions to view a membership
-            scopes.append(Scopes.VIEW)
-
-            if 'role' in request.data.keys():
-                scopes.append(Scopes.UPDATE_ROLE)
+            scopes.extend(__class__.get_per_field_update_scopes(request, {
+                'role': Scopes.UPDATE_ROLE,
+            }))
         else:
             scopes.append(scope)
 

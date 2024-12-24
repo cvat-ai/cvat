@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ModelKind, ModelReturnType, ShapeType } from './enums';
+import {
+    ModelKind, ModelReturnType, RQStatus, ShapeType,
+} from './enums';
 
 export interface ModelAttribute {
     name: string;
@@ -52,6 +54,12 @@ export interface SerializedModel {
     startswith_box_optional?: boolean;
     created_date?: string;
     updated_date?: string;
+}
+
+export interface UpdateStatusData {
+    status: RQStatus;
+    progress: number;
+    message: string;
 }
 
 export type PaginatedResource<T> = T[] & { count: number };

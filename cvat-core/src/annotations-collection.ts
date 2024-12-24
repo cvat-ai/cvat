@@ -157,9 +157,68 @@ export default class Collection {
         return result;
     }
 
-    public export(): Omit<SerializedCollection, 'version'> {
+    public commit(
+        appended: Omit<SerializedCollection, 'version'>,
+        removed: Omit<SerializedCollection, 'version'>,
+        frame: number,
+    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
+        const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .every((object) => typeof object.clientID === 'number' &&
+                Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
+
+        if (!isCollectionConsistent) {
+            throw new ArgumentError('Objects required to be deleted were not found in the collection');
+        }
+
+        const removedCollection: (Shape | Tag | Track)[] = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .map((object) => this.objects[object.clientID as number]);
+
+        const imported = this.import(appended);
+        const appendedCollection = ([] as (Shape | Tag | Track)[])
+            .concat(imported.shapes, imported.tags, imported.tracks);
+        if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
+            // nothing to commit
+            return;
+        }
+
+        let prevRemoved = [];
+        removedCollection.forEach((collectionObject) => {
+            prevRemoved.push(collectionObject.removed);
+            collectionObject.removed = true;
+        });
+
+        this.history.do(
+            HistoryActions.COMMIT_ANNOTATIONS,
+            () => {
+                removedCollection.forEach((collectionObject, idx) => {
+                    collectionObject.removed = prevRemoved[idx];
+                });
+                prevRemoved = [];
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = true;
+                });
+            },
+            () => {
+                removedCollection.forEach((collectionObject) => {
+                    prevRemoved.push(collectionObject.removed);
+                    collectionObject.removed = true;
+                });
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = false;
+                });
+            },
+            [].concat(
+                removedCollection.map((object) => object.clientID),
+                appendedCollection.map((object) => object.clientID),
+            ),
+            frame,
+        );
+    }
+
+    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'> {
         const data = {
-            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),
+            tracks: this.tracks.filter((track) => !track.removed)
+                .map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
                 .reduce((accumulator, frameShapes) => {
                     accumulator.push(...frameShapes);
@@ -201,7 +260,7 @@ export default class Collection {
         }
 
         const objectStates = [];
-        const filtered = this.annotationsFilter.filter(visible, filters);
+        const filtered = this.annotationsFilter.filterSerializedObjectStates(visible, filters);
 
         visible.forEach((stateData) => {
             if (!filters.length || filtered.includes(stateData.clientID)) {
@@ -1295,7 +1354,7 @@ export default class Collection {
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
 
-        // if not looking for an emty frame nor frame with annotations, return the next frame
+        // if not looking for an empty frame nor frame with annotations, return the next frame
         // check if deleted frames are allowed additionally
         if (!annotationsFilters) {
             let frame = frameFrom;
@@ -1338,7 +1397,7 @@ export default class Collection {
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, annotationsFilters);
+            const filtered = this.annotationsFilter.filterSerializedObjectStates(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }

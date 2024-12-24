@@ -96,6 +96,7 @@ export interface Configuration {
     controlPointsSize?: number;
     outlinedBorders?: string | false;
     resetZoom?: boolean;
+    hideEditedObject?: boolean;
 }
 
 export interface BrushTool {
@@ -416,6 +417,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 textPosition: consts.DEFAULT_SHAPE_TEXT_POSITION,
                 textContent: consts.DEFAULT_SHAPE_TEXT_CONTENT,
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
+                hideEditedObject: false,
             },
             imageBitmap: false,
             image: null,
@@ -685,28 +687,34 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public fit(): void {
         const { angle } = this.data;
 
+        let updatedScale = this.data.scale;
         if ((angle / 90) % 2) {
             // 90, 270, ..
-            this.data.scale = Math.min(
+            updatedScale = Math.min(
                 this.data.canvasSize.width / this.data.imageSize.height,
                 this.data.canvasSize.height / this.data.imageSize.width,
             );
         } else {
-            this.data.scale = Math.min(
+            updatedScale = Math.min(
                 this.data.canvasSize.width / this.data.imageSize.width,
                 this.data.canvasSize.height / this.data.imageSize.height,
             );
         }
 
-        this.data.scale = Math.min(Math.max(this.data.scale, FrameZoom.MIN), FrameZoom.MAX);
-        this.data.top = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
-        this.data.left = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
+        updatedScale = Math.min(Math.max(updatedScale, FrameZoom.MIN), FrameZoom.MAX);
+        const updatedTop = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
+        const updatedLeft = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
 
-        // scale is changed during zooming or translating
-        // so, remember fitted scale to compute fit-relative scaling
-        this.data.fittedScale = this.data.scale;
+        if (updatedScale !== this.data.scale || updatedTop !== this.data.top || updatedLeft !== this.data.left) {
+            this.data.scale = updatedScale;
+            this.data.top = updatedTop;
+            this.data.left = updatedLeft;
 
-        this.notify(UpdateReasons.IMAGE_FITTED);
+            // scale is changed during zooming or translating
+            // so, remember fitted scale to compute fit-relative scaling
+            this.data.fittedScale = this.data.scale;
+            this.notify(UpdateReasons.IMAGE_FITTED);
+        }
     }
 
     public grid(stepX: number, stepY: number): void {
@@ -979,6 +987,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.CSSImageFilter === 'string') {
             this.data.configuration.CSSImageFilter = configuration.CSSImageFilter;
+        }
+
+        if (typeof configuration.hideEditedObject === 'boolean') {
+            this.data.configuration.hideEditedObject = configuration.hideEditedObject;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

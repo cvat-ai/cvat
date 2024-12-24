@@ -20,9 +20,9 @@ import itertools
 from django.contrib.auth.models import Group, User
 from rest_framework import status
 
+from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from datumaro.util.test_utils import TestDir
 
 from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
 

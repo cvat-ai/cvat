@@ -1,16 +1,19 @@
 from pathlib import Path
-from typing import Tuple
 import functools
 import hashlib
+import importlib
 import io
 import tarfile
+
+from django.conf import settings
+from django.contrib.sessions.backends.base import SessionBase
 
 _OPA_RULES_PATHS = {
     Path(__file__).parent / 'rules',
 }
 
 @functools.lru_cache(maxsize=None)
-def get_opa_bundle() -> Tuple[bytes, str]:
+def get_opa_bundle() -> tuple[bytes, str]:
     bundle_file = io.BytesIO()
 
     with tarfile.open(fileobj=bundle_file, mode='w:gz') as tar:
@@ -43,3 +46,7 @@ def get_dummy_user(email):
         if email.verified:
             return None
     return user
+
+def clean_up_sessions() -> None:
+    SessionStore: type[SessionBase] = importlib.import_module(settings.SESSION_ENGINE).SessionStore
+    SessionStore.clear_expired()

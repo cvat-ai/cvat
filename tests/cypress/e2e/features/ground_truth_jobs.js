@@ -4,17 +4,22 @@
 
 /// <reference types="cypress" />
 
+import { defaultTaskSpec } from '../../support/default-specs';
+
 context('Ground truth jobs', () => {
-    const caseId = 'Ground truth jobs';
     const labelName = 'car';
-    const taskName = `Annotation task for Case ${caseId}`;
-    const attrName = `Attr for Case ${caseId}`;
-    const textDefaultValue = 'Some default value for type Text';
+    const taskName = 'Annotation task for Ground truth jobs';
 
     const jobOptions = {
         jobType: 'Ground truth',
         frameSelectionMethod: 'Random',
         fromTaskPage: true,
+    };
+
+    const defaultValidationParams = {
+        frameCount: 3,
+        mode: 'gt',
+        frameSelectionMethod: 'random_uniform',
     };
 
     const groundTruthRectangles = [
@@ -64,8 +69,8 @@ context('Ground truth jobs', () => {
     let jobID = null;
     let taskID = null;
 
-    // With seed = 1, frameCount = 4, totalFrames = 10 - predifined ground truth frames are:
-    const groundTruthFrames = [0, 1, 5, 6];
+    // With seed = 1, frameCount = 4, totalFrames = 100 - predifined ground truth frames are:
+    const groundTruthFrames = [10, 23, 71, 87];
 
     function checkRectangleAndObjectMenu(rectangle, isGroundTruthJob = false) {
         if (isGroundTruthJob) {
@@ -97,36 +102,33 @@ context('Ground truth jobs', () => {
         cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
     }
 
+    function createAndOpenTask(serverFiles, validationParams = null) {
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName, serverFiles, labelName, validationParams,
+        });
+        return cy.headlessCreateTask(taskSpec, dataSpec, extras).then((taskResponse) => {
+            taskID = taskResponse.taskID;
+            if (validationParams) {
+                [groundTruthJobID, jobID] = taskResponse.jobIDs;
+            } else {
+                [jobID] = taskResponse.jobIDs;
+            }
+        }).then(() => {
+            cy.visit(`/tasks/${taskID}`);
+            cy.get('.cvat-task-details').should('exist').and('be.visible');
+        });
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
     });
 
     describe('Testing ground truth basics', () => {
-        const imagesCount = 10;
-        const imageFileName = 'ground_truth_1';
-        const width = 800;
-        const height = 800;
-        const posX = 10;
-        const posY = 10;
-        const color = 'gray';
-        const archiveName = `${imageFileName}.zip`;
-        const archivePath = `cypress/fixtures/${archiveName}`;
-        const imagesFolder = `cypress/fixtures/${imageFileName}`;
-        const directoryToArchive = imagesFolder;
+        const serverFiles = ['bigArchive.zip'];
 
         before(() => {
-            cy.visit('/tasks');
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
-            cy.openTask(taskName);
-            cy.url().then((url) => {
-                taskID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-            });
-            cy.get('.cvat-job-item').first().invoke('attr', 'data-row-id').then((val) => {
-                jobID = val;
-            });
+            createAndOpenTask(serverFiles);
         });
 
         after(() => {
@@ -196,35 +198,80 @@ context('Ground truth jobs', () => {
         });
     });
 
+    describe('Testing creating task with quality params', () => {
+        const imagesCount = 3;
+        const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
+        const width = 800;
+        const height = 800;
+        const posX = 10;
+        const posY = 10;
+        const color = 'gray';
+        const archiveName = `${imageFileName}.zip`;
+        const archivePath = `cypress/fixtures/${archiveName}`;
+        const imagesFolder = `cypress/fixtures/${imageFileName}`;
+        const directoryToArchive = imagesFolder;
+        const attrName = 'gt_attr';
+        const defaultAttrValue = 'GT attr';
+        const multiAttrParams = false;
+        const forProject = false;
+        const attachToProject = false;
+        const projectName = null;
+        const expectedResult = 'success';
+        const projectSubsetFieldValue = null;
+        const advancedConfigurationParams = false;
+
+        before(() => {
+            cy.contains('.cvat-header-button', 'Tasks').should('be.visible').click();
+            cy.url().should('include', '/tasks');
+            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+            cy.createZipArchive(directoryToArchive, archivePath);
+        });
+
+        afterEach(() => {
+            cy.goToTaskList();
+            cy.deleteTask(taskName);
+        });
+
+        function createTaskWithQualityParams(qualityParams) {
+            cy.createAnnotationTask(
+                taskName,
+                labelName,
+                attrName,
+                defaultAttrValue,
+                archiveName,
+                multiAttrParams,
+                advancedConfigurationParams,
+                forProject,
+                attachToProject,
+                projectName,
+                expectedResult,
+                projectSubsetFieldValue,
+                qualityParams,
+            );
+            cy.openTask(taskName);
+            cy.get('.cvat-job-item').first()
+                .find('.ant-tag')
+                .should('have.text', 'Ground truth');
+        }
+
+        it('Create task with ground truth job', () => {
+            createTaskWithQualityParams({
+                validationMode: 'Ground Truth',
+            });
+        });
+
+        it('Create task with honeypots', () => {
+            createTaskWithQualityParams({
+                validationMode: 'Honeypots',
+            });
+        });
+    });
+
     describe('Testing ground truth management basics', () => {
         const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
 
         before(() => {
-            cy.headlessCreateTask({
-                labels: [{ name: labelName, attributes: [], type: 'any' }],
-                name: taskName,
-                project_id: null,
-                source_storage: { location: 'local' },
-                target_storage: { location: 'local' },
-            }, {
-                server_files: serverFiles,
-                image_quality: 70,
-                use_zip_chunks: true,
-                use_cache: true,
-                sorting_method: 'lexicographical',
-            }).then((taskResponse) => {
-                taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobIDs;
-            }).then(() => (
-                cy.headlessCreateJob({
-                    task_id: taskID,
-                    frame_count: 3,
-                    type: 'ground_truth',
-                    frame_selection_method: 'random_uniform',
-                })
-            )).then((jobResponse) => {
-                groundTruthJobID = jobResponse.jobID;
-            }).then(() => {
+            createAndOpenTask(serverFiles, defaultValidationParams).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
                 cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
@@ -312,35 +359,10 @@ context('Ground truth jobs', () => {
     });
 
     describe('Regression tests', () => {
-        const imagesCount = 20;
-        const imageFileName = 'ground_truth_2';
-        const width = 100;
-        const height = 100;
-        const posX = 10;
-        const posY = 10;
-        const color = 'gray';
-        const archiveName = `${imageFileName}.zip`;
-        const archivePath = `cypress/fixtures/${archiveName}`;
-        const imagesFolder = `cypress/fixtures/${imageFileName}`;
-        const directoryToArchive = imagesFolder;
+        const serverFiles = ['bigArchive.zip'];
 
-        before(() => {
-            cy.visit('/tasks');
-            cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(directoryToArchive, archivePath);
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                archiveName,
-                false,
-                { multiJobs: true, segmentSize: 1 },
-            );
-            cy.openTask(taskName);
-            cy.url().then((url) => {
-                taskID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-            });
+        beforeEach(() => {
+            createAndOpenTask(serverFiles);
         });
 
         afterEach(() => {
@@ -377,6 +399,52 @@ context('Ground truth jobs', () => {
             cy.url().then((url) => {
                 jobID = Number(url.split('/').slice(-1)[0].split('?')[0]);
             }).should('match', /\/tasks\/\d+\/jobs\/\d+/);
+        });
+
+        it('Check GT annotations can not be shown in standard annotation view', () => {
+            cy.headlessCreateJob({
+                task_id: taskID,
+                frame_count: 4,
+                type: 'ground_truth',
+                frame_selection_method: 'random_uniform',
+                seed: 1,
+            }).then((jobResponse) => {
+                groundTruthJobID = jobResponse.jobID;
+                return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
+                    const gtRect = groundTruthRectangles[index];
+                    return {
+                        labelName,
+                        objectType: 'shape',
+                        shapeType: 'rectangle',
+                        occluded: false,
+                        frame,
+                        points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],
+                    };
+                }), groundTruthJobID);
+            }).then(() => {
+                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                cy.get('.cvat-canvas-container').should('exist');
+
+                cy.changeWorkspace('Review');
+                cy.get('.cvat-objects-sidebar-show-ground-truth').click();
+                cy.get('.cvat-objects-sidebar-show-ground-truth').should(
+                    'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
+                );
+                groundTruthFrames.forEach((frame, index) => {
+                    cy.goCheckFrameNumber(frame);
+                    checkRectangleAndObjectMenu(groundTruthRectangles[index]);
+                });
+
+                cy.interactMenu('Open the task');
+                cy.get('.cvat-task-job-list').within(() => {
+                    cy.contains('a', `Job #${jobID}`).click();
+                });
+                groundTruthFrames.forEach((frame) => {
+                    cy.goCheckFrameNumber(frame);
+                    cy.get('.cvat_canvas_shape').should('not.exist');
+                    cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
+                });
+            });
         });
     });
 });
