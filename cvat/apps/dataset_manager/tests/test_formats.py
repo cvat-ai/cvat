@@ -384,7 +384,7 @@ class TaskExportTest(_DbTestBase):
             ('LFW 1.0', 'lfw'),
             # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
             ('Ultralytics YOLO Classification 1.0', 'yolo_ultralytics_classification'),
-            ('Ultralytics YOLO Oriented Bounding Boxes 1.0', 'yyolo_ultralytics_oriented_boxes'),
+            ('Ultralytics YOLO Oriented Bounding Boxes 1.0', 'yolo_ultralytics_oriented_boxes'),
             ('Ultralytics YOLO Detection 1.0', 'yolo_ultralytics_detection'),
             ('Ultralytics YOLO Pose 1.0', 'yolo_ultralytics_pose'),
             ('Ultralytics YOLO Segmentation 1.0', 'yolo_ultralytics_segmentation'),
