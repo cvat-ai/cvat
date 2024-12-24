@@ -1651,6 +1651,25 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 29,
+  "fields": {
+    "chunk_size": 72,
+    "size": 2,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
@@ -3881,6 +3900,32 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 523,
+  "fields": {
+    "data": 29,
+    "path": "0.png",
+    "frame": 0,
+    "width": 774,
+    "height": 220,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 524,
+  "fields": {
+    "data": 29,
+    "path": "1.png",
+    "frame": 1,
+    "width": 198,
+    "height": 186,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -4206,7 +4251,8 @@
     "subset": "",
     "organization": 1,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4234,7 +4280,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4260,7 +4307,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4288,7 +4336,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4316,7 +4365,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4344,7 +4394,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4372,7 +4423,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": 4,
-    "target_storage": 2
+    "target_storage": 2,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4398,7 +4450,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4426,7 +4479,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4452,7 +4506,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 7,
-    "target_storage": 8
+    "target_storage": 8,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4478,7 +4533,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 15,
-    "target_storage": 16
+    "target_storage": 16,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4506,7 +4562,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4532,7 +4589,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 23,
-    "target_storage": 24
+    "target_storage": 24,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4558,7 +4616,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 25,
-    "target_storage": 26
+    "target_storage": 26,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4584,7 +4643,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 29,
-    "target_storage": 30
+    "target_storage": 30,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4610,7 +4670,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 33,
-    "target_storage": 34
+    "target_storage": 34,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4636,7 +4697,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4662,7 +4724,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4688,7 +4751,8 @@
     "subset": "Train",
     "organization": null,
     "source_storage": 37,
-    "target_storage": 38
+    "target_storage": 38,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4714,7 +4778,8 @@
     "subset": "Validation",
     "organization": null,
     "source_storage": 39,
-    "target_storage": 40
+    "target_storage": 40,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4742,7 +4807,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 45,
-    "target_storage": 46
+    "target_storage": 46,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4770,7 +4836,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 47,
-    "target_storage": 48
+    "target_storage": 48,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4796,7 +4863,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 49,
-    "target_storage": 50
+    "target_storage": 50,
+    "consensus_jobs_per_regular_job": 0
   }
 },
 {
@@ -4822,7 +4890,35 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 0
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 30,
+  "fields": {
+    "created_date": "2024-12-24T17:20:09.731Z",
+    "updated_date": "2024-12-24T17:21:49.968Z",
+    "project": null,
+    "name": "task with consensus jobs",
+    "mode": "annotation",
+    "owner": [
+      "user1"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 2,
+    "status": "annotation",
+    "data": 29,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 1,
+    "source_storage": null,
+    "target_storage": null,
+    "consensus_jobs_per_regular_job": 2
   }
 },
 {
@@ -6173,6 +6269,18 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 42,
+  "fields": {
+    "task": 30,
+    "start_frame": 0,
+    "stop_frame": 1,
+    "chunks_updated_date": "2024-12-24T17:20:09.877Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -6186,7 +6294,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6203,7 +6312,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6218,7 +6328,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6233,7 +6344,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6250,7 +6362,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6267,7 +6380,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6282,7 +6396,8 @@
     "status": "validation",
     "stage": "validation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6297,7 +6412,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6312,7 +6428,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6329,7 +6446,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6344,7 +6462,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6359,7 +6478,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6374,7 +6494,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6389,7 +6510,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6404,7 +6526,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6419,7 +6542,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6434,7 +6558,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6449,7 +6574,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6464,7 +6590,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6479,7 +6606,8 @@
     "status": "validation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6494,7 +6622,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -6509,7 +6638,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6524,7 +6654,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6539,7 +6670,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6554,7 +6686,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -6569,7 +6702,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6584,7 +6718,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6599,7 +6734,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6614,7 +6750,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6629,7 +6766,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6644,7 +6782,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6659,7 +6798,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6674,7 +6814,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6689,7 +6830,62 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 42,
+  "fields": {
+    "created_date": "2024-12-24T17:20:09.881Z",
+    "updated_date": "2024-12-24T17:21:49.958Z",
+    "segment": 42,
+    "assignee": [
+      "user7"
+    ],
+    "assignee_updated_date": "2024-12-24T17:20:29.498Z",
+    "status": "completed",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 43,
+  "fields": {
+    "created_date": "2024-12-24T17:20:09.889Z",
+    "updated_date": "2024-12-24T17:20:41.226Z",
+    "segment": 42,
+    "assignee": [
+      "worker2"
+    ],
+    "assignee_updated_date": "2024-12-24T17:20:32.968Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 42
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 44,
+  "fields": {
+    "created_date": "2024-12-24T17:20:09.893Z",
+    "updated_date": "2024-12-24T17:20:39.362Z",
+    "segment": 42,
+    "assignee": [
+      "worker1"
+    ],
+    "assignee_updated_date": "2024-12-24T17:20:35.006Z",
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "completed",
+    "type": "consensus",
+    "parent_job": 42
   }
 },
 {
@@ -7533,6 +7729,126 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 78,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "human",
+    "color": "#c080e0",
+    "type": "skeleton",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 79,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "1",
+    "color": "#d12345",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 80,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "2",
+    "color": "#350dea",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 81,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "3",
+    "color": "#479ffe",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 82,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "4",
+    "color": "#4a649f",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 83,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "5",
+    "color": "#478144",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 84,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "6",
+    "color": "#57236b",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 85,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "7",
+    "color": "#1cdda5",
+    "type": "points",
+    "parent": 78
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 86,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 87,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -7586,6 +7902,14 @@
   "fields": {
     "root": 68,
     "svg": "<line x1=\"45.96969985961914\" y1=\"28.54729652404785\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"2\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"31.7805118560791\" y2=\"16.04729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"1\"></line>\n<line x1=\"32.11834716796875\" y1=\"28.716217041015625\" x2=\"45.96969985961914\" y2=\"28.54729652404785\" data-type=\"edge\" data-node-from=\"3\" data-node-to=\"2\"></line>\n<circle r=\"0.75\" cx=\"31.7805118560791\" cy=\"16.04729652404785\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"69\"></circle>\n<circle r=\"0.75\" cx=\"45.96969985961914\" cy=\"28.54729652404785\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"70\"></circle>\n<circle r=\"0.75\" cx=\"32.11834716796875\" cy=\"28.716217041015625\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"71\"></circle>\n<circle r=\"0.75\" cx=\"32.62510681152344\" cy=\"40.202701568603516\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"72\"></circle>"
+  }
+},
+{
+  "model": "engine.skeleton",
+  "pk": 8,
+  "fields": {
+    "root": 78,
+    "svg": "<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"28.118427276611328\" y2=\"34.79792022705078\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"2\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"41.1402587890625\" y2=\"24.113340377807617\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"1\"></line>\n<line x1=\"42.97666931152344\" y1=\"35.29875946044922\" x2=\"59.003536224365234\" y2=\"34.464027404785156\" data-type=\"edge\" data-node-from=\"6\" data-node-to=\"3\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"42.97666931152344\" y2=\"35.29875946044922\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"6\"></line>\n<line x1=\"43.14361572265625\" y1=\"44.64776611328125\" x2=\"57.000179290771484\" y2=\"55.16539764404297\" data-type=\"edge\" data-node-from=\"7\" data-node-to=\"5\"></line>\n<line x1=\"33.460716247558594\" y1=\"54.998451232910156\" x2=\"43.14361572265625\" y2=\"44.64776611328125\" data-type=\"edge\" data-node-from=\"4\" data-node-to=\"7\"></line>\n<circle r=\"0.75\" cx=\"41.1402587890625\" cy=\"24.113340377807617\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"79\"></circle>\n<circle r=\"0.75\" cx=\"28.118427276611328\" cy=\"34.79792022705078\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"80\"></circle>\n<circle r=\"0.75\" cx=\"59.003536224365234\" cy=\"34.464027404785156\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"81\"></circle>\n<circle r=\"0.75\" cx=\"33.460716247558594\" cy=\"54.998451232910156\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"82\"></circle>\n<circle r=\"0.75\" cx=\"57.000179290771484\" cy=\"55.16539764404297\" data-type=\"element node\" data-element-id=\"5\" data-node-id=\"5\" data-label-id=\"83\"></circle>\n<circle r=\"0.75\" cx=\"42.97666931152344\" cy=\"35.29875946044922\" data-type=\"element node\" data-element-id=\"6\" data-node-id=\"6\" data-label-id=\"84\"></circle>\n<circle r=\"0.75\" cx=\"43.14361572265625\" cy=\"44.64776611328125\" data-type=\"element node\" data-element-id=\"7\" data-node-id=\"7\" data-label-id=\"85\"></circle>"
   }
 },
 {
@@ -10829,6 +11153,834 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 213,
+  "fields": {
+    "job": 43,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.657046435881057,23.867087153861576,132.87821978533793,88.45460793262646",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 214,
+  "fields": {
+    "job": 43,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "584.5,118.90000000000146,653.8000000000011,125.20000000000073,653.3000000000011,151.40000000000146,626.0,167.20000000000073,566.1000000000004,162.5",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 215,
+  "fields": {
+    "job": 43,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "154.5,117.90000000000146,117.60000000000036,134.5,201.70000000000073,143.10000000000036,155.0,160.3000000000011",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 216,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 217,
+  "fields": {
+    "job": 43,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "605.1826171875,58.802734375,692.0869140625,24.93359375",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 218,
+  "fields": {
+    "job": 43,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.4950283371236,40.1455078125",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 219,
+  "fields": {
+    "job": 43,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.2588744731893,89.15501469517767",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 220,
+  "fields": {
+    "job": 43,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43115552979,137.37403735759472",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 221,
+  "fields": {
+    "job": 43,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91015625,90.73596507347065",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 222,
+  "fields": {
+    "job": 43,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.3227472805229,187.17401039830838",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 223,
+  "fields": {
+    "job": 43,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.0731772087074,186.38353520916098",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 224,
+  "fields": {
+    "job": 43,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.769811597067,93.10739064091285",
+    "rotation": 0.0,
+    "parent": 216
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 225,
+  "fields": {
+    "job": 44,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "75.0,31.0,139.0,52.0,122.0,67.0,108.0,79.0,97.0,89.0,88.0,97.0,80.0,105.0,73.0,111.0,66.0,118.0,61.0,123.0,55.0,129.0,50.0,133.0,46.0,138.0,40.0,142.0,37.0,146.0,34.0,149.0,30.0,153.0,27.0,156.0,23.0,159.0,20.0,162.0,18.0,165.0,15.0,167.0,13.0,169.0,11.0,171.0,10.0,171.0,9.0,173.0,7.0,175.0,5.0,177.0,4.0,177.0,3.0,179.0,2.0,179.0,2.0,179.0,1.0,1267.0,1.0,179.0,2.0,179.0,2.0,179.0,3.0,177.0,5.0,175.0,6.0,175.0,7.0,173.0,9.0,171.0,10.0,171.0,11.0,169.0,13.0,167.0,15.0,165.0,17.0,162.0,21.0,159.0,23.0,157.0,26.0,153.0,30.0,149.0,33.0,146.0,37.0,142.0,42.0,138.0,45.0,133.0,50.0,129.0,55.0,123.0,60.0,118.0,67.0,111.0,73.0,105.0,80.0,97.0,88.0,89.0,97.0,79.0,108.0,67.0,121.0,52.0,140.0,31.0,75.0,514.0,25.0,694.0,95.0",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 226,
+  "fields": {
+    "job": 44,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 227,
+  "fields": {
+    "job": 44,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.66,23.87,132.88,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 228,
+  "fields": {
+    "job": 44,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 229,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 230,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 231,
+  "fields": {
+    "job": 44,
+    "label": 86,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "143.08,46.81,109.55,46.81,74.54,50.82,74.54,85.61,56.41,95.95,80.45,110.71,98.37,106.28",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 232,
+  "fields": {
+    "job": 44,
+    "label": 87,
+    "frame": 1,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "19.37,27.18,67.67,27.6,94.24,48.9,82.43,64.29,70.83,87.7,36.03,78.63,13.26,71.46",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 233,
+  "fields": {
+    "job": 44,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91,90.74",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 234,
+  "fields": {
+    "job": 44,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.07,186.38",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 235,
+  "fields": {
+    "job": 44,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.26,89.16",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 236,
+  "fields": {
+    "job": 44,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.5,40.15",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 237,
+  "fields": {
+    "job": 44,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.32,187.17",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 238,
+  "fields": {
+    "job": 44,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.77,93.11",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 239,
+  "fields": {
+    "job": 44,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43,137.37",
+    "rotation": 0.0,
+    "parent": 229
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 240,
+  "fields": {
+    "job": 44,
+    "label": 85,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.91,157.85",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 241,
+  "fields": {
+    "job": 44,
+    "label": 80,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "0.52,135.44",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 242,
+  "fields": {
+    "job": 44,
+    "label": 82,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "11.68,181.4",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 243,
+  "fields": {
+    "job": 44,
+    "label": 81,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "65.05,134.68",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 244,
+  "fields": {
+    "job": 44,
+    "label": 84,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "31.57,136.58",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 245,
+  "fields": {
+    "job": 44,
+    "label": 83,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "60.87,181.78",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 246,
+  "fields": {
+    "job": 44,
+    "label": 79,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "27.73,111.13",
+    "rotation": 0.0,
+    "parent": 230
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 247,
+  "fields": {
+    "job": 42,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "569.24,110.51,648.53,115.76,648.53,150.42,616.5,164.07,559.79,159.34",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 248,
+  "fields": {
+    "job": 42,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "23.66,23.87,132.88,88.45",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 249,
+  "fields": {
+    "job": 42,
+    "label": 86,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "153.36,119.44,118.7,134.66,202.19,146.22,154.41,163.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 250,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "skeleton",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 251,
+  "fields": {
+    "job": 42,
+    "label": 87,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "75,31,139,52,122,67,108,79,97,89,88,97,80,105,73,111,66,118,61,123,55,129,50,133,46,138,40,142,37,146,34,149,30,153,27,156,23,159,20,162,18,165,15,167,13,169,11,171,10,171,9,173,7,175,5,177,4,177,3,179,2,179,2,179,1,1267,1,179,2,179,2,179,3,177,5,175,6,175,7,173,9,171,10,171,11,169,13,167,15,165,17,162,21,159,23,157,26,153,30,149,33,146,37,142,42,138,45,133,50,129,55,123,60,118,67,111,73,105,80,97,88,89,97,79,108,67,121,52,140,31,75,514,25,694,95",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 252,
+  "fields": {
+    "job": 42,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "352.5,40.15",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 253,
+  "fields": {
+    "job": 42,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "300.91,90.74",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 254,
+  "fields": {
+    "job": 42,
+    "label": 84,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "359.77,93.11",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 255,
+  "fields": {
+    "job": 42,
+    "label": 81,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "423.26,89.16",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 256,
+  "fields": {
+    "job": 42,
+    "label": 83,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "415.32,187.17",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 257,
+  "fields": {
+    "job": 42,
+    "label": 85,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "360.43,137.37",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 258,
+  "fields": {
+    "job": 42,
+    "label": 82,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "322.07,186.38",
+    "rotation": 0.0,
+    "parent": 250
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -13779,6 +14931,1657 @@
       }
     },
     "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n"
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 5,
+  "fields": {
+    "created_date": "2024-12-24T17:20:10.533Z",
+    "updated_date": "2024-12-24T17:20:10.534Z",
+    "webhook": 6,
+    "event": "create:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "",
+        "name": "task with consensus jobs",
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.731500Z",
+        "source_storage": null,
+        "target_storage": null,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "create:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 6,
+  "fields": {
+    "created_date": "2024-12-24T17:20:10.842Z",
+    "updated_date": "2024-12-24T17:20:10.842Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,data_chunk_size,data_compressed_chunk_type,data_original_chunk_type,size,image_quality,data",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "",
+        "name": "task with consensus jobs",
+        "size": 0,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.855506Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "data": null,
+        "size": null,
+        "updated_date": "2024-12-24T17:20:09.731500Z",
+        "image_quality": null,
+        "data_chunk_size": null,
+        "data_original_chunk_type": null,
+        "data_compressed_chunk_type": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 7,
+  "fields": {
+    "created_date": "2024-12-24T17:20:11.259Z",
+    "updated_date": "2024-12-24T17:20:11.259Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "mode,updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.910573Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "mode": "",
+        "updated_date": "2024-12-24T17:20:09.855506Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 8,
+  "fields": {
+    "created_date": "2024-12-24T17:20:11.559Z",
+    "updated_date": "2024-12-24T17:20:11.559Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.926417Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:09.910573Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 9,
+  "fields": {
+    "created_date": "2024-12-24T17:20:12.112Z",
+    "updated_date": "2024-12-24T17:20:12.112Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,status",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:09.995794Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:09.926417Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 10,
+  "fields": {
+    "created_date": "2024-12-24T17:20:12.482Z",
+    "updated_date": "2024-12-24T17:20:12.482Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:09.979112Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.881183Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 11,
+  "fields": {
+    "created_date": "2024-12-24T17:20:12.802Z",
+    "updated_date": "2024-12-24T17:20:12.802Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.010431Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.889170Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 12,
+  "fields": {
+    "created_date": "2024-12-24T17:20:13.088Z",
+    "updated_date": "2024-12-24T17:20:13.088Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,status",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.029970Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.995794Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 13,
+  "fields": {
+    "created_date": "2024-12-24T17:20:13.504Z",
+    "updated_date": "2024-12-24T17:20:13.505Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.020983Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "annotation",
+        "updated_date": "2024-12-24T17:20:09.893322Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 14,
+  "fields": {
+    "created_date": "2024-12-24T17:20:13.810Z",
+    "updated_date": "2024-12-24T17:20:13.810Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.067846Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:09.979112Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 15,
+  "fields": {
+    "created_date": "2024-12-24T17:20:14.221Z",
+    "updated_date": "2024-12-24T17:20:14.221Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.074192Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.029970Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 16,
+  "fields": {
+    "created_date": "2024-12-24T17:20:14.621Z",
+    "updated_date": "2024-12-24T17:20:14.622Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.097974Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.010431Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 17,
+  "fields": {
+    "created_date": "2024-12-24T17:20:14.939Z",
+    "updated_date": "2024-12-24T17:20:14.939Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.103936Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.074192Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 18,
+  "fields": {
+    "created_date": "2024-12-24T17:20:15.246Z",
+    "updated_date": "2024-12-24T17:20:15.246Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:10.130238Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.020983Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 19,
+  "fields": {
+    "created_date": "2024-12-24T17:20:15.551Z",
+    "updated_date": "2024-12-24T17:20:15.551Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "completed",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:10.136501Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:10.103936Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 20,
+  "fields": {
+    "created_date": "2024-12-24T17:20:29.855Z",
+    "updated_date": "2024-12-24T17:20:29.855Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "assignee,updated_date,assignee_updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "http://localhost:8080/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=42",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=42"
+        },
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 10,
+          "url": "http://localhost:8080/api/users/10",
+          "username": "user7",
+          "last_name": "Seventh",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:29.536255Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:29.498066Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "assignee": null,
+        "updated_date": "2024-12-24T17:20:10.067846Z",
+        "assignee_updated_date": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 21,
+  "fields": {
+    "created_date": "2024-12-24T17:20:33.369Z",
+    "updated_date": "2024-12-24T17:20:33.369Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "assignee,updated_date,assignee_updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "http://localhost:8080/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=43",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=43"
+        },
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 7,
+          "url": "http://localhost:8080/api/users/7",
+          "username": "worker2",
+          "last_name": "Second",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:33.007730Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:32.968395Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "assignee": null,
+        "updated_date": "2024-12-24T17:20:10.097974Z",
+        "assignee_updated_date": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 22,
+  "fields": {
+    "created_date": "2024-12-24T17:20:35.418Z",
+    "updated_date": "2024-12-24T17:20:35.418Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "assignee,updated_date,assignee_updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "http://localhost:8080/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "new",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=44",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=44"
+        },
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 6,
+          "url": "http://localhost:8080/api/users/6",
+          "username": "worker1",
+          "last_name": "First",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:35.045835Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:35.006519Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "assignee": null,
+        "updated_date": "2024-12-24T17:20:10.130238Z",
+        "assignee_updated_date": null
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 23,
+  "fields": {
+    "created_date": "2024-12-24T17:20:39.720Z",
+    "updated_date": "2024-12-24T17:20:39.720Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date,status",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "http://localhost:8080/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": "http://localhost:8080/api/jobs?task_id=30",
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "http://localhost:8080/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?task_id=30"
+        },
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:20:39.386055Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:10.136501Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 24,
+  "fields": {
+    "created_date": "2024-12-24T17:20:40.025Z",
+    "updated_date": "2024-12-24T17:20:40.025Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,state,updated_date",
+    "request": {
+      "job": {
+        "id": 44,
+        "url": "http://localhost:8080/api/jobs/44",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "completed",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=44",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=44"
+        },
+        "status": "annotation",
+        "task_id": 30,
+        "assignee": {
+          "id": 6,
+          "url": "http://localhost:8080/api/users/6",
+          "username": "worker1",
+          "last_name": "First",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.893311Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:39.362453Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:35.006519Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "state": "new",
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:35.045835Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 25,
+  "fields": {
+    "created_date": "2024-12-24T17:20:41.665Z",
+    "updated_date": "2024-12-24T17:20:41.665Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "status,state,updated_date",
+    "request": {
+      "job": {
+        "id": 43,
+        "url": "http://localhost:8080/api/jobs/43",
+        "mode": "annotation",
+        "type": "consensus",
+        "stage": "annotation",
+        "state": "completed",
+        "issues": {
+          "url": "http://localhost:8080/api/issues?job_id=43",
+          "count": 0
+        },
+        "labels": {
+          "url": "http://localhost:8080/api/labels?job_id=43"
+        },
+        "status": "annotation",
+        "task_id": 30,
+        "assignee": {
+          "id": 7,
+          "url": "http://localhost:8080/api/users/7",
+          "username": "worker2",
+          "last_name": "Second",
+          "first_name": "Worker"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.889148Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:20:41.226063Z",
+        "parent_job_id": 42,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:32.968395Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1",
+        "last_name": "First",
+        "first_name": "User"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "state": "new",
+        "status": "completed",
+        "updated_date": "2024-12-24T17:20:33.007730Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 26,
+  "fields": {
+    "created_date": "2024-12-24T17:21:50.272Z",
+    "updated_date": "2024-12-24T17:21:50.272Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "user7",
+          "last_name": "Seventh",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:21:49.891722Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:29.498066Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:29.536255Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 27,
+  "fields": {
+    "created_date": "2024-12-24T17:21:50.494Z",
+    "updated_date": "2024-12-24T17:21:50.494Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:21:49.905944Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:20:39.386055Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 28,
+  "fields": {
+    "created_date": "2024-12-24T17:21:50.887Z",
+    "updated_date": "2024-12-24T17:21:50.887Z",
+    "webhook": 6,
+    "event": "update:job",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "job": {
+        "id": 42,
+        "url": "/api/jobs/42",
+        "mode": "annotation",
+        "type": "annotation",
+        "stage": "annotation",
+        "state": "new",
+        "issues": null,
+        "labels": null,
+        "status": "completed",
+        "task_id": 30,
+        "assignee": {
+          "id": 10,
+          "url": "/api/users/10",
+          "username": "user7",
+          "last_name": "Seventh",
+          "first_name": "User"
+        },
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "stop_frame": 1,
+        "bug_tracker": null,
+        "frame_count": 2,
+        "start_frame": 0,
+        "created_date": "2024-12-24T17:20:09.881171Z",
+        "organization": 1,
+        "updated_date": "2024-12-24T17:21:49.958525Z",
+        "parent_job_id": null,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "assignee_updated_date": "2024-12-24T17:20:29.498066Z",
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset"
+      },
+      "event": "update:job",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:21:49.891722Z"
+      }
+    },
+    "response": ""
+  }
+},
+{
+  "model": "webhooks.webhookdelivery",
+  "pk": 29,
+  "fields": {
+    "created_date": "2024-12-24T17:21:51.197Z",
+    "updated_date": "2024-12-24T17:21:51.197Z",
+    "webhook": 6,
+    "event": "update:task",
+    "status_code": 405,
+    "redelivery": false,
+    "changed_fields": "updated_date",
+    "request": {
+      "task": {
+        "id": 30,
+        "url": "/api/tasks/30",
+        "data": 29,
+        "jobs": {
+          "url": null,
+          "count": null,
+          "completed": null,
+          "validation": null
+        },
+        "mode": "annotation",
+        "name": "task with consensus jobs",
+        "size": 2,
+        "owner": {
+          "id": 2,
+          "url": "/api/users/2",
+          "username": "user1",
+          "last_name": "First",
+          "first_name": "User"
+        },
+        "labels": null,
+        "status": "annotation",
+        "subset": "",
+        "overlap": 0,
+        "assignee": null,
+        "guide_id": null,
+        "dimension": "2d",
+        "project_id": null,
+        "bug_tracker": "",
+        "created_date": "2024-12-24T17:20:09.731461Z",
+        "organization": 1,
+        "segment_size": 2,
+        "updated_date": "2024-12-24T17:21:49.968750Z",
+        "image_quality": 70,
+        "source_storage": null,
+        "target_storage": null,
+        "data_chunk_size": 72,
+        "validation_mode": null,
+        "assignee_updated_date": null,
+        "data_original_chunk_type": "imageset",
+        "data_compressed_chunk_type": "imageset",
+        "consensus_jobs_per_regular_job": 2
+      },
+      "event": "update:task",
+      "sender": {
+        "id": 2,
+        "email": "user1@cvat.org",
+        "username": "user1"
+      },
+      "webhook_id": 6,
+      "before_update": {
+        "updated_date": "2024-12-24T17:21:49.905944Z"
+      }
+    },
+    "response": ""
   }
 },
 {
@@ -18729,6 +21532,413 @@
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 25,
+  "fields": {
+    "task": 30,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "match_empty_frames": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 1,
+  "fields": {
+    "task": 2,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 2,
+  "fields": {
+    "task": 5,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 3,
+  "fields": {
+    "task": 6,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 4,
+  "fields": {
+    "task": 7,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 5,
+  "fields": {
+    "task": 8,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 6,
+  "fields": {
+    "task": 9,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 7,
+  "fields": {
+    "task": 11,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 8,
+  "fields": {
+    "task": 12,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 9,
+  "fields": {
+    "task": 13,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 10,
+  "fields": {
+    "task": 14,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 11,
+  "fields": {
+    "task": 15,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 12,
+  "fields": {
+    "task": 17,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 13,
+  "fields": {
+    "task": 18,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 14,
+  "fields": {
+    "task": 19,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 15,
+  "fields": {
+    "task": 20,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 16,
+  "fields": {
+    "task": 21,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 17,
+  "fields": {
+    "task": 22,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 18,
+  "fields": {
+    "task": 23,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 19,
+  "fields": {
+    "task": 24,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 20,
+  "fields": {
+    "task": 25,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 21,
+  "fields": {
+    "task": 26,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 22,
+  "fields": {
+    "task": 27,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 23,
+  "fields": {
+    "task": 28,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 24,
+  "fields": {
+    "task": 29,
+    "agreement_score_threshold": 0.0,
+    "quorum": 0,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensussettings",
+  "pk": 25,
+  "fields": {
+    "task": 30,
+    "agreement_score_threshold": 0.0,
+    "quorum": 2,
+    "iou_threshold": 0.5,
+    "sigma": 0.1,
+    "line_thickness": 0.01
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 1,
+  "fields": {
+    "task": 30,
+    "job": null,
+    "created_date": "2024-12-24T17:21:49.978Z",
+    "target_last_updated": "2024-12-24T17:21:49.968Z",
+    "consensus_score": 48,
+    "assignee": null,
+    "parent": null,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":3,\"conflicts_by_type\":{\"failed_label_voting\":3},\"frame_count\":2,\"mean_conflict_count\":1.5},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":3,\"conflicts_by_type\":{\"failed_label_voting\":3}}},\"consensus_score\":48.0}"
+  }
+},
+{
+  "model": "consensus.consensusreport",
+  "pk": 2,
+  "fields": {
+    "task": 30,
+    "job": 42,
+    "created_date": "2024-12-24T17:21:49.981Z",
+    "target_last_updated": "2024-12-24T17:20:29.536Z",
+    "consensus_score": 48,
+    "assignee": [
+      "user7"
+    ],
+    "parent": 1,
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\",\"label\"],\"agreement_score_threshold\":0.0,\"quorum\":2,\"iou_threshold\":0.5,\"sigma\":0.1,\"line_thickness\":0.01},\"comparison_summary\":{\"frames\":[0,1],\"conflict_count\":8,\"conflicts_by_type\":{\"failed_label_voting\":3},\"frame_count\":2,\"mean_conflict_count\":4.0},\"frame_results\":{\"0\":{\"conflicts\":[],\"consensus_score\":0.9559561542507508,\"conflict_count\":0,\"conflicts_by_type\":{}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]},{\"frame_id\":1,\"type\":\"failed_label_voting\",\"annotation_ids\":[]}],\"consensus_score\":0.0,\"conflict_count\":3,\"conflicts_by_type\":{\"failed_label_voting\":3}}},\"consensus_score\":48.0}"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 1,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 2,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.consensusconflict",
+  "pk": 3,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "failed_label_voting"
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 1,
+  "fields": {
+    "task": 30,
+    "assignee": [
+      "worker2"
+    ],
+    "consensus_score": 89,
+    "conflict_count": 0,
+    "consensus_report_id": 1
+  }
+},
+{
+  "model": "consensus.assigneeconsensusreport",
+  "pk": 2,
+  "fields": {
+    "task": 30,
+    "assignee": [
+      "worker1"
+    ],
+    "consensus_score": 100,
+    "conflict_count": 0,
+    "consensus_report_id": 1
   }
 },
 {

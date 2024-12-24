@@ -1,259 +1,28 @@
 {
-  "count": 24,
+  "count": 3,
   "next": null,
   "previous": null,
   "results": [
     {
       "annotation_ids": [],
       "frame": 1,
-      "id": 24,
-      "report_id": 5,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 1,
-      "id": 23,
-      "report_id": 5,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 42,
-          "obj_id": 19,
-          "shape_type": "rectangle",
-          "type": "track"
-        }
-      ],
-      "frame": 1,
-      "id": 22,
-      "report_id": 5,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 43,
-          "obj_id": 21,
-          "shape_type": "rectangle",
-          "type": "track"
-        }
-      ],
-      "frame": 1,
-      "id": 21,
-      "report_id": 5,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 0,
-      "id": 20,
-      "report_id": 5,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 0,
-      "id": 19,
-      "report_id": 5,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 42,
-          "obj_id": 19,
-          "shape_type": "rectangle",
-          "type": "track"
-        }
-      ],
-      "frame": 0,
-      "id": 18,
-      "report_id": 5,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 43,
-          "obj_id": 21,
-          "shape_type": "rectangle",
-          "type": "track"
-        }
-      ],
-      "frame": 0,
-      "id": 17,
-      "report_id": 5,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 16,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 15,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 46,
-          "obj_id": 254,
-          "shape_type": "polygon",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
-      "id": 14,
-      "report_id": 4,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 47,
-          "obj_id": 257,
-          "shape_type": "polygon",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
-      "id": 13,
-      "report_id": 4,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 12,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 11,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 46,
-          "obj_id": 252,
-          "shape_type": "ellipse",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
-      "id": 10,
-      "report_id": 4,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 47,
-          "obj_id": 256,
-          "shape_type": "ellipse",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
-      "id": 9,
-      "report_id": 4,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 8,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 7,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 46,
-          "obj_id": 251,
-          "shape_type": "points",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
-      "id": 6,
-      "report_id": 4,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [
-        {
-          "job_id": 47,
-          "obj_id": 258,
-          "shape_type": "points",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
-      "id": 5,
-      "report_id": 4,
-      "type": "no_matching_annotation"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
-      "id": 4,
-      "report_id": 4,
-      "type": "failed_label_voting"
-    },
-    {
-      "annotation_ids": [],
-      "frame": 2,
       "id": 3,
-      "report_id": 4,
+      "report_id": 2,
       "type": "failed_label_voting"
     },
     {
-      "annotation_ids": [
-        {
-          "job_id": 46,
-          "obj_id": 253,
-          "shape_type": "polyline",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
+      "annotation_ids": [],
+      "frame": 1,
       "id": 2,
-      "report_id": 4,
-      "type": "no_matching_annotation"
+      "report_id": 2,
+      "type": "failed_label_voting"
     },
     {
-      "annotation_ids": [
-        {
-          "job_id": 47,
-          "obj_id": 255,
-          "shape_type": "polyline",
-          "type": "shape"
-        }
-      ],
-      "frame": 2,
+      "annotation_ids": [],
+      "frame": 1,
       "id": 1,
-      "report_id": 4,
-      "type": "no_matching_annotation"
+      "report_id": 2,
+      "type": "failed_label_voting"
     }
   ]
 }
