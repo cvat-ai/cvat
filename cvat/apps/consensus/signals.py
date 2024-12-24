@@ -16,23 +16,11 @@ from cvat.apps.engine.models import Job, Task
     sender=Task,
     dispatch_uid=__name__ + ".save_task-initialize_consensus_settings",
 )
-@receiver(
-    post_save,
-    sender=Job,
-    dispatch_uid=__name__ + ".save_job-initialize_consensus_settings",
-)
 def __save_task__initialize_consensus_settings(instance, created, **kwargs):
     # Initializes default quality settings for the task
     # this is done in a signal to decouple this component from the engine app
 
     if created:
-        if isinstance(instance, Task):
-            task = instance
-        elif isinstance(instance, Job):
-            task = instance.segment.task
-        else:
-            assert False
-
         ConsensusSettings.objects.get_or_create(
-            task=task, quorum=math.ceil(task.consensus_jobs_per_regular_job / 2)
+            task=instance, quorum=math.ceil(instance.consensus_jobs_per_regular_job / 2)
         )
