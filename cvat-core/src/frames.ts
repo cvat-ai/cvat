@@ -39,7 +39,7 @@ const frameDataCache: Record<string, {
 }> = {};
 
 // frame meta data storage by job id
-const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
+const frameMetaCache: Record<string, FramesMetaData | Promise<FramesMetaData>> = {};
 
 export class FramesMetaData {
     public chunkSize: number;
@@ -555,10 +555,11 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
                     ...serialized,
                     deleted_frames: Object.fromEntries(serialized.deleted_frames.map((_frame) => [_frame, true])),
                 });
+                frameMetaCache[id] = framesMetaData;
                 resolve(framesMetaData);
             }).catch((error: unknown) => {
                 delete frameMetaCache[id];
-                if (previousCache instanceof Promise) {
+                if (previousCache instanceof Promise || previousCache instanceof FramesMetaData) {
                     frameMetaCache[id] = previousCache;
                 }
                 reject(error);
@@ -566,6 +567,9 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
         });
     }
 
+    if (!(frameMetaCache[id] instanceof Promise)) {
+        return Promise.resolve(frameMetaCache[id]);
+    }
     return frameMetaCache[id];
 }
 
@@ -621,7 +625,6 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
             // chunks were re-defined. Existing data not relevant anymore
             // currently we only re-write meta, remove all cached frames from provider and clear cached context images
             // other parameters (e.g. chunkSize) are not supposed to be changed
-            cached.meta = meta;
             cached.provider.cleanup(Number.MAX_SAFE_INTEGER);
             for (const frame of Object.keys(cached.contextCache)) {
                 for (const image of Object.values(cached.contextCache[+frame].data)) {
@@ -761,7 +764,6 @@ export async function getFrame(
         );
 
         frameDataCache[jobID] = {
-            meta,
             metaFetchedTimestamp: Date.now(),
             chunkSize,
             mode,
@@ -784,6 +786,13 @@ export async function getFrame(
             latestContextImagesRequest: null,
             contextCache: {},
             getChunk,
+            get meta(): FramesMetaData {
+                const cached = frameMetaCache[jobID];
+                if (!cached || cached instanceof Promise) {
+                    throw new Error('Frame meta data is not initialized');
+                }
+                return cached;
+            },
         };
     }
 
