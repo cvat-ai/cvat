@@ -126,3 +126,22 @@ is named to correspond with its associated image file.
 
 For example, `frame_000001.txt` serves as the annotation for the
 `frame_000001.jpg` image.
+
+## Import
+
+Uploaded file: a zip archive of the same structure as above.
+
+Alternatively, since some tools (e.g. https://roboflow.com/formats/yolov8-pytorch-txt) have the folders order
+switched when exporting to Ultralytics YOLO format, CVAT can import such datasets.
+```bash
+archive.zip/
+   ├── train/
+   │   ├── images/  # directory with images for train subset
+   │   │    ├── image1.jpg
+   │   │    ├── image2.jpg
+   │   │    └── ...
+   │   ├── labels/  # directory with annotations for train subset
+   │   │    ├── image1.txt
+   │   │    ├── image2.txt
+   │   │    └── ...
+```
