@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from cvat.apps.consensus.models import ConsensusSettings
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Task
 
 
 @receiver(
