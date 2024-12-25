@@ -164,6 +164,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                     selection.selectedRowKeys.length !== 0 ? (
                         <>
                             <DeleteOutlined
+                                className='cvat-allocation-selection-frame-delete'
                                 onClick={() => {
                                     const framesToUpdate = selection.selectedRows
                                         .filter((frameData) => frameData.active)
@@ -173,6 +174,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                                 }}
                             />
                             <Icon
+                                className='cvat-allocation-selection-frame-restore'
                                 onClick={() => {
                                     const framesToUpdate = selection.selectedRows
                                         .filter((frameData) => !frameData.active)
