@@ -14,5 +14,3 @@ lupa==1.14.1
     # via fakeredis
 sortedcontainers==2.4.0
     # via fakeredis
-
-# The following packages are considered to be unsafe in a requirements file:
