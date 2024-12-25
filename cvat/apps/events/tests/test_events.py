@@ -97,95 +97,107 @@ class WorkingTimeTestCase(unittest.TestCase):
         self.assertEqual(event_times[1], self._SHORT_GAP_INT)
 
     def test_instants_with_long_gap(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._instant_event(self._START_TIMESTAMP),
             self._instant_event(self._START_TIMESTAMP + self._LONG_GAP),
         ])
-        self.assertEqual(self._working_time(events[0]), 0)
-        self.assertEqual(self._working_time(events[1]), 0)
+
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 0)
+        self.assertEqual(event_times[1], 0)
 
     def test_compressed_with_short_gap(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=1)),
             self._compressed_event(
                 self._START_TIMESTAMP + timedelta(seconds=1) + self._SHORT_GAP,
                 timedelta(seconds=5)
             ),
         ])
-        self.assertEqual(self._working_time(events[0]), 1000)
-        self.assertEqual(self._working_time(events[1]), self._SHORT_GAP_INT + 5000)
+
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 1000)
+        self.assertEqual(event_times[1], self._SHORT_GAP_INT + 5000)
 
     def test_compressed_with_long_gap(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=1)),
             self._compressed_event(
                 self._START_TIMESTAMP + timedelta(seconds=1) + self._LONG_GAP,
                 timedelta(seconds=5)
             ),
         ])
-        self.assertEqual(self._working_time(events[0]), 1000)
-        self.assertEqual(self._working_time(events[1]), 5000)
+
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 1000)
+        self.assertEqual(event_times[1], 5000)
 
     def test_compressed_contained(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=5)),
             self._compressed_event(
                 self._START_TIMESTAMP + timedelta(seconds=3),
                 timedelta(seconds=1)
             ),
         ])
-        self.assertEqual(self._working_time(events[0]), 5000)
-        self.assertEqual(self._working_time(events[1]), 0)
+
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 5000)
+        self.assertEqual(event_times[1], 0)
 
     def test_compressed_overlapping(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=5)),
             self._compressed_event(
                 self._START_TIMESTAMP + timedelta(seconds=3),
                 timedelta(seconds=6)
             ),
         ])
-        self.assertEqual(self._working_time(events[0]), 5000)
-        self.assertEqual(self._working_time(events[1]), 4000)
+
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 5000)
+        self.assertEqual(event_times[1], 4000)
 
     def test_instant_inside_compressed(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=5)),
             self._instant_event(self._START_TIMESTAMP + timedelta(seconds=3)),
             self._instant_event(self._START_TIMESTAMP + timedelta(seconds=6)),
         ])
-        self.assertEqual(self._working_time(events[0]), 5000)
-        self.assertEqual(self._working_time(events[1]), 0)
-        self.assertEqual(self._working_time(events[2]), 1000)
+
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 5000)
+        self.assertEqual(event_times[1], 0)
+        self.assertEqual(event_times[2], 1000)
 
     def test_previous_instant_short_gap(self):
-        events = self._deserialize(
+        data = self._deserialize(
             [self._instant_event(self._START_TIMESTAMP + self._SHORT_GAP)],
             previous_event=self._instant_event(self._START_TIMESTAMP),
         )
-
-        self.assertEqual(self._working_time(events[0]), self._SHORT_GAP_INT)
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], self._SHORT_GAP_INT)
 
     def test_previous_instant_long_gap(self):
-        events = self._deserialize(
+        data = self._deserialize(
             [self._instant_event(self._START_TIMESTAMP + self._LONG_GAP)],
             previous_event=self._instant_event(self._START_TIMESTAMP),
         )
-
-        self.assertEqual(self._working_time(events[0]), 0)
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 0)
 
     def test_previous_compressed_short_gap(self):
-        events = self._deserialize(
+        data = self._deserialize(
             [self._instant_event(self._START_TIMESTAMP + timedelta(seconds=1) + self._SHORT_GAP)],
             previous_event=self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=1)),
         )
-
-        self.assertEqual(self._working_time(events[0]), self._SHORT_GAP_INT)
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], self._SHORT_GAP_INT)
 
     def test_previous_compressed_long_gap(self):
-        events = self._deserialize(
+        data = self._deserialize(
             [self._instant_event(self._START_TIMESTAMP + timedelta(seconds=1) + self._LONG_GAP)],
             previous_event=self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=1)),
         )
-
-        self.assertEqual(self._working_time(events[0]), 0)
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 0)
