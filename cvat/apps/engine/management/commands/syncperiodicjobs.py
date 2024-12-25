@@ -13,17 +13,19 @@ from django.core.management.base import BaseCommand
 class Command(BaseCommand):
     help = "Synchronize periodic jobs in Redis with the project configuration"
 
-    _PERIODIC_JOBS_KEY_PREFIX = 'cvat:utils:periodic-jobs:'
+    _PERIODIC_JOBS_KEY_PREFIX = "cvat:utils:periodic-jobs:"
 
     def add_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument('--clear', action='store_true', help='Remove jobs from Redis instead of updating them')
+        parser.add_argument(
+            "--clear", action="store_true", help="Remove jobs from Redis instead of updating them"
+        )
 
     def handle(self, *args, **options):
         configured_jobs = defaultdict(dict)
 
         if not options["clear"]:
             for job in settings.PERIODIC_RQ_JOBS:
-                configured_jobs[job['queue']][job['id']] = job
+                configured_jobs[job["queue"]][job["id"]] = job
 
         for queue_name in settings.RQ_QUEUES:
             self.stdout.write(f"Processing queue {queue_name}...")
@@ -34,7 +36,7 @@ class Command(BaseCommand):
             scheduler = django_rq.get_scheduler(queue_name, queue=queue)
 
             stored_jobs_for_queue = {
-                member.decode('UTF-8') for member in queue.connection.smembers(periodic_jobs_key)
+                member.decode("UTF-8") for member in queue.connection.smembers(periodic_jobs_key)
             }
             configured_jobs_for_queue = configured_jobs[queue_name]
 
@@ -51,12 +53,12 @@ class Command(BaseCommand):
 
             # Add/update jobs from the configuration
             for job_definition in configured_jobs_for_queue.values():
-                job_id = job_definition['id']
+                job_id = job_definition["id"]
 
                 if job := queue.fetch_job(job_id):
                     if (
-                        job.func_name == job_definition['func']
-                        and job.meta.get('cron_string') == job_definition['cron_string']
+                        job.func_name == job_definition["func"]
+                        and job.meta.get("cron_string") == job_definition["cron_string"]
                     ):
                         self.stdout.write(f"Job {job_id} is unchanged")
                         queue.connection.sadd(periodic_jobs_key, job_id)
@@ -68,8 +70,8 @@ class Command(BaseCommand):
                     self.stdout.write(f"Creating job {job_id}...")
 
                 scheduler.cron(
-                    cron_string=job_definition['cron_string'],
-                    func=job_definition['func'],
+                    cron_string=job_definition["cron_string"],
+                    func=job_definition["func"],
                     id=job_id,
                 )
 
