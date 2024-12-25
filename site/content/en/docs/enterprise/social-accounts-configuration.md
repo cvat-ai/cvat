@@ -121,7 +121,7 @@ Now, let’s dive deeper into how to accomplish these steps.
 
 This step is optional and should only be performed if a `user pool` has not already been created.
 To create a user pool, follow these instructions:
-1. Go to the [Amazon console](https://console.aws.amazon.com/console/home)
+1. Go to the [AWS Management Console](https://console.aws.amazon.com/console/home)
 1. Locate `Cognito` in the list of services
 1. Click `Create user pool`
 1. Fill in the required fields
