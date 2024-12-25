@@ -41,6 +41,11 @@ const frameDataCache: Record<string, {
 // frame meta data storage by job id
 const frameMetaCache: Record<string, FramesMetaData | Promise<FramesMetaData>> = {};
 
+enum DeletedFrameState {
+    DELETED = 'deleted',
+    RESTORED = 'restored',
+}
+
 export class FramesMetaData {
     public chunkSize: number;
     public deletedFrames: Record<number, boolean>;
@@ -82,10 +87,13 @@ export class FramesMetaData {
             if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
                 if (property === 'deleted_frames') {
                     const update = (frame: string, remove: boolean): void => {
-                        if (this.#updateTrigger.get(`deletedFrames:${frame}:${!remove}`)) {
-                            this.#updateTrigger.resetField(`deletedFrames:${frame}:${!remove}`);
+                        const [state, oppositeState] = remove ?
+                            [DeletedFrameState.DELETED, DeletedFrameState.RESTORED] :
+                            [DeletedFrameState.RESTORED, DeletedFrameState.DELETED];
+                        if (this.#updateTrigger.get(`deletedFrames:${frame}:${oppositeState}`)) {
+                            this.#updateTrigger.resetField(`deletedFrames:${frame}:${oppositeState}`);
                         } else {
-                            this.#updateTrigger.update(`deletedFrames:${frame}:${remove}`);
+                            this.#updateTrigger.update(`deletedFrames:${frame}:${state}`);
                         }
                     };
 
@@ -620,8 +628,9 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
 
     if (isOutdated) {
         // get metadata again if outdated
+        const { meta: prevMeta } = cached;
         const meta = await getFramesMeta('job', jobID, true);
-        if (new Date(meta.chunksUpdatedDate) > new Date(cached.meta.chunksUpdatedDate)) {
+        if (new Date(meta.chunksUpdatedDate) > new Date(prevMeta.chunksUpdatedDate)) {
             // chunks were re-defined. Existing data not relevant anymore
             // currently we only re-write meta, remove all cached frames from provider and clear cached context images
             // other parameters (e.g. chunkSize) are not supposed to be changed
@@ -633,6 +642,18 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
                 }
             }
             cached.contextCache = {};
+        }
+
+        const updatedFields = prevMeta.getUpdated();
+        for (const key in updatedFields) {
+            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
+                const [, frame, value] = key.split(':');
+                if (value === DeletedFrameState.DELETED) {
+                    meta.deletedFrames[+frame] = true;
+                } else if (value === DeletedFrameState.RESTORED) {
+                    delete meta.deletedFrames[+frame];
+                }
+            }
         }
 
         cached.metaFetchedTimestamp = Date.now();
