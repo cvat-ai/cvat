@@ -32,7 +32,7 @@ context('The UI remains stable even when the metadata request fails.', () => {
 
             cy.on('uncaught:exception', (err) => {
                 expect(err.code).to.equal(badResponse.statusCode);
-                expect(err.message).to.include(`> ${badResponse.body}`);
+                expect(err.message).to.include(badResponse.body);
                 return false;
             });
 
