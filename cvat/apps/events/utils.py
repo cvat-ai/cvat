@@ -70,14 +70,17 @@ def cache_deleted(method):
     return wrap
 
 
+def get_end_timestamp(event: dict) -> datetime.datetime:
+    if event["scope"] in COLLAPSED_EVENT_SCOPES:
+        return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
+    return event["timestamp"]
+
+def is_contained(event1: dict, event2: dict) -> bool:
+    return event1['timestamp'] < get_end_timestamp(event2)
+
 def calc_working_time_per_ids(data: dict) -> dict:
     def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
         return event.get("job_id"), event.get("task_id"), event.get("project_id")
-
-    def get_end_timestamp(event: dict) -> datetime.datetime:
-        if event["scope"] in COLLAPSED_EVENT_SCOPES:
-            return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
-        return event["timestamp"]
 
     if previous_event := data["previous_event"]:
         previous_end_timestamp = get_end_timestamp(previous_event)
