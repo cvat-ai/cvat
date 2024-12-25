@@ -131,8 +131,10 @@ For example, `frame_000001.txt` serves as the annotation for the
 
 Uploaded file: a zip archive of the same structure as above.
 
-Alternatively, since some tools (e.g. [roboflow](https://roboflow.com/formats/yolov8-pytorch-txt))
-have the folders order switched when exporting to Ultralytics YOLO format, CVAT can import such datasets.
+For compatibility with other tools exporting in Ultralytics YOLO format 
+(e.g. [roboflow](https://roboflow.com/formats/yolov8-pytorch-txt)),
+CVAT supports datasets with the inverted directory order of subset and "images" or "labels",
+i.e. both `train/images/`, `images/train/` are valid inputs.
 ```bash
 archive.zip/
    ├── train/
