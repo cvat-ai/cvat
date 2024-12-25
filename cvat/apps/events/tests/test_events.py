@@ -13,6 +13,7 @@ from django.test import RequestFactory
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.organizations.models import Organization
 from cvat.apps.events.const import TIME_THRESHOLD, WORKING_TIME_RESOLUTION
+from cvat.apps.events.utils import calc_working_time_per_ids
 
 class WorkingTimeTestCase(unittest.TestCase):
     _START_TIMESTAMP = datetime(2024, 1, 1, 12)
@@ -38,9 +39,18 @@ class WorkingTimeTestCase(unittest.TestCase):
         }
 
     @staticmethod
-    def _working_time_event(event: dict) -> int:
-        payload = json.loads(event["payload"])
-        return payload["working_time"]
+    def _working_times(data: dict) -> int:
+        tmp = data.copy()
+        res = []
+        for event in data['events']:
+            tmp['events'] = [event]
+            event_working_time = calc_working_time_per_ids(tmp)
+            for working_time in event_working_time.values():
+               res.append(
+                   (working_time['value'] // WORKING_TIME_RESOLUTION)
+                   )
+            tmp['previous_event'] = event
+        return res
 
     @staticmethod
     def _deserialize(events: list[dict], previous_event: Optional[dict] = None) -> list[dict]:
@@ -61,27 +71,30 @@ class WorkingTimeTestCase(unittest.TestCase):
 
         s.is_valid(raise_exception=True)
 
-        return s.validated_data["events"]
+        return s.validated_data
 
     def test_instant(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._instant_event(self._START_TIMESTAMP),
         ])
-        self.assertEqual(self._working_time(events[0]), 0)
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 0)
 
     def test_compressed(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, self._LONG_GAP),
         ])
-        self.assertEqual(self._working_time(events[0]), self._LONG_GAP_INT)
+        event_times = self._working_times(data)
+        self.assertEqual(self._working_times(event_times[0]), self._LONG_GAP_INT)
 
     def test_instants_with_short_gap(self):
-        events = self._deserialize([
+        data = self._deserialize([
             self._instant_event(self._START_TIMESTAMP),
             self._instant_event(self._START_TIMESTAMP + self._SHORT_GAP),
         ])
-        self.assertEqual(self._working_time(events[0]), 0)
-        self.assertEqual(self._working_time(events[1]), self._SHORT_GAP_INT)
+        event_times = self._working_times(data)
+        self.assertEqual(event_times[0], 0)
+        self.assertEqual(event_times[1], self._SHORT_GAP_INT)
 
     def test_instants_with_long_gap(self):
         events = self._deserialize([
