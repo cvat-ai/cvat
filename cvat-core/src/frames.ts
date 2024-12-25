@@ -16,7 +16,6 @@ import config from './config';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
-    meta: FramesMetaData;
     metaFetchedTimestamp: number;
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
@@ -36,10 +35,11 @@ const frameDataCache: Record<string, {
         size: number;
     }>;
     getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
+    getMeta: () => Promise<FramesMetaData>;
 }> = {};
 
 // frame meta data storage by job id
-const frameMetaCache: Record<string, FramesMetaData | Promise<FramesMetaData>> = {};
+const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
 
 enum DeletedFrameState {
     DELETED = 'deleted',
@@ -348,17 +348,18 @@ class PrefetchAnalyzer {
 }
 
 Object.defineProperty(FrameData.prototype.data, 'implementation', {
-    value(this: FrameData, onServerRequest) {
+    async value(this: FrameData, onServerRequest) {
+        const {
+            provider, prefetchAnalyzer, chunkSize, jobStartFrame,
+            decodeForward, forwardStep, decodedBlocksCacheSize,
+        } = frameDataCache[this.jobID];
+        const meta = await frameDataCache[this.jobID].getMeta();
+
         return new Promise<{
             renderWidth: number;
             renderHeight: number;
             imageData: ImageBitmap | Blob;
         } | Blob>((resolve, reject) => {
-            const {
-                meta, provider, prefetchAnalyzer, chunkSize, jobStartFrame,
-                decodeForward, forwardStep, decodedBlocksCacheSize,
-            } = frameDataCache[this.jobID];
-
             const requestId = +_.uniqueId();
             const requestedDataFrameNumber = meta.getDataFrameNumber(this.number - jobStartFrame);
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
@@ -563,11 +564,10 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
                     ...serialized,
                     deleted_frames: Object.fromEntries(serialized.deleted_frames.map((_frame) => [_frame, true])),
                 });
-                frameMetaCache[id] = framesMetaData;
                 resolve(framesMetaData);
             }).catch((error: unknown) => {
                 delete frameMetaCache[id];
-                if (previousCache instanceof Promise || previousCache instanceof FramesMetaData) {
+                if (previousCache instanceof Promise) {
                     frameMetaCache[id] = previousCache;
                 }
                 reject(error);
@@ -575,9 +575,6 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
         });
     }
 
-    if (!(frameMetaCache[id] instanceof Promise)) {
-        return Promise.resolve(frameMetaCache[id]);
-    }
     return frameMetaCache[id];
 }
 
@@ -600,8 +597,9 @@ function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaDat
     return frameMetaCache[jobID];
 }
 
-function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
-    const { meta, mode, jobStartFrame } = frameDataCache[jobID];
+async function getFrameMeta(jobID, frame): Promise<SerializedFramesMetaData['frames'][0]> {
+    const { mode, jobStartFrame } = frameDataCache[jobID];
+    const meta = await frameDataCache[jobID].getMeta();
     let frameMeta = null;
     if (mode === 'interpolation' && meta.frames.length === 1) {
         // video tasks have 1 frame info, but image tasks will have many infos
@@ -628,7 +626,7 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
 
     if (isOutdated) {
         // get metadata again if outdated
-        const { meta: prevMeta } = cached;
+        const prevMeta = await cached.getMeta();
         const meta = await getFramesMeta('job', jobID, true);
         if (new Date(meta.chunksUpdatedDate) > new Date(prevMeta.chunksUpdatedDate)) {
             // chunks were re-defined. Existing data not relevant anymore
@@ -660,18 +658,18 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     }
 }
 
-export function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
+export async function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
+    const frameData = frameDataCache[jobID];
+    const meta = await frameData.getMeta();
+    const requestId = frame;
+    const { jobStartFrame } = frameData;
+    const { related_files: relatedFiles } = meta.frames[frame - jobStartFrame];
     return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
         if (!(jobID in frameDataCache)) {
             reject(new Error(
                 'Frame data was not initialized for this job. Try first requesting any frame.',
             ));
         }
-
-        const frameData = frameDataCache[jobID];
-        const requestId = frame;
-        const { jobStartFrame } = frameData;
-        const { related_files: relatedFiles } = frameData.meta.frames[frame - jobStartFrame];
 
         if (relatedFiles === 0) {
             resolve({});
@@ -807,9 +805,9 @@ export async function getFrame(
             latestContextImagesRequest: null,
             contextCache: {},
             getChunk,
-            get meta(): FramesMetaData {
+            getMeta: () => {
                 const cached = frameMetaCache[jobID];
-                if (!cached || cached instanceof Promise) {
+                if (!cached) {
                     throw new Error('Frame meta data is not initialized');
                 }
                 return cached;
@@ -833,10 +831,12 @@ export async function getFrame(
     // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
     await refreshJobCacheIfOutdated(jobID);
 
-    const frameMeta = getFrameMeta(jobID, frame);
+    const frameMeta = await getFrameMeta(jobID, frame);
     frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;
+
+    const meta = await frameDataCache[jobID].getMeta();
 
     return new FrameData({
         width: frameMeta.width,
@@ -844,14 +844,14 @@ export async function getFrame(
         name: frameMeta.name,
         related_files: frameMeta.related_files,
         frameNumber: frame,
-        deleted: frame in frameDataCache[jobID].meta.deletedFrames,
+        deleted: frame in meta.deletedFrames,
         jobID,
     });
 }
 
 export async function getDeletedFrames(instanceType: 'job' | 'task', id: number): Promise<Record<number, boolean>> {
     if (instanceType === 'job') {
-        const { meta } = frameDataCache[id];
+        const meta = await frameDataCache[id].getMeta();
         return meta.deletedFrames;
     }
 
@@ -930,12 +930,13 @@ export function getCachedChunks(jobID: number): number[] {
     return frameDataCache[jobID].provider.cachedChunks(true);
 }
 
-export function getJobFrameNumbers(jobID: number): number[] {
+export async function getJobFrameNumbers(jobID: number): Promise<number[]> {
     if (!(jobID in frameDataCache)) {
         return [];
     }
 
-    const { meta, jobStartFrame } = frameDataCache[jobID];
+    const { jobStartFrame } = frameDataCache[jobID];
+    const meta = await frameDataCache[jobID].getMeta();
     return meta.getSegmentFrameNumbers(jobStartFrame);
 }
 
