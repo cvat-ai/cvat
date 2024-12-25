@@ -176,32 +176,34 @@ class _Agent:
 
     def run(self, *, burst: bool) -> None:
         if burst:
-            while ar := self._poll_for_ar():
-                self._process_ar(ar)
+            while ar_assignment := self._poll_for_ar():
+                self._process_ar(ar_assignment)
             self._client.logger.info("No annotation requests left in queue; exiting.")
         else:
             while True:
-                if ar := self._poll_for_ar():
-                    self._process_ar(ar)
+                if ar_assignment := self._poll_for_ar():
+                    self._process_ar(ar_assignment)
                 else:
                     self._wait_between_polls()
 
-    def _process_ar(self, ar: dict) -> None:
-        self._client.logger.info("Got agent request: %r", ar)
+    def _process_ar(self, ar_assignment: dict) -> None:
+        self._client.logger.info("Got annotation request assignment: %r", ar_assignment)
+
+        ar_id = ar_assignment["ar_id"]
 
         try:
-            result = self._calculate_result_for_ar(ar)
+            result = self._calculate_result_for_ar(ar_id, ar_assignment["ar_params"])
 
-            self._client.logger.info("Submitting result for AR %r...", ar["id"])
+            self._client.logger.info("Submitting result for AR %r...", ar_id)
             self._client.api_client.call_api(
                 "/api/functions/queues/{queue_id}/requests/{request_id}/complete",
                 "POST",
-                path_params={"queue_id": f"function:{self._function_id}", "request_id": ar["id"]},
+                path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
                 body={"agent_id": self._agent_id, "annotations": result},
             )
-            self._client.logger.info("AR %r completed", ar["id"])
+            self._client.logger.info("AR %r completed", ar_id)
         except Exception as ex:
-            self._client.logger.error("Failed to process AR %r", ar["id"], exc_info=True)
+            self._client.logger.error("Failed to process AR %r", ar_id, exc_info=True)
 
             # Arbitrary exceptions may contain details of the client's system or code, which
             # shouldn't be exposed to the server (and to users of the function).
@@ -229,18 +231,18 @@ class _Agent:
 
             try:
                 self._client.api_client.call_api(
-                    "/api/functions/queues/{queue_id}/requests/{request_id}/abort",
+                    "/api/functions/queues/{queue_id}/requests/{request_id}/fail",
                     "POST",
                     path_params={
                         "queue_id": f"function:{self._function_id}",
-                        "request_id": ar["id"],
+                        "request_id": ar_id,
                     },
                     body={"agent_id": self._agent_id, "exc_info": error_message},
                 )
             except Exception:
-                self._client.logger.error("Failed to abort AR %r", ar["id"], exc_info=True)
+                self._client.logger.error("Couldn't fail AR %r", ar_id, exc_info=True)
             else:
-                self._client.logger.info("AR %r aborted", ar["id"])
+                self._client.logger.info("AR %r failed", ar_id)
 
     def _poll_for_ar(self) -> Optional[dict]:
         while True:
@@ -262,13 +264,11 @@ class _Agent:
                 self._wait_between_polls()
 
         response_data = json.loads(response.data)
-        return response_data["agent_request"]
+        return response_data["ar_assignment"]
 
     def _calculate_result_for_detection_ar(
-        self,
-        ar,
+        self, ar_id: str, ar_params
     ) -> models.PatchedLabeledDataRequest:
-        ar_params = ar["params"]
         if ar_params["type"] != "annotate_task":
             raise RuntimeError(f"Unsupported AR type: {ar_params['type']!r}")
 
@@ -285,7 +285,7 @@ class _Agent:
 
         # Fetching the dataset might take a while, so do a progress update to let the server
         # know we're still alive.
-        self._update_ar(ar, 0)
+        self._update_ar(ar_id, 0)
         last_update_timestamp = datetime.now(tz=timezone.utc)
 
         mapping = ar_params["mapping"]
@@ -322,17 +322,17 @@ class _Agent:
             current_timestamp = datetime.now(tz=timezone.utc)
 
             if current_timestamp >= last_update_timestamp + _UPDATE_INTERVAL:
-                self._update_ar(ar, (sample_index + 1) / len(ds.samples))
+                self._update_ar(ar_id, (sample_index + 1) / len(ds.samples))
                 last_update_timestamp = current_timestamp
 
         return all_annotations
 
-    def _update_ar(self, ar: dict, progress: float) -> None:
-        self._client.logger.info("Updating AR %r progress to %.2f%%", ar["id"], progress * 100)
+    def _update_ar(self, ar_id: str, progress: float) -> None:
+        self._client.logger.info("Updating AR %r progress to %.2f%%", ar_id, progress * 100)
         self._client.api_client.call_api(
             "/api/functions/queues/{queue_id}/requests/{request_id}/update",
             "POST",
-            path_params={"queue_id": f"function:{self._function_id}", "request_id": ar["id"]},
+            path_params={"queue_id": f"function:{self._function_id}", "request_id": ar_id},
             body={"agent_id": self._agent_id, "progress": progress},
         )
 
