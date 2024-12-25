@@ -7,7 +7,7 @@ import os.path as osp
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import django_rq
 from attrs.converters import to_bool
@@ -170,7 +170,7 @@ class DatasetExportManager(_ResourceExportManager):
         format: str
         filename: str
         save_images: bool
-        location_config: Dict[str, Any]
+        location_config: dict[str, Any]
 
         @property
         def location(self) -> Location:
@@ -515,7 +515,7 @@ class BackupExportManager(_ResourceExportManager):
     @dataclass
     class ExportArgs:
         filename: str
-        location_config: Dict[str, Any]
+        location_config: dict[str, Any]
 
         @property
         def location(self) -> Location:

@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 from collections import namedtuple
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Any, Optional, Union, cast
 
 from django.shortcuts import get_object_or_404
 from django.conf import settings
@@ -21,7 +22,7 @@ from cvat.apps.organizations.models import Organization
 from .models import AnnotationGuide, CloudStorage, Issue, Job, Label, Project, Task
 from cvat.apps.engine.utils import is_dataset_export
 
-def _get_key(d: Dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
+def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
     """
     Like dict.get(), but supports nested fields. If the field is missing, returns None.
     """
@@ -466,7 +467,7 @@ class TaskPermission(OpenPolicyAgentPermission):
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
     @staticmethod
-    def get_scopes(request, view, obj) -> List[Scopes]:
+    def get_scopes(request, view, obj) -> list[Scopes]:
         Scopes = __class__.Scopes
         scope = {
             ('list', 'GET'): Scopes.LIST,
@@ -1191,7 +1192,7 @@ class RequestPermission(OpenPolicyAgentPermission):
         CANCEL = 'cancel'
 
     @classmethod
-    def create(cls, request, view, obj: Optional[RQJob], iam_context: Dict):
+    def create(cls, request, view, obj: Optional[RQJob], iam_context: dict):
         permissions = []
         if view.basename == 'request':
             for scope in cls.get_scopes(request, view, obj):
@@ -1207,7 +1208,7 @@ class RequestPermission(OpenPolicyAgentPermission):
         self.url = settings.IAM_OPA_DATA_URL + '/requests/allow'
 
     @staticmethod
-    def get_scopes(request, view, obj) -> List[Scopes]:
+    def get_scopes(request, view, obj) -> list[Scopes]:
         Scopes = __class__.Scopes
         return [{
             ('list', 'GET'): Scopes.LIST,
