@@ -327,6 +327,8 @@ see that command's examples for more information.
 **Note**: The functionality described in this section can only be used
 with the CVAT Enterprise or CVAT Cloud.
 
+### Create
+
 - Create a function that uses a detection model from torchvision
   and run an agent for it:
 
@@ -338,6 +340,14 @@ with the CVAT Enterprise or CVAT Cloud.
       --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
       -p model_name=str:fasterrcnn_resnet50_fpn_v2
   ```
+
+These commands accept functions that implement the
+{{< ilink "/docs/api_sdk/sdk/auto-annotation" "auto-annotation function interface" >}}
+from the SDK, same as the `task auto-annotate` command.
+See that command's examples for information on how to implement these functions
+and specify them in the command line.
+
+### Delete
 
 - Delete functions with IDs 100 and 101:
   ```
