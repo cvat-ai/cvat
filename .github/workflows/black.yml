@@ -5,38 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: files
-        uses: tj-actions/changed-files@v41.0.0
-        with:
-          files: |
-              cvat-sdk/**/*.py
-              cvat-cli/**/*.py
-              tests/python/**/*.py
-              cvat/apps/quality_control/**/*.py
-              cvat/apps/analytics_report/**/*.py
-          dir_names: true
 
       - name: Run checks
-        env:
-          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
-          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          # If different modules use different Black configs,
-          # we need to run Black for each python component group separately.
-          # Otherwise, they all will use the same config.
+          pipx install $(grep "^black" ./dev/requirements.txt)
 
-          UPDATED_DIRS="${{steps.files.outputs.all_changed_files}}"
+          echo "Black version: $(black --version)"
 
-          if [[ ! -z $UPDATED_DIRS ]]; then
-            pipx install $(egrep "black.*" ./cvat-cli/requirements/development.txt)
-
-            echo "Black version: "$(black --version)
-            echo "The dirs will be checked: $UPDATED_DIRS"
-            EXIT_CODE=0
-            for DIR in $UPDATED_DIRS; do
-              black --check --diff $DIR || EXIT_CODE=$(($? | $EXIT_CODE)) || true
-            done
-            exit $EXIT_CODE
-          else
-            echo "No files with the \"py\" extension found"
-          fi
+          black --check --diff .

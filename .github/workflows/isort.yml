@@ -25,7 +25,7 @@ jobs:
           UPDATED_DIRS="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $UPDATED_DIRS ]]; then
-            pipx install $(egrep "isort.*" ./cvat-cli/requirements/development.txt)
+            pipx install $(grep "^isort" ./dev/requirements.txt)
 
             echo "isort version: $(isort --version-number)"
             echo "The dirs will be checked: $UPDATED_DIRS"

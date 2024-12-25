@@ -4,43 +4,41 @@
 
 import React from 'react';
 import { Row, Col } from 'antd/es/grid';
-import Spin from 'antd/lib/spin';
 
-import { FramesMetaData, Job, Task } from 'cvat-core-wrapper';
+import {
+    FramesMetaData, QualitySettings,
+    Task, TaskValidationLayout,
+} from 'cvat-core-wrapper';
 import AllocationTable from './allocation-table';
 import SummaryComponent from './summary';
 
 interface Props {
     task: Task;
-    gtJob: Job;
+    gtJobId: number;
     gtJobMeta: FramesMetaData;
-    fetching: boolean;
+    validationLayout: TaskValidationLayout;
+    qualitySettings: QualitySettings;
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
 
 function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     const {
-        task, gtJob, gtJobMeta, fetching,
+        task, gtJobId, gtJobMeta,
+        validationLayout, qualitySettings,
         onDeleteFrames, onRestoreFrames,
     } = props;
 
-    const totalCount = gtJobMeta.getDataFrameNumbers().length;
-    const excludedCount = Object.keys(gtJobMeta.deletedFrames).length;
+    const totalCount = validationLayout.validationFrames.length;
+    const excludedCount = validationLayout.disabledFrames.length;
     const activeCount = totalCount - excludedCount;
 
     return (
         <div className='cvat-quality-control-management-tab'>
-            {
-                fetching && (
-                    <div className='cvat-spinner-container'>
-                        <Spin className='cvat-spinner' />
-                    </div>
-                )
-            }
             <Row>
                 <Col span={24}>
                     <SummaryComponent
+                        mode={validationLayout.mode}
                         excludedCount={excludedCount}
                         activeCount={activeCount}
                         totalCount={totalCount}
@@ -51,8 +49,10 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                 <Col span={24}>
                     <AllocationTable
                         task={task}
-                        gtJob={gtJob}
+                        gtJobId={gtJobId}
                         gtJobMeta={gtJobMeta}
+                        validationLayout={validationLayout}
+                        qualitySettings={qualitySettings}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
                     />

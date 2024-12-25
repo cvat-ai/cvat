@@ -37,7 +37,8 @@ from pycocotools import coco as coco_loader
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from datumaro.util.test_utils import current_function_name, TestDir
+from cvat.apps.dataset_manager.tests.utils import TestDir
+from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
     Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
     StorageChoice, DimensionType, SortingMethod)
@@ -53,7 +54,6 @@ logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
-    (group_business, _) = Group.objects.get_or_create(name="business")
     (group_user, _) = Group.objects.get_or_create(name="user")
     (group_annotator, _) = Group.objects.get_or_create(name="worker")
     (group_somebody, _) = Group.objects.get_or_create(name="somebody")
@@ -62,7 +62,7 @@ def create_db_users(cls):
         password="admin")
     user_admin.groups.add(group_admin)
     user_owner = User.objects.create_user(username="user1", password="user1")
-    user_owner.groups.add(group_business)
+    user_owner.groups.add(group_user)
     user_assignee = User.objects.create_user(username="user2", password="user2")
     user_assignee.groups.add(group_annotator)
     user_annotator = User.objects.create_user(username="user3", password="user3")
@@ -637,6 +637,8 @@ class UserAPITestCase(ApiTestBase):
         extra_check("is_active", data)
         extra_check("last_login", data)
         extra_check("date_joined", data)
+        extra_check("has_analytics_access", data)
+
 
 class UserListAPITestCase(UserAPITestCase):
     def _run_api_v2_users(self, user):
@@ -671,6 +673,7 @@ class UserListAPITestCase(UserAPITestCase):
         response = self._run_api_v2_users(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
 class UserSelfAPITestCase(UserAPITestCase):
     def _run_api_v2_users_self(self, user):
         with ForceLogin(user, self.client):
@@ -697,6 +700,7 @@ class UserSelfAPITestCase(UserAPITestCase):
     def test_api_v2_users_self_no_auth(self):
         response = self._run_api_v2_users_self(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):
@@ -739,6 +743,7 @@ class UserGetAPITestCase(UserAPITestCase):
     def test_api_v2_users_id_no_auth(self):
         response = self._run_api_v2_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id, data):
@@ -785,6 +790,7 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
         data = {"username": "user12"}
         response = self._run_api_v2_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class UserDeleteAPITestCase(UserAPITestCase):
     def _run_api_v2_users_id(self, user, user_id):

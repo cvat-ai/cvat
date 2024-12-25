@@ -12,7 +12,7 @@ import data.organizations
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -56,19 +56,6 @@ allow if {
     input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.SUPERVISOR)
-}
-
-allow if {
-    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    utils.is_sandbox
-    utils.has_perm(utils.BUSINESS)
-}
-
-allow if {
-    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 

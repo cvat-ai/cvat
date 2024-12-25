@@ -77,7 +77,8 @@ setup(
     python_requires="{{{generatorLanguageVersion}}}",
     install_requires=BASE_REQUIREMENTS,
     extras_require={
-        "pytorch": ['torch', 'torchvision'],
+        "masks": ["numpy>=2"],
+        "pytorch": ['torch', 'torchvision', 'scikit-image>=0.24', 'cvat_sdk[masks]'],
     },
     package_dir={"": "."},
     packages=find_packages(include=["cvat_sdk*"]),

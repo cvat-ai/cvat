@@ -7,7 +7,7 @@ import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 import pytest
 from cvat_sdk import Client, models
@@ -30,8 +30,8 @@ class TestTaskUsecases(TestDatasetExport):
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-        fxt_logger: Tuple[Logger, io.StringIO],
+        fxt_login: tuple[Client, str],
+        fxt_logger: tuple[Logger, io.StringIO],
         fxt_stdout: io.StringIO,
         restore_redis_ondisk_per_function,
     ):

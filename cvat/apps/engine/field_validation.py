@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from rest_framework import serializers
 

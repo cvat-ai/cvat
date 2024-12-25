@@ -8,12 +8,13 @@ import json
 import os
 import os.path
 import uuid
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest import mock
 from textwrap import dedent
-from typing import Optional, Callable, Dict, Any, Mapping
+from typing import Optional, Callable, Any
 from urllib.parse import urljoin
 
 import django_rq
@@ -424,7 +425,7 @@ class DatasetMixin:
         request,
         save_images: bool,
         *,
-        get_data: Optional[Callable[[int], Dict[str, Any]]] = None,
+        get_data: Optional[Callable[[int], dict[str, Any]]] = None,
     ) -> Response:
         if request.query_params.get("format"):
             callback = self.get_export_callback(save_images)

@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import pytest
@@ -71,7 +71,7 @@ def filter_jobs(jobs, tasks, org):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostJobs:
-    def _test_create_job_ok(self, user: str, data: Dict[str, Any], **kwargs):
+    def _test_create_job_ok(self, user: str, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)), **kwargs
@@ -80,7 +80,7 @@ class TestPostJobs:
         return response
 
     def _test_create_job_fails(
-        self, user: str, data: Dict[str, Any], *, expected_status: int, **kwargs
+        self, user: str, data: dict[str, Any], *, expected_status: int, **kwargs
     ):
         with make_api_client(user) as api_client:
             (_, response) = api_client.jobs_api.create(
@@ -110,7 +110,7 @@ class TestPostJobs:
         tasks,
         task_mode: str,
         frame_selection_method: str,
-        method_params: Set[str],
+        method_params: set[str],
     ):
         required_task_size = 15
 
@@ -544,7 +544,7 @@ class TestDeleteJobs:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
     def _test_get_job_200(
-        self, user, jid, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user, jid, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as client:
             (_, response) = client.jobs_api.retrieve(jid, **kwargs)
@@ -568,7 +568,7 @@ class TestGetJobs:
         job = next(job for job in jobs if tasks[job["task_id"]]["organization"] is not None)
         self._test_get_job_200(admin_user, job["id"], expected_data=job)
 
-    @pytest.mark.parametrize("groups", [["business"], ["user"]])
+    @pytest.mark.parametrize("groups", [["user"]])
     def test_non_admin_org_staff_can_get_job(
         self, groups, users, organizations, org_staff, jobs_by_org
     ):
@@ -581,7 +581,7 @@ class TestGetJobs:
         job = jobs_by_org[org_id][0]
         self._test_get_job_200(user["username"], job["id"], expected_data=job)
 
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_job_staff_can_get_job(self, groups, users, jobs, is_job_staff):
         user, job = next(
             (user, job)
@@ -591,7 +591,7 @@ class TestGetJobs:
         )
         self._test_get_job_200(user["username"], job["id"], expected_data=job)
 
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"]])
+    @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(
         self, groups, users, organizations, org_staff, jobs, is_job_staff
     ):
@@ -691,6 +691,7 @@ class TestGetJobs:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
 class TestGetGtJobData:
     def _delete_gt_job(self, user, gt_job_id):
         with make_api_client(user) as api_client:
@@ -955,7 +956,7 @@ class TestListJobs:
         self._test_list_jobs_200("admin1", jobs, **kwargs)
 
     @pytest.mark.parametrize("org_id", ["", None, 1, 2])
-    @pytest.mark.parametrize("groups", [["business"], ["user"], ["worker"], []])
+    @pytest.mark.parametrize("groups", [["user"], ["worker"], []])
     def test_non_admin_list_jobs(
         self, org_id, groups, users, jobs, tasks, projects, org_staff, is_org_member
     ):
@@ -1024,8 +1025,6 @@ class TestGetAnnotations:
         [
             (["admin"], True, True),
             (["admin"], False, True),
-            (["business"], True, True),
-            (["business"], False, False),
             (["worker"], True, True),
             (["worker"], False, False),
             (["user"], True, True),
@@ -1093,7 +1092,7 @@ class TestGetAnnotations:
     @pytest.mark.parametrize("org", [1])
     @pytest.mark.parametrize(
         "privilege, expect_success",
-        [("admin", True), ("business", False), ("worker", False), ("user", False)],
+        [("admin", True), ("worker", False), ("user", False)],
     )
     def test_non_member_get_job_annotations(
         self,
@@ -1191,7 +1190,7 @@ class TestPatchJobAnnotations:
     @pytest.mark.parametrize("org", [2])
     @pytest.mark.parametrize(
         "privilege, expect_success",
-        [("admin", True), ("business", False), ("worker", False), ("user", False)],
+        [("admin", True), ("worker", False), ("user", False)],
     )
     def test_non_member_update_job_annotations(
         self,
@@ -1218,8 +1217,6 @@ class TestPatchJobAnnotations:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
@@ -1446,7 +1443,7 @@ class TestJobDataset:
         username: str,
         jid: int,
         *,
-        api_version: Union[int, Tuple[int]],
+        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
@@ -1477,9 +1474,9 @@ class TestJobDataset:
     def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
         self,
         admin_user: str,
-        jobs_with_shapes: List,
+        jobs_with_shapes: list,
         filter_tasks,
-        api_version: Tuple[int],
+        api_version: tuple[int],
         local_download: bool,
     ):
         filter_ = "target_storage__location"
@@ -1651,15 +1648,6 @@ class TestGetJobPreview:
         job_id = next(job["id"] for job in jobs if tasks[job["task_id"]]["organization"])
         self._test_get_job_preview_200("admin2", job_id)
 
-    def test_business_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
-        username, job_id = next(
-            (user["username"], job["id"])
-            for user in find_users(privilege="business")
-            for job in jobs
-            if is_job_staff(user["id"], job["id"])
-        )
-        self._test_get_job_preview_200(username, job_id)
-
     def test_user_can_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(
             (user["username"], job["id"])
@@ -1668,15 +1656,6 @@ class TestGetJobPreview:
             if is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_200(username, job_id)
-
-    def test_business_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
-        username, job_id = next(
-            (user["username"], job["id"])
-            for user in find_users(privilege="business")
-            for job in jobs
-            if not is_job_staff(user["id"], job["id"])
-        )
-        self._test_get_job_preview_403(username, job_id)
 
     def test_user_cannot_get_job_preview_in_sandbox(self, find_users, jobs, is_job_staff):
         username, job_id = next(

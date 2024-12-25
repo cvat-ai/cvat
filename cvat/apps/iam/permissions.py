@@ -8,14 +8,15 @@ from __future__ import annotations
 import importlib
 import operator
 from abc import ABCMeta, abstractmethod
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, TypeVar
+from typing import Any, Optional, TypeVar
 
 from attrs import define, field
 from django.apps import AppConfig
 from django.conf import settings
-from django.db.models import Q, Model
+from django.db.models import Model, Q
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
@@ -24,14 +25,17 @@ from cvat.utils.http import make_requests_session
 
 from .utils import add_opa_rules_path
 
+
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
 @define
 class PermissionResult:
     allow: bool
-    reasons: List[str] = field(factory=list)
+    reasons: list[str] = field(factory=list)
+
 
 def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
@@ -56,6 +60,7 @@ def get_organization(request, obj):
 
     return request.iam_context['organization']
 
+
 def get_membership(request, organization):
     if organization is None:
         return None
@@ -65,6 +70,7 @@ def get_membership(request, organization):
         user=request.user,
         is_active=True
     ).first()
+
 
 def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]):
     return {
@@ -78,7 +84,7 @@ def build_iam_context(request, organization: Optional[Organization], membership:
     }
 
 
-def get_iam_context(request, obj) -> Dict[str, Any]:
+def get_iam_context(request, obj) -> dict[str, Any]:
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
@@ -126,7 +132,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                 'auth': {
                     'user': {
                         'id': self.user_id,
-                        'privilege': self.group_name
+                        'privilege': self.group_name,
                     },
                     'organization': {
                         'id': self.org_id,
@@ -193,9 +199,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             q_objects.append(Q())
 
         # By default, a QuerySet will not eliminate duplicate rows. If your
-        # query spans multiple tables (e.g. members__user_id, owner_id), it’s
+        # query spans multiple tables (e.g. members__user_id, owner_id), it's
         # possible to get duplicate results when a QuerySet is evaluated.
-        # That’s when you’d use distinct().
+        # That's when you'd use distinct().
         return queryset.filter(q_objects[0]).distinct()
 
     @classmethod
@@ -219,10 +225,13 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
         return scopes
 
+
 T = TypeVar('T', bound=Model)
+
 
 def is_public_obj(obj: T) -> bool:
     return getattr(obj, "is_public", False)
+
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
@@ -258,12 +267,14 @@ class PolicyEnforcer(BasePermission):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
 
+
 class IsAuthenticatedOrReadPublicResource(BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
         return bool(
-            request.user and request.user.is_authenticated or
-            request.method == 'GET' and is_public_obj(obj)
+            (request.user and request.user.is_authenticated) or
+            (request.method == 'GET' and is_public_obj(obj))
         )
+
 
 def load_app_permissions(config: AppConfig) -> None:
     """

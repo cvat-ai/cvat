@@ -20,6 +20,7 @@ import {
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
 } from 'reducers';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
@@ -376,6 +377,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private runAnnotationAction = (): void => {
+        const { objectState } = this.props;
+        openAnnotationsActionModal(objectState);
+    };
+
     private commit(): void {
         const { objectState, readonly, updateState } = this.props;
         if (!readonly) {
@@ -426,6 +432,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 edit={this.edit}
                 slice={this.slice}
                 resetCuboidPerspective={this.resetCuboidPerspective}
+                runAnnotationAction={this.runAnnotationAction}
             />
         );
     }

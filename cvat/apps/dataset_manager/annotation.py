@@ -6,7 +6,8 @@
 from copy import copy, deepcopy
 
 import math
-from typing import Container, Optional, Sequence
+from collections.abc import Container, Sequence
+from typing import Optional
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
@@ -131,7 +132,8 @@ class AnnotationIR:
                 if last_key >= stop and scoped_shapes[-1]['points'] != segment_shapes[-1]['points']:
                     segment_shapes.append(scoped_shapes[-1])
                 elif scoped_shapes[-1]['keyframe'] and \
-                        scoped_shapes[-1]['outside']:
+                        scoped_shapes[-1]['outside'] and \
+                        (len(segment_shapes) == 0 or scoped_shapes[-1]['frame'] > segment_shapes[-1]['frame']):
                     segment_shapes.append(scoped_shapes[-1])
                 elif stop + 1 < len(interpolated_shapes) and \
                         interpolated_shapes[stop + 1]['outside']:
@@ -457,6 +459,7 @@ class ShapeManager(ObjectManager):
 
     def _modify_unmatched_object(self, obj, end_frame):
         pass
+
 
 class TrackManager(ObjectManager):
     def to_shapes(self, end_frame: int, *,
@@ -927,6 +930,8 @@ class TrackManager(ObjectManager):
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
+            if included_frames is not None and curr_frame not in included_frames:
+                continue
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
                 # we still need to interpolate up to the next keyframe,
@@ -950,6 +955,11 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
+                if (
+                    curr_frame == prev_shape["frame"]
+                    and dict(shape, id=None, keyframe=None) == dict(prev_shape, id=None, keyframe=None)
+                ):
+                    continue
                 assert curr_frame > prev_shape["frame"], f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}" # Catch invalid tracks
 
                 # Propagate attributes

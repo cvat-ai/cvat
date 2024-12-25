@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from io import BytesIO
-from typing import Any, Callable, Dict, Iterator, Sequence, TypeVar
+from typing import Any, Callable, TypeVar
 import itertools
 import logging
 import os
@@ -178,6 +179,6 @@ def get_paginated_collection(
 
 
 def filter_dict(
-    d: Dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
-) -> Dict[str, Any]:
+    d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> dict[str, Any]:
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}

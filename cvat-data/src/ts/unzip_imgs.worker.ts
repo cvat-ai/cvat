@@ -34,7 +34,7 @@ onmessage = (e) => {
                             .async('blob')
                             .then((fileData) => {
                                 if (!errored) {
-                                    // do not need to read the rest of block if an error already occured
+                                    // do not need to read the rest of block if an error already occurred
                                     if (dimension === dimension2D) {
                                         createImageBitmap(fileData).then((img) => {
                                             postMessage({

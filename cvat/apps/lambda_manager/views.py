@@ -12,7 +12,7 @@ import textwrap
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -32,7 +32,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
+from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.models import (
     Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget
 )
@@ -231,7 +231,7 @@ class LambdaFunction:
     def invoke(
         self,
         db_task: Task,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         *,
         db_job: Optional[Job] = None,
         is_interactive: Optional[bool] = False,
@@ -257,13 +257,12 @@ class LambdaFunction:
         threshold = data.get("threshold")
         if threshold:
             payload.update({ "threshold": threshold })
-        quality = data.get("quality")
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
         task_labels = db_task.get_labels(prefetch=True)
 
-        def labels_compatible(model_label: Dict, task_label: Label) -> bool:
+        def labels_compatible(model_label: dict, task_label: Label) -> bool:
             model_type = model_label['type']
             db_type = task_label.type
             compatible_types = [[ShapeType.MASK, ShapeType.POLYGON]]
@@ -387,19 +386,19 @@ class LambdaFunction:
 
         if self.kind == FunctionKind.DETECTOR:
             payload.update({
-                "image": self._get_image(db_task, mandatory_arg("frame"), quality)
+                "image": self._get_image(db_task, mandatory_arg("frame"))
             })
         elif self.kind == FunctionKind.INTERACTOR:
             payload.update({
-                "image": self._get_image(db_task, mandatory_arg("frame"), quality),
+                "image": self._get_image(db_task, mandatory_arg("frame")),
                 "pos_points": mandatory_arg("pos_points"),
                 "neg_points": mandatory_arg("neg_points"),
                 "obj_bbox": data.get("obj_bbox", None)
             })
         elif self.kind == FunctionKind.REID:
             payload.update({
-                "image0": self._get_image(db_task, mandatory_arg("frame0"), quality),
-                "image1": self._get_image(db_task, mandatory_arg("frame1"), quality),
+                "image0": self._get_image(db_task, mandatory_arg("frame0")),
+                "image1": self._get_image(db_task, mandatory_arg("frame1")),
                 "boxes0": mandatory_arg("boxes0"),
                 "boxes1": mandatory_arg("boxes1")
             })
@@ -410,7 +409,7 @@ class LambdaFunction:
                 })
         elif self.kind == FunctionKind.TRACKER:
             payload.update({
-                "image": self._get_image(db_task, mandatory_arg("frame"), quality),
+                "image": self._get_image(db_task, mandatory_arg("frame")),
                 "shapes": data.get("shapes", []),
                 "states": data.get("states", [])
             })
@@ -487,19 +486,9 @@ class LambdaFunction:
 
         return response
 
-    def _get_image(self, db_task, frame, quality):
-        if quality is None or quality == "original":
-            quality = FrameQuality.ORIGINAL
-        elif  quality == "compressed":
-            quality = FrameQuality.COMPRESSED
-        else:
-            raise ValidationError(
-                '`{}` lambda function was run '.format(self.id) +
-                'with wrong arguments (quality={})'.format(quality),
-                code=status.HTTP_400_BAD_REQUEST)
-
+    def _get_image(self, db_task, frame):
         frame_provider = TaskFrameProvider(db_task)
-        image = frame_provider.get_frame(frame, quality=quality)
+        image = frame_provider.get_frame(frame)
 
         return base64.b64encode(image.data.getvalue()).decode('utf-8')
 
@@ -523,7 +512,7 @@ class LambdaQueue:
         return [LambdaJob(job) for job in jobs if job and job.meta.get("lambda")]
 
     def enqueue(self,
-        lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance, request,
+        lambda_func, threshold, task, mapping, cleanup, conv_mask_to_poly, max_distance, request,
         *,
         job: Optional[int] = None
     ) -> LambdaJob:
@@ -576,7 +565,6 @@ class LambdaQueue:
                     "threshold": threshold,
                     "task": task,
                     "job": job,
-                    "quality": quality,
                     "cleanup": cleanup,
                     "conv_mask_to_poly": conv_mask_to_poly,
                     "mapping": mapping,
@@ -666,10 +654,9 @@ class LambdaJob:
         cls,
         function: LambdaFunction,
         db_task: Task,
-        labels: Dict[str, Dict[str, Any]],
-        quality: str,
+        labels: dict[str, dict[str, Any]],
         threshold: float,
-        mapping: Optional[Dict[str, str]],
+        mapping: Optional[dict[str, str]],
         conv_mask_to_poly: bool,
         *,
         db_job: Optional[Job] = None
@@ -799,7 +786,7 @@ class LambdaJob:
                 continue
 
             annotations = function.invoke(db_task, db_job=db_job, data={
-                "frame": frame, "quality": quality, "mapping": mapping,
+                "frame": frame, "mapping": mapping,
                 "threshold": threshold
             })
 
@@ -854,7 +841,6 @@ class LambdaJob:
         cls,
         function: LambdaFunction,
         db_task: Task,
-        quality: str,
         threshold: float,
         max_distance: int,
         *,
@@ -887,7 +873,7 @@ class LambdaJob:
             boxes1 = boxes_by_frame[frame1]
             if boxes0 and boxes1:
                 matching = function.invoke(db_task, db_job=db_job, data={
-                    "frame0": frame0, "frame1": frame1, "quality": quality,
+                    "frame0": frame0, "frame1": frame1,
                     "boxes0": boxes0, "boxes1": boxes1, "threshold": threshold,
                     "max_distance": max_distance})
 
@@ -947,7 +933,7 @@ class LambdaJob:
                     dm.task.put_task_data(db_task.id, serializer.data)
 
     @classmethod
-    def __call__(cls, function, task: int, quality: str, cleanup: bool, **kwargs):
+    def __call__(cls, function, task: int, cleanup: bool, **kwargs):
         # TODO: need logging
         db_job = None
         if job := kwargs.get('job'):
@@ -977,11 +963,11 @@ class LambdaJob:
         labels = convert_labels(db_task.get_labels(prefetch=True))
 
         if function.kind == FunctionKind.DETECTOR:
-            cls._call_detector(function, db_task, labels, quality,
+            cls._call_detector(function, db_task, labels,
                 kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"),
                 db_job=db_job)
         elif function.kind == FunctionKind.REID:
-            cls._call_reid(function, db_task, quality,
+            cls._call_reid(function, db_task,
                 kwargs.get("threshold"), kwargs.get("max_distance"), db_job=db_job)
 
 def return_response(success_code=status.HTTP_200_OK):
@@ -1176,9 +1162,8 @@ class RequestViewSet(viewsets.ViewSet):
             threshold = request_data.get('threshold')
             task = request_data['task']
             job = request_data.get('job', None)
-            quality = request_data.get("quality")
             cleanup = request_data.get('cleanup', False)
-            conv_mask_to_poly = request_data.get('convMaskToPoly', False)
+            conv_mask_to_poly = request_data.get('conv_mask_to_poly', False)
             mapping = request_data.get('mapping')
             max_distance = request_data.get('max_distance')
         except KeyError as err:
@@ -1190,7 +1175,7 @@ class RequestViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
-        rq_job = queue.enqueue(lambda_func, threshold, task, quality,
+        rq_job = queue.enqueue(lambda_func, threshold, task,
             mapping, cleanup, conv_mask_to_poly, max_distance, request, job=job)
 
         handle_function_call(function, job or task, category="batch")

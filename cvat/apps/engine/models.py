@@ -10,24 +10,27 @@ import os
 import re
 import shutil
 import uuid
+from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Collection, Dict, Optional
+from typing import Any, ClassVar, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
+from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
-from django.db.models.fields import FloatField
 from django.db.models import Q, TextChoices
+from django.db.models.fields import FloatField
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
-from cvat.apps.engine.utils import parse_specific_attributes, chunked_list
+from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -274,6 +277,11 @@ class ValidationLayout(models.Model):
     disabled_frames = IntArrayField(store_sorted=True, unique_values=True)
     "Stores task frame numbers of the disabled (deleted) validation frames"
 
+    @property
+    def active_frames(self) -> Sequence[int]:
+        "An ordered sequence of active (non-disabled) validation frames"
+        return set(self.frames).difference(self.disabled_frames)
+
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
 
@@ -424,7 +432,7 @@ class TimestampedModel(models.Model):
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
-    for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
+    for job_ids_chunk in take_by(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
         LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
@@ -433,6 +441,30 @@ def clear_annotations_in_jobs(job_ids):
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+
+@transaction.atomic(savepoint=False)
+def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
+    if db_task.data.validation_mode != ValidationMode.GT_POOL:
+        # Tracks are prohibited in honeypot tasks
+        raise AssertionError
+
+    for frames_batch in take_by(frames, chunk_size=1000):
+        LabeledShapeAttributeVal.objects.filter(
+            shape__job_id__segment__task_id=db_task.id,
+            shape__frame__in=frames_batch,
+        ).delete()
+        LabeledShape.objects.filter(
+            job_id__segment__task_id=db_task.id,
+            frame__in=frames_batch,
+        ).delete()
+        LabeledImageAttributeVal.objects.filter(
+            image__job_id__segment__task_id=db_task.id,
+            image__frame__in=frames_batch,
+        ).delete()
+        LabeledImage.objects.filter(
+            job_id__segment__task_id=db_task.id,
+            frame__in=frames_batch,
+        ).delete()
 
 class Project(TimestampedModel):
     name = SafeCharField(max_length=256)
@@ -793,7 +825,7 @@ class JobQuerySet(models.QuerySet):
 
         return super().update_or_create(*args, **kwargs)
 
-    def _validate_constraints(self, obj: Dict[str, Any]):
+    def _validate_constraints(self, obj: dict[str, Any]):
         if 'type' not in obj:
             return
 
@@ -1091,9 +1123,16 @@ class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.DO_NOTHING,
         related_name='attributes', related_query_name='attribute')
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
+    has_analytics_access = models.BooleanField(
+        _("has access to analytics"),
+        default=False,
+        help_text=_("Designates whether the user can access analytics."),
+    )
+
 
 class Issue(TimestampedModel):
     frame = models.PositiveIntegerField()

@@ -42,13 +42,20 @@ To install an [official release of CVAT SDK](https://pypi.org/project/cvat-sdk/)
 pip install cvat-sdk
 ```
 
-To use the PyTorch adapter, request the `pytorch` extra:
+To use the `cvat_sdk.masks` module, request the `masks` extra:
+
+```bash
+pip install "cvat-sdk[masks]"
+```
+
+To use the PyTorch adapter or the built-in PyTorch-based auto-annotation functions,
+request the `pytorch` extra:
 
 ```bash
 pip install "cvat-sdk[pytorch]"
 ```
 
-We support Python versions 3.8 and higher.
+We support Python versions 3.9 and higher.
 
 ## Usage
 

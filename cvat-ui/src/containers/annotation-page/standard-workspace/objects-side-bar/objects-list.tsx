@@ -19,6 +19,7 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
+    changeHideActiveObjectAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -26,12 +27,14 @@ import {
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
+    ActiveControl,
 } from 'reducers';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 
 interface OwnProps {
     readonly: boolean;
@@ -56,6 +59,9 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
     workspace: Workspace;
+    editedState: ObjectState | null,
+    activeControl: ActiveControl,
+    activeObjectHidden: boolean,
 }
 
 interface DispatchToProps {
@@ -67,6 +73,7 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
+    changeHideEditedState(value: boolean): void;
 }
 
 const componentShortcuts = {
@@ -142,6 +149,12 @@ const componentShortcuts = {
         sequences: ['ctrl+c'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    RUN_ANNOTATIONS_ACTION: {
+        name: 'Run annotations action',
+        description: 'Opens a dialog with annotations actions',
+        sequences: ['ctrl+e'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
     PROPAGATE_OBJECT: {
         name: 'Propagate object',
         description: 'Make a copy of the object on the following frames',
@@ -186,6 +199,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
+            canvas: {
+                activeControl, activeObjectHidden,
+            },
+            editing: { objectState: editedState },
             colors,
             workspace,
         },
@@ -233,6 +250,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         normalizedKeyMap,
         showGroundTruth,
         workspace,
+        editedState,
+        activeControl,
+        activeObjectHidden,
     };
 }
 
@@ -262,6 +282,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeShowGroundTruth(value: boolean): void {
             dispatch(changeShowGroundTruthAction(value));
             dispatch(fetchAnnotationsAsync());
+        },
+        changeHideEditedState(value: boolean): void {
+            dispatch(changeHideActiveObjectAsync(value));
         },
     };
 }
@@ -388,8 +411,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { updateAnnotations } = this.props;
+        const { updateAnnotations, editedState, changeHideEditedState } = this.props;
         const { filteredStates } = this.state;
+
+        if (editedState?.shapeType === ShapeType.MASK) {
+            changeHideEditedState(hidden);
+        }
 
         for (const objectState of filteredStates) {
             objectState.hidden = hidden;
@@ -475,6 +502,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
+                const {
+                    editedState, changeHideEditedState, activeControl, activeObjectHidden,
+                } = this.props;
+                if (editedState?.shapeType === ShapeType.MASK || activeControl === ActiveControl.DRAW_MASK) {
+                    const hide = editedState ? !editedState.hidden : !activeObjectHidden;
+                    changeHideEditedState(hide);
+                }
                 if (state) {
                     state.hidden = !state.hidden;
                     updateAnnotations([state]);
@@ -559,6 +593,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (state && !readonly) {
                     copyShape(state);
+                }
+            },
+            RUN_ANNOTATIONS_ACTION: () => {
+                const state = activatedState(true);
+                if (!readonly) {
+                    if (state) {
+                        openAnnotationsActionModal(state);
+                    } else {
+                        openAnnotationsActionModal();
+                    }
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {

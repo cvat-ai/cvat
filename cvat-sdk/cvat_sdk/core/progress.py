@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 import contextlib
-from typing import ContextManager, Iterable, Optional, TypeVar
+from collections.abc import Generator, Iterable
+from typing import Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -26,7 +27,7 @@ class ProgressReporter:
     """
 
     @contextlib.contextmanager
-    def task(self, **kwargs) -> ContextManager[None]:
+    def task(self, **kwargs) -> Generator[None, None, None]:
         """
         Returns a context manager that represents a long-running task
         for which progress can be reported.

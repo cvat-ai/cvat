@@ -12,7 +12,7 @@ azure-storage-blob==12.13.0
 boto3==1.17.61
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@e612d1bfb76a3c3d3d545187338c841a246619fb
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@bf0374689df50599a34a4f220b9e5329aca695ce
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
@@ -29,7 +29,7 @@ django-health-check>=3.18.1,<4
 django-rq==2.8.1
 django-sendfile2==0.7.0
 Django~=4.2.7
-djangorestframework~=3.14.0
+djangorestframework>=3.15.2,<4
 drf-spectacular==0.26.2
 furl==2.1.0
 google-cloud-storage==1.42.0

@@ -5,11 +5,11 @@
   "results": [
     {
       "assignee": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 10,
-        "last_name": "First",
+        "last_name": "Seventh",
         "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
+        "username": "user7"
       },
       "assignee_updated_date": "2024-09-23T08:09:45.461000Z",
       "bug_tracker": "",
@@ -383,11 +383,11 @@
     },
     {
       "assignee": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 13,
-        "last_name": "Fourth",
+        "last_name": "Tenth",
         "url": "http://localhost:8080/api/users/13",
-        "username": "business4"
+        "username": "user10"
       },
       "assignee_updated_date": null,
       "bug_tracker": "",
@@ -553,11 +553,11 @@
       "name": "project2",
       "organization": 2,
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 10,
-        "last_name": "First",
+        "last_name": "Seventh",
         "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
+        "username": "user7"
       },
       "source_storage": {
         "cloud_storage_id": 3,
@@ -600,11 +600,11 @@
       "name": "project1",
       "organization": null,
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 10,
-        "last_name": "First",
+        "last_name": "Seventh",
         "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
+        "username": "user7"
       },
       "source_storage": null,
       "status": "annotation",

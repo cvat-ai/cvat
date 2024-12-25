@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import AbstractContextManager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ContextManager, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 import requests
 import urllib3
@@ -147,9 +148,9 @@ class Uploader:
         url: str,
         filename: Path,
         *,
-        meta: Dict[str, Any],
-        query_params: Dict[str, Any] = None,
-        fields: Optional[Dict[str, Any]] = None,
+        meta: dict[str, Any],
+        query_params: dict[str, Any] = None,
+        fields: Optional[dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         logger=None,
     ) -> urllib3.HTTPResponse:
@@ -194,7 +195,7 @@ class Uploader:
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
 
     @staticmethod
-    def _uploading_task(pbar: ProgressReporter, total_size: int) -> ContextManager[None]:
+    def _uploading_task(pbar: ProgressReporter, total_size: int) -> AbstractContextManager[None]:
         return pbar.task(
             total=total_size, desc="Uploading data", unit_scale=True, unit="B", unit_divisor=1024
         )
@@ -256,7 +257,7 @@ class AnnotationUploader(Uploader):
         filename: Path,
         format_name: str,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
+        url_params: Optional[dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
     ):
@@ -279,7 +280,7 @@ class DatasetUploader(Uploader):
         filename: Path,
         format_name: str,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
+        url_params: Optional[dict[str, Any]] = None,
         pbar: Optional[ProgressReporter] = None,
         status_check_period: Optional[int] = None,
     ):
@@ -302,7 +303,7 @@ class DataUploader(Uploader):
     def upload_files(
         self,
         url: str,
-        resources: List[Path],
+        resources: list[Path],
         *,
         pbar: Optional[ProgressReporter] = None,
         **kwargs,
@@ -351,10 +352,10 @@ class DataUploader(Uploader):
         return self._tus_finish_upload(url, fields=kwargs)
 
     def _split_files_by_requests(
-        self, filenames: List[Path]
-    ) -> Tuple[List[Tuple[List[Path], int]], List[Path], int]:
-        bulk_files: Dict[str, int] = {}
-        separate_files: Dict[str, int] = {}
+        self, filenames: list[Path]
+    ) -> tuple[list[tuple[list[Path], int]], list[Path], int]:
+        bulk_files: dict[str, int] = {}
+        separate_files: dict[str, int] = {}
         max_request_size = self.max_request_size
 
         # sort by size
@@ -369,9 +370,9 @@ class DataUploader(Uploader):
         total_size = sum(bulk_files.values()) + sum(separate_files.values())
 
         # group small files by requests
-        bulk_file_groups: List[Tuple[List[str], int]] = []
+        bulk_file_groups: list[tuple[list[str], int]] = []
         current_group_size: int = 0
-        current_group: List[str] = []
+        current_group: list[str] = []
         for filename, file_size in bulk_files.items():
             if max_request_size < current_group_size + file_size:
                 bulk_file_groups.append((current_group, current_group_size))
