@@ -126,3 +126,24 @@ is named to correspond with its associated image file.
 
 For example, `frame_000001.txt` serves as the annotation for the
 `frame_000001.jpg` image.
+
+## Import
+
+Uploaded file: a zip archive of the same structure as above.
+
+For compatibility with other tools exporting in Ultralytics YOLO format 
+(e.g. [roboflow](https://roboflow.com/formats/yolov8-pytorch-txt)),
+CVAT supports datasets with the inverted directory order of subset and "images" or "labels",
+i.e. both `train/images/`, `images/train/` are valid inputs.
+```bash
+archive.zip/
+   ├── train/
+   │   ├── images/  # directory with images for train subset
+   │   │    ├── image1.jpg
+   │   │    ├── image2.jpg
+   │   │    └── ...
+   │   ├── labels/  # directory with annotations for train subset
+   │   │    ├── image1.txt
+   │   │    ├── image2.txt
+   │   │    └── ...
+```
