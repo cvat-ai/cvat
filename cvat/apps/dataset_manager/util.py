@@ -159,12 +159,18 @@ class ExportFileType(str, Enum):
     BACKUP = "backup"
     DATASET = "dataset"
 
+class InstanceType(str, Enum):
+    PROJECT = "project"
+    TASK = "task"
+    JOB = "job"
+
 
 @attrs.frozen
 class _ParsedExportFilename:
     file_type: ExportFileType
     file_ext: str
     instance_type: str
+    instance_id: int
     instance_timestamp: float
 
 
@@ -182,7 +188,7 @@ class ExportCacheManager:
     SPLITTER = "-"
     INSTANCE_PREFIX = "instance"
     FILE_NAME_TEMPLATE = SPLITTER.join([
-        "{file_type}", INSTANCE_PREFIX +
+        "{instance_type}", "{instance_id}", "{file_type}", INSTANCE_PREFIX +
         # store the instance timestamp in the file name to reliably get this information
         # ctime / mtime do not return file creation time on linux
         # mtime is used for file usage checks
@@ -194,19 +200,24 @@ class ExportCacheManager:
         cls,
         cache_dir: str,
         *,
-        save_images: bool,
+        instance_type: str,
+        instance_id: int,
         instance_timestamp: float,
+        save_images: bool,
         format_name: str,
     ) -> str:
         from .formats.registry import EXPORT_FORMATS
 
         file_ext = EXPORT_FORMATS[format_name].EXT
 
+        instance_type = InstanceType(instance_type.lower())
         file_type = ExportFileType.DATASET if save_images else ExportFileType.ANNOTATIONS
 
         normalized_format_name = make_file_name(to_snake_case(format_name))
         filename = cls.FILE_NAME_TEMPLATE.format_map(
             {
+                "instance_type": instance_type,
+                "instance_id": instance_id,
                 "file_type": file_type,
                 "instance_timestamp": instance_timestamp,
                 "optional_suffix": cls.SPLITTER + normalized_format_name,
@@ -221,10 +232,15 @@ class ExportCacheManager:
         cls,
         cache_dir: str,
         *,
+        instance_type: str,
+        instance_id: int,
         instance_timestamp: float,
     ) -> str:
+        instance_type = InstanceType(instance_type.lower())
         filename = cls.FILE_NAME_TEMPLATE.format_map(
             {
+                "instance_type": instance_type,
+                "instance_id": instance_id,
                 "file_type": ExportFileType.BACKUP,
                 "instance_timestamp": instance_timestamp,
                 "optional_suffix": "",
@@ -238,21 +254,17 @@ class ExportCacheManager:
         cls, file_path: os.PathLike[str],
     ) -> ParsedDatasetFilename | ParsedBackupFilename:
         file_path = osp.normpath(file_path)
-        dirname, basename = osp.split(file_path)
+        basename = osp.split(file_path)[1]
 
-        # handle directory
-        dirname_match = re.search(
-            rf"/(jobs|tasks|projects)/\d+/{settings.EXPORT_CACHE_DIR_NAME}$", dirname
-        )
-        if not dirname_match:
-            raise CacheFilePathParseError(f"Couldn't parse instance type in '{dirname}'")
-
-        instance_type_names = dirname_match.group(1)
-        assert instance_type_names in {"projects", "tasks", "jobs"}
-        instance_type_name = instance_type_names[:-1]
 
         # handle file name
-        file_type, unparsed = basename.split(cls.SPLITTER, maxsplit=1)
+        instance_type, unparsed = basename.split(cls.SPLITTER, maxsplit=1)
+        instance_type = InstanceType(instance_type)
+
+        instance_id, unparsed = basename.split(cls.SPLITTER, maxsplit=1)
+        instance_id = int(instance_id)
+
+        file_type, unparsed = unparsed.split(cls.SPLITTER, maxsplit=1)
         file_type = ExportFileType(file_type)
 
         unparsed, file_ext = osp.splitext(unparsed)
@@ -281,7 +293,8 @@ class ExportCacheManager:
         return ParsedFileNameClass(
             file_type=file_type.value,
             file_ext=file_ext,
-            instance_type=instance_type_name,
+            instance_id=instance_id,
+            instance_type=instance_type.value,
             instance_timestamp=instance_timestamp,
             **specific_params,
         )

@@ -320,7 +320,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.CLEANING.value: {
         **shared_queue_settings,
-        'DEFAULT_TIMEOUT': '1h',
+        'DEFAULT_TIMEOUT': '2h',
     },
     CVAT_QUEUES.CHUNKS.value: {
         **shared_queue_settings,
@@ -353,20 +353,14 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.iam.utils.clean_up_sessions',
         'cron_string': '0 0 * * *',
     },
-    *(
-        {
-            'queue': CVAT_QUEUES.CLEANING.value,
-            'id': f'cron_{model.lower()}_export_cache_cleanup',
-            'func': 'cvat.apps.engine.cron.cron_export_cache_cleanup',
-            # Run once a day at midnight
-            'cron_string': cron_string,
-            'args': (f'cvat.apps.engine.models.{model.title()}',),
-        }
-        for model, cron_string in zip(
-            ('project', 'task', 'job'),
-            ('0 0 * * *', '0 6 * * *', '0 12 * * *')
-        )
-    ),
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': f'cron_export_cache_cleanup',
+        'func': 'cvat.apps.engine.cron.cron_export_cache_cleanup',
+        # Run twice a day (at midnight and at noon)
+        # 'cron_string': '0 0,12 * * *',
+        'cron_string': '30 11 * * *',
+    }
 ]
 
 # JavaScript and CSS compression
@@ -426,6 +420,9 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
+
+EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
+os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
 
 EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)

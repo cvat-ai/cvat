@@ -91,5 +91,3 @@ else:
     EXPORT_LOCKED_RETRY_INTERVAL = int(
         os.getenv("CVAT_EXPORT_LOCKED_RETRY_INTERVAL", default_export_locked_retry_interval)
     )
-
-EXPORT_CACHE_DIR_NAME = "export_cache"

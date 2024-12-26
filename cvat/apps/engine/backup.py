@@ -1035,12 +1035,16 @@ def create_backup(
     cache_ttl: timedelta,
 ):
     try:
-        cache_dir = db_instance.get_export_cache_directory(create=True)
-        db_instance.touch_last_export_date()
+        cache_dir = settings.EXPORT_CACHE_ROOT
         db_instance.refresh_from_db(fields=['updated_date'])
         instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 
-        output_path = ExportCacheManager.make_backup_file_path(cache_dir, instance_timestamp=instance_timestamp)
+        output_path = ExportCacheManager.make_backup_file_path(
+            cache_dir,
+            instance_id=db_instance.id,
+            instance_type=db_instance.__class__.__name__,
+            instance_timestamp=instance_timestamp
+        )
 
         with get_export_cache_lock(
             output_path,

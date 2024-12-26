@@ -131,10 +131,8 @@ def export(
             export_fn = task.export_job
             db_instance = Job.objects.get(pk=job_id)
 
-        db_instance.touch_last_export_date()
-
         cache_ttl = get_export_cache_ttl(db_instance)
-        cache_dir = db_instance.get_export_cache_directory(create=True)
+        cache_dir = settings.EXPORT_CACHE_ROOT
 
         # As we're not locking the db object here, it can be updated by the time of actual export.
         # The file will be saved with the older timestamp.
@@ -149,7 +147,11 @@ def export(
             instance_update_time = max(tasks_update + [instance_update_time])
 
         output_path = ExportCacheManager.make_dataset_file_path(
-            cache_dir, save_images=save_images, instance_timestamp=instance_update_time.timestamp(),
+            cache_dir,
+            instance_id=db_instance.id,
+            instance_type=db_instance.__class__.__name__,
+            instance_timestamp=instance_update_time.timestamp(),
+            save_images=save_images,
             format_name=dst_format
         )
 

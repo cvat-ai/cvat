@@ -2,13 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import os
 import os.path as osp
 from datetime import timedelta
 from pathlib import Path
+from threading import Event, Thread
+from time import sleep
+from typing import Callable
 
-from django.db.models import QuerySet
+from django.conf import settings
 from django.utils import timezone
+from rq import get_current_job
 
 from cvat.apps.dataset_manager.util import ExportCacheManager, get_export_cache_lock
 from cvat.apps.dataset_manager.views import (
@@ -18,7 +24,6 @@ from cvat.apps.dataset_manager.views import (
     log_exception,
 )
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Job, Project, Task
 
 logger = ServerLogManager(__name__).glob
 
@@ -34,46 +39,93 @@ def clear_export_cache(file_path: str) -> None:
         cache_ttl = get_export_cache_ttl(parsed_filename.instance_type)
 
         if timezone.now().timestamp() <= osp.getmtime(file_path) + cache_ttl.total_seconds():
-            logger.debug(f"Export cache file {file_path!r} was recently accessed".format(file_path))
+            logger.debug(f"Export cache file {file_path!r} was recently accessed")
             return
 
         os.remove(file_path)
         logger.debug(f"Export cache file {file_path!r} was successfully removed")
 
 
-def cron_export_cache_cleanup() -> None:
-    for Model in (Project, Task, Job):
-        started_at = timezone.now()
-        one_month_ago = timezone.now() - timedelta(days=30)
-        queryset: QuerySet[Project | Task | Job] = Model.objects.filter(
-            last_export_date__gte=one_month_ago
-        )
+class CleanupExportCacheThread(Thread):
+    def __init__(self, stop_event: Event, *args, **kwargs) -> None:
+        self._stop_event = stop_event
+        self._removed_files_count = 0
+        self._exception_occurred = None
+        super().__init__(*args, **kwargs, target=self._cleanup_export_cache)
 
-        for instance in queryset.iterator():
-            instance_dir_path = Path(instance.get_dirname())
-            export_cache_dir_path = Path(instance.get_export_cache_directory())
+    @property
+    def removed_files_count(self) -> int:
+        return self._removed_files_count
 
-            if not export_cache_dir_path.exists():
+    @property
+    def exception_occurred(self) -> Exception | None:
+        return self._exception_occurred
+
+    def suppress_exceptions(method: Callable):
+        def wrapper(self: CleanupExportCacheThread):
+            try:
+                method(self)
+            except Exception as ex:
+                self._exception_occurred = ex
+
+        return wrapper
+
+    @suppress_exceptions
+    def _cleanup_export_cache(self) -> None:
+        # raise Exception("Ooops")
+        export_cache_dir_path = Path(settings.EXPORT_CACHE_ROOT)
+        assert export_cache_dir_path.exists()
+
+        # TODO: use scandir
+        for child in export_cache_dir_path.iterdir():
+            # stop clean up process correctly before rq job timeout is ended
+            if self._stop_event.is_set():
+                return
+
+            # export cache directory may contain temporary directories
+            if not child.is_file():
                 logger.debug(
-                    f"{export_cache_dir_path.relative_to(instance_dir_path)} path does not exist, skipping..."
+                    f"The {child.relative_to(export_cache_dir_path)} is not a file, skipping..."
                 )
                 continue
 
-            for child in export_cache_dir_path.iterdir():
-                # export cache dir may contain temporary directories
-                if not child.is_file():
-                    logger.debug(
-                        f"The {child.relative_to(instance_dir_path)} is not a file, skipping..."
-                    )
-                    continue
+            try:
+                clear_export_cache(child)
+                self._removed_files_count += 1
+            except Exception:
+                log_exception(logger)
 
-                try:
-                    clear_export_cache(child)
-                except Exception:
-                    log_exception(logger)
 
-        finished_at = timezone.now()
-        logger.info(
-            f"Clearing the {Model.__class__.__name__.lower()} export cache has been successfully "
-            f"completed after {int((finished_at - started_at).total_seconds())} seconds."
-        )
+def cron_export_cache_cleanup() -> None:
+    started_at = timezone.now()
+    rq_job = get_current_job()
+    seconds_left = rq_job.timeout - 60
+    sleep_interval = 30
+    assert seconds_left > sleep_interval + 10  # TODO:
+    finish_before = started_at + timedelta(seconds=seconds_left)
+
+    stop_event = Event()
+    cleanup_export_cache_thread = CleanupExportCacheThread(stop_event=stop_event)
+    cleanup_export_cache_thread.start()
+
+    while timezone.now() < finish_before:
+        if not cleanup_export_cache_thread.is_alive():
+            stop_event.set()
+            break
+        sleep(sleep_interval)
+
+    if not stop_event.is_set():
+        stop_event.set()
+
+    cleanup_export_cache_thread.join()
+    if exception_occurred := cleanup_export_cache_thread.exception_occurred:
+        raise exception_occurred
+
+    removed_files_count = cleanup_export_cache_thread.removed_files_count
+
+    finished_at = timezone.now()
+    logger.info(
+        f"Export cache cleanup has been successfully "
+        f"completed after {int((finished_at - started_at).total_seconds())} seconds. "
+        f"{removed_files_count} files have been removed"
+    )

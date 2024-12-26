@@ -447,25 +447,6 @@ class _FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
     def get_tmp_dirname(self) -> str:
         return os.path.join(self.get_dirname(), "tmp")
 
-    def get_export_cache_directory(self, create: bool = False) -> str:
-        base_dir = os.path.abspath(self.get_dirname())
-        cache_dir = os.path.join(base_dir, settings.EXPORT_CACHE_DIR_NAME)
-
-        if create:
-            os.makedirs(cache_dir, exist_ok=True)
-
-        return cache_dir
-
-
-class _Exportable(models.Model):
-    class Meta:
-        abstract = True
-
-    last_export_date = models.DateTimeField(null=True)
-
-    def touch_last_export_date(self):
-        self.last_export_date = timezone.now()
-        self.save(update_fields=["last_export_date"])
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
@@ -504,7 +485,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
 
-class Project(TimestampedModel, _FileSystemRelatedModel, _Exportable):
+class Project(TimestampedModel, _FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -579,7 +560,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(TimestampedModel, _FileSystemRelatedModel, _Exportable):
+class Task(TimestampedModel, _FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -870,7 +851,7 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel, _FileSystemRelatedModel, _Exportable):
+class Job(TimestampedModel, _FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
