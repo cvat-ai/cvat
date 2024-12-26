@@ -33,7 +33,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         secondY: 450,
     };
 
-    const dumpType = 'YOLO';
+    const dumpType = 'YOLO 1.1';
     let annotationArchiveName = '';
 
     function confirmUpdate(modalWindowClassName) {
@@ -114,7 +114,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             uploadAnnotation(
-                dumpType.split(' ')[0],
+                dumpType,
                 annotationArchiveName,
                 '.cvat-modal-content-load-job-annotation',
             );
