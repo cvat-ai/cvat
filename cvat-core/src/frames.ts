@@ -564,7 +564,27 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
                     ...serialized,
                     deleted_frames: Object.fromEntries(serialized.deleted_frames.map((_frame) => [_frame, true])),
                 });
-                resolve(framesMetaData);
+                // When we get new framesMetaData from server there can be some unsaved data
+                // here we merge new meta data with cached one
+                if (previousCache instanceof Promise) {
+                    previousCache.then((prevMeta) => {
+                        const updatedFields = prevMeta.getUpdated();
+                        for (const key in updatedFields) {
+                            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
+                                const [, frame, value] = key.split(':');
+                                if (value === DeletedFrameState.DELETED) {
+                                    framesMetaData.deletedFrames[+frame] = true;
+                                } else if (value === DeletedFrameState.RESTORED) {
+                                    delete framesMetaData.deletedFrames[+frame];
+                                }
+                            }
+                        }
+                    }).finally(() => {
+                        resolve(framesMetaData);
+                    });
+                } else {
+                    resolve(framesMetaData);
+                }
             }).catch((error: unknown) => {
                 delete frameMetaCache[id];
                 if (previousCache instanceof Promise) {
@@ -640,18 +660,6 @@ async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
                 }
             }
             cached.contextCache = {};
-        }
-
-        const updatedFields = prevMeta.getUpdated();
-        for (const key in updatedFields) {
-            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
-                const [, frame, value] = key.split(':');
-                if (value === DeletedFrameState.DELETED) {
-                    meta.deletedFrames[+frame] = true;
-                } else if (value === DeletedFrameState.RESTORED) {
-                    delete meta.deletedFrames[+frame];
-                }
-            }
         }
 
         cached.metaFetchedTimestamp = Date.now();
@@ -807,7 +815,7 @@ export async function getFrame(
             getChunk,
             getMeta: () => {
                 const cached = frameMetaCache[jobID];
-                if (!cached) {
+                if (!(cached instanceof Promise)) {
                     throw new Error('Frame meta data is not initialized');
                 }
                 return cached;
