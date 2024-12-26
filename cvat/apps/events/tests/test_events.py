@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import unittest
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -40,16 +39,15 @@ class WorkingTimeTestCase(unittest.TestCase):
 
 
     @staticmethod
-    def _actual_working_times(data: dict) -> int:
+    def _actual_working_times(data: dict) -> list[int]:
         tmp = data.copy()
         res = []
         for event in data['events']:
             tmp['events'] = [event]
             event_working_time = calc_working_time_per_ids(tmp)
+            #pylint: disable=unused-variable
             for ids, working_time in event_working_time.items():
-               res.append(
-                   (working_time['value'] // WORKING_TIME_RESOLUTION)
-                   )
+                res.append((working_time['value'] // WORKING_TIME_RESOLUTION))
             if tmp['previous_event'] and is_contained(event, tmp['previous_event']):
                 continue
             tmp['previous_event'] = event
@@ -57,7 +55,7 @@ class WorkingTimeTestCase(unittest.TestCase):
 
 
     @staticmethod
-    def _deserialize(events: list[dict], previous_event: Optional[dict] = None) -> list[dict]:
+    def _deserialize(events: list[dict], previous_event: Optional[dict] = None) -> dict:
         request = RequestFactory().post("/api/events")
         request.user = get_user_model()(id=100, username="testuser", email="testuser@example.org")
         request.iam_context = {
