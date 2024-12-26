@@ -72,6 +72,10 @@ $excluded-background: #d9d9d973;
     td.ant-table-column-sort {
         background: none;
     }
+
+    .ant-table-pagination.ant-pagination {
+        margin-bottom: 0;
+    }
 }
 
 .cvat-frame-allocation-actions {
@@ -175,7 +179,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-quality-table-search-wrapper {
-    padding: $grid-unit-size * 0.5 0;
+    padding-bottom: $grid-unit-size * 0.5;
 
     input, button {
         height: $grid-unit-size * 3.5 !important;
