@@ -77,53 +77,53 @@ def _import_yolo(*args, **kwargs):
     _import_common(*args, format_name="yolo", **kwargs)
 
 
-@exporter(name='YOLOv8 Detection', ext='ZIP', version='1.0')
-def _export_yolov8_detection(*args, **kwargs):
-    _export_common(*args, format_name='yolov8_detection', **kwargs)
+@exporter(name='Ultralytics YOLO Detection', ext='ZIP', version='1.0')
+def _export_yolo_ultralytics_detection(*args, **kwargs):
+    _export_common(*args, format_name='yolo_ultralytics_detection', **kwargs)
 
 
-@exporter(name='YOLOv8 Oriented Bounding Boxes', ext='ZIP', version='1.0')
-def _export_yolov8_oriented_boxes(*args, **kwargs):
-    _export_common(*args, format_name='yolov8_oriented_boxes', **kwargs)
+@exporter(name='Ultralytics YOLO Oriented Bounding Boxes', ext='ZIP', version='1.0')
+def _export_yolo_ultralytics_oriented_boxes(*args, **kwargs):
+    _export_common(*args, format_name='yolo_ultralytics_oriented_boxes', **kwargs)
 
 
-@exporter(name='YOLOv8 Segmentation', ext='ZIP', version='1.0')
-def _export_yolov8_segmentation(dst_file, temp_dir, instance_data, *, save_images=False):
+@exporter(name='Ultralytics YOLO Segmentation', ext='ZIP', version='1.0')
+def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset = dataset.transform('masks_to_polygons')
-        dataset.export(temp_dir, 'yolov8_segmentation', save_images=save_images)
+        dataset.export(temp_dir, 'yolo_ultralytics_segmentation', save_images=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
 
-@exporter(name='YOLOv8 Pose', ext='ZIP', version='1.0')
-def _export_yolov8_pose(*args, **kwargs):
-    _export_common(*args, format_name='yolov8_pose', **kwargs)
+@exporter(name='Ultralytics YOLO Pose', ext='ZIP', version='1.0')
+def _export_yolo_ultralytics_pose(*args, **kwargs):
+    _export_common(*args, format_name='yolo_ultralytics_pose', **kwargs)
 
 
-@exporter(name='YOLOv8 Classification', ext='ZIP', version='1.0')
-def _export_yolov8_classification(*args, **kwargs):
-    _export_common(*args, format_name='yolov8_classification', **kwargs)
+@exporter(name='Ultralytics YOLO Classification', ext='ZIP', version='1.0')
+def _export_yolo_ultralytics_classification(*args, **kwargs):
+    _export_common(*args, format_name='yolo_ultralytics_classification', **kwargs)
 
 
-@importer(name='YOLOv8 Detection', ext="ZIP", version="1.0")
-def _import_yolov8_detection(*args, **kwargs):
-    _import_common(*args, format_name="yolov8_detection", **kwargs)
+@importer(name='Ultralytics YOLO Detection', ext="ZIP", version="1.0")
+def _import_yolo_ultralytics_detection(*args, **kwargs):
+    _import_common(*args, format_name="yolo_ultralytics_detection", **kwargs)
 
 
-@importer(name='YOLOv8 Segmentation', ext="ZIP", version="1.0")
-def _import_yolov8_segmentation(*args, **kwargs):
-    _import_common(*args, format_name="yolov8_segmentation", **kwargs)
+@importer(name='Ultralytics YOLO Segmentation', ext="ZIP", version="1.0")
+def _import_yolo_ultralytics_segmentation(*args, **kwargs):
+    _import_common(*args, format_name="yolo_ultralytics_segmentation", **kwargs)
 
 
-@importer(name='YOLOv8 Oriented Bounding Boxes', ext="ZIP", version="1.0")
-def _import_yolov8_oriented_boxes(*args, **kwargs):
-    _import_common(*args, format_name="yolov8_oriented_boxes", **kwargs)
+@importer(name='Ultralytics YOLO Oriented Bounding Boxes', ext="ZIP", version="1.0")
+def _import_yolo_ultralytics_oriented_boxes(*args, **kwargs):
+    _import_common(*args, format_name="yolo_ultralytics_oriented_boxes", **kwargs)
 
 
-@importer(name='YOLOv8 Pose', ext="ZIP", version="1.0")
-def _import_yolov8_pose(src_file, temp_dir, instance_data, **kwargs):
+@importer(name='Ultralytics YOLO Pose', ext="ZIP", version="1.0")
+def _import_yolo_ultralytics_pose(src_file, temp_dir, instance_data, **kwargs):
     with GetCVATDataExtractor(instance_data) as extractor:
         point_categories = extractor.categories().get(AnnotationType.points)
         label_categories = extractor.categories().get(AnnotationType.label)
@@ -135,12 +135,12 @@ def _import_yolov8_pose(src_file, temp_dir, instance_data, **kwargs):
         src_file,
         temp_dir,
         instance_data,
-        format_name="yolov8_pose",
+        format_name="yolo_ultralytics_pose",
         import_kwargs=dict(skeleton_sub_labels=true_skeleton_point_labels),
         **kwargs
     )
 
 
-@importer(name='YOLOv8 Classification', ext="ZIP", version="1.0")
-def _import_yolov8_classification(*args, **kwargs):
-    _import_common(*args, format_name="yolov8_classification", **kwargs)
+@importer(name='Ultralytics YOLO Classification', ext="ZIP", version="1.0")
+def _import_yolo_ultralytics_classification(*args, **kwargs):
+    _import_common(*args, format_name="yolo_ultralytics_classification", **kwargs)
