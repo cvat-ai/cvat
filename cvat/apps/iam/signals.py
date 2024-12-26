@@ -42,6 +42,9 @@ elif settings.IAM_TYPE == 'LDAP':
                     if role == settings.IAM_ADMIN_ROLE:
                         user.is_staff = user.is_superuser = True
                     break
+        # add default group if no other group has been assigned
+        if not len(user_groups):
+            user_groups.append(Group.objects.get(name=settings.IAM_DEFAULT_ROLE))
 
         # It is important to save the user before adding groups. Please read
         # https://django-auth-ldap.readthedocs.io/en/latest/users.html#populating-users

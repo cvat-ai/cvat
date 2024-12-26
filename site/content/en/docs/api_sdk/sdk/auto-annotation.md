@@ -163,7 +163,7 @@ The same logic is used for sub-label IDs.
 ### Helper factory functions
 
 The CVAT API model types used in the AA function protocol are somewhat unwieldy to work with,
-so it's recommented to use the helper factory functions provided by this layer.
+so it's recommended to use the helper factory functions provided by this layer.
 These helpers instantiate an object of their corresponding model type,
 passing their arguments to the model constructor
 and sometimes setting some attributes to fixed values.
@@ -181,9 +181,22 @@ The following helpers are available for use in `detect`:
 | Name        | Model type               | Fixed attributes              |
 |-------------|--------------------------|-------------------------------|
 | `shape`     | `LabeledShapeRequest`    | `frame=0`                     |
+| `mask`      | `LabeledShapeRequest`    | `frame=0`, `type="mask"`      |
+| `polygon`   | `LabeledShapeRequest`    | `frame=0`, `type="polygon"`   |
 | `rectangle` | `LabeledShapeRequest`    | `frame=0`, `type="rectangle"` |
 | `skeleton`  | `LabeledShapeRequest`    | `frame=0`, `type="skeleton"`  |
 | `keypoint`  | `SubLabeledShapeRequest` | `frame=0`, `type="points"`    |
+
+For `mask`, it is recommended to create the points list using
+the `cvat.masks.encode_mask` function, which will convert a bitmap into a
+list in the format that CVAT expects. For example:
+
+```python
+cvataa.mask(my_label, encode_mask(
+    my_mask,  # boolean 2D array, same size as the input image
+    [x1, y1, x2, y2],  # top left and bottom right coordinates of the mask
+))
+```
 
 ## Auto-annotation driver
 
@@ -257,10 +270,18 @@ The `create` function accepts the following parameters:
 It also accepts arbitrary additional parameters,
 which are passed directly to the model constructor.
 
+### `cvat_sdk.auto_annotation.functions.torchvision_instance_segmentation`
+
+This AA function is analogous to `torchvision_detection`,
+except it uses torchvision's instance segmentation models and produces mask
+or polygon annotations (depending on the value of `conv_mask_to_poly`).
+
+Refer to that function's description for usage instructions and parameter information.
+
 ### `cvat_sdk.auto_annotation.functions.torchvision_keypoint_detection`
 
 This AA function is analogous to `torchvision_detection`,
 except it uses torchvision's keypoint detection models and produces skeleton annotations.
 Keypoints which the model marks as invisible will be marked as occluded in CVAT.
 
-Refer to the previous section for usage instructions and parameter information.
+Refer to that function's description for usage instructions and parameter information.

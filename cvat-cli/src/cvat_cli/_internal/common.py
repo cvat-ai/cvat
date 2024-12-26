@@ -5,15 +5,26 @@
 
 import argparse
 import getpass
+import importlib
+import importlib.util
 import logging
 import os
 import sys
 from http.client import HTTPConnection
+from pathlib import Path
+from typing import Any, Optional
 
+import attrs
+import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk.core.client import Client, Config
 
 from ..version import VERSION
+from .parsers import BuildDictAction, parse_function_parameter
 from .utils import popattr
+
+
+class CriticalError(Exception):
+    pass
 
 
 def get_auth(s):
@@ -74,7 +85,7 @@ def configure_logger(logger: logging.Logger, parsed_args: argparse.Namespace) ->
     formatter = logging.Formatter(
         "[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S", style="%"
     )
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(level)
@@ -102,3 +113,77 @@ def build_client(parsed_args: argparse.Namespace, logger: logging.Logger) -> Cli
     client.organization_slug = popattr(parsed_args, "organization")
 
     return client
+
+
+def configure_function_implementation_arguments(parser: argparse.ArgumentParser) -> None:
+    function_group = parser.add_mutually_exclusive_group(required=True)
+
+    function_group.add_argument(
+        "--function-module",
+        metavar="MODULE",
+        help="qualified name of a module to use as the function",
+    )
+
+    function_group.add_argument(
+        "--function-file",
+        metavar="PATH",
+        type=Path,
+        help="path to a Python source file to use as the function",
+    )
+
+    parser.add_argument(
+        "--function-parameter",
+        "-p",
+        metavar="NAME=TYPE:VALUE",
+        type=parse_function_parameter,
+        action=BuildDictAction,
+        dest="function_parameters",
+        help="parameter for the function",
+    )
+
+    original_executor = parser.get_default("_executor")
+
+    def execute_with_function_loader(
+        client,
+        *,
+        function_module: Optional[str],
+        function_file: Optional[Path],
+        function_parameters: dict[str, Any],
+        **kwargs,
+    ):
+        original_executor(
+            client,
+            function_loader=FunctionLoader(function_module, function_file, function_parameters),
+            **kwargs,
+        )
+
+    parser.set_defaults(_executor=execute_with_function_loader)
+
+
+@attrs.frozen
+class FunctionLoader:
+    function_module: Optional[str]
+    function_file: Optional[Path]
+    function_parameters: dict[str, Any]
+
+    def __attrs_post_init__(self):
+        assert self.function_module is not None or self.function_file is not None
+
+    def load(self) -> cvataa.DetectionFunction:
+        if self.function_module is not None:
+            function = importlib.import_module(self.function_module)
+        else:
+            module_spec = importlib.util.spec_from_file_location(
+                "__cvat_function__", self.function_file
+            )
+            function = importlib.util.module_from_spec(module_spec)
+            module_spec.loader.exec_module(function)
+
+        if hasattr(function, "create"):
+            # this is actually a function factory
+            function = function.create(**self.function_parameters)
+        else:
+            if self.function_parameters:
+                raise TypeError("function takes no parameters")
+
+        return function

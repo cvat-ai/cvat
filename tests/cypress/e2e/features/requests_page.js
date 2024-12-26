@@ -322,9 +322,11 @@ context('Requests page', () => {
 
             cy.getJobIDFromIdx(0).then((jobID) => {
                 const closeExportNotification = () => {
-                    cy.contains('Export is finished').should('be.visible');
-                    cy.contains('Export is finished').parents('.ant-notification-notice')
-                        .find('span[aria-label="close"]').click();
+                    cy.get('.ant-notification-notice').first().within((notification) => {
+                        cy.contains('Export is finished').should('be.visible');
+                        cy.get('span[aria-label="close"]').click();
+                        cy.wrap(notification).should('not.exist');
+                    });
                 };
 
                 const exportParams = {

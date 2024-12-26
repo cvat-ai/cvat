@@ -69,7 +69,7 @@ docker compose up -d
 ### Ports settings
 
 If you cannot access analytics on
-development environnement,
+development environment,
 see {{< ilink "/docs/contributing/development-environment#cvat-analytics-ports" "Analytics Ports" >}}
 
 ### Events log structure
@@ -134,6 +134,12 @@ Server events:
 - `export:dataset`, `import:dataset`
 
 - `call:function`
+
+- `create:membership`, `update:membership`, `delete:membership`
+
+- `create:webhook`, `update:webhook`, `delete:webhook`
+
+- `create:invitation`, `delete:invitation`
 
 Client events:
 

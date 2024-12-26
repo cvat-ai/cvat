@@ -1163,7 +1163,7 @@ class RequestViewSet(viewsets.ViewSet):
             task = request_data['task']
             job = request_data.get('job', None)
             cleanup = request_data.get('cleanup', False)
-            conv_mask_to_poly = request_data.get('convMaskToPoly', False)
+            conv_mask_to_poly = request_data.get('conv_mask_to_poly', False)
             mapping = request_data.get('mapping')
             max_distance = request_data.get('max_distance')
         except KeyError as err:

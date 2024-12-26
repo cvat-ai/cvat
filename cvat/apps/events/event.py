@@ -20,6 +20,8 @@ class EventScopes:
         "task": ["create", "update", "delete"],
         "job": ["create", "update", "delete"],
         "organization": ["create", "update", "delete"],
+        "membership": ["create", "update", "delete"],
+        "invitation": ["create", "delete"],
         "user": ["create", "update", "delete"],
         "cloudstorage": ["create", "update", "delete"],
         "issue": ["create", "update", "delete"],
@@ -28,6 +30,7 @@ class EventScopes:
         "label": ["create", "update", "delete"],
         "dataset": ["export", "import"],
         "function": ["call"],
+        "webhook": ["create", "update", "delete"],
     }
 
     @classmethod

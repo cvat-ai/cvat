@@ -6,7 +6,8 @@
 from copy import copy, deepcopy
 
 import math
-from typing import Container, Optional, Sequence
+from collections.abc import Container, Sequence
+from typing import Optional
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
@@ -458,6 +459,7 @@ class ShapeManager(ObjectManager):
 
     def _modify_unmatched_object(self, obj, end_frame):
         pass
+
 
 class TrackManager(ObjectManager):
     def to_shapes(self, end_frame: int, *,
@@ -928,6 +930,8 @@ class TrackManager(ObjectManager):
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
+            if included_frames is not None and curr_frame not in included_frames:
+                continue
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
                 # we still need to interpolate up to the next keyframe,

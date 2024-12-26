@@ -7,14 +7,14 @@ import os.path as osp
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
 from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
-from django_rq.queues import DjangoRQ
+from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import serializers, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -51,6 +51,11 @@ from cvat.apps.engine.utils import (
 from cvat.apps.events.handlers import handle_dataset_export
 
 slogger = ServerLogManager(__name__)
+
+REQUEST_TIMEOUT = 60
+# it's better to return LockNotAvailableError instead of response with 504 status
+LOCK_TTL = REQUEST_TIMEOUT - 5
+LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
 class _ResourceExportManager(ABC):
@@ -89,7 +94,7 @@ class _ResourceExportManager(ABC):
     def _handle_rq_job_v1(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
         pass
 
-    def _handle_rq_job_v2(self, rq_job: Optional[RQJob], *args, **kwargs) -> Optional[Response]:
+    def _handle_rq_job_v2(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
         if not rq_job:
             return None
 
@@ -101,17 +106,23 @@ class _ResourceExportManager(ABC):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        if rq_job_status in (RQJobStatus.SCHEDULED, RQJobStatus.DEFERRED):
+        if rq_job_status == RQJobStatus.DEFERRED:
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+
+        if rq_job_status == RQJobStatus.SCHEDULED:
+            scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
+            # remove the job id from the set with scheduled keys
+            scheduler.cancel(rq_job)
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         rq_job.delete()
         return None
 
-    def handle_rq_job(self, *args, **kwargs) -> Optional[Response]:
+    def handle_rq_job(self, rq_job: RQJob | None, queue: DjangoRQ) -> Optional[Response]:
         if self.version == 1:
-            return self._handle_rq_job_v1(*args, **kwargs)
+            return self._handle_rq_job_v1(rq_job, queue)
         elif self.version == 2:
-            return self._handle_rq_job_v2(*args, **kwargs)
+            return self._handle_rq_job_v2(rq_job, queue)
 
         raise ValueError("Unsupported version")
 
@@ -159,7 +170,7 @@ class DatasetExportManager(_ResourceExportManager):
         format: str
         filename: str
         save_images: bool
-        location_config: Dict[str, Any]
+        location_config: dict[str, Any]
 
         @property
         def location(self) -> Location:
@@ -220,7 +231,9 @@ class DatasetExportManager(_ResourceExportManager):
             return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < instance_update_time
 
         def handle_local_download() -> Response:
-            with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+            with dm.util.get_export_cache_lock(
+                file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+            ):
                 if not osp.exists(file_path):
                     return Response(
                         "The exported file has expired, please retry exporting",
@@ -295,8 +308,6 @@ class DatasetExportManager(_ResourceExportManager):
         instance_update_time = self.get_instance_update_time()
         instance_timestamp = self.get_timestamp(instance_update_time)
 
-        REQUEST_TIMEOUT = 60
-
         if rq_job_status == RQJobStatus.FINISHED:
             if self.export_args.location == Location.CLOUD_STORAGE:
                 rq_job.delete()
@@ -313,11 +324,13 @@ class DatasetExportManager(_ResourceExportManager):
                 if action == "download":
                     return handle_local_download()
                 else:
-                    with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+                    with dm.util.get_export_cache_lock(
+                        file_path,
+                        ttl=LOCK_TTL,
+                        acquire_timeout=LOCK_ACQUIRE_TIMEOUT,
+                    ):
                         if osp.exists(file_path) and not is_result_outdated():
-                            # Update last update time to prolong the export lifetime
-                            # as the last access time is not available on every filesystem
-                            os.utime(file_path, None)
+                            dm.util.extend_export_file_lifetime(file_path)
 
                             return Response(status=status.HTTP_201_CREATED)
 
@@ -422,7 +435,7 @@ class DatasetExportManager(_ResourceExportManager):
         user_id = self.request.user.id
 
         func = self.export_callback
-        func_args = (self.db_instance.id, self.export_args.format, server_address)
+        func_args = (self.db_instance.id, self.export_args.format)
         result_url = None
 
         if self.export_args.location == Location.CLOUD_STORAGE:
@@ -467,6 +480,9 @@ class DatasetExportManager(_ResourceExportManager):
             queue.enqueue_call(
                 func=func,
                 args=func_args,
+                kwargs={
+                    "server_url": server_address,
+                },
                 job_id=rq_id,
                 meta=get_rq_job_meta(
                     request=self.request, db_obj=self.db_instance, result_url=result_url
@@ -499,7 +515,7 @@ class BackupExportManager(_ResourceExportManager):
     @dataclass
     class ExportArgs:
         filename: str
-        location_config: Dict[str, Any]
+        location_config: dict[str, Any]
 
         @property
         def location(self) -> Location:

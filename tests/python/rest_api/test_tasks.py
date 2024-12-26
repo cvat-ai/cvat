@@ -24,7 +24,7 @@ from http import HTTPStatus
 from itertools import chain, groupby, product
 from math import ceil
 from operator import itemgetter
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
 from typing import Any, Callable, ClassVar, Optional, Union
@@ -64,9 +64,12 @@ from shared.utils.helpers import (
 )
 
 from .utils import (
+    DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
+    calc_end_frame,
     compare_annotations,
     create_task,
+    export_dataset,
     export_task_backup,
     export_task_dataset,
     parse_frame_step,
@@ -80,6 +83,15 @@ def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Op
 
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
+
+
+def count_frame_uses(data: Sequence[int], *, included_frames: Sequence[int]) -> dict[int, int]:
+    use_counts = {f: 0 for f in included_frames}
+    for f in data:
+        if f in included_frames:
+            use_counts[f] += 1
+
+    return use_counts
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -888,6 +900,7 @@ class TestGetTaskDataset:
 
     @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     def test_can_download_task_with_special_chars_in_name(self, admin_user: str, api_version: int):
         # Control characters in filenames may conflict with the Content-Disposition header
         # value restrictions, as it needs to include the downloaded file name.
@@ -969,11 +982,52 @@ class TestGetTaskDataset:
                     subset_path in path for path in zip_file.namelist()
                 ), f"No {subset_path} in {zip_file.namelist()}"
 
+    @pytest.mark.parametrize(
+        "dimension, mode", [("2d", "annotation"), ("2d", "interpolation"), ("3d", "annotation")]
+    )
+    def test_datumaro_export_without_annotations_includes_image_info(
+        self, admin_user, tasks, mode, dimension
+    ):
+        task = next(
+            t for t in tasks if t.get("size") if t["mode"] == mode if t["dimension"] == dimension
+        )
+
+        with make_api_client(admin_user) as api_client:
+            dataset_file = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    api_version=2,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
+            )
+
+        with zipfile.ZipFile(dataset_file) as zip_file:
+            annotations = json.loads(zip_file.read("annotations/default.json"))
+
+        assert annotations["items"]
+        for item in annotations["items"]:
+            assert "media" not in item
+
+            if dimension == "2d":
+                assert osp.splitext(item["image"]["path"])[0] == item["id"]
+                assert not Path(item["image"]["path"]).is_absolute()
+                assert tuple(item["image"]["size"]) > (0, 0)
+            elif dimension == "3d":
+                assert osp.splitext(osp.basename(item["point_cloud"]["path"]))[0] == item["id"]
+                assert not Path(item["point_cloud"]["path"]).is_absolute()
+                for related_image in item["related_images"]:
+                    assert not Path(related_image["path"]).is_absolute()
+                    if "size" in related_image:
+                        assert tuple(related_image["size"]) > (0, 0)
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -2221,6 +2275,15 @@ class TestPostTaskData:
             validation_frames
         )
 
+        if frame_selection_method == "random_uniform":
+            # Test distribution
+            validation_frame_counts = {
+                f: annotation_job_frame_counts.get(f, 0) + 1 for f in validation_frames
+            }
+            assert max(validation_frame_counts.values()) <= 1 + min(
+                validation_frame_counts.values()
+            )
+
         # each job must have the specified number of validation frames
         for job_meta in annotation_job_metas:
             assert (
@@ -2683,8 +2746,9 @@ class _VideoTaskSpec(_TaskSpecBase):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskData:
     _USERNAME = "admin1"
 
@@ -3057,7 +3121,7 @@ class TestTaskData:
         stop_frame = getattr(task_spec, "stop_frame", None) or (
             start_frame + (task_spec.size - 1) * frame_step
         )
-        end_frame = stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step
+        end_frame = calc_end_frame(start_frame, stop_frame, frame_step)
 
         validation_params = getattr(task_spec, "validation_params", None)
         if validation_params and validation_params.mode.value == "gt_pool":
@@ -3774,6 +3838,7 @@ class TestPatchTaskLabel:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
@@ -4396,6 +4461,15 @@ class TestWorkWithHoneypotTasks:
                 api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
             )
 
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [gt_frame_set[0]],
+                ),
+            )
+
             params = {"frame_selection_method": frame_selection_method}
 
             if frame_selection_method == "manual":
@@ -4422,6 +4496,15 @@ class TestWorkWithHoneypotTasks:
 
             if frame_selection_method == "manual":
                 assert new_honeypot_real_frames == requested_honeypot_real_frames
+            elif frame_selection_method == "random_uniform":
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames,
+                    included_frames=new_validation_layout["validation_frames"],
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
 
             assert (
                 DeepDiff(
@@ -4449,10 +4532,13 @@ class TestWorkWithHoneypotTasks:
             gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
             active_gt_set = gt_frame_set[:honeypots_per_job]
 
-            api_client.jobs_api.partial_update_data_meta(
-                gt_job["id"],
-                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
-                    deleted_frames=[f for f in gt_frame_set if f not in active_gt_set]
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    disabled_frames=[f for f in gt_frame_set if f not in active_gt_set],
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [active_gt_set[0]],
                 ),
             )
 
@@ -4495,7 +4581,7 @@ class TestWorkWithHoneypotTasks:
             new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
 
             assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
-            assert all(f in active_gt_set for f in new_honeypot_real_frames)
+            assert all([f in active_gt_set for f in new_honeypot_real_frames])
 
             if frame_selection_method == "manual":
                 assert new_honeypot_real_frames == requested_honeypot_real_frames
@@ -4513,6 +4599,97 @@ class TestWorkWithHoneypotTasks:
                         for j in range(len(annotation_jobs))
                     ]
                 ), new_honeypot_real_frames
+
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames, included_frames=active_gt_set
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
+
+    @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
+    @parametrize("frame_selection_method", ["manual", "random_uniform"])
+    def test_can_restore_and_change_honeypot_frames_in_task_in_the_same_request(
+        self, admin_user, task, gt_job, annotation_jobs, frame_selection_method: str
+    ):
+        assert gt_job["stop_frame"] - gt_job["start_frame"] + 1 >= 2
+
+        with make_api_client(admin_user) as api_client:
+            old_validation_layout = json.loads(
+                api_client.tasks_api.retrieve_validation_layout(task["id"])[1].data
+            )
+
+            honeypots_per_job = old_validation_layout["frames_per_job_count"]
+
+            gt_frame_set = range(gt_job["start_frame"], gt_job["stop_frame"] + 1)
+            active_gt_set = gt_frame_set[:honeypots_per_job]
+
+            api_client.tasks_api.partial_update_validation_layout(
+                task["id"],
+                patched_task_validation_layout_write_request=models.PatchedTaskValidationLayoutWriteRequest(
+                    disabled_frames=[f for f in gt_frame_set if f not in active_gt_set],
+                    frame_selection_method="manual",
+                    honeypot_real_frames=old_validation_layout["honeypot_count"]
+                    * [active_gt_set[0]],
+                ),
+            )
+
+            active_gt_set = gt_frame_set
+
+            params = {
+                "frame_selection_method": frame_selection_method,
+                "disabled_frames": [],  # restore all validation frames
+            }
+
+            if frame_selection_method == "manual":
+                requested_honeypot_real_frames = [
+                    active_gt_set[(old_real_frame + 1) % len(active_gt_set)]
+                    for old_real_frame in old_validation_layout["honeypot_real_frames"]
+                ]
+
+                params["honeypot_real_frames"] = requested_honeypot_real_frames
+
+            new_validation_layout = json.loads(
+                api_client.tasks_api.partial_update_validation_layout(
+                    task["id"],
+                    patched_task_validation_layout_write_request=(
+                        models.PatchedTaskValidationLayoutWriteRequest(**params)
+                    ),
+                )[1].data
+            )
+
+            new_honeypot_real_frames = new_validation_layout["honeypot_real_frames"]
+
+            assert old_validation_layout["honeypot_count"] == len(new_honeypot_real_frames)
+            assert sorted(new_validation_layout["disabled_frames"]) == sorted(
+                params["disabled_frames"]
+            )
+
+            if frame_selection_method == "manual":
+                assert new_honeypot_real_frames == requested_honeypot_real_frames
+            else:
+                assert all(
+                    [
+                        honeypots_per_job
+                        == len(
+                            set(
+                                new_honeypot_real_frames[
+                                    j * honeypots_per_job : (j + 1) * honeypots_per_job
+                                ]
+                            )
+                        )
+                    ]
+                    for j in range(len(annotation_jobs))
+                ), new_honeypot_real_frames
+
+                # Test distribution
+                validation_frame_counts = count_frame_uses(
+                    new_honeypot_real_frames, included_frames=active_gt_set
+                )
+                assert max(validation_frame_counts.values()) <= 1 + min(
+                    validation_frame_counts.values()
+                )
 
     @parametrize("task, gt_job, annotation_jobs", [fixture_ref(fxt_task_with_honeypots)])
     @parametrize("frame_selection_method", ["manual", "random_uniform"])
@@ -4654,7 +4831,7 @@ class TestGetTaskPreview:
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
 
 
-@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestUnequalJobs:
     @pytest.fixture(autouse=True)
@@ -5180,6 +5357,47 @@ class TestImportTaskAnnotations:
         self._delete_annotations(task_id)
         task.import_annotations(self.import_format, file_path)
         self._check_annotations(task_id)
+
+    @pytest.mark.parametrize("dimension", ["2d", "3d"])
+    def test_can_import_datumaro_json(self, admin_user, tasks, dimension):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["dimension"] == dimension and t.get("validation_mode") != "gt_pool"
+        )
+
+        with make_api_client(admin_user) as api_client:
+            original_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+            )
+
+            dataset_archive = io.BytesIO(
+                export_dataset(
+                    api_client.tasks_api,
+                    api_version=2,
+                    id=task["id"],
+                    format=DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    save_images=False,
+                )
+            )
+
+        with zipfile.ZipFile(dataset_archive) as zip_file:
+            annotations = zip_file.read("annotations/default.json")
+
+        with TemporaryDirectory() as tempdir:
+            annotations_path = Path(tempdir) / "annotations.json"
+            annotations_path.write_bytes(annotations)
+            self.client.tasks.retrieve(task["id"]).import_annotations(
+                DATUMARO_FORMAT_FOR_DIMENSION[dimension], annotations_path
+            )
+
+        with make_api_client(admin_user) as api_client:
+            updated_annotations = json.loads(
+                api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+            )
+
+        assert compare_annotations(original_annotations, updated_annotations) == {}
 
     @pytest.mark.parametrize(
         "format_name",
@@ -6244,3 +6462,69 @@ class TestImportWithComplexFilenames:
         check_element_outside_count(1, 0, 1)
         check_element_outside_count(1, 1, 2)
         check_element_outside_count(1, 2, 2)
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+class TestPatchExportFrames(TestTaskData):
+
+    @fixture(scope="class")
+    @parametrize("media_type", [_SourceDataType.images, _SourceDataType.video])
+    @parametrize("step", [5])
+    @parametrize("frame_count", [20])
+    @parametrize("start_frame", [None, 3])
+    def fxt_uploaded_media_task(
+        self,
+        request: pytest.FixtureRequest,
+        media_type: _SourceDataType,
+        step: int,
+        frame_count: int,
+        start_frame: Optional[int],
+    ) -> Generator[tuple[_TaskSpec, Task, str], None, None]:
+        args = dict(request=request, frame_count=frame_count, step=step, start_frame=start_frame)
+
+        if media_type == _SourceDataType.images:
+            (spec, task_id) = next(self._uploaded_images_task_fxt_base(**args))
+        else:
+            (spec, task_id) = next(self._uploaded_video_task_fxt_base(**args))
+
+        with make_sdk_client(self._USERNAME) as client:
+            task = client.tasks.retrieve(task_id)
+
+            yield (spec, task, f"CVAT for {media_type} 1.1")
+
+    @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+    @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])
+    def test_export_with_non_default_frame_step(
+        self, tmp_path: Path, spec: _TaskSpec, task: Task, format_name: str
+    ):
+
+        dataset_file = tmp_path / "dataset.zip"
+        task.export_dataset(format_name, dataset_file, include_images=True)
+
+        def get_img_index(zinfo: zipfile.ZipInfo) -> int:
+            name = PurePosixPath(zinfo.filename)
+            if name.suffix.lower() not in (".png", ".jpg", ".jpeg"):
+                return -1
+            return int(name.stem.rsplit("_", maxsplit=1)[-1])
+
+        # get frames and sort them
+        with zipfile.ZipFile(dataset_file) as dataset:
+            frames = np.array(
+                [png_idx for png_idx in map(get_img_index, dataset.filelist) if png_idx != -1]
+            )
+            frames.sort()
+
+        task_meta = task.get_meta()
+        (src_start_frame, src_stop_frame, src_frame_step) = (
+            task_meta["start_frame"],
+            task_meta["stop_frame"],
+            spec.frame_step,
+        )
+        src_end_frame = calc_end_frame(src_start_frame, src_stop_frame, src_frame_step)
+        assert len(frames) == spec.size == task_meta["size"], "Some frames were lost"
+        assert np.all(
+            frames == np.arange(src_start_frame, src_end_frame, src_frame_step)
+        ), "Some frames are wrong"

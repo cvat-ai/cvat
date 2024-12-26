@@ -16,8 +16,9 @@ from abc import ABCMeta, abstractmethod
 from contextlib import suppress
 from PIL import Image
 from types import SimpleNamespace
-from typing import Optional, Any, Dict, List, Union, cast, Callable, Mapping, Iterable
+from typing import Optional, Any, Union, cast, Callable
 from collections import namedtuple
+from collections.abc import Mapping, Iterable
 from copy import copy
 from datetime import datetime
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -106,7 +107,7 @@ from . import models, task
 from .log import ServerLogManager
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import PolicyEnforcer, IsAuthenticatedOrReadPublicResource
-from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.cache import MediaCache, CvatChunkTimestampMismatchError, LockError
 from cvat.apps.engine.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
@@ -118,6 +119,7 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
+_RETRY_AFTER_TIMEOUT = 10
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -723,6 +725,11 @@ class _DataGetter(metaclass=ABCMeta):
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
+        except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
+            return Response(
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+            )
 
     @abstractmethod
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]: ...
@@ -806,20 +813,26 @@ class _JobDataGetter(_DataGetter):
             # Reproduce the task chunk indexing
             frame_provider = self._get_frame_provider()
 
-            if self.index is not None:
-                data = frame_provider.get_chunk(
-                    self.index, quality=self.quality, is_task_chunk=False
-                )
-            else:
-                data = frame_provider.get_chunk(
-                    self.number, quality=self.quality, is_task_chunk=True
-                )
+            try:
+                if self.index is not None:
+                    data = frame_provider.get_chunk(
+                        self.index, quality=self.quality, is_task_chunk=False
+                    )
+                else:
+                    data = frame_provider.get_chunk(
+                        self.number, quality=self.quality, is_task_chunk=True
+                    )
 
-            return HttpResponse(
-                data.data.getvalue(),
-                content_type=data.mime,
-                headers=self._get_chunk_response_headers(data),
-            )
+                return HttpResponse(
+                    data.data.getvalue(),
+                    content_type=data.mime,
+                    headers=self._get_chunk_response_headers(data),
+                )
+            except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
+                return Response(
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                    headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+                )
         else:
             return super().__call__()
 
@@ -1064,7 +1077,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filename = self._prepare_upload_info_entry(filename)
         task_data.client_files.get_or_create(file=filename)
 
-    def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
+    def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
         task_data.client_files.bulk_create([
@@ -1072,7 +1085,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             for cf in client_files
         ])
 
-    def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
+    def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
         Applies file ordering for the "predefined" file sorting method of the task creation.
 
@@ -1760,7 +1773,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
     def validation_layout(self, request, pk):
-        db_task = self.get_object() # call check_object_permissions as well
+        db_task = cast(models.Task, self.get_object()) # call check_object_permissions as well
 
         validation_layout = getattr(db_task.data, 'validation_layout', None)
 
@@ -2968,6 +2981,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 '\n'.join([str(d) for d in ex.detail])
             slogger.cloud_storage[pk].info(msg)
             return Response(data=msg, status=ex.status_code)
+        except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
+            return Response(
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+                headers={'Retry-After': _RETRY_AFTER_TIMEOUT},
+            )
         except Exception as ex:
             slogger.glob.error(str(ex))
             return Response("An internal error has occurred",
@@ -3254,6 +3272,9 @@ class AnnotationGuidesViewSet(
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(
         traceback.format_exception_only(exc_type, exc_value))
+    if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
+        rq_job.meta[RQJobMetaField.EXCEPTION_TYPE] = exc_type
+        rq_job.meta[RQJobMetaField.EXCEPTION_ARGS] = exc_value.args
     rq_job.save_meta()
 
     return True
@@ -3548,7 +3569,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
-    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(queue.get_job_ids() +
             queue.started_job_registry.get_job_ids() +
             queue.finished_job_registry.get_job_ids() +
@@ -3568,7 +3589,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         return jobs
 
 
-    def _get_rq_jobs(self, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs(self, user_id: int) -> list[RQJob]:
         """
         Get all RQ jobs for a specific user and return them as a list of RQJob objects.
 

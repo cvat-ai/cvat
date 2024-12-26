@@ -4,14 +4,16 @@
 # SPDX-License-Identifier: MIT
 
 import ast
+from itertools import islice
 import cv2 as cv
 from collections import namedtuple
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 import hashlib
 import importlib
 import sys
 import traceback
 from contextlib import suppress, nullcontext
-from typing import Any, Dict, Optional, Callable, Sequence, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 import subprocess
 import os
 import urllib.parse
@@ -96,6 +98,9 @@ def execute_python_code(source_code, global_vars=None, local_vars=None):
         _, _, tb = sys.exc_info()
         line_number = traceback.extract_tb(tb)[-1][1]
         raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))
+
+class CvatChunkTimestampMismatchError(Exception):
+    pass
 
 def av_scan_paths(*paths):
     if 'yes' == os.environ.get('CLAM_AV'):
@@ -198,14 +203,25 @@ def define_dependent_job(
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
 
-def get_rq_lock_by_user(queue: DjangoRQ, user_id: int) -> Union[Lock, nullcontext]:
+def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int] = 30, blocking_timeout: Optional[int] = None) -> Union[Lock, nullcontext]:
     if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
-        return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
+        return queue.connection.lock(
+            name=f'{queue.name}-lock-{user_id}',
+            timeout=timeout,
+            blocking_timeout=blocking_timeout,
+        )
     return nullcontext()
 
-def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str) -> Lock:
+def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, blocking_timeout: int = 50) -> Lock:
     # lock timeout corresponds to the nginx request timeout (proxy_read_timeout)
-    return queue.connection.lock(f'lock-for-job-{rq_id}'.lower(), timeout=60)
+
+    assert timeout is not None
+    assert blocking_timeout is not None
+    return queue.connection.lock(
+        name=f'lock-for-job-{rq_id}'.lower(),
+        timeout=timeout,
+        blocking_timeout=blocking_timeout,
+    )
 
 def get_rq_job_meta(
     request: HttpRequest,
@@ -247,7 +263,7 @@ def get_rq_job_meta(
     return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
-    query_params: Optional[Dict[str, str]] = None,
+    query_params: Optional[dict[str, str]] = None,
     request: Optional[HttpRequest] = None,
 ) -> str:
     """
@@ -266,7 +282,7 @@ def reverse(viewname, *, args=None, kwargs=None,
 def get_server_url(request: HttpRequest) -> str:
     return request.build_absolute_uri('/')
 
-def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
+def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.
     """
@@ -363,10 +379,6 @@ def sendfile(
 
     return _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)
 
-def load_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
-    pil_img = Image.open(image[0])
-    pil_img.load()
-    return pil_img, image[1], image[2]
 
 def build_backup_file_name(
     *,
@@ -414,10 +426,22 @@ def directory_tree(path, max_depth=None) -> str:
 def is_dataset_export(request: HttpRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
+_T = TypeVar('_T')
 
-def chunked_list(lst, chunk_size):
-    for i in range(0, len(lst), chunk_size):
-        yield lst[i:i + chunk_size]
+def take_by(iterable: Iterable[_T], chunk_size: int) -> Generator[list[_T], None, None]:
+    """
+    Returns elements from the input iterable by batches of N items.
+    ('abcdefg', 3) -> ['a', 'b', 'c'], ['d', 'e', 'f'], ['g']
+    """
+    # can be changed to itertools.batched after migration to python3.12
+
+    it = iter(iterable)
+    while True:
+        batch = list(islice(it, chunk_size))
+        if len(batch) == 0:
+            break
+
+        yield batch
 
 
 FORMATTED_LIST_DISPLAY_THRESHOLD = 10
@@ -436,3 +460,34 @@ def format_list(
         separator.join(items[:max_items]),
         f" (and {remainder_count} more)" if 0 < remainder_count else "",
     )
+
+
+_K = TypeVar("_K")
+_V = TypeVar("_V")
+
+
+def grouped(
+    items: Iterator[_V] | Iterable[_V], *, key: Callable[[_V], _K]
+) -> Mapping[_K, Sequence[_V]]:
+    """
+    Returns a mapping with input iterable elements grouped by key, for example:
+
+    grouped(
+        [("apple1", "red"), ("apple2", "green"), ("apple3", "red")],
+        key=lambda v: v[1]
+    )
+    ->
+    {
+        "red": [("apple1", "red"), ("apple3", "red")],
+        "green": [("apple2", "green")]
+    }
+
+    Similar to itertools.groupby, but allows reiteration on resulting groups.
+    """
+
+    # Can be implemented with itertools.groupby, but it requires extra sorting for input elements
+    grouped_items = {}
+    for item in items:
+        grouped_items.setdefault(key(item), []).append(item)
+
+    return grouped_items

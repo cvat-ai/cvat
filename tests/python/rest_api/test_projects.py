@@ -19,7 +19,7 @@ from time import sleep
 from typing import Optional, Union
 
 import pytest
-from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -37,8 +37,10 @@ from shared.utils.config import (
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
+    DATUMARO_FORMAT_FOR_DIMENSION,
     CollectionSimpleFilterTestBase,
     create_task,
+    export_dataset,
     export_project_backup,
     export_project_dataset,
 )
@@ -992,6 +994,68 @@ class TestImportExportDatasetProject:
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
     @pytest.mark.parametrize(
+        "dimension, format_name",
+        [
+            *DATUMARO_FORMAT_FOR_DIMENSION.items(),
+            ("2d", "CVAT 1.1"),
+            ("3d", "CVAT 1.1"),
+            ("2d", "COCO 1.0"),
+        ],
+    )
+    def test_cant_import_annotations_as_project(self, admin_user, tasks, format_name, dimension):
+        task = next(t for t in tasks if t.get("size") if t["dimension"] == dimension)
+
+        def _export_task(task_id: int, format_name: str) -> io.BytesIO:
+            with make_api_client(admin_user) as api_client:
+                return io.BytesIO(
+                    export_dataset(
+                        api_client.tasks_api,
+                        api_version=2,
+                        id=task_id,
+                        format=format_name,
+                        save_images=False,
+                    )
+                )
+
+        if format_name in list(DATUMARO_FORMAT_FOR_DIMENSION.values()):
+            with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
+                annotations = zip_file.read("annotations/default.json")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.json"
+        elif format_name == "CVAT 1.1":
+            with zipfile.ZipFile(_export_task(task["id"], "CVAT for images 1.1")) as zip_file:
+                annotations = zip_file.read("annotations.xml")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.xml"
+        elif format_name == "COCO 1.0":
+            with zipfile.ZipFile(_export_task(task["id"], format_name)) as zip_file:
+                annotations = zip_file.read("annotations/instances_default.json")
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.json"
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            project, _ = api_client.projects_api.create(
+                project_write_request=models.ProjectWriteRequest(
+                    name=f"test_annotations_import_as_project {format_name}"
+                )
+            )
+
+            import_data = {"dataset_file": dataset_file}
+
+            with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
+                self._test_import_project(
+                    admin_user,
+                    project.id,
+                    format_name=format_name,
+                    data=import_data,
+                )
+
+    @pytest.mark.parametrize(
         "export_format, subset_path_template",
         [
             ("COCO 1.0", "images/{subset}/"),
@@ -1045,10 +1109,7 @@ class TestImportExportDatasetProject:
                     len([f for f in zip_file.namelist() if f.startswith(folder_prefix)]) > 0
                 ), f"No {folder_prefix} in {zip_file.namelist()}"
 
-    def test_export_project_with_honeypots(
-        self,
-        admin_user: str,
-    ):
+    def test_export_project_with_honeypots(self, admin_user: str):
         project_spec = {
             "name": "Project with honeypots",
             "labels": [{"name": "cat"}],

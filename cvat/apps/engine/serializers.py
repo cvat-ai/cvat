@@ -3,39 +3,47 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
+from collections import OrderedDict
+from collections.abc import Iterable, Sequence
 from contextlib import closing
 import warnings
 from copy import copy
+from datetime import timedelta
+from decimal import Decimal
 from inspect import isclass
 import os
 import re
 import shutil
 import string
-import rq.defaults as rq_defaults
-
 from tempfile import NamedTemporaryFile
 import textwrap
-from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
+from typing import Any, Optional, Union
 
-from rq.job import Job as RQJob, JobStatus as RQJobStatus
-from datetime import timedelta
-from decimal import Decimal
-
-from rest_framework import serializers, exceptions
+import django_rq
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.db import transaction
+from django.db.models import prefetch_related_objects, Prefetch
 from django.utils import timezone
 from numpy import random
+from rest_framework import serializers, exceptions
+import rq.defaults as rq_defaults
+from rq.job import Job as RQJob, JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.engine.frame_provider import TaskFrameProvider
-from cvat.apps.engine.utils import format_list, parse_exception_message
 from cvat.apps.engine import field_validation, models
+from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
+from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
+from cvat.apps.engine.utils import (
+    format_list, grouped, parse_exception_message, CvatChunkTimestampMismatchError,
+    parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse, take_by
+)
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
@@ -361,9 +369,9 @@ class LabelSerializer(SublabelSerializer):
     @transaction.atomic
     def update_label(
         cls,
-        validated_data: Dict[str, Any],
+        validated_data: dict[str, Any],
         svg: str,
-        sublabels: Iterable[Dict[str, Any]],
+        sublabels: Iterable[dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -477,7 +485,7 @@ class LabelSerializer(SublabelSerializer):
     @classmethod
     @transaction.atomic
     def create_labels(cls,
-        labels: Iterable[Dict[str, Any]],
+        labels: Iterable[dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -528,7 +536,7 @@ class LabelSerializer(SublabelSerializer):
     @classmethod
     @transaction.atomic
     def update_labels(cls,
-        labels: Iterable[Dict[str, Any]],
+        labels: Iterable[dict[str, Any]],
         *,
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
@@ -958,6 +966,13 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         """.format(models.JobFrameSelectionMethod.MANUAL))
     )
 
+    def __init__(
+        self, *args, bulk_context: _TaskValidationLayoutBulkUpdateContext | None = None, **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+
+        self._bulk_context = bulk_context
+
     def validate(self, attrs):
         frame_selection_method = attrs["frame_selection_method"]
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
@@ -980,9 +995,10 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
-        from cvat.apps.engine.cache import MediaCache
-        from cvat.apps.engine.frame_provider import FrameQuality, JobFrameProvider, prepare_chunk
-        from cvat.apps.dataset_manager.task import JobAnnotation, AnnotationManager
+        from cvat.apps.engine.cache import (
+            MediaCache, Callback, enqueue_create_chunk_job, wait_for_rq_job
+        )
+        from cvat.apps.engine.frame_provider import JobFrameProvider
 
         db_job = instance
         db_segment = db_job.segment
@@ -1008,22 +1024,30 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
         def _to_rel_frame(abs_frame: int) -> int:
             return (abs_frame - db_data.start_frame) // frame_step
 
-        all_task_frames: dict[int, models.Image] = {
-            _to_rel_frame(frame.frame): frame
-            for frame in db_data.images.all()
-        }
-        task_honeypot_frames = set(
-            _to_rel_frame(frame_id)
-            for frame_id, frame in all_task_frames.items()
-            if frame.is_placeholder
-        )
+        def _to_abs_frame(rel_frame: int) -> int:
+            return rel_frame * frame_step + db_data.start_frame
+
+        bulk_context = self._bulk_context
+        if bulk_context:
+            db_frames = bulk_context.all_db_frames
+            task_honeypot_frames = set(bulk_context.honeypot_frames)
+            task_all_validation_frames = set(bulk_context.all_validation_frames)
+            task_active_validation_frames = set(bulk_context.active_validation_frames)
+        else:
+            db_frames: dict[int, models.Image] = {
+                _to_rel_frame(frame.frame): frame
+                for frame in db_data.images.all()
+            }
+            task_honeypot_frames = set(
+                _to_rel_frame(frame_id)
+                for frame_id, frame in db_frames.items()
+                if frame.is_placeholder
+            )
+            task_all_validation_frames = set(db_data.validation_layout.frames)
+            task_active_validation_frames = set(db_data.validation_layout.active_frames)
+
         segment_frame_set = set(map(_to_rel_frame, db_segment.frame_set))
         segment_honeypots = sorted(segment_frame_set & task_honeypot_frames)
-
-        deleted_task_frames = db_data.deleted_frames
-        task_all_validation_frames = set(map(_to_rel_frame, db_task.gt_job.segment.frame_set))
-        task_active_validation_frames = task_all_validation_frames.difference(deleted_task_frames)
-
         segment_honeypots_count = len(segment_honeypots)
 
         frame_selection_method = validated_data['frame_selection_method']
@@ -1076,69 +1100,73 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     )
                 )
 
-            # Guarantee uniformness by using a known distribution
-            # overall task honeypot distribution is not guaranteed though
-            rng = random.Generator(random.MT19937())
-            requested_frames = rng.choice(
-                tuple(task_active_validation_frames), size=segment_honeypots_count,
-                shuffle=False, replace=False
-            ).tolist()
+            if bulk_context:
+                active_validation_frame_counts = bulk_context.active_validation_frame_counts
+            else:
+                active_validation_frame_counts = {
+                    validation_frame: 0 for validation_frame in task_active_validation_frames
+                }
+                for task_honeypot_frame in task_honeypot_frames:
+                    real_frame = _to_rel_frame(db_frames[task_honeypot_frame].real_frame)
+                    if real_frame in task_active_validation_frames:
+                        active_validation_frame_counts[real_frame] += 1
+
+            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+            requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
+            requested_frames = list(map(_to_abs_frame, requested_frames))
         else:
             assert False
 
         # Replace validation frames in the job
-        old_honeypot_real_ids = []
-        updated_db_frames = []
+        updated_honeypots = {}
         for frame, requested_validation_frame in zip(segment_honeypots, requested_frames):
-            db_requested_frame = all_task_frames[requested_validation_frame]
-            db_segment_frame = all_task_frames[frame]
+            db_requested_frame = db_frames[requested_validation_frame]
+            db_segment_frame = db_frames[frame]
             assert db_segment_frame.is_placeholder
 
-            old_honeypot_real_ids.append(_to_rel_frame(db_segment_frame.real_frame))
+            if db_segment_frame.real_frame == db_requested_frame.frame:
+                continue
 
             # Change image in the current segment honeypot frame
+            db_segment_frame.real_frame = db_requested_frame.frame
+
             db_segment_frame.path = db_requested_frame.path
             db_segment_frame.width = db_requested_frame.width
             db_segment_frame.height = db_requested_frame.height
-            db_segment_frame.real_frame = db_requested_frame.frame
-            db_segment_frame.related_files.set(db_requested_frame.related_files.all())
 
-            updated_db_frames.append(db_segment_frame)
+            updated_honeypots[frame] = db_segment_frame
 
-        updated_validation_frames = [
-            frame
-            for new_validation_frame, old_validation_frame, frame in zip(
-                requested_frames, old_honeypot_real_ids, segment_honeypots
-            )
-            if new_validation_frame != old_validation_frame
-        ]
-        if updated_validation_frames:
-            models.Image.objects.bulk_update(
-                updated_db_frames, fields=['path', 'width', 'height', 'real_frame']
-            )
+        if updated_honeypots:
+            if bulk_context:
+                bulk_context.updated_honeypots.update(updated_honeypots)
+            else:
+                # Update image infos
+                models.Image.objects.bulk_update(
+                    updated_honeypots.values(), fields=['path', 'width', 'height', 'real_frame']
+                )
 
-            # Remove annotations on changed validation frames
-            job_annotation = JobAnnotation(db_job.id)
-            job_annotation.init_from_db()
-            job_annotation_manager = AnnotationManager(
-                job_annotation.ir_data, dimension=db_task.dimension
-            )
-            job_annotation_manager.clear_frames(
-                segment_frame_set.difference(updated_validation_frames)
-            )
-            job_annotation.delete(job_annotation_manager.data)
+                models.RelatedFile.images.through.objects.filter(
+                    image_id__in=updated_honeypots
+                ).delete()
+
+                for updated_honeypot in updated_honeypots.values():
+                    validation_frame = db_frames[_to_rel_frame(updated_honeypot.real_frame)]
+                    updated_honeypot.related_files.set(validation_frame.related_files.all())
+
+                # Remove annotations on changed validation frames
+                self._clear_annotations_on_frames(db_segment, updated_honeypots)
 
             # Update chunks
-            task_frame_provider = TaskFrameProvider(db_task)
             job_frame_provider = JobFrameProvider(db_job)
             updated_segment_chunk_ids = set(
                 job_frame_provider.get_chunk_number(updated_segment_frame_id)
-                for updated_segment_frame_id in updated_validation_frames
+                for updated_segment_frame_id in updated_honeypots
             )
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
 
-            media_cache = MediaCache()
+            chunks_to_be_removed = []
+            queue = django_rq.get_queue(settings.CVAT_QUEUES.CHUNKS.value)
             for chunk_id in sorted(updated_segment_chunk_ids):
                 chunk_frames = segment_frames[
                     chunk_id * db_data.chunk_size :
@@ -1146,58 +1174,127 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 ]
 
                 for quality in FrameQuality.__members__.values():
-                    def _write_updated_static_chunk():
-                        def _iterate_chunk_frames():
-                            for chunk_frame in chunk_frames:
-                                db_frame = all_task_frames[chunk_frame]
-                                chunk_real_frame = segment_frame_map.get(chunk_frame, chunk_frame)
-                                yield (
-                                    task_frame_provider.get_frame(
-                                        chunk_real_frame, quality=quality
-                                    ).data,
-                                    os.path.basename(db_frame.path),
-                                    chunk_frame,
-                                )
-
-                        with closing(_iterate_chunk_frames()) as frame_iter:
-                            chunk, _ = prepare_chunk(
-                                frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
-                            )
-
-                            get_chunk_path = {
-                                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
-                                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
-                            }[quality]
-
-                            with open(get_chunk_path(chunk_id, db_segment.id), 'wb') as f:
-                                f.write(chunk.getvalue())
-
                     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
-                        _write_updated_static_chunk()
+                        rq_id = f"segment_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
+                        rq_job = enqueue_create_chunk_job(
+                            queue=queue,
+                            rq_job_id=rq_id,
+                            create_callback=Callback(
+                                callable=self._write_updated_static_chunk,
+                                args=[
+                                    db_segment.id,
+                                    chunk_id,
+                                    chunk_frames,
+                                    quality,
+                                    {
+                                        chunk_frame: db_frames[chunk_frame].path
+                                        for chunk_frame in chunk_frames
+                                    },
+                                    segment_frame_map,
+                                ],
+                            ),
+                        )
+                        wait_for_rq_job(rq_job)
 
-                    media_cache.remove_segment_chunk(db_segment, chunk_id, quality=quality)
+                    chunks_to_be_removed.append(
+                        {'db_segment': db_segment, 'chunk_number': chunk_id, 'quality': quality}
+                    )
 
-            db_segment.chunks_updated_date = timezone.now()
-            db_segment.save(update_fields=['chunks_updated_date'])
+            context_image_chunks_to_be_removed = [
+                {"db_data": db_data, "frame_number": f} for f in updated_honeypots
+            ]
 
-        if updated_validation_frames or (
+            if bulk_context:
+                bulk_context.chunks_to_be_removed.extend(chunks_to_be_removed)
+                bulk_context.context_image_chunks_to_be_removed.extend(
+                    context_image_chunks_to_be_removed
+                )
+                bulk_context.segments_with_updated_chunks.append(db_segment.id)
+            else:
+                media_cache = MediaCache()
+                media_cache.remove_segments_chunks(chunks_to_be_removed)
+                media_cache.remove_context_images_chunks(context_image_chunks_to_be_removed)
+
+                db_segment.chunks_updated_date = timezone.now()
+                db_segment.save(update_fields=['chunks_updated_date'])
+
+        if updated_honeypots or (
             # even if the randomly selected frames were the same as before, we should still
             # consider it an update to the validation frames and restore them, if they were deleted
             frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM
         ):
-            if set(deleted_task_frames).intersection(updated_validation_frames):
+            # deleted frames that were updated in the job should be restored, as they are new now
+            if set(db_data.deleted_frames).intersection(updated_honeypots):
                 db_data.deleted_frames = sorted(
-                    set(deleted_task_frames).difference(updated_validation_frames)
+                    set(db_data.deleted_frames).difference(updated_honeypots)
                 )
                 db_data.save(update_fields=['deleted_frames'])
 
-            db_job.touch()
-            db_segment.job_set.exclude(id=db_job.id).update(updated_date=timezone.now())
-            db_task.touch()
-            if db_task.project:
-                db_task.project.touch()
+            new_updated_date = timezone.now()
+            db_job.updated_date = new_updated_date
+
+            if bulk_context:
+                bulk_context.updated_segments.append(db_segment.id)
+            else:
+                db_segment.job_set.update(updated_date=new_updated_date)
+
+                db_task.touch()
+                if db_task.project:
+                    db_task.project.touch()
 
         return instance
+
+    def _clear_annotations_on_frames(self, segment: models.Segment, frames: Sequence[int]):
+        models.clear_annotations_on_frames_in_honeypot_task(segment.task, frames=frames)
+
+    @staticmethod
+    def _write_updated_static_chunk(
+        db_segment_id: int,
+        chunk_id: int,
+        chunk_frames: list[int],
+        quality: FrameQuality,
+        frame_path_map: dict[int, str],
+        segment_frame_map: dict[int,int],
+    ):
+        from cvat.apps.engine.frame_provider import prepare_chunk
+
+        db_segment = models.Segment.objects.select_related("task").get(pk=db_segment_id)
+        initial_chunks_updated_date = db_segment.chunks_updated_date
+        db_task = db_segment.task
+        task_frame_provider = TaskFrameProvider(db_task)
+        db_data = db_task.data
+
+        def _iterate_chunk_frames():
+            for chunk_frame in chunk_frames:
+                db_frame_path = frame_path_map[chunk_frame]
+                chunk_real_frame = segment_frame_map.get(chunk_frame, chunk_frame)
+                yield (
+                    task_frame_provider.get_frame(
+                        chunk_real_frame, quality=quality
+                    ).data,
+                    os.path.basename(db_frame_path),
+                    chunk_frame,
+                )
+
+        with closing(_iterate_chunk_frames()) as frame_iter:
+            chunk, _ = prepare_chunk(
+                frame_iter, quality=quality, db_task=db_task, dump_unchanged=True,
+            )
+
+            get_chunk_path = {
+                FrameQuality.COMPRESSED: db_data.get_compressed_segment_chunk_path,
+                FrameQuality.ORIGINAL: db_data.get_original_segment_chunk_path,
+            }[quality]
+
+            db_segment.refresh_from_db(fields=["chunks_updated_date"])
+            if db_segment.chunks_updated_date > initial_chunks_updated_date:
+                raise CvatChunkTimestampMismatchError(
+                    "Attempting to write an out of date static chunk, "
+                    f"segment.chunks_updated_date: {db_segment.chunks_updated_date}, "
+                    f"expected_ts: {initial_chunks_updated_date}"
+            )
+            with open(get_chunk_path(chunk_id, db_segment_id), 'wb') as f:
+                f.write(chunk.getvalue())
 
 class JobValidationLayoutReadSerializer(serializers.Serializer):
     honeypot_count = serializers.IntegerField(min_value=0, required=False)
@@ -1253,6 +1350,28 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
 
         return super().to_representation(data)
 
+class _TaskValidationLayoutBulkUpdateContext:
+    def __init__(
+        self,
+        *,
+        all_db_frames: dict[int, models.Image],
+        honeypot_frames: list[int],
+        all_validation_frames: list[int],
+        active_validation_frames: list[int],
+        validation_frame_counts: dict[int, int] | None = None
+    ):
+        self.updated_honeypots: dict[int, models.Image] = {}
+        self.updated_segments: list[int] = []
+        self.chunks_to_be_removed: list[dict[str, Any]] = []
+        self.context_image_chunks_to_be_removed: list[dict[str, Any]] = []
+        self.segments_with_updated_chunks: list[int] = []
+
+        self.all_db_frames = all_db_frames
+        self.honeypot_frames = honeypot_frames
+        self.all_validation_frames = all_validation_frames
+        self.active_validation_frames = active_validation_frames
+        self.active_validation_frame_counts = validation_frame_counts
+
 class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     disabled_frames = serializers.ListField(
         child=serializers.IntegerField(min_value=0), required=False,
@@ -1293,18 +1412,20 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
-        validation_layout = getattr(instance.data, 'validation_layout', None)
-        if not validation_layout:
+        db_validation_layout: models.ValidationLayout | None = (
+            getattr(instance.data, 'validation_layout', None)
+        )
+        if not db_validation_layout:
             raise serializers.ValidationError("Validation is not configured in the task")
 
         if 'disabled_frames' in validated_data:
             requested_disabled_frames = validated_data['disabled_frames']
             unknown_requested_disabled_frames = (
-                set(requested_disabled_frames).difference(validation_layout.frames)
+                set(requested_disabled_frames).difference(db_validation_layout.frames)
             )
             if unknown_requested_disabled_frames:
                 raise serializers.ValidationError(
-                    "Unknown frames requested for exclusion from the validation set {}".format(
+                    "Unknown frames requested for exclusion from the validation set: {}".format(
                         format_list(tuple(map(str, sorted(unknown_requested_disabled_frames))))
                     )
                 )
@@ -1315,9 +1436,12 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
             gt_job_meta_serializer.is_valid(raise_exception=True)
             gt_job_meta_serializer.save()
 
+            db_validation_layout.refresh_from_db()
+            instance.data.refresh_from_db()
+
         frame_selection_method = validated_data.get('frame_selection_method')
         if frame_selection_method and not (
-            validation_layout and
+            db_validation_layout and
             instance.data.validation_layout.mode == models.ValidationMode.GT_POOL
         ):
             raise serializers.ValidationError(
@@ -1325,51 +1449,189 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 f"validation mode is '{models.ValidationMode.GT_POOL}'"
             )
 
+        if not frame_selection_method:
+            return instance
+
+        # Populate the prefetch cache for required objects
+        prefetch_related_objects([instance],
+            Prefetch('data__images', queryset=models.Image.objects.order_by('frame')),
+            'segment_set',
+            'segment_set__job_set',
+        )
+
+        frame_provider = TaskFrameProvider(instance)
+        db_frames = {
+            frame_provider.get_rel_frame_number(db_image.frame): db_image
+            for db_image in instance.data.images.all()
+        }
+        honeypot_frames = sorted(f for f, v in db_frames.items() if v.is_placeholder)
+        all_validation_frames = db_validation_layout.frames
+        active_validation_frames = db_validation_layout.active_frames
+
+        bulk_context = _TaskValidationLayoutBulkUpdateContext(
+            all_db_frames=db_frames,
+            honeypot_frames=honeypot_frames,
+            all_validation_frames=all_validation_frames,
+            active_validation_frames=active_validation_frames,
+        )
+
         if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
             requested_honeypot_real_frames = validated_data['honeypot_real_frames']
-
-            task_honeypot_abs_frames = (
-                instance.data.images
-                .filter(is_placeholder=True)
-                .order_by('frame')
-                .values_list('frame', flat=True)
-            )
-
-            task_honeypot_frames_count = len(task_honeypot_abs_frames)
+            task_honeypot_frames_count = len(honeypot_frames)
             if task_honeypot_frames_count != len(requested_honeypot_real_frames):
                 raise serializers.ValidationError(
                     "Invalid size of 'honeypot_real_frames' array, "
                     f"expected {task_honeypot_frames_count}"
                 )
+        elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+            # Reset distribution for active validation frames
+            bulk_context.active_validation_frame_counts = { f: 0 for f in active_validation_frames }
 
-        if frame_selection_method:
-            for db_job in (
-                models.Job.objects.select_related("segment")
-                .filter(segment__task_id=instance.id, type=models.JobType.ANNOTATION)
-                .order_by("segment__start_frame")
-                .all()
-            ):
-                job_serializer_params = {
-                    'frame_selection_method': frame_selection_method
-                }
+        # Could be done using Django ORM, but using order_by() and filter()
+        # would result in an extra DB request
+        db_jobs = sorted(
+            (
+                db_job
+                for db_segment in instance.segment_set.all()
+                for db_job in db_segment.job_set.all()
+                if db_job.type == models.JobType.ANNOTATION
+            ),
+            key=lambda j: j.segment.start_frame
+        )
+        for db_job in db_jobs:
+            job_serializer_params = {
+                'frame_selection_method': frame_selection_method
+            }
 
-                if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
-                    segment_frame_set = db_job.segment.frame_set
-                    job_serializer_params['honeypot_real_frames'] = [
-                        requested_frame
-                        for abs_frame, requested_frame in zip(
-                            task_honeypot_abs_frames, requested_honeypot_real_frames
-                        )
-                        if abs_frame in segment_frame_set
-                    ]
+            if frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+                segment_frame_set = db_job.segment.frame_set
+                job_serializer_params['honeypot_real_frames'] = [
+                    requested_frame
+                    for rel_frame, requested_frame in zip(
+                        honeypot_frames, requested_honeypot_real_frames
+                    )
+                    if frame_provider.get_abs_frame_number(rel_frame) in segment_frame_set
+                ]
 
-                job_validation_layout_serializer = JobValidationLayoutWriteSerializer(
-                    db_job, job_serializer_params
-                )
-                job_validation_layout_serializer.is_valid(raise_exception=True)
-                job_validation_layout_serializer.save()
+            job_validation_layout_serializer = JobValidationLayoutWriteSerializer(
+                db_job, job_serializer_params, bulk_context=bulk_context
+            )
+            job_validation_layout_serializer.is_valid(raise_exception=True)
+            job_validation_layout_serializer.save()
+
+        self._perform_bulk_updates(instance, bulk_context=bulk_context)
 
         return instance
+
+    def _perform_bulk_updates(
+        self,
+        db_task: models.Task,
+        *,
+        bulk_context: _TaskValidationLayoutBulkUpdateContext,
+    ):
+        updated_segments = bulk_context.updated_segments
+        if not updated_segments:
+            return
+
+        self._update_frames_in_bulk(db_task, bulk_context=bulk_context)
+
+        # Import it here to avoid circular import
+        from cvat.apps.engine.cache import MediaCache
+        media_cache = MediaCache()
+        media_cache.remove_segments_chunks(bulk_context.chunks_to_be_removed)
+        media_cache.remove_context_images_chunks(bulk_context.context_image_chunks_to_be_removed)
+
+        # Update segments
+        updated_date = timezone.now()
+        for updated_segments_batch in take_by(updated_segments, chunk_size=1000):
+            models.Job.objects.filter(
+                segment_id__in=updated_segments_batch
+            ).update(updated_date=updated_date)
+
+        for updated_segment_chunks_batch in take_by(
+            bulk_context.segments_with_updated_chunks, chunk_size=1000
+        ):
+            models.Segment.objects.filter(
+                id__in=updated_segment_chunks_batch
+            ).update(chunks_updated_date=updated_date)
+
+        # Update parent objects
+        db_task.touch()
+        if db_task.project:
+            db_task.project.touch()
+
+    def _update_frames_in_bulk(
+        self,
+        db_task: models.Task,
+        *,
+        bulk_context: _TaskValidationLayoutBulkUpdateContext,
+    ):
+        self._clear_annotations_on_frames(db_task, bulk_context.updated_honeypots)
+
+        # The django generated bulk_update() query is too slow, so we use bulk_create() instead
+        # NOTE: Silk doesn't show these queries in the list of queries
+        # for some reason, but they can be seen in the profile
+        models.Image.objects.bulk_create(
+            list(bulk_context.updated_honeypots.values()),
+            update_conflicts=True,
+            update_fields=['path', 'width', 'height', 'real_frame'],
+            unique_fields=[
+                # required for Postgres
+                # https://docs.djangoproject.com/en/4.2/ref/models/querysets/#bulk-create
+                'id'
+            ],
+            batch_size=1000,
+        )
+
+        # Update related images in 2 steps: remove all m2m for honeypots, then add (copy) new ones
+        # 1. remove
+        for updated_honeypots_batch in take_by(
+            bulk_context.updated_honeypots.values(), chunk_size=1000
+        ):
+            models.RelatedFile.images.through.objects.filter(
+                image_id__in=(db_honeypot.id for db_honeypot in updated_honeypots_batch)
+            ).delete()
+
+        # 2. batched add (copy): collect all the new records and insert
+        frame_provider = TaskFrameProvider(db_task)
+        honeypots_by_validation_frame = grouped(
+            bulk_context.updated_honeypots,
+            key=lambda honeypot_frame: frame_provider.get_rel_frame_number(
+                bulk_context.updated_honeypots[honeypot_frame].real_frame
+            )
+        ) # validation frame -> [honeypot_frame, ...]
+
+        new_m2m_objects = []
+        m2m_objects_by_validation_image_id = grouped(
+            models.RelatedFile.images.through.objects
+            .filter(image_id__in=(
+                bulk_context.all_db_frames[validation_frame].id
+                for validation_frame in honeypots_by_validation_frame
+            ))
+            .all(),
+            key=lambda m2m_obj: m2m_obj.image_id
+        )
+        for validation_frame, validation_frame_honeypots in honeypots_by_validation_frame.items():
+            validation_frame_m2m_objects = m2m_objects_by_validation_image_id.get(
+                bulk_context.all_db_frames[validation_frame].id
+            )
+            if not validation_frame_m2m_objects:
+                continue
+
+            # Copy validation frame m2m objects to corresponding honeypots
+            for honeypot_frame in validation_frame_honeypots:
+                new_m2m_objects.extend(
+                    models.RelatedFile.images.through(
+                        image_id=bulk_context.all_db_frames[honeypot_frame].id,
+                        relatedfile_id=m2m_obj.relatedfile_id
+                    )
+                    for m2m_obj in validation_frame_m2m_objects
+                )
+
+        models.RelatedFile.images.through.objects.bulk_create(new_m2m_objects, batch_size=1000)
+
+    def _clear_annotations_on_frames(self, db_task: models.Task, frames: Sequence[int]):
+        models.clear_annotations_on_frames_in_honeypot_task(db_task, frames=frames)
 
 class TaskValidationLayoutReadSerializer(serializers.ModelSerializer):
     validation_frames = serializers.ListField(
@@ -3010,7 +3272,7 @@ class RelatedFileSerializer(serializers.ModelSerializer):
 
 def _update_related_storages(
     instance: Union[models.Project, models.Task],
-    validated_data: Dict[str, Any],
+    validated_data: dict[str, Any],
 ) -> None:
     for storage_type in ('source_storage', 'target_storage'):
         new_conf = validated_data.pop(storage_type, None)
@@ -3065,7 +3327,7 @@ def _update_related_storages(
         storage_instance.cloud_storage_id = new_cloud_storage_id
         storage_instance.save()
 
-def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Optional[models.Storage]]:
+def _configure_related_storages(validated_data: dict[str, Any]) -> dict[str, Optional[models.Storage]]:
     storages = {
         'source_storage': None,
         'target_storage': None,
@@ -3158,7 +3420,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     format = serializers.CharField(required=False, allow_null=True)
     function_id = serializers.CharField(required=False, allow_null=True)
 
-    def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
+    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
 
         return {
@@ -3199,7 +3461,7 @@ class RequestSerializer(serializers.Serializer):
     result_id = serializers.IntegerField(required=False, allow_null=True)
 
     @extend_schema_field(UserIdentifiersSerializer())
-    def get_owner(self, rq_job: RQJob) -> Dict[str, Any]:
+    def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
         return UserIdentifiersSerializer(rq_job.meta[RQJobMetaField.USER]).data
 
     @extend_schema_field(
@@ -3239,10 +3501,11 @@ class RequestSerializer(serializers.Serializer):
 
         return message
 
-    def to_representation(self, rq_job: RQJob) -> Dict[str, Any]:
+    def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         representation = super().to_representation(rq_job)
 
-        if representation["status"] == RQJobStatus.DEFERRED:
+        # FUTURE-TODO: support such statuses on UI
+        if representation["status"] in (RQJobStatus.DEFERRED, RQJobStatus.SCHEDULED):
             representation["status"] = RQJobStatus.QUEUED
 
         if representation["status"] == RQJobStatus.FINISHED:

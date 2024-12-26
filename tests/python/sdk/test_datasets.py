@@ -23,6 +23,7 @@ def _common_setup(
     fxt_login: tuple[Client, str],
     fxt_logger: tuple[Logger, io.StringIO],
     restore_redis_ondisk_per_function,
+    restore_redis_inmem_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]

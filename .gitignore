@@ -4,7 +4,6 @@
 /share/
 /static/
 /db.sqlite3
-/.*env*
 /keys
 /logs
 /profiles
@@ -49,6 +48,8 @@ yarn-error.log*
 
 # Ignore all the installed packages
 node_modules
+/*env*/
+/.*env*
 
 # Ignore all js dists
 cvat-data/dist

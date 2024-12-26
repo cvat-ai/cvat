@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.22.1
+  version: 2.24.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -8060,7 +8060,11 @@ components:
           description: Whether existing annotations should be removed
         convMaskToPoly:
           type: boolean
-          default: false
+          writeOnly: true
+          description: Deprecated; use conv_mask_to_poly instead
+        conv_mask_to_poly:
+          type: boolean
+          description: Convert mask shapes to polygons
         mapping:
           type: object
           additionalProperties:
@@ -8986,6 +8990,9 @@ components:
       - slug
     PaginatedAnnotationConflictList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9006,6 +9013,9 @@ components:
             $ref: '#/components/schemas/AnnotationConflict'
     PaginatedCloudStorageReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9026,6 +9036,9 @@ components:
             $ref: '#/components/schemas/CloudStorageRead'
     PaginatedCommentReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9046,6 +9059,9 @@ components:
             $ref: '#/components/schemas/CommentRead'
     PaginatedInvitationReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9066,6 +9082,9 @@ components:
             $ref: '#/components/schemas/InvitationRead'
     PaginatedIssueReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9086,6 +9105,9 @@ components:
             $ref: '#/components/schemas/IssueRead'
     PaginatedJobReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9106,6 +9128,9 @@ components:
             $ref: '#/components/schemas/JobRead'
     PaginatedLabelList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9126,6 +9151,9 @@ components:
             $ref: '#/components/schemas/Label'
     PaginatedMembershipReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9146,6 +9174,9 @@ components:
             $ref: '#/components/schemas/MembershipRead'
     PaginatedMetaUserList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9166,6 +9197,9 @@ components:
             $ref: '#/components/schemas/MetaUser'
     PaginatedOrganizationReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9186,6 +9220,9 @@ components:
             $ref: '#/components/schemas/OrganizationRead'
     PaginatedProjectReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9206,6 +9243,9 @@ components:
             $ref: '#/components/schemas/ProjectRead'
     PaginatedQualityReportList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9226,6 +9266,9 @@ components:
             $ref: '#/components/schemas/QualityReport'
     PaginatedQualitySettingsList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9246,6 +9289,9 @@ components:
             $ref: '#/components/schemas/QualitySettings'
     PaginatedRequestList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9266,6 +9312,9 @@ components:
             $ref: '#/components/schemas/Request'
     PaginatedTaskReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9286,6 +9335,9 @@ components:
             $ref: '#/components/schemas/TaskRead'
     PaginatedWebhookDeliveryReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -9306,6 +9358,9 @@ components:
             $ref: '#/components/schemas/WebhookDeliveryRead'
     PaginatedWebhookReadList:
       type: object
+      required:
+      - count
+      - results
       properties:
         count:
           type: integer
