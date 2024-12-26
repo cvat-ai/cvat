@@ -58,11 +58,11 @@ function QualityTableHeader(props: TableHeaderProps): JSX.Element {
             {onSearch && (
                 <Col flex='auto'>
                     <Row justify='end'>
-                        <Col span={8}>
+                        <Col span={8} className='cvat-quality-table-search-wrapper'>
                             <Input.Search
                                 enterButton
                                 onSearch={onSearch}
-                                className='cvat-tasks-page-search-bar'
+                                className='cvat-quality-table-search-bar'
                                 placeholder='Search ...'
                             />
                         </Col>
