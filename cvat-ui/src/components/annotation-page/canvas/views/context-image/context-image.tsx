@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
-import { SettingOutlined } from '@ant-design/icons';
+import { ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 
 import CVATTooltop from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
@@ -48,6 +48,7 @@ function ContextImage(props: Props): JSX.Element {
         handleMouseMove,
         handleMouseUp,
         handleZoomChange,
+        resetColorSetting,
         wrapperRef,
     } = useCanvasControl(canvasRef, fullscreenKey);
 
@@ -110,6 +111,10 @@ function ContextImage(props: Props): JSX.Element {
                         }}
                     />
                 )}
+                <ReloadOutlined
+                    className='cvat-context-image-reset-button'
+                    onClick={resetColorSetting}
+                />
                 <div className='cvat-context-image-title'>
                     <CVATTooltop title={contextImageName}>
                         <Text>{contextImageName}</Text>

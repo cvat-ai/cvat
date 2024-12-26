@@ -62,6 +62,17 @@
             top: $grid-unit-size;
             right: $grid-unit-size;
         }
+
+        > .cvat-context-image-reset-button{
+            position: absolute;
+            opacity: 0.6;
+            top: $grid-unit-size * 1.1;
+            left: $grid-unit-size * 7;
+
+            &:hover{
+                opacity: 1;
+            }
+        }
     }
 
     .draggable-wrapper{
