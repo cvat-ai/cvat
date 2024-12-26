@@ -68,15 +68,7 @@
 
 .cvat-analytics-download-report-button {
     padding-left: $grid-unit-size * 2;
-    padding-right: $grid-unit-size * 2;
-
-    a {
-        color: white;
-
-        &:hover {
-            color: white;
-        }
-    }
+    padding-right: 0;
 }
 
 .cvat-analytics-page {

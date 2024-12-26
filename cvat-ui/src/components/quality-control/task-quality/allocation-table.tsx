@@ -84,6 +84,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
             title: 'Frame',
             dataIndex: 'frame',
             key: 'frame',
+            align: 'center' as const,
             sorter: sorter('frame'),
             render: (frame: number): JSX.Element => (
                 <div>
@@ -104,6 +105,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
+            align: 'center' as const,
             sorter: sorter('name'),
             width: frameNameWidth,
             render: (name: string, record: RowData) => {
@@ -130,11 +132,11 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
             title: 'Actions',
             dataIndex: 'active',
             key: 'actions',
-            align: 'center' as const,
             filters: [
                 { text: 'Active', value: true },
                 { text: 'Excluded', value: false },
             ],
+            align: 'center' as const,
             sorter: sorter('active'),
             onFilter: (value: boolean | Key, record: RowData) => record.active === value,
             render: (active: boolean, record: RowData): JSX.Element => (

@@ -37,8 +37,11 @@
 }
 
 .cvat-quality-settings-form {
+    @extend .cvat-quality-scrollbar;
+
     display: block;
     position: relative;
+    height: calc(100vh - $grid-unit-size * 30);
 
     .cvat-quality-settings-save-btn {
         position: sticky;
@@ -71,10 +74,6 @@ $excluded-background: #d9d9d973;
 
     td.ant-table-column-sort {
         background: none;
-    }
-
-    .ant-table-pagination.ant-pagination {
-        margin-bottom: 0;
     }
 }
 
@@ -147,17 +146,15 @@ $excluded-background: #d9d9d973;
     .ant-table-tbody .ant-table-cell {
         padding: $grid-unit-size * 0.5 $grid-unit-size !important;
     }
-
-    .ant-table-column-title {
-        text-align: center;
-    }
 }
 
 .cvat-task-control-tabs {
     .ant-tabs-tabpane {
-        @extend .cvat-quality-scrollbar;
-
         height: calc(100vh - $grid-unit-size * 30);
+    }
+
+    .ant-table-pagination.ant-pagination {
+        margin-bottom: 0;
     }
 }
 
