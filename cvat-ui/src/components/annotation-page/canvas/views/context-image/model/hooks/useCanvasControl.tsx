@@ -62,12 +62,14 @@ export const useCanvasControl = (canvasRef: RefObject<HTMLCanvasElement>, fullsc
                 const deltaX = e.movementX;
                 const deltaY = e.movementY;
 
+                const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
                 if (deltaY !== 0) {
-                    setContrast((prevContrast) => Math.max(0, prevContrast + deltaY / 2));
+                    setContrast((prevContrast) => clamp(prevContrast + deltaY / 2, 50, 200));
                 }
 
                 if (deltaX !== 0) {
-                    setBrightness((prevBrightness) => Math.max(0, prevBrightness + deltaX / 2));
+                    setBrightness((prevBrightness) => clamp(prevBrightness + deltaX / 2, 50, 200));
                 }
             }
         }, [zoomLevel, isDragging, dragOffset]);
