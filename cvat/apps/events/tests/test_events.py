@@ -11,14 +11,14 @@ from django.test import RequestFactory
 
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.organizations.models import Organization
-from cvat.apps.events.const import TIME_THRESHOLD, WORKING_TIME_RESOLUTION
+from cvat.apps.events.const import MAX_EVENT_DURATION, WORKING_TIME_RESOLUTION
 from cvat.apps.events.utils import calc_working_time_per_ids, is_contained
 
 class WorkingTimeTestCase(unittest.TestCase):
     _START_TIMESTAMP = datetime(2024, 1, 1, 12)
-    _SHORT_GAP = TIME_THRESHOLD - timedelta(milliseconds=1)
+    _SHORT_GAP = MAX_EVENT_DURATION - timedelta(milliseconds=1)
     _SHORT_GAP_INT = _SHORT_GAP / WORKING_TIME_RESOLUTION
-    _LONG_GAP = TIME_THRESHOLD
+    _LONG_GAP = MAX_EVENT_DURATION
     _LONG_GAP_INT = _LONG_GAP / WORKING_TIME_RESOLUTION
 
     @staticmethod

@@ -5,7 +5,7 @@
 import datetime
 
 
-from .const import TIME_THRESHOLD, COLLAPSED_EVENT_SCOPES
+from .const import MAX_EVENT_DURATION, COLLAPSED_EVENT_SCOPES
 from .cache import clear_cache
 
 
@@ -96,7 +96,7 @@ def calc_working_time_per_ids(data: dict) -> dict:
 
         if timestamp > previous_end_timestamp:
             t_diff = timestamp - previous_end_timestamp
-            if t_diff < TIME_THRESHOLD:
+            if t_diff < MAX_EVENT_DURATION:
                 working_time += t_diff
 
             previous_end_timestamp = timestamp
