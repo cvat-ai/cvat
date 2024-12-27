@@ -1016,7 +1016,7 @@
         "type": "rectangle",
         "occluded": false,
         "z_order": 0,
-        "points": [8.3, 9.1, 19.2, 14.8],
+        "points": [0.3, 0.1, 0.2, 0.8],
         "frame": 0,
         "label_id": null,
         "group": 0,
@@ -1035,18 +1035,19 @@
             "type": "rectangle",
             "occluded": false,
             "z_order": 0,
-            "points": [8.3, 9.1, 19.2, 14.8],
+            "points": [0.2, 0.1, 0.2, 0.8],
             "frame": 0,
-            "outside": true,
-            "attributes": []
+            "outside": false,
+            "attributes": [],
+            "keyframe": true
           },
           {
             "type": "rectangle",
             "occluded": false,
             "z_order": 0,
-            "points": [8.3, 9.1, 19.2, 14.8],
+            "points": [0.4, 0.1, 0.2, 0.8],
             "frame": 1,
-            "outside": false,
+            "outside": true,
             "attributes": [],
             "keyframe": true
           }
