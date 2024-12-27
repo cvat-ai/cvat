@@ -58,6 +58,7 @@ DEFAULT_ATTRIBUTES_FORMATS = [
     "Ultralytics YOLO Classification 1.0",
     "YOLO 1.1",
     "Ultralytics YOLO Detection 1.0",
+    "Ultralytics YOLO Detection Track 1.0",
     "Ultralytics YOLO Segmentation 1.0",
     "Ultralytics YOLO Oriented Bounding Boxes 1.0",
     "Ultralytics YOLO Pose 1.0",

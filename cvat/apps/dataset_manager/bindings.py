@@ -2175,7 +2175,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'coco',
         'coco_instances',
         'coco_person_keypoints',
-        'voc'
+        'voc',
+        'yolo_ultralytics_detection',
+        'yolo_ultralytics_segmentation',
+        'yolo_ultralytics_oriented_boxes',
+        'yolo_ultralytics_pose',
     ]
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
