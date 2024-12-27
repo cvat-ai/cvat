@@ -14,6 +14,7 @@ from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
+from pathlib import Path
 from rest_framework.test import APITestCase
 import av
 import django_rq
@@ -105,6 +106,11 @@ class ApiTestBase(APITestCase):
 
         # Clear any remaining RQ jobs produced by the tests executed
         self._clear_rq_jobs()
+
+        # clear cache files created after previous exports
+        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        for child in export_cache_dir.iterdir():
+            os.remove(child)
 
     def _clear_rq_jobs(self):
         clear_rq_jobs()

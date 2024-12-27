@@ -2093,7 +2093,12 @@ class ExportBehaviorTest(_DbTestBase):
                         "cvat.apps.engine.cron.clear_export_cache",
                         side_effect=clear_export_cache,
                     ) as mock_clear_export_cache,
+                    patch(
+                        "cvat.apps.engine.cron.get_current_job",
+                    ) as mock_rq_get_current_job,
                 ):
+                    mock_rq_job = MagicMock(timeout=100)
+                    mock_rq_get_current_job.return_value = mock_rq_job
                     cron_export_cache_cleanup()
                     mock_clear_export_cache.assert_called_once()
 
