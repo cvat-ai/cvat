@@ -56,6 +56,31 @@ To upgrade CVAT, follow these steps:
   docker logs cvat_server -f
   ```
 
+## Upgrade CVAT after 2.24.0
+TODO:
+```python
+import shutil
+from datetime import datetime
+from pathlib import Path
+
+from tqdm import tqdm
+
+from cvat.apps.engine.models import Job, Project, Task
+
+migration_date = datetime.now()  # TODO: release date
+
+for Model in (Project, Task, Job):
+    print(f"Deleting the export cache for {Model.__name__.lower()}s...")
+    queryset = Model.objects.filter(created_date__lt=migration_date)
+    objects_count = queryset.count()
+    print(f"The {objects_count} folders are going to be checked")
+
+    for obj in tqdm(queryset.iterator(), total=objects_count):
+        export_cache_dir = Path(obj.get_dirname()) / "export_cache"
+        if export_cache_dir.exists():
+            shutil.rmtree(export_cache_dir)
+```
+
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
 Step by step commands how to upgrade CVAT from v2.2.0 to v2.3.0.
