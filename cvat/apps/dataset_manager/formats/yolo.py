@@ -6,21 +6,21 @@ import os.path as osp
 from glob import glob
 from typing import Callable, Optional
 
+from datumaro.components.annotation import AnnotationType
+from datumaro.components.extractor import DatasetItem
+from datumaro.components.project import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
+    GetCVATDataExtractor,
+    ProjectData,
     detect_dataset,
     find_dataset_root,
-    GetCVATDataExtractor,
     import_dm_annotations,
     match_dm_item,
-    ProjectData,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.components.annotation import AnnotationType
-from datumaro.components.extractor import DatasetItem
-from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 from .transformations import SetKeyframeForEveryTrackShape
