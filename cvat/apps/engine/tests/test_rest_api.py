@@ -6146,13 +6146,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "YOLO 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Detection 1.0":
+            elif annotation_format == "Ultralytics YOLO Detection 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Oriented Bounding Boxes 1.0":
+            elif annotation_format == "Ultralytics YOLO Oriented Bounding Boxes 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Segmentation 1.0":
+            elif annotation_format == "Ultralytics YOLO Segmentation 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
             elif annotation_format == "COCO 1.0":
@@ -6512,7 +6512,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     self.assertEqual(meta["task"]["name"], task["name"])
         elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name in ["YOLO 1.1", "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0", "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0"]:
+        elif format_name in [
+            "YOLO 1.1", "Ultralytics YOLO Detection 1.0", "Ultralytics YOLO Segmentation 1.0",
+            "Ultralytics YOLO Oriented Bounding Boxes 1.0", "Ultralytics YOLO Pose 1.0",
+        ]:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))

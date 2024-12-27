@@ -55,12 +55,12 @@ with open(annotation_path) as file:
 DEFAULT_ATTRIBUTES_FORMATS = [
     "VGGFace2 1.0",
     "WiderFace 1.0",
-    "YOLOv8 Classification 1.0",
+    "Ultralytics YOLO Classification 1.0",
     "YOLO 1.1",
-    "YOLOv8 Detection 1.0",
-    "YOLOv8 Segmentation 1.0",
-    "YOLOv8 Oriented Bounding Boxes 1.0",
-    "YOLOv8 Pose 1.0",
+    "Ultralytics YOLO Detection 1.0",
+    "Ultralytics YOLO Segmentation 1.0",
+    "Ultralytics YOLO Oriented Bounding Boxes 1.0",
+    "Ultralytics YOLO Pose 1.0",
     "PASCAL VOC 1.1",
     "Segmentation mask 1.1",
     "ImageNet 1.0",
@@ -411,7 +411,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Cityscapes 1.0", "COCO Keypoints 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                         "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
-                        "YOLOv8 Pose 1.0",
+                        "Ultralytics YOLO Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -469,7 +469,7 @@ class TaskDumpUploadTest(_DbTestBase):
                                 "Cityscapes 1.0", "COCO Keypoints 1.0",
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                                 "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
-                                "YOLOv8 Pose 1.0",
+                                "Ultralytics YOLO Pose 1.0",
                             ]:
                                 task = self._create_task(tasks[upload_format_name], images)
                             else:
@@ -513,7 +513,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Cityscapes 1.0", "COCO Keypoints 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                         "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
-                        "YOLOv8 Pose 1.0",
+                        "Ultralytics YOLO Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], video)
                     else:
@@ -569,7 +569,7 @@ class TaskDumpUploadTest(_DbTestBase):
                                 "Cityscapes 1.0", "COCO Keypoints 1.0",
                                 "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                                 "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
-                                "YOLOv8 Pose 1.0",
+                                "Ultralytics YOLO Pose 1.0",
                             ]:
                                 task = self._create_task(tasks[upload_format_name], video)
                             else:
@@ -846,7 +846,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Cityscapes 1.0", "COCO Keypoints 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                         "ICDAR Segmentation 1.0", "Market-1501 1.0", "MOT 1.1",
-                        "YOLOv8 Pose 1.0",
+                        "Ultralytics YOLO Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -947,7 +947,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "Market-1501 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
-                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "YOLOv8 Pose 1.0",
+                        "ICDAR Segmentation 1.0", "COCO Keypoints 1.0", "Ultralytics YOLO Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
@@ -1058,7 +1058,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Market-1501 1.0", "Cityscapes 1.0",
                         "ICDAR Localization 1.0", "ICDAR Recognition 1.0",
                         "ICDAR Segmentation 1.0", "COCO Keypoints 1.0",
-                        "YOLOv8 Pose 1.0",
+                        "Ultralytics YOLO Pose 1.0",
                     ]:
                         task = self._create_task(tasks[dump_format_name], images)
                     else:
