@@ -17,7 +17,6 @@ import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { ObjectState, QualityConflict } from 'cvat-core-wrapper';
-import { changeBrightnessLevel, changeContrastLevel } from 'actions/settings-actions';
 
 interface OwnProps {
     readonly?: boolean;
@@ -37,8 +36,6 @@ interface StateToProps {
     workspace: Workspace;
     latestComments: string[];
     activatedStateID: number | null;
-    brightnessLevel: number;
-    contrastLevel: number;
 }
 
 interface DispatchToProps {
@@ -49,8 +46,6 @@ interface DispatchToProps {
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
     onCopyObject(objectState: ObjectState): void;
-    onChangeBrightnessLevel(level: number): void;
-    onChangeContrastLevel(level: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -65,12 +60,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 ready,
             },
             workspace,
-        },
-        settings: {
-            player: {
-                brightnessLevel,
-                contrastLevel,
-            },
         },
         review: { latestComments, frameConflicts },
     } = state;
@@ -101,8 +90,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         latestComments,
         frameConflicts,
-        brightnessLevel,
-        contrastLevel,
     };
 }
 
@@ -126,12 +113,6 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         onCopyObject(objectState: ObjectState): void {
             dispatch(copyShape(objectState));
             dispatch(pasteShapeAsync());
-        },
-        onChangeBrightnessLevel(level: number): void {
-            dispatch(changeBrightnessLevel(level));
-        },
-        onChangeContrastLevel(level: number): void {
-            dispatch(changeContrastLevel(level));
         },
     };
 }
@@ -287,50 +268,6 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             });
 
             e.preventDefault();
-        }
-        if (e.buttons === 2) {
-            const targetElement = e.target as HTMLElement;
-            let isFirstCanvas = false;
-            const elementId = 'cvat_canvas_content';
-
-            const traverseParentNodes = (element: HTMLElement) => {
-                if (element.id && element.id === elementId) {
-                    isFirstCanvas = true;
-                }
-
-                const parentNode = element.parentNode as HTMLElement;
-
-                if (!parentNode) {
-                    return;
-                }
-
-                if (parentNode) {
-                    traverseParentNodes(parentNode);
-                }
-            };
-
-            traverseParentNodes(targetElement);
-
-            if (isFirstCanvas) {
-                const {
-                    onChangeBrightnessLevel,
-                    onChangeContrastLevel,
-                    brightnessLevel,
-                    contrastLevel,
-                } = this.props;
-
-                const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
-
-                const newBrightness = clamp(brightnessLevel + e.movementX / 2, 50, 200);
-                const newContrast = clamp(contrastLevel + e.movementY / 2, 50, 200);
-
-                if (newBrightness !== brightnessLevel) {
-                    onChangeBrightnessLevel(newBrightness);
-                }
-                if (newContrast !== contrastLevel) {
-                    onChangeContrastLevel(newContrast);
-                }
-            }
         }
     };
 
