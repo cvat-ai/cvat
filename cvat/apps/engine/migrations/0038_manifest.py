@@ -110,7 +110,7 @@ def migrate2manifest(apps, shema_editor):
 
                 if db_data.storage == StorageChoice.SHARE:
                     def _get_frame_step(str_):
-                        match = search("step\s*=\s*([1-9]\d*)", str_)
+                        match = search(r"step\s*=\s*([1-9]\d*)", str_)
                         return int(match.group(1)) if match else 1
                     logger.info('Data is located on the share, metadata update has been started')
                     manifest.step = _get_frame_step(db_data.frame_filter)
