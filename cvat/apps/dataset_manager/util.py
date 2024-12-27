@@ -6,7 +6,6 @@
 import inspect
 import os
 import os.path as osp
-import re
 import zipfile
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager

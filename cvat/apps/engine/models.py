@@ -25,7 +25,6 @@ from django.db.models import Q, TextChoices
 from django.db.models.fields import FloatField
 from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
-from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 

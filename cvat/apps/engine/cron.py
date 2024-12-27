@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 import os.path as osp
 from datetime import timedelta
-from pathlib import Path
+from functools import wraps
 from threading import Event, Thread
 from time import sleep
 from typing import Callable
@@ -26,6 +26,17 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine.log import ServerLogManager
 
 logger = ServerLogManager(__name__).glob
+
+
+def suppress_exceptions(func: Callable[[CleanupExportCacheThread], None]):
+    @wraps(func)
+    def wrapper(self: CleanupExportCacheThread):
+        try:
+            func(self)
+        except Exception as ex:
+            self.set_exception(ex)
+
+    return wrapper
 
 
 def clear_export_cache(file_path: str) -> None:
@@ -61,32 +72,23 @@ class CleanupExportCacheThread(Thread):
     def exception_occurred(self) -> Exception | None:
         return self._exception_occurred
 
-    def suppress_exceptions(method: Callable):
-        def wrapper(self: CleanupExportCacheThread):
-            try:
-                method(self)
-            except Exception as ex:
-                self._exception_occurred = ex
-
-        return wrapper
+    def set_exception(self, ex: Exception) -> None:
+        assert isinstance(ex, Exception)
+        self._exception_occurred = ex
 
     @suppress_exceptions
     def _cleanup_export_cache(self) -> None:
-        # raise Exception("Ooops")
-        export_cache_dir_path = Path(settings.EXPORT_CACHE_ROOT)
-        assert export_cache_dir_path.exists()
+        export_cache_dir_path = settings.EXPORT_CACHE_ROOT
+        assert os.path.exists(export_cache_dir_path)
 
-        # TODO: use scandir
-        for child in export_cache_dir_path.iterdir():
+        for child in os.scandir(export_cache_dir_path):
             # stop clean up process correctly before rq job timeout is ended
             if self._stop_event.is_set():
                 return
 
             # export cache directory may contain temporary directories
             if not child.is_file():
-                logger.debug(
-                    f"The {child.relative_to(export_cache_dir_path)} is not a file, skipping..."
-                )
+                logger.debug(f"The {child.name} is not a file, skipping...")
                 continue
 
             try:
@@ -100,8 +102,8 @@ def cron_export_cache_cleanup() -> None:
     started_at = timezone.now()
     rq_job = get_current_job()
     seconds_left = rq_job.timeout - 60
-    sleep_interval = 30
-    assert seconds_left > sleep_interval + 10  # TODO:
+    sleep_interval = 10
+    assert seconds_left > sleep_interval
     finish_before = started_at + timedelta(seconds=seconds_left)
 
     stop_event = Event()
@@ -118,14 +120,14 @@ def cron_export_cache_cleanup() -> None:
         stop_event.set()
 
     cleanup_export_cache_thread.join()
-    if exception_occurred := cleanup_export_cache_thread.exception_occurred:
+    if isinstance(
+        (exception_occurred := cleanup_export_cache_thread.exception_occurred), Exception
+    ):
         raise exception_occurred
-
-    removed_files_count = cleanup_export_cache_thread.removed_files_count
 
     finished_at = timezone.now()
     logger.info(
         f"Export cache cleanup has been successfully "
         f"completed after {int((finished_at - started_at).total_seconds())} seconds. "
-        f"{removed_files_count} files have been removed"
+        f"{cleanup_export_cache_thread.removed_files_count} files have been removed"
     )
