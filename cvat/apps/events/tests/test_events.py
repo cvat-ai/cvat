@@ -39,19 +39,18 @@ class WorkingTimeTestCase(unittest.TestCase):
 
 
     @staticmethod
-    def _actual_working_times(data: dict) -> list[int]:
-        tmp = data.copy()
-        res = []
+    def _get_actual_working_times(data: dict) -> list[int]:
+        data_copy = data.copy()
+        working_times = []
         for event in data['events']:
-            tmp['events'] = [event]
-            event_working_time = compute_working_time_per_ids(tmp)
-            #pylint: disable=unused-variable
-            for ids, working_time in event_working_time.items():
-                res.append((working_time['value'] // WORKING_TIME_RESOLUTION))
-            if tmp['previous_event'] and is_contained(event, tmp['previous_event']):
+            data_copy['events'] = [event]
+            event_working_time = compute_working_time_per_ids(data_copy)
+            for working_time in event_working_time.values():
+                working_times.append((working_time['value'] // WORKING_TIME_RESOLUTION))
+            if data_copy['previous_event'] and is_contained(event, data_copy['previous_event']):
                 continue
-            tmp['previous_event'] = event
-        return res
+            data_copy['previous_event'] = event
+        return working_times
 
 
     @staticmethod
@@ -79,14 +78,14 @@ class WorkingTimeTestCase(unittest.TestCase):
         data = self._deserialize([
             self._instant_event(self._START_TIMESTAMP),
         ])
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 0)
 
     def test_compressed(self):
         data = self._deserialize([
             self._compressed_event(self._START_TIMESTAMP, self._LONG_GAP),
         ])
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], self._LONG_GAP_INT)
 
     def test_instants_with_short_gap(self):
@@ -94,7 +93,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             self._instant_event(self._START_TIMESTAMP),
             self._instant_event(self._START_TIMESTAMP + self._SHORT_GAP),
         ])
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 0)
         self.assertEqual(event_times[1], self._SHORT_GAP_INT)
 
@@ -104,7 +103,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             self._instant_event(self._START_TIMESTAMP + self._LONG_GAP),
         ])
 
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 0)
         self.assertEqual(event_times[1], 0)
 
@@ -117,7 +116,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             ),
         ])
 
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 1000)
         self.assertEqual(event_times[1], self._SHORT_GAP_INT + 5000)
 
@@ -130,7 +129,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             ),
         ])
 
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 1000)
         self.assertEqual(event_times[1], 5000)
 
@@ -143,7 +142,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             ),
         ])
 
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 5000)
         self.assertEqual(event_times[1], 0)
 
@@ -156,7 +155,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             ),
         ])
 
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 5000)
         self.assertEqual(event_times[1], 4000)
 
@@ -167,7 +166,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             self._instant_event(self._START_TIMESTAMP + timedelta(seconds=6)),
         ])
 
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 5000)
         self.assertEqual(event_times[1], 0)
         self.assertEqual(event_times[2], 1000)
@@ -178,7 +177,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             [self._instant_event(self._START_TIMESTAMP + self._SHORT_GAP)],
             previous_event=self._instant_event(self._START_TIMESTAMP),
         )
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], self._SHORT_GAP_INT)
 
     def test_previous_instant_long_gap(self):
@@ -186,7 +185,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             [self._instant_event(self._START_TIMESTAMP + self._LONG_GAP)],
             previous_event=self._instant_event(self._START_TIMESTAMP),
         )
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 0)
 
     def test_previous_compressed_short_gap(self):
@@ -194,7 +193,7 @@ class WorkingTimeTestCase(unittest.TestCase):
             [self._instant_event(self._START_TIMESTAMP + timedelta(seconds=1) + self._SHORT_GAP)],
             previous_event=self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=1)),
         )
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], self._SHORT_GAP_INT)
 
     def test_previous_compressed_long_gap(self):
@@ -202,5 +201,5 @@ class WorkingTimeTestCase(unittest.TestCase):
             [self._instant_event(self._START_TIMESTAMP + timedelta(seconds=1) + self._LONG_GAP)],
             previous_event=self._compressed_event(self._START_TIMESTAMP, timedelta(seconds=1)),
         )
-        event_times = self._actual_working_times(data)
+        event_times = self._get_actual_working_times(data)
         self.assertEqual(event_times[0], 0)
