@@ -33,11 +33,11 @@ def _export_common(
     format_name: str,
     *,
     save_images: bool = False,
-    write_track_id: bool = False,
+    **kwargs
 ):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, format_name, save_images=save_images, write_track_id=write_track_id)
+        dataset.export(temp_dir, format_name, save_images=save_images, **(kwargs or {}))
 
     make_zip_archive(temp_dir, dst_file)
 
