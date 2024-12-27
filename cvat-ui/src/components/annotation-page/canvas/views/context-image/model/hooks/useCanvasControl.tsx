@@ -36,7 +36,6 @@ export const useCanvasControl = (canvasRef: RefObject<HTMLCanvasElement>, fullsc
         setBrightness(100);
         setContrast(100);
     };
-
     const handleZoomChange = useCallback(
         (event: React.WheelEvent) => {
             const delta = event.deltaY;
