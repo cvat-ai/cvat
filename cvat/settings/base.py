@@ -40,6 +40,7 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
+SECRET_KEY = os.environ.get("DJANGO_APP_SECRET", "")
 
 def generate_secret_key():
     """
@@ -72,12 +73,13 @@ def generate_secret_key():
             # Discard ours and use theirs.
             pass
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ModuleNotFoundError:
-    generate_secret_key()
-    from keys.secret_key import SECRET_KEY
+if not SECRET_KEY:
+    try:
+        sys.path.append(BASE_DIR)
+        from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+    except ModuleNotFoundError:
+        generate_secret_key()
+        from keys.secret_key import SECRET_KEY
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
