@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import itertools
-import os
 from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum

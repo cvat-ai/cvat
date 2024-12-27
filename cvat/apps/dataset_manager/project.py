@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from collections.abc import Mapping
 from tempfile import TemporaryDirectory
 import rq
