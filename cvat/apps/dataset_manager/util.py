@@ -205,7 +205,6 @@ class ExportCacheManager:
     @classmethod
     def make_dataset_file_path(
         cls,
-        cache_dir: str,
         *,
         instance_type: str,
         instance_id: int,
@@ -232,12 +231,11 @@ class ExportCacheManager:
             }
         )
 
-        return osp.join(cache_dir, filename)
+        return osp.join(settings.EXPORT_CACHE_ROOT, filename)
 
     @classmethod
     def make_backup_file_path(
         cls,
-        cache_dir: str,
         *,
         instance_type: str,
         instance_id: int,
@@ -254,7 +252,7 @@ class ExportCacheManager:
                 "file_ext": "zip",
             }
         )
-        return osp.join(cache_dir, filename)
+        return osp.join(settings.EXPORT_CACHE_ROOT, filename)
 
     @classmethod
     def parse_file_path(

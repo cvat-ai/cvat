@@ -769,7 +769,6 @@ class JobAnnotation:
         )
 
         temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
 
@@ -782,7 +781,6 @@ class JobAnnotation:
         self.delete()
 
         temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
@@ -976,7 +974,6 @@ class TaskAnnotation:
         )
 
         temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
 
@@ -989,7 +986,6 @@ class TaskAnnotation:
         self.delete()
 
         temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)

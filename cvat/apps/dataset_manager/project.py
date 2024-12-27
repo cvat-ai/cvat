@@ -139,7 +139,7 @@ class ProjectAnnotationAndData:
         )
 
         temp_dir_base = self.db_project.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
+
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             exporter(dst_file, temp_dir, project_data, **options)
 
@@ -156,7 +156,7 @@ class ProjectAnnotationAndData:
         project_data.soft_attribute_import = True
 
         temp_dir_base = self.db_project.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
+
         with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
             try:
                 importer(dataset_file, temp_dir, project_data, load_data_callback=self.load_dataset_data, **options)

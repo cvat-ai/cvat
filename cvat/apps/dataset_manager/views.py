@@ -132,7 +132,6 @@ def export(
             db_instance = Job.objects.get(pk=job_id)
 
         cache_ttl = get_export_cache_ttl(db_instance)
-        cache_dir = settings.EXPORT_CACHE_ROOT
 
         # As we're not locking the db object here, it can be updated by the time of actual export.
         # The file will be saved with the older timestamp.
@@ -147,15 +146,12 @@ def export(
             instance_update_time = max(tasks_update + [instance_update_time])
 
         output_path = ExportCacheManager.make_dataset_file_path(
-            cache_dir,
             instance_id=db_instance.id,
             instance_type=db_instance.__class__.__name__,
             instance_timestamp=instance_update_time.timestamp(),
             save_images=save_images,
             format_name=dst_format
         )
-
-        os.makedirs(cache_dir, exist_ok=True)
 
         # acquire a lock 2 times instead of using one long lock:
         # 1. to check whether the file exists or not
@@ -169,7 +165,9 @@ def export(
                 extend_export_file_lifetime(output_path)
                 return output_path
 
-        with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
+        tmp_dir = db_instance.get_tmp_dirname()
+
+        with tempfile.TemporaryDirectory(dir=tmp_dir) as temp_dir:
             temp_file = osp.join(temp_dir, 'result')
             export_fn(db_instance.id, temp_file, dst_format,
                 server_url=server_url, save_images=save_images)
