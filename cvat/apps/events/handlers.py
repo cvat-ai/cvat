@@ -31,7 +31,7 @@ from cvat.apps.webhooks.serializers import WebhookReadSerializer
 from .cache import get_cache
 from .event import event_scope, record_server_event
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
-from .utils import calc_working_time_per_ids
+from .utils import compute_working_time_per_ids
 
 
 def project_id(instance):
@@ -624,7 +624,7 @@ def handle_viewset_exception(exc, context):
 def handle_client_events_push(request, data: dict):
     org = request.iam_context["organization"]
 
-    working_time_per_ids = calc_working_time_per_ids(data)
+    working_time_per_ids = compute_working_time_per_ids(data)
 
     if data["events"]:
         common = {

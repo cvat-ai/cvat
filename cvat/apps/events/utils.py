@@ -78,7 +78,7 @@ def get_end_timestamp(event: dict) -> datetime.datetime:
 def is_contained(event1: dict, event2: dict) -> bool:
     return event1['timestamp'] < get_end_timestamp(event2)
 
-def calc_working_time_per_ids(data: dict) -> dict:
+def compute_working_time_per_ids(data: dict) -> dict:
     def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
         return event.get("job_id"), event.get("task_id"), event.get("project_id")
 

@@ -12,7 +12,7 @@ from django.test import RequestFactory
 from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.organizations.models import Organization
 from cvat.apps.events.const import MAX_EVENT_DURATION, WORKING_TIME_RESOLUTION
-from cvat.apps.events.utils import calc_working_time_per_ids, is_contained
+from cvat.apps.events.utils import compute_working_time_per_ids, is_contained
 
 class WorkingTimeTestCase(unittest.TestCase):
     _START_TIMESTAMP = datetime(2024, 1, 1, 12)
@@ -44,7 +44,7 @@ class WorkingTimeTestCase(unittest.TestCase):
         res = []
         for event in data['events']:
             tmp['events'] = [event]
-            event_working_time = calc_working_time_per_ids(tmp)
+            event_working_time = compute_working_time_per_ids(tmp)
             #pylint: disable=unused-variable
             for ids, working_time in event_working_time.items():
                 res.append((working_time['value'] // WORKING_TIME_RESOLUTION))
