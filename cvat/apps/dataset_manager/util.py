@@ -7,6 +7,7 @@ import inspect
 import os
 import os.path as osp
 import zipfile
+import re
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
@@ -158,11 +159,18 @@ class ExportFileType(str, Enum):
     BACKUP = "backup"
     DATASET = "dataset"
 
+    @classmethod
+    def values(cls) -> list[str]:
+        return list(map(lambda x: x.value, cls))
+
 class InstanceType(str, Enum):
     PROJECT = "project"
     TASK = "task"
     JOB = "job"
 
+    @classmethod
+    def values(cls) -> list[str]:
+        return list(map(lambda x: x.value, cls))
 
 @attrs.frozen
 class _ParsedExportFilename:
@@ -207,7 +215,7 @@ class ExportCacheManager:
     ) -> str:
         from .formats.registry import EXPORT_FORMATS
 
-        file_ext = EXPORT_FORMATS[format_name].EXT
+        file_ext = (EXPORT_FORMATS[format_name].EXT).lower()
 
         instance_type = InstanceType(instance_type.lower())
         file_type = ExportFileType.DATASET if save_images else ExportFileType.ANNOTATIONS
@@ -254,47 +262,50 @@ class ExportCacheManager:
     ) -> ParsedDatasetFilename | ParsedBackupFilename:
         file_path = osp.normpath(file_path)
         basename = osp.split(file_path)[1]
-
+        basename, file_ext = osp.splitext(basename)
+        file_ext = file_ext.strip(".").lower()
 
         # handle file name
-        instance_type, unparsed = basename.split(cls.SPLITTER, maxsplit=1)
-        instance_type = InstanceType(instance_type)
+        basename_match = re.fullmatch(
+            (
+                rf"^(?P<instance_type>{'|'.join(InstanceType.values())})"
+                rf"{cls.SPLITTER}(?P<instance_id>\d+)"
+                rf"{cls.SPLITTER}(?P<file_type>{'|'.join(ExportFileType.values())})"
+                rf"{cls.SPLITTER}(?P<unparsed>.+)$"
+            ),
+            basename,
+        )
 
-        instance_id, unparsed = basename.split(cls.SPLITTER, maxsplit=1)
-        instance_id = int(instance_id)
+        if not basename_match:
+            raise CacheFilePathParseError(f"Couldn't parse file name: {basename!r}")
 
-        file_type, unparsed = unparsed.split(cls.SPLITTER, maxsplit=1)
-        file_type = ExportFileType(file_type)
+        fragments = basename_match.groupdict()
+        fragments["instance_id"] = int(fragments["instance_id"])
 
-        unparsed, file_ext = osp.splitext(unparsed)
-        unparsed = unparsed[len(cls.INSTANCE_PREFIX):]
+        unparsed = fragments.pop("unparsed")[len(cls.INSTANCE_PREFIX):]
         specific_params = {}
 
-        if file_type in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
+        if fragments["file_type"] in (ExportFileType.DATASET, ExportFileType.ANNOTATIONS):
             try:
                 instance_timestamp, format_repr = unparsed.split(cls.SPLITTER, maxsplit=1)
             except ValueError:
-                raise CacheFilePathParseError(f"Couldn't parse file name: '{basename}'")
+                raise CacheFilePathParseError(f"Couldn't parse file name: {basename!r}")
 
             specific_params["format_repr"] = format_repr
             ParsedFileNameClass = ParsedDatasetFilename
-        elif file_type == ExportFileType.BACKUP:
+        else:
             instance_timestamp = unparsed
             ParsedFileNameClass = ParsedBackupFilename
-        else:
-            raise CacheFilePathParseError(f"Unsupported file type: {file_type!r}")
 
         try:
             instance_timestamp = float(instance_timestamp)
         except ValueError:
-            raise CacheFilePathParseError(f"Couldn't parse instance timestamp: '{instance_timestamp}'")
+            raise CacheFilePathParseError(f"Couldn't parse instance timestamp: {instance_timestamp!r}")
 
         return ParsedFileNameClass(
-            file_type=file_type.value,
             file_ext=file_ext,
-            instance_id=instance_id,
-            instance_type=instance_type.value,
             instance_timestamp=instance_timestamp,
+            **fragments,
             **specific_params,
         )
 
