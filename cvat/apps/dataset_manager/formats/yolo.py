@@ -96,7 +96,7 @@ def _export_yolo_ultralytics_detection(*args, **kwargs):
 
 
 @exporter(name='Ultralytics YOLO Detection Track', ext='ZIP', version='1.0')
-def _export_yolo_ultralytics_detection(*args, **kwargs):
+def _export_yolo_ultralytics_detection_track(*args, **kwargs):
     _export_common(*args, format_name='yolo_ultralytics_detection', write_track_id=True, **kwargs)
 
 
