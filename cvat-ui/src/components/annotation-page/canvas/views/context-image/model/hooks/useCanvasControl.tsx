@@ -40,8 +40,8 @@ export const useCanvasControl = (canvasRef: RefObject<HTMLCanvasElement>, fullsc
     const handleZoomChange = useCallback(
         (event: React.WheelEvent) => {
             const delta = event.deltaY;
-            const newZoomLevel = zoomLevel + delta * 0.001;
-            setZoomLevel(Math.max(0.1, Math.min(5, newZoomLevel)));
+            const newZoomLevel = zoomLevel - delta * 0.001;
+            setZoomLevel(Math.max(0.5, Math.min(5, newZoomLevel)));
         },
         [zoomLevel],
     );
@@ -54,15 +54,16 @@ export const useCanvasControl = (canvasRef: RefObject<HTMLCanvasElement>, fullsc
                     y: (e.clientY - dragOffset.y) / zoomLevel,
                 };
                 positionRef.current = newPosition;
-                if (animationFrameRef.current === null) {
-                    animationFrameRef.current = requestAnimationFrame(() => {
-                        if (canvasRef.current) {
-                            canvasRef.current.style.transform = `
-                                scale(${zoomLevel}) translate(${positionRef.current.x}px, ${positionRef.current.y}px)`;
-                        }
-                        animationFrameRef.current = null;
-                    });
+                if (animationFrameRef.current !== null) {
+                    cancelAnimationFrame(animationFrameRef.current);
                 }
+                animationFrameRef.current = requestAnimationFrame(() => {
+                    if (canvasRef.current) {
+                        canvasRef.current.style.transform = `
+                            scale(${zoomLevel}) translate(${positionRef.current.x}px, ${positionRef.current.y}px)`;
+                    }
+                    animationFrameRef.current = null;
+                });
             } else if (e.buttons === 2) {
                 const deltaX = e.movementX;
                 const deltaY = e.movementY;
