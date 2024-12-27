@@ -8,7 +8,7 @@ jobs:
 
       - name: Run checks
         run: |
-          pipx install $(grep "^black" ./cvat-cli/requirements/development.txt)
+          pipx install $(grep "^black" ./dev/requirements.txt)
 
           echo "Black version: $(black --version)"
 

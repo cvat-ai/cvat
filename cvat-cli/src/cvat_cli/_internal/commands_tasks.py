@@ -5,12 +5,9 @@
 from __future__ import annotations
 
 import argparse
-import importlib
-import importlib.util
 import textwrap
 from collections.abc import Sequence
-from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import cvat_sdk.auto_annotation as cvataa
 from attr.converters import to_bool
@@ -19,13 +16,8 @@ from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .command_base import CommandGroup, GenericCommand, GenericDeleteCommand, GenericListCommand
-from .parsers import (
-    BuildDictAction,
-    parse_function_parameter,
-    parse_label_arg,
-    parse_resource_type,
-    parse_threshold,
-)
+from .common import FunctionLoader, configure_function_implementation_arguments
+from .parsers import parse_label_arg, parse_resource_type, parse_threshold
 
 COMMANDS = CommandGroup(description="Perform operations on CVAT tasks.")
 
@@ -416,30 +408,7 @@ class TaskAutoAnnotate:
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("task_id", type=int, help="task ID")
 
-        function_group = parser.add_mutually_exclusive_group(required=True)
-
-        function_group.add_argument(
-            "--function-module",
-            metavar="MODULE",
-            help="qualified name of a module to use as the function",
-        )
-
-        function_group.add_argument(
-            "--function-file",
-            metavar="PATH",
-            type=Path,
-            help="path to a Python source file to use as the function",
-        )
-
-        parser.add_argument(
-            "--function-parameter",
-            "-p",
-            metavar="NAME=TYPE:VALUE",
-            type=parse_function_parameter,
-            action=BuildDictAction,
-            dest="function_parameters",
-            help="parameter for the function",
-        )
+        configure_function_implementation_arguments(parser)
 
         parser.add_argument(
             "--clear-existing",
@@ -471,29 +440,13 @@ class TaskAutoAnnotate:
         client: Client,
         *,
         task_id: int,
-        function_module: Optional[str] = None,
-        function_file: Optional[Path] = None,
-        function_parameters: dict[str, Any],
+        function_loader: FunctionLoader,
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
         conf_threshold: Optional[float],
         conv_mask_to_poly: bool,
     ) -> None:
-        if function_module is not None:
-            function = importlib.import_module(function_module)
-        elif function_file is not None:
-            module_spec = importlib.util.spec_from_file_location("__cvat_function__", function_file)
-            function = importlib.util.module_from_spec(module_spec)
-            module_spec.loader.exec_module(function)
-        else:
-            assert False, "function identification arguments missing"
-
-        if hasattr(function, "create"):
-            # this is actually a function factory
-            function = function.create(**function_parameters)
-        else:
-            if function_parameters:
-                raise TypeError("function takes no parameters")
+        function = function_loader.load()
 
         cvataa.annotate_task(
             client,
