@@ -19,19 +19,13 @@ such benefits as:
 
 Currently, we offer three options:
 
-- Authentication with Github.
-- Authentication with Google.
-- Authentication with Amazon Cognito.
+- [Authentication with Google](#authentication-with-google)
+- [Authentication with GitHub](#authentication-with-github)
+- [Authentication with Amazon Cognito](#authentication-with-amazon-cognito)
 
 With more to come soon. Stay tuned!
 
-See:
-
-- [Enable authentication with a Google account](#enable-authentication-with-a-google-account)
-- [Enable authentication with a GitHub account](#enable-authentication-with-a-github-account)
-- [Enable authentication with an Amazon Cognito](#enable-authentication-with-an-amazon-cognito)
-
-## Enable authentication with a Google account
+## Authentication with Google
 
 To enable authentication, do the following:
 
@@ -72,7 +66,7 @@ To enable authentication, do the following:
    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
    ```
 
-## Enable authentication with a GitHub account
+## Authentication with GitHub
 
 There are 2 basic steps to enable GitHub account authentication.
 
@@ -106,7 +100,7 @@ There are 2 basic steps to enable GitHub account authentication.
 > but don't forget to add required permissions.
 > <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
 
-## Enable authentication with Amazon Cognito
+## Authentication with Amazon Cognito
 
 To enable authentication with Amazon Cognito for your CVAT instance, follow these steps:
 
