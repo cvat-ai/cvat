@@ -1,3 +1,7 @@
+# Copyright (C) 2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import datetime
 
 TIME_THRESHOLD = datetime.timedelta(seconds=100)
