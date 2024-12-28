@@ -10,7 +10,7 @@ export interface ImageProcessing {
     currentProcessedImage: number | null;
 
     processImage: (src: ImageData, frameNumber: number) => ImageData;
-    configure: (options: object) => void;
+    configure: (options: ImageFilterSettings) => void;
 }
 
 /* eslint @typescript-eslint/no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
@@ -22,7 +22,7 @@ export class BaseImageFilter implements ImageProcessing {
         throw new Error('Process image is not implemented');
     }
 
-    configure(_options: object): void {}
+    configure(_options: ImageFilterSettings): void {}
 }
 
 export interface ImageFilter {
@@ -42,4 +42,15 @@ export function hasFilter(filters: ImageFilter[], alias: ImageFilterAlias): Imag
         return filters[index];
     }
     return null;
+}
+
+export class ImageFilterSettings {
+    public claheClipLimit: number;
+    public claheTileGridSize: { rows: number, columns: number };
+
+    constructor() {
+        // Default values, same as default values in OpenCV
+        this.claheClipLimit = 40.0;
+        this.claheTileGridSize = { rows: 8, columns: 8 };
+    }
 }

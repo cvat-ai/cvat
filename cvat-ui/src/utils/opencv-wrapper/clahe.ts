@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BaseImageFilter, ImageProcessing } from 'utils/image-processing';
+import { BaseImageFilter, ImageFilterSettings, ImageProcessing } from 'utils/image-processing';
 
 export interface CLAHE extends ImageProcessing {
     processImage: (src: ImageData, frameNumber: number) => ImageData;
@@ -11,24 +11,23 @@ export interface CLAHE extends ImageProcessing {
 
 export default class CLAHEImplementation extends BaseImageFilter {
     private cv:any;
-    // same defaults as opencv
-    private clipLimit: number = 40.0;
-    private tileGridSize: { rows: number, columns: number } = { rows: 8, columns: 8 };
+    private settings: ImageFilterSettings;
 
     constructor(cv:any) {
         super();
         this.cv = cv;
+        this.settings = new ImageFilterSettings();
     }
 
-    public configure(options: {
-        clipLimit?: number,
-        tileGridSize?: { width: number, height: number }
-    }): void {
-        if (options.clipLimit !== undefined) {
-            this.clipLimit = options.clipLimit;
+    public configure(options: ImageFilterSettings): void {
+        if (options.claheClipLimit !== null) {
+            this.settings.claheClipLimit = options.claheClipLimit;
         }
-        if (options.tileGridSize !== undefined) {
-            this.tileGridSize = options.tileGridSize;
+        if (options.claheTileGridSize.columns !== null) {
+            this.settings.claheTileGridSize.columns = options.claheTileGridSize.columns;
+        }
+        if (options.claheTileGridSize.rows !== null) {
+            this.settings.claheTileGridSize.rows = options.claheTileGridSize.rows;
         }
     }
 
@@ -42,8 +41,9 @@ export default class CLAHEImplementation extends BaseImageFilter {
         const RGBADist = new cv.Mat();
         let channels = new cv.MatVector();
         const equalizedY = new cv.Mat();
-        const tileGridSize = new cv.Size(this.tileGridSize.rows, this.tileGridSize.columns);
-        const clahe = new cv.CLAHE(this.clipLimit, tileGridSize);
+
+        const tileGridSize = new cv.Size(this.settings.claheTileGridSize.columns, this.settings.claheTileGridSize.rows);
+        const clahe = new cv.CLAHE(this.settings.claheClipLimit, tileGridSize);
         try {
             this.currentProcessedImage = frameNumber;
             matImage = cv.matFromImageData(src);
