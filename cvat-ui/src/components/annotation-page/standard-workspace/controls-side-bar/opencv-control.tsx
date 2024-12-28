@@ -586,6 +586,78 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { enableImageFilter, disableImageFilter, filters } = this.props;
         const { imageFilterSettings } = this.state;
 
+        const claheContent = (
+            <div>
+                <Row align='middle' gutter={8}>
+                    <Col span={12}>Clip Limit:</Col>
+                    <Col span={12}>
+                        <InputNumber
+                            min={1}
+                            max={255}
+                            step={1}
+                            value={imageFilterSettings.claheClipLimit}
+                            onChange={(value) => {
+                                if (value !== null) {
+                                    imageFilterSettings.claheClipLimit = value;
+                                    this.setState({
+                                        imageFilterSettings,
+                                    });
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    }, imageFilterSettings);
+                                }
+                            }}
+                        />
+                    </Col>
+                </Row>
+                <Row align='middle' gutter={8}>
+                    <Col span={12}>Tile Columns:</Col>
+                    <Col span={12}>
+                        <InputNumber
+                            min={1}
+                            max={128}
+                            value={imageFilterSettings.claheTileGridSize.columns}
+                            onChange={(value) => {
+                                if (value !== null) {
+                                    imageFilterSettings.claheTileGridSize.columns = value;
+                                    this.setState({
+                                        imageFilterSettings,
+                                    });
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    }, imageFilterSettings);
+                                }
+                            }}
+                        />
+                    </Col>
+                </Row>
+                <Row align='middle' gutter={8}>
+                    <Col span={12}>Tile Rows:</Col>
+                    <Col span={12}>
+                        <InputNumber
+                            min={1}
+                            max={128}
+                            value={imageFilterSettings.claheTileGridSize.rows}
+                            onChange={(value) => {
+                                if (value !== null) {
+                                    imageFilterSettings.claheTileGridSize.rows = value;
+                                    this.setState({
+                                        imageFilterSettings,
+                                    });
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    }, imageFilterSettings);
+                                }
+                            }}
+                        />
+                    </Col>
+                </Row>
+            </div>
+        );
+
         return (
             <Tabs
                 defaultActiveKey='none'
@@ -605,81 +677,24 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         }, imageFilterSettings);
                     }
                 }}
-            >
-                <Tabs.TabPane tab='None' key='none' />
-                <Tabs.TabPane tab='Histogram Eq' key={ImageFilterAlias.HISTOGRAM_EQUALIZATION} icon={<AreaChartOutlined />} />
-                <Tabs.TabPane tab='CLAHE' key={ImageFilterAlias.CLAHE} icon={<BarChartOutlined />}>
-                    <div>
-                        <Row align='middle' gutter={8}>
-                            <Col span={12}>Clip Limit:</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    min={1}
-                                    max={255}
-                                    step={1}
-                                    value={imageFilterSettings.claheClipLimit}
-                                    onChange={(value) => {
-                                        if (value !== null) {
-                                            imageFilterSettings.claheClipLimit = value;
-                                            this.setState({
-                                                imageFilterSettings,
-                                            });
-                                            enableImageFilter({
-                                                modifier: openCVWrapper.imgproc.clahe(),
-                                                alias: ImageFilterAlias.CLAHE,
-                                            }, imageFilterSettings);
-                                        }
-                                    }}
-                                />
-                            </Col>
-                        </Row>
-                        <Row align='middle' gutter={8}>
-                            <Col span={12}>Tile Columns:</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    min={1}
-                                    max={128}
-                                    value={imageFilterSettings.claheTileGridSize.columns}
-                                    onChange={(value) => {
-                                        if (value !== null) {
-                                            imageFilterSettings.claheTileGridSize.columns = value;
-                                            this.setState({
-                                                imageFilterSettings,
-                                            });
-                                            enableImageFilter({
-                                                modifier: openCVWrapper.imgproc.clahe(),
-                                                alias: ImageFilterAlias.CLAHE,
-                                            }, imageFilterSettings);
-                                        }
-                                    }}
-                                />
-                            </Col>
-                        </Row>
-                        <Row align='middle' gutter={8}>
-                            <Col span={12}>Tile Rows:</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    min={1}
-                                    max={128}
-                                    value={imageFilterSettings.claheTileGridSize.rows}
-                                    onChange={(value) => {
-                                        if (value !== null) {
-                                            imageFilterSettings.claheTileGridSize.rows = value;
-                                            this.setState({
-                                                imageFilterSettings,
-                                            });
-                                            enableImageFilter({
-                                                modifier: openCVWrapper.imgproc.clahe(),
-                                                alias: ImageFilterAlias.CLAHE,
-                                            }, imageFilterSettings);
-                                        }
-                                    }}
-                                />
-                            </Col>
-                        </Row>
-                    </div>
-                </Tabs.TabPane>
-            </Tabs>
+                items={[
+                    {
+                        label: 'None',
+                        key: 'none',
+                    },
+                    {
+                        label: 'Histogram Eq',
+                        key: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
+                        icon: <AreaChartOutlined />,
+                    },
+                    {
+                        label: 'CLAHE',
+                        key: ImageFilterAlias.CLAHE,
+                        icon: <BarChartOutlined />,
+                        children: claheContent,
+                    },
+                ]}
+            />
         );
     }
 
