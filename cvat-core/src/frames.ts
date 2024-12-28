@@ -46,6 +46,10 @@ enum DeletedFrameState {
     RESTORED = 'restored',
 }
 
+interface FramesMetaDataUpdatedData {
+    deletedFrames: Record<number, DeletedFrameState>;
+}
+
 export class FramesMetaData {
     public chunkSize: number;
     public deletedFrames: Record<number, boolean>;
@@ -186,8 +190,17 @@ export class FramesMetaData {
         return (dataFrameNumber - this.startFrame) / this.frameStep;
     }
 
-    getUpdated(): Record<string, unknown> {
-        return this.#updateTrigger.getUpdated(this);
+    getUpdated(): FramesMetaDataUpdatedData {
+        const updatedFields = this.#updateTrigger.getUpdated(this);
+        const deletedFrames: FramesMetaDataUpdatedData['deletedFrames'] = {};
+        for (const key in updatedFields) {
+            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
+                const [, frame, state] = key.split(':');
+                deletedFrames[frame] = state;
+            }
+        }
+
+        return { deletedFrames };
     }
 
     resetUpdated(): void {
@@ -545,6 +558,34 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     writable: false,
 });
 
+function mergeMetaData(
+    nextData: SerializedFramesMetaData,
+    previousData?: Promise<FramesMetaData>,
+): Promise<FramesMetaData> {
+    const framesMetaData = new FramesMetaData({
+        ...nextData,
+        deleted_frames: Object.fromEntries(nextData.deleted_frames.map((_frame) => [_frame, true])),
+    });
+
+    if (previousData instanceof Promise) {
+        return previousData.then((prevMeta) => {
+            const updatedFields = prevMeta.getUpdated();
+            const updatedDeletedFrames = updatedFields.deletedFrames;
+            for (const [frame, state] of Object.entries(updatedDeletedFrames)) {
+                if (state === DeletedFrameState.DELETED) {
+                    framesMetaData.deletedFrames[frame] = true;
+                } else if (state === DeletedFrameState.RESTORED) {
+                    delete framesMetaData.deletedFrames[frame];
+                }
+            }
+
+            return framesMetaData;
+        });
+    }
+
+    return Promise.resolve(framesMetaData);
+}
+
 export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = false): Promise<FramesMetaData> {
     if (type === 'task') {
         // we do not cache task meta currently. So, each new call will results to the server request
@@ -560,31 +601,11 @@ export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = fa
         const previousCache = frameMetaCache[id];
         frameMetaCache[id] = new Promise((resolve, reject) => {
             serverProxy.frames.getMeta('job', id).then((serialized) => {
-                const framesMetaData = new FramesMetaData({
-                    ...serialized,
-                    deleted_frames: Object.fromEntries(serialized.deleted_frames.map((_frame) => [_frame, true])),
-                });
                 // When we get new framesMetaData from server there can be some unsaved data
                 // here we merge new meta data with cached one
-                if (previousCache instanceof Promise) {
-                    previousCache.then((prevMeta) => {
-                        const updatedFields = prevMeta.getUpdated();
-                        for (const key in updatedFields) {
-                            if (Object.hasOwn(updatedFields, key) && key.startsWith('deletedFrames')) {
-                                const [, frame, value] = key.split(':');
-                                if (value === DeletedFrameState.DELETED) {
-                                    framesMetaData.deletedFrames[+frame] = true;
-                                } else if (value === DeletedFrameState.RESTORED) {
-                                    delete framesMetaData.deletedFrames[+frame];
-                                }
-                            }
-                        }
-                    }).finally(() => {
-                        resolve(framesMetaData);
-                    });
-                } else {
-                    resolve(framesMetaData);
-                }
+                mergeMetaData(serialized, previousCache).then((mergedData) => {
+                    resolve(mergedData);
+                });
             }).catch((error: unknown) => {
                 delete frameMetaCache[id];
                 if (previousCache instanceof Promise) {
