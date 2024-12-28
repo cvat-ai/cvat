@@ -24,7 +24,7 @@ that can _perfectly_ annotate 50% of your data equates to reducing manual annota
 Since we know DL models can help us to annotate faster, how then do we use them?
 In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
 serverless platform. There are multiple implemented functions that can be
-found in the [serverless][cvat-builtin-serverless] directory such as _Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
+found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
 understand how to use these functions in the UI to automatically annotate data.
@@ -160,6 +160,8 @@ Finally you will get bounding boxes.
 ![SiamMask results](/images/siammask_results.gif)
 
 `SiamMask` model is more optimized to work on Nvidia GPUs.
+
+- For more information about deploying the model for the GPU, [read on](#objects-segmentation-using-mask-rcnn).
 
 ### Object detection using YOLO-v3
 
