@@ -175,11 +175,11 @@ For more information about the supported formats, see:
 | [Kitti Raw Format](https://www.cvlibs.net/datasets/kitti/raw_data.php)                           | ✔️     | ✔️     |
 | [LFW](http://vis-www.cs.umass.edu/lfw/)                                                          | ✔️     | ✔️     |
 | [Supervisely Point Cloud Format](https://docs.supervise.ly/data-organization/00_ann_format_navi) | ✔️     | ✔️     |
-| [YOLOv8 Detection](https://docs.ultralytics.com/datasets/detect/)                                | ✔️     | ✔️     |
-| [YOLOv8 Oriented Bounding Boxes](https://docs.ultralytics.com/datasets/obb/)                     | ✔️     | ✔️     |
-| [YOLOv8 Segmentation](https://docs.ultralytics.com/datasets/segment/)                            | ✔️     | ✔️     |
-| [YOLOv8 Pose](https://docs.ultralytics.com/datasets/pose/)                                       | ✔️     | ✔️     |
-| [YOLOv8 Classification](https://docs.ultralytics.com/datasets/classify/)                         | ✔️     | ✔️     |
+| [Ultralytics YOLO Detection](https://docs.ultralytics.com/datasets/detect/)                      | ✔️     | ✔️     |
+| [Ultralytics YOLO Oriented Bounding Boxes](https://docs.ultralytics.com/datasets/obb/)                     | ✔️     | ✔️     |
+| [Ultralytics YOLO Segmentation](https://docs.ultralytics.com/datasets/segment/)                            | ✔️     | ✔️     |
+| [Ultralytics YOLO Pose](https://docs.ultralytics.com/datasets/pose/)                                       | ✔️     | ✔️     |
+| [Ultralytics YOLO Classification](https://docs.ultralytics.com/datasets/classify/)                         | ✔️     | ✔️     |
 
 <!--lint enable maximum-line-length-->
 

@@ -6,7 +6,8 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Match, Pattern
+from re import Match, Pattern
+from typing import Callable
 
 
 SUCCESS_CHAR = "\u2714"
@@ -159,8 +160,8 @@ REPLACEMENT_RULES = [
     ),
     ReplacementRule(
         "cvat-cli/requirements/base.txt",
-        re.compile(r"^cvat-sdk~=[\d.]+$", re.M),
-        lambda v, m: f"cvat-sdk~={v.major}.{v.minor}.{v.patch}",
+        re.compile(r"^cvat-sdk==[\d.]+$", re.M),
+        lambda v, m: f"cvat-sdk=={v.major}.{v.minor}.{v.patch}",
     ),
 ]
 

@@ -1,24 +1,24 @@
 ---
-title: 'YOLOv8'
-linkTitle: 'YOLOv8'
+title: 'Ultralytics YOLO'
+linkTitle: 'Ultralytics YOLO'
 weight: 7
-description: 'How to export and import data in YOLOv8 formats'
+description: 'How to export and import data in Ultralytics YOLO formats'
 ---
 
-YOLOv8 is a format family which consists of four formats:
+Ultralytics YOLO is a format family which consists of four formats:
 - [Detection](https://docs.ultralytics.com/datasets/detect/)
 - [Oriented bounding Box](https://docs.ultralytics.com/datasets/obb/)
 - [Segmentation](https://docs.ultralytics.com/datasets/segment/)
 - [Pose](https://docs.ultralytics.com/datasets/pose/)
 
 Dataset examples:
-- [Detection](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_detection)
-- [Oriented Bounding Boxes](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_oriented_boxes)
-- [Segmentation](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_segmentation)
-- [Pose](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_pose)
+- [Detection](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolo_ultralytics_detection)
+- [Oriented Bounding Boxes](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolo_ultralytics_oriented_boxes)
+- [Segmentation](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolo_ultralytics_segmentation)
+- [Pose](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolo_ultralytics_pose)
 
 
-## YOLOv8 export
+## Ultralytics YOLO export
 
 For export of images:
 
@@ -59,7 +59,7 @@ images/<subset>/image2.jpg
 path:  ./ # dataset root dir
 train: train.txt  # train images (relative to 'path')
 
-# YOLOv8 Pose specific field
+# Ultralytics YOLO Pose specific field
 # First number is the number of points in a skeleton.
 # If there are several skeletons with different number of points, it is the greatest number of points
 # Second number defines the format of point info in annotation txt files
@@ -75,7 +75,7 @@ names:
 # <image_name>.txt:
 # content depends on format
 
-# YOLOv8 Detection:
+# Ultralytics YOLO Detection:
 # label_id - id from names field of data.yaml
 # cx, cy - relative coordinates of the bbox center
 # rw, rh - relative size of the bbox
@@ -83,19 +83,19 @@ names:
 1 0.3 0.8 0.1 0.3
 2 0.7 0.2 0.3 0.1
 
-# YOLOv8 Oriented Bounding Boxes:
+# Ultralytics YOLO Oriented Bounding Boxes:
 # xn, yn - relative coordinates of the n-th point
 # label_id x1 y1 x2 y2 x3 y3 x4 y4
 1 0.3 0.8 0.1 0.3 0.4 0.5 0.7 0.5
 2 0.7 0.2 0.3 0.1 0.4 0.5 0.5 0.6
 
-# YOLOv8 Segmentation:
+# Ultralytics YOLO Segmentation:
 # xn, yn - relative coordinates of the n-th point
 # label_id x1 y1 x2 y2 x3 y3 ...
 1 0.3 0.8 0.1 0.3 0.4 0.5
 2 0.7 0.2 0.3 0.1 0.4 0.5 0.5 0.6 0.7 0.5
 
-# YOLOv8 Pose:
+# Ultralytics YOLO Pose:
 # cx, cy - relative coordinates of the bbox center
 # rw, rh - relative size of the bbox
 # xn, yn - relative coordinates of the n-th point
@@ -126,3 +126,24 @@ is named to correspond with its associated image file.
 
 For example, `frame_000001.txt` serves as the annotation for the
 `frame_000001.jpg` image.
+
+## Import
+
+Uploaded file: a zip archive of the same structure as above.
+
+For compatibility with other tools exporting in Ultralytics YOLO format
+(e.g. [roboflow](https://roboflow.com/formats/yolov8-pytorch-txt)),
+CVAT supports datasets with the inverted directory order of subset and "images" or "labels",
+i.e. both `train/images/`, `images/train/` are valid inputs.
+```bash
+archive.zip/
+   ├── train/
+   │   ├── images/  # directory with images for train subset
+   │   │    ├── image1.jpg
+   │   │    ├── image2.jpg
+   │   │    └── ...
+   │   ├── labels/  # directory with annotations for train subset
+   │   │    ├── image1.txt
+   │   │    ├── image2.txt
+   │   │    └── ...
+```

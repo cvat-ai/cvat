@@ -12,13 +12,13 @@ import shutil
 import sys
 import textwrap
 from glob import iglob
-from typing import Callable, List
+from typing import Callable
 
 from inflection import underscore
 
 
 class Processor:
-    _reference_files: List[str]
+    _reference_files: list[str]
 
     def __init__(self, *, input_dir: str, site_root: str) -> None:
         self._input_dir = input_dir
@@ -29,7 +29,7 @@ class Processor:
         self._templates_dir = osp.join(self._site_root, "templates")
 
     @staticmethod
-    def _copy_files(src_dir: str, glob_pattern: str, dst_dir: str) -> List[str]:
+    def _copy_files(src_dir: str, glob_pattern: str, dst_dir: str) -> list[str]:
         copied_files = []
 
         for src_path in iglob(osp.join(src_dir, glob_pattern), recursive=True):
@@ -140,7 +140,7 @@ class Processor:
             with open(p, "w") as f:
                 f.write(contents)
 
-    def _process_non_code_blocks(self, text: str, handlers: List[Callable[[str], str]]) -> str:
+    def _process_non_code_blocks(self, text: str, handlers: list[Callable[[str], str]]) -> str:
         """
         Allows to process Markdown documents with passed callbacks. Callbacks are only
         executed outside code blocks.
