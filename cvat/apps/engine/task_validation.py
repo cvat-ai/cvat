@@ -39,6 +39,9 @@ class _BaggedCounter(Generic[_K]):
         return _BaggedCounter(bags=bags)
 
     def __attrs_post_init__(self):
+        self._sort_bags()
+
+    def _sort_bags(self):
         self.bags = dict(sorted(self.bags.items(), key=lambda e: e[0]))
 
     def shuffle(self, *, rng: np.random.Generator | None):
@@ -64,7 +67,13 @@ class _BaggedCounter(Generic[_K]):
         if not bag:
             self.bags.pop(count)
 
-        self.bags.setdefault(count + 1, dict())[item] = None
+        next_bag = self.bags.get(count + 1)
+        if next_bag is None:
+            next_bag = {}
+            self.bags[count + 1] = next_bag
+            self._sort_bags() # the new bag can be added in the wrong position if there were gaps
+
+        next_bag[item] = None
 
     def __iter__(self) -> Iterable[tuple[int, _K, dict]]:
         for count, bag in self.bags.items():  # bags must be ordered
