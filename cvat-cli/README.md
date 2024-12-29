@@ -22,6 +22,11 @@ The following subcommands are supported:
   - `backup` - back up a task
   - `auto-annotate` - automatically annotate a task using a local function
 
+- Functions (Enterprise/Cloud only):
+  - `create-native` - create a function that can be powered by an agent
+  - `delete` - delete a function
+  - `run-agent` - process requests for a native function
+
 ## Installation
 
 `pip install cvat-cli`
