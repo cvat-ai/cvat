@@ -34,7 +34,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
         lowOverlapThreshold: settings.lowOverlapThreshold * 100,
         iouThreshold: settings.iouThreshold * 100,
         compareAttributes: settings.compareAttributes,
-        matchEmptyFrames: settings.matchEmptyFrames,
+        emptyIsAnnotated: settings.emptyIsAnnotated,
 
         oksSigma: settings.oksSigma * 100,
         pointSizeBase: settings.pointSizeBase,
@@ -81,7 +81,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
             {makeTooltipFragment('Target metric', targetMetricDescription)}
             {makeTooltipFragment('Target metric threshold', settings.descriptions.targetMetricThreshold)}
             {makeTooltipFragment('Compare attributes', settings.descriptions.compareAttributes)}
-            {makeTooltipFragment('Match empty frames', settings.descriptions.matchEmptyFrames)}
+            {makeTooltipFragment('Empty frames are annotated', settings.descriptions.emptyIsAnnotated)}
         </>,
     );
 
@@ -198,12 +198,12 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 </Col>
                 <Col span={12}>
                     <Form.Item
-                        name='matchEmptyFrames'
+                        name='emptyIsAnnotated'
                         valuePropName='checked'
                         rules={[{ required: true }]}
                     >
                         <Checkbox>
-                            <Text className='cvat-text-color'>Match empty frames</Text>
+                            <Text className='cvat-text-color'>Empty frames are annotated</Text>
                         </Checkbox>
                     </Form.Item>
                 </Col>
