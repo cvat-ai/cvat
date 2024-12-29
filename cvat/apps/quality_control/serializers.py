@@ -167,8 +167,8 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             """,
             "compare_attributes": "Enables or disables annotation attribute comparison",
             "empty_is_annotated": """
-                Count empty frames as annotated. This affects target metrics like accuracy in cases
-                there are no annotations. If disabled, frames without annotations
+                Consider empty frames annotated as "empty". This affects target metrics like
+                accuracy in cases there are no annotations. If disabled, frames without annotations
                 are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
                 This will also add virtual annotations to empty frames in the comparison results.
             """,

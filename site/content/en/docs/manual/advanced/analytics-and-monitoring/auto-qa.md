@@ -385,7 +385,8 @@ Annotation quality settings have the following parameters:
 | - | - |
 | Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
 | Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects _Low overlap_ warnings. It's supposed that _Min similarity threshold_ <= _Low overlap threshold_. |
-| Match empty frames | Consider frames matched if there are no annotations both on GT and regular job frames |
+| Empty frames are annotated | Consider frames annotated as "empty" if there are no annotations on a frame.
+If a frame is empty in both GT and job annotations, it will be considered a matching annotation. |
 
 | _Point and Skeleton matching_ | |
 | - | - |
