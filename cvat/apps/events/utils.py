@@ -5,7 +5,7 @@
 import datetime
 
 
-from .const import MAX_EVENT_DURATION, COLLAPSED_EVENT_SCOPES
+from .const import MAX_EVENT_DURATION, COMPRESSED_EVENT_SCOPES
 from .cache import clear_cache
 
 
@@ -71,7 +71,7 @@ def cache_deleted(method):
 
 
 def get_end_timestamp(event: dict) -> datetime.datetime:
-    if event["scope"] in COLLAPSED_EVENT_SCOPES:
+    if event["scope"] in COMPRESSED_EVENT_SCOPES:
         return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
     return event["timestamp"]
 
