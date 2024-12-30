@@ -69,6 +69,10 @@ DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
 
+class EmptyCacheItemError(Exception):
+    pass
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -216,8 +220,13 @@ class MediaCache:
     ) -> DataWithMime:
         timestamp = django_tz.now()
         item_data = create_callback()
-        item_data_bytes = item_data[0].getvalue()
-        item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes), timestamp)
+        data_to_be_cached, mime_type = item_data
+        if data_to_be_cached is None:
+            slogger.glob.info(f"{key} preparation: empty data has been prepared")
+            raise EmptyCacheItemError()
+
+        item_data_bytes = data_to_be_cached.getvalue()
+        item = (data_to_be_cached, mime_type, cls._get_checksum(item_data_bytes), timestamp)
         if item_data_bytes:
             cache = cls._cache()
             with get_rq_lock_for_job(
