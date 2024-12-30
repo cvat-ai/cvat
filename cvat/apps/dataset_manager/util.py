@@ -6,8 +6,8 @@
 import inspect
 import os
 import os.path as osp
-import zipfile
 import re
+import zipfile
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy

@@ -61,7 +61,7 @@ class CleanupExportCacheThread(Thread):
     def __init__(self, stop_event: Event, *args, **kwargs) -> None:
         self._stop_event = stop_event
         self._removed_files_count = 0
-        self._exception_occurred = None
+        self._exception = None
         super().__init__(*args, **kwargs, target=self._cleanup_export_cache)
 
     @property
@@ -69,12 +69,12 @@ class CleanupExportCacheThread(Thread):
         return self._removed_files_count
 
     @property
-    def exception_occurred(self) -> Exception | None:
-        return self._exception_occurred
+    def exception(self) -> Exception | None:
+        return self._exception
 
     def set_exception(self, ex: Exception) -> None:
         assert isinstance(ex, Exception)
-        self._exception_occurred = ex
+        self._exception = ex
 
     @suppress_exceptions
     def _cleanup_export_cache(self) -> None:
@@ -121,9 +121,9 @@ def cron_export_cache_cleanup() -> None:
 
     cleanup_export_cache_thread.join()
     if isinstance(
-        (exception_occurred := cleanup_export_cache_thread.exception_occurred), Exception
+        (exception := cleanup_export_cache_thread.exception), Exception
     ):
-        raise exception_occurred
+        raise exception
 
     finished_at = timezone.now()
     logger.info(
