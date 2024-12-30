@@ -1248,7 +1248,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         new_report = self.create_quality_report(admin_user, task_id)
         if parameter == "empty_is_annotated":
             assert new_report["summary"]["valid_count"] != old_report["summary"]["valid_count"]
-            assert new_report["summary"]["total_count`"] != old_report["summary"]["total_count`"]
+            assert new_report["summary"]["total_count"] != old_report["summary"]["total_count"]
             assert new_report["summary"]["ds_count"] != old_report["summary"]["ds_count"]
             assert new_report["summary"]["gt_count"] != old_report["summary"]["gt_count"]
         else:
