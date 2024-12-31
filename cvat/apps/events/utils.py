@@ -2,7 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import datetime
+
+
+from .const import MAX_EVENT_DURATION, COMPRESSED_EVENT_SCOPES
 from .cache import clear_cache
+
 
 def _prepare_objects_to_delete(object_to_delete):
     from cvat.apps.engine.models import Project, Task, Segment, Job, Issue, Comment
@@ -63,3 +68,51 @@ def cache_deleted(method):
         finally:
             clear_cache()
     return wrap
+
+
+def get_end_timestamp(event: dict) -> datetime.datetime:
+    if event["scope"] in COMPRESSED_EVENT_SCOPES:
+        return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
+    return event["timestamp"]
+
+def is_contained(event1: dict, event2: dict) -> bool:
+    return event1['timestamp'] < get_end_timestamp(event2)
+
+def compute_working_time_per_ids(data: dict) -> dict:
+    def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
+        return event.get("job_id"), event.get("task_id"), event.get("project_id")
+
+    if previous_event := data["previous_event"]:
+        previous_end_timestamp = get_end_timestamp(previous_event)
+        previous_ids = read_ids(previous_event)
+    elif data["events"]:
+        previous_end_timestamp = data["events"][0]["timestamp"]
+        previous_ids = read_ids(data["events"][0])
+
+    working_time_per_ids = {}
+    for event in data["events"]:
+        working_time = datetime.timedelta()
+        timestamp = event["timestamp"]
+
+        if timestamp > previous_end_timestamp:
+            t_diff = timestamp - previous_end_timestamp
+            if t_diff < MAX_EVENT_DURATION:
+                working_time += t_diff
+
+            previous_end_timestamp = timestamp
+
+        end_timestamp = get_end_timestamp(event)
+        if end_timestamp > previous_end_timestamp:
+            working_time += end_timestamp - previous_end_timestamp
+            previous_end_timestamp = end_timestamp
+
+        if previous_ids not in working_time_per_ids:
+            working_time_per_ids[previous_ids] = {
+                "value": datetime.timedelta(),
+                "timestamp": timestamp,
+            }
+
+        working_time_per_ids[previous_ids]["value"] += working_time
+        previous_ids = read_ids(event)
+
+    return working_time_per_ids
