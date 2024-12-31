@@ -9,6 +9,7 @@ from typing import Any, Callable, TypeVar
 import itertools
 import logging
 import os
+import shutil
 
 from django.conf import settings
 from django.core.cache import caches
@@ -110,7 +111,10 @@ class ApiTestBase(APITestCase):
         # clear cache files created after previous exports
         export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
         for child in export_cache_dir.iterdir():
-            os.remove(child)
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                os.remove(child)
 
     def _clear_rq_jobs(self):
         clear_rq_jobs()
