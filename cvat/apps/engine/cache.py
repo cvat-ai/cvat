@@ -220,24 +220,21 @@ class MediaCache:
     ) -> DataWithMime:
         timestamp = django_tz.now()
         item_data = create_callback()
-        data_to_be_cached, mime_type = item_data
-        if data_to_be_cached is None:
-            slogger.glob.info(f"{key} preparation: empty data has been prepared")
-            raise EmptyCacheItemError()
+        item_data_bytes = item_data[0].getvalue()
+        item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes), timestamp)
 
-        item_data_bytes = data_to_be_cached.getvalue()
-        item = (data_to_be_cached, mime_type, cls._get_checksum(item_data_bytes), timestamp)
-        if item_data_bytes:
-            cache = cls._cache()
-            with get_rq_lock_for_job(
-                cls._get_queue(),
-                key,
-            ):
-                cached_item = cache.get(key)
-                if cached_item is not None and timestamp <= cached_item[3]:
-                    item = cached_item
-                else:
-                    cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+        # allow empty data to be set in cache to prevent
+        # future rq jobs from being enqueued to prepare the item
+        cache = cls._cache()
+        with get_rq_lock_for_job(
+            cls._get_queue(),
+            key,
+        ):
+            cached_item = cache.get(key)
+            if cached_item is not None and timestamp <= cached_item[3]:
+                item = cached_item
+            else:
+                cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
         return item
 
@@ -365,7 +362,7 @@ class MediaCache:
     def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]: ...
 
     def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]:
-        if not cache_item:
+        if not cache_item or not len(cache_item[0].getbuffer()):
             return None
 
         return cache_item[:2]
