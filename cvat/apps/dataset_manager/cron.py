@@ -68,10 +68,6 @@ class CleanupExportCacheThread(Thread):
     def removed_files_count(self) -> int:
         return self._removed_files_count
 
-    @property
-    def exception(self) -> Exception | None:
-        return self._exception
-
     def set_exception(self, ex: Exception) -> None:
         assert isinstance(ex, Exception)
         self._exception = ex
@@ -97,6 +93,10 @@ class CleanupExportCacheThread(Thread):
             except Exception:
                 log_exception(logger)
 
+    def raise_if_exception(self) -> None:
+        if isinstance(self._exception, Exception):
+            raise self._exception
+
 
 def cron_export_cache_cleanup() -> None:
     started_at = timezone.now()
@@ -120,10 +120,7 @@ def cron_export_cache_cleanup() -> None:
         stop_event.set()
 
     cleanup_export_cache_thread.join()
-    if isinstance(
-        (exception := cleanup_export_cache_thread.exception), Exception
-    ):
-        raise exception
+    cleanup_export_cache_thread.raise_if_exception()
 
     finished_at = timezone.now()
     logger.info(
