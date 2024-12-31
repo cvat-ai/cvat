@@ -3091,7 +3091,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
-        from cvat.apps.engine.cron import cron_export_cache_cleanup, clear_export_cache
+        from cvat.apps.dataset_manager.cron import cron_export_cache_cleanup, clear_export_cache
         self._create_tasks()
         task_id = self.tasks[0]["id"]
         user = self.admin
@@ -3101,11 +3101,11 @@ class TaskImportExportAPITestCase(ApiTestBase):
             mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=TASK_CACHE_TTL),
             mock.patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': TASK_CACHE_TTL}),
             mock.patch(
-                "cvat.apps.engine.cron.clear_export_cache",
+                "cvat.apps.dataset_manager.cron.clear_export_cache",
                 side_effect=clear_export_cache,
             ) as mock_clear_export_cache,
             mock.patch(
-                "cvat.apps.engine.cron.get_current_job",
+                "cvat.apps.dataset_manager.cron.get_current_job",
             ) as mock_rq_get_current_job,
         ):
             mock_rq_job = mock.MagicMock(timeout=100)

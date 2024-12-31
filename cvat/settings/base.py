@@ -356,7 +356,7 @@ PERIODIC_RQ_JOBS = [
     {
         'queue': CVAT_QUEUES.CLEANING.value,
         'id': 'cron_export_cache_cleanup',
-        'func': 'cvat.apps.engine.cron.cron_export_cache_cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cron_export_cache_cleanup',
         # Run twice a day (at midnight and at noon)
         'cron_string': '0 0,12 * * *',
     }
