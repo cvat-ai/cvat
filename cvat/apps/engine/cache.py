@@ -358,7 +358,7 @@ class MediaCache:
     def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]: ...
 
     def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]:
-        if not cache_item or not len(cache_item[0].getbuffer()):
+        if not cache_item:
             return None
 
         return cache_item[:2]
