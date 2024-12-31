@@ -355,10 +355,17 @@ class MediaCache:
     def _to_data_with_mime(self, cache_item: _CacheItem) -> DataWithMime: ...
 
     @overload
-    def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]: ...
+    def _to_data_with_mime(
+        self, cache_item: Optional[_CacheItem], *, raise_on_null: bool = True
+    ) -> Optional[DataWithMime]: ...
 
-    def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]:
+    def _to_data_with_mime(
+        self, cache_item: Optional[_CacheItem], *, raise_on_null: bool = True
+    ) -> Optional[DataWithMime]:
         if not cache_item:
+            if raise_on_null:
+                raise ValueError("Unexpected null cache item")
+
             return None
 
         return cache_item[:2]
@@ -387,7 +394,8 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_chunk_key(db_task, chunk_number, quality=quality),
-            )
+            ),
+            raise_on_null=False,
         )
 
     def get_or_set_task_chunk(
@@ -415,7 +423,8 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
-            )
+            ),
+            raise_on_null=False,
         )
 
     def get_or_set_segment_task_chunk(
@@ -512,7 +521,9 @@ class MediaCache:
         self._bulk_delete_cache_items(keys_to_remove)
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
-        return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))
+        return self._to_data_with_mime(
+            self._get_cache_item(self._make_preview_key(db_storage)), raise_on_null=False
+        )
 
     def get_or_set_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
         return self._to_data_with_mime(
