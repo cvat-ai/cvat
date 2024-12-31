@@ -69,10 +69,6 @@ DataWithMime = tuple[io.BytesIO, str]
 _CacheItem = tuple[io.BytesIO, str, int, Union[datetime, None]]
 
 
-class EmptyCacheItemError(Exception):
-    pass
-
-
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
