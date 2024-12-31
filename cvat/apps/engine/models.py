@@ -443,7 +443,7 @@ class _FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
     def get_dirname(self) -> str:
         ...
 
-    def get_tmp_dirname(self, create: bool = True) -> str:
+    def get_tmp_dirname(self, *, create: bool = True) -> str:
         dir_path = os.path.join(self.get_dirname(), "tmp")
 
         if create:
