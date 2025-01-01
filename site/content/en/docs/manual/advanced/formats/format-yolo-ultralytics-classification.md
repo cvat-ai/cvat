@@ -1,16 +1,16 @@
 ---
-title: 'YOLOv8-Classification'
-linkTitle: 'YOLOv8-Classification'
+title: 'Ultralytics-YOLO-Classification'
+linkTitle: 'Ultralytics-YOLO-Classification'
 weight: 7
-description: 'How to export and import data in YOLOv8 Classification format'
+description: 'How to export and import data in Ultralytics YOLO Classification format'
 ---
 
 For more information, see:
 
 - [Format specification](https://docs.ultralytics.com/datasets/classify/)
-- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolov8_classification)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/develop/tests/assets/yolo_dataset/yolo_ultralytics_classification)
 
-## YOLOv8 Classification export
+## Ultralytics YOLO Classification export
 
 For export of images:
 

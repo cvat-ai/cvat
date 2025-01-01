@@ -976,7 +976,7 @@
     ],
     "tracks": []
   },
-  "YOLOv8 Classification 1.0": {
+  "Ultralytics YOLO Classification 1.0": {
     "version": 0,
     "tags": [
       {
@@ -990,7 +990,7 @@
     "shapes": [],
     "tracks": []
   },
-  "YOLOv8 Detection 1.0": {
+  "Ultralytics YOLO Detection 1.0": {
     "version": 0,
     "tags": [],
     "shapes": [
@@ -1008,7 +1008,7 @@
     ],
     "tracks": []
   },
-  "YOLOv8 Oriented Bounding Boxes 1.0": {
+  "Ultralytics YOLO Oriented Bounding Boxes 1.0": {
     "version": 0,
     "tags": [],
     "shapes": [
@@ -1027,7 +1027,7 @@
     ],
     "tracks": []
   },
-  "YOLOv8 Segmentation 1.0": {
+  "Ultralytics YOLO Segmentation 1.0": {
     "version": 0,
     "tags": [],
     "shapes": [
@@ -1045,7 +1045,7 @@
     ],
     "tracks": []
   },
-  "YOLOv8 Pose 1.0": {
+  "Ultralytics YOLO Pose 1.0": {
     "version": 0,
     "tags": [],
     "shapes": [

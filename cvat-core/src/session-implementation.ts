@@ -265,7 +265,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function includedFramesImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.frameNumbers> {
-            return Promise.resolve(getJobFrameNumbers(this.id));
+            return getJobFrameNumbers(this.id);
         },
     });
 
