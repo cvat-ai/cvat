@@ -129,6 +129,7 @@ class ProjectsRepo(
                 filename=dataset_path,
                 pbar=pbar,
                 status_check_period=status_check_period,
+                conv_mask_to_poly=conv_mask_to_poly,
             )
 
         project.fetch()
