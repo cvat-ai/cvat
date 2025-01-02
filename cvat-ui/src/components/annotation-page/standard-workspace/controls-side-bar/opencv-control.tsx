@@ -662,7 +662,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             <Tabs
                 defaultActiveKey='none'
                 onChange={(key) => {
-                    filters.values().forEach((filter: ImageFilter) => disableImageFilter(filter.alias));
+                    filters.values().forEach((filter: ImageFilter) => {
+                        if (key !== filter.alias) {
+                            disableImageFilter(filter.alias);
+                        }
+                    });
                     if (key === 'none') {
                         filters.values().forEach((filter: ImageFilter) => disableImageFilter(filter.alias));
                     } else if (key === ImageFilterAlias.HISTOGRAM_EQUALIZATION) {

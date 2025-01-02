@@ -398,7 +398,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             const { alias } = filter;
             const filters = [...state.imageFilters];
             const index = filters.findIndex((imageFilter) => imageFilter.alias === alias);
-            if (options && index !== -1) {
+            if (index !== -1) {
                 const enabledFilter = filters[index];
                 enabledFilter.modifier.currentProcessedImage = null;
                 enabledFilter.modifier.configure(options);
@@ -407,6 +407,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                     imageFilters: filters,
                 };
             }
+            filter.modifier.configure(options);
             return {
                 ...state,
                 imageFilters: [
