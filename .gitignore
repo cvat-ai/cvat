@@ -20,6 +20,11 @@ __pycache__
 .coverage
 .husky/
 .python-version
+tmp*cvat/
+temp*/
+
+# Ignore generated test files
+docker-compose.tests.yml
 
 # Ignore npm logs file
 npm-debug.log*
