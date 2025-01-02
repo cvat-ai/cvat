@@ -162,6 +162,23 @@ class TestProjectUsecases(TestDatasetExport):
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    def test_can_create_project_from_dataset_without_poly_masks(self, fxt_coco_dataset: Path):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        project = self.client.projects.create_from_dataset(
+            spec=models.ProjectWriteRequest(name="project with data"),
+            dataset_path=fxt_coco_dataset,
+            dataset_format="COCO 1.0",
+            conv_mask_to_poly=False,
+            pbar=pbar,
+        )
+
+        assert project.get_tasks()[0].size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+
     def test_can_retrieve_project(self, fxt_new_project: Project):
         project_id = fxt_new_project.id
 
