@@ -435,7 +435,7 @@ class TimestampedModel(models.Model):
 class ABCModelMeta(ABCMeta, ModelBase):
     pass
 
-class _FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
+class FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
     class Meta:
         abstract = True
 
@@ -489,7 +489,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
 
-class Project(TimestampedModel, _FileSystemRelatedModel):
+class Project(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -564,7 +564,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(TimestampedModel, _FileSystemRelatedModel):
+class Task(TimestampedModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -855,7 +855,7 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel, _FileSystemRelatedModel):
+class Job(TimestampedModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
