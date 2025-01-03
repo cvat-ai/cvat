@@ -1345,3 +1345,9 @@ class RequestSubresource(TextChoices):
     ANNOTATIONS = "annotations"
     DATASET = "dataset"
     BACKUP = "backup"
+
+
+class RedisMigration(models.Model):
+    # todo: redis_inmem/redis_ondisk
+    name = models.CharField(max_length=256)
+    applied_date = models.DateTimeField(auto_now_add=True)
