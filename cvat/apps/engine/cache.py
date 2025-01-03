@@ -356,17 +356,17 @@ class MediaCache:
 
     @overload
     def _to_data_with_mime(
-        self, cache_item: Optional[_CacheItem], *, raise_on_null: bool = True
+        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
     ) -> Optional[DataWithMime]: ...
 
     def _to_data_with_mime(
-        self, cache_item: Optional[_CacheItem], *, raise_on_null: bool = True
+        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
     ) -> Optional[DataWithMime]:
         if not cache_item:
-            if raise_on_null:
-                raise ValueError("Unexpected null cache item")
+            if allow_none:
+                return None
 
-            return None
+            raise ValueError("A cache item is not allowed to be None")
 
         return cache_item[:2]
 
@@ -395,7 +395,7 @@ class MediaCache:
             self._get_cache_item(
                 key=self._make_chunk_key(db_task, chunk_number, quality=quality),
             ),
-            raise_on_null=False,
+            allow_none=True,
         )
 
     def get_or_set_task_chunk(
@@ -424,7 +424,7 @@ class MediaCache:
             self._get_cache_item(
                 key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
             ),
-            raise_on_null=False,
+            allow_none=True,
         )
 
     def get_or_set_segment_task_chunk(
@@ -522,7 +522,7 @@ class MediaCache:
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
         return self._to_data_with_mime(
-            self._get_cache_item(self._make_preview_key(db_storage)), raise_on_null=False
+            self._get_cache_item(self._make_preview_key(db_storage)), allow_none=True
         )
 
     def get_or_set_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
