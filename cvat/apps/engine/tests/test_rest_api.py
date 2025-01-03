@@ -3096,7 +3096,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
         task_id = self.tasks[0]["id"]
         user = self.admin
 
-        TASK_CACHE_TTL = timedelta(seconds=5)
+        TASK_CACHE_TTL = timedelta(hours=1)
         with (
             mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=TASK_CACHE_TTL),
             mock.patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': TASK_CACHE_TTL}),
@@ -3127,10 +3127,12 @@ class TaskImportExportAPITestCase(ApiTestBase):
             file_path = job.return_value()
             self.assertTrue(os.path.isfile(file_path))
 
-            sleep(TASK_CACHE_TTL.total_seconds() + 1)
-
-            cron_export_cache_cleanup()
-            mock_clear_export_cache.assert_called_once()
+            with (
+                mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(seconds=0)),
+                mock.patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
+            ):
+                cron_export_cache_cleanup()
+                mock_clear_export_cache.assert_called_once()
             self.assertFalse(os.path.exists(file_path))
 
 
