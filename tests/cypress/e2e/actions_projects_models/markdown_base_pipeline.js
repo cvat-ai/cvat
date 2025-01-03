@@ -14,14 +14,14 @@ context('Basic markdown pipeline', () => {
             username: 'md_job_assignee',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'md_job_assignee@local.local',
+            email: 'md_job_assignee@local.local',
             password: 'Fv5Df3#f55g',
         },
         taskAssignee: {
             username: 'md_task_assignee',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'md_task_assignee@local.local',
+            email: 'md_task_assignee@local.local',
             password: 'UfdU21!dds',
         },
         notAssignee: {
