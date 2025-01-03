@@ -6,7 +6,7 @@
 import os.path as osp
 
 from datumaro.components.dataset import Dataset
-from datumaro.plugins.kitti_format.format import KittiPath, write_label_map
+from datumaro.plugins.data_formats.kitti.format import KittiPath, write_label_map
 
 from pyunpack import Archive
 

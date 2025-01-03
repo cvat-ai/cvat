@@ -7,7 +7,7 @@ import glob
 import os.path as osp
 
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.plugins.open_images_format import OpenImagesPath
+from datumaro.plugins.data_formats.open_images import OpenImagesPath
 from datumaro.util.image import DEFAULT_IMAGE_META_FILE_NAME
 from pyunpack import Archive
 
