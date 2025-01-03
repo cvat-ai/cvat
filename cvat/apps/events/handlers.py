@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import datetime
 import traceback
 from typing import Any, Optional, Union
 
@@ -31,6 +30,8 @@ from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
 from .event import event_scope, record_server_event
+from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
+from .utils import compute_working_time_per_ids
 
 
 def project_id(instance):
@@ -619,53 +620,11 @@ def handle_viewset_exception(exc, context):
 
     return response
 
+
 def handle_client_events_push(request, data: dict):
-    TIME_THRESHOLD = datetime.timedelta(seconds=100)
-    WORKING_TIME_SCOPE = 'send:working_time'
-    WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-    COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
     org = request.iam_context["organization"]
 
-    def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:
-        return event.get("job_id"), event.get("task_id"), event.get("project_id")
-
-    def get_end_timestamp(event: dict) -> datetime.datetime:
-        if event["scope"] in COLLAPSED_EVENT_SCOPES:
-            return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
-        return event["timestamp"]
-
-    if previous_event := data["previous_event"]:
-        previous_end_timestamp = get_end_timestamp(previous_event)
-        previous_ids = read_ids(previous_event)
-    elif data["events"]:
-        previous_end_timestamp = data["events"][0]["timestamp"]
-        previous_ids = read_ids(data["events"][0])
-
-    working_time_per_ids = {}
-    for event in data["events"]:
-        working_time = datetime.timedelta()
-        timestamp = event["timestamp"]
-
-        if timestamp > previous_end_timestamp:
-            t_diff = timestamp - previous_end_timestamp
-            if t_diff < TIME_THRESHOLD:
-                working_time += t_diff
-
-            previous_end_timestamp = timestamp
-
-        end_timestamp = get_end_timestamp(event)
-        if end_timestamp > previous_end_timestamp:
-            working_time += end_timestamp - previous_end_timestamp
-            previous_end_timestamp = end_timestamp
-
-        if previous_ids not in working_time_per_ids:
-            working_time_per_ids[previous_ids] = {
-                "value": datetime.timedelta(),
-                "timestamp": timestamp,
-            }
-
-        working_time_per_ids[previous_ids]["value"] += working_time
-        previous_ids = read_ids(event)
+    working_time_per_ids = compute_working_time_per_ids(data)
 
     if data["events"]:
         common = {
