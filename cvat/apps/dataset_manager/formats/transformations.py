@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 import math
-import cv2
-import numpy as np
 from itertools import chain
-from pycocotools import mask as mask_utils
 
+import cv2
 import datumaro as dm
+import numpy as np
+from pycocotools import mask as mask_utils
 
 
 class RotatedBoxesToPolygons(dm.ItemTransform):

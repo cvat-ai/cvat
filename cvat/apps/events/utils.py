@@ -4,13 +4,12 @@
 
 import datetime
 
-
-from .const import MAX_EVENT_DURATION, COMPRESSED_EVENT_SCOPES
 from .cache import clear_cache
+from .const import COMPRESSED_EVENT_SCOPES, MAX_EVENT_DURATION
 
 
 def _prepare_objects_to_delete(object_to_delete):
-    from cvat.apps.engine.models import Project, Task, Segment, Job, Issue, Comment
+    from cvat.apps.engine.models import Comment, Issue, Job, Project, Segment, Task
 
     relation_chain = (Project, Task, Segment, Job, Issue, Comment)
     related_field_names = ('task_set', 'segment_set', 'job_set', 'issues', 'comments')

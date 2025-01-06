@@ -3,23 +3,21 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import PasswordResetSerializer, LoginSerializer
-from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework.exceptions import ValidationError
-from rest_framework import serializers
-from allauth.account import app_settings as allauth_settings
-from allauth.account.utils import filter_users_by_email
-from allauth.account.adapter import get_adapter
-from allauth.account.utils import setup_user_email
-from allauth.account.models import EmailAddress
+from typing import Optional, Union
 
+from allauth.account import app_settings as allauth_settings
+from allauth.account.adapter import get_adapter
+from allauth.account.models import EmailAddress
+from allauth.account.utils import filter_users_by_email, setup_user_email
+from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.serializers import LoginSerializer, PasswordResetSerializer
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
-
+from django.core.exceptions import ValidationError as DjangoValidationError
 from drf_spectacular.utils import extend_schema_field
-from typing import Optional, Union
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
 from cvat.apps.iam.utils import get_dummy_user

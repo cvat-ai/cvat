@@ -3,17 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 
-import os
 import argparse
 import logging
+import os
 from glob import glob
 
 import numpy as np
-from tqdm import tqdm
 from PIL import Image
 from pydicom import dcmread
 from pydicom.pixel_data_handlers.util import convert_color_space
-
+from tqdm import tqdm
 
 # Script configuration
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")

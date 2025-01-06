@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .models import Organization, Membership
 from django.contrib import admin
+
+from .models import Membership, Organization
+
 
 class MembershipInline(admin.TabularInline):
     model = Membership

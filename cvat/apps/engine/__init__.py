@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: MIT
 
 
-from .schema import * # force import of declared symbols
+from .schema import *  # force import of declared symbols

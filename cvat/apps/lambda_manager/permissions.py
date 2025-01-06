@@ -8,6 +8,7 @@ from django.conf import settings
 from cvat.apps.engine.permissions import JobPermission, TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
 
+
 class LambdaPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
         LIST = 'list'

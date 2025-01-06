@@ -19,34 +19,45 @@ import django_rq
 import numpy as np
 import requests
 import rq
-from cvat.apps.events.handlers import handle_function_call
-from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
-                                   extend_schema, extend_schema_view,
-                                   inline_serializer)
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
 from rest_framework import serializers, status, viewsets
-from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
-    Job, ShapeType, SourceType, Task, Label, RequestAction, RequestTarget
+    Job,
+    Label,
+    RequestAction,
+    RequestTarget,
+    ShapeType,
+    SourceType,
+    Task,
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.events.handlers import handle_function_call
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind
 from cvat.apps.lambda_manager.permissions import LambdaPermission
 from cvat.apps.lambda_manager.serializers import (
-    FunctionCallRequestSerializer, FunctionCallSerializer
+    FunctionCallRequestSerializer,
+    FunctionCallSerializer,
 )
-from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from cvat.utils.http import make_requests_session
-from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 slogger = ServerLogManager(__name__)
 
