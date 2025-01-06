@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Counter, Generic, Iterable, Mapping, Sequence, TypeVar
+from typing import Callable, Generic, Iterable, Mapping, Sequence, TypeVar
 
 import attrs
 import numpy as np
@@ -20,10 +20,6 @@ class _BaggedCounter(Generic[_K]):
         dict[_K, None],
         # dict is used instead of a set to preserve item order. It's also more performant
     ]
-
-    @staticmethod
-    def from_iterable(items: Sequence[_K]) -> _BaggedCounter:
-        return _BaggedCounter.from_dict(Counter(items))
 
     @staticmethod
     def from_dict(item_counts: Mapping[_K, int]) -> _BaggedCounter:
@@ -71,7 +67,7 @@ class _BaggedCounter(Generic[_K]):
         if next_bag is None:
             next_bag = {}
             self.bags[count + 1] = next_bag
-            self._sort_bags() # the new bag can be added in the wrong position if there were gaps
+            self._sort_bags()  # the new bag can be added in the wrong position if there were gaps
 
         next_bag[item] = None
 
