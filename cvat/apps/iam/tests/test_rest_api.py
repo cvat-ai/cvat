@@ -3,17 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
-from rest_framework.authtoken.models import Token
-from django.test import override_settings
-from django.urls import path, re_path
 from allauth.account.views import EmailVerificationSentView
+from django.test import override_settings
+from django.urls import path, re_path, reverse
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient, APITestCase
 
 from cvat.apps.iam.urls import urlpatterns as iam_url_patterns
 from cvat.apps.iam.views import ConfirmEmailViewEx
-
 
 urlpatterns = iam_url_patterns + [
     re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailViewEx.as_view(),

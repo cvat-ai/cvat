@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib import admin
-from django.contrib.auth.models import Group, User
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
+from django.contrib.auth.models import Group, User
 from django.utils.translation import gettext_lazy as _
 
 from cvat.apps.engine.models import Profile

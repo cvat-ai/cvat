@@ -5,6 +5,7 @@
 
 from django.apps import AppConfig
 
+
 class IAMConfig(AppConfig):
     name = 'cvat.apps.iam'
 

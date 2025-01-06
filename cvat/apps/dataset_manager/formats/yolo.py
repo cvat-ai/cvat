@@ -5,19 +5,19 @@
 import os.path as osp
 from glob import glob
 
+from datumaro.components.annotation import AnnotationType
+from datumaro.components.extractor import DatasetItem
+from datumaro.components.project import Dataset
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
     detect_dataset,
+    find_dataset_root,
     import_dm_annotations,
     match_dm_item,
-    find_dataset_root,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.components.annotation import AnnotationType
-from datumaro.components.extractor import DatasetItem
-from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 

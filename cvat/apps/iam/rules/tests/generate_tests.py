@@ -10,8 +10,8 @@ from argparse import ArgumentParser, Namespace
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
 
