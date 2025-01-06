@@ -8,12 +8,6 @@ import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
 import { RQStatus, ShapeType } from './enums';
 
-export interface ModelProvider {
-    name: string;
-    icon: string;
-    attributes: Record<string, string>;
-}
-
 export interface InteractorResults {
     mask: number[][];
     points?: [number, number][];

@@ -10,7 +10,6 @@ import ObjectState from 'cvat-core/src/object-state';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import CloudStorage from 'cvat-core/src/cloud-storage';
-import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
     Label, Attribute,
 } from 'cvat-core/src/labels';
@@ -121,7 +120,6 @@ export type {
     SerializedAttribute,
     SerializedLabel,
     StorageData,
-    ModelProvider,
     APIWrapperEnterOptions,
     QualitySummary,
     CVATCore,
