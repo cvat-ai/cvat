@@ -3,17 +3,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import path, re_path
-from django.conf import settings
-from django.urls.conf import include
-from dj_rest_auth.views import (
-    LogoutView, PasswordChangeView,
-    PasswordResetView, PasswordResetConfirmView)
 from allauth.account import app_settings as allauth_settings
+from dj_rest_auth.views import (
+    LogoutView,
+    PasswordChangeView,
+    PasswordResetConfirmView,
+    PasswordResetView,
+)
+from django.conf import settings
+from django.urls import path, re_path
+from django.urls.conf import include
 
 from cvat.apps.iam.views import (
-    SigningView, RegisterViewEx, RulesView,
-    ConfirmEmailViewEx, LoginViewEx
+    ConfirmEmailViewEx,
+    LoginViewEx,
+    RegisterViewEx,
+    RulesView,
+    SigningView,
 )
 
 BASIC_LOGIN_PATH_NAME = 'rest_login'

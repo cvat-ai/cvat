@@ -3,19 +3,19 @@
 #
 # SPDX-License-Identifier: MIT
 
-from copy import copy, deepcopy
-
 import math
 from collections.abc import Container, Sequence
-from typing import Optional
-import numpy as np
+from copy import copy, deepcopy
 from itertools import chain
+from typing import Optional
+
+import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from cvat.apps.engine.models import ShapeType, DimensionType
-from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.dataset_manager.util import faster_deepcopy
+from cvat.apps.engine.models import DimensionType, ShapeType
+from cvat.apps.engine.serializers import LabeledDataSerializer
 
 
 class AnnotationIR:

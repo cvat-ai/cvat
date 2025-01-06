@@ -2,12 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
+
+from django.contrib.auth import get_user_model
 from django.core import signing
+from furl import furl
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
-from django.contrib.auth import get_user_model
-from furl import furl
-import hashlib
+
 
 # Got implementation ideas in https://github.com/marcgibbons/drf_signed_auth
 class Signer:

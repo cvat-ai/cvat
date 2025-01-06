@@ -2,25 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from logging import Logger
-import os
 import csv
-from datetime import datetime, timedelta, timezone
-from dateutil import parser
+import os
 import uuid
+from datetime import datetime, timedelta, timezone
+from logging import Logger
 
-import django_rq
-from django.conf import settings
 import clickhouse_connect
-
-
+import django_rq
+from dateutil import parser
+from django.conf import settings
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.utils import sendfile
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.utils import sendfile
 
 slogger = ServerLogManager(__name__)
 

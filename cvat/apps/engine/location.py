@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
 
-from cvat.apps.engine.models import Location, Project, Task, Job
+from cvat.apps.engine.models import Job, Location, Project, Task
+
 
 class StorageType(str, Enum):
     TARGET = 'target_storage'

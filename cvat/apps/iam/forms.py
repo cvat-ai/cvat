@@ -2,13 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.contrib.sites.shortcuts import get_current_site
-from django.contrib.auth import get_user_model
-
+from allauth.account.adapter import get_adapter
 from allauth.account.forms import default_token_generator
 from allauth.account.utils import user_pk_to_url_str
-from allauth.account.adapter import get_adapter
 from dj_rest_auth.forms import AllAuthPasswordResetForm
+from django.contrib.auth import get_user_model
+from django.contrib.sites.shortcuts import get_current_site
 
 UserModel = get_user_model()
 
