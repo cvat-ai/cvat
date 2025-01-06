@@ -7,6 +7,9 @@ extend_skip=[
     # Correctly ordering the imports in serverless functions would
     # require a pyproject.toml in every function; don't bother with it for now.
     "serverless",
+    # Sorting the imports in this file causes test failures;
+    # TODO: fix them and remove this ignore.
+    "cvat/apps/dataset_manager/formats/registry.py",
 ]
 
 [tool.black]
