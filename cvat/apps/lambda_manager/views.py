@@ -63,7 +63,7 @@ slogger = ServerLogManager(__name__)
 
 
 class LambdaGateway:
-    NUCLIO_ROOT_URL = '/api/functions'
+    NUCLIO_ROOT_URL = "/api/functions"
 
     def _http(
         self,
@@ -76,18 +76,18 @@ class LambdaGateway:
         headers=None,
         data=None,
     ):
-        NUCLIO_GATEWAY = '{}://{}:{}'.format(
-            scheme or settings.NUCLIO['SCHEME'],
-            host or settings.NUCLIO['HOST'],
-            port or settings.NUCLIO['PORT'],
+        NUCLIO_GATEWAY = "{}://{}:{}".format(
+            scheme or settings.NUCLIO["SCHEME"],
+            host or settings.NUCLIO["HOST"],
+            port or settings.NUCLIO["PORT"],
         )
-        NUCLIO_FUNCTION_NAMESPACE = function_namespace or settings.NUCLIO['FUNCTION_NAMESPACE']
-        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
+        NUCLIO_FUNCTION_NAMESPACE = function_namespace or settings.NUCLIO["FUNCTION_NAMESPACE"]
+        NUCLIO_TIMEOUT = settings.NUCLIO["DEFAULT_TIMEOUT"]
         extra_headers = {
-            'x-nuclio-project-name': 'cvat',
-            'x-nuclio-function-namespace': NUCLIO_FUNCTION_NAMESPACE,
-            'x-nuclio-invoke-via': 'domain-name',
-            'X-Nuclio-Invoke-Timeout': f"{NUCLIO_TIMEOUT}s",
+            "x-nuclio-project-name": "cvat",
+            "x-nuclio-function-namespace": NUCLIO_FUNCTION_NAMESPACE,
+            "x-nuclio-invoke-via": "domain-name",
+            "X-Nuclio-Invoke-Timeout": f"{NUCLIO_TIMEOUT}s",
         }
         if headers:
             extra_headers.update(headers)
@@ -115,33 +115,33 @@ class LambdaGateway:
                 slogger.glob.error("Failed to parse lambda function metadata", exc_info=True)
 
     def get(self, func_id):
-        data = self._http(url=self.NUCLIO_ROOT_URL + '/' + func_id)
+        data = self._http(url=self.NUCLIO_ROOT_URL + "/" + func_id)
         response = LambdaFunction(self, data)
         return response
 
     def invoke(self, func, payload):
         invoke_method = {
-            'dashboard': self._invoke_via_dashboard,
-            'direct': self._invoke_directly,
+            "dashboard": self._invoke_via_dashboard,
+            "direct": self._invoke_directly,
         }
 
-        return invoke_method[settings.NUCLIO['INVOKE_METHOD']](func, payload)
+        return invoke_method[settings.NUCLIO["INVOKE_METHOD"]](func, payload)
 
     def _invoke_via_dashboard(self, func, payload):
         return self._http(
             method="post",
-            url='/api/function_invocations',
+            url="/api/function_invocations",
             data=payload,
-            headers={'x-nuclio-function-name': func.id, 'x-nuclio-path': '/'},
+            headers={"x-nuclio-function-name": func.id, "x-nuclio-path": "/"},
         )
 
     def _invoke_directly(self, func, payload):
         # host.docker.internal for Linux will work only with Docker 20.10+
-        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
-        if os.path.exists('/.dockerenv'):  # inside a docker container
-            url = f'http://host.docker.internal:{func.port}'
+        NUCLIO_TIMEOUT = settings.NUCLIO["DEFAULT_TIMEOUT"]
+        if os.path.exists("/.dockerenv"):  # inside a docker container
+            url = f"http://host.docker.internal:{func.port}"
         else:
-            url = f'http://localhost:{func.port}'
+            url = f"http://localhost:{func.port}"
 
         with make_requests_session() as session:
             reply = session.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
@@ -157,17 +157,17 @@ class InvalidFunctionMetadataError(Exception):
 
 class LambdaFunction:
     FRAME_PARAMETERS = (
-        ('frame', 'frame'),
-        ('frame0', 'start frame'),
-        ('frame1', 'end frame'),
+        ("frame", "frame"),
+        ("frame0", "start frame"),
+        ("frame1", "end frame"),
     )
 
     def __init__(self, gateway, data):
         # ID of the function (e.g. omz.public.yolo-v3)
-        self.id = data['metadata']['name']
+        self.id = data["metadata"]["name"]
         # type of the function (e.g. detector, interactor)
-        meta_anno = data['metadata']['annotations']
-        kind = meta_anno.get('type')
+        meta_anno = data["metadata"]["annotations"]
+        kind = meta_anno.get("type")
         try:
             self.kind = FunctionKind(kind)
         except ValueError as e:
@@ -175,20 +175,20 @@ class LambdaFunction:
                 f"{self.id} lambda function has unknown type: {kind!r}"
             ) from e
         # dictionary of labels for the function (e.g. car, person)
-        spec = json.loads(meta_anno.get('spec') or '[]')
+        spec = json.loads(meta_anno.get("spec") or "[]")
 
         def parse_labels(spec):
             def parse_attributes(attrs_spec):
                 parsed_attributes = [
                     {
-                        'name': attr['name'],
-                        'input_type': attr['input_type'],
-                        'values': attr['values'],
+                        "name": attr["name"],
+                        "input_type": attr["input_type"],
+                        "values": attr["values"],
                     }
                     for attr in attrs_spec
                 ]
 
-                if len(parsed_attributes) != len({attr['name'] for attr in attrs_spec}):
+                if len(parsed_attributes) != len({attr["name"] for attr in attrs_spec}):
                     raise InvalidFunctionMetadataError(
                         f"{self.id} lambda function has non-unique attributes"
                     )
@@ -198,17 +198,17 @@ class LambdaFunction:
             parsed_labels = []
             for label in spec:
                 parsed_label = {
-                    'name': label['name'],
-                    'type': label.get('type', 'unknown'),
-                    'attributes': parse_attributes(label.get('attributes', [])),
+                    "name": label["name"],
+                    "type": label.get("type", "unknown"),
+                    "attributes": parse_attributes(label.get("attributes", [])),
                 }
-                if parsed_label['type'] == 'skeleton':
+                if parsed_label["type"] == "skeleton":
                     parsed_label.update(
-                        {'sublabels': parse_labels(label['sublabels']), 'svg': label['svg']}
+                        {"sublabels": parse_labels(label["sublabels"]), "svg": label["svg"]}
                     )
                 parsed_labels.append(parsed_label)
 
-            if len(parsed_labels) != len({label['name'] for label in spec}):
+            if len(parsed_labels) != len({label["name"] for label in spec}):
                 raise InvalidFunctionMetadataError(
                     f"{self.id} lambda function has non-unique labels"
                 )
@@ -217,10 +217,10 @@ class LambdaFunction:
 
         self.labels = parse_labels(spec)
         # mapping of labels and corresponding supported attributes
-        self.func_attributes = {item['name']: item.get('attributes', []) for item in spec}
+        self.func_attributes = {item["name"]: item.get("attributes", []) for item in spec}
         for label, attributes in self.func_attributes.items():
-            if len([attr['name'] for attr in attributes]) != len(
-                set([attr['name'] for attr in attributes])
+            if len([attr["name"] for attr in attributes]) != len(
+                set([attr["name"] for attr in attributes])
             ):
                 raise InvalidFunctionMetadataError(
                     "`{}` lambda function has non-unique attributes for label {}".format(
@@ -228,39 +228,39 @@ class LambdaFunction:
                     )
                 )
         # description of the function
-        self.description = data['spec']['description']
+        self.description = data["spec"]["description"]
         # http port to access the serverless function
         self.port = data["status"].get("httpPort")
         # display name for the function
-        self.name = meta_anno.get('name', self.id)
-        self.min_pos_points = int(meta_anno.get('min_pos_points', 1))
-        self.min_neg_points = int(meta_anno.get('min_neg_points', -1))
-        self.startswith_box = bool(meta_anno.get('startswith_box', False))
-        self.startswith_box_optional = bool(meta_anno.get('startswith_box_optional', False))
-        self.animated_gif = meta_anno.get('animated_gif', '')
-        self.version = int(meta_anno.get('version', '1'))
-        self.help_message = meta_anno.get('help_message', '')
+        self.name = meta_anno.get("name", self.id)
+        self.min_pos_points = int(meta_anno.get("min_pos_points", 1))
+        self.min_neg_points = int(meta_anno.get("min_neg_points", -1))
+        self.startswith_box = bool(meta_anno.get("startswith_box", False))
+        self.startswith_box_optional = bool(meta_anno.get("startswith_box_optional", False))
+        self.animated_gif = meta_anno.get("animated_gif", "")
+        self.version = int(meta_anno.get("version", "1"))
+        self.help_message = meta_anno.get("help_message", "")
         self.gateway = gateway
 
     def to_dict(self):
         response = {
-            'id': self.id,
-            'kind': str(self.kind),
-            'labels_v2': self.labels,
-            'description': self.description,
-            'name': self.name,
-            'version': self.version,
+            "id": self.id,
+            "kind": str(self.kind),
+            "labels_v2": self.labels,
+            "description": self.description,
+            "name": self.name,
+            "version": self.version,
         }
 
         if self.kind is FunctionKind.INTERACTOR:
             response.update(
                 {
-                    'min_pos_points': self.min_pos_points,
-                    'min_neg_points': self.min_neg_points,
-                    'startswith_box': self.startswith_box,
-                    'startswith_box_optional': self.startswith_box_optional,
-                    'help_message': self.help_message,
-                    'animated_gif': self.animated_gif,
+                    "min_pos_points": self.min_pos_points,
+                    "min_neg_points": self.min_neg_points,
+                    "startswith_box": self.startswith_box,
+                    "startswith_box_optional": self.startswith_box_optional,
+                    "help_message": self.help_message,
+                    "animated_gif": self.animated_gif,
                 }
             )
 
@@ -303,13 +303,13 @@ class LambdaFunction:
         task_labels = db_task.get_labels(prefetch=True)
 
         def labels_compatible(model_label: dict, task_label: Label) -> bool:
-            model_type = model_label['type']
+            model_type = model_label["type"]
             db_type = task_label.type
             compatible_types = [[ShapeType.MASK, ShapeType.POLYGON]]
             return (
                 model_type == db_type
-                or (db_type == 'any' and model_type != 'skeleton')
-                or (model_type == 'unknown' and db_type != 'skeleton')
+                or (db_type == "any" and model_type != "skeleton")
+                or (model_type == "unknown" and db_type != "skeleton")
                 or any(
                     [
                         model_type in compatible and db_type in compatible
@@ -322,24 +322,24 @@ class LambdaFunction:
             mapping_by_default = {}
             for model_label in model_labels:
                 for task_label in task_labels:
-                    if task_label.name == model_label['name'] and labels_compatible(
+                    if task_label.name == model_label["name"] and labels_compatible(
                         model_label, task_label
                     ):
                         attributes_default_mapping = {}
-                        for model_attr in model_label.get('attributes', {}):
+                        for model_attr in model_label.get("attributes", {}):
                             for db_attr in task_label.attributespec_set.all():
-                                if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr['name']] = db_attr.name
+                                if db_attr.name == model_attr["name"]:
+                                    attributes_default_mapping[model_attr["name"]] = db_attr.name
 
-                        mapping_by_default[model_label['name']] = {
-                            'name': task_label.name,
-                            'attributes': attributes_default_mapping,
+                        mapping_by_default[model_label["name"]] = {
+                            "name": task_label.name,
+                            "attributes": attributes_default_mapping,
                         }
 
-                        if model_label['type'] == 'skeleton' and task_label.type == 'skeleton':
-                            mapping_by_default[model_label['name']]['sublabels'] = (
+                        if model_label["type"] == "skeleton" and task_label.type == "skeleton":
+                            mapping_by_default[model_label["name"]]["sublabels"] = (
                                 make_default_mapping(
-                                    model_label['sublabels'],
+                                    model_label["sublabels"],
                                     task_label.sublabels.all(),
                                 )
                             )
@@ -349,21 +349,21 @@ class LambdaFunction:
         def update_mapping(_mapping, _model_labels, _db_labels):
             copy = deepcopy(_mapping)
             for model_label_name, mapping_item in copy.items():
-                md_label = next(filter(lambda x: x['name'] == model_label_name, _model_labels))
-                db_label = next(filter(lambda x: x.name == mapping_item['name'], _db_labels))
-                mapping_item.setdefault('attributes', {})
-                mapping_item['md_label'] = md_label
-                mapping_item['db_label'] = db_label
-                if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
-                    mapping_item['sublabels'] = update_mapping(
-                        mapping_item['sublabels'], md_label['sublabels'], db_label.sublabels.all()
+                md_label = next(filter(lambda x: x["name"] == model_label_name, _model_labels))
+                db_label = next(filter(lambda x: x.name == mapping_item["name"], _db_labels))
+                mapping_item.setdefault("attributes", {})
+                mapping_item["md_label"] = md_label
+                mapping_item["db_label"] = db_label
+                if md_label["type"] == "skeleton" and db_label.type == "skeleton":
+                    mapping_item["sublabels"] = update_mapping(
+                        mapping_item["sublabels"], md_label["sublabels"], db_label.sublabels.all()
                     )
             return copy
 
         def validate_labels_mapping(_mapping, _model_labels, _db_labels):
             def validate_attributes_mapping(attributes_mapping, model_attributes, db_attributes):
                 db_attr_names = [attr.name for attr in db_attributes]
-                model_attr_names = [attr['name'] for attr in model_attributes]
+                model_attr_names = [attr["name"] for attr in model_attributes]
                 for model_attr in attributes_mapping:
                     task_attr = attributes_mapping[model_attr]
                     if model_attr not in model_attr_names:
@@ -376,12 +376,12 @@ class LambdaFunction:
                         )
 
             for model_label_name, mapping_item in _mapping.items():
-                db_label_name = mapping_item['name']
+                db_label_name = mapping_item["name"]
 
                 md_label = None
                 db_label = None
                 try:
-                    md_label = next(x for x in _model_labels if x['name'] == model_label_name)
+                    md_label = next(x for x in _model_labels if x["name"] == model_label_name)
                 except StopIteration:
                     raise ValidationError(
                         f'Invalid mapping. Unknown model label "{model_label_name}"'
@@ -399,19 +399,19 @@ class LambdaFunction:
                     )
 
                 validate_attributes_mapping(
-                    mapping_item.get('attributes', {}),
-                    md_label['attributes'],
+                    mapping_item.get("attributes", {}),
+                    md_label["attributes"],
                     db_label.attributespec_set.all(),
                 )
 
-                if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
-                    if 'sublabels' not in mapping_item:
+                if md_label["type"] == "skeleton" and db_label.type == "skeleton":
+                    if "sublabels" not in mapping_item:
                         raise ValidationError(
                             f'Mapping for elements was not specified in skeleton "{model_label_name}" '
                         )
 
                     validate_labels_mapping(
-                        mapping_item['sublabels'], md_label['sublabels'], db_label.sublabels.all()
+                        mapping_item["sublabels"], md_label["sublabels"], db_label.sublabels.all()
                     )
 
         if not mapping:
@@ -470,7 +470,7 @@ class LambdaFunction:
             )
         else:
             raise ValidationError(
-                '`{}` lambda function has incorrect type: {}'.format(self.id, self.kind),
+                "`{}` lambda function has incorrect type: {}".format(self.id, self.kind),
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -500,37 +500,37 @@ class LambdaFunction:
         def transform_attributes(input_attributes, attr_mapping, db_attributes):
             attributes = []
             for attr in input_attributes:
-                if attr['name'] not in attr_mapping:
+                if attr["name"] not in attr_mapping:
                     continue
-                db_attr_name = attr_mapping[attr['name']]
-                db_attr = next(filter(lambda x: x['name'] == db_attr_name, db_attributes), None)
-                if db_attr is not None and check_attr_value(attr['value'], db_attr):
-                    attributes.append({'name': db_attr['name'], 'value': attr['value']})
+                db_attr_name = attr_mapping[attr["name"]]
+                db_attr = next(filter(lambda x: x["name"] == db_attr_name, db_attributes), None)
+                if db_attr is not None and check_attr_value(attr["value"], db_attr):
+                    attributes.append({"name": db_attr["name"], "value": attr["value"]})
             return attributes
 
         if self.kind == FunctionKind.DETECTOR:
             for item in response:
-                item_label = item['label']
+                item_label = item["label"]
                 if item_label not in mapping:
                     continue
-                db_label = mapping[item_label]['db_label']
-                item['label'] = db_label.name
-                item['attributes'] = transform_attributes(
-                    item.get('attributes', {}),
-                    mapping[item_label]['attributes'],
+                db_label = mapping[item_label]["db_label"]
+                item["label"] = db_label.name
+                item["attributes"] = transform_attributes(
+                    item.get("attributes", {}),
+                    mapping[item_label]["attributes"],
                     db_label.attributespec_set.values(),
                 )
 
-                if 'elements' in item:
-                    sublabels = mapping[item_label]['sublabels']
-                    item['elements'] = [x for x in item['elements'] if x['label'] in sublabels]
-                    for element in item['elements']:
-                        element_label = element['label']
-                        db_label = sublabels[element_label]['db_label']
-                        element['label'] = db_label.name
-                        element['attributes'] = transform_attributes(
-                            element.get('attributes', {}),
-                            sublabels[element_label]['attributes'],
+                if "elements" in item:
+                    sublabels = mapping[item_label]["sublabels"]
+                    item["elements"] = [x for x in item["elements"] if x["label"] in sublabels]
+                    for element in item["elements"]:
+                        element_label = element["label"]
+                        db_label = sublabels[element_label]["db_label"]
+                        element["label"] = db_label.name
+                        element["attributes"] = transform_attributes(
+                            element.get("attributes", {}),
+                            sublabels[element_label]["attributes"],
                             db_label.attributespec_set.values(),
                         )
                 response_filtered.append(item)
@@ -542,7 +542,7 @@ class LambdaFunction:
         frame_provider = TaskFrameProvider(db_task)
         image = frame_provider.get_frame(frame)
 
-        return base64.b64encode(image.data.getvalue()).decode('utf-8')
+        return base64.b64encode(image.data.getvalue()).decode("utf-8")
 
 
 class LambdaQueue:
@@ -676,14 +676,14 @@ class LambdaJob:
                 ),
             },
             "status": self.job.get_status(),
-            "progress": self.job.meta.get('progress', 0),
+            "progress": self.job.meta.get("progress", 0),
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
             "exc_info": self.job.exc_info,
         }
-        if dict_['status'] == rq.job.JobStatus.DEFERRED:
-            dict_['status'] = rq.job.JobStatus.QUEUED.value
+        if dict_["status"] == rq.job.JobStatus.DEFERRED:
+            dict_["status"] = rq.job.JobStatus.QUEUED.value
 
         return dict_
 
@@ -772,15 +772,15 @@ class LambdaJob:
                 return None
 
             attrs = [
-                {'spec_id': label['attributes'][attr['name']], 'value': attr['value']}
-                for attr in anno.get('attributes', [])
-                if attr['name'] in label['attributes']
+                {"spec_id": label["attributes"][attr["name"]], "value": attr["value"]}
+                for attr in anno.get("attributes", [])
+                if attr["name"] in label["attributes"]
             ]
 
             if anno["type"].lower() == "tag":
                 return {
                     "frame": frame,
-                    "label_id": label['id'],
+                    "label_id": label["id"],
                     "source": "auto",
                     "attributes": attrs,
                     "group": None,
@@ -788,7 +788,7 @@ class LambdaJob:
             else:
                 shape = {
                     "frame": frame,
-                    "label_id": label['id'],
+                    "label_id": label["id"],
                     "source": "auto",
                     "attributes": attrs,
                     "group": anno["group_id"] if "group_id" in anno else None,
@@ -815,7 +815,7 @@ class LambdaJob:
                     shape["points"] = rle
 
                 if shape["type"] == "skeleton":
-                    parsed_elements = [parse_anno(x, label['sublabels']) for x in anno["elements"]]
+                    parsed_elements = [parse_anno(x, label["sublabels"]) for x in anno["elements"]]
 
                     # find a center to set position of missing points
                     center = [0, 0]
@@ -829,24 +829,24 @@ class LambdaJob:
                         try:
                             return next(
                                 filter(
-                                    lambda x: x['label_id'] == sublabel_body['id'], parsed_elements
+                                    lambda x: x["label_id"] == sublabel_body["id"], parsed_elements
                                 )
                             )
                         except StopIteration:
                             return {
                                 "frame": frame,
-                                "label_id": sublabel_body['id'],
+                                "label_id": sublabel_body["id"],
                                 "source": "auto",
                                 "attributes": [],
                                 "group": None,
-                                "type": sublabel_body['type'],
+                                "type": sublabel_body["type"],
                                 "occluded": False,
                                 "points": center,
                                 "outside": True,
                                 "z_order": 0,
                             }
 
-                    shape["elements"] = list(map(_map, label['sublabels'].values()))
+                    shape["elements"] = list(map(_map, label["sublabels"].values()))
                     if all(element["outside"] for element in shape["elements"]):
                         return None
 
@@ -1020,8 +1020,8 @@ class LambdaJob:
     def __call__(cls, function, task: int, cleanup: bool, **kwargs):
         # TODO: need logging
         db_job = None
-        if job := kwargs.get('job'):
-            db_job = Job.objects.select_related('segment', 'segment__task').get(pk=job)
+        if job := kwargs.get("job"):
+            db_job = Job.objects.select_related("segment", "segment__task").get(pk=job)
             db_task = db_job.segment.task
         else:
             db_task = Task.objects.get(pk=task)
@@ -1037,11 +1037,11 @@ class LambdaJob:
         def convert_labels(db_labels):
             labels = {}
             for label in db_labels:
-                labels[label.name] = {'id': label.id, 'attributes': {}, 'type': label.type}
-                if label.type == 'skeleton':
-                    labels[label.name]['sublabels'] = convert_labels(label.sublabels.all())
+                labels[label.name] = {"id": label.id, "attributes": {}, "type": label.type}
+                if label.type == "skeleton":
+                    labels[label.name]["sublabels"] = convert_labels(label.sublabels.all())
                 for attr in label.attributespec_set.values():
-                    labels[label.name]['attributes'][attr['name']] = attr['id']
+                    labels[label.name]["attributes"][attr["name"]] = attr["id"]
             return labels
 
         labels = convert_labels(db_task.get_labels(prefetch=True))
@@ -1100,24 +1100,24 @@ def return_response(success_code=status.HTTP_200_OK):
     return wrap_response
 
 
-@extend_schema(tags=['lambda'])
+@extend_schema(tags=["lambda"])
 @extend_schema_view(
     retrieve=extend_schema(
-        operation_id='lambda_retrieve_functions',
-        summary='Method returns the information about the function',
+        operation_id="lambda_retrieve_functions",
+        summary="Method returns the information about the function",
         responses={
-            '200': OpenApiResponse(
-                response=OpenApiTypes.OBJECT, description='Information about the function'
+            "200": OpenApiResponse(
+                response=OpenApiTypes.OBJECT, description="Information about the function"
             ),
         },
     ),
     list=extend_schema(
-        operation_id='lambda_list_functions', summary='Method returns a list of functions'
+        operation_id="lambda_list_functions", summary="Method returns a list of functions"
     ),
 )
 class FunctionViewSet(viewsets.ViewSet):
-    lookup_value_regex = '[a-zA-Z0-9_.-]+'
-    lookup_field = 'func_id'
+    lookup_value_regex = "[a-zA-Z0-9_.-]+"
+    lookup_field = "func_id"
     iam_organization_field = None
     serializer_class = None
 
@@ -1157,19 +1157,19 @@ class FunctionViewSet(viewsets.ViewSet):
     def call(self, request, func_id):
         self.check_object_permissions(request, func_id)
         try:
-            job_id = request.data.get('job')
+            job_id = request.data.get("job")
             job = None
             if job_id is not None:
                 job = Job.objects.get(id=job_id)
                 task_id = job.get_task_id()
             else:
-                task_id = request.data['task']
+                task_id = request.data["task"]
 
             db_task = Task.objects.get(pk=task_id)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(func_id)
-                + 'with wrong arguments ({})'.format(str(err)),
+                "`{}` lambda function was run ".format(func_id)
+                + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1199,41 +1199,41 @@ class FunctionViewSet(viewsets.ViewSet):
         return response
 
 
-@extend_schema(tags=['lambda'])
+@extend_schema(tags=["lambda"])
 @extend_schema_view(
     retrieve=extend_schema(
-        operation_id='lambda_retrieve_requests',
-        summary='Method returns the status of the request',
+        operation_id="lambda_retrieve_requests",
+        summary="Method returns the status of the request",
         parameters=[
             OpenApiParameter(
-                'id',
+                "id",
                 location=OpenApiParameter.PATH,
                 type=OpenApiTypes.STR,
-                description='Request id',
+                description="Request id",
             ),
         ],
-        responses={'200': FunctionCallSerializer},
+        responses={"200": FunctionCallSerializer},
     ),
     list=extend_schema(
-        operation_id='lambda_list_requests',
-        summary='Method returns a list of requests',
-        responses={'200': FunctionCallSerializer(many=True)},
+        operation_id="lambda_list_requests",
+        summary="Method returns a list of requests",
+        responses={"200": FunctionCallSerializer(many=True)},
     ),
     create=extend_schema(
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
-        summary='Method calls the function',
+        summary="Method calls the function",
         request=FunctionCallRequestSerializer,
-        responses={'200': FunctionCallSerializer},
+        responses={"200": FunctionCallSerializer},
     ),
     destroy=extend_schema(
-        operation_id='lambda_delete_requests',
-        summary='Method cancels the request',
+        operation_id="lambda_delete_requests",
+        summary="Method cancels the request",
         parameters=[
             OpenApiParameter(
-                'id',
+                "id",
                 location=OpenApiParameter.PATH,
                 type=OpenApiTypes.STR,
-                description='Request id',
+                description="Request id",
             ),
         ],
     ),
@@ -1271,18 +1271,18 @@ class RequestViewSet(viewsets.ViewSet):
         request_data = request_serializer.validated_data
 
         try:
-            function = request_data['function']
-            threshold = request_data.get('threshold')
-            task = request_data['task']
-            job = request_data.get('job', None)
-            cleanup = request_data.get('cleanup', False)
-            conv_mask_to_poly = request_data.get('conv_mask_to_poly', False)
-            mapping = request_data.get('mapping')
-            max_distance = request_data.get('max_distance')
+            function = request_data["function"]
+            threshold = request_data.get("threshold")
+            task = request_data["task"]
+            job = request_data.get("job", None)
+            cleanup = request_data.get("cleanup", False)
+            conv_mask_to_poly = request_data.get("conv_mask_to_poly", False)
+            mapping = request_data.get("mapping")
+            max_distance = request_data.get("max_distance")
         except KeyError as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(request_data.get('function', 'undefined'))
-                + 'with wrong arguments ({})'.format(str(err)),
+                "`{}` lambda function was run ".format(request_data.get("function", "undefined"))
+                + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
 

@@ -15,14 +15,14 @@ from cvat.apps.iam.views import ConfirmEmailViewEx
 
 urlpatterns = iam_url_patterns + [
     re_path(
-        r'^account-confirm-email/(?P<key>[-:\w]+)/$',
+        r"^account-confirm-email/(?P<key>[-:\w]+)/$",
         ConfirmEmailViewEx.as_view(),
-        name='account_confirm_email',
+        name="account_confirm_email",
     ),
     path(
-        'register/account-email-verification-sent',
+        "register/account-email-verification-sent",
         EmailVerificationSentView.as_view(),
-        name='account_email_verification_sent',
+        name="account_email_verification_sent",
     ),
 ]
 
@@ -34,7 +34,7 @@ class ForceLogin:
 
     def __enter__(self):
         if self.user:
-            self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
+            self.client.force_login(self.user, backend="django.contrib.auth.backends.ModelBackend")
 
         return self
 
@@ -46,72 +46,72 @@ class ForceLogin:
 class UserRegisterAPITestCase(APITestCase):
 
     user_data = {
-        'first_name': 'test_first',
-        'last_name': 'test_last',
-        'username': 'test_username',
-        'email': 'test_email@test.com',
-        'password1': '$Test357Test%',
-        'password2': '$Test357Test%',
-        'confirmations': [],
+        "first_name": "test_first",
+        "last_name": "test_last",
+        "username": "test_username",
+        "email": "test_email@test.com",
+        "password1": "$Test357Test%",
+        "password2": "$Test357Test%",
+        "confirmations": [],
     }
 
     def setUp(self):
         self.client = APIClient()
 
     def _run_api_v2_user_register(self, data):
-        url = reverse('rest_register')
-        response = self.client.post(url, data, format='json')
+        url = reverse("rest_register")
+        response = self.client.post(url, data, format="json")
         return response
 
     def _check_response(self, response, data):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data, data)
 
-    @override_settings(ACCOUNT_EMAIL_VERIFICATION='none')
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none")
     def test_api_v2_user_register_with_email_verification_none(self):
         """
         Ensure we can register a user and get auth token key when email verification is none
         """
         response = self._run_api_v2_user_register(self.user_data)
-        user_token = Token.objects.get(user__username=response.data['username'])
+        user_token = Token.objects.get(user__username=response.data["username"])
         self._check_response(
             response,
             {
-                'first_name': 'test_first',
-                'last_name': 'test_last',
-                'username': 'test_username',
-                'email': 'test_email@test.com',
-                'email_verification_required': False,
-                'key': user_token.key,
+                "first_name": "test_first",
+                "last_name": "test_last",
+                "username": "test_username",
+                "email": "test_email@test.com",
+                "email_verification_required": False,
+                "key": user_token.key,
             },
         )
 
     # Since URLConf is executed before running the tests, so we have to manually configure the url patterns for
     # the tests and pass it using ROOT_URLCONF in the override settings decorator
 
-    @override_settings(ACCOUNT_EMAIL_VERIFICATION='optional', ROOT_URLCONF=__name__)
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="optional", ROOT_URLCONF=__name__)
     def test_api_v2_user_register_with_email_verification_optional(self):
         """
         Ensure we can register a user and get auth token key when email verification is optional
         """
         response = self._run_api_v2_user_register(self.user_data)
-        user_token = Token.objects.get(user__username=response.data['username'])
+        user_token = Token.objects.get(user__username=response.data["username"])
         self._check_response(
             response,
             {
-                'first_name': 'test_first',
-                'last_name': 'test_last',
-                'username': 'test_username',
-                'email': 'test_email@test.com',
-                'email_verification_required': False,
-                'key': user_token.key,
+                "first_name": "test_first",
+                "last_name": "test_last",
+                "username": "test_username",
+                "email": "test_email@test.com",
+                "email_verification_required": False,
+                "key": user_token.key,
             },
         )
 
     @override_settings(
         ACCOUNT_EMAIL_REQUIRED=True,
-        ACCOUNT_EMAIL_VERIFICATION='mandatory',
-        EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend',
+        ACCOUNT_EMAIL_VERIFICATION="mandatory",
+        EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
         ROOT_URLCONF=__name__,
     )
     def test_register_account_with_email_verification_mandatory(self):
@@ -122,11 +122,11 @@ class UserRegisterAPITestCase(APITestCase):
         self._check_response(
             response,
             {
-                'first_name': 'test_first',
-                'last_name': 'test_last',
-                'username': 'test_username',
-                'email': 'test_email@test.com',
-                'email_verification_required': True,
-                'key': None,
+                "first_name": "test_first",
+                "last_name": "test_last",
+                "username": "test_username",
+                "email": "test_email@test.com",
+                "email_verification_required": True,
+                "key": None,
             },
         )

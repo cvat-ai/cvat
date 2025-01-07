@@ -301,7 +301,7 @@ def handle_create(scope, instance, **kwargs):
         scope=scope,
         request_id=request_id(),
         on_commit=True,
-        obj_id=getattr(instance, 'id', None),
+        obj_id=getattr(instance, "id", None),
         obj_name=_get_object_name(instance),
         org_id=oid,
         org_slug=oslug,
@@ -336,7 +336,7 @@ def handle_update(scope, instance, old_instance, **kwargs):
             request_id=request_id(),
             on_commit=True,
             obj_name=prop,
-            obj_id=getattr(instance, f'{prop}_id', None),
+            obj_id=getattr(instance, f"{prop}_id", None),
             obj_val=str(change["new_value"]),
             org_id=oid,
             org_slug=oslug,
@@ -581,7 +581,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     payload = {
         "message": tb_strings[-1].rstrip("\n"),
-        "stack": ''.join(tb_strings),
+        "stack": "".join(tb_strings),
     }
 
     record_server_event(
@@ -628,7 +628,7 @@ def handle_viewset_exception(exc, context):
             "method": request.method,
         },
         "message": tb_strings[-1].rstrip("\n"),
-        "stack": ''.join(tb_strings),
+        "stack": "".join(tb_strings),
         "status_code": status_code,
     }
 

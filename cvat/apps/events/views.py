@@ -22,13 +22,13 @@ class EventsViewSet(viewsets.ViewSet):
     serializer_class = None
 
     @extend_schema(
-        summary='Log client events',
-        methods=['POST'],
-        description='Sends logs to the Clickhouse if it is connected',
+        summary="Log client events",
+        methods=["POST"],
+        description="Sends logs to the Clickhouse if it is connected",
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         request=ClientEventsSerializer(),
         responses={
-            '201': ClientEventsSerializer(),
+            "201": ClientEventsSerializer(),
         },
     )
     def create(self, request):
@@ -39,84 +39,84 @@ class EventsViewSet(viewsets.ViewSet):
         for event in serializer.validated_data["events"]:
             message = (
                 JSONRenderer()
-                .render({**event, 'timestamp': str(event["timestamp"].timestamp())})
-                .decode('UTF-8')
+                .render({**event, "timestamp": str(event["timestamp"].timestamp())})
+                .decode("UTF-8")
             )
             vlogger.info(message)
 
         return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
-        summary='Get an event log',
-        methods=['GET'],
-        description='The log is returned in the CSV format.',
+        summary="Get an event log",
+        methods=["GET"],
+        description="The log is returned in the CSV format.",
         parameters=[
             OpenApiParameter(
-                'org_id',
+                "org_id",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.INT,
                 required=False,
                 description="Filter events by organization ID",
             ),
             OpenApiParameter(
-                'project_id',
+                "project_id",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.INT,
                 required=False,
                 description="Filter events by project ID",
             ),
             OpenApiParameter(
-                'task_id',
+                "task_id",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.INT,
                 required=False,
                 description="Filter events by task ID",
             ),
             OpenApiParameter(
-                'job_id',
+                "job_id",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.INT,
                 required=False,
                 description="Filter events by job ID",
             ),
             OpenApiParameter(
-                'user_id',
+                "user_id",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.INT,
                 required=False,
                 description="Filter events by user ID",
             ),
             OpenApiParameter(
-                'from',
+                "from",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.DATETIME,
                 required=False,
                 description="Filter events after the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
             ),
             OpenApiParameter(
-                'to',
+                "to",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.DATETIME,
                 required=False,
                 description="Filter events before the datetime. If no 'from' or 'to' parameters are passed, the last 30 days will be set.",
             ),
             OpenApiParameter(
-                'filename',
-                description='Desired output file name',
+                "filename",
+                description="Desired output file name",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.STR,
                 required=False,
             ),
             OpenApiParameter(
-                'action',
+                "action",
                 location=OpenApiParameter.QUERY,
-                description='Used to start downloading process after annotation file had been created',
+                description="Used to start downloading process after annotation file had been created",
                 type=OpenApiTypes.STR,
                 required=False,
-                enum=['download'],
+                enum=["download"],
             ),
             OpenApiParameter(
-                'query_id',
+                "query_id",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.STR,
                 required=False,
@@ -124,9 +124,9 @@ class EventsViewSet(viewsets.ViewSet):
             ),
         ],
         responses={
-            '200': OpenApiResponse(description='Download of file started'),
-            '201': OpenApiResponse(description='CSV log file is ready for downloading'),
-            '202': OpenApiResponse(description='Creating a CSV log file has been started'),
+            "200": OpenApiResponse(description="Download of file started"),
+            "201": OpenApiResponse(description="CSV log file is ready for downloading"),
+            "202": OpenApiResponse(description="Creating a CSV log file has been started"),
         },
     )
     def list(self, request):

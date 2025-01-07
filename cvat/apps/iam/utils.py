@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase
 
 _OPA_RULES_PATHS = {
-    Path(__file__).parent / 'rules',
+    Path(__file__).parent / "rules",
 }
 
 
@@ -17,9 +17,9 @@ _OPA_RULES_PATHS = {
 def get_opa_bundle() -> tuple[bytes, str]:
     bundle_file = io.BytesIO()
 
-    with tarfile.open(fileobj=bundle_file, mode='w:gz') as tar:
+    with tarfile.open(fileobj=bundle_file, mode="w:gz") as tar:
         for p in _OPA_RULES_PATHS:
-            for f in p.glob('*[!.gen].rego'):
+            for f in p.glob("*[!.gen].rego"):
                 tar.add(name=f, arcname=f.relative_to(p.parent))
 
     bundle = bundle_file.getvalue()

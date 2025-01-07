@@ -13,7 +13,7 @@ def register_groups(sender, **kwargs):
         Group.objects.get_or_create(name=role)
 
 
-if settings.IAM_TYPE == 'BASIC':
+if settings.IAM_TYPE == "BASIC":
 
     def create_user(sender, instance, created, **kwargs):
         from allauth.account import app_settings as allauth_settings
@@ -29,11 +29,11 @@ if settings.IAM_TYPE == 'BASIC':
                     user=instance, email=instance.email, primary=True, verified=True
                 )
         else:  # don't need to add default groups for superuser
-            if created and not getattr(instance, 'skip_group_assigning', None):
+            if created and not getattr(instance, "skip_group_assigning", None):
                 db_group = Group.objects.get(name=settings.IAM_DEFAULT_ROLE)
                 instance.groups.add(db_group)
 
-elif settings.IAM_TYPE == 'LDAP':
+elif settings.IAM_TYPE == "LDAP":
 
     def create_user(sender, user=None, ldap_user=None, **kwargs):
         user_groups = []
@@ -60,10 +60,10 @@ elif settings.IAM_TYPE == 'LDAP':
 
 def register_signals(app_config):
     post_migrate.connect(register_groups, app_config)
-    if settings.IAM_TYPE == 'BASIC':
+    if settings.IAM_TYPE == "BASIC":
         # Add default groups and add admin rights to super users.
         post_save.connect(create_user, sender=User)
-    elif settings.IAM_TYPE == 'LDAP':
+    elif settings.IAM_TYPE == "LDAP":
         import django_auth_ldap.backend
 
         # Map groups from LDAP to roles, convert a user to super user if he/she

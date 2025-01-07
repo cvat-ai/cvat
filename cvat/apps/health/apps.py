@@ -7,7 +7,7 @@ from health_check.plugins import plugin_dir
 
 
 class HealthConfig(AppConfig):
-    name = 'cvat.apps.health'
+    name = "cvat.apps.health"
 
     def ready(self):
         from .backends import OPAHealthCheck

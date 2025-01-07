@@ -23,7 +23,7 @@ class LabelMappingEntrySerializer(serializers.Serializer):
 
 @extend_schema_serializer(
     # The "Request" suffix is added by drf-spectacular automatically
-    component_name='FunctionCall'
+    component_name="FunctionCall"
 )
 class FunctionCallRequestSerializer(serializers.Serializer):
     function = serializers.CharField(help_text="The name of the function to execute")

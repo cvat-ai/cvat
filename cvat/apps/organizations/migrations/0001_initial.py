@@ -15,94 +15,94 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Organization',
+            name="Organization",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
-                ('slug', models.SlugField(max_length=16, unique=True)),
-                ('name', models.CharField(blank=True, max_length=64)),
-                ('description', models.TextField(blank=True)),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
-                ('updated_date', models.DateTimeField(auto_now=True)),
-                ('contact', models.JSONField(blank=True, default=dict)),
+                ("slug", models.SlugField(max_length=16, unique=True)),
+                ("name", models.CharField(blank=True, max_length=64)),
+                ("description", models.TextField(blank=True)),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
+                ("updated_date", models.DateTimeField(auto_now=True)),
+                ("contact", models.JSONField(blank=True, default=dict)),
                 (
-                    'owner',
+                    "owner",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        related_name='+',
+                        related_name="+",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],
             options={
-                'default_permissions': (),
+                "default_permissions": (),
             },
         ),
         migrations.CreateModel(
-            name='Membership',
+            name="Membership",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
-                ('is_active', models.BooleanField(default=False)),
-                ('joined_date', models.DateTimeField(null=True)),
+                ("is_active", models.BooleanField(default=False)),
+                ("joined_date", models.DateTimeField(null=True)),
                 (
-                    'role',
+                    "role",
                     models.CharField(
                         choices=[
-                            ('worker', 'Worker'),
-                            ('supervisor', 'Supervisor'),
-                            ('maintainer', 'Maintainer'),
-                            ('owner', 'Owner'),
+                            ("worker", "Worker"),
+                            ("supervisor", "Supervisor"),
+                            ("maintainer", "Maintainer"),
+                            ("owner", "Owner"),
                         ],
                         max_length=16,
                     ),
                 ),
                 (
-                    'organization',
+                    "organization",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='members',
-                        to='organizations.organization',
+                        related_name="members",
+                        to="organizations.organization",
                     ),
                 ),
                 (
-                    'user',
+                    "user",
                     models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='memberships',
+                        related_name="memberships",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],
             options={
-                'default_permissions': (),
-                'unique_together': {('user', 'organization')},
+                "default_permissions": (),
+                "unique_together": {("user", "organization")},
             },
         ),
         migrations.CreateModel(
-            name='Invitation',
+            name="Invitation",
             fields=[
-                ('key', models.CharField(max_length=64, primary_key=True, serialize=False)),
-                ('created_date', models.DateTimeField(auto_now_add=True)),
+                ("key", models.CharField(max_length=64, primary_key=True, serialize=False)),
+                ("created_date", models.DateTimeField(auto_now_add=True)),
                 (
-                    'membership',
+                    "membership",
                     models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE, to='organizations.membership'
+                        on_delete=django.db.models.deletion.CASCADE, to="organizations.membership"
                     ),
                 ),
                 (
-                    'owner',
+                    "owner",
                     models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
@@ -111,7 +111,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                'default_permissions': (),
+                "default_permissions": (),
             },
         ),
     ]

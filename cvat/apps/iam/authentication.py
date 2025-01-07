@@ -13,12 +13,12 @@ from rest_framework.authentication import BaseAuthentication
 
 # Got implementation ideas in https://github.com/marcgibbons/drf_signed_auth
 class Signer:
-    QUERY_PARAM = 'sign'
+    QUERY_PARAM = "sign"
     MAX_AGE = 30
 
     @classmethod
     def get_salt(cls, url):
-        normalized_url = furl(url).remove(cls.QUERY_PARAM).url.encode('utf-8')
+        normalized_url = furl(url).remove(cls.QUERY_PARAM).url.encode("utf-8")
         salt = hashlib.sha256(normalized_url).hexdigest()
         return salt
 
@@ -26,7 +26,7 @@ class Signer:
         """
         Create a signature for a user object.
         """
-        data = {'user_id': user.pk, 'username': user.get_username()}
+        data = {"user_id": user.pk, "username": user.get_username()}
 
         return signing.dumps(data, salt=self.get_salt(url))
 
@@ -42,7 +42,7 @@ class Signer:
 
         try:
             return User.objects.get(
-                **{'pk': data.get('user_id'), User.USERNAME_FIELD: data.get('username')}
+                **{"pk": data.get("user_id"), User.USERNAME_FIELD: data.get("username")}
             )
         except User.DoesNotExist:
             raise signing.BadSignature()
@@ -65,10 +65,10 @@ class SignatureAuthentication(BaseAuthentication):
         try:
             user = signer.unsign(sign, request.build_absolute_uri())
         except signing.SignatureExpired:
-            raise exceptions.AuthenticationFailed('This URL has expired.')
+            raise exceptions.AuthenticationFailed("This URL has expired.")
         except signing.BadSignature:
-            raise exceptions.AuthenticationFailed('Invalid signature.')
+            raise exceptions.AuthenticationFailed("Invalid signature.")
         if not user.is_active:
-            raise exceptions.AuthenticationFailed('User inactive or deleted.')
+            raise exceptions.AuthenticationFailed("User inactive or deleted.")
 
         return (user, None)

@@ -33,27 +33,27 @@ from .authentication import Signer
 from .utils import get_opa_bundle
 
 
-@extend_schema(tags=['auth'])
+@extend_schema(tags=["auth"])
 @extend_schema_view(
     post=extend_schema(
-        summary='This method signs URL for access to the server',
-        description='Signed URL contains a token which authenticates a user on the server.'
-        'Signed URL is valid during 30 seconds since signing.',
+        summary="This method signs URL for access to the server",
+        description="Signed URL contains a token which authenticates a user on the server."
+        "Signed URL is valid during 30 seconds since signing.",
         request=inline_serializer(
-            name='Signing',
+            name="Signing",
             fields={
-                'url': serializers.CharField(),
+                "url": serializers.CharField(),
             },
         ),
-        responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')},
+        responses={"200": OpenApiResponse(response=OpenApiTypes.STR, description="text URL")},
     )
 )
 class SigningView(views.APIView):
 
     def post(self, request):
-        url = request.data.get('url')
+        url = request.data.get("url")
         if not url:
-            raise ValidationError('Please provide `url` parameter')
+            raise ValidationError("Please provide `url` parameter")
 
         signer = Signer()
         url = self.request.build_absolute_uri(url)
@@ -84,9 +84,9 @@ class LoginViewEx(LoginView):
             self.serializer.is_valid(raise_exception=True)
         except ValidationError:
             user = self.serializer.get_auth_user(
-                self.serializer.data.get('username'),
-                self.serializer.data.get('email'),
-                self.serializer.data.get('password'),
+                self.serializer.data.get("username"),
+                self.serializer.data.get("email"),
+                self.serializer.data.get("password"),
             )
             if not user:
                 raise
@@ -98,7 +98,7 @@ class LoginViewEx(LoginView):
                 # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
                 # because redirect will make a POST request and we'll get a 404 code
                 # (although in the browser request method will be displayed like GET)
-                return HttpResponseBadRequest('Unverified email')
+                return HttpResponseBadRequest("Unverified email")
         except Exception:  # nosec
             pass
 
@@ -178,11 +178,11 @@ class RulesView(views.APIView):
 
     @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):
-        return HttpResponse(get_opa_bundle()[0], content_type='application/x-tar')
+        return HttpResponse(get_opa_bundle()[0], content_type="application/x-tar")
 
 
 class ConfirmEmailViewEx(ConfirmEmailView):
-    template_name = 'account/email/email_confirmation_signup_message.html'
+    template_name = "account/email/email_confirmation_signup_message.html"
 
     def get(self, *args, **kwargs):
         try:

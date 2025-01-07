@@ -25,7 +25,7 @@ class Organization(TimestampedModel):
     contact = models.JSONField(blank=True, default=dict)
 
     owner = models.ForeignKey(
-        get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+        get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     def __str__(self):
@@ -36,30 +36,30 @@ class Organization(TimestampedModel):
 
 
 class Membership(models.Model):
-    WORKER = 'worker'
-    SUPERVISOR = 'supervisor'
-    MAINTAINER = 'maintainer'
-    OWNER = 'owner'
+    WORKER = "worker"
+    SUPERVISOR = "supervisor"
+    MAINTAINER = "maintainer"
+    OWNER = "owner"
 
     user = models.ForeignKey(
-        get_user_model(), on_delete=models.CASCADE, null=True, related_name='memberships'
+        get_user_model(), on_delete=models.CASCADE, null=True, related_name="memberships"
     )
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='members')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="members")
     is_active = models.BooleanField(default=False)
     joined_date = models.DateTimeField(null=True)
     role = models.CharField(
         max_length=16,
         choices=[
-            (WORKER, 'Worker'),
-            (SUPERVISOR, 'Supervisor'),
-            (MAINTAINER, 'Maintainer'),
-            (OWNER, 'Owner'),
+            (WORKER, "Worker"),
+            (SUPERVISOR, "Supervisor"),
+            (MAINTAINER, "Maintainer"),
+            (OWNER, "Owner"),
         ],
     )
 
     class Meta:
         default_permissions = ()
-        unique_together = ('user', 'organization')
+        unique_together = ("user", "organization")
 
 
 # Inspried by https://github.com/bee-keeper/django-invitations
@@ -101,16 +101,16 @@ class Invitation(models.Model):
         site_name = current_site.name
         domain = current_site.domain
         context = {
-            'email': target_email,
-            'invitation_key': self.key,
-            'domain': domain,
-            'site_name': site_name,
-            'invitation_owner': self.owner.get_username(),
-            'organization_name': self.membership.organization.slug,
-            'protocol': 'https' if request.is_secure() else 'http',
+            "email": target_email,
+            "invitation_key": self.key,
+            "domain": domain,
+            "site_name": site_name,
+            "invitation_owner": self.owner.get_username(),
+            "organization_name": self.membership.organization.slug,
+            "protocol": "https" if request.is_secure() else "http",
         }
 
-        get_adapter(request).send_mail('invitation/invitation', target_email, context)
+        get_adapter(request).send_mail("invitation/invitation", target_email, context)
 
         self.sent_date = timezone.now()
         self.save()

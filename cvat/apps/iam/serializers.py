@@ -51,8 +51,8 @@ class RegisterSerializerEx(RegisterSerializer):
         data = super().get_cleaned_data()
         data.update(
             {
-                'first_name': self.validated_data.get('first_name', ''),
-                'last_name': self.validated_data.get('last_name', ''),
+                "first_name": self.validated_data.get("first_name", ""),
+                "last_name": self.validated_data.get("last_name", ""),
             }
         )
 
@@ -74,7 +74,7 @@ class RegisterSerializerEx(RegisterSerializer):
                 user = get_dummy_user(email)
                 if not user:
                     raise serializers.ValidationError(
-                        ('A user is already registered with this e-mail address.'),
+                        ("A user is already registered with this e-mail address."),
                     )
 
         return email
@@ -90,7 +90,7 @@ class RegisterSerializerEx(RegisterSerializer):
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:
             try:
-                adapter.clean_password(self.cleaned_data['password1'], user=user)
+                adapter.clean_password(self.cleaned_data["password1"], user=user)
             except DjangoValidationError as exc:
                 raise serializers.ValidationError(detail=serializers.as_serializer_error(exc))
         user.save()
@@ -108,11 +108,11 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
 
     def get_email_options(self):
         domain = None
-        if hasattr(settings, 'UI_HOST') and settings.UI_HOST:
+        if hasattr(settings, "UI_HOST") and settings.UI_HOST:
             domain = settings.UI_HOST
-            if hasattr(settings, 'UI_PORT') and settings.UI_PORT:
-                domain += ':{}'.format(settings.UI_PORT)
-        return {'domain_override': domain}
+            if hasattr(settings, "UI_PORT") and settings.UI_PORT:
+                domain += ":{}".format(settings.UI_PORT)
+        return {"domain_override": domain}
 
 
 class LoginSerializerEx(LoginSerializer):
@@ -133,16 +133,16 @@ class LoginSerializerEx(LoginSerializer):
         # check that the server settings match the request
         if is_username_authentication() and not username and email:
             raise ValidationError(
-                'Attempt to authenticate with email/password. '
-                'But username/password are used for authentication on the server. '
-                'Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD.'
+                "Attempt to authenticate with email/password. "
+                "But username/password are used for authentication on the server. "
+                "Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD."
             )
 
         if is_email_authentication() and not email and username:
             raise ValidationError(
-                'Attempt to authenticate with username/password. '
-                'But email/password are used for authentication on the server. '
-                'Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD.'
+                "Attempt to authenticate with username/password. "
+                "But email/password are used for authentication on the server. "
+                "Please check your server configuration ACCOUNT_AUTHENTICATION_METHOD."
             )
 
         # Authentication through email
@@ -157,6 +157,6 @@ class LoginSerializerEx(LoginSerializer):
         if email:
             users = filter_users_by_email(email)
             if not users or len(users) > 1:
-                raise ValidationError('Unable to login with provided credentials')
+                raise ValidationError("Unable to login with provided credentials")
 
         return self._validate_username_email(username, email, password)

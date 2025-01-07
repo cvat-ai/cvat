@@ -6,7 +6,7 @@ from django.apps import AppConfig
 
 
 class EventsConfig(AppConfig):
-    name = 'cvat.apps.events'
+    name = "cvat.apps.events"
 
     def ready(self):
         from cvat.apps.iam.permissions import load_app_permissions

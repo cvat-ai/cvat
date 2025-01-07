@@ -42,14 +42,14 @@ class WorkingTimeTestCase(unittest.TestCase):
     def _get_actual_working_times(data: dict) -> list[int]:
         data_copy = data.copy()
         working_times = []
-        for event in data['events']:
-            data_copy['events'] = [event]
+        for event in data["events"]:
+            data_copy["events"] = [event]
             event_working_time = compute_working_time_per_ids(data_copy)
             for working_time in event_working_time.values():
-                working_times.append((working_time['value'] // WORKING_TIME_RESOLUTION))
-            if data_copy['previous_event'] and is_contained(event, data_copy['previous_event']):
+                working_times.append((working_time["value"] // WORKING_TIME_RESOLUTION))
+            if data_copy["previous_event"] and is_contained(event, data_copy["previous_event"]):
                 continue
-            data_copy['previous_event'] = event
+            data_copy["previous_event"] = event
         return working_times
 
     @staticmethod

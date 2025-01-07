@@ -22,9 +22,9 @@ def get_organization(request):
     organization = None
 
     try:
-        org_slug = request.GET.get('org')
-        org_id = request.GET.get('org_id')
-        org_header = request.headers.get('X-Organization')
+        org_slug = request.GET.get("org")
+        org_id = request.GET.get("org_id")
+        org_header = request.headers.get("X-Organization")
 
         if org_id is not None and (org_slug is not None or org_header is not None):
             raise ValidationError(
@@ -41,13 +41,13 @@ def get_organization(request):
         org_slug = org_slug if org_slug is not None else org_header
 
         if org_slug:
-            organization = Organization.objects.select_related('owner').get(slug=org_slug)
+            organization = Organization.objects.select_related("owner").get(slug=org_slug)
         elif org_id:
-            organization = Organization.objects.select_related('owner').get(id=int(org_id))
+            organization = Organization.objects.select_related("owner").get(id=int(org_id))
     except Organization.DoesNotExist:
-        raise NotFound(f'{org_slug or org_id} organization does not exist.')
+        raise NotFound(f"{org_slug or org_id} organization does not exist.")
 
-    context = {"organization": organization, "privilege": getattr(privilege, 'name', None)}
+    context = {"organization": organization, "privilege": getattr(privilege, "name", None)}
 
     return context
 

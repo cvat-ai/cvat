@@ -22,36 +22,36 @@ from cvat.apps.iam.views import (
     SigningView,
 )
 
-BASIC_LOGIN_PATH_NAME = 'rest_login'
-BASIC_REGISTER_PATH_NAME = 'rest_register'
+BASIC_LOGIN_PATH_NAME = "rest_login"
+BASIC_REGISTER_PATH_NAME = "rest_register"
 
 urlpatterns = [
-    path('login', LoginViewEx.as_view(), name=BASIC_LOGIN_PATH_NAME),
-    path('logout', LogoutView.as_view(), name='rest_logout'),
-    path('signing', SigningView.as_view(), name='signing'),
-    path('rules', RulesView.as_view(), name='rules'),
+    path("login", LoginViewEx.as_view(), name=BASIC_LOGIN_PATH_NAME),
+    path("logout", LogoutView.as_view(), name="rest_logout"),
+    path("signing", SigningView.as_view(), name="signing"),
+    path("rules", RulesView.as_view(), name="rules"),
 ]
 
-if settings.IAM_TYPE == 'BASIC':
+if settings.IAM_TYPE == "BASIC":
     urlpatterns += [
-        path('register', RegisterViewEx.as_view(), name=BASIC_REGISTER_PATH_NAME),
+        path("register", RegisterViewEx.as_view(), name=BASIC_REGISTER_PATH_NAME),
         # password
-        path('password/reset', PasswordResetView.as_view(), name='rest_password_reset'),
+        path("password/reset", PasswordResetView.as_view(), name="rest_password_reset"),
         path(
-            'password/reset/confirm',
+            "password/reset/confirm",
             PasswordResetConfirmView.as_view(),
-            name='rest_password_reset_confirm',
+            name="rest_password_reset_confirm",
         ),
-        path('password/change', PasswordChangeView.as_view(), name='rest_password_change'),
+        path("password/change", PasswordChangeView.as_view(), name="rest_password_change"),
     ]
     if allauth_settings.EMAIL_VERIFICATION != allauth_settings.EmailVerificationMethod.NONE:
         # emails
         urlpatterns += [
             re_path(
-                r'^account-confirm-email/(?P<key>[-:\w]+)/$',
+                r"^account-confirm-email/(?P<key>[-:\w]+)/$",
                 ConfirmEmailViewEx.as_view(),
-                name='account_confirm_email',
+                name="account_confirm_email",
             ),
         ]
 
-urlpatterns = [path('auth/', include(urlpatterns))]
+urlpatterns = [path("auth/", include(urlpatterns))]
