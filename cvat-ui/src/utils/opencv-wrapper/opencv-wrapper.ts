@@ -7,8 +7,7 @@ import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import waitFor from 'utils/wait-for';
 import config from 'config';
 import { ImageFilterSettings } from 'utils/image-processing';
-import CLAHEImplementation, { CLAHE } from './clahe';
-import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
+import { HistogramEqualizationImplementation, CLAHEqualizationImplementation, ImageEqualization } from './image-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
@@ -34,8 +33,8 @@ export interface Contours {
 }
 
 export interface ImgProc {
-    hist: () => HistogramEqualization;
-    clahe: () => CLAHE;
+    hist: () => ImageEqualization;
+    clahe: () => ImageEqualization;
 }
 
 export interface Tracking {
@@ -304,7 +303,7 @@ export class OpenCVWrapper {
         this.checkInitialization();
         return {
             hist: () => new HistogramEqualizationImplementation(this.cv),
-            clahe: () => new CLAHEImplementation(this.cv),
+            clahe: () => new CLAHEqualizationImplementation(this.cv),
         };
     }
 
