@@ -3,15 +3,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import nullcontext
-from collections.abc import Mapping
-from typing import Any, Callable
 import io
+from collections.abc import Mapping
+from contextlib import nullcontext
+from typing import Any, Callable
+
 import rq
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import TmpDirManager

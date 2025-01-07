@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 
-import django_rq
 import copy
 import io
 import json
@@ -27,6 +26,7 @@ from time import sleep
 from unittest import mock
 
 import av
+import django_rq
 import numpy as np
 from django.conf import settings
 from django.contrib.auth.models import Group, User
@@ -3108,7 +3108,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
-        from cvat.apps.dataset_manager.cron import cron_export_cache_cleanup, clear_export_cache
+        from cvat.apps.dataset_manager.cron import clear_export_cache, cron_export_cache_cleanup
         self._create_tasks()
         task_id = self.tasks[0]["id"]
         user = self.admin

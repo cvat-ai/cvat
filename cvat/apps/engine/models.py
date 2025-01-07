@@ -22,8 +22,8 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
-from django.db.models.fields import FloatField
 from django.db.models.base import ModelBase
+from django.db.models.fields import FloatField
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field

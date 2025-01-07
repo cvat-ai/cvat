@@ -24,16 +24,14 @@ from cvat.apps.engine.rq_job_handler import RQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
-from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 from .util import (
+    ExportCacheManager,
     LockNotAvailableError,
+    TmpDirManager,
     current_function_name,
     extend_export_file_lifetime,
     get_export_cache_lock,
-    ExportCacheManager,
-    TmpDirManager,
 )
-
 
 slogger = ServerLogManager(__name__)
 

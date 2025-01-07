@@ -6,17 +6,16 @@
 import io
 import itertools
 from collections import OrderedDict
+from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, Union, Callable
-
-from contextlib import nullcontext
-from django.utils import timezone
+from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch, QuerySet
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
@@ -28,11 +27,11 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import (
+    TmpDirManager,
     add_prefetch_fields,
     bulk_create,
     faster_deepcopy,
     get_cached,
-    TmpDirManager,
 )
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager

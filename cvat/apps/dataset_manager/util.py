@@ -7,16 +7,16 @@ import inspect
 import os
 import os.path as osp
 import re
-import zipfile
 import tempfile
+import zipfile
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
+from pathlib import Path
 from threading import Lock
 from typing import Any
-from pathlib import Path
 
 import attrs
 import django_rq

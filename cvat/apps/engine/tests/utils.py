@@ -5,11 +5,13 @@
 import itertools
 import logging
 import os
+import shutil
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Callable, TypeVar
-import shutil
+
 import av
 import django_rq
 import numpy as np
@@ -17,7 +19,6 @@ from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
-from pathlib import Path
 from rest_framework.test import APITestCase
 
 T = TypeVar('T')

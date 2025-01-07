@@ -32,8 +32,8 @@ from PIL import Image
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.cron import clear_export_cache
 from cvat.apps.dataset_manager.bindings import CvatTaskOrJobDataExtractor, TaskData
+from cvat.apps.dataset_manager.cron import clear_export_cache
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock

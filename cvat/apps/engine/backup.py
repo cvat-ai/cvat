@@ -8,16 +8,15 @@ import mimetypes
 import os
 import re
 import shutil
-import tempfile
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
+from datetime import timedelta
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Union, Type
+from typing import Any, Optional, Type, Union
 from zipfile import ZipFile
-from datetime import timedelta
 
 import django_rq
 from django.conf import settings
@@ -31,8 +30,8 @@ from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatImportError
-from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.dataset_manager.util import ExportCacheManager, TmpDirManager
+from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
