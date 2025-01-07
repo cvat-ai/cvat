@@ -59,6 +59,7 @@ DEFAULT_ATTRIBUTES_FORMATS = [
     "Ultralytics YOLO Classification 1.0",
     "YOLO 1.1",
     "Ultralytics YOLO Detection 1.0",
+    "Ultralytics YOLO Detection Track 1.0",
     "Ultralytics YOLO Segmentation 1.0",
     "Ultralytics YOLO Oriented Bounding Boxes 1.0",
     "Ultralytics YOLO Pose 1.0",
@@ -980,6 +981,8 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     if dump_format_name == "CVAT for images 1.1" or dump_format_name == "CVAT for video 1.1":
                         dump_format_name = "CVAT 1.1"
+                    elif dump_format_name == "Ultralytics YOLO Detection Track 1.0":
+                        dump_format_name = "Ultralytics YOLO Detection 1.0"
                     url = self._generate_url_upload_tasks_annotations(task_id, dump_format_name)
 
                     with open(file_zip_name, 'rb') as binary_file:
@@ -1093,6 +1096,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         # upload annotations
                         if dump_format_name in ["CVAT for images 1.1", "CVAT for video 1.1"]:
                             upload_format_name = "CVAT 1.1"
+                        elif dump_format_name in ['Ultralytics YOLO Detection Track 1.0']:
+                            upload_format_name = 'Ultralytics YOLO Detection 1.0'
                         else:
                             upload_format_name = dump_format_name
                         url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
