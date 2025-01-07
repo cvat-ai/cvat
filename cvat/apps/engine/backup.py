@@ -57,7 +57,7 @@ from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.views import EXPORT_CACHE_LOCK_TTL, EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT
-from cvat.apps.dataset_manager.util import extend_export_file_lifetime
+from cvat.apps.dataset_manager.util import extend_export_file_lifetime, TmpDirManager
 
 slogger = ServerLogManager(__name__)
 
@@ -1035,13 +1035,13 @@ def create_backup(
     cache_ttl: timedelta,
 ):
     try:
-        tmp_dir = db_instance.get_tmp_dirname()
+        instance_type = db_instance.__class__.__name__
         db_instance.refresh_from_db(fields=['updated_date'])
         instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 
         output_path = ExportCacheManager.make_backup_file_path(
             instance_id=db_instance.id,
-            instance_type=db_instance.__class__.__name__,
+            instance_type=instance_type,
             instance_timestamp=instance_timestamp
         )
 
@@ -1056,8 +1056,11 @@ def create_backup(
                 extend_export_file_lifetime(output_path)
                 return output_path
 
-        with tempfile.TemporaryDirectory(dir=tmp_dir) as temp_dir:
-            temp_file = os.path.join(temp_dir, 'dump')
+        # TODO: use another prefix?
+        with TmpDirManager.get_tmp_export_dir(
+            instance_type=instance_type, instance_timestamp=instance_timestamp
+        ) as tmp_dir:
+            temp_file = os.path.join(tmp_dir, 'dump')
             exporter = Exporter(db_instance.id)
             exporter.export_to(temp_file)
 
@@ -1175,7 +1178,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 def get_backup_dirname():
-    return settings.TMP_FILES_ROOT
+    # FUTURE-FIXME
+    return TmpDirManager.TMP_ROOT
 
 def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:

@@ -443,11 +443,13 @@ class FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
     def get_dirname(self) -> str:
         ...
 
-    def get_tmp_dirname(self, *, create: bool = True) -> str:
+    def get_tmp_dirname(self) -> str:
+        """
+        This method returns a directory that is only used
+        to store temporary files or subfolders related to an object
+        """
         dir_path = os.path.join(self.get_dirname(), "tmp")
-
-        if create:
-            os.makedirs(dir_path, exist_ok=True)
+        os.makedirs(dir_path, exist_ok=True)
 
         return dir_path
 

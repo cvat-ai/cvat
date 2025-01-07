@@ -27,7 +27,7 @@ from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     LockNotAvailableError,
     current_function_name, get_export_cache_lock,
-    ExportCacheManager, extend_export_file_lifetime
+    ExportCacheManager, extend_export_file_lifetime, TmpDirManager
 )
 
 
@@ -132,6 +132,7 @@ def export(
             db_instance = Job.objects.get(pk=job_id)
 
         cache_ttl = get_export_cache_ttl(db_instance)
+        instance_type = db_instance.__class__.__name__
 
         # As we're not locking the db object here, it can be updated by the time of actual export.
         # The file will be saved with the older timestamp.
@@ -147,7 +148,7 @@ def export(
 
         output_path = ExportCacheManager.make_dataset_file_path(
             instance_id=db_instance.id,
-            instance_type=db_instance.__class__.__name__,
+            instance_type=instance_type,
             instance_timestamp=instance_update_time.timestamp(),
             save_images=save_images,
             format_name=dst_format
@@ -165,12 +166,13 @@ def export(
                 extend_export_file_lifetime(output_path)
                 return output_path
 
-        tmp_dir = db_instance.get_tmp_dirname()
-
-        with tempfile.TemporaryDirectory(dir=tmp_dir) as temp_dir:
+        with TmpDirManager.get_tmp_export_dir(
+            instance_type=instance_type,
+            instance_timestamp=instance_update_time.timestamp(),
+        ) as temp_dir:
             temp_file = osp.join(temp_dir, 'result')
-            export_fn(db_instance.id, temp_file, dst_format,
-                server_url=server_url, save_images=save_images)
+            export_fn(db_instance.id, temp_file, dst_format=dst_format,
+                server_url=server_url, save_images=save_images, temp_dir=temp_dir)
             with get_export_cache_lock(
                 output_path,
                 ttl=EXPORT_CACHE_LOCK_TTL,

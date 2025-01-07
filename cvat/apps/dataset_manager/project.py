@@ -3,14 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Mapping
-from tempfile import TemporaryDirectory
+from collections.abc import Mapping, Callable
+import io
 import rq
-from typing import Any, Callable
+from typing import Any
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
 from django.conf import settings
+from django.utils import timezone
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
@@ -18,6 +19,8 @@ from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.dataset_manager.task import TaskAnnotation
+from cvat.apps.dataset_manager.util import TmpDirManager
+from contextlib import nullcontext
 
 from .annotation import AnnotationIR
 from .bindings import CvatDatasetNotFoundError, ProjectData, load_dataset_data, CvatImportError
@@ -25,8 +28,15 @@ from .formats.registry import make_exporter, make_importer
 
 dlogger = DatasetLogManager()
 
-def export_project(project_id, dst_file, format_name,
-        server_url=None, save_images=False):
+def export_project(
+    project_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images: bool = False,
+    temp_dir: str | None = None,
+):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -38,7 +48,7 @@ def export_project(project_id, dst_file, format_name,
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        project.export(f, exporter, host=server_url, save_images=save_images)
+        project.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
 
 class ProjectAnnotationAndData:
     def __init__(self, pk: int):
@@ -130,16 +140,27 @@ class ProjectAnnotationAndData:
             self.task_annotations[task.id] = annotation
             self.annotation_irs[task.id] = annotation.ir_data
 
-    def export(self, dst_file: str, exporter: Callable, host: str='', **options):
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         project_data = ProjectData(
             annotation_irs=self.annotation_irs,
             db_project=self.db_project,
             host=host
         )
 
-        temp_dir_base = self.db_project.get_tmp_dirname()
-
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_export_dir(
+                instance_type=self.db_project.__class__.__name__,
+                instance_timestamp=timezone.localtime(self.db_project.updated_date).timestamp(),
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, project_data, **options)
 
     def load_dataset_data(self, *args, **kwargs):
@@ -154,9 +175,7 @@ class ProjectAnnotationAndData:
         )
         project_data.soft_attribute_import = True
 
-        temp_dir_base = self.db_project.get_tmp_dirname()
-
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_dir() as temp_dir:
             try:
                 importer(dataset_file, temp_dir, project_data, load_data_callback=self.load_dataset_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:

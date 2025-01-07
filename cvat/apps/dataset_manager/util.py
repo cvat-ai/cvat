@@ -8,6 +8,7 @@ import os
 import os.path as osp
 import re
 import zipfile
+import tempfile
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
@@ -15,6 +16,7 @@ from datetime import timedelta
 from enum import Enum
 from threading import Lock
 from typing import Any
+from pathlib import Path
 
 import attrs
 import django_rq
@@ -103,7 +105,7 @@ def faster_deepcopy(v):
 class LockNotAvailableError(Exception):
     pass
 
-class CacheFilePathParseError(Exception):
+class CacheFileOrDirPathParseError(Exception):
     pass
 
 
@@ -176,9 +178,9 @@ class InstanceType(str, Enum):
 class _ParsedExportFilename:
     file_type: ExportFileType
     file_ext: str
-    instance_type: str
+    instance_type: InstanceType = attrs.field(converter=InstanceType)
     instance_id: int
-    instance_timestamp: float
+    instance_timestamp: float = attrs.field(converter=float)
 
 
 @attrs.frozen
@@ -190,6 +192,80 @@ class ParsedDatasetFilename(_ParsedExportFilename):
 class ParsedBackupFilename(_ParsedExportFilename):
     pass
 
+@attrs.frozen
+class ParsedTmpDirFilename:
+    instance_type: InstanceType = attrs.field(converter=InstanceType)
+    instance_timestamp: float = attrs.field(converter=float)
+
+_not_set = object()
+
+class TmpDirManager:
+    SPLITTER = "-"
+    INSTANCE_PREFIX = "instance"
+    TMP_ROOT = settings.TMP_FILES_ROOT
+
+    @classmethod
+    @contextmanager
+    def get_tmp_dir(
+        cls,
+        *,
+        prefix: str | object = _not_set,
+        suffix: str | object = _not_set,
+        ignore_cleanup_errors: bool | object = _not_set,
+    ) -> Generator[str, Any, Any]:
+        params = {}
+        for k, v in {
+            "prefix": prefix,
+            "suffix": suffix,
+            "ignore_cleanup_errors": ignore_cleanup_errors,
+        }.items():
+            if v is not _not_set:
+                params[k] = v
+
+        with tempfile.TemporaryDirectory(**params, dir=cls.TMP_ROOT) as tmp_dir:
+            yield tmp_dir
+
+    @classmethod
+    @contextmanager
+    def get_tmp_export_dir(
+        cls,
+        *,
+        instance_type: str,
+        instance_timestamp: float,
+    ) -> Generator[str, Any, Any]:
+        instance_type = InstanceType(instance_type.lower())
+        with cls.get_tmp_dir(
+            prefix=cls.SPLITTER.join(
+                ["export", instance_type, cls.INSTANCE_PREFIX + str(instance_timestamp)]
+            ) + cls.SPLITTER
+        ) as tmp_dir:
+            yield tmp_dir
+
+    @classmethod
+    def parse_tmp_directory(cls, dir_path: os.PathLike[str]) -> ParsedTmpDirFilename:
+        dir_path = Path(osp.normpath(dir_path))
+        assert dir_path.is_dir()
+        dir_name = dir_path.name
+
+        basename_match = re.fullmatch(
+            (
+                rf"^export{cls.SPLITTER}(?P<instance_type>{'|'.join(InstanceType.values())})"
+                rf"{cls.SPLITTER}{cls.INSTANCE_PREFIX}(?P<instance_timestamp>\d+\.\d+){cls.SPLITTER}"
+            ),
+            dir_name,
+        )
+
+        if not basename_match:
+            raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}")
+
+        try:
+            parsed_dir_name = ParsedTmpDirFilename(
+                basename_match.groupdict()
+            )
+        except ValueError as ex:
+            raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}") from ex
+
+        return parsed_dir_name
 
 class ExportCacheManager:
     SPLITTER = "-"
@@ -275,7 +351,7 @@ class ExportCacheManager:
         )
 
         if not basename_match:
-            raise CacheFilePathParseError(f"Couldn't parse file name: {basename!r}")
+            raise CacheFileOrDirPathParseError(f"Couldn't parse file name: {basename!r}")
 
         fragments = basename_match.groupdict()
         fragments["instance_id"] = int(fragments["instance_id"])
@@ -287,7 +363,7 @@ class ExportCacheManager:
             try:
                 instance_timestamp, format_repr = unparsed.split(cls.SPLITTER, maxsplit=1)
             except ValueError:
-                raise CacheFilePathParseError(f"Couldn't parse file name: {basename!r}")
+                raise CacheFileOrDirPathParseError(f"Couldn't parse file name: {basename!r}")
 
             specific_params["format_repr"] = format_repr
             ParsedFileNameClass = ParsedDatasetFilename
@@ -296,16 +372,16 @@ class ExportCacheManager:
             ParsedFileNameClass = ParsedBackupFilename
 
         try:
-            instance_timestamp = float(instance_timestamp)
-        except ValueError:
-            raise CacheFilePathParseError(f"Couldn't parse instance timestamp: {instance_timestamp!r}")
+            parsed_file_name = ParsedFileNameClass(
+                file_ext=file_ext,
+                instance_timestamp=instance_timestamp,
+                **fragments,
+                **specific_params,
+            )
+        except ValueError as ex:
+            raise CacheFileOrDirPathParseError(f"Couldn't parse file name: {basename!r}") from ex
 
-        return ParsedFileNameClass(
-            file_ext=file_ext,
-            instance_timestamp=instance_timestamp,
-            **fragments,
-            **specific_params,
-        )
+        return parsed_file_name
 
 
 def extend_export_file_lifetime(file_path: str):

@@ -82,9 +82,9 @@ class CleanupExportCacheThread(Thread):
             if self._stop_event.is_set():
                 return
 
-            # export cache directory may contain temporary directories
+            # export cache directory is expected to contain only files
             if not child.is_file():
-                logger.debug(f"The {child.name} is not a file, skipping...")
+                logger.warning(f"The {child.name} is not a file, skipping...")
                 continue
 
             try:

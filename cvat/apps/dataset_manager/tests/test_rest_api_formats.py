@@ -2032,8 +2032,8 @@ class ExportBehaviorTest(_DbTestBase):
 
 
     def test_cleanup_can_fail_if_no_file(self):
-        from cvat.apps.dataset_manager.util import CacheFilePathParseError
-        with self.assertRaises(CacheFilePathParseError):
+        from cvat.apps.dataset_manager.util import CacheFileOrDirPathParseError
+        with self.assertRaises(CacheFileOrDirPathParseError):
             clear_export_cache(file_path="non existent file path")
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
