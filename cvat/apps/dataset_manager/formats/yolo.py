@@ -37,7 +37,7 @@ def _export_common(
 ):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, format_name, save_images=save_images, **(kwargs or {}))
+        dataset.export(temp_dir, format_name, save_images=save_images, **kwargs)
 
     make_zip_archive(temp_dir, dst_file)
 
