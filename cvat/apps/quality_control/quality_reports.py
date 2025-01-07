@@ -1978,9 +1978,7 @@ class DatasetComparator:
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        if self.settings.empty_is_annotated and (
-            not gt_item.annotations or not ds_item.annotations
-        ):
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames
             if not gt_item.annotations and not ds_item.annotations:
                 valid_labels_count = 1
@@ -2086,7 +2084,7 @@ class DatasetComparator:
     ) -> ComparisonReportAnnotationsSummary:
         summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
 
-        if self.settings.empty_is_annotated and (not summary.ds_count or not summary.gt_count):
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames
             if not summary.total_count:
                 summary.valid_count = 1
