@@ -30,8 +30,20 @@ from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatImportError
-from cvat.apps.dataset_manager.util import ExportCacheManager, TmpDirManager
-from cvat.apps.dataset_manager.views import log_exception
+from cvat.apps.dataset_manager.util import (
+    ExportCacheManager,
+    TmpDirManager,
+    extend_export_file_lifetime,
+    get_export_cache_lock,
+)
+from cvat.apps.dataset_manager.views import (
+    EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+    EXPORT_CACHE_LOCK_TTL,
+    EXPORT_LOCKED_RETRY_INTERVAL,
+    LockNotAvailableError,
+    log_exception,
+    retry_current_rq_job,
+)
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration

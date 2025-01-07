@@ -6,7 +6,6 @@
 import logging
 import os
 import os.path as osp
-import tempfile
 from datetime import timedelta
 from os.path import exists as osp_exists
 
