@@ -5,6 +5,7 @@
 from io import BytesIO
 from typing import Protocol
 
+
 class Named(Protocol):
     filename: str
 

@@ -6,11 +6,9 @@
 import copy
 import itertools
 import json
-import os.path as osp
-import os
 import multiprocessing
-import av
-import numpy as np
+import os
+import os.path as osp
 import random
 import shutil
 import xml.etree.ElementTree as ET
@@ -22,8 +20,11 @@ from io import BytesIO
 from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Any, Callable, ClassVar, Optional, overload
-from unittest.mock import MagicMock, patch, DEFAULT as MOCK_DEFAULT
+from unittest.mock import DEFAULT as MOCK_DEFAULT
+from unittest.mock import MagicMock, patch
 
+import av
+import numpy as np
 from attr import define, field
 from datumaro.components.dataset import Dataset
 from datumaro.components.operations import ExactComparator
@@ -38,7 +39,7 @@ from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import clear_export_cache, export, parse_export_file_path
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
+from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, get_paginated_collection
 
 projects_path = osp.join(osp.dirname(__file__), 'assets', 'projects.json')
 with open(projects_path) as file:
@@ -1456,8 +1457,8 @@ class ExportBehaviorTest(_DbTestBase):
             import sys
             from os import replace as original_replace
             from os.path import exists as original_exists
-            from cvat.apps.dataset_manager.task import export_task as original_export_task
 
+            from cvat.apps.dataset_manager.task import export_task as original_export_task
             from cvat.apps.dataset_manager.views import log_exception as original_log_exception
 
             def patched_log_exception(logger=None, exc_info=True):

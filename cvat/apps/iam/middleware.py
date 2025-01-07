@@ -5,10 +5,10 @@
 from datetime import timedelta
 from typing import Callable
 
-from django.utils.functional import SimpleLazyObject
-from rest_framework.exceptions import ValidationError, NotFound
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
+from django.utils.functional import SimpleLazyObject
+from rest_framework.exceptions import NotFound, ValidationError
 
 
 def get_organization(request):

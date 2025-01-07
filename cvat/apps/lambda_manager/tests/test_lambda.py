@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
+import os
 from collections import Counter, OrderedDict
 from itertools import groupby
 from typing import Optional
 from unittest import mock, skip
-import json
-import os
 
 import requests
 from django.contrib.auth.models import Group, User
@@ -16,7 +16,11 @@ from django.http import HttpResponseNotFound, HttpResponseServerError
 from rest_framework import status
 
 from cvat.apps.engine.tests.utils import (
-    ApiTestBase, filter_dict, ForceLogin, generate_image_file, get_paginated_collection
+    ApiTestBase,
+    ForceLogin,
+    filter_dict,
+    generate_image_file,
+    get_paginated_collection,
 )
 
 LAMBDA_ROOT_PATH = '/api/lambda'

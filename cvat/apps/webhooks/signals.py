@@ -13,17 +13,21 @@ import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models.signals import (post_delete, post_save, pre_delete,
-                                      pre_save)
+from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import Signal, receiver
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.events.handlers import (get_request, get_serializer, get_user,
-                                       get_instance_diff, organization_id,
-                                       project_id)
+from cvat.apps.events.handlers import (
+    get_instance_diff,
+    get_request,
+    get_serializer,
+    get_user,
+    organization_id,
+    project_id,
+)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
-from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
+from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
 from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice

@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework.renderers import JSONRenderer
 from datetime import datetime, timezone
 from typing import Optional
 
 from django.db import transaction
+from rest_framework.renderers import JSONRenderer
 
 from cvat.apps.engine.log import vlogger
+
 
 def event_scope(action, resource):
     return f"{action}:{resource}"
