@@ -24,6 +24,7 @@ slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 
+
 def _create_csv(query_params, output_filename, cache_ttl):
     try:
         clickhouse_settings = settings.CLICKHOUSE['events']
@@ -71,7 +72,8 @@ def _create_csv(query_params, output_filename, cache_ttl):
 
         archive_ctime = os.path.getctime(output_filename)
         scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
-        cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
+        cleaning_job = scheduler.enqueue_in(
+            time_delta=cache_ttl,
             func=_clear_export_cache,
             file_path=output_filename,
             file_ctime=archive_ctime,
@@ -86,6 +88,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
     except Exception:
         log_exception(slogger.glob)
         raise
+
 
 def export(request, filter_query, queue_name):
     action = request.query_params.get('action', None)
@@ -125,8 +128,7 @@ def export(request, filter_query, queue_name):
         query_params["from"] = query_params["to"] - timedelta(days=30)
 
     if action not in (None, 'download'):
-        raise serializers.ValidationError(
-            "Unexpected action specified for the request")
+        raise serializers.ValidationError("Unexpected action specified for the request")
 
     query_id = request.query_params.get('query_id', None) or uuid.uuid4()
     rq_id = f"export:csv-logs-{query_id}-by-{request.user}"
@@ -145,16 +147,14 @@ def export(request, filter_query, queue_name):
                 timestamp = datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S")
                 filename = filename or f"logs_{timestamp}.csv"
 
-                return sendfile(request, file_path, attachment=True,
-                    attachment_filename=filename)
+                return sendfile(request, file_path, attachment=True, attachment_filename=filename)
             else:
                 if os.path.exists(file_path):
                     return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
             exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
             rq_job.delete()
-            return Response(exc_info,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
 
@@ -165,18 +165,19 @@ def export(request, filter_query, queue_name):
         args=(query_params, output_filename, DEFAULT_CACHE_TTL),
         job_id=rq_id,
         meta={},
-        result_ttl=ttl, failure_ttl=ttl)
+        result_ttl=ttl,
+        failure_ttl=ttl,
+    )
 
     return Response(data=response_data, status=status.HTTP_202_ACCEPTED)
+
 
 def _clear_export_cache(file_path: str, file_ctime: float, logger: Logger) -> None:
     try:
         if os.path.exists(file_path) and os.path.getctime(file_path) == file_ctime:
             os.remove(file_path)
 
-            logger.info(
-                "Export cache file '{}' successfully removed" \
-                .format(file_path))
+            logger.info("Export cache file '{}' successfully removed".format(file_path))
     except Exception:
         log_exception(logger)
         raise

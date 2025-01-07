@@ -12,7 +12,9 @@ def register_groups(sender, **kwargs):
     for role in settings.IAM_ROLES:
         Group.objects.get_or_create(name=role)
 
+
 if settings.IAM_TYPE == 'BASIC':
+
     def create_user(sender, instance, created, **kwargs):
         from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress
@@ -23,14 +25,16 @@ if settings.IAM_TYPE == 'BASIC':
 
             # create and verify EmailAddress for superuser accounts
             if allauth_settings.EMAIL_REQUIRED:
-                EmailAddress.objects.get_or_create(user=instance,
-                    email=instance.email, primary=True, verified=True)
-        else: # don't need to add default groups for superuser
+                EmailAddress.objects.get_or_create(
+                    user=instance, email=instance.email, primary=True, verified=True
+                )
+        else:  # don't need to add default groups for superuser
             if created and not getattr(instance, 'skip_group_assigning', None):
                 db_group = Group.objects.get(name=settings.IAM_DEFAULT_ROLE)
                 instance.groups.add(db_group)
 
 elif settings.IAM_TYPE == 'LDAP':
+
     def create_user(sender, user=None, ldap_user=None, **kwargs):
         user_groups = []
         for role in settings.IAM_ROLES:

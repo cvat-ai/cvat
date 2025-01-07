@@ -11,4 +11,5 @@ class IAMConfig(AppConfig):
 
     def ready(self):
         from .signals import register_signals
+
         register_signals(self)

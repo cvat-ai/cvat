@@ -9,23 +9,31 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('engine', '0014_job_max_shape_id'),
+        ("engine", "0014_job_max_shape_id"),
     ]
 
-    replaces = [('git', '0001_initial')]
+    replaces = [("git", "0001_initial")]
 
     operations = [
         migrations.CreateModel(
-            name='GitData',
+            name="GitData",
             fields=[
-                ('task', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='engine.Task')),
-                ('url', models.URLField(max_length=2000)),
-                ('path', models.CharField(max_length=256)),
-                ('sync_date', models.DateTimeField(auto_now_add=True)),
-                ('status', models.CharField(default='!sync', max_length=20)),
+                (
+                    "task",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        primary_key=True,
+                        serialize=False,
+                        to="engine.Task",
+                    ),
+                ),
+                ("url", models.URLField(max_length=2000)),
+                ("path", models.CharField(max_length=256)),
+                ("sync_date", models.DateTimeField(auto_now_add=True)),
+                ("status", models.CharField(default="!sync", max_length=20)),
             ],
             options={
-                'db_table': 'git_gitdata',
+                "db_table": "git_gitdata",
             },
         ),
     ]

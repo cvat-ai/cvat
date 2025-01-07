@@ -28,6 +28,7 @@ class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
             'description': 'Can be used to share URLs to private links',
         }
 
+
 class TokenAuthenticationScheme(TokenScheme):
     """
     Adds the token auth method to schema. The description includes extra info
@@ -45,7 +46,8 @@ class TokenAuthenticationScheme(TokenScheme):
     def get_security_definition(self, auto_schema):
         schema = super().get_security_definition(auto_schema)
         schema['x-token-prefix'] = self.target.keyword
-        schema['description'] = textwrap.dedent(f"""
+        schema['description'] = textwrap.dedent(
+            f"""
             To authenticate using a token (or API key), you need to have 3 components in a request:
             - the 'sessionid' cookie
             - the 'csrftoken' cookie or 'X-CSRFTOKEN' header
@@ -53,8 +55,10 @@ class TokenAuthenticationScheme(TokenScheme):
 
             You can obtain an API key (the token) from the server response on
             the basic auth request.
-        """)
+        """
+        )
         return schema
+
 
 class CookieAuthenticationScheme(SessionScheme):
     """
@@ -75,9 +79,10 @@ class CookieAuthenticationScheme(SessionScheme):
             'type': 'apiKey',
             'in': 'cookie',
             'name': 'csrftoken',
-            'description': 'Can be sent as a cookie or as the X-CSRFTOKEN header'
+            'description': 'Can be sent as a cookie or as the X-CSRFTOKEN header',
         }
         return [sessionid_schema, csrftoken_schema]
+
 
 class CustomAutoSchema(AutoSchema):
     def get_operation_id(self):

@@ -26,10 +26,7 @@ class Signer:
         """
         Create a signature for a user object.
         """
-        data = {
-            'user_id': user.pk,
-            'username': user.get_username()
-        }
+        data = {'user_id': user.pk, 'username': user.get_username()}
 
         return signing.dumps(data, salt=self.get_salt(url))
 
@@ -38,24 +35,24 @@ class Signer:
         Return a user object for a valid signature.
         """
         User = get_user_model()
-        data = signing.loads(signature, salt=self.get_salt(url),
-            max_age=self.MAX_AGE)
+        data = signing.loads(signature, salt=self.get_salt(url), max_age=self.MAX_AGE)
 
         if not isinstance(data, dict):
             raise signing.BadSignature()
 
         try:
-            return User.objects.get(**{
-                'pk': data.get('user_id'),
-                User.USERNAME_FIELD: data.get('username')
-            })
+            return User.objects.get(
+                **{'pk': data.get('user_id'), User.USERNAME_FIELD: data.get('username')}
+            )
         except User.DoesNotExist:
             raise signing.BadSignature()
+
 
 class SignatureAuthentication(BaseAuthentication):
     """
     Authentication backend for signed URLs.
     """
+
     def authenticate(self, request):
         """
         Returns authenticated user if URL signature is valid.

@@ -11,4 +11,5 @@ class LambdaManagerConfig(AppConfig):
 
     def ready(self) -> None:
         from cvat.apps.iam.permissions import load_app_permissions
+
         load_app_permissions(self)

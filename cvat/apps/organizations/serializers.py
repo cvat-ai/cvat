@@ -20,17 +20,28 @@ from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True)
+
     class Meta:
         model = Organization
-        fields = ['id', 'slug', 'name', 'description', 'created_date',
-            'updated_date', 'contact', 'owner']
+        fields = [
+            'id',
+            'slug',
+            'name',
+            'description',
+            'created_date',
+            'updated_date',
+            'contact',
+            'owner',
+        ]
         read_only_fields = fields
+
 
 class BasicOrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = ['id', 'slug']
         read_only_fields = fields
+
 
 class OrganizationWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
@@ -53,23 +64,33 @@ class OrganizationWriteSerializer(serializers.ModelSerializer):
             organization=organization,
             is_active=True,
             joined_date=organization.created_date,
-            role=Membership.OWNER)
+            role=Membership.OWNER,
+        )
 
         return organization
 
+
 class InvitationReadSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(Membership.role.field.choices,
-        source='membership.role')
+    role = serializers.ChoiceField(Membership.role.field.choices, source='membership.role')
     user = BasicUserSerializer(source='membership.user')
     organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all(),
-        source='membership.organization')
+        queryset=Organization.objects.all(), source='membership.organization'
+    )
     organization_info = BasicOrganizationSerializer(source='membership.organization')
     owner = BasicUserSerializer(allow_null=True)
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired', 'organization_info']
+        fields = [
+            'key',
+            'created_date',
+            'owner',
+            'role',
+            'user',
+            'organization',
+            'expired',
+            'organization_info',
+        ]
         read_only_fields = fields
         extra_kwargs = {
             'expired': {
@@ -77,12 +98,13 @@ class InvitationReadSerializer(serializers.ModelSerializer):
             }
         }
 
+
 class InvitationWriteSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(Membership.role.field.choices,
-        source='membership.role')
+    role = serializers.ChoiceField(Membership.role.field.choices, source='membership.role')
     email = serializers.EmailField(source='membership.user.email')
     organization = serializers.PrimaryKeyRelatedField(
-        source='membership.organization', read_only=True)
+        source='membership.organization', read_only=True
+    )
 
     def to_representation(self, instance):
         serializer = InvitationReadSerializer(instance, context=self.context)
@@ -98,26 +120,27 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         membership_data = validated_data.pop('membership')
         organization = validated_data.pop('organization')
         try:
-            user = get_user_model().objects.get(
-                email__iexact=membership_data['user']['email'])
+            user = get_user_model().objects.get(email__iexact=membership_data['user']['email'])
             del membership_data['user']
         except ObjectDoesNotExist:
             user_email = membership_data['user']['email']
             user = User.objects.create_user(username=user_email, email=user_email)
             user.set_unusable_password()
             # User.objects.create_user(...) normalizes passed email and user.email can be different from original user_email
-            email = EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=False)
+            email = EmailAddress.objects.create(
+                user=user, email=user.email, primary=True, verified=False
+            )
             user.save()
             email.save()
             del membership_data['user']
         membership, created = Membership.objects.get_or_create(
-            defaults=membership_data,
-            user=user, organization=organization)
+            defaults=membership_data, user=user, organization=organization
+        )
         if not created:
-            raise serializers.ValidationError('The user is a member of '
-                'the organization already.')
-        invitation = Invitation.objects.create(**validated_data,
-            membership=membership)
+            raise serializers.ValidationError(
+                'The user is a member of ' 'the organization already.'
+            )
+        invitation = Invitation.objects.create(**validated_data, membership=membership)
 
         return invitation
 
@@ -134,19 +157,20 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
         return invitation
 
+
 class MembershipReadSerializer(serializers.ModelSerializer):
     user = BasicUserSerializer()
 
     class Meta:
         model = Membership
-        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
-            'invitation']
+        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role', 'invitation']
         read_only_fields = fields
         extra_kwargs = {
             'invitation': {
-                'allow_null': True, # owner of an organization does not have an invitation
+                'allow_null': True,  # owner of an organization does not have an invitation
             }
         }
+
 
 class MembershipWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
@@ -157,6 +181,7 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
+
 
 class AcceptInvitationReadSerializer(serializers.Serializer):
     organization_slug = serializers.CharField()

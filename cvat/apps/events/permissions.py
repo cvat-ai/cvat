@@ -39,7 +39,9 @@ class EventsPermission(OpenPolicyAgentPermission):
         for query in r:
             for attr, value in query.items():
                 if filter_params.get(attr, value) != value:
-                    raise PermissionDenied(f"You don't have permission to view events with {attr}={filter_params.get(attr)}")
+                    raise PermissionDenied(
+                        f"You don't have permission to view events with {attr}={filter_params.get(attr)}"
+                    )
                 else:
                     filter_params[attr] = value
         return filter_params
@@ -47,10 +49,12 @@ class EventsPermission(OpenPolicyAgentPermission):
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
-        return [{
-            ('create', 'POST'): Scopes.SEND_EVENTS,
-            ('list', 'GET'): Scopes.DUMP_EVENTS,
-        }[(view.action, request.method)]]
+        return [
+            {
+                ('create', 'POST'): Scopes.SEND_EVENTS,
+                ('list', 'GET'): Scopes.DUMP_EVENTS,
+            }[(view.action, request.method)]
+        ]
 
     def get_resource(self):
         return None

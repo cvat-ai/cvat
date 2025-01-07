@@ -30,9 +30,7 @@ class EventTypeValidator:
                 webhook_type == WebhookTypeChoice.ORGANIZATION
                 and not events.issubset(set(OrganizationEvents.events))
             ):
-                raise serializers.ValidationError(
-                    f"Invalid events list for {webhook_type} webhook"
-                )
+                raise serializers.ValidationError(f"Invalid events list for {webhook_type} webhook")
 
 
 class EventTypesSerializer(serializers.MultipleChoiceField):
@@ -62,9 +60,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
     type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
     content_type = serializers.ChoiceField(choices=WebhookContentTypeChoice.choices())
 
-    last_status = serializers.IntegerField(
-        source="deliveries.last.status_code", read_only=True
-    )
+    last_status = serializers.IntegerField(source="deliveries.last.status_code", read_only=True)
 
     last_delivery_date = serializers.DateTimeField(
         source="deliveries.last.updated_date", read_only=True
@@ -99,9 +95,7 @@ class WebhookReadSerializer(serializers.ModelSerializer):
 class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     events = EventTypesSerializer(write_only=True)
 
-    project_id = serializers.IntegerField(
-        write_only=True, allow_null=True, required=False
-    )
+    project_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     def to_representation(self, instance):
         serializer = WebhookReadSerializer(instance, context=self.context)

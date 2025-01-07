@@ -11,4 +11,5 @@ class HealthConfig(AppConfig):
 
     def ready(self):
         from .backends import OPAHealthCheck
+
         plugin_dir.register(OPAHealthCheck)

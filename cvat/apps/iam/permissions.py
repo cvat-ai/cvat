@@ -66,20 +66,19 @@ def get_membership(request, organization):
         return None
 
     return Membership.objects.filter(
-        organization=organization,
-        user=request.user,
-        is_active=True
+        organization=organization, user=request.user, is_active=True
     ).first()
 
 
-def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]):
+def build_iam_context(
+    request, organization: Optional[Organization], membership: Optional[Membership]
+):
     return {
         'user_id': request.user.id,
         'group_name': request.iam_context['privilege'],
         'org_id': getattr(organization, 'id', None),
         'org_slug': getattr(organization, 'slug', None),
-        'org_owner_id': getattr(organization.owner, 'id', None)
-            if organization else None,
+        'org_owner_id': getattr(organization.owner, 'id', None) if organization else None,
         'org_role': getattr(membership, 'role', None),
     }
 
@@ -103,17 +102,13 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def create(cls, request, view, obj, iam_context) -> Sequence[OpenPolicyAgentPermission]:
-        ...
+    def create(cls, request, view, obj, iam_context) -> Sequence[OpenPolicyAgentPermission]: ...
 
     @classmethod
     def create_base_perm(cls, request, view, scope, iam_context, obj=None, **kwargs):
         if not iam_context and request:
             iam_context = get_iam_context(request, obj)
-        return cls(
-            scope=scope,
-            obj=obj,
-            **iam_context, **kwargs)
+        return cls(scope=scope, obj=obj, **iam_context, **kwargs)
 
     @classmethod
     def create_scope_list(cls, request, iam_context=None):
@@ -134,16 +129,20 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
                         'id': self.user_id,
                         'privilege': self.group_name,
                     },
-                    'organization': {
-                        'id': self.org_id,
-                        'owner': {
-                            'id': self.org_owner_id,
-                        },
-                        'user': {
-                            'role': self.org_role,
-                        },
-                    } if self.org_id is not None else None
-                }
+                    'organization': (
+                        {
+                            'id': self.org_id,
+                            'owner': {
+                                'id': self.org_owner_id,
+                            },
+                            'user': {
+                                'role': self.org_role,
+                            },
+                        }
+                        if self.org_id is not None
+                        else None
+                    ),
+                },
             }
         }
 
@@ -257,22 +256,23 @@ class PolicyEnforcer(BasePermission):
         if not view.detail:
             return self.check_permission(request, view, None)
         else:
-            return True # has_object_permission will be called later
+            return True  # has_object_permission will be called later
 
     def has_object_permission(self, request, view, obj):
         return self.check_permission(request, view, obj)
 
     @staticmethod
     def is_metadata_request(request, view):
-        return request.method == 'OPTIONS' \
-            or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
+        return request.method == 'OPTIONS' or (
+            request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0
+        )
 
 
 class IsAuthenticatedOrReadPublicResource(BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
         return bool(
-            (request.user and request.user.is_authenticated) or
-            (request.method == 'GET' and is_public_obj(obj))
+            (request.user and request.user.is_authenticated)
+            or (request.method == 'GET' and is_public_obj(obj))
         )
 
 

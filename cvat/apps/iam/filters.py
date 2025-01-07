@@ -32,6 +32,7 @@ ORGANIZATION_OPEN_API_PARAMETERS = [
     ),
 ]
 
+
 class OrganizationFilterBackend(BaseFilterBackend):
 
     def _parameter_is_provided(self, request):
@@ -62,22 +63,23 @@ class OrganizationFilterBackend(BaseFilterBackend):
 
         return Q()
 
-
     def filter_queryset(self, request, queryset, view):
         # Filter works only for "list" requests and allows to return
         # only non-organization objects if org isn't specified
 
         if (
-            view.detail or not view.iam_organization_field or
+            view.detail
+            or not view.iam_organization_field
+            or
             # FIXME:  It should be handled in another way. For example, if we try to get information for a specific job
             # and org isn't specified, we need to return the full list of labels, issues, comments.
             # Allow crowdsourcing users to get labels/issues/comments related to specific job.
             # Crowdsourcing user always has worker group and isn't a member of an organization.
             (
-                view.__class__.__name__ in ('LabelViewSet', 'IssueViewSet', 'CommentViewSet') and
-                request.query_params.get('job_id') and
-                request.iam_context.get('organization') is None and
-                request.iam_context.get('privilege') == 'worker'
+                view.__class__.__name__ in ('LabelViewSet', 'IssueViewSet', 'CommentViewSet')
+                and request.query_params.get('job_id')
+                and request.iam_context.get('organization') is None
+                and request.iam_context.get('privilege') == 'worker'
             )
         ):
             return queryset
@@ -112,11 +114,13 @@ class OrganizationFilterBackend(BaseFilterBackend):
             elif parameter.type == str:
                 parameter_type = 'string'
 
-            parameters.append({
-                'name': parameter.name,
-                'in': parameter.location,
-                'description': parameter.description,
-                'schema': {'type': parameter_type}
-            })
+            parameters.append(
+                {
+                    'name': parameter.name,
+                    'in': parameter.location,
+                    'description': parameter.description,
+                    'schema': {'type': parameter_type},
+                }
+            )
 
         return parameters

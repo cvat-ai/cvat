@@ -35,39 +35,29 @@ class OrganizationPermission(OpenPolicyAgentPermission):
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
-        return [{
-            'list': Scopes.LIST,
-            'create': Scopes.CREATE,
-            'destroy': Scopes.DELETE,
-            'partial_update': Scopes.UPDATE,
-            'retrieve': Scopes.VIEW,
-        }[view.action]]
+        return [
+            {
+                'list': Scopes.LIST,
+                'create': Scopes.CREATE,
+                'destroy': Scopes.DELETE,
+                'partial_update': Scopes.UPDATE,
+                'retrieve': Scopes.VIEW,
+            }[view.action]
+        ]
 
     def get_resource(self):
         if self.obj:
-            membership = Membership.objects.filter(
-                organization=self.obj, user=self.user_id).first()
+            membership = Membership.objects.filter(organization=self.obj, user=self.user_id).first()
             return {
                 'id': self.obj.id,
-                'owner': {
-                    'id': getattr(self.obj.owner, 'id', None)
-                },
-                'user': {
-                    'role': membership.role if membership else None
-                }
+                'owner': {'id': getattr(self.obj.owner, 'id', None)},
+                'user': {'role': membership.role if membership else None},
             }
         elif self.scope.startswith(__class__.Scopes.CREATE.value):
-            return {
-                'id': None,
-                'owner': {
-                    'id': self.user_id
-                },
-                'user': {
-                    'role': 'owner'
-                }
-            }
+            return {'id': None, 'owner': {'id': self.user_id}, 'user': {'role': 'owner'}}
         else:
             return None
+
 
 class InvitationPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
@@ -84,8 +74,9 @@ class InvitationPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'invitation':
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                    role=request.data.get('role'))
+                self = cls.create_base_perm(
+                    request, view, scope, iam_context, obj, role=request.data.get('role')
+                )
                 permissions.append(self)
 
         return permissions
@@ -98,42 +89,40 @@ class InvitationPermission(OpenPolicyAgentPermission):
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
-        return [{
-            'list': Scopes.LIST,
-            'create': Scopes.CREATE,
-            'destroy': Scopes.DELETE,
-            'partial_update': Scopes.ACCEPT if 'accepted' in
-                request.query_params else Scopes.RESEND,
-            'retrieve': Scopes.VIEW,
-            'accept': Scopes.ACCEPT,
-            'decline': Scopes.DECLINE,
-            'resend': Scopes.RESEND,
-        }[view.action]]
+        return [
+            {
+                'list': Scopes.LIST,
+                'create': Scopes.CREATE,
+                'destroy': Scopes.DELETE,
+                'partial_update': (
+                    Scopes.ACCEPT if 'accepted' in request.query_params else Scopes.RESEND
+                ),
+                'retrieve': Scopes.VIEW,
+                'accept': Scopes.ACCEPT,
+                'decline': Scopes.DECLINE,
+                'resend': Scopes.RESEND,
+            }[view.action]
+        ]
 
     def get_resource(self):
         data = None
         if self.obj:
             data = {
-                'owner': { 'id': getattr(self.obj.owner, 'id', None) },
-                'invitee': { 'id': getattr(self.obj.membership.user, 'id', None) },
+                'owner': {'id': getattr(self.obj.owner, 'id', None)},
+                'invitee': {'id': getattr(self.obj.membership.user, 'id', None)},
                 'role': self.obj.membership.role,
-                'organization': {
-                    'id': self.obj.membership.organization.id
-                }
+                'organization': {'id': self.obj.membership.organization.id},
             }
         elif self.scope.startswith(__class__.Scopes.CREATE.value):
             data = {
-                'owner': { 'id': self.user_id },
-                'invitee': {
-                    'id': None # unknown yet
-                },
+                'owner': {'id': self.user_id},
+                'invitee': {'id': None},  # unknown yet
                 'role': self.role,
-                'organization': {
-                    'id': self.org_id
-                } if self.org_id is not None else None
+                'organization': {'id': self.org_id} if self.org_id is not None else None,
             }
 
         return data
+
 
 class MembershipPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
@@ -174,9 +163,14 @@ class MembershipPermission(OpenPolicyAgentPermission):
         }[view.action]
 
         if scope == Scopes.UPDATE:
-            scopes.extend(__class__.get_per_field_update_scopes(request, {
-                'role': Scopes.UPDATE_ROLE,
-            }))
+            scopes.extend(
+                __class__.get_per_field_update_scopes(
+                    request,
+                    {
+                        'role': Scopes.UPDATE_ROLE,
+                    },
+                )
+            )
         else:
             scopes.append(scope)
 
@@ -187,8 +181,8 @@ class MembershipPermission(OpenPolicyAgentPermission):
             return {
                 'role': self.obj.role,
                 'is_active': self.obj.is_active,
-                'user': { 'id': self.obj.user.id },
-                'organization': { 'id': self.obj.organization.id }
+                'user': {'id': self.obj.user.id},
+                'organization': {'id': self.obj.organization.id},
             }
         else:
             return None

@@ -29,8 +29,9 @@ class WebhookPermission(OpenPolicyAgentPermission):
         if view.basename == 'webhook':
             project_id = request.data.get('project_id')
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                    project_id=project_id)
+                self = cls.create_base_perm(
+                    request, view, scope, iam_context, obj, project_id=project_id
+                )
                 permissions.append(self)
 
             owner = request.data.get('owner_id') or request.data.get('owner')
@@ -80,42 +81,52 @@ class WebhookPermission(OpenPolicyAgentPermission):
         if self.obj:
             data = {
                 "id": self.obj.id,
-                "owner": {"id": getattr(self.obj.owner, 'id', None) },
-                'organization': {
-                    "id": getattr(self.obj.organization, 'id', None)
-                },
-                "project": None
+                "owner": {"id": getattr(self.obj.owner, 'id', None)},
+                'organization': {"id": getattr(self.obj.organization, 'id', None)},
+                "project": None,
             }
             if self.obj.type == 'project' and getattr(self.obj, 'project', None):
-                data['project'] = {
-                    'owner': {'id': getattr(self.obj.project.owner, 'id', None)}
-                }
+                data['project'] = {'owner': {'id': getattr(self.obj.project.owner, 'id', None)}}
         elif self.scope in [
             __class__.Scopes.CREATE,
             __class__.Scopes.CREATE_IN_PROJECT,
-            __class__.Scopes.CREATE_IN_ORG
+            __class__.Scopes.CREATE_IN_ORG,
         ]:
             project = None
             if self.project_id:
                 try:
                     project = Project.objects.get(id=self.project_id)
                 except Project.DoesNotExist:
-                    raise ValidationError(f"Could not find project with provided id: {self.project_id}")
+                    raise ValidationError(
+                        f"Could not find project with provided id: {self.project_id}"
+                    )
 
             data = {
                 'id': None,
                 'owner': self.user_id,
-                'project': {
-                    'owner': {
-                        'id': project.owner.id,
-                    } if project.owner else None,
-                } if project else None,
-                'organization': {
-                    'id': self.org_id,
-                } if self.org_id is not None else None,
+                'project': (
+                    {
+                        'owner': (
+                            {
+                                'id': project.owner.id,
+                            }
+                            if project.owner
+                            else None
+                        ),
+                    }
+                    if project
+                    else None
+                ),
+                'organization': (
+                    {
+                        'id': self.org_id,
+                    }
+                    if self.org_id is not None
+                    else None
+                ),
                 'user': {
                     'id': self.user_id,
-                }
+                },
             }
 
         return data

@@ -36,19 +36,22 @@ if settings.IAM_TYPE == 'BASIC':
     urlpatterns += [
         path('register', RegisterViewEx.as_view(), name=BASIC_REGISTER_PATH_NAME),
         # password
-        path('password/reset', PasswordResetView.as_view(),
-            name='rest_password_reset'),
-        path('password/reset/confirm', PasswordResetConfirmView.as_view(),
-            name='rest_password_reset_confirm'),
-        path('password/change', PasswordChangeView.as_view(),
-            name='rest_password_change'),
+        path('password/reset', PasswordResetView.as_view(), name='rest_password_reset'),
+        path(
+            'password/reset/confirm',
+            PasswordResetConfirmView.as_view(),
+            name='rest_password_reset_confirm',
+        ),
+        path('password/change', PasswordChangeView.as_view(), name='rest_password_change'),
     ]
-    if allauth_settings.EMAIL_VERIFICATION != \
-       allauth_settings.EmailVerificationMethod.NONE:
+    if allauth_settings.EMAIL_VERIFICATION != allauth_settings.EmailVerificationMethod.NONE:
         # emails
         urlpatterns += [
-            re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailViewEx.as_view(),
-                name='account_confirm_email'),
+            re_path(
+                r'^account-confirm-email/(?P<key>[-:\w]+)/$',
+                ConfirmEmailViewEx.as_view(),
+                name='account_confirm_email',
+            ),
         ]
 
 urlpatterns = [path('auth/', include(urlpatterns))]

@@ -38,6 +38,7 @@ RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 signal_redelivery = Signal()
 signal_ping = Signal()
 
+
 def send_webhook(webhook, payload, redelivery=False):
     headers = {}
     if webhook.secret:
@@ -63,9 +64,7 @@ def send_webhook(webhook, payload, redelivery=False):
                 proxies=PROXIES_FOR_UNTRUSTED_URLS,
             )
             status_code = response.status_code
-            response_body = response.raw.read(
-                RESPONSE_SIZE_LIMIT + 1, decode_content=True
-            )
+            response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
     except requests.ConnectionError:
         status_code = HTTPStatus.BAD_GATEWAY
     except requests.Timeout:
@@ -86,6 +85,7 @@ def send_webhook(webhook, payload, redelivery=False):
     )
 
     return delivery
+
 
 def add_to_queue(webhook, payload, redelivery=False):
     queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
@@ -167,6 +167,7 @@ def pre_save_resource_event(sender, instance, **kwargs):
         old_serializer = get_serializer(instance=old_instance)
         instance._webhooks_old_data = old_serializer.data
 
+
 @receiver(post_save, sender=Project, dispatch_uid=__name__ + ":project:post_save")
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ":task:post_save")
 @receiver(post_save, sender=Job, dispatch_uid=__name__ + ":job:post_save")
@@ -200,10 +201,7 @@ def post_save_resource_event(sender, instance, **kwargs):
 
     if not created:
         if diff := get_instance_diff(old_data=old_data, data=serializer.data):
-            data["before_update"] = {
-                attr: value["old_value"]
-                for attr, value in diff.items()
-            }
+            data["before_update"] = {attr: value["old_value"] for attr, value in diff.items()}
 
     transaction.on_commit(
         lambda: batch_add_to_queue(selected_webhooks, data),
@@ -254,7 +252,11 @@ def post_delete_resource_event(sender, instance, **kwargs):
         "sender": get_sender(instance),
     }
 
-    related_webhooks = [webhook for webhook in getattr(instance, "_related_webhooks", []) if webhook.id not in map(lambda a: a.id, filtered_webhooks)]
+    related_webhooks = [
+        webhook
+        for webhook in getattr(instance, "_related_webhooks", [])
+        if webhook.id not in map(lambda a: a.id, filtered_webhooks)
+    ]
 
     transaction.on_commit(
         lambda: batch_add_to_queue(filtered_webhooks + related_webhooks, data),

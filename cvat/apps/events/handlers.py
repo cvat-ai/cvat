@@ -175,9 +175,7 @@ def organization_slug(instance):
 
 
 def get_instance_diff(old_data, data):
-    ignore_related_fields = (
-        "labels",
-    )
+    ignore_related_fields = ("labels",)
     diff = {}
     for prop, value in data.items():
         if prop in ignore_related_fields:
@@ -193,7 +191,7 @@ def get_instance_diff(old_data, data):
 
 
 def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
-    fields=(
+    fields = (
         "slug",
         "id",
         "name",
@@ -213,9 +211,7 @@ def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
         "attributes",
         "key",
     )
-    subfields=(
-        "url",
-    )
+    subfields = ("url",)
 
     data = {}
     for k, v in obj.items():
@@ -229,11 +225,13 @@ def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
 
 
 def _get_object_name(instance):
-    if isinstance(instance, Organization) or \
-        isinstance(instance, Project) or \
-        isinstance(instance, Task) or \
-        isinstance(instance, Job) or \
-        isinstance(instance, Label):
+    if (
+        isinstance(instance, Organization)
+        or isinstance(instance, Project)
+        or isinstance(instance, Task)
+        or isinstance(instance, Job)
+        or isinstance(instance, Label)
+    ):
         return getattr(instance, "name", None)
 
     if isinstance(instance, User):
@@ -265,9 +263,7 @@ SERIALIZERS = [
 
 
 def get_serializer(instance):
-    context = {
-        "request": get_current_request()
-    }
+    context = {"request": get_current_request()}
 
     serializer = None
     for model, serializer_class in SERIALIZERS:
@@ -275,6 +271,7 @@ def get_serializer(instance):
             serializer = serializer_class(instance=instance, context=context)
 
     return serializer
+
 
 def get_serializer_without_url(instance):
     serializer = get_serializer(instance)
@@ -494,6 +491,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
                 payload={"tracks": tracks},
             )
 
+
 def handle_dataset_io(
     instance: Union[Project, Task, Job],
     action: str,
@@ -502,7 +500,7 @@ def handle_dataset_io(
     cloud_storage_id: Optional[int],
     **payload_fields,
 ) -> None:
-    payload={"format": format_name, **payload_fields}
+    payload = {"format": format_name, **payload_fields}
 
     if cloud_storage_id:
         payload["cloud_storage"] = {"id": cloud_storage_id}
@@ -521,6 +519,7 @@ def handle_dataset_io(
         payload=payload,
     )
 
+
 def handle_dataset_export(
     instance: Union[Project, Task, Job],
     *,
@@ -528,8 +527,14 @@ def handle_dataset_export(
     cloud_storage_id: Optional[int],
     save_images: bool,
 ) -> None:
-    handle_dataset_io(instance, "export",
-        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images)
+    handle_dataset_io(
+        instance,
+        "export",
+        format_name=format_name,
+        cloud_storage_id=cloud_storage_id,
+        save_images=save_images,
+    )
+
 
 def handle_dataset_import(
     instance: Union[Project, Task, Job],
@@ -537,7 +542,10 @@ def handle_dataset_import(
     format_name: str,
     cloud_storage_id: Optional[int],
 ) -> None:
-    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id)
+    handle_dataset_io(
+        instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id
+    )
+
 
 def handle_function_call(
     function_id: str,
@@ -558,6 +566,7 @@ def handle_function_call(
             **payload_fields,
         },
     )
+
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)
@@ -592,10 +601,11 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     return False
 
+
 def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
-    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
+    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated,)
     if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
         return response
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied

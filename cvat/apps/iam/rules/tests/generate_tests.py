@@ -15,6 +15,7 @@ from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
 
+
 def create_arg_parser() -> ArgumentParser:
     parser = ArgumentParser(add_help=True)
     parser.add_argument(
@@ -53,7 +54,7 @@ def main(args: Optional[Sequence[str]] = None) -> int:
             partial(call_generator, gen_params=args),
             generator_paths,
         ):
-            pass # consume all results in order to propagate exceptions
+            pass  # consume all results in order to propagate exceptions
 
 
 if __name__ == "__main__":

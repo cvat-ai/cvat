@@ -42,6 +42,7 @@ class EventScopes:
             for action in cls.RESOURCES.get(resource, [])
         ]
 
+
 def record_server_event(
     *,
     scope: str,
@@ -80,6 +81,7 @@ class EventScopeChoice:
     @classmethod
     def choices(cls):
         return sorted((val, val.upper()) for val in AllEvents.events)
+
 
 class AllEvents:
     events = list(

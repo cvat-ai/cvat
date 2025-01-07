@@ -27,12 +27,16 @@ def get_organization(request):
         org_header = request.headers.get('X-Organization')
 
         if org_id is not None and (org_slug is not None or org_header is not None):
-            raise ValidationError('You cannot specify "org_id" query parameter with '
-                '"org" query parameter or "X-Organization" HTTP header at the same time.')
+            raise ValidationError(
+                'You cannot specify "org_id" query parameter with '
+                '"org" query parameter or "X-Organization" HTTP header at the same time.'
+            )
 
         if org_slug is not None and org_header is not None and org_slug != org_header:
-            raise ValidationError('You cannot specify "org" query parameter and '
-                '"X-Organization" HTTP header with different values.')
+            raise ValidationError(
+                'You cannot specify "org" query parameter and '
+                '"X-Organization" HTTP header with different values.'
+            )
 
         org_slug = org_slug if org_slug is not None else org_header
 
@@ -43,10 +47,7 @@ def get_organization(request):
     except Organization.DoesNotExist:
         raise NotFound(f'{org_slug or org_id} organization does not exist.')
 
-    context = {
-        "organization": organization,
-        "privilege": getattr(privilege, 'name', None)
-    }
+    context = {"organization": organization, "privilege": getattr(privilege, 'name', None)}
 
     return context
 
@@ -61,6 +62,7 @@ class ContextMiddleware:
         request.iam_context = SimpleLazyObject(lambda: get_organization(request))
 
         return self.get_response(request)
+
 
 class SessionRefreshMiddleware:
     """

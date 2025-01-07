@@ -33,7 +33,7 @@ class LogViewerPermission(OpenPolicyAgentPermission):
             obj=obj,
             has_analytics_access=request.user.profile.has_analytics_access,
             **iam_context,
-            **kwargs
+            **kwargs,
         )
 
     def __init__(self, has_analytics_access=False, **kwargs):
@@ -44,9 +44,11 @@ class LogViewerPermission(OpenPolicyAgentPermission):
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
-        return [{
-            'list': Scopes.VIEW,
-        }[view.action]]
+        return [
+            {
+                'list': Scopes.VIEW,
+            }[view.action]
+        ]
 
     def get_resource(self):
         return None
