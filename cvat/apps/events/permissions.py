@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
-
 from rest_framework.exceptions import PermissionDenied
 
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
 from cvat.utils.http import make_requests_session
+
 
 class EventsPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):

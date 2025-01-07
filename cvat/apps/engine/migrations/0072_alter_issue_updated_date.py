@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+
 def forwards_func(apps, schema_editor):
     Issue = apps.get_model("engine", "Issue")
 

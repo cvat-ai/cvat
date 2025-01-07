@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 
+import copy
 import io
+import itertools
 import os
 import os.path as osp
 import tempfile
@@ -13,18 +15,15 @@ import zipfile
 from collections import defaultdict
 from glob import glob
 from io import BytesIO
-import copy
 from shutil import copyfile
-import itertools
 
 from django.contrib.auth.models import Group, User
 from rest_framework import status
 
+from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.dataset_manager.task import TaskAnnotation
-
-from cvat.apps.engine.tests.utils import get_paginated_collection, ApiTestBase, ForceLogin
+from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin, get_paginated_collection
 
 CREATE_ACTION = "create"
 UPDATE_ACTION = "update"

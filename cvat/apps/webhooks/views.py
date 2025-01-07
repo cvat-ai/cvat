@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
-                                   OpenApiTypes, extend_schema,
-                                   extend_schema_view)
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
@@ -16,8 +20,12 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .permissions import WebhookPermission
-from .serializers import (EventsSerializer, WebhookDeliveryReadSerializer,
-                          WebhookReadSerializer, WebhookWriteSerializer)
+from .serializers import (
+    EventsSerializer,
+    WebhookDeliveryReadSerializer,
+    WebhookReadSerializer,
+    WebhookWriteSerializer,
+)
 from .signals import signal_ping, signal_redelivery
 
 

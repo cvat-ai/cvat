@@ -9,10 +9,11 @@ from typing import Optional
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 
-from cvat.apps.events.serializers import ClientEventsSerializer
-from cvat.apps.organizations.models import Organization
 from cvat.apps.events.const import MAX_EVENT_DURATION, WORKING_TIME_RESOLUTION
+from cvat.apps.events.serializers import ClientEventsSerializer
 from cvat.apps.events.utils import compute_working_time_per_ids, is_contained
+from cvat.apps.organizations.models import Organization
+
 
 class WorkingTimeTestCase(unittest.TestCase):
     _START_TIMESTAMP = datetime(2024, 1, 1, 12)

@@ -9,12 +9,15 @@ from datumaro.components.dataset import Dataset
 from datumaro.plugins.data_formats.cityscapes import write_label_map
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
-                                                import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .utils import make_colormap
 
 
