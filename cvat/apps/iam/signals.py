@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
-from django.db.models.signals import post_save, post_migrate
+from django.contrib.auth.models import Group, User
+from django.db.models.signals import post_migrate, post_save
 
 
 def register_groups(sender, **kwargs):
@@ -61,6 +61,7 @@ def register_signals(app_config):
         post_save.connect(create_user, sender=User)
     elif settings.IAM_TYPE == 'LDAP':
         import django_auth_ldap.backend
+
         # Map groups from LDAP to roles, convert a user to super user if he/she
         # has an admin group.
         django_auth_ldap.backend.populate_user.connect(create_user)

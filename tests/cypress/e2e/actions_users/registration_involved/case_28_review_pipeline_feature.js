@@ -12,14 +12,14 @@ context('Review pipeline feature', () => {
             username: 'annotator',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'annotator@local.local',
+            email: 'annotator@local.local',
             password: 'UfdU21!dds',
         },
         reviewer: {
             username: 'reviewer',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'reviewer@local.local',
+            email: 'reviewer@local.local',
             password: 'Fv5Df3#f55g',
         },
     };

@@ -4,8 +4,21 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib import admin
-from .models import Task, Segment, Job, Label, AttributeSpec, Project, \
-    CloudStorage, Storage, Data, AnnotationGuide, Asset
+
+from .models import (
+    AnnotationGuide,
+    Asset,
+    AttributeSpec,
+    CloudStorage,
+    Data,
+    Job,
+    Label,
+    Project,
+    Segment,
+    Storage,
+    Task,
+)
+
 
 class JobInline(admin.TabularInline):
     model = Job

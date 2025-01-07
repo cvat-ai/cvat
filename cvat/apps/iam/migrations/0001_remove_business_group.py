@@ -2,7 +2,6 @@
 from django.conf import settings
 from django.db import migrations
 
-
 BUSINESS_GROUP_NAME = "business"
 USER_GROUP_NAME = "user"
 

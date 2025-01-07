@@ -1,10 +1,11 @@
 import os
 import platform
 from datetime import datetime, timedelta
-from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
-from rq.worker import Worker
+
 import django_rq
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from rq.worker import Worker
 
 
 class Command(BaseCommand):

@@ -1,9 +1,9 @@
-from pathlib import Path
 import functools
 import hashlib
 import importlib
 import io
 import tarfile
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase
@@ -30,8 +30,8 @@ def add_opa_rules_path(path: Path) -> None:
     get_opa_bundle.cache_clear()
 
 def get_dummy_user(email):
-    from allauth.account.models import EmailAddress
     from allauth.account import app_settings
+    from allauth.account.models import EmailAddress
     from allauth.account.utils import filter_users_by_email
 
     users = filter_users_by_email(email)

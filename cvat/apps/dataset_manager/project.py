@@ -3,27 +3,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Mapping, Callable
+from contextlib import nullcontext
+from collections.abc import Mapping
+from typing import Any, Callable
 import io
 import rq
-from typing import Any
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
-
-from django.db import transaction
 from django.conf import settings
 from django.utils import timezone
+from django.db import transaction
 
-from cvat.apps.engine import models
-from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
-from cvat.apps.engine.task import _create_thread as create_task
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import TmpDirManager
-from contextlib import nullcontext
+from cvat.apps.engine import models
+from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
+from cvat.apps.engine.task import _create_thread as create_task
 
 from .annotation import AnnotationIR
-from .bindings import CvatDatasetNotFoundError, ProjectData, load_dataset_data, CvatImportError
+from .bindings import CvatDatasetNotFoundError, CvatImportError, ProjectData, load_dataset_data
 from .formats.registry import make_exporter, make_importer
 
 dlogger = DatasetLogManager()

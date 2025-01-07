@@ -3,13 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 import requests
-
+from django.conf import settings
 from health_check.backends import BaseHealthCheckBackend
 from health_check.exceptions import HealthCheckException
 
-from django.conf import settings
-
 from cvat.utils.http import make_requests_session
+
 
 class OPAHealthCheck(BaseHealthCheckBackend):
     critical_service = True

@@ -3,30 +3,35 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.utils.crypto import get_random_string
-from django.db import transaction
 from django.core.exceptions import ImproperlyConfigured
-
-from rest_framework import mixins, viewsets, status
-from rest_framework.permissions import SAFE_METHODS
+from django.db import transaction
+from django.utils.crypto import get_random_string
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-
+from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.organizations.permissions import (
-    InvitationPermission, MembershipPermission, OrganizationPermission)
+    InvitationPermission,
+    MembershipPermission,
+    OrganizationPermission,
+)
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
-from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from .models import Invitation, Membership, Organization
-
 from .serializers import (
-    InvitationReadSerializer, InvitationWriteSerializer,
-    MembershipReadSerializer, MembershipWriteSerializer,
-    OrganizationReadSerializer, OrganizationWriteSerializer,
-    AcceptInvitationReadSerializer)
+    AcceptInvitationReadSerializer,
+    InvitationReadSerializer,
+    InvitationWriteSerializer,
+    MembershipReadSerializer,
+    MembershipWriteSerializer,
+    OrganizationReadSerializer,
+    OrganizationWriteSerializer,
+)
+
 
 @extend_schema(tags=['organizations'])
 @extend_schema_view(

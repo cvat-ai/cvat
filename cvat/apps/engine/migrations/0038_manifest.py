@@ -9,9 +9,8 @@ from django.conf import settings
 from django.db import migrations
 
 from cvat.apps.engine.log import get_logger
-from cvat.apps.engine.models import (DimensionType, StorageChoice,
-                                     StorageMethodChoice)
 from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.models import DimensionType, StorageChoice, StorageMethodChoice
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 MIGRATION_NAME = os.path.splitext(os.path.basename(__file__))[0]

@@ -4,18 +4,19 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import timedelta
-from django.conf import settings
+
 from allauth.account.adapter import get_adapter
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ImproperlyConfigured
+from django.db import models
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.core.exceptions import ImproperlyConfigured
-from django.utils import timezone
-
 from cvat.apps.engine.models import TimestampedModel
+
 
 class Organization(TimestampedModel):
     slug = models.SlugField(max_length=16, blank=False, unique=True)

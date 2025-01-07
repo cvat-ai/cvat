@@ -4,11 +4,11 @@
 
 from django.conf import settings
 from django.http import HttpResponsePermanentRedirect
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from drf_spectacular.utils import extend_schema
 
 @extend_schema(exclude=True)
 class LogViewerAccessViewSet(viewsets.ViewSet):

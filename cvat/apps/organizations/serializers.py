@@ -3,18 +3,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-from attr.converters import to_bool
-from django.contrib.auth import get_user_model
 from allauth.account.models import EmailAddress
-from django.core.exceptions import ObjectDoesNotExist
+from attr.converters import to_bool
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-
 from rest_framework import serializers
+
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.iam.utils import get_dummy_user
+
 from .models import Invitation, Membership, Organization
+
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True)

@@ -23,41 +23,57 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-
 from rest_framework import serializers, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.dataset_manager.util import ExportCacheManager, get_export_cache_lock, LockNotAvailableError
-from cvat.apps.dataset_manager.views import EXPORT_LOCKED_RETRY_INTERVAL, retry_current_rq_job
+from cvat.apps.dataset_manager.bindings import CvatImportError
+from cvat.apps.dataset_manager.views import log_exception
+from cvat.apps.dataset_manager.util import ExportCacheManager, TmpDirManager
 from cvat.apps.engine import models
-from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, JobWriteSerializer,
-    LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
-    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
-    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer,
-    ValidationParamsSerializer)
-from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job,
-    get_rq_job_meta, import_resource_with_clean_up_after,
-    define_dependent_job, get_rq_lock_by_user,
-)
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
-from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Location,
-    RequestAction, RequestTarget, RequestSubresource,
-)
-from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.models import (
+    DataChoice,
+    Location,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    StorageChoice,
+    StorageMethodChoice,
+)
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.dataset_manager.views import log_exception
-from cvat.apps.dataset_manager.bindings import CvatImportError
-from cvat.apps.dataset_manager.views import EXPORT_CACHE_LOCK_TTL, EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT
-from cvat.apps.dataset_manager.util import extend_export_file_lifetime, TmpDirManager
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.serializers import (
+    AnnotationGuideWriteSerializer,
+    AssetWriteSerializer,
+    AttributeSerializer,
+    DataSerializer,
+    JobWriteSerializer,
+    LabeledDataSerializer,
+    LabelSerializer,
+    ProjectFileSerializer,
+    ProjectReadSerializer,
+    RqIdSerializer,
+    SegmentSerializer,
+    SimpleJobSerializer,
+    TaskFileSerializer,
+    TaskReadSerializer,
+    ValidationParamsSerializer,
+)
+from cvat.apps.engine.task import JobFileMapping, _create_thread
+from cvat.apps.engine.utils import (
+    av_scan_paths,
+    define_dependent_job,
+    get_rq_job_meta,
+    get_rq_lock_by_user,
+    import_resource_with_clean_up_after,
+    process_failed_job,
+)
 
 slogger = ServerLogManager(__name__)
 

@@ -11,12 +11,17 @@ from datumaro.plugins.open_images_format import OpenImagesPath
 from datumaro.util.image import DEFAULT_IMAGE_META_FILE_NAME
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
-    find_dataset_root, import_dm_annotations, match_dm_item)
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    find_dataset_root,
+    import_dm_annotations,
+    match_dm_item,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 
 
 def find_item_ids(path):

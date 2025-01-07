@@ -7,13 +7,8 @@ from rest_framework import serializers
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
-from .event_type import EventTypeChoice, ProjectEvents, OrganizationEvents
-from .models import (
-    Webhook,
-    WebhookContentTypeChoice,
-    WebhookTypeChoice,
-    WebhookDelivery,
-)
+from .event_type import EventTypeChoice, OrganizationEvents, ProjectEvents
+from .models import Webhook, WebhookContentTypeChoice, WebhookDelivery, WebhookTypeChoice
 
 
 class EventTypeValidator:
