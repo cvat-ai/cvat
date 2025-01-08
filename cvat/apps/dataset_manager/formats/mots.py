@@ -5,7 +5,7 @@
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset
-from datumaro.components.dataset_base import ItemTransform
+from datumaro.components.transformer import ItemTransform
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (

@@ -22,7 +22,8 @@ from datumaro.components.annotation import (
     Skeleton,
 )
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.dataset_base import DEFAULT_SUBSET_NAME, DatasetBase, Importer
+from datumaro.components.dataset_base import DEFAULT_SUBSET_NAME, DatasetBase
+from datumaro.components.importer import Importer
 from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporter
 from datumaro.util.image import Image
 from defusedxml import ElementTree
