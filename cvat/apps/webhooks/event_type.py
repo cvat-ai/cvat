@@ -47,7 +47,11 @@ class AllEvents:
 
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
-    events = [*Events.select(["task", "job", "label", "issue", "comment"]), event_name("update", "project"), event_name("delete", "project")]
+    events = [
+        *Events.select(["task", "job", "label", "issue", "comment"]),
+        event_name("update", "project"),
+        event_name("delete", "project"),
+    ]
 
 
 class OrganizationEvents:

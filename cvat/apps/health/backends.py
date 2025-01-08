@@ -14,7 +14,7 @@ class OPAHealthCheck(BaseHealthCheckBackend):
     critical_service = True
 
     def check_status(self):
-        opa_health_url = f'{settings.IAM_OPA_HOST}/health?bundles'
+        opa_health_url = f"{settings.IAM_OPA_HOST}/health?bundles"
         try:
             with make_requests_session() as session:
                 response = session.get(opa_health_url)
