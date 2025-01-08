@@ -171,6 +171,16 @@ def kube_exec_cvat(command: Union[list[str], str]):
     return _run(_command)
 
 
+def container_exec_cvat(request: pytest.FixtureRequest, command: Union[list[str], str]):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        return docker_exec_cvat(command)
+    elif platform == "kube":
+        return kube_exec_cvat(command)
+    else:
+        assert False, "unknown platform"
+
+
 def kube_exec_cvat_db(command):
     pod_name = _kube_get_db_pod_name()
     _run(["kubectl", "exec", pod_name, "--"] + command)
