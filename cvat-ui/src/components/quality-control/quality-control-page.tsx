@@ -223,7 +223,7 @@ function QualityControlPage(): JSX.Element {
                 settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
                 settings.iouThreshold = values.iouThreshold / 100;
                 settings.compareAttributes = values.compareAttributes;
-                settings.matchEmptyFrames = values.matchEmptyFrames;
+                settings.emptyIsAnnotated = values.emptyIsAnnotated;
 
                 settings.oksSigma = values.oksSigma / 100;
                 settings.pointSizeBase = values.pointSizeBase;
