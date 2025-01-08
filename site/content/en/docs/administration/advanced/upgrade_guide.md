@@ -59,48 +59,8 @@ To upgrade CVAT, follow these steps:
 ## Upgrade CVAT after v2.25.0
 
 In version 2.25.0, CVAT changed the location where the export cache is stored.
-The following Python script can be used to remove outdated files from the previous location:
+To clean up the outdated cache, run the following command: `python manage.py exportcachecleanup`.
 
-```python
-import shutil
-from pathlib import Path
-from django.utils import timezone
-from tqdm import tqdm
-from cvat.apps.engine.models import Job, Project, Task
-
-
-def cleanup_outdated_cache():
-   now = timezone.now()
-
-   for Model in (Project, Task, Job):
-      print(f"Deleting the export cache for {Model.__name__.lower()}s...")
-      queryset = Model.objects.filter(created_date__lt=now)
-      objects_count = queryset.count()
-      if objects_count < 1:
-         continue
-
-      print(f"The {objects_count} folder{'s' if objects_count > 1 else ''} are going to be checked")
-
-      for obj in tqdm(queryset.iterator(), total=objects_count):
-         export_cache_dir = Path(obj.get_dirname()) / "export_cache"
-         if export_cache_dir.exists():
-               shutil.rmtree(export_cache_dir)
-
-
-if __name__ == "__main__":
-    cleanup_outdated_cache()
-
-```
-
-### How to run the script
-
-1. Save the script as `cleanup_script.py` in a directory where `manage.py` is located
-1. Run Django shell command: `python manage.py shell`
-1. Import and execute the script:
-   ```python
-   from cleanup_script import cleanup_outdated_cache
-   cleanup_outdated_cache()
-   ```
 
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
