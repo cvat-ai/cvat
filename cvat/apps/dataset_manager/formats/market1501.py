@@ -7,7 +7,7 @@ import zipfile
 
 from datumaro.components.annotation import AnnotationType, Label, LabelCategories
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.dataset_base import ItemTransform
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
