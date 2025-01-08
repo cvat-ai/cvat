@@ -158,7 +158,6 @@ class ProjectAnnotationAndData:
         with (
             TmpDirManager.get_tmp_export_dir(
                 instance_type=self.db_project.__class__.__name__,
-                instance_timestamp=timezone.localtime(self.db_project.updated_date).timestamp(),
             ) if not temp_dir else nullcontext(temp_dir)
         ) as temp_dir:
             exporter(dst_file, temp_dir, project_data, **options)

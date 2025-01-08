@@ -155,7 +155,15 @@ def get_export_cache_lock(
         if acquired:
             lock.release()
 
+class OperationType(str, Enum):
+    EXPORT = "export"
+    IMPORT = "import"
 
+    @classmethod
+    def values(cls) -> list[str]:
+        return list(map(lambda x: x.value, cls))
+
+# todo: rename
 class ExportFileType(str, Enum):
     ANNOTATIONS = "annotations"
     BACKUP = "backup"
@@ -192,26 +200,42 @@ class ParsedDatasetFilename(_ParsedExportFilename):
 class ParsedBackupFilename(_ParsedExportFilename):
     pass
 
-@attrs.frozen
-class ParsedTmpDirFilename:
-    instance_type: InstanceType = attrs.field(converter=InstanceType)
-    instance_timestamp: float = attrs.field(converter=float)
+class TmpEntityType(str, Enum):
+    DIR = "dir"
+    FILE = "file"
 
-_not_set = object()
+@attrs.frozen
+class ParsedTmpEntity:
+    instance_type: InstanceType = attrs.field(converter=InstanceType)
+    operation: OperationType = attrs.field(converter=OperationType)
+
+@attrs.frozen
+class ParsedTmpDir(ParsedTmpEntity):
+    type: TmpEntityType = attrs.field(init=False, default=TmpEntityType.DIR)
+
+@attrs.frozen
+class ParsedTmpFile(ParsedTmpEntity):
+    type: TmpEntityType = attrs.field(init=False, default=TmpEntityType.FILE)
+
 
 class TmpDirManager:
     SPLITTER = "-"
-    INSTANCE_PREFIX = "instance"
     TMP_ROOT = settings.TMP_FILES_ROOT
+
+    @classmethod
+    def get_export_related_dirs(cls) -> Generator[Path, Any, Any]:
+        for item in Path(cls.TMP_ROOT).glob(f"{OperationType.EXPORT}*"):
+            if item.is_dir():
+                yield item
 
     @classmethod
     @contextmanager
     def get_tmp_dir(
         cls,
         *,
-        prefix: str | object = _not_set,
-        suffix: str | object = _not_set,
-        ignore_cleanup_errors: bool | object = _not_set,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        ignore_cleanup_errors: bool | None = None,
     ) -> Generator[str, Any, Any]:
         params = {}
         for k, v in {
@@ -219,7 +243,7 @@ class TmpDirManager:
             "suffix": suffix,
             "ignore_cleanup_errors": ignore_cleanup_errors,
         }.items():
-            if v is not _not_set:
+            if v is not None:
                 params[k] = v
 
         with tempfile.TemporaryDirectory(**params, dir=cls.TMP_ROOT) as tmp_dir:
@@ -231,41 +255,41 @@ class TmpDirManager:
         cls,
         *,
         instance_type: str,
-        instance_timestamp: float,
     ) -> Generator[str, Any, Any]:
         instance_type = InstanceType(instance_type.lower())
         with cls.get_tmp_dir(
-            prefix=cls.SPLITTER.join(
-                ["export", instance_type, cls.INSTANCE_PREFIX + str(instance_timestamp)]
-            ) + cls.SPLITTER
+            prefix=cls.SPLITTER.join([OperationType.EXPORT, instance_type]) + cls.SPLITTER
         ) as tmp_dir:
             yield tmp_dir
 
     @classmethod
-    def parse_tmp_directory(cls, dir_path: os.PathLike[str]) -> ParsedTmpDirFilename:
-        dir_path = Path(osp.normpath(dir_path))
-        assert dir_path.is_dir()
-        dir_name = dir_path.name
+    def parse_tmp_child(cls, child_path: os.PathLike[str]) -> ParsedTmpDir | ParsedTmpFile:
+        child_path = Path(osp.normpath(child_path))
 
-        basename_match = re.fullmatch(
-            (
-                rf"^export{cls.SPLITTER}(?P<instance_type>{'|'.join(InstanceType.values())})"
-                rf"{cls.SPLITTER}{cls.INSTANCE_PREFIX}(?P<instance_timestamp>\d+\.\d+){cls.SPLITTER}"
-            ),
-            dir_name,
-        )
+        if child_path.is_dir():
+            dir_name = child_path.name
 
-        if not basename_match:
-            raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}")
-
-        try:
-            parsed_dir_name = ParsedTmpDirFilename(
-                basename_match.groupdict()
+            basename_match = re.match(
+                (
+                    rf"^(?P<operation>{'|'.join(OperationType.values())}){cls.SPLITTER}"
+                    rf"(?P<instance_type>{'|'.join(InstanceType.values())}){cls.SPLITTER}"
+                ),
+                dir_name,
             )
-        except ValueError as ex:
-            raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}") from ex
 
-        return parsed_dir_name
+            if not basename_match:
+                raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}")
+
+            try:
+                parsed_dir_name = ParsedTmpDir(
+                    **basename_match.groupdict()
+                )
+            except ValueError as ex:
+                raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}") from ex
+
+            return parsed_dir_name
+
+        raise NotImplementedError()
 
 class ExportCacheManager:
     SPLITTER = "-"

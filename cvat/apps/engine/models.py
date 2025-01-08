@@ -435,18 +435,15 @@ class TimestampedModel(models.Model):
 class ABCModelMeta(ABCMeta, ModelBase):
     pass
 
-class FileSystemRelatedModel(models.Model, metaclass=ABCModelMeta):
-    class Meta:
-        abstract = True
-
+class FileSystemRelatedModel(metaclass=ABCModelMeta):
     @abstractmethod
     def get_dirname(self) -> str:
         ...
 
     def get_tmp_dirname(self) -> str:
         """
-        This method returns a directory that is only used
-        to store temporary files or subfolders related to an object
+        The method returns a directory that is only used
+        to store temporary files or folders related to the object
         """
         dir_path = os.path.join(self.get_dirname(), "tmp")
         os.makedirs(dir_path, exist_ok=True)

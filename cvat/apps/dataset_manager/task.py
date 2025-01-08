@@ -788,7 +788,6 @@ class JobAnnotation:
         with (
             TmpDirManager.get_tmp_export_dir(
                 instance_type=self.db_job.__class__.__name__,
-                instance_timestamp=timezone.localtime(self.db_job.updated_date).timestamp(),
             ) if not temp_dir else nullcontext(temp_dir)
         ) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
@@ -1004,7 +1003,6 @@ class TaskAnnotation:
         with (
             TmpDirManager.get_tmp_export_dir(
                 instance_type=self.db_task.__class__.__name__,
-                instance_timestamp=timezone.localtime(self.db_task.updated_date).timestamp(),
             ) if not temp_dir else nullcontext(temp_dir)
         ) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
@@ -1143,8 +1141,8 @@ def delete_task_data(pk):
 
 def export_task(
     task_id: int,
-    *,
     dst_file: str,
+    *,
     format_name: str,
     server_url: str | None = None,
     save_images: bool = False,
