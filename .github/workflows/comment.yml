@@ -10,7 +10,7 @@ jobs:
   verify_author:
     if: contains(github.event.issue.html_url, '/pull') &&
       contains(github.event.comment.body, '/check')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       ref: ${{ steps.get-ref.outputs.ref }}
       cid: ${{ steps.send-status.outputs.cid }}
@@ -60,7 +60,7 @@ jobs:
       ref: ${{ needs.verify_author.outputs.ref }}
 
   send_status:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [run-full, verify_author]
     if: needs.run-full.result != 'skipped' && always()
     env:

@@ -10,7 +10,7 @@ env:
 
 jobs:
   check_updates:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       REPO: ${{ github.repository }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,7 +43,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -100,7 +100,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -170,7 +170,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

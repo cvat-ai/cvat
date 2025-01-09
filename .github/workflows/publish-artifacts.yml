@@ -5,7 +5,7 @@ on:
 
 jobs:
   docker-images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +34,7 @@ jobs:
           docker push "${DOCKERHUB_WORKSPACE}/${UI_IMAGE_REPO}:latest"
 
   python-packages:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     steps:

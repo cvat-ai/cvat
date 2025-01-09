@@ -28,7 +28,7 @@ jobs:
 
   build:
     needs: search_cache
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -132,7 +132,7 @@ jobs:
 
   rest_api_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -206,7 +206,7 @@ jobs:
 
   unit_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -270,7 +270,7 @@ jobs:
 
   e2e_testing:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -389,7 +389,7 @@ jobs:
   publish_dev_images:
     if: github.ref == 'refs/heads/develop'
     needs: [rest_api_testing, unit_testing, e2e_testing]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -428,7 +428,7 @@ jobs:
           docker push "${UI_IMAGE_REPO}:dev"
 
   codecov:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [unit_testing, e2e_testing, rest_api_testing]
     steps:
       - uses: actions/checkout@v4

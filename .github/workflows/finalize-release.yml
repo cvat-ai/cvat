@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Discover pending release
         id: discover

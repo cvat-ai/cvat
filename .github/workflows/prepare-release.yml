@@ -8,7 +8,7 @@ on:
         default: X.Y.Z
 jobs:
   main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Validate version number
         env:
