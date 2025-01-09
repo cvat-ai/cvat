@@ -81,12 +81,11 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                 />
             </Row>
             { validationModeText ? (
-                <Row>
-                    <Text type='secondary' className='cvat-quality-control-validation-mode-hint'>
-                    The task&apos;s validation mode is configured as&nbsp;
-                        <strong>{validationModeText}</strong>
-                    .
+                <Row className='cvat-quality-control-validation-mode-hint'>
+                    <Text type='secondary'>
+                        The task&apos;s validation mode is configured as&nbsp;
                     </Text>
+                    <Text type='secondary' strong>{` ${validationModeText}.`}</Text>
                 </Row>
             ) : null}
             <Row>
