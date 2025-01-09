@@ -103,7 +103,7 @@ class CleanupTmpDirThread(BaseCleanupThread):
         #    In that case an exception is expected and is handled by the cron process.
         # 2. A temporary file/directory can be removed by the cron job only when it is outdated.
         # 3. Each temporary file/directory has a unique name, so the race condition when one process is creating an object
-        # and another is removing it - impossible.
+        #    and another is removing it - impossible.
         for child in os.scandir(TmpDirManager.TMP_ROOT):
             # stop clean up process correctly before rq job timeout is ended
             if self._stop_event.is_set():

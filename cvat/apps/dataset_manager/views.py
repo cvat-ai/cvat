@@ -169,8 +169,10 @@ def export(
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
             temp_file = osp.join(temp_dir, 'result')
+            temp_subdir = osp.join(temp_dir, 'subdir')
+            os.makedirs(temp_subdir, exist_ok=True)
             export_fn(db_instance.id, temp_file, format_name=dst_format,
-                server_url=server_url, save_images=save_images, temp_dir=temp_dir)
+                server_url=server_url, save_images=save_images, temp_dir=temp_subdir)
             with get_export_cache_lock(
                 output_path,
                 ttl=EXPORT_CACHE_LOCK_TTL,

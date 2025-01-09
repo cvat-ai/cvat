@@ -1202,7 +1202,6 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 def get_backup_dirname():
-    # FUTURE-FIXME
     return TmpDirManager.TMP_ROOT
 
 def import_project(request, queue_name, filename=None):
