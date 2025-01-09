@@ -9,7 +9,6 @@ from pathlib import Path
 from re import Match, Pattern
 from typing import Callable
 
-
 SUCCESS_CHAR = "\u2714"
 FAIL_CHAR = "\u2716"
 

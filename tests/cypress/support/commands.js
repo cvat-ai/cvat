@@ -360,8 +360,12 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
         headers: {
             'Content-type': 'application/json',
         },
+    }).then((response) => {
+        expect(response.status).to.eq(201);
+        expect(response.body.username).to.eq(userSpec.username);
+        expect(response.body.email).to.eq(userSpec.email);
+        return cy.wrap();
     });
-    return cy.wrap();
 });
 
 Cypress.Commands.add('headlessLogout', () => {

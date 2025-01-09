@@ -2,15 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-import re
 import hashlib
 import mimetypes
+import os
+import re
+from enum import Enum
+from random import shuffle
+
 import cv2 as cv
 from av import VideoFrame
-from enum import Enum
 from natsort import os_sorted
-from random import shuffle
+
 
 def rotate_image(image, angle):
     height, width = image.shape[:2]

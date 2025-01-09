@@ -45,7 +45,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
+from shared.fixtures.init import container_exec_cvat
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -5315,12 +5315,9 @@ class TestImportTaskAnnotations:
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        platform = request.config.getoption("--platform")
-        assert platform in ("kube", "local")
-        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
         for _ in range(12):
             sleep(2)
-            result, _ = func(command)
+            result, _ = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break

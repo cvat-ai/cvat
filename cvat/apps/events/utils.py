@@ -4,16 +4,15 @@
 
 import datetime
 
-
-from .const import MAX_EVENT_DURATION, COMPRESSED_EVENT_SCOPES
 from .cache import clear_cache
+from .const import COMPRESSED_EVENT_SCOPES, MAX_EVENT_DURATION
 
 
 def _prepare_objects_to_delete(object_to_delete):
-    from cvat.apps.engine.models import Project, Task, Segment, Job, Issue, Comment
+    from cvat.apps.engine.models import Comment, Issue, Job, Project, Segment, Task
 
     relation_chain = (Project, Task, Segment, Job, Issue, Comment)
-    related_field_names = ('task_set', 'segment_set', 'job_set', 'issues', 'comments')
+    related_field_names = ("task_set", "segment_set", "job_set", "issues", "comments")
     field_names = tuple(m._meta.model_name for m in relation_chain)
 
     # Find object Model
@@ -26,25 +25,21 @@ def _prepare_objects_to_delete(object_to_delete):
 
     # Fill filter param
     filter_params = {
-        f'{object_to_delete.__class__._meta.model_name}_id': object_to_delete.id,
+        f"{object_to_delete.__class__._meta.model_name}_id": object_to_delete.id,
     }
 
     # Fill prefetch
     prefetch = []
     if index < len(relation_chain) - 1:
-        forward_prefetch = '__'.join(related_field_names[index:])
+        forward_prefetch = "__".join(related_field_names[index:])
         prefetch.append(forward_prefetch)
 
     if index > 0:
-        backward_prefetch = '__'.join(reversed(field_names[:index]))
+        backward_prefetch = "__".join(reversed(field_names[:index]))
         prefetch.append(backward_prefetch)
 
     # make queryset
-    objects = relation_chain[index].objects.filter(
-        **filter_params
-    ).prefetch_related(
-        *prefetch
-    )
+    objects = relation_chain[index].objects.filter(**filter_params).prefetch_related(*prefetch)
 
     # list of objects which will be deleted with current object
     objects_to_delete = list(objects)
@@ -56,9 +51,11 @@ def _prepare_objects_to_delete(object_to_delete):
 
     return objects_to_delete
 
+
 def cache_deleted(method):
     def wrap(self, *args, **kwargs):
         from .signals import resource_delete
+
         objects = _prepare_objects_to_delete(self)
         try:
             for obj in objects:
@@ -67,6 +64,7 @@ def cache_deleted(method):
             method(self, *args, **kwargs)
         finally:
             clear_cache()
+
     return wrap
 
 
@@ -75,8 +73,10 @@ def get_end_timestamp(event: dict) -> datetime.datetime:
         return event["timestamp"] + datetime.timedelta(milliseconds=event["duration"])
     return event["timestamp"]
 
+
 def is_contained(event1: dict, event2: dict) -> bool:
-    return event1['timestamp'] < get_end_timestamp(event2)
+    return event1["timestamp"] < get_end_timestamp(event2)
+
 
 def compute_working_time_per_ids(data: dict) -> dict:
     def read_ids(event: dict) -> tuple[int | None, int | None, int | None]:

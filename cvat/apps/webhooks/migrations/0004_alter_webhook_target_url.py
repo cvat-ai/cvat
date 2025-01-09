@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('webhooks', '0003_alter_webhookdelivery_status_code'),
+        ("webhooks", "0003_alter_webhookdelivery_status_code"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='webhook',
-            name='target_url',
+            model_name="webhook",
+            name="target_url",
             field=models.URLField(max_length=8192),
         ),
     ]

@@ -215,10 +215,11 @@ class ComparisonParameters(_Serializable):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
-    match_empty_frames: bool = False
+    empty_is_annotated: bool = False
     """
-    Consider unannotated (empty) frames as matching. If disabled, quality metrics, such as accuracy,
-    will be 0 if both GT and DS frames have no annotations. When enabled, they will be 1 instead.
+    Consider unannotated (empty) frames virtually annotated as "nothing".
+    If disabled, quality metrics, such as accuracy, will be 0 if both GT and DS frames
+    have no annotations. When enabled, they will be 1 instead.
     This will also add virtual annotations to empty frames in the comparison results.
     """
 
@@ -1977,15 +1978,20 @@ class DatasetComparator:
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        if self.settings.match_empty_frames and not gt_item.annotations and not ds_item.annotations:
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames
-            valid_labels_count = 1
-            total_labels_count = 1
+            if not gt_item.annotations and not ds_item.annotations:
+                valid_labels_count = 1
+                total_labels_count = 1
 
-            valid_shapes_count = 1
-            total_shapes_count = 1
-            ds_shapes_count = 1
-            gt_shapes_count = 1
+                valid_shapes_count = 1
+                total_shapes_count = 1
+
+            if not ds_item.annotations:
+                ds_shapes_count = 1
+
+            if not gt_item.annotations:
+                gt_shapes_count = 1
 
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
             annotations=self._generate_frame_annotations_summary(
@@ -2078,12 +2084,17 @@ class DatasetComparator:
     ) -> ComparisonReportAnnotationsSummary:
         summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
 
-        if self.settings.match_empty_frames and summary.total_count == 0:
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames
-            summary.valid_count = 1
-            summary.total_count = 1
-            summary.ds_count = 1
-            summary.gt_count = 1
+            if not summary.total_count:
+                summary.valid_count = 1
+                summary.total_count = 1
+
+            if not summary.ds_count:
+                summary.ds_count = 1
+
+            if not summary.gt_count:
+                summary.gt_count = 1
 
         return summary
 
@@ -2108,14 +2119,26 @@ class DatasetComparator:
             ),
         )
         mean_ious = []
-        empty_frame_count = 0
+        empty_gt_frames = set()
+        empty_ds_frames = set()
         confusion_matrix_labels, confusion_matrix, _ = self._make_zero_confusion_matrix()
 
-        for frame_result in frame_summaries.values():
+        for frame_id, frame_result in frame_summaries.items():
             confusion_matrix += frame_result.annotations.confusion_matrix.rows
 
-            if not np.any(frame_result.annotations.confusion_matrix.rows):
-                empty_frame_count += 1
+            if self.settings.empty_is_annotated and not np.any(
+                frame_result.annotations.confusion_matrix.rows[
+                    np.triu_indices_from(frame_result.annotations.confusion_matrix.rows)
+                ]
+            ):
+                empty_ds_frames.add(frame_id)
+
+            if self.settings.empty_is_annotated and not np.any(
+                frame_result.annotations.confusion_matrix.rows[
+                    np.tril_indices_from(frame_result.annotations.confusion_matrix.rows)
+                ]
+            ):
+                empty_gt_frames.add(frame_id)
 
             if annotation_components is None:
                 annotation_components = deepcopy(frame_result.annotation_components)
@@ -2128,13 +2151,13 @@ class DatasetComparator:
             confusion_matrix, confusion_matrix_labels
         )
 
-        if self.settings.match_empty_frames and empty_frame_count:
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames,
             # they are not included in the confusion matrix
-            annotation_summary.valid_count += empty_frame_count
-            annotation_summary.total_count += empty_frame_count
-            annotation_summary.ds_count += empty_frame_count
-            annotation_summary.gt_count += empty_frame_count
+            annotation_summary.valid_count += len(empty_ds_frames & empty_gt_frames)
+            annotation_summary.total_count += len(empty_ds_frames | empty_gt_frames)
+            annotation_summary.ds_count += len(empty_ds_frames)
+            annotation_summary.gt_count += len(empty_gt_frames)
 
         # Cannot be computed in accumulate()
         annotation_components.shape.mean_iou = np.mean(mean_ious)

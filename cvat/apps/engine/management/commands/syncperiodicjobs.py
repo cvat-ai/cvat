@@ -5,10 +5,10 @@
 from argparse import ArgumentParser
 from collections import defaultdict
 
-from django.core.management.base import BaseCommand
-from django.conf import settings
-
 import django_rq
+from django.conf import settings
+from django.core.management.base import BaseCommand
+
 
 class Command(BaseCommand):
     help = "Synchronize periodic jobs in Redis with the project configuration"

@@ -11,26 +11,40 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.views import exception_handler
 
-from cvat.apps.engine.models import (CloudStorage, Comment, Issue, Job, Label,
-                                     Project, ShapeType, Task, User)
-from cvat.apps.engine.serializers import (BasicUserSerializer,
-                                          CloudStorageReadSerializer,
-                                          CommentReadSerializer,
-                                          IssueReadSerializer,
-                                          JobReadSerializer, LabelSerializer,
-                                          ProjectReadSerializer,
-                                          TaskReadSerializer)
-from cvat.apps.organizations.models import Invitation, Membership, Organization
-from cvat.apps.organizations.serializers import (InvitationReadSerializer,
-                                                 MembershipReadSerializer,
-                                                 OrganizationReadSerializer)
+from cvat.apps.engine.models import (
+    CloudStorage,
+    Comment,
+    Issue,
+    Job,
+    Label,
+    Project,
+    ShapeType,
+    Task,
+    User,
+)
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.serializers import (
+    BasicUserSerializer,
+    CloudStorageReadSerializer,
+    CommentReadSerializer,
+    IssueReadSerializer,
+    JobReadSerializer,
+    LabelSerializer,
+    ProjectReadSerializer,
+    TaskReadSerializer,
+)
+from cvat.apps.organizations.models import Invitation, Membership, Organization
+from cvat.apps.organizations.serializers import (
+    InvitationReadSerializer,
+    MembershipReadSerializer,
+    OrganizationReadSerializer,
+)
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.webhooks.serializers import WebhookReadSerializer
 
 from .cache import get_cache
-from .event import event_scope, record_server_event
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
+from .event import event_scope, record_server_event
 from .utils import compute_working_time_per_ids
 
 
@@ -161,9 +175,7 @@ def organization_slug(instance):
 
 
 def get_instance_diff(old_data, data):
-    ignore_related_fields = (
-        "labels",
-    )
+    ignore_related_fields = ("labels",)
     diff = {}
     for prop, value in data.items():
         if prop in ignore_related_fields:
@@ -179,7 +191,7 @@ def get_instance_diff(old_data, data):
 
 
 def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
-    fields=(
+    fields = (
         "slug",
         "id",
         "name",
@@ -199,9 +211,7 @@ def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
         "attributes",
         "key",
     )
-    subfields=(
-        "url",
-    )
+    subfields = ("url",)
 
     data = {}
     for k, v in obj.items():
@@ -215,11 +225,13 @@ def _cleanup_fields(obj: dict[str, Any]) -> dict[str, Any]:
 
 
 def _get_object_name(instance):
-    if isinstance(instance, Organization) or \
-        isinstance(instance, Project) or \
-        isinstance(instance, Task) or \
-        isinstance(instance, Job) or \
-        isinstance(instance, Label):
+    if (
+        isinstance(instance, Organization)
+        or isinstance(instance, Project)
+        or isinstance(instance, Task)
+        or isinstance(instance, Job)
+        or isinstance(instance, Label)
+    ):
         return getattr(instance, "name", None)
 
     if isinstance(instance, User):
@@ -251,9 +263,7 @@ SERIALIZERS = [
 
 
 def get_serializer(instance):
-    context = {
-        "request": get_current_request()
-    }
+    context = {"request": get_current_request()}
 
     serializer = None
     for model, serializer_class in SERIALIZERS:
@@ -261,6 +271,7 @@ def get_serializer(instance):
             serializer = serializer_class(instance=instance, context=context)
 
     return serializer
+
 
 def get_serializer_without_url(instance):
     serializer = get_serializer(instance)
@@ -290,7 +301,7 @@ def handle_create(scope, instance, **kwargs):
         scope=scope,
         request_id=request_id(),
         on_commit=True,
-        obj_id=getattr(instance, 'id', None),
+        obj_id=getattr(instance, "id", None),
         obj_name=_get_object_name(instance),
         org_id=oid,
         org_slug=oslug,
@@ -325,7 +336,7 @@ def handle_update(scope, instance, old_instance, **kwargs):
             request_id=request_id(),
             on_commit=True,
             obj_name=prop,
-            obj_id=getattr(instance, f'{prop}_id', None),
+            obj_id=getattr(instance, f"{prop}_id", None),
             obj_val=str(change["new_value"]),
             org_id=oid,
             org_slug=oslug,
@@ -480,6 +491,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
                 payload={"tracks": tracks},
             )
 
+
 def handle_dataset_io(
     instance: Union[Project, Task, Job],
     action: str,
@@ -488,7 +500,7 @@ def handle_dataset_io(
     cloud_storage_id: Optional[int],
     **payload_fields,
 ) -> None:
-    payload={"format": format_name, **payload_fields}
+    payload = {"format": format_name, **payload_fields}
 
     if cloud_storage_id:
         payload["cloud_storage"] = {"id": cloud_storage_id}
@@ -507,6 +519,7 @@ def handle_dataset_io(
         payload=payload,
     )
 
+
 def handle_dataset_export(
     instance: Union[Project, Task, Job],
     *,
@@ -514,8 +527,14 @@ def handle_dataset_export(
     cloud_storage_id: Optional[int],
     save_images: bool,
 ) -> None:
-    handle_dataset_io(instance, "export",
-        format_name=format_name, cloud_storage_id=cloud_storage_id, save_images=save_images)
+    handle_dataset_io(
+        instance,
+        "export",
+        format_name=format_name,
+        cloud_storage_id=cloud_storage_id,
+        save_images=save_images,
+    )
+
 
 def handle_dataset_import(
     instance: Union[Project, Task, Job],
@@ -523,7 +542,10 @@ def handle_dataset_import(
     format_name: str,
     cloud_storage_id: Optional[int],
 ) -> None:
-    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id)
+    handle_dataset_io(
+        instance, "import", format_name=format_name, cloud_storage_id=cloud_storage_id
+    )
+
 
 def handle_function_call(
     function_id: str,
@@ -545,6 +567,7 @@ def handle_function_call(
         },
     )
 
+
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     oid = rq_job.meta.get(RQJobMetaField.ORG_ID, None)
     oslug = rq_job.meta.get(RQJobMetaField.ORG_SLUG, None)
@@ -558,7 +581,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     payload = {
         "message": tb_strings[-1].rstrip("\n"),
-        "stack": ''.join(tb_strings),
+        "stack": "".join(tb_strings),
     }
 
     record_server_event(
@@ -578,10 +601,11 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 
     return False
 
+
 def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
-    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
+    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated,)
     if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
         return response
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
@@ -604,7 +628,7 @@ def handle_viewset_exception(exc, context):
             "method": request.method,
         },
         "message": tb_strings[-1].rstrip("\n"),
-        "stack": ''.join(tb_strings),
+        "stack": "".join(tb_strings),
         "status_code": status_code,
     }
 

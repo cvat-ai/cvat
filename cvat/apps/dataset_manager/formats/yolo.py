@@ -4,28 +4,40 @@
 # SPDX-License-Identifier: MIT
 import os.path as osp
 from glob import glob
+from typing import Callable, Optional
 
-from pyunpack import Archive
-
-from cvat.apps.dataset_manager.bindings import (
-    GetCVATDataExtractor,
-    detect_dataset,
-    import_dm_annotations,
-    match_dm_item,
-    find_dataset_root,
-)
-from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.extractor import DatasetItem
 from datumaro.components.project import Dataset
+from pyunpack import Archive
+
+from cvat.apps.dataset_manager.bindings import (
+    CommonData,
+    GetCVATDataExtractor,
+    ProjectData,
+    detect_dataset,
+    find_dataset_root,
+    import_dm_annotations,
+    match_dm_item,
+)
+from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
+from .transformations import SetKeyframeForEveryTrackShape
 
 
-def _export_common(dst_file, temp_dir, instance_data, format_name, *, save_images=False):
+def _export_common(
+    dst_file: str,
+    temp_dir: str,
+    instance_data: ProjectData | CommonData,
+    format_name: str,
+    *,
+    save_images: bool = False,
+    **kwargs
+):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, format_name, save_images=save_images)
+        dataset.export(temp_dir, format_name, save_images=save_images, **kwargs)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -37,12 +49,12 @@ def _export_yolo(*args, **kwargs):
 
 def _import_common(
     src_file,
-    temp_dir,
-    instance_data,
-    format_name,
+    temp_dir: str,
+    instance_data: ProjectData | CommonData,
+    format_name: str,
     *,
-    load_data_callback=None,
-    import_kwargs=None,
+    load_data_callback: Optional[Callable] = None,
+    import_kwargs: dict | None = None,
     **kwargs
 ):
     Archive(src_file.name).extractall(temp_dir)
@@ -67,6 +79,7 @@ def _import_common(
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
     dataset = Dataset.import_from(temp_dir, format_name,
         env=dm_env, image_info=image_info, **(import_kwargs or {}))
+    dataset = dataset.transform(SetKeyframeForEveryTrackShape)
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)
@@ -80,6 +93,11 @@ def _import_yolo(*args, **kwargs):
 @exporter(name='Ultralytics YOLO Detection', ext='ZIP', version='1.0')
 def _export_yolo_ultralytics_detection(*args, **kwargs):
     _export_common(*args, format_name='yolo_ultralytics_detection', **kwargs)
+
+
+@exporter(name='Ultralytics YOLO Detection Track', ext='ZIP', version='1.0')
+def _export_yolo_ultralytics_detection_track(*args, **kwargs):
+    _export_common(*args, format_name='yolo_ultralytics_detection', write_track_id=True, **kwargs)
 
 
 @exporter(name='Ultralytics YOLO Oriented Bounding Boxes', ext='ZIP', version='1.0')

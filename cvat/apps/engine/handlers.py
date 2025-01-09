@@ -4,7 +4,9 @@
 
 from pathlib import Path
 from time import time
+
 from django.conf import settings
+
 from cvat.apps.engine.log import ServerLogManager
 
 slogger = ServerLogManager(__name__)

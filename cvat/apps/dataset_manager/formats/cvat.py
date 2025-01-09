@@ -11,29 +11,34 @@ from glob import glob
 from io import BufferedWriter
 from typing import Callable, Union
 
-from datumaro.components.annotation import (AnnotationType, Bbox, Label,
-                                            LabelCategories, Points, Polygon,
-                                            PolyLine, Skeleton)
+from datumaro.components.annotation import (
+    AnnotationType,
+    Bbox,
+    Label,
+    LabelCategories,
+    Points,
+    Polygon,
+    PolyLine,
+    Skeleton,
+)
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.extractor import (DEFAULT_SUBSET_NAME, Extractor,
-                                           Importer)
-from datumaro.plugins.cvat_format.extractor import CvatImporter as _CvatImporter
-
+from datumaro.components.extractor import DEFAULT_SUBSET_NAME, Extractor, Importer
+from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporter
 from datumaro.util.image import Image
 from defusedxml import ElementTree
 
 from cvat.apps.dataset_manager.bindings import (
+    JobData,
     NoMediaInAnnotationFileError,
     ProjectData,
     TaskData,
-    JobData,
     detect_dataset,
     get_defaulted_subset,
     import_dm_annotations,
-    match_dm_item
+    match_dm_item,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.frame_provider import FrameQuality, FrameOutputType, make_frame_provider
+from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, make_frame_provider
 
 from .registry import dm_env, exporter, importer
 

@@ -4,28 +4,33 @@
 #
 # SPDX-License-Identifier: MIT
 
-import numpy as np
 import os.path as osp
 import tempfile
 import zipfile
 from io import BytesIO
 
 import datumaro
-from datumaro.components.dataset import Dataset, DatasetItem
+import numpy as np
 from datumaro.components.annotation import Mask
+from datumaro.components.dataset import Dataset, DatasetItem
 from django.contrib.auth.models import Group, User
-
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import (CvatTaskOrJobDataExtractor,
-                                                TaskData, find_dataset_root)
+from cvat.apps.dataset_manager.bindings import (
+    CvatTaskOrJobDataExtractor,
+    TaskData,
+    find_dataset_root,
+)
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import (
-    get_paginated_collection, ForceLogin, generate_image_file, ApiTestBase
+    ApiTestBase,
+    ForceLogin,
+    generate_image_file,
+    get_paginated_collection,
 )
 
 
@@ -295,6 +300,7 @@ class TaskExportTest(_DbTestBase):
             'Ultralytics YOLO Classification 1.0',
             'Ultralytics YOLO Oriented Bounding Boxes 1.0',
             'Ultralytics YOLO Detection 1.0',
+            'Ultralytics YOLO Detection Track 1.0',
             'Ultralytics YOLO Pose 1.0',
             'Ultralytics YOLO Segmentation 1.0',
         })

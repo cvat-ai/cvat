@@ -6,15 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dataset_repo', '0001_initial'),
+        ("dataset_repo", "0001_initial"),
     ]
 
-    replaces = [('git', '0002_auto_20190123_1305')]
+    replaces = [("git", "0002_auto_20190123_1305")]
 
     operations = [
         migrations.AlterField(
-            model_name='gitdata',
-            name='status',
-            field=models.CharField(default='!sync', max_length=20),
+            model_name="gitdata",
+            name="status",
+            field=models.CharField(default="!sync", max_length=20),
         ),
     ]
