@@ -167,7 +167,7 @@ def export(
                 extend_export_file_lifetime(output_path)
                 return output_path
 
-        with TmpDirManager.get_tmp_export_dir(instance_type=instance_type) as temp_dir:
+        with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
             temp_file = osp.join(temp_dir, 'result')
             export_fn(db_instance.id, temp_file, format_name=dst_format,
                 server_url=server_url, save_images=save_images, temp_dir=temp_dir)

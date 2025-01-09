@@ -12,7 +12,6 @@ import rq
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import TmpDirManager
@@ -156,7 +155,7 @@ class ProjectAnnotationAndData:
         )
 
         with (
-            TmpDirManager.get_tmp_export_dir(
+            TmpDirManager.get_tmp_directory_for_export(
                 instance_type=self.db_project.__class__.__name__,
             ) if not temp_dir else nullcontext(temp_dir)
         ) as temp_dir:
@@ -174,7 +173,7 @@ class ProjectAnnotationAndData:
         )
         project_data.soft_attribute_import = True
 
-        with TmpDirManager.get_tmp_dir() as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(dataset_file, temp_dir, project_data, load_data_callback=self.load_dataset_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:

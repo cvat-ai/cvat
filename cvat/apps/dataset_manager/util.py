@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) 2023-2025 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,7 +14,6 @@ from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
-from pathlib import Path
 from threading import Lock
 from typing import Any
 
@@ -157,13 +156,11 @@ def get_export_cache_lock(
 
 class OperationType(str, Enum):
     EXPORT = "export"
-    IMPORT = "import"
 
     @classmethod
     def values(cls) -> list[str]:
         return list(map(lambda x: x.value, cls))
 
-# todo: rename
 class ExportFileType(str, Enum):
     ANNOTATIONS = "annotations"
     BACKUP = "backup"
@@ -200,43 +197,25 @@ class ParsedDatasetFilename(_ParsedExportFilename):
 class ParsedBackupFilename(_ParsedExportFilename):
     pass
 
-class TmpEntityType(str, Enum):
-    DIR = "dir"
-    FILE = "file"
-
-@attrs.frozen
-class ParsedTmpEntity:
-    instance_type: InstanceType = attrs.field(converter=InstanceType)
-    operation: OperationType = attrs.field(converter=OperationType)
-
-@attrs.frozen
-class ParsedTmpDir(ParsedTmpEntity):
-    type: TmpEntityType = attrs.field(init=False, default=TmpEntityType.DIR)
-
-@attrs.frozen
-class ParsedTmpFile(ParsedTmpEntity):
-    type: TmpEntityType = attrs.field(init=False, default=TmpEntityType.FILE)
-
 
 class TmpDirManager:
     SPLITTER = "-"
     TMP_ROOT = settings.TMP_FILES_ROOT
-
-    @classmethod
-    def get_export_related_dirs(cls) -> Generator[Path, Any, Any]:
-        for item in Path(cls.TMP_ROOT).glob(f"{OperationType.EXPORT}*"):
-            if item.is_dir():
-                yield item
+    TMP_FILE_OR_DIR_RETENTION_DAYS = settings.TMP_FILE_OR_DIR_RETENTION_DAYS
 
     @classmethod
     @contextmanager
-    def get_tmp_dir(
+    def get_tmp_directory(
         cls,
         *,
         prefix: str | None = None,
         suffix: str | None = None,
         ignore_cleanup_errors: bool | None = None,
     ) -> Generator[str, Any, Any]:
+        """
+        The method allows to create a temporary directory and
+        ensures that the parent directory uses the CVAT tmp directory
+        """
         params = {}
         for k, v in {
             "prefix": prefix,
@@ -251,45 +230,17 @@ class TmpDirManager:
 
     @classmethod
     @contextmanager
-    def get_tmp_export_dir(
+    def get_tmp_directory_for_export(
         cls,
         *,
         instance_type: str,
     ) -> Generator[str, Any, Any]:
         instance_type = InstanceType(instance_type.lower())
-        with cls.get_tmp_dir(
+        with cls.get_tmp_directory(
             prefix=cls.SPLITTER.join([OperationType.EXPORT, instance_type]) + cls.SPLITTER
         ) as tmp_dir:
             yield tmp_dir
 
-    @classmethod
-    def parse_tmp_child(cls, child_path: os.PathLike[str]) -> ParsedTmpDir | ParsedTmpFile:
-        child_path = Path(osp.normpath(child_path))
-
-        if child_path.is_dir():
-            dir_name = child_path.name
-
-            basename_match = re.match(
-                (
-                    rf"^(?P<operation>{'|'.join(OperationType.values())}){cls.SPLITTER}"
-                    rf"(?P<instance_type>{'|'.join(InstanceType.values())}){cls.SPLITTER}"
-                ),
-                dir_name,
-            )
-
-            if not basename_match:
-                raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}")
-
-            try:
-                parsed_dir_name = ParsedTmpDir(
-                    **basename_match.groupdict()
-                )
-            except ValueError as ex:
-                raise CacheFileOrDirPathParseError(f"Couldn't parse directory name: {dir_name!r}") from ex
-
-            return parsed_dir_name
-
-        raise NotImplementedError()
 
 class ExportCacheManager:
     SPLITTER = "-"
@@ -355,15 +306,11 @@ class ExportCacheManager:
         return osp.join(settings.EXPORT_CACHE_ROOT, filename)
 
     @classmethod
-    def parse_file_path(
-        cls, file_path: os.PathLike[str],
+    def parse_filename(
+        cls, filename: str,
     ) -> ParsedDatasetFilename | ParsedBackupFilename:
-        file_path = osp.normpath(file_path)
-        basename = osp.split(file_path)[1]
-        basename, file_ext = osp.splitext(basename)
+        basename, file_ext = osp.splitext(filename)
         file_ext = file_ext.strip(".").lower()
-
-        # handle file name
         basename_match = re.fullmatch(
             (
                 rf"^(?P<instance_type>{'|'.join(InstanceType.values())})"

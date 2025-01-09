@@ -15,7 +15,6 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch, QuerySet
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
@@ -786,7 +785,7 @@ class JobAnnotation:
         )
 
         with (
-            TmpDirManager.get_tmp_export_dir(
+            TmpDirManager.get_tmp_directory_for_export(
                 instance_type=self.db_job.__class__.__name__,
             ) if not temp_dir else nullcontext(temp_dir)
         ) as temp_dir:
@@ -800,7 +799,7 @@ class JobAnnotation:
         )
         self.delete()
 
-        with TmpDirManager.get_tmp_dir() as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -1001,7 +1000,7 @@ class TaskAnnotation:
         )
 
         with (
-            TmpDirManager.get_tmp_export_dir(
+            TmpDirManager.get_tmp_directory_for_export(
                 instance_type=self.db_task.__class__.__name__,
             ) if not temp_dir else nullcontext(temp_dir)
         ) as temp_dir:
@@ -1015,7 +1014,7 @@ class TaskAnnotation:
         )
         self.delete()
 
-        with TmpDirManager.get_tmp_dir() as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:

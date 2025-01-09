@@ -359,7 +359,6 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.dataset_manager.cron.cleanup',
         # Run twice a day (at midnight and at noon)
         'cron_string': '0 0,12 * * *',
-        # 'cron_string': '50 11 * * *',
         'args': ('cvat.apps.dataset_manager.cron.CleanupExportCacheThread',),
     },
     {
@@ -368,7 +367,6 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.dataset_manager.cron.cleanup',
         # Run once a day
         'cron_string': '0 18 * * *',
-        # 'cron_string': '17 12 * * *',
         'args': ('cvat.apps.dataset_manager.cron.CleanupTmpDirThread',),
     }
 ]
@@ -766,3 +764,6 @@ update_started_job_registry_cleanup()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
+
+# Indicates the maximum number of days a file or directory is retained in the temporary directory
+TMP_FILE_OR_DIR_RETENTION_DAYS = 14

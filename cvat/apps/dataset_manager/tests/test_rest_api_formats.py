@@ -21,6 +21,7 @@ from time import sleep
 from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import DEFAULT as MOCK_DEFAULT
 from unittest.mock import MagicMock, patch
+from pathlib import Path
 
 import av
 import numpy as np
@@ -1520,7 +1521,7 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                clear_export_cache(file_path=file_path)
+                clear_export_cache(file_path=Path(file_path))
                 set_condition(clear_has_been_finished)
 
                 mock_os_remove.assert_not_called()
@@ -1699,7 +1700,7 @@ class ExportBehaviorTest(_DbTestBase):
 
                 exited_by_timeout = False
                 try:
-                    clear_export_cache(file_path=file_path)
+                    clear_export_cache(file_path=Path(file_path))
                 except LockNotAvailableError:
                     # should come from waiting for get_export_cache_lock
                     exited_by_timeout = True
@@ -2027,7 +2028,7 @@ class ExportBehaviorTest(_DbTestBase):
             patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}),
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=export_path)
+            clear_export_cache(file_path=Path(export_path))
 
         self.assertFalse(osp.isfile(export_path))
 
@@ -2035,7 +2036,7 @@ class ExportBehaviorTest(_DbTestBase):
     def test_cleanup_can_fail_if_no_file(self):
         from cvat.apps.dataset_manager.util import CacheFileOrDirPathParseError
         with self.assertRaises(CacheFileOrDirPathParseError):
-            clear_export_cache(file_path="non existent file path")
+            clear_export_cache(file_path=Path("non existent file path"))
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
         from os import remove as original_remove
@@ -2050,13 +2051,13 @@ class ExportBehaviorTest(_DbTestBase):
             patch("cvat.apps.dataset_manager.cron.os.remove", side_effect=original_remove) as mock_os_remove,
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=export_path)
+            clear_export_cache(file_path=Path(export_path))
             mock_os_remove.assert_not_called()
 
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_cron_job_can_delete_cached_files(self):
-        from cvat.apps.dataset_manager.cron import cron_export_cache_cleanup
+        from cvat.apps.dataset_manager.cron import cleanup
 
         def _get_project_task_job_ids():
             project = self._create_project(projects["main"])
@@ -2100,7 +2101,7 @@ class ExportBehaviorTest(_DbTestBase):
                 ):
                     mock_rq_job = MagicMock(timeout=100)
                     mock_rq_get_current_job.return_value = mock_rq_job
-                    cron_export_cache_cleanup()
+                    cleanup('cvat.apps.dataset_manager.cron.CleanupExportCacheThread')
                     mock_clear_export_cache.assert_called_once()
 
                 self.assertFalse(osp.exists(export_path))

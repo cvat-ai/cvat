@@ -1083,7 +1083,7 @@ def create_backup(
                 extend_export_file_lifetime(output_path)
                 return output_path
 
-        with TmpDirManager.get_tmp_export_dir(instance_type=instance_type) as tmp_dir:
+        with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
             temp_file = os.path.join(tmp_dir, 'dump')
             exporter = Exporter(db_instance.id)
             exporter.export_to(temp_file)
