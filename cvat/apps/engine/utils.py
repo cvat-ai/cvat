@@ -4,43 +4,39 @@
 # SPDX-License-Identifier: MIT
 
 import ast
-from itertools import islice
-import cv2 as cv
-from collections import namedtuple
 import hashlib
 import importlib
+import logging
+import os
+import platform
+import re
+import subprocess
 import sys
 import traceback
-from contextlib import suppress, nullcontext
-from typing import (
-    Any, Callable, Dict, Generator, Iterable, Iterator, Optional, Mapping, Sequence, TypeVar, Union
-)
-import subprocess
-import os
 import urllib.parse
-import re
-import logging
-import platform
-
-from attr.converters import to_bool
-from datumaro.util.os_util import walk
-from rq.job import Job, Dependency
-from django_rq.queues import DjangoRQ
+from collections import namedtuple
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
+from contextlib import nullcontext, suppress
+from itertools import islice
+from multiprocessing import cpu_count
 from pathlib import Path
+from typing import Any, Callable, Optional, TypeVar, Union
 
+import cv2 as cv
+from attr.converters import to_bool
+from av import VideoFrame
+from datumaro.util.os_util import walk
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.http.request import HttpRequest
 from django.utils import timezone
 from django.utils.http import urlencode
-from rest_framework.reverse import reverse as _reverse
-
-from av import VideoFrame
-from PIL import Image
-from multiprocessing import cpu_count
-
-from django.core.exceptions import ValidationError
+from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
-from django.conf import settings
+from PIL import Image
 from redis.lock import Lock
+from rest_framework.reverse import reverse as _reverse
+from rq.job import Dependency, Job
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -231,8 +227,8 @@ def get_rq_job_meta(
     result_url: Optional[str] = None,
 ):
     # to prevent circular import
-    from cvat.apps.webhooks.signals import project_id, organization_id
-    from cvat.apps.events.handlers import task_id, job_id, organization_slug
+    from cvat.apps.events.handlers import job_id, organization_slug, task_id
+    from cvat.apps.webhooks.signals import organization_id, project_id
 
     oid = organization_id(db_obj)
     oslug = organization_slug(db_obj)
@@ -264,7 +260,7 @@ def get_rq_job_meta(
     return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
-    query_params: Optional[Dict[str, str]] = None,
+    query_params: Optional[dict[str, str]] = None,
     request: Optional[HttpRequest] = None,
 ) -> str:
     """
@@ -283,7 +279,7 @@ def reverse(viewname, *, args=None, kwargs=None,
 def get_server_url(request: HttpRequest) -> str:
     return request.build_absolute_uri('/')
 
-def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
+def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
     """
     Builds a collection filter query params for a single field and value.
     """

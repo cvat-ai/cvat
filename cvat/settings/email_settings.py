@@ -5,7 +5,6 @@
 
 from cvat.settings.production import *
 
-
 # https://github.com/pennersr/django-allauth
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True

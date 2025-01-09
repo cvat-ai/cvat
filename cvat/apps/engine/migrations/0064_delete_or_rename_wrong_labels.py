@@ -1,7 +1,9 @@
 import os
 
 from django.db import migrations
+
 from cvat.apps.engine.log import get_migration_logger
+
 
 def delete_or_rename_wrong_labels(apps, schema_editor):
     migration_name = os.path.splitext(os.path.basename(__file__))[0]

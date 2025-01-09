@@ -12,7 +12,7 @@ azure-storage-blob==12.13.0
 boto3==1.17.61
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@bf0374689df50599a34a4f220b9e5329aca695ce
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@08e77b216080555a57e12c01625be8c8201e3131
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)

@@ -139,7 +139,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: v2.24.0
+    tag: v2.25.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -162,7 +162,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.24.0
+    tag: v2.25.0
     imagePullPolicy: Always
     labels: {}
     #  test: test
@@ -475,7 +475,7 @@ ingress:
   ##   kubernetes.io/ingress.class: nginx
   ##
   annotations: {}
-  ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## @param ingress.className IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##

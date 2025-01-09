@@ -3,10 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import ExitStack
-from datetime import timedelta
+import copy
 import io
-from itertools import product
+import json
+import logging
 import os
 import random
 import shutil
@@ -15,39 +15,55 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
+from contextlib import ExitStack
+from datetime import timedelta
 from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
-from unittest import mock
+from itertools import product
 from time import sleep
-import logging
-import copy
-import json
+from unittest import mock
 
 import av
 import django_rq
 import numpy as np
-from pdf2image import convert_from_bytes
-from pyunpack import Archive
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
+from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
+from pyunpack import Archive
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
-    Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
-    StorageChoice, DimensionType, SortingMethod)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
-from cvat.apps.engine.tests.utils import get_paginated_collection
+from cvat.apps.engine.models import (
+    AttributeSpec,
+    AttributeType,
+    Data,
+    DimensionType,
+    Job,
+    Label,
+    Project,
+    Segment,
+    SortingMethod,
+    StageChoice,
+    StatusChoice,
+    StorageChoice,
+    StorageMethodChoice,
+    Task,
+)
+from cvat.apps.engine.tests.utils import (
+    ApiTestBase,
+    ForceLogin,
+    generate_image_file,
+    generate_video_file,
+    get_paginated_collection,
+)
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-
-from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin,
-    generate_image_file, generate_video_file)
 
 #suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -6127,13 +6143,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "YOLO 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Detection 1.0":
+            elif annotation_format == "Ultralytics YOLO Detection 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Oriented Bounding Boxes 1.0":
+            elif annotation_format == "Ultralytics YOLO Oriented Bounding Boxes 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Segmentation 1.0":
+            elif annotation_format == "Ultralytics YOLO Segmentation 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
             elif annotation_format == "COCO 1.0":
@@ -6382,6 +6398,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 formats['CVAT for video 1.1'] = 'CVAT 1.1'
             if 'CVAT for images 1.1' in export_formats:
                 formats['CVAT for images 1.1'] = 'CVAT 1.1'
+        if 'Ultralytics YOLO Detection 1.0' in import_formats:
+            if 'Ultralytics YOLO Detection Track 1.0' in export_formats:
+                formats['Ultralytics YOLO Detection Track 1.0'] = 'Ultralytics YOLO Detection 1.0'
         if set(import_formats) ^ set(export_formats):
             # NOTE: this may not be an error, so we should not fail
             print("The following import formats have no pair:",
@@ -6493,7 +6512,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     self.assertEqual(meta["task"]["name"], task["name"])
         elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name in ["YOLO 1.1", "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0", "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0"]:
+        elif format_name in [
+            "YOLO 1.1", "Ultralytics YOLO Detection 1.0", "Ultralytics YOLO Segmentation 1.0",
+            "Ultralytics YOLO Oriented Bounding Boxes 1.0", "Ultralytics YOLO Pose 1.0",
+        ]:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))

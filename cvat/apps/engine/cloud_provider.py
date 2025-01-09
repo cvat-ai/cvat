@@ -5,13 +5,14 @@
 
 import functools
 import json
-import os
 import math
-from abc import ABC, abstractmethod, abstractproperty
+import os
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
-from typing import Dict, List, Optional, Any, Callable, TypeVar, Iterator
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_EXCEPTION
+from typing import Any, Callable, Optional, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -26,13 +27,13 @@ from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
-from rest_framework.exceptions import (NotFound, PermissionDenied,
-                                       ValidationError)
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+
 
 class NamedBytesIO(BytesIO):
     @property
@@ -135,7 +136,8 @@ class _CloudStorage(ABC):
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self):
         pass
 
@@ -232,7 +234,7 @@ class _CloudStorage(ABC):
 
     def bulk_download_to_memory(
         self,
-        files: List[str],
+        files: list[str],
         *,
         threads_number: Optional[int] = None,
         _use_optimal_downloading: bool = True,
@@ -246,7 +248,7 @@ class _CloudStorage(ABC):
 
     def bulk_download_to_dir(
         self,
-        files: List[str],
+        files: list[str],
         upload_dir: str,
         *,
         threads_number: Optional[int] = None,
@@ -274,7 +276,7 @@ class _CloudStorage(ABC):
         prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         pass
 
     def list_files_on_one_page(
@@ -284,7 +286,7 @@ class _CloudStorage(ABC):
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
-    ) -> Dict:
+    ) -> dict:
 
         if self.prefix and prefix and not (self.prefix.startswith(prefix) or prefix.startswith(self.prefix)):
             return {
@@ -337,7 +339,7 @@ class _CloudStorage(ABC):
         self,
         prefix: str = "",
         _use_flat_listing: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         all_files = []
         next_token = None
         while True:
@@ -349,7 +351,8 @@ class _CloudStorage(ABC):
 
         return all_files
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def supported_actions(self):
         pass
 
@@ -365,7 +368,7 @@ def get_cloud_storage_instance(
     cloud_provider: CloudProviderChoice,
     resource: str,
     credentials: str,
-    specific_attributes: Optional[Dict[str, Any]] = None,
+    specific_attributes: Optional[dict[str, Any]] = None,
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AWS_S3:
@@ -529,7 +532,7 @@ class AWS_S3(_CloudStorage):
         prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         # The structure of response looks like this:
         # {
         #    'CommonPrefixes': [{'Prefix': 'sub/'}],
@@ -736,7 +739,7 @@ class AzureBlobContainer(_CloudStorage):
         prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         page = self._client.walk_blobs(
             maxresults=page_size, results_per_page=page_size, delimiter='/',
             **({'name_starts_with': prefix} if prefix else {})
@@ -852,7 +855,7 @@ class GoogleCloudStorage(_CloudStorage):
         prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         iterator = self._client.list_blobs(
             bucket_or_name=self.name, max_results=page_size, page_size=page_size,
             fields='items(name),nextPageToken,prefixes', # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields

@@ -13,104 +13,173 @@ import textwrap
 import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
-from contextlib import suppress
-from PIL import Image
-from types import SimpleNamespace
-from typing import Optional, Any, Dict, List, Union, cast, Callable, Mapping, Iterable
 from collections import namedtuple
+from collections.abc import Iterable, Mapping
+from contextlib import suppress
 from copy import copy
 from datetime import datetime
-from redis.exceptions import ConnectionError as RedisConnectionError
+from pathlib import Path
 from tempfile import NamedTemporaryFile
+from types import SimpleNamespace
+from typing import Any, Callable, Optional, Union, cast
 
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError
 from django.db import models as django_models
+from django.db import transaction
 from django.db.models.query import Prefetch
-from django.http import HttpResponse, HttpRequest, HttpResponseNotFound, HttpResponseBadRequest
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django_rq.queues import DjangoRQ
-
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
-    OpenApiExample, OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    PolymorphicProxySerializer,
+    extend_schema,
+    extend_schema_view,
 )
-
-from pathlib import Path
+from PIL import Image
+from redis.exceptions import ConnectionError as RedisConnectionError
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-
-from rq.job import Job as RQJob, JobStatus as RQJobStatus
+from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage
-from cvat.apps.events.handlers import handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
-from cvat.apps.engine.frame_provider import (
-    DataWithMeta, IFrameProvider, TaskFrameProvider, JobFrameProvider, FrameQuality
-)
-from cvat.apps.engine.filters import NonModelSimpleFilter, NonModelOrderingFilter, NonModelJsonLogicFilter
-from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.permissions import AnnotationGuidePermission, get_iam_context
-from cvat.apps.engine.models import (
-    ClientFile, Job, JobType, Label, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice,
-    CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
-    Asset, AnnotationGuide, RequestStatus, RequestAction, RequestTarget, RequestSubresource
-)
-from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, FileInfoSerializer,
-    JobDataMetaWriteSerializer, JobReadSerializer, JobWriteSerializer,
-    JobValidationLayoutReadSerializer, JobValidationLayoutWriteSerializer,
-    LabelSerializer, LabeledDataSerializer,
-    ProjectReadSerializer, ProjectWriteSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskValidationLayoutReadSerializer, TaskValidationLayoutWriteSerializer, TaskWriteSerializer,
-    UserSerializer, PluginsSerializer, IssueReadSerializer,
-    AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
-    AssetReadSerializer, AssetWriteSerializer,
-    IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer,
-    ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer,
-    RequestSerializer,
-)
-from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-
-from utils.dataset_manifest import ImageManifestManager
-from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job,
-    parse_exception_message, get_rq_job_meta,
-    import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user,
-)
-from cvat.apps.engine.rq_job_handler import RQId, is_rq_job_owner, RQJobMetaField
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import (
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
+from cvat.apps.engine.cache import CvatChunkTimestampMismatchError, LockError, MediaCache
+from cvat.apps.engine.cloud_provider import (
+    db_storage_to_storage_instance,
+    import_resource_from_cloud_storage,
 )
-from cvat.apps.engine.location import get_location_configuration, StorageType
+from cvat.apps.engine.filters import (
+    NonModelJsonLogicFilter,
+    NonModelOrderingFilter,
+    NonModelSimpleFilter,
+)
+from cvat.apps.engine.frame_provider import (
+    DataWithMeta,
+    FrameQuality,
+    IFrameProvider,
+    JobFrameProvider,
+    TaskFrameProvider,
+)
+from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.mixins import (
+    BackupMixin,
+    CsrfWorkaroundMixin,
+    DatasetMixin,
+    PartialUpdateModelMixin,
+    UploadMixin,
+)
+from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
+from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+from cvat.apps.engine.models import (
+    Comment,
+    Data,
+    Issue,
+    Job,
+    JobType,
+    Label,
+    Location,
+    Project,
+    RequestAction,
+    RequestStatus,
+    RequestSubresource,
+    RequestTarget,
+    StorageChoice,
+    StorageMethodChoice,
+    Task,
+)
+from cvat.apps.engine.permissions import (
+    AnnotationGuidePermission,
+    CloudStoragePermission,
+    CommentPermission,
+    IssuePermission,
+    JobPermission,
+    LabelPermission,
+    ProjectPermission,
+    TaskPermission,
+    UserPermission,
+    get_cloud_storage_for_import_or_export,
+    get_iam_context,
+)
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField, is_rq_job_owner
+from cvat.apps.engine.serializers import (
+    AboutSerializer,
+    AnnotationFileSerializer,
+    AnnotationGuideReadSerializer,
+    AnnotationGuideWriteSerializer,
+    AssetReadSerializer,
+    AssetWriteSerializer,
+    BasicUserSerializer,
+    CloudStorageContentSerializer,
+    CloudStorageReadSerializer,
+    CloudStorageWriteSerializer,
+    CommentReadSerializer,
+    CommentWriteSerializer,
+    DataMetaReadSerializer,
+    DataMetaWriteSerializer,
+    DataSerializer,
+    DatasetFileSerializer,
+    FileInfoSerializer,
+    IssueReadSerializer,
+    IssueWriteSerializer,
+    JobDataMetaWriteSerializer,
+    JobReadSerializer,
+    JobValidationLayoutReadSerializer,
+    JobValidationLayoutWriteSerializer,
+    JobWriteSerializer,
+    LabeledDataSerializer,
+    LabelSerializer,
+    PluginsSerializer,
+    ProjectFileSerializer,
+    ProjectReadSerializer,
+    ProjectWriteSerializer,
+    RequestSerializer,
+    RqIdSerializer,
+    RqStatusSerializer,
+    TaskFileSerializer,
+    TaskReadSerializer,
+    TaskValidationLayoutReadSerializer,
+    TaskValidationLayoutWriteSerializer,
+    TaskWriteSerializer,
+    UserSerializer,
+)
+from cvat.apps.engine.utils import (
+    av_scan_paths,
+    define_dependent_job,
+    get_rq_job_meta,
+    get_rq_lock_by_user,
+    import_resource_with_clean_up_after,
+    parse_exception_message,
+    process_failed_job,
+    sendfile,
+)
+from cvat.apps.engine.view_utils import tus_chunk_action
+from cvat.apps.events.handlers import handle_dataset_import
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource, PolicyEnforcer
+from utils.dataset_manifest import ImageManifestManager
 
 from . import models, task
 from .log import ServerLogManager
-from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.iam.permissions import PolicyEnforcer, IsAuthenticatedOrReadPublicResource
-from cvat.apps.engine.cache import MediaCache, CvatChunkTimestampMismatchError, LockError
-from cvat.apps.engine.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission)
-from cvat.apps.engine.view_utils import tus_chunk_action
 
 slogger = ServerLogManager(__name__)
 
@@ -1076,7 +1145,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         filename = self._prepare_upload_info_entry(filename)
         task_data.client_files.get_or_create(file=filename)
 
-    def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
+    def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
         task_data.client_files.bulk_create([
@@ -1084,7 +1153,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             for cf in client_files
         ])
 
-    def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
+    def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
         Applies file ordering for the "predefined" file sorting method of the task creation.
 
@@ -3568,7 +3637,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     def queues(self) -> Iterable[DjangoRQ]:
         return (django_rq.get_queue(queue_name) for queue_name in self.SUPPORTED_QUEUES)
 
-    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs_from_queue(self, queue: DjangoRQ, user_id: int) -> list[RQJob]:
         job_ids = set(queue.get_job_ids() +
             queue.started_job_registry.get_job_ids() +
             queue.finished_job_registry.get_job_ids() +
@@ -3588,7 +3657,7 @@ class RequestViewSet(viewsets.GenericViewSet):
         return jobs
 
 
-    def _get_rq_jobs(self, user_id: int) -> List[RQJob]:
+    def _get_rq_jobs(self, user_id: int) -> list[RQJob]:
         """
         Get all RQ jobs for a specific user and return them as a list of RQJob objects.
 

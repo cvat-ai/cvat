@@ -4,23 +4,24 @@
 # SPDX-License-Identifier: MIT
 
 import concurrent.futures
-import itertools
 import fnmatch
+import itertools
 import os
 import re
-import rq
 import shutil
-from copy import deepcopy
+from collections.abc import Iterator, Sequence
 from contextlib import closing
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Any, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-import av
 import attrs
+import av
 import django_rq
+import rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -28,25 +29,39 @@ from django.http import HttpRequest
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    MEDIA_TYPES, CachingMediaIterator, IMediaReader, ImageListReader,
-    Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
-    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort,
+    MEDIA_TYPES,
+    CachingMediaIterator,
+    ImageListReader,
+    IMediaReader,
+    Mpeg4ChunkWriter,
+    Mpeg4CompressedChunkWriter,
+    RandomAccessIterator,
+    ValidateDimension,
+    ZipChunkWriter,
+    ZipCompressedChunkWriter,
+    get_mime,
     load_image,
+    sort,
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.utils import (
-    av_scan_paths, format_list, get_rq_job_meta,
-    define_dependent_job, get_rq_lock_by_user, take_by
-)
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
+from cvat.apps.engine.utils import (
+    av_scan_paths,
+    define_dependent_job,
+    format_list,
+    get_rq_job_meta,
+    get_rq_lock_by_user,
+    take_by,
+)
+from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import detect_related_images
+
 from .cloud_provider import db_storage_to_storage_instance
 
 slogger = ServerLogManager(__name__)
@@ -77,7 +92,7 @@ def create(
 
 ############################# Internal implementation for server API
 
-JobFileMapping = List[List[str]]
+JobFileMapping = list[list[str]]
 
 class SegmentParams(NamedTuple):
     start_frame: int
@@ -91,10 +106,10 @@ class SegmentsParams(NamedTuple):
     overlap: int
 
 def _copy_data_from_share_point(
-    server_files: List[str],
+    server_files: list[str],
     upload_dir: str,
     server_dir: Optional[str] = None,
-    server_files_exclude: Optional[List[str]] = None,
+    server_files_exclude: Optional[list[str]] = None,
 ):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from source..'
@@ -304,7 +319,7 @@ def _validate_data(counter, manifest_files=None):
     return counter, task_modes[0]
 
 def _validate_job_file_mapping(
-    db_task: models.Task, data: Dict[str, Any]
+    db_task: models.Task, data: dict[str, Any]
 ) -> Optional[JobFileMapping]:
     job_file_mapping = data.get('job_file_mapping', None)
 
@@ -343,7 +358,7 @@ def _validate_job_file_mapping(
     return job_file_mapping
 
 def _validate_validation_params(
-    db_task: models.Task, data: Dict[str, Any], *, is_backup_restore: bool = False
+    db_task: models.Task, data: dict[str, Any], *, is_backup_restore: bool = False
 ) -> Optional[dict[str, Any]]:
     params = data.get('validation_params', {})
     if not params:
@@ -382,7 +397,7 @@ def _validate_validation_params(
     return params
 
 def _validate_manifest(
-    manifests: List[str],
+    manifests: list[str],
     root_dir: Optional[str],
     *,
     is_in_cloud: bool,
@@ -455,7 +470,7 @@ def _download_data(urls, upload_dir):
 
 def _download_data_from_cloud_storage(
     db_storage: models.CloudStorage,
-    files: List[str],
+    files: list[str],
     upload_dir: str,
 ):
     cloud_storage_instance = db_storage_to_storage_instance(db_storage)
@@ -479,7 +494,7 @@ def _read_dataset_manifest(path: str, *, create_index: bool = False) -> ImageMan
 
 def _restore_file_order_from_manifest(
     extractor: ImageListReader, manifest: ImageManifestManager, upload_dir: str
-) -> List[str]:
+) -> list[str]:
     """
     Restores file ordering for the "predefined" file sorting method of the task creation.
     Checks for extra files in the input.
@@ -511,7 +526,7 @@ def _restore_file_order_from_manifest(
     return [input_files[fn] for fn in manifest_files]
 
 def _create_task_manifest_based_on_cloud_storage_manifest(
-    sorted_media: List[str],
+    sorted_media: list[str],
     cloud_storage_manifest_prefix: str,
     cloud_storage_manifest: ImageManifestManager,
     manifest: ImageManifestManager,
@@ -536,7 +551,7 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
 
 def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
-    sorted_media: List[str],
+    sorted_media: list[str],
     manifest: ImageManifestManager,
     dimension: models.DimensionType = models.DimensionType.DIM_2D,
     *,
@@ -557,7 +572,7 @@ def _create_task_manifest_from_cloud_data(
 @transaction.atomic
 def _create_thread(
     db_task: Union[int, models.Task],
-    data: Dict[str, Any],
+    data: dict[str, Any],
     *,
     is_backup_restore: bool = False,
     is_dataset_import: bool = False,
@@ -1598,7 +1613,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
     frame_map = {} # frame number -> extractor frame number
 
     if isinstance(media_extractor, MEDIA_TYPES['video']['extractor']):
-        def _get_frame_size(frame_tuple: Tuple[av.VideoFrame, Any, Any]) -> int:
+        def _get_frame_size(frame_tuple: tuple[av.VideoFrame, Any, Any]) -> int:
             # There is no need to be absolutely precise here,
             # just need to provide the reasonable upper boundary.
             # Return bytes needed for 1 frame

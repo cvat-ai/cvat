@@ -8,12 +8,13 @@ import json
 import os
 import os.path
 import uuid
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from unittest import mock
 from textwrap import dedent
-from typing import Optional, Callable, Dict, Any, Mapping
+from typing import Any, Callable, Optional
+from unittest import mock
 from urllib.parse import urljoin
 
 import django_rq
@@ -21,20 +22,18 @@ from attr.converters import to_bool
 from django.conf import settings
 from django.http import HttpRequest
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
-                                   extend_schema)
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
-from rest_framework.decorators import action
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cvat.apps.engine.background import (BackupExportManager,
-                                                    DatasetExportManager)
+from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, RequestAction, RequestTarget, RequestSubresource
+from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
 from cvat.apps.engine.utils import is_dataset_export
@@ -424,7 +423,7 @@ class DatasetMixin:
         request,
         save_images: bool,
         *,
-        get_data: Optional[Callable[[int], Dict[str, Any]]] = None,
+        get_data: Optional[Callable[[int], dict[str, Any]]] = None,
     ) -> Response:
         if request.query_params.get("format"):
             callback = self.get_export_callback(save_images)

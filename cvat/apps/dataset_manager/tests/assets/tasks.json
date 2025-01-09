@@ -634,8 +634,8 @@
       }
     ]
   },
-  "YOLOv8 Pose 1.0": {
-    "name": "YOLOv8 pose task",
+  "Ultralytics YOLO Pose 1.0": {
+    "name": "Ultralytics YOLO pose task",
     "overlap": 0,
     "segment_size": 100,
     "labels": [

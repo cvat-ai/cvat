@@ -21,7 +21,7 @@ export default function isAbleToChangeFrame(frame?: number): boolean {
     if (typeof frame === 'number') {
         if (meta.includedFrames) {
             // frame argument comes in job coordinates
-            // hovewer includedFrames contains absolute data values
+            // however includedFrames contains absolute data values
             frameInTheJob = meta.includedFrames.includes(meta.getDataFrameNumber(frame - job.startFrame));
         }
 

@@ -7,8 +7,11 @@ import zipfile
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset, \
-    import_dm_annotations
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
