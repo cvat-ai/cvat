@@ -7,7 +7,7 @@ import zipfile
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset
-from datumaro.plugins.coco_format.importer import CocoImporter
+from datumaro.plugins.data_formats.coco.importer import CocoImporter
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,

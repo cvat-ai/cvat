@@ -78,13 +78,15 @@ def get_data(scope, context, ownership, privilege, membership, resource):
         "scope": scope,
         "auth": {
             "user": {"id": random.randrange(0, 100), "privilege": privilege},
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            }
-            if context == "organization"
-            else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": {**resource, "owner": {"id": random.randrange(300, 400)}} if resource else None,
     }

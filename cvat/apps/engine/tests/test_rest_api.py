@@ -6420,6 +6420,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 formats['CVAT for video 1.1'] = 'CVAT 1.1'
             if 'CVAT for images 1.1' in export_formats:
                 formats['CVAT for images 1.1'] = 'CVAT 1.1'
+        if 'Ultralytics YOLO Detection 1.0' in import_formats:
+            if 'Ultralytics YOLO Detection Track 1.0' in export_formats:
+                formats['Ultralytics YOLO Detection Track 1.0'] = 'Ultralytics YOLO Detection 1.0'
         if set(import_formats) ^ set(export_formats):
             # NOTE: this may not be an error, so we should not fail
             print("The following import formats have no pair:",
