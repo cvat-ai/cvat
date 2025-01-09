@@ -16,12 +16,12 @@ from contextlib import ExitStack, contextmanager
 from datetime import timedelta
 from functools import partial
 from io import BytesIO
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Any, Callable, ClassVar, Optional, overload
 from unittest.mock import DEFAULT as MOCK_DEFAULT
 from unittest.mock import MagicMock, patch
-from pathlib import Path
 
 import av
 import numpy as np
