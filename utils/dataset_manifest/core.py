@@ -3,25 +3,24 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
-from io import StringIO
-import av
 import json
 import os
-
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import closing
-from itertools import islice
-from PIL import Image
-from json.decoder import JSONDecodeError
+from enum import Enum
 from inspect import isgenerator
+from io import StringIO
+from itertools import islice
+from json.decoder import JSONDecodeError
+from typing import Any, Callable, Optional, Union
+
+import av
+from PIL import Image
 
 from .errors import InvalidManifestError, InvalidVideoError
-from .utils import SortingMethod, md5_hash, rotate_image, sort
 from .types import NamedBytesIO
-
-from typing import Any, Union, Optional, Callable
+from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 
 class VideoStreamReader:

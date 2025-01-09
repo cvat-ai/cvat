@@ -62,9 +62,15 @@ def eval_rule(scope, context, ownership, privilege, membership, data, has_analyt
         )
     )
     rules = list(filter(lambda r: GROUPS.index(privilege) <= GROUPS.index(r["privilege"]), rules))
-    rules = list(filter(lambda r: r["hasanalyticsaccess"] in ("na", str(has_analytics_access).lower()), rules))
+    rules = list(
+        filter(
+            lambda r: r["hasanalyticsaccess"] in ("na", str(has_analytics_access).lower()), rules
+        )
+    )
     resource = data["resource"]
-    rules = list(filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules))
+    rules = list(
+        filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules)
+    )
 
     return bool(rules)
 
@@ -78,13 +84,15 @@ def get_data(scope, context, ownership, privilege, membership, resource, has_ana
                 "privilege": privilege,
                 "has_analytics_access": has_analytics_access,
             },
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            }
-            if context == "organization"
-            else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": resource,
     }
@@ -143,9 +151,15 @@ def gen_test_rego(name):
                 if not is_valid(scope, context, ownership, privilege, membership, resource):
                     continue
 
-                data = get_data(scope, context, ownership, privilege, membership, resource, has_analytics_access)
-                test_name = get_name(scope, context, ownership, privilege, membership, resource, has_analytics_access)
-                result = eval_rule(scope, context, ownership, privilege, membership, data, has_analytics_access)
+                data = get_data(
+                    scope, context, ownership, privilege, membership, resource, has_analytics_access
+                )
+                test_name = get_name(
+                    scope, context, ownership, privilege, membership, resource, has_analytics_access
+                )
+                result = eval_rule(
+                    scope, context, ownership, privilege, membership, data, has_analytics_access
+                )
                 f.write(
                     "{test_name} if {{\n    {allow} with input as {data}\n}}\n\n".format(
                         test_name=test_name,

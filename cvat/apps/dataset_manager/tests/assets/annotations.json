@@ -1008,6 +1008,54 @@
     ],
     "tracks": []
   },
+  "Ultralytics YOLO Detection Track 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [0.3, 0.1, 0.2, 0.8],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [0.2, 0.1, 0.2, 0.8],
+            "frame": 0,
+            "outside": false,
+            "attributes": [],
+            "keyframe": true
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [0.4, 0.1, 0.2, 0.8],
+            "frame": 1,
+            "outside": true,
+            "attributes": [],
+            "keyframe": true
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  },
   "Ultralytics YOLO Oriented Bounding Boxes 1.0": {
     "version": 0,
     "tags": [],

@@ -19,9 +19,9 @@ import mimetypes
 import os
 import sys
 import tempfile
+import urllib
 from datetime import timedelta
 from enum import Enum
-import urllib
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
@@ -74,7 +74,7 @@ def generate_secret_key():
 
 try:
     sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+    from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
 except ModuleNotFoundError:
     generate_secret_key()
     from keys.secret_key import SECRET_KEY
@@ -740,6 +740,7 @@ ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))
 
 from cvat.rq_patching import update_started_job_registry_cleanup
+
 update_started_job_registry_cleanup()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4

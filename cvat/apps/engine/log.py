@@ -4,11 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import sys
 import os.path as osp
+import sys
 from contextlib import contextmanager
-from cvat.apps.engine.utils import directory_tree
+
 from django.conf import settings
+
+from cvat.apps.engine.utils import directory_tree
+
 
 class _LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg: str, kwargs):

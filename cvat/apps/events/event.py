@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework.renderers import JSONRenderer
 from datetime import datetime, timezone
 from typing import Optional
 
 from django.db import transaction
+from rest_framework.renderers import JSONRenderer
 
 from cvat.apps.engine.log import vlogger
+
 
 def event_scope(action, resource):
     return f"{action}:{resource}"
@@ -41,6 +42,7 @@ class EventScopes:
             for action in cls.RESOURCES.get(resource, [])
         ]
 
+
 def record_server_event(
     *,
     scope: str,
@@ -63,11 +65,11 @@ def record_server_event(
         "scope": scope,
         "timestamp": str(datetime.now(timezone.utc).timestamp()),
         "source": "server",
-        "payload": JSONRenderer().render(payload_with_request_id).decode('UTF-8'),
+        "payload": JSONRenderer().render(payload_with_request_id).decode("UTF-8"),
         **kwargs,
     }
 
-    rendered_data = JSONRenderer().render(data).decode('UTF-8')
+    rendered_data = JSONRenderer().render(data).decode("UTF-8")
 
     if on_commit:
         transaction.on_commit(lambda: vlogger.info(rendered_data), robust=True)
@@ -79,6 +81,7 @@ class EventScopeChoice:
     @classmethod
     def choices(cls):
         return sorted((val, val.upper()) for val in AllEvents.events)
+
 
 class AllEvents:
     events = list(

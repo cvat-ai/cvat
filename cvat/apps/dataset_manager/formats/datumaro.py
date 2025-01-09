@@ -4,10 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 import zipfile
+
 from datumaro.components.dataset import Dataset
 
 from cvat.apps.dataset_manager.bindings import (
-    GetCVATDataExtractor, import_dm_annotations, NoMediaInAnnotationFileError, detect_dataset
+    GetCVATDataExtractor,
+    NoMediaInAnnotationFileError,
+    detect_dataset,
+    import_dm_annotations,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
