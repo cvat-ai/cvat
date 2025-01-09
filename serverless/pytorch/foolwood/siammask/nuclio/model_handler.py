@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tools.test import * # pylint: disable=wildcard-import
 import os
 from copy import copy
+
 import jsonpickle
 import numpy as np
+from tools.test import *  # pylint: disable=wildcard-import
+
 
 class ModelHandler:
     def __init__(self):

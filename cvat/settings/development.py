@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 # Inherit parent config
-from .base import * # pylint: disable=wildcard-import
+from .base import *  # pylint: disable=wildcard-import
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
