@@ -1094,7 +1094,7 @@ def create_backup(
                 acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
                 ttl=EXPORT_CACHE_LOCK_TTL,
             ):
-                os.replace(temp_file, output_path)
+                shutil.move(temp_file, output_path)
 
             logger.info(
                 f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "

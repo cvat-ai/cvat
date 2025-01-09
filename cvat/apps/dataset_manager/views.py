@@ -6,6 +6,7 @@
 import logging
 import os
 import os.path as osp
+import shutil
 from datetime import timedelta
 from os.path import exists as osp_exists
 
@@ -169,16 +170,20 @@ def export(
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
             temp_file = osp.join(temp_dir, 'result')
+            # create a subdirectory to store export-related files,
+            # which will be fully included in the resulting archive
             temp_subdir = osp.join(temp_dir, 'subdir')
             os.makedirs(temp_subdir, exist_ok=True)
+
             export_fn(db_instance.id, temp_file, format_name=dst_format,
                 server_url=server_url, save_images=save_images, temp_dir=temp_subdir)
+
             with get_export_cache_lock(
                 output_path,
                 ttl=EXPORT_CACHE_LOCK_TTL,
                 acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ):
-                os.replace(temp_file, output_path)
+                shutil.move(temp_file, output_path)
 
         logger.info(
             f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is exported "

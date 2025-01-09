@@ -1486,7 +1486,7 @@ class ExportBehaviorTest(_DbTestBase):
                 # only after checking whether a file exists inside an acquired lock
                 patch("cvat.apps.dataset_manager.views.osp_exists") as mock_osp_exists,
                 patch(
-                    "cvat.apps.dataset_manager.views.os.replace", side_effect=original_replace
+                    "cvat.apps.dataset_manager.views.shutil.move", side_effect=original_replace
                 ) as mock_os_replace,
                 patch("cvat.apps.dataset_manager.views.log_exception", new=patched_log_exception),
                 patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
@@ -1861,7 +1861,7 @@ class ExportBehaviorTest(_DbTestBase):
             patch(
                 "cvat.apps.dataset_manager.views.osp_exists", side_effect=original_exists
             ) as mock_osp_exists,
-            patch("cvat.apps.dataset_manager.views.os.replace") as mock_os_replace,
+            patch("cvat.apps.dataset_manager.views.shutil.move") as mock_os_replace,
         ):
             second_export_path = export(dst_format=format_name, task_id=task_id)
 
@@ -1908,7 +1908,7 @@ class ExportBehaviorTest(_DbTestBase):
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.dataset_manager.views.os.replace") as mock_os_replace,
+                patch("cvat.apps.dataset_manager.views.shutil.move") as mock_os_replace,
                 patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
                 patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
             ):
@@ -1948,7 +1948,7 @@ class ExportBehaviorTest(_DbTestBase):
                     "cvat.apps.dataset_manager.views.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.dataset_manager.views.os.replace") as mock_os_replace,
+                patch("cvat.apps.dataset_manager.views.shutil.move") as mock_os_replace,
                 patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
                 patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
             ):
