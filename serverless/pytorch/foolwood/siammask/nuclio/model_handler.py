@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tools.test import *
+from tools.test import * # pylint: disable=wildcard-import
 import os
 from copy import copy
 import jsonpickle

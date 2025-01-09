@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .development import *
+# Inherit parent config
+from .development import * # pylint: disable=wildcard-import
+
 import tempfile
 
 DATABASES = {
