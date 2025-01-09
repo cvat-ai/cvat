@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import os
-import os.path as osp
 import shutil
 from abc import ABCMeta, abstractmethod
 from datetime import timedelta

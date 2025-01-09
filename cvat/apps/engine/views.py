@@ -541,7 +541,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             tmp_dir = self._object.get_tmp_dirname()
             uploaded_file = os.path.join(tmp_dir, filename)
             if not os.path.isfile(uploaded_file):
-                uploaded_file = None # TODO: why is this needed
+                uploaded_file = None
 
             return _import_project_dataset(
                 request=request,
