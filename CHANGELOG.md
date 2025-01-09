@@ -16,6 +16,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.25.0'></a>
+## \[2.25.0\] - 2025-01-09
+
+### Added
+
+- \[CLI\] Added commands for working with native functions
+  (<https://github.com/cvat-ai/cvat/pull/8821>)
+
+- Ultralytics YOLO formats now support tracks
+  (<https://github.com/cvat-ai/cvat/pull/8883>)
+
+### Changed
+
+- YOLOv8 formats renamed to Ultralytics YOLO formats
+  (<https://github.com/cvat-ai/cvat/pull/8863>)
+
+- The `match_empty_frames` quality setting is changed to `empty_is_annotated`.
+  The updated option includes any empty frames in the final metrics instead of only
+  matching empty frames. This makes metrics such as Precision much more representative and useful.
+  (<https://github.com/cvat-ai/cvat/pull/8888>)
+
+### Fixed
+
+- Changing rotation after export/import in Ultralytics YOLO Oriented Boxes format
+  (<https://github.com/cvat-ai/cvat/pull/8891>)
+
 <a id='changelog-2.24.0'></a>
 ## \[2.24.0\] - 2024-12-20
 
