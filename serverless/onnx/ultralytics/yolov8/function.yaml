@@ -1,0 +1,38 @@
+apiVersion: "nuclio.io/v1"
+kind: NuclioFunction
+metadata:
+  name: yolov8-cpu
+  namespace: nuclio
+spec:
+  runtime: "python"
+  handler: "main:handler"
+  env:
+    - name: MODEL_PATH
+      value: "/opt/nuclio/yolov8.onnx"  # Path to your ONNX model inside the container
+  volumes:
+    - volume:
+      name: yolov8-model-volume
+      hostPath:
+        path: "/Users/altsang/workspace/cvat/serverless/onnx/ultralytics/yolov8"  # Local directory path
+      volumeMount:
+        name: yolov8-model-volume
+        mountPath: "/opt/nuclio"  # Mount point inside the container
+  resources:
+    limits:
+      memory: 4Gi
+      cpu: 2
+    requests:
+      memory: 2Gi
+      cpu: 1
+  build:
+    path: "."
+    baseImage: "python:3.9-slim"
+    commands:
+      - pip install onnxruntime pillow numpy opencv-python-headless
+  triggers:
+    myHttpTrigger:
+      numWorkers: 4
+      kind: "http"
+      attributes:
+        method: ["POST"]
+        path: "/"

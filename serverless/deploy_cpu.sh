@@ -7,17 +7,19 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 FUNCTIONS_DIR=${1:-$SCRIPT_DIR}
 
 export DOCKER_BUILDKIT=1
+export NUCTL_PLATFORM=arm64
+export NUCLIO_ARCH=arm64
 
 docker build -t cvat.openvino.base "$SCRIPT_DIR/openvino/base"
 
 nuctl create project cvat --platform local
 
-shopt -s globstar
+#shopt -s globstar - this isn't needed for zsh only bash
 
-for func_config in "$FUNCTIONS_DIR"/**/function.yaml
+for func_config in "$FUNCTIONS_DIR"/function.yaml
 do
     func_root="$(dirname "$func_config")"
-    func_rel_path="$(realpath --relative-to="$SCRIPT_DIR" "$(dirname "$func_root")")"
+    func_rel_path="$(grealpath --relative-to="$SCRIPT_DIR" "$(dirname "$func_root")")"
 
     if [ -f "$func_root/Dockerfile" ]; then
         docker build -t "cvat.${func_rel_path//\//.}.base" "$func_root"

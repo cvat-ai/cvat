@@ -1,4 +1,4 @@
-FROM openvino/ubuntu20_runtime:2022.3.0
+FROM ghcr.io/uaws/openvino-on-aarch64:latest
 
 USER root
 
@@ -10,6 +10,6 @@ RUN pip install --no-cache-dir opencv-python-headless pillow pyyaml
 
 COPY model_loader.py shared.py /opt/nuclio/common/openvino/
 
-ENV PYTHONPATH=/opt/nuclio/common/openvino:$PYTHONPATH
+ENV PYTHONPATH="/opt/nuclio/common/openvino"
 
 USER openvino

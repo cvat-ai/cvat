@@ -96,7 +96,7 @@ spec:
 
   build:
     image: cvat.pth.facebookresearch.detectron2.retinanet_r101
-    baseImage: ubuntu:20.04
+    baseImage: arm64v8/ubuntu:20.04
 
     directives:
       preCopy:
@@ -107,7 +107,7 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip3 install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+          value: pip3 install torch==1.8.1 torchvision==0.9.1 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
         - kind: RUN
           value: pip3 install 'git+https://github.com/facebookresearch/detectron2@ff53992b1985'
         - kind: RUN
