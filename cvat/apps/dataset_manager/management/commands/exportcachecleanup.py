@@ -4,6 +4,7 @@
 
 import os
 import shutil
+from contextlib import suppress
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -42,5 +43,5 @@ class Command(BaseCommand):
             for i, obj in enumerate(queryset.iterator()):
                 update_progress()
                 export_cache_dir = Path(obj.get_dirname()) / "export_cache"
-                if export_cache_dir.exists():
+                with suppress(FileNotFoundError):
                     shutil.rmtree(export_cache_dir)
