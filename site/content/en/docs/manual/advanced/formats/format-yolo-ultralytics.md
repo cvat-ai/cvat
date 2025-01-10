@@ -28,7 +28,7 @@ For export of images:
   - Segmentation: Polygons, Masks
   - Pose: Skeletons
 - Attributes: Not supported.
-- Tracks: Not supported.
+- Tracks: Supported.
 
 The downloaded file is a .zip archive with the following structure:
 
