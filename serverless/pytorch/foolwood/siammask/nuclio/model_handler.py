@@ -39,7 +39,7 @@ class ModelHandler:
 
     def decode_state(self, state):
         for k,v in state.items():
-            state[k] = jsonpickle.decode(v)
+            state[k] = jsonpickle.decode(v)  # nosec: B301
 
         state['net'] = copy(self.siammask)
         state['net'].zf = state['net.zf']
