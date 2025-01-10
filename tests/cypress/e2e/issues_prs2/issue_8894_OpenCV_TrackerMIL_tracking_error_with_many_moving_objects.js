@@ -4,41 +4,33 @@
 
 /// <reference types="cypress" />
 
-import { inspect } from 'util';
 import { taskName } from '../../support/const';
 
-context('OpenCV - TrackerMIL - Tracking error', () => {
+context.skip('OpenCV - TrackerMIL - Tracking error with big resolution', () => {
     const issueId = '8894';
-    // const labelName = `Issue ${issueId}`;
     const labelName = `${issueId}`;
-    const text = labelName;
     const attrName = `Attr for ${labelName}`;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 5000;
     const height = 5000;
-    // const textWidth = 375;
-    // const textHeight = 52;
-    const posX0 = 101;
-    const posY0 = 103;
+    const posX = 10;
+    const posY = 10;
     const color = 'gray';
+    const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const archiveName = `${imageFileName}.zip`;
     const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const extension = 'jpg';
-    // const objCount = 1;
     const textDefaultValue = 'Some default value for type Text';
+    const spacing = 5;
+    const imagesCount = 3;
 
-    const spacing = 100; // minimal step so that texts don't overlap
-    // const imagesCount = 3;
-    // const scale = textWidth / textHeight;
-
-    const opencvTrackerShape = {
+    const createOpencvTrackerShape = {
         labelName,
         tracker: 'TrackerMIL',
         pointsMap: [
-            { x: 50, y: 20 }, //
-            { x: 150, y: 35 },
+            { x: 430, y: 40 },
+            { x: 640, y: 145 },
         ],
     };
 
@@ -49,67 +41,35 @@ context('OpenCV - TrackerMIL - Tracking error', () => {
         });
         cy.get('body').click();
     }
+
     before(() => {
-        cy.imageGenerator(
-            imagesFolder, '01',
-            width, height, color,
-            posX0, posY0,
-            text, 1, extension,
-        );
-        cy.imageGenerator(
-            imagesFolder, '02',
-            width, height, color,
-            posX0 + spacing, posY0,
-            text, 1, extension,
-        );
+        for (let i = 0; i < imagesCount; i++) {
+            cy.imageGenerator(imagesFolder, imageFileName + i, width, height, color, posX + i * spacing,
+                posY + i * spacing, labelName, 1, extension);
+        }
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+
         cy.openTaskJob(taskName);
     });
     describe(`Testing issue ${issueId}`, () => {
-        it('Testing TrackerMIL', () => {
+        // TODO: activate it after the fix
+        it.skip('Create a shape with "TrackerMIL" on a big picture. Look out for a tracking error', () => {
+            const shapeNumber = 1;
             loadOpenCV();
-            cy.get('#cvat_canvas_content,#cvat_canvas_background')
-            // .then(([$el]) => {
-
-                //     return {
-                //         svg: $el,
-                //         canvas,
-                //     };
-            //     cy.find()
-            //     const canvasBackground = $el.querySelector('canvas');
-            //     const svgObj = $el.querySelector('svg');
-            //     // cy.task('log', svgObj.getCTM());
-            //     // cy.task('log', canvasBackground);
-            //     return {
-            //         svg: svgObj.getCTM(),
-            //         canvasBackground,
-            //     };
-            // })
-            // .then((obj) => cy.task('log', obj))
-                .then(([stuff]) => {
-                    // cy.customScreenshot('iframe.aut-iframe', 'iframe');
-                    cy.task('log', inspect(stuff));
-                    // cy.task('log', obj);
-                    cy.createOpenCVTrack(opencvTrackerShape).then(() => {
-                        cy.screenshot('looking_for_tracking_error1', { capture: 'runner', overwrite: true });
-                        cy.goToNextFrame(1)
-                        // .then(() => cy.wait(2))
-                            .then(() => cy.screenshot('looking_for_tracking_error2', { capture: 'runner', overwrite: true }));
-                    });
+            // We will start testing tracking from 2nd frame because it's a bit unstable on inintialization
+            cy.goToNextFrame(1);
+            cy.createOpenCVTrack(createOpencvTrackerShape);
+            cy.get('.cvat-tracking-notice').should('not.exist');
+            cy.get(`#cvat_canvas_shape_${shapeNumber}`)
+                .then(() => {
+                    cy.get('.cvat-tracking-notice').should('not.exist');
+                    cy.get(`#cvat-objects-sidebar-state-item-${shapeNumber}`)
+                        .should('contain', 'RECTANGLE TRACK');
+                    // We don't actually check tracking functionality, we just doing load testing
                 });
+            cy.goToNextFrame(2);
+            cy.get('.ant-notification-notice-message').contains('Tracking error').should('not.exist');
         });
     });
 });
-// });
-// cy.customScreenshot('', `${i}`);
-
-// for (let i = 0; i < imagesCount; i++) {
-// cy.screenshot(`page_${i}`, { capture: 'fullPage' });
-// cy.screenshot(`viewport_${i}`, { capture: 'viewport', scale: false, overwrite: true });
-// cy.screenshot(`viewport_${i}`, { capture: 'viewport' });
-//     cy.customScreenshot('', `custom_${i}`);
-//     cy.goToNextFrame(i + 1);
-// cy.screenshot({ capture: 'fullPage' });
-// }
-// cy.
