@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import mimetypes
-
+import os
 
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 MEDIA_MIMETYPES_FILES = [

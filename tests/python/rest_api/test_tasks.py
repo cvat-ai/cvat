@@ -45,7 +45,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
+from shared.fixtures.init import container_exec_cvat
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -947,7 +947,7 @@ class TestGetTaskDataset:
         [
             ("Datumaro 1.0", "", "images/{subset}"),
             ("YOLO 1.1", "train", "obj_{subset}_data"),
-            ("YOLOv8 Detection 1.0", "train", "images/{subset}"),
+            ("Ultralytics YOLO Detection 1.0", "train", "images/{subset}"),
         ],
     )
     @pytest.mark.parametrize("api_version", (1, 2))
@@ -5315,12 +5315,9 @@ class TestImportTaskAnnotations:
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        platform = request.config.getoption("--platform")
-        assert platform in ("kube", "local")
-        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
         for _ in range(12):
             sleep(2)
-            result, _ = func(command)
+            result, _ = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break
@@ -5422,10 +5419,10 @@ class TestImportTaskAnnotations:
             "Open Images V6 1.0",
             "Datumaro 1.0",
             "Datumaro 3D 1.0",
-            "YOLOv8 Oriented Bounding Boxes 1.0",
-            "YOLOv8 Detection 1.0",
-            "YOLOv8 Pose 1.0",
-            "YOLOv8 Segmentation 1.0",
+            "Ultralytics YOLO Oriented Bounding Boxes 1.0",
+            "Ultralytics YOLO Detection 1.0",
+            "Ultralytics YOLO Pose 1.0",
+            "Ultralytics YOLO Segmentation 1.0",
         ],
     )
     def test_check_import_error_on_wrong_file_structure(self, tasks_with_shapes, format_name):

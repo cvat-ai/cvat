@@ -20,6 +20,7 @@ class EngineConfig(AppConfig):
 
         # Required to define signals in application
         import cvat.apps.engine.signals
+
         # Required in order to silent "unused-import" in pyflake
         assert cvat.apps.engine.signals
 

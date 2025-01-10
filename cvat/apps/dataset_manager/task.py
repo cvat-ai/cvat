@@ -10,26 +10,33 @@ from copy import deepcopy
 from enum import Enum
 from tempfile import TemporaryDirectory
 from typing import Optional, Union
-from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
+from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch, QuerySet
-from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
+from cvat.apps.dataset_manager.bindings import (
+    CvatDatasetNotFoundError,
+    CvatImportError,
+    JobData,
+    TaskData,
+)
+from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
+from cvat.apps.dataset_manager.util import (
+    add_prefetch_fields,
+    bulk_create,
+    faster_deepcopy,
+    get_cached,
+)
 from cvat.apps.engine import models, serializers
-from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
-
-from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
-from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
-from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import (
-    add_prefetch_fields, bulk_create, get_cached, faster_deepcopy
-)
 
 dlogger = DatasetLogManager()
 
