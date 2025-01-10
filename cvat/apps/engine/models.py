@@ -1348,6 +1348,14 @@ class RequestSubresource(TextChoices):
 
 
 class RedisMigration(models.Model):
-    # todo: redis_inmem/redis_ondisk
+    app_label = models.CharField(max_length=256)
     name = models.CharField(max_length=256)
     applied_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                name='migration_name_unique',
+                fields=('app_label', 'name'),
+            ),
+        ]
