@@ -66,7 +66,6 @@ def clear_export_cache(file_path: Path) -> bool:
         return True
 
 
-
 class BaseCleanupThread(Thread, metaclass=ABCMeta):
     description: ClassVar[str]
 
@@ -111,9 +110,9 @@ class CleanupTmpDirThread(BaseCleanupThread):
 
             try:
                 if (
-                    child.stat().st_atime + timedelta(
-                        days=TmpDirManager.TMP_FILE_OR_DIR_RETENTION_DAYS
-                    ).total_seconds() < timezone.now().timestamp()
+                    child.stat().st_atime
+                    + timedelta(days=TmpDirManager.TMP_FILE_OR_DIR_RETENTION_DAYS).total_seconds()
+                    < timezone.now().timestamp()
                 ):
                     if child.is_dir():
                         shutil.rmtree(child.path)

@@ -20,24 +20,24 @@ class Command(BaseCommand):
             progress = (i + 1) / objects_count
             done = int(progress_bar_len * progress)
             progress_bar = "#" * done + "-" * (progress_bar_len - done)
-            print(f"\rProgress: |{progress_bar}| {progress:.0%}", end="", flush=True)
+            self.stdout.write(f"\rProgress: |{progress_bar}| {progress:.0%}", ending="")
 
         now = timezone.now()
         progress_bar_len = os.get_terminal_size().columns // 2
 
         for Model in (Project, Task, Job):
-            print(f"\nDeleting the export cache for {Model.__name__.lower()}s...")
+            self.stdout.write(f"\nDeleting the export cache for {Model.__name__.lower()}s...")
             queryset = Model.objects.filter(created_date__lt=now)
             objects_count = queryset.count()
             if objects_count < 1:
                 continue
 
             msg = (
-                f"\nThe {objects_count} folders are going to be checked"
+                f"The {objects_count} folders are going to be checked"
                 if objects_count > 1
-                else "\nThe 1 folder is going to be checked"
+                else "The 1 folder is going to be checked"
             )
-            print(msg)
+            self.stdout.write(msg)
 
             for i, obj in enumerate(queryset.iterator()):
                 update_progress()
