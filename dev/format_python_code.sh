@@ -2,6 +2,7 @@
 
 set -e
 
+REPO_ROOT="$(dirname "$0")/.."
 PYTHON="${PYTHON:-python3}"
 BLACK="${PYTHON} -m black"
 ISORT="${PYTHON} -m isort"
@@ -15,5 +16,6 @@ if ! ${ISORT} --version >/dev/null 2>&1; then
     exit 1
 fi
 
+cd -- "${REPO_ROOT}"
 ${BLACK} .
 ${ISORT} --resolve-all-configs .
