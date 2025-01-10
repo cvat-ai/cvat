@@ -766,4 +766,4 @@ CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
 
 # Indicates the maximum number of days a file or directory is retained in the temporary directory
-TMP_FILE_OR_DIR_RETENTION_DAYS = 14
+TMP_FILE_OR_DIR_RETENTION_DAYS = 3
