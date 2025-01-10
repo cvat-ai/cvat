@@ -6,7 +6,7 @@
 #    pip-compile-multi
 #
 -r base.txt
-anyio==4.7.0
+anyio==4.8.0
     # via watchfiles
 coverage==7.2.3
     # via -r cvat/requirements/production.in

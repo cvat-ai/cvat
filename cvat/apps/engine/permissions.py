@@ -7,20 +7,23 @@ from collections import namedtuple
 from collections.abc import Sequence
 from typing import Any, Optional, Union, cast
 
-from django.shortcuts import get_object_or_404
 from django.conf import settings
-
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.rq_job_handler import is_rq_job_owner
+from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
-    OpenPolicyAgentPermission, StrEnum, get_iam_context, get_membership
+    OpenPolicyAgentPermission,
+    StrEnum,
+    get_iam_context,
+    get_membership,
 )
 from cvat.apps.organizations.models import Organization
 
 from .models import AnnotationGuide, CloudStorage, Issue, Job, Label, Project, Task
-from cvat.apps.engine.utils import is_dataset_export
+
 
 def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
     """

@@ -8,10 +8,10 @@ import os
 import os.path as osp
 import tempfile
 from datetime import timedelta
+from os.path import exists as osp_exists
 
 import django_rq
 import rq
-from os.path import exists as osp_exists
 from django.conf import settings
 from django.utils import timezone
 from rq_scheduler import Scheduler
@@ -20,18 +20,20 @@ import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
-from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.engine.rq_job_handler import RQMeta
+from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
+from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
 from .util import (
     LockNotAvailableError,
-    current_function_name, get_export_cache_lock,
-    get_export_cache_dir, make_export_filename,
-    parse_export_file_path, extend_export_file_lifetime
+    current_function_name,
+    extend_export_file_lifetime,
+    get_export_cache_dir,
+    get_export_cache_lock,
+    make_export_filename,
+    parse_export_file_path,
 )
-from .util import EXPORT_CACHE_DIR_NAME  # pylint: disable=unused-import
-
 
 slogger = ServerLogManager(__name__)
 

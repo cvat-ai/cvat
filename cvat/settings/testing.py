@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .development import *
 import tempfile
+
+from .development import *
 
 DATABASES = {
     'default': {
@@ -73,11 +74,13 @@ PASSWORD_HASHERS = (
 TEST_RUNNER = "cvat.settings.testing.PatchedDiscoverRunner"
 
 from django.test.runner import DiscoverRunner
+
+
 class PatchedDiscoverRunner(DiscoverRunner):
     def __init__(self, *args, **kwargs):
         # Used fakeredis for testing (don't affect production redis)
-        from fakeredis import FakeRedis, FakeStrictRedis
         import django_rq.queues
+        from fakeredis import FakeRedis, FakeStrictRedis
         simple_redis = FakeRedis()
         strict_redis = FakeStrictRedis()
         django_rq.queues.get_redis_connection = lambda _, strict: strict_redis \

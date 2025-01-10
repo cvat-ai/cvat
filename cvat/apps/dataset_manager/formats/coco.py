@@ -5,16 +5,20 @@
 
 import zipfile
 
-from datumaro.components.dataset import Dataset
 from datumaro.components.annotation import AnnotationType
-from datumaro.plugins.coco_format.importer import CocoImporter
+from datumaro.components.dataset import Dataset
+from datumaro.plugins.data_formats.coco.importer import CocoImporter
 
 from cvat.apps.dataset_manager.bindings import (
-    GetCVATDataExtractor, NoMediaInAnnotationFileError, import_dm_annotations, detect_dataset
+    GetCVATDataExtractor,
+    NoMediaInAnnotationFileError,
+    detect_dataset,
+    import_dm_annotations,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
+
 
 @exporter(name='COCO', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, instance_data, save_images=False):

@@ -2,27 +2,29 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .models import Organization, Membership
 from django.contrib import admin
+
+from .models import Membership, Organization
+
 
 class MembershipInline(admin.TabularInline):
     model = Membership
     extra = 0
 
     radio_fields = {
-        'role': admin.VERTICAL,
+        "role": admin.VERTICAL,
     }
 
-    autocomplete_fields = ('user', )
+    autocomplete_fields = ("user",)
+
 
 class OrganizationAdmin(admin.ModelAdmin):
-    search_fields = ('slug', 'name', 'owner__username')
-    list_display = ('id', 'slug', 'name')
+    search_fields = ("slug", "name", "owner__username")
+    list_display = ("id", "slug", "name")
 
-    autocomplete_fields = ('owner', )
+    autocomplete_fields = ("owner",)
 
-    inlines = [
-        MembershipInline
-    ]
+    inlines = [MembershipInline]
+
 
 admin.site.register(Organization, OrganizationAdmin)

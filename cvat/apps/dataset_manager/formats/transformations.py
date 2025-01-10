@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 import math
-import cv2
-import numpy as np
 from itertools import chain
-from pycocotools import mask as mask_utils
 
+import cv2
 import datumaro as dm
+import numpy as np
+from pycocotools import mask as mask_utils
 
 
 class RotatedBoxesToPolygons(dm.ItemTransform):
@@ -36,6 +36,7 @@ class RotatedBoxesToPolygons(dm.ItemTransform):
                 z_order=ann.z_order))
 
         return item.wrap(annotations=annotations)
+
 
 class MaskConverter:
     @staticmethod
@@ -100,6 +101,7 @@ class MaskConverter:
 
         return cvat_rle
 
+
 class EllipsesToMasks:
     @staticmethod
     def convert_ellipse(ellipse, img_h, img_w):
@@ -114,6 +116,7 @@ class EllipsesToMasks:
         rle = mask_utils.encode(np.asfortranarray(mat))
         return dm.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)
+
 
 class MaskToPolygonTransformation:
     """
@@ -130,3 +133,13 @@ class MaskToPolygonTransformation:
         if kwargs.get('conv_mask_to_poly', True):
             dataset.transform('masks_to_polygons')
         return dataset
+
+
+class SetKeyframeForEveryTrackShape(dm.ItemTransform):
+    def transform_item(self, item):
+        annotations = []
+        for ann in item.annotations:
+            if "track_id" in ann.attributes:
+                ann = ann.wrap(attributes=dict(ann.attributes, keyframe=True))
+            annotations.append(ann)
+        return item.wrap(annotations=annotations)
