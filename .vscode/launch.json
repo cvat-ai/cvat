@@ -126,7 +126,7 @@
             "justMyCode": false,
         },
         {
-            "type": "pwa-chrome",
+            "type": "chrome",
             "request": "launch",
             "preLaunchTask": "npm: start - cvat-ui",
             "name": "ui.js: debug",
@@ -152,7 +152,10 @@
                 "run",
                 "--headless",
                 "--browser",
-                "chrome"
+                "chrome",
+                "--spec",
+                "cypress/e2e/issues_prs2/issue_8894*.js"
+                // "cypress/e2e/actions_tasks2/case_101*.js",
             ],
             "outputCapture": "std",
             "console": "internalConsole"
