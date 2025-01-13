@@ -48,12 +48,5 @@
     "python.testing.cwd": "${workspaceFolder}/tests",
     "cSpell.words": [
         "crowdsourcing"
-    ],
-    "[javascript]": {
-        "editor.maxTokenizationLineLength": 2500,
-        "editor.codeActionsOnSave": {
-            "source.fixAll.eslint": "always",
-            // "eslin"
-        }
-    }
+    ]
 }

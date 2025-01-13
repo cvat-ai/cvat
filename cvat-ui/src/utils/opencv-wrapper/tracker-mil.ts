@@ -42,9 +42,6 @@ export default class TrackerMILImplementation implements TrackerMIL {
             matImage = this.cv.matFromImageData(src);
             const rect = new this.cv.Rect(x1, y1, width, height);
             this.trackerMIL.init(matImage, rect);
-        } catch (error) {
-            // eslint-disable-next-line
-            const test = error;
         } finally {
             if (matImage) matImage.delete();
         }
