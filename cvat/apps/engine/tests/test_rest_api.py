@@ -3108,7 +3108,10 @@ class TaskImportExportAPITestCase(ApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
-        from cvat.apps.dataset_manager.cron import cleanup_export_cache_directory, clear_export_cache
+        from cvat.apps.dataset_manager.cron import (
+            cleanup_export_cache_directory,
+            clear_export_cache,
+        )
         self._create_tasks()
         task_id = self.tasks[0]["id"]
         user = self.admin

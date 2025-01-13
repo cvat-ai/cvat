@@ -15,7 +15,7 @@ from datetime import timedelta
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Type, Union, ClassVar
+from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
 
 import django_rq

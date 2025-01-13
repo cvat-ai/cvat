@@ -8,11 +8,9 @@ import os
 import shutil
 from abc import ABCMeta, abstractmethod
 from datetime import timedelta
-from enum import Enum
 from functools import wraps
 from pathlib import Path
 from threading import Event, Thread
-from time import sleep
 from typing import Callable, ClassVar, Type
 
 from django.conf import settings
