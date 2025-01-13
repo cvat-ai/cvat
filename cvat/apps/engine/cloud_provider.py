@@ -13,7 +13,7 @@ from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, BinaryIO
+from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
