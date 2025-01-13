@@ -8,15 +8,15 @@ import os
 import shutil
 from abc import ABCMeta, abstractmethod
 from datetime import timedelta
+from enum import Enum
 from functools import wraps
 from pathlib import Path
 from threading import Event, Thread
 from time import sleep
-from typing import Callable, ClassVar
+from typing import Callable, ClassVar, Type
 
 from django.conf import settings
 from django.utils import timezone
-from django.utils.module_loading import import_string
 from rq import get_current_job
 
 from cvat.apps.dataset_manager.util import (
@@ -156,31 +156,47 @@ class CleanupExportCacheThread(BaseCleanupThread):
                 log_exception(logger)
 
 
-def cleanup(thread_class_path: str) -> None:
-    ThreadClass = import_string(thread_class_path)
-    assert issubclass(ThreadClass, BaseCleanupThread)
+class CleanupType(str, Enum):
+    EXPORT_CACHE = "export_cache"
+    TEMP_DIRECTORY = "temp_directory"
 
+    def to_thread_class(self) -> Type[CleanupExportCacheThread | CleanupTmpDirThread]:
+        if CleanupType.EXPORT_CACHE == self.value:
+            ThreadClass = CleanupExportCacheThread
+        elif CleanupType.TEMP_DIRECTORY == self.value:
+            ThreadClass = CleanupTmpDirThread
+        else:
+            raise ValueError(f"Unknown cleaning type: {self.value}")
+        return ThreadClass
+
+
+def cleanup(cleanup_type: CleanupType) -> None:
     started_at = timezone.now()
-    rq_job = get_current_job()
-    seconds_left = rq_job.timeout - 60
-    sleep_interval = 10
-    assert seconds_left > sleep_interval
-    finish_before = started_at + timedelta(seconds=seconds_left)
-
     stop_event = Event()
+    ThreadClass = CleanupType(cleanup_type).to_thread_class()
     cleanup_thread = ThreadClass(stop_event=stop_event)
-    cleanup_thread.start()
 
-    while timezone.now() < finish_before:
-        if not cleanup_thread.is_alive():
+    if rq_job := get_current_job():
+        seconds_left = rq_job.timeout - 60
+        sleep_interval = 10
+        assert seconds_left > sleep_interval
+        finish_before = started_at + timedelta(seconds=seconds_left)
+        cleanup_thread.start()
+
+        while timezone.now() < finish_before:
+            if not cleanup_thread.is_alive():
+                stop_event.set()
+                break
+            sleep(sleep_interval)
+
+        if not stop_event.is_set():
             stop_event.set()
-            break
-        sleep(sleep_interval)
 
-    if not stop_event.is_set():
-        stop_event.set()
+        cleanup_thread.join()
+    else:
+        # run func in the current thread
+        cleanup_thread.run()
 
-    cleanup_thread.join()
     cleanup_thread.raise_if_exception()
 
     finished_at = timezone.now()
