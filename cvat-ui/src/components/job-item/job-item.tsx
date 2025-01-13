@@ -145,7 +145,7 @@ function JobItem(props: Props): JSX.Element {
                 <Tag color='#ED9C00'>Ground truth</Tag>
             </Col>
         );
-    } else if (job.type === JobType.CONSENSUS) {
+    } else if (job.type === JobType.ANNOTATION && task.consensusJobsPerRegularJob) {
         tag = (
             <Col offset={1}>
                 <Tag color='#1890FF'>Consensus</Tag>
