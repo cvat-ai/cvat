@@ -508,6 +508,7 @@ export class Job extends Session {
         parent_job_id: number | null;
         consensus_replicas: number;
     };
+
     constructor(initialData: InitializerType) {
         super();
 
