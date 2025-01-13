@@ -61,6 +61,8 @@ To upgrade CVAT, follow these steps:
 In version 2.25.0, CVAT changed the location where the export cache is stored.
 To clean up the outdated cache, run the command depending on how CVAT is deployed:
 
+<!--lint disable no-undefined-references-->
+
 {{< tabpane lang="shell" >}}
   {{< tab header="Docker" >}}
   docker exec -it cvat_server python manage.py exportcachecleanup
@@ -73,6 +75,8 @@ To clean up the outdated cache, run the command depending on how CVAT is deploye
   python manage.py exportcachecleanup
   {{< /tab >}}
 {{< /tabpane >}}
+
+<!--lint enable no-undefined-references-->
 
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
