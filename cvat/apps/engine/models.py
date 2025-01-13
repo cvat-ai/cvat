@@ -168,6 +168,7 @@ class SortingMethod(str, Enum):
 class JobType(str, Enum):
     ANNOTATION = 'annotation'
     GROUND_TRUTH = 'ground_truth'
+    CONSENSUS = 'consensus'
 
     @classmethod
     def choices(cls):
@@ -531,6 +532,7 @@ class TaskQuerySet(models.QuerySet):
         return self.prefetch_related(
             'segment_set__job_set',
         ).annotate(
+            total_jobs_count=models.Count('segment__job', distinct=True),
             completed_jobs_count=models.Count(
                 'segment__job',
                 filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
@@ -573,6 +575,7 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    consensus_jobs_per_regular_job = models.IntegerField(default=0, blank=True)
 
     segment_set: models.manager.RelatedManager[Segment]
 
@@ -859,6 +862,7 @@ class Job(TimestampedModel):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+    parent_job = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children_jobs')
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
