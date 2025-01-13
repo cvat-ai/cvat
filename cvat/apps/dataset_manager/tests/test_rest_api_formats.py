@@ -1449,7 +1449,7 @@ class ExportBehaviorTest(_DbTestBase):
         export_checked_the_file = self.SharedBool()
         clear_has_been_finished = self.SharedBool()
         clear_removed_the_file = self.SharedBool()
-        export_outdated_after = timedelta(seconds=1)
+        export_outdated_after = timedelta(seconds=4)
 
         EXPORT_CACHE_LOCK_TTL = 4
         EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = EXPORT_CACHE_LOCK_TTL * 2
@@ -2062,7 +2062,7 @@ class ExportBehaviorTest(_DbTestBase):
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_cron_job_can_delete_cached_files(self):
-        from cvat.apps.dataset_manager.cron import cleanup
+        from cvat.apps.dataset_manager.cron import cleanup_export_cache_directory
 
         def _get_project_task_job_ids():
             project = self._create_project(projects["main"])
@@ -2106,7 +2106,7 @@ class ExportBehaviorTest(_DbTestBase):
                 ):
                     mock_rq_job = MagicMock(timeout=100)
                     mock_rq_get_current_job.return_value = mock_rq_job
-                    cleanup('cvat.apps.dataset_manager.cron.CleanupExportCacheThread')
+                    cleanup_export_cache_directory()
                     mock_clear_export_cache.assert_called_once()
 
                 self.assertFalse(osp.exists(export_path))

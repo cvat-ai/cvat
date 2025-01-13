@@ -65,14 +65,14 @@ To clean up the outdated cache, run the command depending on how CVAT is deploye
 
 {{< tabpane lang="shell" >}}
   {{< tab header="Docker" >}}
-  docker exec -it cvat_server python manage.py exportcachecleanup
+  docker exec -it cvat_server python manage.py cleanuplegacyexportcache
   {{< /tab >}}
   {{< tab header="Kubernetes" >}}
   cvat_backend_pod=$(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}')
-  kubectl exec -it ${cvat_backend_pod} -- python manage.py exportcachecleanup
+  kubectl exec -it ${cvat_backend_pod} -- python manage.py cleanuplegacyexportcache
   {{< /tab >}}
   {{< tab header="Development" >}}
-  python manage.py exportcachecleanup
+  python manage.py cleanuplegacyexportcache
   {{< /tab >}}
 {{< /tabpane >}}
 

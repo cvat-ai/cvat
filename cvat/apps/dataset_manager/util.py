@@ -157,9 +157,6 @@ def get_export_cache_lock(
 class OperationType(str, Enum):
     EXPORT = "export"
 
-    @classmethod
-    def values(cls) -> list[str]:
-        return list(map(lambda x: x.value, cls))
 
 class ExportFileType(str, Enum):
     ANNOTATIONS = "annotations"

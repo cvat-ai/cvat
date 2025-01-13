@@ -10,7 +10,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("job_id", help="ID of the job to run")
-        parser.add_argument("job_args", nargs="*", help="Arguments to pass to the job")
 
     def handle(self, *args, **options):
         job_id = options["job_id"]
@@ -18,7 +17,10 @@ class Command(BaseCommand):
         for job_definition in settings.PERIODIC_RQ_JOBS:
             if job_definition["id"] == job_id:
                 job_func = import_string(job_definition["func"])
-                job_func(*options["job_args"])
+                job_func(
+                    *(job_definition.get("args", [])),
+                    **(job_definition.get("kwargs", {})),
+                )
                 return
 
         raise CommandError(f"Job with ID {job_id} not found")

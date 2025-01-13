@@ -355,19 +355,17 @@ PERIODIC_RQ_JOBS = [
     },
     {
         'queue': CVAT_QUEUES.CLEANING.value,
-        'id': 'cron_export_cache_cleanup',
-        'func': 'cvat.apps.dataset_manager.cron.cleanup',
+        'id': 'cron_export_cache_directory_cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cleanup_export_cache_directory',
         # Run twice a day (at midnight and at noon)
         'cron_string': '0 0,12 * * *',
-        'args': ('cvat.apps.dataset_manager.cron.CleanupExportCacheThread',),
     },
     {
         'queue': CVAT_QUEUES.CLEANING.value,
         'id': 'cron_tmp_directory_cleanup',
-        'func': 'cvat.apps.dataset_manager.cron.cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cleanup_tmp_directory',
         # Run once a day
         'cron_string': '0 18 * * *',
-        'args': ('cvat.apps.dataset_manager.cron.CleanupTmpDirThread',),
     }
 ]
 

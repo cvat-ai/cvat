@@ -92,7 +92,7 @@ class BaseCleanupThread(Thread, metaclass=ABCMeta):
 
 
 class CleanupTmpDirThread(BaseCleanupThread):
-    description: ClassVar[str] = "Cleanup common temporary directory"
+    description: ClassVar[str] = "common temporary directory cleanup"
 
     @suppress_exceptions
     def _cleanup(self) -> None:
@@ -128,7 +128,7 @@ class CleanupTmpDirThread(BaseCleanupThread):
 
 
 class CleanupExportCacheThread(BaseCleanupThread):
-    description: ClassVar[str] = "Cleanup export cache"
+    description: ClassVar[str] = "export cache cleanup"
 
     @suppress_exceptions
     def _cleanup(self) -> None:
@@ -156,43 +156,22 @@ class CleanupExportCacheThread(BaseCleanupThread):
                 log_exception(logger)
 
 
-class CleanupType(str, Enum):
-    EXPORT_CACHE = "export_cache"
-    TEMP_DIRECTORY = "temp_directory"
-
-    def to_thread_class(self) -> Type[CleanupExportCacheThread | CleanupTmpDirThread]:
-        if CleanupType.EXPORT_CACHE == self.value:
-            ThreadClass = CleanupExportCacheThread
-        elif CleanupType.TEMP_DIRECTORY == self.value:
-            ThreadClass = CleanupTmpDirThread
-        else:
-            raise ValueError(f"Unknown cleaning type: {self.value}")
-        return ThreadClass
-
-
-def cleanup(cleanup_type: CleanupType) -> None:
+def cleanup(ThreadClass: Type[CleanupExportCacheThread | CleanupTmpDirThread]) -> None:
+    assert issubclass(ThreadClass, BaseCleanupThread)
     started_at = timezone.now()
     stop_event = Event()
-    ThreadClass = CleanupType(cleanup_type).to_thread_class()
     cleanup_thread = ThreadClass(stop_event=stop_event)
 
     if rq_job := get_current_job():
         seconds_left = rq_job.timeout - 60
-        sleep_interval = 10
-        assert seconds_left > sleep_interval
-        finish_before = started_at + timedelta(seconds=seconds_left)
+        assert seconds_left > 0
+
         cleanup_thread.start()
+        cleanup_thread.join(timeout=seconds_left)
 
-        while timezone.now() < finish_before:
-            if not cleanup_thread.is_alive():
-                stop_event.set()
-                break
-            sleep(sleep_interval)
-
-        if not stop_event.is_set():
+        if cleanup_thread.is_alive():
             stop_event.set()
-
-        cleanup_thread.join()
+            cleanup_thread.join()
     else:
         # run func in the current thread
         cleanup_thread.run()
@@ -205,3 +184,11 @@ def cleanup(cleanup_type: CleanupType) -> None:
         f"completed after {int((finished_at - started_at).total_seconds())} seconds. "
         f"{cleanup_thread.number_of_removed_objects} elements have been removed"
     )
+
+
+def cleanup_tmp_directory() -> None:
+    cleanup(CleanupTmpDirThread)
+
+
+def cleanup_export_cache_directory() -> None:
+    cleanup(CleanupExportCacheThread)

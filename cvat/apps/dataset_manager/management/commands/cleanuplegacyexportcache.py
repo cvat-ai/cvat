@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import shutil
 from contextlib import suppress
 from pathlib import Path
@@ -24,7 +23,7 @@ class Command(BaseCommand):
             self.stdout.write(f"\rProgress: |{progress_bar}| {progress:.0%}", ending="")
 
         now = timezone.now()
-        progress_bar_len = os.get_terminal_size().columns // 2
+        progress_bar_len = shutil.get_terminal_size().columns // 2
 
         for Model in (Project, Task, Job):
             self.stdout.write(f"\nDeleting the export cache for {Model.__name__.lower()}s...")
@@ -34,9 +33,9 @@ class Command(BaseCommand):
                 continue
 
             msg = (
-                f"The {objects_count} folders are going to be checked"
+                f"{objects_count} folders are going to be checked"
                 if objects_count > 1
-                else "The 1 folder is going to be checked"
+                else "1 folder is going to be checked"
             )
             self.stdout.write(msg)
 
