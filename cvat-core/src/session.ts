@@ -494,7 +494,7 @@ export class Job extends Session {
         frame_count?: number;
         project_id: number | null;
         guide_id: number | null;
-        task_id: number | null;
+        task_id: number;
         labels: Label[];
         dimension?: DimensionType;
         data_compressed_chunk_type?: ChunkType;
@@ -505,8 +505,8 @@ export class Job extends Session {
         updated_date?: string,
         source_storage: Storage,
         target_storage: Storage,
+        parent_job_id: number | null;
     };
-
     constructor(initialData: InitializerType) {
         super();
 
@@ -532,6 +532,7 @@ export class Job extends Session {
             updated_date: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            parent_job_id: null,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
@@ -546,6 +547,7 @@ export class Job extends Session {
         this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
+        this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -641,12 +643,16 @@ export class Job extends Session {
         return this.#data.guide_id;
     }
 
-    public get taskId(): number | null {
+    public get taskId(): number {
         return this.#data.task_id;
     }
 
     public get dimension(): DimensionType {
         return this.#data.dimension;
+    }
+
+    public get parent_job_id(): number | null {
+        return this.#data.parent_job_id;
     }
 
     public get dataChunkType(): ChunkType {
@@ -751,6 +757,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
+    public readonly consensusJobsPerRegularJob: number;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -810,6 +817,7 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
+            consensus_jobs_per_regular_job: undefined,
 
             validation_mode: null,
         };
@@ -887,6 +895,7 @@ export class Task extends Session {
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
+                    parent_job_id: job.parent_job_id,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -993,6 +1002,9 @@ export class Task extends Session {
                 },
                 copyData: {
                     get: () => data.copy_data,
+                },
+                consensusJobsPerRegularJob: {
+                    get: () => data.consensus_jobs_per_regular_job,
                 },
                 labels: {
                     get: () => [...data.labels],
