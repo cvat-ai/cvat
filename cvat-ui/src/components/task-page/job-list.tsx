@@ -60,7 +60,7 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     }
 
     // consensus jobs will be under the collapse view
-    result = result.filter((job) => job.parent_job_id === null);
+    result = result.filter((job) => job.parentJobId === null);
 
     return result;
 }

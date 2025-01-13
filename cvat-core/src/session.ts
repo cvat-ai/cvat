@@ -506,6 +506,7 @@ export class Job extends Session {
         source_storage: Storage,
         target_storage: Storage,
         parent_job_id: number | null;
+        consensus_replicas: number;
     };
     constructor(initialData: InitializerType) {
         super();
@@ -533,6 +534,7 @@ export class Job extends Session {
             source_storage: undefined,
             target_storage: undefined,
             parent_job_id: null,
+            consensus_replicas: undefined,
         };
 
         this.#data.id = initialData.id ?? this.#data.id;
@@ -548,6 +550,7 @@ export class Job extends Session {
         this.#data.mode = initialData.mode ?? this.#data.mode;
         this.#data.created_date = initialData.created_date ?? this.#data.created_date;
         this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
+        this.#data.consensus_replicas = initialData.consensus_replicas ?? this.#data.consensus_replicas;
 
         if (Array.isArray(initialData.labels)) {
             this.#data.labels = initialData.labels.map((labelData) => {
@@ -651,8 +654,12 @@ export class Job extends Session {
         return this.#data.dimension;
     }
 
-    public get parent_job_id(): number | null {
+    public get parentJobId(): number | null {
         return this.#data.parent_job_id;
+    }
+
+    public get consensusReplicas(): number | null {
+        return this.#data.consensus_replicas;
     }
 
     public get dataChunkType(): ChunkType {
@@ -757,7 +764,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
-    public readonly consensusReplicas: number;
+    public readonly consensusEnabled: boolean;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -817,7 +824,7 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
-            consensus_replicas: undefined,
+            consensus_enabled: undefined,
 
             validation_mode: null,
         };
@@ -896,6 +903,7 @@ export class Task extends Session {
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
                     parent_job_id: job.parent_job_id,
+                    consensus_replicas: job.consensus_replicas,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -1003,8 +1011,8 @@ export class Task extends Session {
                 copyData: {
                     get: () => data.copy_data,
                 },
-                consensusReplicas: {
-                    get: () => data.consensus_replicas,
+                consensusEnabled: {
+                    get: () => data.consensus_enabled,
                 },
                 labels: {
                     get: () => [...data.labels],

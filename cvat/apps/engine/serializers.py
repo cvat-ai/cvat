@@ -638,9 +638,7 @@ class JobReadSerializer(serializers.ModelSerializer):
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
-    consensus_replicas = serializers.ReadOnlyField(
-        source='segment.task.consensus_replicas', allow_null=True
-    )
+    consensus_replicas = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = models.Job
@@ -656,8 +654,14 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if instance.type == models.JobType.ANNOTATION:
+            data['consensus_replicas'] = instance.segment.task.consensus_replicas
+        else:
+            data['consensus_replicas'] = 0
 
         if request := self.context.get('request'):
             perm = TaskPermission.create_scope_view(request, instance.segment.task)
@@ -2230,7 +2234,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
         source='data.validation_mode', required=False, allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation"
     )
-    consensus_enabled = serializers.ReadOnlyField(required=False, allow_null=True)
+    consensus_enabled = serializers.BooleanField(
+        source='get_consensus_enabled', required=False, read_only=True
+    )
 
     class Meta:
         model = models.Task
@@ -2249,6 +2255,11 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     def get_consensus_enabled(self, instance: models.Task) -> bool:
         return instance.consensus_replicas > 0
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+        return representation
 
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):

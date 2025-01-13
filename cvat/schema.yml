@@ -8348,10 +8348,7 @@ components:
           readOnly: true
         consensus_replicas:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           readOnly: true
-          nullable: true
       required:
       - issues
       - labels
@@ -10967,9 +10964,8 @@ components:
           description: Describes how the task validation is performed. Configured
             at task creation
         consensus_enabled:
-          type: string
+          type: boolean
           readOnly: true
-          nullable: true
       required:
       - jobs
       - labels

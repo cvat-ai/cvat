@@ -492,7 +492,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     <Col span={7}>{this.renderChunkSize()}</Col>
                 </Row>
                 <Row justify='start'>
-                    <Col span={24}>
+                    <Col span={7}>
                         {this.renderConsensusReplicas()}
                     </Col>
                 </Row>
