@@ -678,10 +678,7 @@ class FrameMatchingTest(_DbTestBase):
                 task = self._generate_task(images)
                 task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
-                dataset = [
-                    datumaro.components.extractor.DatasetItem(
-                        id=osp.splitext(p)[0])
-                    for p in dataset_paths]
+                dataset = [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
 
                 root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
