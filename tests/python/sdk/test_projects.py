@@ -162,7 +162,10 @@ class TestProjectUsecases(TestDatasetExport):
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
-    def test_can_create_project_from_dataset_without_poly_masks(self, fxt_coco_dataset: Path):
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_create_project_from_dataset_with_polygons_to_masks_param(
+            self, fxt_coco_dataset: Path, convert: bool
+        ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -178,6 +181,12 @@ class TestProjectUsecases(TestDatasetExport):
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+        task = project.get_tasks()[0]
+        imported_annotations = task.get_annotations()
+        assert all([
+            s.type.value == "polygon" if convert else "mask"
+            for s in imported_annotations.shapes
+        ])
 
     def test_can_retrieve_project(self, fxt_new_project: Project):
         project_id = fxt_new_project.id
