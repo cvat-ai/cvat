@@ -2681,7 +2681,7 @@ class TestPostTaskData:
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
 
-class _SourceDataType(str, Enum):
+class _SourceDataType(Enum):
     images = "images"
     video = "video"
 
@@ -6490,7 +6490,7 @@ class TestPatchExportFrames(TestTaskData):
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)
 
-            yield (spec, task, f"CVAT for {media_type} 1.1")
+            yield (spec, task, f"CVAT for {media_type.value} 1.1")
 
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])
