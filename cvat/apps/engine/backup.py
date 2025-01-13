@@ -15,11 +15,12 @@ from datetime import timedelta
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Type, Union
+from typing import Any, Optional, Type, Union, ClassVar
 from zipfile import ZipFile
 
 import django_rq
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers, status
@@ -342,6 +343,8 @@ class _TaskBackupBase(_BackupBase):
         return ()
 
 class _ExporterBase(metaclass=ABCMeta):
+    ModelClass: ClassVar[models.Project | models.Task]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -373,7 +376,18 @@ class _ExporterBase(metaclass=ABCMeta):
     def export_to(self, file: str | ZipFile, target_dir: str | None = None):
         ...
 
+    @classmethod
+    def get_object(cls, pk: int) -> models.Project | models.Task:
+        # FUTURE-FIXME: need to check permissions one more time when background task is called
+        try:
+            return cls.ModelClass.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            raise ValidationError(f'Such a {cls.ModelClass.__name__.lower()} does not exist')
+
+
 class TaskExporter(_ExporterBase, _TaskBackupBase):
+    ModelClass: ClassVar[models.Task] = models.Task
+
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
 
@@ -934,9 +948,11 @@ class _ProjectBackupBase(_BackupBase):
         return self._prepare_meta(allowed_fields, project)
 
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
+    ModelClass: ClassVar[models.Project] = models.Project
+
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.project[pk])
-        self._db_project = models.Project.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
+        self._db_project = self.ModelClass.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
@@ -1055,23 +1071,22 @@ def _import_project(filename, user, org_id):
 
 
 def create_backup(
-    # FUTURE-FIXME: there db_instance_id should be passed
-    db_instance: models.Project | models.Task,
+    instance_id: int,
     Exporter: Type[ProjectExporter | TaskExporter],
     logger: Logger,
     cache_ttl: timedelta,
 ):
+    db_instance = Exporter.get_object(instance_id)
+    instance_type = db_instance.__class__.__name__
+    instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
+
+    output_path = ExportCacheManager.make_backup_file_path(
+        instance_id=db_instance.id,
+        instance_type=instance_type,
+        instance_timestamp=instance_timestamp
+    )
+
     try:
-        instance_type = db_instance.__class__.__name__
-        db_instance.refresh_from_db(fields=['updated_date'])
-        instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
-
-        output_path = ExportCacheManager.make_backup_file_path(
-            instance_id=db_instance.id,
-            instance_type=instance_type,
-            instance_timestamp=instance_timestamp
-        )
-
         with get_export_cache_lock(
             output_path,
             block=True,

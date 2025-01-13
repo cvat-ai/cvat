@@ -713,7 +713,7 @@ class BackupExportManager(_ResourceExportManager):
 
         func = self.export_callback
         func_args = (
-            self.db_instance,
+            self.db_instance.id,
             Exporter,
             logger,
             cache_ttl,
