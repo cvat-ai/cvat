@@ -60,7 +60,7 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusJobsPerRegularJob: number;
+    consensusReplicas: number;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -72,7 +72,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusJobsPerRegularJob: taskInstance.consensusJobsPerRegularJob,
+            consensusReplicas: taskInstance.consensusReplicas,
         };
     }
 
@@ -117,7 +117,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderDescription(): JSX.Element {
         const { task: taskInstance, onUpdateTask } = this.props;
-        const { consensusJobsPerRegularJob } = this.state;
+        const { consensusReplicas } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -142,7 +142,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                             </Text>
                         </div>
                     )}
-                    {consensusJobsPerRegularJob > 0 && <Tag color='#1890ff'>Consensus</Tag>}
+                    {consensusReplicas > 0 && <Tag color='#1890ff'>Consensus</Tag>}
                 </Col>
                 <Col>
                     <Text type='secondary'>Assigned to</Text>

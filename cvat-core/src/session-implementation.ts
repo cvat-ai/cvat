@@ -748,8 +748,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (this.consensusJobsPerRegularJob) {
-                taskSpec.consensus_jobs_per_regular_job = this.consensusJobsPerRegularJob;
+            if (this.consensusReplicas) {
+                taskSpec.consensus_replicas = this.consensusReplicas;
             }
 
             const taskDataSpec = {

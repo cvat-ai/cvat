@@ -224,7 +224,7 @@ ThunkAction {
             sorting_method: data.advanced.sortingMethod,
             source_storage: new Storage(data.advanced.sourceStorage || { location: StorageLocation.LOCAL }).toJSON(),
             target_storage: new Storage(data.advanced.targetStorage || { location: StorageLocation.LOCAL }).toJSON(),
-            consensus_jobs_per_regular_job: data.advanced.consensusJobsPerRegularJob,
+            consensus_replicas: data.advanced.consensusReplicas,
         };
 
         if (data.projectId) {
@@ -276,8 +276,8 @@ ThunkAction {
                 },
             };
         }
-        if (data.advanced.consensusJobsPerRegularJob) {
-            description.consensus_jobs_per_regular_job = +data.advanced.consensusJobsPerRegularJob;
+        if (data.advanced.consensusReplicas) {
+            description.consensus_replicas = +data.advanced.consensusReplicas;
         }
 
         const taskInstance = new cvat.classes.Task(description);

@@ -48,7 +48,7 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
-    consensusJobsPerRegularJob: number;
+    consensusReplicas: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -61,7 +61,7 @@ const initialValues: AdvancedConfiguration = {
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
-    consensusJobsPerRegularJob: 0,
+    consensusReplicas: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -384,11 +384,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
-    private renderconsensusJobsPerRegularJob(): JSX.Element {
+    private renderConsensusReplicas(): JSX.Element {
         return (
             <Form.Item
-                label='Consensus Jobs Per Regular Job'
-                name='consensusJobsPerRegularJob'
+                label='Consensus Replicas'
+                name='consensusReplicas'
                 rules={[
                     {
                         validator: isInteger({
@@ -493,7 +493,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
                 <Row justify='start'>
                     <Col span={24}>
-                        {this.renderconsensusJobsPerRegularJob()}
+                        {this.renderConsensusReplicas()}
                     </Col>
                 </Row>
 

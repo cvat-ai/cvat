@@ -124,12 +124,12 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     let jobName = `Job #${job.id}`;
-    if (task.consensusJobsPerRegularJob && job.type !== JobType.GROUND_TRUTH) {
+    if (task.consensusReplicas && job.type !== JobType.GROUND_TRUTH) {
         jobName = `Job #${job.id}`;
     }
 
     let consensusJobs: Job[] = [];
-    if (task.consensusJobsPerRegularJob) {
+    if (task.consensusReplicas) {
         consensusJobs = task.jobs.filter((eachJob: Job) => eachJob.parent_job_id === job.id).reverse();
     }
     const consensusJobViews: React.JSX.Element[] = consensusJobs.map((eachJob: Job) => (
@@ -149,7 +149,7 @@ function JobItem(props: Props): JSX.Element {
                 <Tag color='#ED9C00'>Ground truth</Tag>
             </Col>
         );
-    } else if (job.type === JobType.ANNOTATION && task.consensusJobsPerRegularJob) {
+    } else if (job.type === JobType.ANNOTATION && task.consensusReplicas) {
         tag = (
             <Col offset={1}>
                 <Tag color='#1890FF'>Consensus</Tag>
@@ -303,7 +303,7 @@ function JobItem(props: Props): JSX.Element {
                     overlay={(
                         <JobActionsMenu
                             job={job}
-                            consensusJobsPresent={Boolean(task.consensusJobsPerRegularJob)}
+                            consensusJobsPresent={Boolean(task.consensusReplicas)}
                         />
                     )}
                 >

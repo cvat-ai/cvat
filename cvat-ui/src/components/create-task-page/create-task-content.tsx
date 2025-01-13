@@ -85,7 +85,7 @@ const defaultState: State = {
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
-        consensusJobsPerRegularJob: 0,
+        consensusReplicas: 0,
     },
     quality: {
         validationMode: ValidationMode.NONE,

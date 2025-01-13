@@ -209,7 +209,7 @@ class _TaskBackupBase(_BackupBase):
             'status',
             'subset',
             'labels',
-            'consensus_jobs_per_regular_job',
+            'consensus_replicas',
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -878,7 +878,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 })
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type == models.JobType.ANNOTATION:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS]:
                 continue
             else:
                 assert False
@@ -913,7 +913,7 @@ class _ProjectBackupBase(_BackupBase):
     def _prepare_project_meta(self, project):
         allowed_fields = {
             'bug_tracker',
-            'deimension',
+            'dimension',
             'labels',
             'name',
             'status',

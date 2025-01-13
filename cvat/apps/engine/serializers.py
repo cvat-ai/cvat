@@ -166,7 +166,7 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    count = serializers.IntegerField(source='total_jobs_count', allow_null=True)
+    count = serializers.IntegerField(source='total_jobs_count', default=0)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
@@ -638,6 +638,9 @@ class JobReadSerializer(serializers.ModelSerializer):
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
+    consensus_replicas = serializers.ReadOnlyField(
+        source='segment.task.consensus_replicas', allow_null=True
+    )
 
     class Meta:
         model = models.Job
@@ -646,7 +649,9 @@ class JobReadSerializer(serializers.ModelSerializer):
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id')
+            'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
+            'consensus_replicas'
+        )
         read_only_fields = fields
 
     def to_representation(self, instance):
@@ -2225,7 +2230,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         source='data.validation_mode', required=False, allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation"
     )
-    consensus_jobs_per_regular_job = serializers.ReadOnlyField(required=False, allow_null=True)
+    consensus_enabled = serializers.ReadOnlyField(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -2234,13 +2239,16 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date', 'validation_mode', 'consensus_jobs_per_regular_job',
+            'assignee_updated_date', 'validation_mode', 'consensus_enabled',
         )
         read_only_fields = fields
         extra_kwargs = {
             'organization': { 'allow_null': True },
             'overlap': { 'allow_null': True },
         }
+
+    def get_consensus_enabled(self, instance: models.Task) -> bool:
+        return instance.consensus_replicas > 0
 
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -2250,20 +2258,37 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
-    consensus_jobs_per_regular_job = serializers.IntegerField(required=False, allow_null=True)
+    consensus_replicas = serializers.IntegerField(
+        required=False, allow_null=True, default=0, min_value=0,
+        help_text=textwrap.dedent("""\
+            The number of consensus replica jobs for each annotation job.
+            Configured at task creation
+        """)
+    )
 
     class Meta:
         model = models.Task
         fields = (
             'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage', 'consensus_jobs_per_regular_job',
+            'target_storage', 'source_storage', 'consensus_replicas',
         )
-        write_once_fields = ('overlap', 'segment_size')
+        write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate_consensus_replicas(self, value):
+        max_replicas = settings.MAX_CONSENSUS_REPLICAS
+        if value and (value == 1 or value < 0 or value > max_replicas):
+            raise serializers.ValidationError(
+                f"Consensus replicas must be 0 "
+                f"or a positive number more than 1 and less than {max_replicas + 1}, "
+                f"got {value}"
+            )
+
+        return value or 0
 
     # pylint: disable=no-self-use
     @transaction.atomic
@@ -2445,11 +2470,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             for label, sublabels in new_sublabel_names.items():
                 if sublabels != target_project_sublabel_names.get(label):
                     raise serializers.ValidationError('All task or project label names must be mapped to the target project')
-
-        consensus_jobs_per_regular_job = attrs.get('consensus_jobs_per_regular_job', self.instance.consensus_jobs_per_regular_job if self.instance else None)
-
-        if consensus_jobs_per_regular_job and (consensus_jobs_per_regular_job == 1 or consensus_jobs_per_regular_job < 0 or consensus_jobs_per_regular_job > 10):
-            raise serializers.ValidationError("Consensus jobs per regular job shouldn't be negative, less than 10 except 1")
 
         return attrs
 
