@@ -7,7 +7,7 @@ from glob import glob
 from typing import Callable, Optional
 
 from datumaro.components.annotation import AnnotationType
-from datumaro.components.extractor import DatasetItem
+from datumaro.components.dataset_base import DatasetItem
 from datumaro.components.project import Dataset
 from pyunpack import Archive
 
