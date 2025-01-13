@@ -142,7 +142,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                             </Text>
                         </div>
                     )}
-                    {consensusJobsPerRegularJob > 0 && <Tag color='#1890ff'>Consensus Based Annotation</Tag>}
+                    {consensusJobsPerRegularJob > 0 && <Tag color='#1890ff'>Consensus</Tag>}
                 </Col>
                 <Col>
                     <Text type='secondary'>Assigned to</Text>
