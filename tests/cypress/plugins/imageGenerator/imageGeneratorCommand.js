@@ -14,16 +14,3 @@ Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, colo
     count,
     extension,
 }));
-
-Cypress.Commands.add('imageGeneratorManyObjects', (directory, fileName, width, height, color, posXs, posYs, message, imagesCount, extension = 'png') => cy.task('imageGeneratorManyObjects', {
-    directory,
-    fileName,
-    width,
-    height,
-    color,
-    posXs,
-    posYs,
-    message,
-    imagesCount,
-    extension,
-}));
