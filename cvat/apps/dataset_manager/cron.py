@@ -8,14 +8,11 @@ import os
 import shutil
 from abc import ABCMeta, abstractmethod
 from datetime import timedelta
-from functools import wraps
 from pathlib import Path
-from threading import Event, Thread
-from typing import Callable, ClassVar, Type
+from typing import ClassVar, Type
 
 from django.conf import settings
 from django.utils import timezone
-from rq import get_current_job
 
 from cvat.apps.dataset_manager.util import (
     CacheFileOrDirPathParseError,
@@ -32,17 +29,6 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine.log import ServerLogManager
 
 logger = ServerLogManager(__name__).glob
-
-
-def suppress_exceptions(func: Callable[[CleanupExportCacheThread], None]):
-    @wraps(func)
-    def wrapper(self: CleanupExportCacheThread):
-        try:
-            func(self)
-        except Exception as ex:
-            self.set_exception(ex)
-
-    return wrapper
 
 
 def clear_export_cache(file_path: Path) -> bool:
@@ -64,36 +50,25 @@ def clear_export_cache(file_path: Path) -> bool:
         return True
 
 
-class BaseCleanupThread(Thread, metaclass=ABCMeta):
-    description: ClassVar[str]
+class BaseCleaner(metaclass=ABCMeta):
+    task_description: ClassVar[str]
 
-    def __init__(self, stop_event: Event, *args, **kwargs) -> None:
-        self._stop_event = stop_event
+    def __init__(self) -> None:
         self._number_of_removed_objects = 0
-        self._exception = None
-        super().__init__(*args, **kwargs, target=self._cleanup)
 
     @property
     def number_of_removed_objects(self) -> int:
         return self._number_of_removed_objects
 
     @abstractmethod
-    def _cleanup(self) -> None: ...
-
-    def set_exception(self, ex: Exception) -> None:
-        assert isinstance(ex, Exception)
-        self._exception = ex
-
-    def raise_if_exception(self) -> None:
-        if isinstance(self._exception, Exception):
-            raise self._exception
+    def do_cleanup(self):
+        pass
 
 
-class CleanupTmpDirThread(BaseCleanupThread):
-    description: ClassVar[str] = "common temporary directory cleanup"
+class TmpDirectoryCleaner(BaseCleaner):
+    task_description: ClassVar[str] = "common temporary directory cleanup"
 
-    @suppress_exceptions
-    def _cleanup(self) -> None:
+    def do_cleanup(self) -> None:
         # we do not use locks here when handling objects from tmp directory
         # because undesired race conditions are not possible here:
         # 1. A temporary file/directory can be removed while checking access time.
@@ -102,10 +77,6 @@ class CleanupTmpDirThread(BaseCleanupThread):
         # 3. Each temporary file/directory has a unique name, so the race condition when one process is creating an object
         #    and another is removing it - impossible.
         for child in os.scandir(TmpDirManager.TMP_ROOT):
-            # stop clean up process correctly before rq job timeout is ended
-            if self._stop_event.is_set():
-                return
-
             try:
                 if (
                     child.stat().st_atime
@@ -125,19 +96,14 @@ class CleanupTmpDirThread(BaseCleanupThread):
                 log_exception(logger)
 
 
-class CleanupExportCacheThread(BaseCleanupThread):
-    description: ClassVar[str] = "export cache cleanup"
+class ExportCacheDirectoryCleaner(BaseCleaner):
+    task_description: ClassVar[str] = "export cache directory cleanup"
 
-    @suppress_exceptions
-    def _cleanup(self) -> None:
+    def do_cleanup(self) -> None:
         export_cache_dir_path = settings.EXPORT_CACHE_ROOT
         assert os.path.exists(export_cache_dir_path)
 
         for child in os.scandir(export_cache_dir_path):
-            # stop clean up process correctly before rq job timeout is ended
-            if self._stop_event.is_set():
-                return
-
             # export cache directory is expected to contain only files
             if not child.is_file():
                 logger.warning(f"The {child.name} is not a file, skipping...")
@@ -154,39 +120,24 @@ class CleanupExportCacheThread(BaseCleanupThread):
                 log_exception(logger)
 
 
-def cleanup(ThreadClass: Type[CleanupExportCacheThread | CleanupTmpDirThread]) -> None:
-    assert issubclass(ThreadClass, BaseCleanupThread)
+def cleanup(CleanerClass: Type[ExportCacheDirectoryCleaner | TmpDirectoryCleaner]) -> None:
+    assert issubclass(CleanerClass, BaseCleaner)
     started_at = timezone.now()
-    stop_event = Event()
-    cleanup_thread = ThreadClass(stop_event=stop_event)
 
-    if rq_job := get_current_job():
-        seconds_left = rq_job.timeout - 60
-        assert seconds_left > 0
-
-        cleanup_thread.start()
-        cleanup_thread.join(timeout=seconds_left)
-
-        if cleanup_thread.is_alive():
-            stop_event.set()
-            cleanup_thread.join()
-    else:
-        # run func in the current thread
-        cleanup_thread.run()
-
-    cleanup_thread.raise_if_exception()
+    cleaner = CleanerClass()
+    cleaner.do_cleanup()
 
     finished_at = timezone.now()
     logger.info(
-        f"The {cleanup_thread.description!r} process has been successfully "
+        f"The {cleaner.task_description!r} process has been successfully "
         f"completed after {int((finished_at - started_at).total_seconds())} seconds. "
-        f"{cleanup_thread.number_of_removed_objects} elements have been removed"
+        f"{cleaner.number_of_removed_objects} elements have been removed"
     )
 
 
-def cleanup_tmp_directory() -> None:
-    cleanup(CleanupTmpDirThread)
-
-
 def cleanup_export_cache_directory() -> None:
-    cleanup(CleanupExportCacheThread)
+    cleanup(ExportCacheDirectoryCleaner)
+
+
+def cleanup_tmp_directory() -> None:
+    cleanup(TmpDirectoryCleaner)

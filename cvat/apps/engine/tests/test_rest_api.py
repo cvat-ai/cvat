@@ -3124,12 +3124,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
                 "cvat.apps.dataset_manager.cron.clear_export_cache",
                 side_effect=clear_export_cache,
             ) as mock_clear_export_cache,
-            mock.patch(
-                "cvat.apps.dataset_manager.cron.get_current_job",
-            ) as mock_rq_get_current_job,
         ):
-            mock_rq_job = mock.MagicMock(timeout=100)
-            mock_rq_get_current_job.return_value = mock_rq_job
             cleanup_export_cache_directory()
             mock_clear_export_cache.assert_not_called()
 
