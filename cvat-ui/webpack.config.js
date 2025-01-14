@@ -48,7 +48,7 @@ module.exports = (env) => {
         },
         devServer: {
             compress: false,
-            host: process.env.CVAT_UI_HOST ?? '0.0.0.0',
+            host: process.env.CVAT_UI_HOST ?? 'localhost',
             client: {
                 overlay: false,
                 webSocketURL: 'ws://0.0.0.0:0/ws',
