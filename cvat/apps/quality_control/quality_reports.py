@@ -1360,7 +1360,6 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         if t not in self.included_ann_types:
             return None
 
-        # pylint: disable=no-value-for-parameter
         if t == dm.AnnotationType.label:
             return self.match_labels(*args)
         elif t == dm.AnnotationType.bbox:
@@ -1375,7 +1374,6 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             return self.match_lines(*args)
         elif t == dm.AnnotationType.ellipse:
             return self.match_ellipses(*args)
-        # pylint: enable=no-value-for-parameter
         else:
             return None
 
