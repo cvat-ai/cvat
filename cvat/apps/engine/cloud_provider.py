@@ -770,8 +770,9 @@ class AzureBlobContainer(_CloudStorage):
             blob=key,
             offset=None,
             length=None,
+            max_concurrency=self.MAX_CONCURRENCY,
         )
-        storage_stream_downloader.download_to_stream(stream, max_concurrency=self.MAX_CONCURRENCY)
+        storage_stream_downloader.readinto(stream)
 
     @validate_file_status
     @validate_bucket_status
