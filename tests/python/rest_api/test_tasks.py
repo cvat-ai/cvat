@@ -4036,35 +4036,33 @@ class TestTaskBackups:
         else:
             assert backup is None
 
+    def _test_can_export_backup(self, task_id: int):
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
-        task = self.client.tasks.retrieve(task_id)
+        self._test_can_export_backup(task_id)
 
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-        task.download_backup(filename)
-
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
+    def test_can_export_backup_for_consensus_task(self, tasks):
+        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
-        task = self.client.tasks.retrieve(task_id)
-
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
-        task.download_backup(filename)
-
-        assert filename.is_file()
-        assert filename.stat().st_size > 0
+        self._test_can_export_backup(task_id)
 
     def test_cannot_export_backup_for_task_without_data(self, tasks):
         task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
-        task = self.client.tasks.retrieve(task_id)
-
-        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
 
         with pytest.raises(ApiException) as exc:
-            task.download_backup(filename)
+            self._test_can_export_backup(task_id)
 
             assert exc.status == HTTPStatus.BAD_REQUEST
             assert "Backup of a task without data is not allowed" == exc.body.encode()
@@ -4076,6 +4074,10 @@ class TestTaskBackups:
 
     def test_can_import_backup_with_honeypot_task(self, tasks):
         task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        self._test_can_restore_task_from_backup(task_id)
+
+    def test_can_import_backup_with_consensus_task(self, tasks):
+        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
