@@ -1955,7 +1955,7 @@ class CvatToDmAnnotationConverter:
                 if a_desc['input_type'] == AttributeType.NUMBER:
                     a_value = float(a_value)
                 elif a_desc['input_type'] == AttributeType.CHECKBOX:
-                    a_value = (a_value.lower() == 'true')
+                    a_value = a_value.lower() == 'true'
                 dm_attr[a_name] = a_value
             except Exception as e:
                 raise Exception(
