@@ -1,11 +1,20 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2025 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
+import re
 from http import HTTPStatus
 
 from config import ASSETS_DIR, get_method
+
+
+def clean_json(data: str) -> str:
+    # truncate milliseconds to 3 digit precision to align with data.json
+    data = re.sub(r'(\.\d{3})\d{3}Z"', r'\g<1>000Z"', data)
+    data = data.rstrip()
+    return data
+
 
 if __name__ == "__main__":
     annotations = {}
@@ -31,7 +40,7 @@ if __name__ == "__main__":
 
         filename = f"{obj}s.json".replace("/", "_")
         with open(ASSETS_DIR / filename, "w") as f:
-            json.dump(response.json(), f, indent=2, sort_keys=True)
+            f.write(clean_json(json.dumps(response.json(), indent=2, sort_keys=True)))
 
         if obj in ["job", "task"]:
             annotations[obj] = {}
