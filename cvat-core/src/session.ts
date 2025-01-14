@@ -659,7 +659,7 @@ export class Job extends Session {
         return this.#data.parent_job_id;
     }
 
-    public get consensusReplicas(): number | null {
+    public get consensusReplicas(): number {
         return this.#data.consensus_replicas;
     }
 
