@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) 2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import { DownloadOutlined } from '@ant-design/icons/lib/icons';
 interface TableHeaderProps {
     title: string;
     onSearch?: (query: string) => void;
-    onDownload?: () => { filename: string, data: Array<{ [key: string]: any }> };
+    onDownload: () => { filename: string, data: Array<{ [key: string]: any }> };
     actions?: React.ReactNode;
 }
 
@@ -49,13 +49,11 @@ function QualityTableHeader(props: TableHeaderProps): JSX.Element {
             <Col>
                 <Text className='cvat-text-color cvat-frame-allocation-header'>{title}</Text>
             </Col>
-            {onDownload && (
-                <Col>
-                    <DownloadOutlined onClick={handleDownload} />
-                </Col>
-            )}
+            <Col>
+                <DownloadOutlined onClick={handleDownload} />
+            </Col>
             <Col>{actions}</Col>
-            {onSearch && (
+            {!!onSearch && (
                 <Col flex='auto'>
                     <Row justify='end'>
                         <Col span={8} className='cvat-quality-table-search-wrapper'>
@@ -73,4 +71,4 @@ function QualityTableHeader(props: TableHeaderProps): JSX.Element {
     );
 }
 
-export default QualityTableHeader;
+export default React.memo(QualityTableHeader);

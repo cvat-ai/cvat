@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) 2024-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,7 +30,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     } = props;
 
     const tableRef = useRef(null);
-    const [pageWidth, setPageWidth] = useState(0);
+    const [pageSizeData, setPageSizeData] = useState({ width: 0, height: 0 });
 
     const totalCount = validationLayout.validationFrames.length;
     const excludedCount = validationLayout.disabledFrames.length;
@@ -45,8 +45,8 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     useLayoutEffect(() => {
         const resize = (): void => {
             if (tableRef?.current) {
-                const { clientWidth } = tableRef.current;
-                setPageWidth(clientWidth);
+                const { clientWidth, clientHeight } = tableRef.current;
+                setPageSizeData({ width: clientWidth, height: clientHeight });
             }
         };
 
@@ -59,7 +59,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     }, []);
 
     return (
-        <div className='cvat-quality-control-management-tab'>
+        <div className='cvat-quality-control-management-tab' ref={tableRef}>
             <Row className='cvat-quality-control-management-tab-summary'>
                 <AnalyticsCard
                     title='Total validation frames'
@@ -85,11 +85,11 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                     <Text type='secondary'>
                         The task&apos;s validation mode is configured as&nbsp;
                     </Text>
-                    <Text type='secondary' strong>{` ${validationModeText}.`}</Text>
+                    <Text type='secondary' strong>{validationModeText}</Text>
                 </Row>
             ) : null}
             <Row>
-                <Col span={24} ref={tableRef}>
+                <Col span={24}>
                     <AllocationTable
                         task={task}
                         gtJobId={gtJobId}
@@ -98,7 +98,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                         qualitySettings={qualitySettings}
                         onDeleteFrames={onDeleteFrames}
                         onRestoreFrames={onRestoreFrames}
-                        pageWidth={pageWidth}
+                        pageSizeData={pageSizeData}
                     />
                 </Col>
             </Row>

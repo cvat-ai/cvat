@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) 2024-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -156,15 +156,23 @@ $excluded-background: #d9d9d973;
     .ant-table-pagination.ant-pagination {
         margin-bottom: 0;
     }
+
+    .ant-tag {
+        margin-inline-end: 0;
+    }
 }
 
 .cvat-quality-control-management-tab-summary {
     margin-left: - $grid-unit-size;
     margin-right: - $grid-unit-size;
 
-    >.ant-col {
+    > .ant-col {
         padding: 0 $grid-unit-size;
     }
+}
+
+.cvat-quality-control-management-tab {
+    height: 100%;
 }
 
 .cvat-quality-control-validation-mode-hint {
@@ -178,7 +186,12 @@ $excluded-background: #d9d9d973;
 .cvat-quality-table-search-wrapper {
     padding-bottom: $grid-unit-size * 0.5;
 
-    input, button {
-        height: $grid-unit-size * 3.5 !important;
+    .ant-input, .ant-input-search-button {
+        height: $grid-unit-size * 3.5;
     }
+}
+
+.cvat-quality-download-report-button {
+    padding-left: $grid-unit-size * 2;
+    padding-right: 0;
 }

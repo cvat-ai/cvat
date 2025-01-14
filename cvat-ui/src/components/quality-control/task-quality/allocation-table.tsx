@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) 2024-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ import {
     Task, FramesMetaData, TaskValidationLayout, QualitySettings,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { sorter } from 'utils/quality';
+import { sorter, tablePaginationPageSize } from 'utils/quality';
 import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import QualityTableHeader from './quality-table-header';
 
@@ -26,7 +26,7 @@ interface Props {
     gtJobMeta: FramesMetaData;
     validationLayout: TaskValidationLayout;
     qualitySettings: QualitySettings;
-    pageWidth: number;
+    pageSizeData: { width: number, height: number };
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
@@ -37,12 +37,12 @@ interface RowData {
     active: boolean;
 }
 
-const COLUMNS_OFFSET_PERCENT = 0.30;
+const FRAME_NAME_WIDTH_COEF = 0.70;
 
-function AllocationTable(props: Readonly<Props>): JSX.Element {
+function AllocationTable(props: Readonly<Props>): JSX.Element | null {
     const {
         task, gtJobId, gtJobMeta, validationLayout,
-        onDeleteFrames, onRestoreFrames, pageWidth,
+        onDeleteFrames, onRestoreFrames, pageSizeData,
     } = props;
 
     const history = useHistory();
@@ -77,7 +77,13 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         return { filename, data: csvContent };
     };
 
-    const frameNameWidth = pageWidth - COLUMNS_OFFSET_PERCENT * pageWidth;
+    const { width: pageWidth, height: pageHeight } = pageSizeData;
+    const frameNameWidth = FRAME_NAME_WIDTH_COEF * pageWidth;
+    const defaultPageSize = tablePaginationPageSize(pageHeight);
+
+    if (!pageWidth || !pageHeight) {
+        return null;
+    }
 
     const columns = [
         {
@@ -211,7 +217,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                     },
                 }}
                 size='small'
-                pagination={{ showSizeChanger: true }}
+                pagination={{ showSizeChanger: true, defaultPageSize }}
             />
         </div>
     );
