@@ -166,23 +166,23 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
         }
         case JobsActionTypes.COLLAPSE_REGULAR_JOB: {
             const { jobID } = action.payload;
-            state.regularJobViewUncollapse[jobID] = true;
 
             return {
                 ...state,
                 regularJobViewUncollapse: {
                     ...state.regularJobViewUncollapse,
+                    [jobID]: true,
                 },
             };
         }
         case JobsActionTypes.UNCOLLAPSE_REGULAR_JOB: {
             const { jobID } = action.payload;
-            state.regularJobViewUncollapse[jobID] = false;
 
             return {
                 ...state,
                 regularJobViewUncollapse: {
                     ...state.regularJobViewUncollapse,
+                    [jobID]: false,
                 },
             };
         }

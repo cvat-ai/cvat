@@ -125,11 +125,11 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     const jobName = `Job #${job.id}`;
 
-    let consensusJobs: Job[] = [];
+    let childJobs: Job[] = [];
     if (task.consensusEnabled) {
-        consensusJobs = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === job.id).reverse();
+        childJobs = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === job.id).reverse();
     }
-    const consensusJobViews: React.JSX.Element[] = consensusJobs.map((eachJob: Job) => (
+    const consensusJobViews: React.JSX.Element[] = childJobs.map((eachJob: Job) => (
         <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
     ));
 
@@ -146,8 +146,7 @@ function JobItem(props: Props): JSX.Element {
                 <Tag color='#ED9C00'>Ground truth</Tag>
             </Col>
         );
-    }
-    if (job.consensusReplicas) {
+    } else if (job.consensusReplicas) {
         tag = (
             <Col offset={1}>
                 <Tag color='#1890FF'>Consensus</Tag>
@@ -302,7 +301,7 @@ function JobItem(props: Props): JSX.Element {
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
-                {consensusJobs.length > 0 && (
+                {childJobs.length > 0 && (
                     <Collapse
                         className='cvat-consensus-job-collapse'
                         activeKey={regularJobUncollapsed ? ['1'] : []}
@@ -310,7 +309,7 @@ function JobItem(props: Props): JSX.Element {
                         items={[
                             {
                                 key: '1',
-                                label: <Text>{`${consensusJobs.length} Consensus Jobs`}</Text>,
+                                label: <Text>{`${childJobs.length} Replicas`}</Text>,
                                 children: consensusJobViews,
                             },
                         ]}

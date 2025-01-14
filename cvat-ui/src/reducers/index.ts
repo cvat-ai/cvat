@@ -90,7 +90,7 @@ export interface JobsState {
         };
     };
     regularJobViewUncollapse: {
-        [tid: number]: boolean;
+        [jobId: number]: boolean;
     };
 }
 
