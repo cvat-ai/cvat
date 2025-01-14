@@ -599,7 +599,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (!readonly) {
                     if (state) {
-                        openAnnotationsActionModal(state);
+                        openAnnotationsActionModal({ defaultObjectState: state });
                     } else {
                         openAnnotationsActionModal();
                     }

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2023-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import HistogramEqualizationImplementation, { HistogramEqualization } from './hi
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
+import TrackerMILAction from './annotations-actions/tracker-mil';
 
 const core = getCore();
 
@@ -124,6 +125,8 @@ export class OpenCVWrapper {
 
         this.injectionProcess = null;
         this.initialized = true;
+
+        await core.actions.register(new TrackerMILAction(this));
     }
 
     public removeProgressCallback(): void {
@@ -308,7 +311,7 @@ export class OpenCVWrapper {
             trackerMIL: {
                 model: () => new TrackerMImplementation(this.cv),
                 name: 'TrackerMIL',
-                description: 'Light client-side model useful to track simple objects',
+                description: 'Lightweight client-side algorithm, useful to track simple objects',
                 kind: 'opencv_tracker_mil',
             },
         };

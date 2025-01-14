@@ -250,10 +250,11 @@
 }
 
 .cvat-opencv-tracker-select {
+    margin-bottom: $grid-unit-size * 2;
     width: 100%;
 }
 
-.cvat-opencv-tracking-label-select {
+.cvat-opencv-tracker-help-message {
     @extend .cvat-opencv-tracker-select;
 }
 

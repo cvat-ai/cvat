@@ -379,7 +379,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private runAnnotationAction = (): void => {
         const { objectState } = this.props;
-        openAnnotationsActionModal(objectState);
+        openAnnotationsActionModal({ defaultObjectState: objectState });
     };
 
     private commit(): void {
