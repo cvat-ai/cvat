@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import uuid
 from collections.abc import Collection, Iterable
+from copy import deepcopy
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
@@ -322,12 +323,14 @@ class _TaskBackupBase(_BackupBase):
         return annotations
 
     def _get_db_jobs(self):
-        if self._db_task:
-            db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
-            db_segments.sort(key=lambda i: i.job_set.first().id)
-            db_jobs = (job for s in db_segments for job in s.job_set.all())
-            return db_jobs
-        return ()
+        if not self._db_task:
+            return
+
+        db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
+        db_segments.sort(key=lambda i: i.job_set.first().id)
+
+        for db_segment in db_segments:
+            yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
 
 class _ExporterBase():
     def __init__(self, *args, **kwargs):
@@ -430,7 +433,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
-            task = self._prepare_task_meta(task_serializer.data)
+            serialized_task = task_serializer.data
+            if serialized_task.pop('consensus_enabled', False):
+                serialized_task['consensus_replicas'] = self._db_task.consensus_replicas
+
+            task = self._prepare_task_meta(serialized_task)
             task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
             for label in task['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
@@ -438,34 +445,39 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return task
 
         def serialize_segment(db_segment):
-            segments = []
-            db_jobs = db_segment.job_set.all()
-            for db_job in db_jobs:
-                job_serializer = SimpleJobSerializer(db_job)
-                for field in ('url', 'assignee'):
-                    job_serializer.fields.pop(field)
-                job_data = self._prepare_job_meta(job_serializer.data)
+            segment_serializer = SegmentSerializer(db_segment)
+            segment_serializer.fields.pop('jobs')
+            serialized_segment = segment_serializer.data
 
-                segment_serializer = SegmentSerializer(db_segment)
-                segment_serializer.fields.pop('jobs')
-                segment = segment_serializer.data
-                segment_type = segment.pop("type")
-                segment.update(job_data)
-
+            segment_type = serialized_segment.pop("type")
             if (
                 self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE
                 or self._db_data.validation_mode == models.ValidationMode.GT_POOL
             ):
-                segment.update(serialize_segment_file_names(db_segment))
+                serialized_segment.update(serialize_segment_file_names(db_segment))
 
-                segments.append(segment)
-
-            return segments
+            return serialized_segment
 
         def serialize_jobs():
             db_segments = list(self._db_task.segment_set.all())
             db_segments.sort(key=lambda i: i.job_set.first().id)
-            return (serialized_job for s in db_segments for serialized_job in serialize_segment(s))
+
+            serialized_jobs = []
+            for db_segment in db_segments:
+                serialized_segment = serialize_segment(db_segment)
+
+                db_jobs = list(db_segment.job_set.all())
+                db_jobs.sort(key=lambda v: v.id)
+                for db_job in db_jobs:
+                    job_serializer = SimpleJobSerializer(db_job)
+                    for field in ('url', 'assignee'):
+                        job_serializer.fields.pop(field)
+
+                    serialized_job = self._prepare_job_meta(job_serializer.data)
+                    serialized_job.update(deepcopy(serialized_segment))
+                    serialized_jobs.append(serialized_job)
+
+            return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
             if self._db_task.mode == 'annotation':
@@ -763,7 +775,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         job_file_mapping = None
         if data.pop('custom_segments', False):
             job_file_mapping = self._parse_segment_frames(jobs=[
-                v for v in jobs if v.get('type') != models.JobType.GROUND_TRUTH
+                v for v in jobs if v.get('type') == models.JobType.ANNOTATION
             ])
 
             for d in [self._manifest, data]:
