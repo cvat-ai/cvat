@@ -117,6 +117,7 @@ INSTALLED_APPS = [
     'cvat.apps.events',
     'cvat.apps.quality_control',
     'cvat.apps.analytics_report',
+    'cvat.apps.redis_handler',
 ]
 
 SITE_ID = 1
@@ -406,8 +407,6 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 
 # Make sure to update other config files when updating these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
-
-REDIS_MIGRATIONS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine', 'redis_migrations')
 
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
