@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
+import importlib
+from pathlib import Path
+from typing import Any, Generator, Mapping
+
 from django.utils.module_loading import module_has_submodule
 
 from cvat.apps import AppConfig
 from cvat.apps import get_app_configs as get_cvat_app_configs
 from cvat.apps.redis_handler.models import RedisMigration as DBRedisMigration
 from cvat.apps.redis_handler.redis_migrations import BaseMigration as BaseRedisMigration
-from pathlib import Path
-
-from typing import Mapping, Generator, Any
-import importlib
 
 _MigrationsPerApp = dict[int, list[str]]
 
@@ -33,20 +33,19 @@ class MigrationLoader:
             return [
                 app_config
                 for app_config in get_cvat_app_configs()
-                if module_has_submodule(app_config.module, MigrationLoader.REDIS_MIGRATIONS_DIR_NAME)
+                if module_has_submodule(
+                    app_config.module, MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
+                )
             ]
 
         def _init_app_configs_mapping(self):
-            return {
-                app_config.label: app_config for app_config in self._app_configs
-            }
+            return {app_config.label: app_config for app_config in self._app_configs}
 
         def __getitem__(self, label: str) -> AppConfig:
             return self._app_configs_mapping[label]
 
         def __iter__(self) -> Generator[AppConfig, Any, Any]:
             yield from self._app_configs
-
 
     def __init__(self) -> None:
         self._initialized = False
@@ -58,7 +57,7 @@ class MigrationLoader:
         self._init_unapplied_migrations()
 
     @property
-    def app_configs(self) -> 'AppConfigs':
+    def app_configs(self) -> "AppConfigs":
         return self._app_configs
 
     def _load_from_disk(self):
@@ -66,16 +65,16 @@ class MigrationLoader:
             migrations_dir = Path(app_config.path) / self.REDIS_MIGRATIONS_DIR_NAME
             for migration_file in sorted(migrations_dir.glob("[0-9]*.py")):
                 migration_name = migration_file.stem
-                (self._disk_migrations_per_app.setdefault(app_config.label, [])).append(migration_name)
+                (self._disk_migrations_per_app.setdefault(app_config.label, [])).append(
+                    migration_name
+                )
 
     def _init_unapplied_migrations(self):
         applied_migrations = DBRedisMigration.objects.all().values_list("name", "app_label")
 
         for app_label, migration_names in self._disk_migrations_per_app.items():
             app_config = self.app_configs[app_label]
-            app_applied_migrations = {
-                m[0] for m in applied_migrations if m[1] == app_config.label
-            }
+            app_applied_migrations = {m[0] for m in applied_migrations if m[1] == app_config.label}
             app_unapplied_migrations = sorted(set(migration_names) - app_applied_migrations)
             for migration_name in app_unapplied_migrations:
                 MigrationClass = self.get_migration_class(app_config.name, migration_name)

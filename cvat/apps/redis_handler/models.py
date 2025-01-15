@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class RedisMigration(models.Model):
     app_label = models.CharField(max_length=128)
     name = models.CharField(max_length=128)
@@ -8,7 +9,7 @@ class RedisMigration(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                name='migration_name_unique',
-                fields=('app_label', 'name'),
+                name="migration_name_unique",
+                fields=("app_label", "name"),
             ),
         ]

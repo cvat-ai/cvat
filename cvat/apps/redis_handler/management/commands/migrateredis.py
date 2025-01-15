@@ -5,8 +5,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from cvat.apps.redis_handler.models import RedisMigration
 from cvat.apps.redis_handler.migration_loader import MigrationLoader
+from cvat.apps.redis_handler.models import RedisMigration
 
 
 class Command(BaseCommand):
@@ -18,11 +18,19 @@ class Command(BaseCommand):
         for migration in loader:
             try:
                 with transaction.atomic():
-                    RedisMigration.objects.create(name=migration.name, app_label=migration.app_label)
+                    RedisMigration.objects.create(
+                        name=migration.name, app_label=migration.app_label
+                    )
                     migration.run()
                 self.stdout.write(
-                    self.style.SUCCESS(f"[{migration.app_label}] Successfully applied migration: {migration.name}")
+                    self.style.SUCCESS(
+                        f"[{migration.app_label}] Successfully applied migration: {migration.name}"
+                    )
                 )
             except Exception as ex:
-                self.stderr.write(self.style.ERROR(f"[{migration.app_label}] Failed to apply migration: {migration.name}"))
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"[{migration.app_label}] Failed to apply migration: {migration.name}"
+                    )
+                )
                 raise CommandError(str(ex))
