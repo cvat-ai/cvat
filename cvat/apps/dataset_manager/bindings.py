@@ -1639,7 +1639,7 @@ class CVATDataExtractorMixin:
         return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
 
 
-class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
+class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         instance_data: CommonData,
@@ -1650,7 +1650,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         **kwargs
     ):
         instance_meta = instance_data.meta[instance_data.META_FIELD]
-        dm.SourceExtractor.__init__(
+        dm.SubsetBase.__init__(
             self,
             media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=instance_meta['subset'],
@@ -1748,7 +1748,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
 
-class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
+class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         project_data: ProjectData,
@@ -1758,7 +1758,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
-        dm.Extractor.__init__(
+        dm.DatasetBase.__init__(
             self, media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud
         )
         CVATDataExtractorMixin.__init__(self, **kwargs)

@@ -21,6 +21,7 @@ RUN apt-get update && \
         libxmlsec1-dev \
         libxmlsec1-openssl \
         libhdf5-dev \
+        cargo \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_VERSION
