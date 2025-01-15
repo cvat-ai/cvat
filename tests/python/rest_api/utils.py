@@ -611,6 +611,6 @@ _T = TypeVar("_T")
 
 
 def unique(
-    it: Iterator[_T] | Iterable[_T], *, key: Callable[[_T], Hashable] = None
+    it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
 ) -> Iterable[_T]:
     return {key(v): v for v in it}.values()
