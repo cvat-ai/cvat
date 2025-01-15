@@ -31,10 +31,12 @@ for paths in \
     "cvat/apps/engine/field_validation.py" \
     "cvat/apps/engine/model_utils.py" \
     "cvat/apps/engine/task_validation.py" \
+    "cvat/apps/dataset_manager/cron.py" \
     "cvat/apps/dataset_manager/tests/test_annotation.py" \
     "cvat/apps/dataset_manager/tests/utils.py" \
     "cvat/apps/events/signals.py" \
-    "cvat/apps/engine/management/commands/migrateredis.py" \
+    "cvat/apps/engine/management/commands/syncperiodicjobs.py" \
+    "cvat/apps/dataset_manager/management/commands/cleanuplegacyexportcache.py" \
     "cvat/apps/redis_handler/**/*.py" \
     ; do
     ${BLACK} -- ${paths}
