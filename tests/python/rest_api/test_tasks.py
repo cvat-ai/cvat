@@ -4881,6 +4881,44 @@ class TestWorkWithHoneypotTasks:
                 assert new_job_meta.chunks_updated_date > old_job_meta.chunks_updated_date
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWorkWithConsensusTasks:
+    @pytest.mark.parametrize("task_id", [30])
+    def test_replica_annotations_are_not_present_in_task_annotations(
+        self, admin_user, jobs, annotations, task_id: int
+    ):
+        task_jobs = [j for j in jobs if j["task_id"] == task_id]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus"]
+
+        # Ensure there are annotations in replicas
+        assert any(
+            len(annotations["job"][str(j["id"])]["tags"])
+            + len(annotations["job"][str(j["id"])]["shapes"])
+            + len(annotations["job"][str(j["id"])]["tracks"])
+            for j in consensus_jobs
+        )
+
+        with make_api_client(admin_user) as api_client:
+            for annotation_job in task_jobs:
+                if annotation_job["type"] != "consensus":
+                    api_client.jobs_api.destroy_annotations(annotation_job["id"])
+
+            updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)
+            assert not updated_task_annotations.tags
+            assert not updated_task_annotations.shapes
+            assert not updated_task_annotations.tracks
+
+            for consensus_job in consensus_jobs:
+                job_annotations = annotations["job"][str(consensus_job["id"])]
+                updated_job_annotations, _ = api_client.jobs_api.retrieve_annotations(
+                    consensus_job["id"]
+                )
+
+                assert len(job_annotations["tags"]) == len(updated_job_annotations.tags)
+                assert len(job_annotations["shapes"]) == len(updated_job_annotations.shapes)
+                assert len(job_annotations["tracks"]) == len(updated_job_annotations.tracks)
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskPreview:
     def _test_task_preview_200(self, username, task_id, **kwargs):
