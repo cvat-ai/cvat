@@ -262,7 +262,7 @@ class TaskExportTest(_DbTestBase):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = osp.join(temp_dir, format_name)
             dm.task.export_task(task["id"], file_path,
-                format_name, **export_args)
+                format_name=format_name, **export_args)
 
             check(file_path)
 
@@ -986,7 +986,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             if import_format == "CVAT 1.1":
                 export_format = "CVAT for images 1.1"
 
-            dm.task.export_task(task["id"], file_path, export_format)
+            dm.task.export_task(task["id"], file_path, format_name=export_format)
             expected_ann = TaskAnnotation(task["id"])
             expected_ann.init_from_db()
 

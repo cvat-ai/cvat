@@ -531,7 +531,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return self._object.get_tmp_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
-        return ""
+        assert False
 
     def upload_finished(self, request):
         if self.action == 'dataset':
@@ -539,9 +539,10 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
             tmp_dir = self._object.get_tmp_dirname()
-            uploaded_file = None
-            if os.path.isfile(os.path.join(tmp_dir, filename)):
-                uploaded_file = os.path.join(tmp_dir, filename)
+            uploaded_file = os.path.join(tmp_dir, filename)
+            if not os.path.isfile(uploaded_file):
+                uploaded_file = None
+
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
@@ -1132,7 +1133,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return self._object.data.get_upload_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
-        return ""
+
+        assert False
 
     def _prepare_upload_info_entry(self, filename: str) -> str:
         filename = osp.normpath(filename)
@@ -1210,8 +1212,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
             tmp_dir = self._object.get_tmp_dirname()
-            if os.path.isfile(os.path.join(tmp_dir, filename)):
-                annotation_file = os.path.join(tmp_dir, filename)
+            annotation_file = os.path.join(tmp_dir, filename)
+            if os.path.isfile(annotation_file):
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
@@ -2019,8 +2021,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
             tmp_dir = self.get_upload_dir()
-            if os.path.isfile(os.path.join(tmp_dir, filename)):
-                annotation_file = os.path.join(tmp_dir, filename)
+            annotation_file = os.path.join(tmp_dir, filename)
+            if os.path.isfile(annotation_file):
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
@@ -2159,7 +2161,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES,
         csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force call of check_object_permissions()
+        self._object: models.Job = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             # FUTURE-TODO: mark as deprecated using this endpoint to export annotations when new API for result file downloading will be implemented
             return self.export_dataset_v1(
