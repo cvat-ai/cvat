@@ -30,7 +30,7 @@ function AnalyticsCard(props: Props): JSX.Element {
 
     return (
         <Col span={size?.cardSize ?? 24} className={className ?? 'cvat-analytics-card'} data-entry-name={entryName}>
-            <Card>
+            <Card className='cvat-analytics-card-holder'>
                 <Row justify='space-between' align='middle'>
                     <Col span={size?.leftElementSize}>
                         <Row>

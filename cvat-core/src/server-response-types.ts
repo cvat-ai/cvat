@@ -240,7 +240,14 @@ export interface SerializedOrganization {
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
+
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
+
+export interface APIConsensusSettingsFilter extends APICommonFilterParams {
+    task_id?: number;
+}
+
+export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
@@ -328,6 +335,13 @@ export interface SerializedQualityReportData {
             covered_annotation: number;
         }
     };
+}
+
+export interface SerializedConsensusSettingsData {
+    id?: number;
+    task?: number;
+    quorum?: number;
+    iou_threshold?: number;
 }
 
 export interface SerializedDataEntry {

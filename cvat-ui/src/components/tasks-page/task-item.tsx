@@ -242,6 +242,10 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             history.push(`/tasks/${taskInstance.id}/quality-control`);
         };
 
+        const onViewConsensusAnalytics = (): void => {
+            history.push(`/tasks/${taskInstance.id}/consensus`);
+        };
+
         return (
             <Col span={3}>
                 <Row justify='end'>
@@ -271,6 +275,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                 taskInstance={taskInstance}
                                 onViewAnalytics={onViewAnalytics}
                                 onViewQualityControl={onViewQualityControl}
+                                onViewConsensusAnalytics={onViewConsensusAnalytics}
                             />
                         )}
                     >

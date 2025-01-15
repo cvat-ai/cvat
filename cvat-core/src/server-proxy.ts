@@ -19,6 +19,7 @@ import {
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
     SerializedQualityReportData, APIQualityReportsFilter, SerializedAnalyticsReport, APIAnalyticsReportFilter,
+    SerializedConsensusSettingsData, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
 import { PaginatedResource, UpdateStatusData } from './core-types';
@@ -765,6 +766,41 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+async function mergeConsensusJobs(id: number, instanceType: string): Promise<void> {
+    const { backendAPI } = config;
+    const url = `${backendAPI}/consensus/reports`;
+    const params = {
+        rq_id: null,
+    };
+    const requestBody = {
+        task_id: null,
+        job_ids: [],
+    };
+
+    if (instanceType === 'task') requestBody.task_id = id;
+    else requestBody.job_ids = [id];
+
+    return new Promise<void>((resolve, reject) => {
+        async function request() {
+            try {
+                const response = await Axios.post(url, requestBody, { params });
+                params.rq_id = response.data.rq_id;
+                const { status } = response;
+                if (status === 202) {
+                    setTimeout(request, 3000);
+                } else if (status === 201) {
+                    resolve();
+                } else {
+                    reject(generateError(response));
+                }
+            } catch (errorData) {
+                reject(generateError(errorData));
+            }
+        }
+        setTimeout(request);
+    });
 }
 
 async function getLabels(filter: {
@@ -2182,6 +2218,42 @@ async function updateQualitySettings(
     }
 }
 
+async function getConsensusSettings(
+    filter: APIConsensusSettingsFilter,
+): Promise<SerializedConsensusSettingsData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/consensus/settings`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results[0];
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateConsensusSettings(
+    settingsID: number,
+    settingsData: SerializedConsensusSettingsData,
+): Promise<SerializedConsensusSettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/consensus/settings/${settingsID}`, settingsData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getQualityConflicts(
     filter: APIQualityConflictsFilter,
 ): Promise<SerializedQualityConflictData[]> {
@@ -2411,6 +2483,7 @@ export default Object.freeze({
         backup: backupTask,
         restore: restoreTask,
         validationLayout: validationLayout('tasks'),
+        mergeConsensusJobs,
     }),
 
     labels: Object.freeze({
@@ -2427,6 +2500,7 @@ export default Object.freeze({
         delete: deleteJob,
         exportDataset: exportDataset('jobs'),
         validationLayout: validationLayout('jobs'),
+        mergeConsensusJobs,
     }),
 
     users: Object.freeze({
@@ -2528,6 +2602,13 @@ export default Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
             }),
+        }),
+    }),
+
+    consensus: Object.freeze({
+        settings: Object.freeze({
+            get: getConsensusSettings,
+            update: updateConsensusSettings,
         }),
     }),
 

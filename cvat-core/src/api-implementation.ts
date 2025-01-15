@@ -33,6 +33,7 @@ import { ArgumentError } from './exceptions';
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
     QualitySettingsFilter, SerializedAsset,
+    ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
@@ -46,6 +47,7 @@ import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
+import ConsensusSettings from './consensus-settings';
 
 function implementationMixin(func: Function, implementation: Function): void {
     Object.assign(func, { implementation });
@@ -412,6 +414,17 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         Object.assign(webhooks, { count: webhooksData.count });
         return webhooks;
+    });
+
+    implementationMixin(cvat.consensus.settings.get, async (filter: ConsensusSettingsFilter) => {
+        checkFilter(filter, {
+            taskID: isInteger,
+        });
+
+        const params = fieldsToSnakeCase(filter);
+
+        const settings = await serverProxy.consensus.settings.get(params);
+        return new ConsensusSettings({ ...settings });
     });
 
     implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter) => {

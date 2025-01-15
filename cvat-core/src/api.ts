@@ -382,6 +382,14 @@ function build(): CVATCore {
                 return result;
             },
         },
+        consensus: {
+            settings: {
+                async get(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.consensus.settings.get, filter);
+                    return result;
+                },
+            },
+        },
         analytics: {
             performance: {
                 async reports(filter = {}) {
@@ -487,6 +495,7 @@ function build(): CVATCore {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.webhooks = Object.freeze(cvat.webhooks);
+    cvat.consensus = Object.freeze(cvat.consensus);
     cvat.analytics = Object.freeze(cvat.analytics);
     cvat.classes = Object.freeze(cvat.classes);
     cvat.utils = Object.freeze(cvat.utils);

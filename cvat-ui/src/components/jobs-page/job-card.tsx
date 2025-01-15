@@ -95,7 +95,12 @@ function JobCardComponent(props: Props): JSX.Element {
             <Dropdown
                 trigger={['click']}
                 destroyPopupOnHide
-                overlay={<JobActionsMenu job={job} />}
+                overlay={(
+                    <JobActionsMenu
+                        job={job}
+                        consensusJobsPresent={false}
+                    />
+                )}
             >
                 <MoreOutlined className='cvat-job-card-more-button' />
             </Dropdown>
