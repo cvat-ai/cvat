@@ -24,8 +24,8 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
     #instance: Job | Task | null;
     #targetFrame: number;
     #convertRectangleShapesToTracks: boolean;
-    #openCVWrapper: any;
-    #name: string;
+    readonly #openCVWrapper: any;
+    readonly #name: string;
 
     public constructor(openCVWrapper: any) {
         super();
@@ -100,22 +100,23 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
             acc[0].push([...objectState.points as number[]]);
 
             if (this.#convertRectangleShapesToTracks && objectState.objectType === ObjectType.SHAPE) {
+                const castedObject = object as Required<Shape>;
                 const convertedTrack = {
                     source: Source.AUTO,
                     attributes: [],
                     elements: [],
-                    frame: object.frame,
-                    group: object.group,
-                    label_id: object.label_id,
+                    frame: castedObject.frame,
+                    group: castedObject.group,
+                    label_id: castedObject.label_id,
                     shapes: [{
-                        frame: object.frame,
+                        frame: castedObject.frame,
                         attributes: [],
-                        occluded: (object as Shape).occluded,
+                        occluded: castedObject.occluded,
                         outside: false,
-                        points: [...(object as Shape).points as number[]],
-                        rotation: (object as Shape).rotation,
-                        z_order: (object as Shape).z_order,
-                        type: (object as Shape).type,
+                        points: [...castedObject.points],
+                        rotation: castedObject.rotation,
+                        z_order: castedObject.z_order,
+                        type: castedObject.type,
                     }],
                 };
 
@@ -181,12 +182,13 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
                     const { updated, points } = tracker.update(imageBitmapToImageData(image.imageData as ImageBitmap));
                     if (updated) {
                         if (targetObjectState.objectType === ObjectType.TRACK) {
-                            const existingShape = (targetObject as Track).shapes
-                                .find((_shape) => _shape.frame === frame) ?? null;
+                            const castedObject = targetObject as Track;
+                            const existingShape = castedObject.shapes.find((_shape) => _shape.frame === frame) ?? null;
+
                             if (existingShape) {
                                 existingShape.points = points;
                             } else {
-                                (targetObject as Track).shapes.push({
+                                castedObject.shapes.push({
                                     frame,
                                     attributes: [],
                                     occluded: targetObjectState.occluded,
@@ -198,19 +200,20 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
                                 });
                             }
                         } else {
+                            const castedObject = targetObject as Shape;
                             trackedShapes.push({
                                 elements: [],
-                                group: targetObject.group,
+                                group: castedObject.group,
                                 frame,
                                 source: Source.AUTO,
-                                attributes: cloneDeep(targetObject.attributes),
-                                occluded: (targetObject as Shape).occluded,
+                                attributes: cloneDeep(castedObject.attributes),
+                                occluded: castedObject.occluded,
                                 outside: false,
                                 points,
                                 rotation: 0,
-                                z_order: (targetObject as Shape).z_order,
-                                label_id: (targetObject as Shape).label_id,
-                                type: (targetObject as Shape).type,
+                                z_order: castedObject.z_order,
+                                label_id: castedObject.label_id,
+                                type: castedObject.type,
                             });
                         }
                     }
