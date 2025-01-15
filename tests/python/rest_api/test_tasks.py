@@ -4336,6 +4336,7 @@ class TestWorkWithHoneypotTasks:
             j
             for j in jobs
             if j["type"] == "ground_truth"
+            if j["frame_count"] >= 4
             if job_has_annotations(j["id"])
             if tasks[j["task_id"]]["validation_mode"] == "gt_pool"
             if tasks[j["task_id"]]["size"]
