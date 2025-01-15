@@ -125,8 +125,6 @@ export class OpenCVWrapper {
 
         this.injectionProcess = null;
         this.initialized = true;
-
-        await core.actions.register(new TrackerMILAction(this));
     }
 
     public removeProgressCallback(): void {
@@ -142,10 +140,10 @@ export class OpenCVWrapper {
     }
 
     public get mat(): MatSpace {
-        this.checkInitialization();
         const { cv } = this;
         return {
             fromData: (width: number, height: number, type: MatType, data: number[]) => {
+                this.checkInitialization();
                 const typeToCVType = {
                     [MatType.CV_8UC1]: cv.CV_8UC1,
                     [MatType.CV_8UC3]: cv.CV_8UC3,
@@ -159,18 +157,21 @@ export class OpenCVWrapper {
     }
 
     public get matVector(): MatVectorSpace {
-        this.checkInitialization();
         const { cv } = this;
         return {
-            empty: () => new cv.MatVector(),
+            empty: () => {
+                this.checkInitialization();
+                return new cv.MatVector();
+            },
         };
     }
 
     public get contours(): Contours {
-        this.checkInitialization();
         const { cv } = this;
         return {
             convexHull: (contours: number[][]): number[] => {
+                this.checkInitialization();
+
                 const points = contours.flat();
                 const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
                 const output = new cv.Mat();
@@ -183,6 +184,8 @@ export class OpenCVWrapper {
                 }
             },
             findContours: (src: any, findLongest: boolean): number[][] => {
+                this.checkInitialization();
+
                 const contours = this.matVector.empty();
                 const hierarchy = new cv.Mat();
                 const expanded = new cv.Mat();
@@ -222,6 +225,8 @@ export class OpenCVWrapper {
                 return jsContours;
             },
             approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
+                this.checkInitialization();
+
                 const isArrayOfArrays = Array.isArray(points[0]);
                 if (points.length < 3) {
                     // one pair of coordinates [x, y], approximation not possible
@@ -292,24 +297,30 @@ export class OpenCVWrapper {
     };
 
     public get segmentation(): Segmentation {
-        this.checkInitialization();
         return {
-            intelligentScissorsFactory: () => new IntelligentScissorsImplementation(this.cv),
+            intelligentScissorsFactory: () => {
+                this.checkInitialization();
+                return new IntelligentScissorsImplementation(this.cv);
+            },
         };
     }
 
     public get imgproc(): ImgProc {
-        this.checkInitialization();
         return {
-            hist: () => new HistogramEqualizationImplementation(this.cv),
+            hist: () => {
+                this.checkInitialization();
+                return new HistogramEqualizationImplementation(this.cv);
+            },
         };
     }
 
     public get tracking(): Tracking {
-        this.checkInitialization();
         return {
             trackerMIL: {
-                model: () => new TrackerMImplementation(this.cv),
+                model: () => {
+                    this.checkInitialization();
+                    return new TrackerMImplementation(this.cv);
+                },
                 name: 'TrackerMIL',
                 description: 'Lightweight client-side algorithm, useful to track simple objects',
                 kind: 'opencv_tracker_mil',
@@ -318,4 +329,6 @@ export class OpenCVWrapper {
     }
 }
 
-export default new OpenCVWrapper();
+const openCVWrapper = new OpenCVWrapper();
+await core.actions.register(new TrackerMILAction(openCVWrapper));
+export default openCVWrapper;

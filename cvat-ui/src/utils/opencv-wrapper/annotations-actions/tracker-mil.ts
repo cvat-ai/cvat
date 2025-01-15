@@ -139,6 +139,14 @@ export default class OpenCVTrackerMIL extends BaseCollectionAction {
             return acc;
         }, [[], [], []] as [number[][], (Shape | Track)[], ObjectState[]]);
 
+        if (!this.#openCVWrapper.isInitialized) {
+            onProgress('OpenCV library initialization', 0);
+            await this.#openCVWrapper.initialize(() => {});
+            if (cancelled()) {
+                return noChanges;
+            }
+        }
+
         onProgress('Action is running', 0);
         if (cancelled()) {
             return noChanges;
