@@ -956,7 +956,6 @@ class _ProjectBackupBase(_BackupBase):
     def _prepare_project_meta(self, project):
         allowed_fields = {
             'bug_tracker',
-            'dimension',
             'labels',
             'name',
             'status',
