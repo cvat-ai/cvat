@@ -19,6 +19,7 @@ import numpy as np
 import rq
 from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
+from datumaro.util.annotation_util import segment_iou as dm_segment_iou
 from django.conf import settings
 from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
@@ -661,7 +662,7 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
 def _match_segments(
     a_segms,
     b_segms,
-    distance=dm.ops.segment_iou,
+    distance=dm_segment_iou,
     dist_thresh=1.0,
     label_matcher=lambda a, b: a.label == b.label,
 ):
@@ -1048,7 +1049,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         item_a,
         item_b,
         *,
-        distance: Callable = dm.ops.segment_iou,
+        distance: Callable = dm_segment_iou,
         label_matcher: Callable = None,
         a_objs: Optional[Sequence[dm.Annotation]] = None,
         b_objs: Optional[Sequence[dm.Annotation]] = None,
