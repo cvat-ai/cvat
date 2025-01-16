@@ -1,0 +1,235 @@
+# Copyright (C) 2024 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+from typing import Type
+
+import datumaro as dm
+import django_rq
+from django.conf import settings
+from django.db import transaction
+from django_rq.queues import DjangoRQ as RqQueue
+from rest_framework.exceptions import ValidationError
+from rest_framework.request import Request
+from rq.job import Job as RqJob
+from rq.job import JobStatus as RqJobStatus
+
+from cvat.apps.consensus.intersect_merge import IntersectMerge
+from cvat.apps.consensus.models import ConsensusSettings
+from cvat.apps.dataset_manager.bindings import import_dm_annotations
+from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
+from cvat.apps.engine.models import (
+    DimensionType,
+    Job,
+    JobType,
+    StageChoice,
+    StateChoice,
+    Task,
+    User,
+)
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.profiler import silk_profile
+from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
+
+
+class _Merger:
+    _jobs: dict[int, list[tuple[int, User]]]
+    _parent_jobs: list[Job]
+    _merger: IntersectMerge
+    _settings: ConsensusSettings
+
+    def check_merging_available(self):
+        if not self._jobs:
+            raise MergingNotAvailable(
+                "No annotated consensus jobs found or no regular jobs in annotation stage"
+            )
+
+    def __init__(self, task_id: int) -> None:
+        self.task_id = task_id
+        self._init_jobs(task_id)
+        self.check_merging_available()
+
+        self._settings = ConsensusSettings.objects.filter(task=task_id).first()
+
+        comparison_parameters = ComparisonParameters()
+        self._merger = IntersectMerge(
+            conf=IntersectMerge.Conf(
+                pairwise_dist=self._settings.iou_threshold,
+                output_conf_thresh=0,
+                quorum=self._settings.quorum,
+                sigma=comparison_parameters.oks_sigma,
+                torso_r=comparison_parameters.line_thickness,
+            )
+        )
+
+    def _init_jobs(self, task_id: int) -> None:
+        job_map = {}  # parent_job_id -> [(consensus_job_id, assignee)]
+        parent_jobs: dict[int, Job] = {}
+        for job in (
+            Job.objects.prefetch_related("segment", "parent_job", "assignee")
+            .filter(
+                segment__task_id=task_id,
+                type=JobType.CONSENSUS.value,
+                parent_job__stage=StageChoice.ANNOTATION.value,
+                parent_job__isnull=False,
+            )
+            .exclude(state=StateChoice.NEW.value)
+        ):
+            job_map.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
+            parent_jobs.setdefault(job.parent_job_id, job.parent_job)
+
+        self._jobs = job_map
+        self._parent_jobs = list(parent_jobs.values())
+
+    @staticmethod
+    def _get_annotations(job_id: int) -> dm.Dataset:
+        return JobDataProvider(job_id).dm_dataset
+
+    def _merge_consensus_jobs(self, parent_job_id: int):
+        consensus_job_info = self._jobs.get(parent_job_id)
+        if not consensus_job_info:
+            raise ValidationError(f"No consensus jobs found for parent job {parent_job_id}")
+
+        consensus_job_ids = [consensus_job_id for consensus_job_id, _ in consensus_job_info]
+
+        consensus_job_data_providers = list(map(JobDataProvider, consensus_job_ids))
+        consensus_datasets = [
+            consensus_job_data_provider.dm_dataset
+            for consensus_job_data_provider in consensus_job_data_providers
+        ]
+
+        merged_dataset = self._merger(consensus_datasets)
+
+        # delete the existing annotations in the job
+        patch_job_data(parent_job_id, None, PatchAction.DELETE)
+        # if we don't delete existing annotations, the imported annotations
+        # will be appended to the existing annotations, and thus updated annotation
+        # would have both existing + imported annotations, but we only want the
+        # imported annotations
+
+        parent_job_data_provider = JobDataProvider(parent_job_id)
+
+        # imports the annotations in the `parent_job.job_data` instance
+        import_dm_annotations(merged_dataset, parent_job_data_provider.job_data)
+
+        # updates the annotations in the job
+        patch_job_data(
+            parent_job_id, parent_job_data_provider.job_data.data.serialize(), PatchAction.UPDATE
+        )
+
+        for parent_job_id in self._parent_jobs:
+            if parent_job_id.id == parent_job_id and parent_job_id.type == JobType.ANNOTATION.value:
+                parent_job_id.state = StateChoice.COMPLETED.value
+                parent_job_id.save()
+
+    @transaction.atomic
+    def merge_all_consensus_jobs(self) -> None:
+        for parent_job_id in self._jobs.keys():
+            self._merge_consensus_jobs(parent_job_id)
+
+    @transaction.atomic
+    def merge_single_consensus_job(self, parent_job_id: int) -> None:
+        self._merge_consensus_jobs(parent_job_id)
+
+
+class MergingNotAvailable(Exception):
+    pass
+
+
+class JobAlreadyExists(MergingNotAvailable):
+    def __init__(self, instance: Task | Job):
+        super().__init__()
+        self.instance = instance
+
+    def __str__(self):
+        return f"Merging for this {type(self.instance).__name__.lower()} already enqueued"
+
+
+class MergingManager:
+    _QUEUE_CUSTOM_JOB_PREFIX = "consensus-merge-"
+    _JOB_RESULT_TTL = 300
+
+    def _get_queue(self) -> RqQueue:
+        return django_rq.get_queue(settings.CVAT_QUEUES.CONSENSUS.value)
+
+    def _make_job_id(self, task_id: int, job_id: int | None, user_id: int) -> str:
+        key = f"{self._QUEUE_CUSTOM_JOB_PREFIX}task-{task_id}"
+        if job_id:
+            key += f"-job-{job_id}"
+        key += f"-user-{user_id}"  # TODO: remove user id, add support for non owners to get status
+        return key
+
+    def _check_merging_available(self, task: Task):
+        if task.dimension != DimensionType.DIM_2D:
+            raise MergingNotAvailable("Merging is only supported in 2d tasks")
+
+    def schedule_merge(self, target: Task | Job, *, request: Request) -> str:
+        if isinstance(target, Job):
+            target_task = target.segment.task
+            target_job = target
+        else:
+            target_task = target
+            target_job = None
+
+        self._check_merging_available(target_task)
+
+        queue = self._get_queue()
+
+        user_id = request.user.id
+        with get_rq_lock_by_user(queue, user_id=user_id):
+            rq_id = self._make_job_id(
+                task_id=target_task.id,
+                job_id=target_job.id if target_job else None,
+                user_id=user_id,
+            )
+            rq_job = queue.fetch_job(rq_id)
+            if rq_job:
+                if rq_job.get_status(refresh=False) in (
+                    RqJobStatus.QUEUED,
+                    RqJobStatus.STARTED,
+                    RqJobStatus.SCHEDULED,
+                    RqJobStatus.DEFERRED,
+                ):
+                    raise JobAlreadyExists(target)
+
+                rq_job.delete()
+
+            dependency = define_dependent_job(
+                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+            )
+
+            queue.enqueue(
+                self._merge,
+                target_type=type(target),
+                target_id=target.id,
+                job_id=rq_id,
+                meta=get_rq_job_meta(request=request, db_obj=target),
+                result_ttl=self._JOB_RESULT_TTL,
+                failure_ttl=self._JOB_RESULT_TTL,
+                depends_on=dependency,
+            )
+
+        return rq_id
+
+    def get_job(self, rq_id: str) -> RqJob | None:
+        queue = self._get_queue()
+        rq_job = queue.fetch_job(rq_id)
+
+        if rq_job:
+            rq_job = None
+
+        return rq_job
+
+    @classmethod
+    @silk_profile()
+    def _merge(cls, *, target_type: Type[Task | Job], target_id: int) -> int:
+        if issubclass(target_type, Task):
+            task_id = Task.objects.get(target_id)
+            merger = _Merger(task_id=task_id)
+            return merger.merge_all_consensus_jobs()
+        elif issubclass(target_type, Job):
+            job = Job.objects.get(target_id)
+            merger = _Merger(task_id=job.get_task_id())
+            return merger.merge_single_consensus_job()
+        else:
+            assert False

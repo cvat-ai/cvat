@@ -17,7 +17,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
-from rq.job import JobStatus as RQJobStatus
+from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
@@ -304,13 +304,13 @@ class QualityReportViewSet(
 
             rq_job_status = rq_job.get_status(refresh=False)
 
-            if rq_job_status == RQJobStatus.FAILED:
+            if rq_job_status == RqJobStatus.FAILED:
                 message = str(rq_job.exc_info)
                 rq_job.delete()
                 raise ValidationError(message)
-            elif rq_job_status in {RQJobStatus.QUEUED, RQJobStatus.STARTED, RQJobStatus.DEFERRED}:
+            elif rq_job_status in (RqJobStatus.QUEUED, RqJobStatus.STARTED, RqJobStatus.SCHEDULED):
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            elif rq_job_status == RQJobStatus.FINISHED:
+            elif rq_job_status == RqJobStatus.FINISHED:
                 return_value = rq_job.return_value()
                 rq_job.delete()
                 if not return_value:
@@ -325,11 +325,8 @@ class QualityReportViewSet(
                     status=status.HTTP_201_CREATED,
                     headers=self.get_success_headers(report_serializer.data),
                 )
-            # e.g. scheduled or None
-            return Response(
-                f"Unexpected job status: {rq_job_status}",
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
+            raise AssertionError(f"Unexpected rq job '{rq_id}' status '{rq_job_status}'")
 
     @extend_schema(
         operation_id="quality_retrieve_report_data",

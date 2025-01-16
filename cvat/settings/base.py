@@ -117,6 +117,7 @@ INSTALLED_APPS = [
     'cvat.apps.events',
     'cvat.apps.quality_control',
     'cvat.apps.analytics_report',
+    'cvat.apps.consensus',
 ]
 
 SITE_ID = 1
@@ -277,6 +278,7 @@ class CVAT_QUEUES(Enum):
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
     CHUNKS = 'chunks'
+    CONSENSUS = 'consensus'
 
 redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
@@ -325,6 +327,10 @@ RQ_QUEUES = {
     CVAT_QUEUES.CHUNKS.value: {
         **shared_queue_settings,
         'DEFAULT_TIMEOUT': '5m',
+    },
+    CVAT_QUEUES.CONSENSUS.value: {
+        **shared_queue_settings,
+        'DEFAULT_TIMEOUT': '1h',
     },
 }
 
