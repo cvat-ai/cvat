@@ -13,13 +13,15 @@ from functools import cached_property, partial
 from typing import Any, Callable, Optional, Union, cast
 
 import datumaro as dm
+import datumaro.components.annotations.matcher
+import datumaro.components.comparator
+import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import django_rq
 import numpy as np
 import rq
 from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
-from datumaro.util.annotation_util import segment_iou as dm_segment_iou
 from django.conf import settings
 from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
@@ -662,7 +664,7 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
 def _match_segments(
     a_segms,
     b_segms,
-    distance=dm_segment_iou,
+    distance=dm.util.annotation_util.segment_iou,
     dist_thresh=1.0,
     label_matcher=lambda a, b: a.label == b.label,
 ):
@@ -741,7 +743,7 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
     if not scale:
         if bbox is None:
-            bbox = dm.ops.mean_bbox([a, b])
+            bbox = dm.util.annotation_util.mean_bbox([a, b])
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
@@ -751,14 +753,14 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
 
 @define(kw_only=True)
-class _KeypointsMatcher(dm.ops.PointsMatcher):
+class _KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+        if dm.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
 
-        bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+        bbox = dm.util.annotation_util.mean_bbox([a_bbox, b_bbox])
         return _OKS(
             a,
             b,
@@ -807,7 +809,7 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
 
 @define(kw_only=True)
-class _LineMatcher(dm.ops.LineMatcher):
+class _LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
     EPSILON = 1e-7
 
     torso_r: float = 0.25
@@ -954,7 +956,7 @@ class _LineMatcher(dm.ops.LineMatcher):
         return a_new_points, b_new_points
 
 
-class _DistanceComparator(dm.ops.DistanceComparator):
+class _DistanceComparator(dm.components.comparator.DistanceComparator):
     def __init__(
         self,
         categories: dm.CategoriesInfo,
@@ -995,7 +997,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
     def _instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
     ) -> tuple[float, float, float, float]:
-        return dm.ops.max_bbox(
+        return dm.util.annotation_util.max_bbox(
             a.get_bbox() if isinstance(a, dm.Skeleton) else a
             for a in instance_anns
             if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
@@ -1049,7 +1051,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         item_a,
         item_b,
         *,
-        distance: Callable = dm_segment_iou,
+        distance: Callable = dm.util.annotation_util.segment_iou,
         label_matcher: Callable = None,
         a_objs: Optional[Sequence[dm.Annotation]] = None,
         b_objs: Optional[Sequence[dm.Annotation]] = None,
@@ -1103,7 +1105,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
-                return dm.ops.bbox_iou(a, b)
+                return dm.util.annotation_util.bbox_iou(a, b)
             else:
                 return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
 
@@ -1129,7 +1131,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in dm.ops.find_instances(annotations):
+            for ann_group in dm.util.annotation_util.find_instances(annotations):
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -1283,7 +1285,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
-            source_instances = dm.ops.find_instances(source_anns)
+            source_instances = dm.util.annotation_util.find_instances(source_anns)
             for instance_group in source_instances:
                 instance_bbox = self._instance_bbox(instance_group)
 
@@ -1313,11 +1315,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 elif self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
                     # match points in their bbox space
 
-                    if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+                    if dm.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
                         # this early exit may not work for points forming an axis-aligned line
                         return 0
 
-                    bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+                    bbox = dm.util.annotation_util.mean_bbox([a_bbox, b_bbox])
                     scale = bbox[2] * bbox[3]
                 else:
                     assert False, f"Unknown point size base {self.point_size_base}"
@@ -1428,7 +1430,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
-            for instance_group in dm.ops.find_instances(source):
+            for instance_group in dm.util.annotation_util.find_instances(source):
                 instance_bbox = self._instance_bbox(instance_group)
 
                 instance_group = [
@@ -1584,7 +1586,7 @@ class _Comparator:
     def find_groups(
         self, item: dm.DatasetItem
     ) -> tuple[dict[int, list[dm.Annotation]], dict[int, int]]:
-        ann_groups = dm.ops.find_instances(
+        ann_groups = dm.util.annotation_util.find_instances(
             [
                 ann
                 for ann in item.annotations
