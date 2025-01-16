@@ -37,7 +37,7 @@ for paths in \
     "cvat/apps/events/signals.py" \
     "cvat/apps/engine/management/commands/syncperiodicjobs.py" \
     "cvat/apps/dataset_manager/management/commands/cleanuplegacyexportcache.py" \
-    "cvat/apps/redis_handler/**/*.py" \
+    "cvat/apps/redis_handler" \
     ; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}
