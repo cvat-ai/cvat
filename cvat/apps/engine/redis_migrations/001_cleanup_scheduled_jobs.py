@@ -5,6 +5,7 @@
 import django_rq
 from django.conf import settings
 from rq_scheduler import Scheduler
+
 from cvat.apps.redis_handler.redis_migrations import BaseMigration
 
 
