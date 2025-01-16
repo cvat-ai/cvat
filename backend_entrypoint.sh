@@ -20,8 +20,8 @@ cmd_init() {
     ~/manage.py migrate
 
     wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
-    ~/manage.py syncperiodicjobs
     ~/manage.py migrateredis
+    ~/manage.py syncperiodicjobs
 }
 
 cmd_run() {
