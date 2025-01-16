@@ -126,9 +126,10 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
             if rq_job_status == RqJobStatus.FAILED:
                 exc_info = process_failed_job(rq_job, logger=slogger.glob)
 
-                if (exc_pos := exc_info.find(f"{merging.MergingNotAvailable.__name__}: ")) != -1:
+                exc_name_pattern = f"{merging.MergingNotAvailable.__name__}: "
+                if (exc_pos := exc_info.find(exc_name_pattern)) != -1:
                     return Response(
-                        data=exc_info[exc_pos:],
+                        data=exc_info[exc_pos + len(exc_name_pattern) :].strip(),
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 

@@ -424,7 +424,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const params = fieldsToSnakeCase(filter);
 
         const settings = await serverProxy.consensus.settings.get(params);
-        return new ConsensusSettings({ ...settings });
+        const schema = await getServerAPISchema();
+        const descriptions = convertDescriptions(schema.components.schemas.ConsensusSettings.properties);
+
+        return new ConsensusSettings({ ...settings, descriptions });
     });
 
     implementationMixin(cvat.analytics.quality.reports, async (filter: QualityReportsFilter) => {

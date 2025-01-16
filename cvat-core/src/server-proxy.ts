@@ -770,17 +770,17 @@ async function deleteTask(id: number, organizationID: string | null = null): Pro
 
 async function mergeConsensusJobs(id: number, instanceType: string): Promise<void> {
     const { backendAPI } = config;
-    const url = `${backendAPI}/consensus/reports`;
+    const url = `${backendAPI}/consensus/merges`;
     const params = {
         rq_id: null,
     };
     const requestBody = {
-        task_id: null,
-        job_ids: [],
+        task_id: undefined,
+        job_id: undefined,
     };
 
     if (instanceType === 'task') requestBody.task_id = id;
-    else requestBody.job_ids = [id];
+    else requestBody.job_id = id;
 
     return new Promise<void>((resolve, reject) => {
         async function request() {

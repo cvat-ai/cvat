@@ -342,6 +342,7 @@ export interface SerializedConsensusSettingsData {
     task?: number;
     quorum?: number;
     iou_threshold?: number;
+    descriptions?: Record<string, string>;
 }
 
 export interface SerializedDataEntry {

@@ -8,7 +8,7 @@ from rest_framework import routers
 from cvat.apps.consensus import views
 
 router = routers.DefaultRouter(trailing_slash=False)
-router.register("reports", views.ConsensusMergesViewSet, basename="consensus_merges")
+router.register("merges", views.ConsensusMergesViewSet, basename="consensus_merges")
 router.register("settings", views.ConsensusSettingsViewSet, basename="consensus_settings")
 
 urlpatterns = [

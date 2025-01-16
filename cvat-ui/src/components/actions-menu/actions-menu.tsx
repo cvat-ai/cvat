@@ -148,7 +148,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item
                 key={Actions.VIEW_CONSENSUS_ANALYTICS}
             >
-                View Consensus Analytics
+                Consensus management
             </Menu.Item>
         ), 55]);
         menuItems.push([(
@@ -157,7 +157,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                 disabled={isTaskInMergingConsensus}
                 icon={isTaskInMergingConsensus && <LoadingOutlined />}
             >
-                Merge Consensus Jobs
+                Merge consensus jobs
             </Menu.Item>
         ), 60]);
     }

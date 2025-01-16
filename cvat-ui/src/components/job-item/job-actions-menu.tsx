@@ -80,7 +80,7 @@ function JobActionsMenu(props: Props): JSX.Element {
                     disabled={isTaskInMergingConsensus}
                     icon={isTaskInMergingConsensus && <LoadingOutlined />}
                 >
-                    Merge Consensus Jobs
+                    Merge consensus jobs
                 </Menu.Item>
             )}
             <Menu.Divider />

@@ -7,7 +7,7 @@ from typing import Optional, cast
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from cvat.apps.engine.models import Project, Task
+from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
@@ -40,16 +40,27 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                     # and to check the operation status
                     rq_id = request.query_params.get("rq_id")
                     task_id = request.data.get("task_id")
+                    job_id = request.data.get("job_id")
 
-                    if not (task_id or rq_id):
-                        raise PermissionDenied("Either task_id or rq_id must be specified")
+                    if not (task_id or job_id or rq_id):
+                        raise PermissionDenied(
+                            "Either task_id or job_id or rq_id must be specified"
+                        )
 
                     if rq_id:
                         # There will be another check for this case during request processing
                         continue
 
                     # merge is always at least at the task level, even for specific jobs
-                    if task_id is not None:
+                    if task_id is not None or job_id is not None:
+                        if job_id:
+                            try:
+                                job = Job.objects.get(id=job_id)
+                            except Job.DoesNotExist:
+                                raise ValidationError("The specified job does not exist")
+
+                            task_id = job.get_task_id()
+
                         # The request may have a different org or org unset
                         # Here we need to retrieve iam_context for this user, based on the task_id
                         try:

@@ -9,6 +9,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
+    ConsensusSettings,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -175,11 +176,11 @@ export interface ImportState {
 
 export interface ConsensusState {
     fetching: boolean;
-    consensusSettings: any | null;
-    taskInstance: any | null;
-    jobInstance: any | null;
+    consensusSettings: ConsensusSettings | null;
+    taskInstance: Task | null;
+    jobInstance: Job | null;
     mergingConsensus: {
-        [tid: string]: boolean;
+        [taskId: string]: boolean;
     };
 }
 

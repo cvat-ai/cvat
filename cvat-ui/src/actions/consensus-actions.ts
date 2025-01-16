@@ -3,11 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ConsensusSettings, Job, Task } from 'cvat-core-wrapper';
+import { Job, Task } from 'cvat-core-wrapper';
 
 export enum ConsensusActionTypes {
-    SET_FETCHING = 'SET_FETCHING',
-    SET_CONSENSUS_SETTINGS = 'SET_CONSENSUS_SETTINGS',
     MERGE_CONSENSUS_JOBS = 'MERGE_CONSENSUS_JOBS',
     MERGE_CONSENSUS_JOBS_SUCCESS = 'MERGE_CONSENSUS_JOBS_SUCCESS',
     MERGE_CONSENSUS_JOBS_FAILED = 'MERGE_CONSENSUS_JOBS_FAILED',
@@ -17,12 +15,6 @@ export enum ConsensusActionTypes {
 }
 
 export const consensusActions = {
-    setFetching: (fetching: boolean) => (
-        createAction(ConsensusActionTypes.SET_FETCHING, { fetching })
-    ),
-    setConsensusSettings: (consensusSettings: ConsensusSettings) => (
-        createAction(ConsensusActionTypes.SET_CONSENSUS_SETTINGS, { consensusSettings })
-    ),
     mergeTaskConsensusJobs: (taskID: number) => (
         createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS, { taskID })
     ),

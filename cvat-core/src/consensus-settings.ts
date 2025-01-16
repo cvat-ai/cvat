@@ -11,12 +11,14 @@ export default class ConsensusSettings {
     #task: number;
     #iouThreshold: number;
     #quorum: number;
+    #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedConsensusSettingsData) {
         this.#id = initialData.id;
         this.#task = initialData.task;
         this.#iouThreshold = initialData.iou_threshold;
         this.#quorum = initialData.quorum;
+        this.#descriptions = initialData.descriptions;
     }
 
     get id(): number {
@@ -41,6 +43,16 @@ export default class ConsensusSettings {
 
     set quorum(newVal: number) {
         this.#quorum = newVal;
+    }
+
+    get descriptions(): Record<string, string> {
+        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
+            const camelCaseKey = _.camelCase(key);
+            acc[camelCaseKey] = this.#descriptions[key];
+            return acc;
+        }, {});
+
+        return descriptions;
     }
 
     public toJSON(): SerializedConsensusSettingsData {

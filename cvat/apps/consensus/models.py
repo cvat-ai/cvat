@@ -21,7 +21,7 @@ class ConsensusSettings(models.Model):
         null=True,
         blank=True,
     )
-    quorum = models.IntegerField(default=0.5)
+    quorum = models.FloatField(default=0.5)
     iou_threshold = models.FloatField()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
