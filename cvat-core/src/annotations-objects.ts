@@ -61,7 +61,7 @@ function computeNewSource(currentSource: Source): Source {
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
-    framesInfo: Readonly<Record<number, Readonly<{ width: number; height: number; filename: string; }>>>
+    framesInfo: Readonly<Record<number, Readonly<{ width: number; height: number; }>>>
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -488,16 +488,10 @@ class Drawn extends Annotation {
             checkObjectType('points', data.points, null, Array);
             checkNumberOfPoints(this.shapeType, data.points);
             // cut points
-            const { width, height, filename } = this.framesInfo[frame];
+            const { width, height } = this.framesInfo[frame];
             fittedPoints = this.fitPoints(data.points, data.rotation, width, height);
-            let check = true;
-            if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                check = false;
-            }
-            if (check) {
-                if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                    fittedPoints = [];
-                }
+            if (this.dimension === DimensionType.DIMENSION_2D && !checkShapeArea(this.shapeType, fittedPoints)) {
+                fittedPoints = [];
             }
         }
 

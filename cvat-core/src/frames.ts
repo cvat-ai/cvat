@@ -47,13 +47,15 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = new Proxy({}, {
             const result = Reflect.set(target, prop, value);
 
             // automatically update synced storage each time new promise set
-            value.then((metaData: FramesMetaData) => {
-                if (target[prop]) {
-                    frameMetaCacheSync[prop] = metaData;
-                }
-            }).catch(() => {
-                // do nothing
-            });
+            if (result) {
+                value.then((metaData: FramesMetaData) => {
+                    if (target[prop]) {
+                        frameMetaCacheSync[prop] = metaData;
+                    }
+                }).catch(() => {
+                    // do nothing
+                });
+            }
 
             return result;
         }
@@ -62,7 +64,9 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = new Proxy({}, {
     deleteProperty(target, prop): boolean {
         if (typeof prop === 'string') {
             const result = Reflect.deleteProperty(target, prop);
-            delete frameMetaCacheSync[prop];
+            if (result) {
+                delete frameMetaCacheSync[prop];
+            }
             return result;
         }
 
@@ -203,7 +207,7 @@ export class FramesMetaData {
         if (initialData.frames.length === 1) {
             // it may be a videofile or one image
             framesInfo = frameNumbers.map(() => initialData.frames[0]);
-        } else if (this.includedFrames.length) {
+        } else if (this.includedFrames) {
             // is a ground truth job, keep only meta related to the job
             framesInfo = this.includedFrames.map((includedFrame) => this.getJobRelativeFrameNumber(includedFrame))
                 .map((jobRelativeFrame: number) => initialData.frames[jobRelativeFrame]);
@@ -282,7 +286,7 @@ export class FramesMetaData {
 
     getDataFrameNumbers(): number[] {
         if (this.includedFrames) {
-            return [...this.includedFrames];
+            return this.includedFrames.slice(0);
         }
 
         return range(this.startFrame, this.stopFrame + 1, this.frameStep);
@@ -897,7 +901,7 @@ export async function getFrame(
 
     const frameIndex = frameDataCache[jobID].segmentFrameNumbers.indexOf(frame);
     if (frameIndex === -1) {
-        throw new Error('The segment does not have specified frame');
+        throw new Error('The segment does not have the specified frame');
     }
 
     const framesMetaData = await frameDataCache[jobID].getMeta();
@@ -992,7 +996,7 @@ export async function getJobFrameNumbers(jobID: number): Promise<number[]> {
     }
 
     const { segmentFrameNumbers } = frameDataCache[jobID];
-    return [...segmentFrameNumbers];
+    return segmentFrameNumbers.slice(0);
 }
 
 export function clear(jobID: number): void {
