@@ -301,7 +301,12 @@ class UploadMixin:
             location = request.build_absolute_uri()
             if 'HTTP_X_FORWARDED_HOST' not in request.META:
                 location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
-
+            
+            # Use X-Forwarded-Proto in nginx conf thats uses to determine if the original request was HTTP or HTTPS
+            # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto  
+            if settings.EXTERNAL_PROXY or request.META.get('HTTP_X_FORWARDED_PROTO', ''):
+                location = location.replace('http://', 'https://', 1) 
+            
             if import_type in ('backup', 'annotations', 'datasets'):
                 scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.CLEANING.value)
                 path = Path(self.get_upload_dir()) / tus_file.filename

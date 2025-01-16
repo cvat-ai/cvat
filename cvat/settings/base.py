@@ -320,7 +320,7 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.CLEANING.value: {
         **shared_queue_settings,
-        'DEFAULT_TIMEOUT': '2h',
+        'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.CHUNKS.value: {
         **shared_queue_settings,
@@ -353,20 +353,6 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.iam.utils.clean_up_sessions',
         'cron_string': '0 0 * * *',
     },
-    {
-        'queue': CVAT_QUEUES.CLEANING.value,
-        'id': 'cron_export_cache_directory_cleanup',
-        'func': 'cvat.apps.dataset_manager.cron.cleanup_export_cache_directory',
-        # Run twice a day (at midnight and at noon)
-        'cron_string': '0 0,12 * * *',
-    },
-    {
-        'queue': CVAT_QUEUES.CLEANING.value,
-        'id': 'cron_tmp_directory_cleanup',
-        'func': 'cvat.apps.dataset_manager.cron.cleanup_tmp_directory',
-        # Run once a day
-        'cron_string': '0 18 * * *',
-    }
 ]
 
 # JavaScript and CSS compression
@@ -426,9 +412,6 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
-
-EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
-os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
 
 EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
@@ -756,12 +739,13 @@ ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))
 
+# if CVAT is deployed under a proxy https://github.com/cvat-ai/cvat/issues/7288
+# Not recommend to use it better to use https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto in nginx
+EXTERNAL_PROXY = os.getenv('USED_EXTERNAL_PROXY', False)
+
 from cvat.rq_patching import update_started_job_registry_cleanup
 
 update_started_job_registry_cleanup()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
-
-# Indicates the maximum number of days a file or directory is retained in the temporary directory
-TMP_FILE_OR_DIR_RETENTION_DAYS = 3
