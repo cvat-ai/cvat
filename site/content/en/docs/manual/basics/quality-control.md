@@ -90,7 +90,7 @@ Read more about this functionality in the
 2. (optional) Request quality metrics computation, wait for completion
 3. Review summaries or detailed reports
 
-  ![Quality Analytics page](/images/honeypot05.jpg)
+  ![Quality Analytics page](/images/honeypot05.png)
 
 Read more about this functionality
 {{< ilink "/docs/manual/advanced/analytics-and-monitoring/auto-qa#quality-analytics" "here" >}}.

@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,14 +10,14 @@ export interface HistogramEqualization extends ImageProcessing {
 }
 
 export default class HistogramEqualizationImplementation extends BaseImageFilter {
-    private cv:any;
+    private cv: any;
 
     constructor(cv:any) {
         super();
         this.cv = cv;
     }
 
-    public processImage(src:ImageData, frameNumber: number) : ImageData {
+    public processImage(src: ImageData, frameNumber: number) : ImageData {
         const { cv } = this;
         let matImage = null;
         const RGBImage = new cv.Mat();
@@ -48,11 +48,17 @@ export default class HistogramEqualizationImplementation extends BaseImageFilter
             const arr = new Uint8ClampedArray(RGBADist.data, RGBADist.cols, RGBADist.rows);
             const imgData = new ImageData(arr, src.width, src.height);
             return imgData;
-        } catch (e) {
-            throw new Error(e.toString());
+        } catch (e: unknown) {
+            throw e instanceof Error ? e : new Error('Unknown error');
         } finally {
-            if (matImage) matImage.delete();
-            if (channels) channels.delete();
+            if (matImage) {
+                matImage.delete();
+            }
+
+            if (channels) {
+                channels.delete();
+            }
+
             RGBImage.delete();
             YUVImage.delete();
             RGBDist.delete();
