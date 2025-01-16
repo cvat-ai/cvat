@@ -89,7 +89,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
 
         // Get meta information about frames
         const frameMeta = await getFramesMeta(sessionType, session.id);
-        const frameNumbers = frameMeta.getDataFrameNumbers();
+        const frameNumbers = frameMeta.getSegmentFrameNumbers(session instanceof Job ? session.startFrame : 0);
 
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({

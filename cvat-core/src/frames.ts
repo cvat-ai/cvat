@@ -10,7 +10,7 @@ import {
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { SerializedFramesMetaData } from './server-response-types';
-import { ArgumentError, DataError } from './exceptions';
+import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
 
@@ -29,6 +29,7 @@ const frameDataCache: Record<string, {
     decodedBlocksCacheSize: number;
     activeChunkRequest: Promise<void> | null;
     activeContextRequest: Promise<Record<number, ImageBitmap>> | null;
+    segmentFrameNumbers: number[];
     contextCache: Record<number, {
         data: Record<number, ImageBitmap>;
         timestamp: number;
@@ -165,9 +166,6 @@ export class FramesMetaData {
                 frameFilter: {
                     get: () => data.frame_filter,
                 },
-                frames: {
-                    get: () => data.frames,
-                },
                 imageQuality: {
                     get: () => data.image_quality,
                 },
@@ -189,13 +187,20 @@ export class FramesMetaData {
             }),
         );
 
-        const chunkCount: number = Math.ceil(this.getDataFrameNumbers().length / this.chunkSize);
+        // it may be a videofile or one image
+        const frameNumbers = this.getDataFrameNumbers();
+        const framesInfo = Object.freeze(initialData.frames.length === 1 ?
+            frameNumbers.map(() => initialData.frames[0]) : initialData.frames);
+        const chunkCount: number = Math.ceil(frameNumbers.length / this.chunkSize);
 
         Object.defineProperties(
             this,
             Object.freeze({
                 chunkCount: {
                     get: () => chunkCount,
+                },
+                frames: {
+                    get: () => framesInfo,
                 },
             }),
         );
@@ -387,7 +392,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     async value(this: FrameData, onServerRequest) {
         const {
             provider, prefetchAnalyzer, chunkSize, jobStartFrame,
-            decodeForward, forwardStep, decodedBlocksCacheSize,
+            decodeForward, forwardStep, decodedBlocksCacheSize, segmentFrameNumbers,
         } = frameDataCache[this.jobID];
         const meta = await frameDataCache[this.jobID].getMeta();
 
@@ -399,7 +404,6 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             const requestId = +_.uniqueId();
             const requestedDataFrameNumber = meta.getDataFrameNumber(this.number - jobStartFrame);
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
-            const segmentFrameNumbers = meta.getSegmentFrameNumbers(jobStartFrame);
             const frame = provider.frame(this.number);
 
             function findTheNextNotDecodedChunk(currentFrameIndex: number): number | null {
@@ -669,25 +673,6 @@ function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaDat
     return frameMetaCache[jobID];
 }
 
-async function getFrameMeta(jobID: number, frame: number): Promise<SerializedFramesMetaData['frames'][0]> {
-    const { mode, jobStartFrame } = frameDataCache[jobID];
-    const meta = await frameDataCache[jobID].getMeta();
-    let frameMeta = null;
-    if (mode === 'interpolation' && meta.frames.length === 1) {
-        // video tasks have 1 frame info, but image tasks will have many infos
-        [frameMeta] = meta.frames;
-    } else if (mode === 'annotation' || (mode === 'interpolation' && meta.frames.length > 1)) {
-        if (frame > meta.stopFrame) {
-            throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
-        }
-        frameMeta = meta.frames[frame - jobStartFrame];
-    } else {
-        throw new DataError(`Invalid mode is specified ${mode}`);
-    }
-
-    return frameMeta;
-}
-
 async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     const cached = frameDataCache[jobID];
     if (!cached) {
@@ -847,6 +832,7 @@ export async function getFrame(
             chunkSize,
             mode,
             jobStartFrame,
+            segmentFrameNumbers: meta.getSegmentFrameNumbers(jobStartFrame),
             decodeForward: isPlaying,
             forwardStep: step,
             provider: new FrameDecoder(
@@ -891,7 +877,13 @@ export async function getFrame(
     // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
     await refreshJobCacheIfOutdated(jobID);
 
-    const frameMeta = await getFrameMeta(jobID, frame);
+    const frameIndex = frameDataCache[jobID].segmentFrameNumbers.indexOf(frame);
+    if (frameIndex === -1) {
+        throw new Error('The segment does not have specified frame');
+    }
+
+    const framesMetaData = await frameDataCache[jobID].getMeta();
+    const frameMeta = framesMetaData.frames[frameIndex];
     frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;
@@ -981,9 +973,8 @@ export async function getJobFrameNumbers(jobID: number): Promise<number[]> {
         return [];
     }
 
-    const { jobStartFrame } = frameDataCache[jobID];
-    const meta = await frameDataCache[jobID].getMeta();
-    return meta.getSegmentFrameNumbers(jobStartFrame);
+    const { segmentFrameNumbers } = frameDataCache[jobID];
+    return [...segmentFrameNumbers];
 }
 
 export function clear(jobID: number): void {
