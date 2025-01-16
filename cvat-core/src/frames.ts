@@ -59,6 +59,15 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = new Proxy({}, {
         }
         return Reflect.set(target, prop, value);
     },
+    deleteProperty(target, prop): boolean {
+        if (typeof prop === 'string') {
+            const result = Reflect.deleteProperty(target, prop);
+            delete frameMetaCacheSync[prop];
+            return result;
+        }
+
+        return Reflect.deleteProperty(target, prop);
+    },
 });
 
 enum DeletedFrameState {
@@ -997,6 +1006,5 @@ export function clear(jobID: number): void {
 
         delete frameDataCache[jobID];
         delete frameMetaCache[jobID];
-        delete frameMetaCacheSync[jobID];
     }
 }

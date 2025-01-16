@@ -386,7 +386,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 throw new ArgumentError('The stop frame is out of the job');
             }
 
-            return Promise.resolve(getCollection(this).search(frameFrom, frameTo, searchParameters));
+            return Promise.resolve(
+                getCollection(this).search(frameFrom, frameTo, searchParameters),
+            );
         },
     });
 
