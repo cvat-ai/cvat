@@ -546,6 +546,15 @@ docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
+## External proxy
+Sometimes, in production deployments, administrative structures have their own web server that provides access to a variety of sources.  
+The correct solution would be to use header with explicitly proxy protocol (like [X-Forwarded-Proto](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Proto) in Nginx). 
+
+If it is not possible to influence the nginx configuration
+```shell
+export USED_EXTERNAL_PROXY=True
+```
+
 ### Deploy CVAT with an external database
 
 By default, `docker compose up` will start a PostgreSQL database server,
