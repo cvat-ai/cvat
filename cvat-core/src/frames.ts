@@ -39,7 +39,26 @@ const frameDataCache: Record<string, {
 }> = {};
 
 // frame meta data storage by job id
-const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
+const frameMetaCacheSync: Record<string, FramesMetaData> = {};
+const frameMetaCache: Record<string, Promise<FramesMetaData>> = new Proxy({}, {
+    set(target, prop, value): boolean {
+        if (typeof prop === 'string' && value instanceof Promise) {
+            const result = Reflect.set(target, prop, value);
+
+            // automatically update synced storage each time new promise set
+            value.then((metaData: FramesMetaData) => {
+                if (target[prop]) {
+                    frameMetaCacheSync[prop] = metaData;
+                }
+            }).catch(() => {
+                // do nothing
+            });
+
+            return result;
+        }
+        return Reflect.set(target, prop, value);
+    },
+});
 
 enum DeletedFrameState {
     DELETED = 'deleted',
@@ -590,6 +609,14 @@ function mergeMetaData(
     return Promise.resolve(framesMetaData);
 }
 
+export function getJobFramesMetaSync(jobID: number): FramesMetaData {
+    const cached = frameMetaCacheSync[jobID];
+    if (!cached) {
+        throw new Error('Frames meta cache was not initialized for this job');
+    }
+    return cached;
+}
+
 export function getFramesMeta(type: 'job' | 'task', id: number, forceReload = false): Promise<FramesMetaData> {
     if (type === 'task') {
         // we do not cache task meta currently. So, each new call will results to the server request
@@ -642,7 +669,7 @@ function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaDat
     return frameMetaCache[jobID];
 }
 
-async function getFrameMeta(jobID, frame): Promise<SerializedFramesMetaData['frames'][0]> {
+async function getFrameMeta(jobID: number, frame: number): Promise<SerializedFramesMetaData['frames'][0]> {
     const { mode, jobStartFrame } = frameDataCache[jobID];
     const meta = await frameDataCache[jobID].getMeta();
     let frameMeta = null;
@@ -664,7 +691,7 @@ async function getFrameMeta(jobID, frame): Promise<SerializedFramesMetaData['fra
 async function refreshJobCacheIfOutdated(jobID: number): Promise<void> {
     const cached = frameDataCache[jobID];
     if (!cached) {
-        throw new Error('Frame data cache is abscent');
+        throw new Error('Frames meta cache was not initialized for this job');
     }
 
     const isOutdated = (Date.now() - cached.metaFetchedTimestamp) > config.jobMetaDataReloadPeriod;
@@ -970,5 +997,6 @@ export function clear(jobID: number): void {
 
         delete frameDataCache[jobID];
         delete frameMetaCache[jobID];
+        delete frameMetaCacheSync[jobID];
     }
 }

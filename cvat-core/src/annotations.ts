@@ -12,7 +12,7 @@ import { checkObjectType } from './common';
 import Project from './project';
 import { Task, Job } from './session';
 import { ArgumentError } from './exceptions';
-import { getFramesMeta } from './frames';
+import { getFramesMeta, getJobFramesMetaSync } from './frames';
 import { JobType } from './enums';
 
 const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
@@ -89,14 +89,27 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
 
         // Get meta information about frames
         const frameMeta = await getFramesMeta(sessionType, session.id);
+        const frameNumbers = frameMeta.getDataFrameNumbers();
+
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
-            labels: session.labels,
-            history,
-            stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
-            frameMeta,
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
+            stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
+            labels: session.labels,
             dimension: session.dimension,
+            isFrameDeleted: session instanceof Job ?
+                (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :
+                (frame: number) => !!frameMeta.deletedFrames[frame],
+            framesInfo: frameMeta.frames.reduce((acc, frameInfo, idx) => {
+                // keep only static information
+                acc[frameNumbers[idx]] = {
+                    width: frameInfo.width,
+                    height: frameInfo.height,
+                    filename: frameInfo.name,
+                };
+                return acc;
+            }, {}),
+            history,
         });
 
         // eslint-disable-next-line no-unsanitized/method
@@ -120,7 +133,12 @@ export function clearCache(session): void {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters): Promise<ReturnType<AnnotationsCollection['get']>> {
+export async function getAnnotations(
+    session: Job | Task,
+    frame: number,
+    allTracks: boolean,
+    filters: object[],
+): Promise<ReturnType<AnnotationsCollection['get']>> {
     try {
         return getCollection(session).get(frame, allTracks, filters);
     } catch (error) {
@@ -128,7 +146,6 @@ export async function getAnnotations(session, frame, allTracks, filters): Promis
             await getAnnotationsFromServer(session);
             return getCollection(session).get(frame, allTracks, filters);
         }
-
         throw error;
     }
 }

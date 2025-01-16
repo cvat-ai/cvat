@@ -356,7 +356,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
     });
 
     Object.defineProperty(Job.prototype.annotations.search, 'implementation', {
-        value: function searchAnnotationsImplementation(
+        value: async function searchAnnotationsImplementation(
             this: JobClass,
             frameFrom: Parameters<typeof JobClass.prototype.annotations.search>[0],
             frameTo: Parameters<typeof JobClass.prototype.annotations.search>[1],
@@ -386,9 +386,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 throw new ArgumentError('The stop frame is out of the job');
             }
 
-            return Promise.resolve(
-                getCollection(this).search(frameFrom, frameTo, searchParameters),
-            );
+            return getCollection(this).search(frameFrom, frameTo, searchParameters);
         },
     });
 
@@ -1040,7 +1038,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     });
 
     Object.defineProperty(Task.prototype.annotations.search, 'implementation', {
-        value: function searchAnnotationsImplementation(
+        value: async function searchAnnotationsImplementation(
             this: TaskClass,
             frameFrom: Parameters<typeof TaskClass.prototype.annotations.search>[0],
             frameTo: Parameters<typeof TaskClass.prototype.annotations.search>[1],
@@ -1070,7 +1068,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 throw new ArgumentError('The stop frame is out of the task');
             }
 
-            return Promise.resolve(getCollection(this).search(frameFrom, frameTo, searchParameters));
+            return getCollection(this).search(frameFrom, frameTo, searchParameters);
         },
     });
 
@@ -1161,7 +1159,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
     });
 
     Object.defineProperty(Task.prototype.annotations.statistics, 'implementation', {
-        value: function statisticsImplementation(
+        value: async function statisticsImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.annotations.statistics> {
             return Promise.resolve(getCollection(this).statistics());
