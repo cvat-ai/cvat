@@ -515,7 +515,7 @@ be included in quality computation.
 
 The Analytics page has the following elements:
 
-![Quality Analytics page](/images/honeypot05.jpg)
+![Quality Analytics page](/images/honeypot05.png)
 
 <!--lint disable maximum-line-length-->
 

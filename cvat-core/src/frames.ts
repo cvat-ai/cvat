@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -300,7 +300,11 @@ export class FrameData {
         );
     }
 
-    async data(onServerRequest = () => {}): Promise<ImageBitmap | Blob> {
+    async data(onServerRequest = () => {}): Promise<{
+        renderWidth: number;
+        renderHeight: number;
+        imageData: ImageBitmap | Blob;
+    }> {
         const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
         return result;
     }
@@ -372,7 +376,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             renderWidth: number;
             renderHeight: number;
             imageData: ImageBitmap | Blob;
-        } | Blob>((resolve, reject) => {
+        }>((resolve, reject) => {
             const requestId = +_.uniqueId();
             const requestedDataFrameNumber = meta.getDataFrameNumber(this.number - jobStartFrame);
             const chunkIndex = meta.getFrameChunkIndex(requestedDataFrameNumber);
