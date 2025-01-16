@@ -901,7 +901,7 @@ export async function getFrame(
 
     const frameIndex = frameDataCache[jobID].segmentFrameNumbers.indexOf(frame);
     if (frameIndex === -1) {
-        throw new Error('The segment does not have specified frame');
+        throw new Error('The segment does not have the specified frame');
     }
 
     const framesMetaData = await frameDataCache[jobID].getMeta();
@@ -996,7 +996,7 @@ export async function getJobFrameNumbers(jobID: number): Promise<number[]> {
     }
 
     const { segmentFrameNumbers } = frameDataCache[jobID];
-    return [...segmentFrameNumbers];
+    return segmentFrameNumbers.slice(0);
 }
 
 export function clear(jobID: number): void {
