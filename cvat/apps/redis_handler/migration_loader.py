@@ -6,10 +6,9 @@ import importlib
 from pathlib import Path
 from typing import Any, Generator, Mapping
 
+from django.apps import AppConfig, apps
 from django.utils.module_loading import module_has_submodule
 
-from cvat.apps import AppConfig
-from cvat.apps import get_app_configs as get_cvat_app_configs
 from cvat.apps.redis_handler.models import RedisMigration as DBRedisMigration
 from cvat.apps.redis_handler.redis_migrations import BaseMigration as BaseRedisMigration
 
@@ -32,8 +31,9 @@ class MigrationLoader:
         def _find_app_configs(self):
             return [
                 app_config
-                for app_config in get_cvat_app_configs()
-                if module_has_submodule(
+                for app_config in apps.get_app_configs()
+                if app_config.name.startswith("cvat")
+                and module_has_submodule(
                     app_config.module, MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
                 )
             ]
