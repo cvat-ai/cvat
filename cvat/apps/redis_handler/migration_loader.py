@@ -91,3 +91,6 @@ class MigrationLoader:
 
     def __iter__(self):
         yield from self._unapplied_migrations
+
+    def __len__(self):
+        return len(self._unapplied_migrations)

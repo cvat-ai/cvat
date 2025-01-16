@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
 import traceback
 
 from django.core.management.base import BaseCommand, CommandError
@@ -16,6 +17,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options) -> None:
         loader = MigrationLoader()
+
+        if not loader:
+            self.stdout.write("No migrations to apply")
+            sys.exit(0)
 
         for migration in loader:
             try:
