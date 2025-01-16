@@ -101,7 +101,6 @@ class Annotation {
         color: string;
         readonly id: number;
     };
-    protected isFrameDeleted: (frame: number) => boolean;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         this.taskLabels = injection.labels;
@@ -111,7 +110,6 @@ class Annotation {
         this.serverID = data.id || null;
         this.parentID = injection.parentID || null;
         this.dimension = injection.dimension;
-        this.isFrameDeleted = injection.isFrameDeleted;
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
@@ -395,6 +393,7 @@ class Annotation {
 }
 
 class Drawn extends Annotation {
+    protected isFrameDeleted: (frame: number) => boolean;
     protected framesInfo: AnnotationInjection['framesInfo'];
     protected descriptions: string[];
     public hidden: boolean;
@@ -403,6 +402,7 @@ class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
+        this.isFrameDeleted = injection.isFrameDeleted;
         this.framesInfo = injection.framesInfo;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
@@ -3085,7 +3085,7 @@ export class SkeletonTrack extends Track {
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             label: this.label,
             pinned: this.pinned,
-            keyframes: this.deepBoundedKeyframes(frame, context),
+            keyframes: this.deepBoundedKeyframes(frame),
             elements,
             frame,
             source: this.source,
