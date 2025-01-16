@@ -108,7 +108,7 @@ export class FramesMetaData {
         const data: typeof initialData = {
             chunk_size: undefined,
             deleted_frames: {},
-            included_frames: [],
+            included_frames: null,
             frame_filter: undefined,
             frames: [],
             image_quality: undefined,
