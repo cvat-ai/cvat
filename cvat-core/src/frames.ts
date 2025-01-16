@@ -187,11 +187,20 @@ export class FramesMetaData {
             }),
         );
 
-        // it may be a videofile or one image
         const frameNumbers = this.getDataFrameNumbers();
-        const framesInfo = Object.freeze(initialData.frames.length === 1 ?
-            frameNumbers.map(() => initialData.frames[0]) : initialData.frames);
         const chunkCount: number = Math.ceil(frameNumbers.length / this.chunkSize);
+
+        let framesInfo = [];
+        if (initialData.frames.length === 1) {
+            // it may be a videofile or one image
+            framesInfo = frameNumbers.map(() => initialData.frames[0]);
+        } else if (this.includedFrames.length) {
+            // is a ground truth job, keep only meta related to the job
+            framesInfo = this.includedFrames.map((includedFrame) => this.getJobRelativeFrameNumber(includedFrame))
+                .map((jobRelativeFrame: number) => initialData.frames[jobRelativeFrame]);
+        } else {
+            framesInfo = initialData.frames;
+        }
 
         Object.defineProperties(
             this,
