@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import traceback
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -33,4 +34,7 @@ class Command(BaseCommand):
                         f"[{migration.app_label}] Failed to apply migration: {migration.name}"
                     )
                 )
+                self.stderr.write(self.style.ERROR(
+                    f"\n{traceback.format_exc()}"
+                ))
                 raise CommandError(str(ex))

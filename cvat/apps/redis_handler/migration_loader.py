@@ -48,7 +48,6 @@ class MigrationLoader:
             yield from self._app_configs
 
     def __init__(self) -> None:
-        self._initialized = False
         self._app_configs = self.AppConfigs()
         self._disk_migrations_per_app: _MigrationsPerApp = {}
         self._unapplied_migrations: list[BaseRedisMigration] = []
@@ -80,8 +79,6 @@ class MigrationLoader:
                 MigrationClass = self.get_migration_class(app_config.name, migration_name)
                 self._unapplied_migrations.append(MigrationClass(migration_name, app_config.label))
 
-        self._initialized = True
-
     def get_migration_class(self, app_name: str, migration_name: str) -> BaseRedisMigration:
         migration_module_path = ".".join([app_name, self.REDIS_MIGRATIONS_DIR_NAME, migration_name])
         module = importlib.import_module(migration_module_path)
@@ -93,5 +90,4 @@ class MigrationLoader:
         return MigrationClass
 
     def __iter__(self):
-        assert self._initialized
         yield from self._unapplied_migrations
