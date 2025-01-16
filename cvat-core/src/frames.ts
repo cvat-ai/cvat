@@ -207,10 +207,6 @@ export class FramesMetaData {
         if (initialData.frames.length === 1) {
             // it may be a videofile or one image
             framesInfo = frameNumbers.map(() => initialData.frames[0]);
-        } else if (this.includedFrames) {
-            // is a ground truth job, keep only meta related to the job
-            framesInfo = this.includedFrames.map((includedFrame) => this.getJobRelativeFrameNumber(includedFrame))
-                .map((jobRelativeFrame: number) => initialData.frames[jobRelativeFrame]);
         } else {
             framesInfo = initialData.frames;
         }
@@ -569,7 +565,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                             });
                                             prefetchAnalyzer.addRequested(this.number);
                                         }
-                                    }, () => {
+                                    },
+                                    () => {
                                         frameDataCache[this.jobID].activeChunkRequest = null;
                                         resolveLoadAndDecode();
                                         const decodedFrame = provider.frame(this.number);
@@ -583,7 +580,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                         } else if (!wasResolved) {
                                             reject(this.number);
                                         }
-                                    }, (error: Error | RequestOutdatedError) => {
+                                    },
+                                    (error: Error | RequestOutdatedError) => {
                                         frameDataCache[this.jobID].activeChunkRequest = null;
                                         resolveLoadAndDecode();
                                         if (error instanceof RequestOutdatedError) {
@@ -899,13 +897,8 @@ export async function getFrame(
     // Thus, it is better to only call `refreshJobCacheIfOutdated` from getFrame()
     await refreshJobCacheIfOutdated(jobID);
 
-    const frameIndex = frameDataCache[jobID].segmentFrameNumbers.indexOf(frame);
-    if (frameIndex === -1) {
-        throw new Error('The segment does not have the specified frame');
-    }
-
     const framesMetaData = await frameDataCache[jobID].getMeta();
-    const frameMeta = framesMetaData.frames[frameIndex];
+    const frameMeta = framesMetaData.frames[frame - jobStartFrame];
     frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;
@@ -1009,6 +1002,9 @@ export function clear(jobID: number): void {
         }
 
         delete frameDataCache[jobID];
+    }
+
+    if (jobID in frameMetaCache) {
         delete frameMetaCache[jobID];
     }
 }
