@@ -47,13 +47,15 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = new Proxy({}, {
             const result = Reflect.set(target, prop, value);
 
             // automatically update synced storage each time new promise set
-            value.then((metaData: FramesMetaData) => {
-                if (target[prop]) {
-                    frameMetaCacheSync[prop] = metaData;
-                }
-            }).catch(() => {
-                // do nothing
-            });
+            if (result) {
+                value.then((metaData: FramesMetaData) => {
+                    if (target[prop]) {
+                        frameMetaCacheSync[prop] = metaData;
+                    }
+                }).catch(() => {
+                    // do nothing
+                });
+            }
 
             return result;
         }
@@ -62,7 +64,9 @@ const frameMetaCache: Record<string, Promise<FramesMetaData>> = new Proxy({}, {
     deleteProperty(target, prop): boolean {
         if (typeof prop === 'string') {
             const result = Reflect.deleteProperty(target, prop);
-            delete frameMetaCacheSync[prop];
+            if (result) {
+                delete frameMetaCacheSync[prop];
+            }
             return result;
         }
 

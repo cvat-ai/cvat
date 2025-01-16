@@ -78,6 +78,8 @@ type AnnotationInjection = BasicInjection & {
     readOnlyFields?: string[];
 };
 
+export class InterpolationNotPossibleError extends Error {}
+
 class Annotation {
     public clientID: number;
     protected taskLabels: Record<number, Label>;
@@ -1409,10 +1411,7 @@ export class Track extends Drawn {
             };
         }
 
-        throw new DataError(
-            'No one left position or right position was found. ' +
-                `Interpolation impossible. Client ID: ${this.clientID}`,
-        );
+        throw new InterpolationNotPossibleError();
     }
 }
 
@@ -3270,10 +3269,7 @@ export class SkeletonTrack extends Track {
             };
         }
 
-        throw new DataError(
-            'No one left position or right position was found. ' +
-                `Interpolation impossible. Client ID: ${this.clientID}`,
-        );
+        throw new InterpolationNotPossibleError();
     }
 }
 
