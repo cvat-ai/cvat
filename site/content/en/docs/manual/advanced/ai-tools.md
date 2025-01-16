@@ -31,7 +31,9 @@ See:
   - [OpenCV: annotate with trackers](#opencv-annotate-with-trackers)
   - [When tracking](#when-tracking)
   - [Trackers models](#trackers-models)
-- [OpenCV: histogram equalization](#opencv-histogram-equalization)
+- [OpenCV](#opencv)
+  - [Histogram Equalization](#opencv-histogram-equalization)
+  - [Contrast Limited Adaptive Histogram Equalization](#opencv-clahe)
 
 ## Interactors
 
@@ -280,29 +282,28 @@ All annotated objects will be automatically tracked when you move to the next fr
 
 <!--lint enable maximum-line-length-->
 
-## OpenCV: histogram equalization
+## OpenCV Image Filters
+To use **Intelligent scissors**, do the following:
 
-**Histogram equalization** improves
-the contrast by stretching the intensity range.
+1. On the menu toolbar, click **OpenCV**![OpenCV](/images/image201.jpg) and wait for the library to load.
 
-It increases the global contrast of images
-when its usable data is represented by close contrast values.
+   <br>![](/images/image198.jpg)
 
-It is useful in images with backgrounds
-and foregrounds that are bright or dark.
+2. Go to the **Image** tab
 
-To improve the contrast of the image, do the following:
+   ![](/images/image199.jpg)
 
-1. In the **OpenCV** menu, go to the **Image** tab.
-2. Click on **Histogram equalization** button.
-   <br>![](/images/image221.jpg)
+3. Select the filter to apply and modify the settings as desired. The active tab indicates the active filter, selecting the 'None' tab will deactivate the filter. Only 1 filter is active at a time.
 
-**Histogram equalization** will improve
-contrast on current and following
-frames.
+![Example of image filters applied with various settings](/images/image222.jpg)
 
-Example of the result:
 
-![](/images/image222.jpg)
+### Histogram Equalization
+**Histogram equalization** improves the contrast by adjusting the brightness of each pixel to approximate a uniform brightness distribution across the entire image. This can improve contrast in dark or bright regions. In some cases increasing the contrast in some regions may decrease the contrast in others.
 
-To disable **Histogram equalization**, click on the button again.
+### CLAHE
+Contrast Limited Adaptive Histogram Equalization (CLAHE) adjust the brightness to create a more uniform brightness distribution but works in over local regions and bounds how much each pixel can be adjusted.
+
+At a high level, the image is broken into tiles (configured with 'Tile Columns' and 'Tile Rows') and histogram equalization is applied to each tile. The amount that each pixel's brightness can be adjusted is clamped to a specified value (configured by the 'Clip Limit' value). This means setting tile rows and columns both to 1 and clip limit to 255 will result in the same image as regular histogram equalization.
+
+![](/images/opencv-image-clahe_interaction.jpg)

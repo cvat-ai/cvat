@@ -6,7 +6,8 @@
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import waitFor from 'utils/wait-for';
 import config from 'config';
-import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
+import { ImageFilterSettings } from 'utils/image-processing';
+import { HistogramEqualizationImplementation, CLAHEqualizationImplementation, ImageEqualization } from './image-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
@@ -32,7 +33,8 @@ export interface Contours {
 }
 
 export interface ImgProc {
-    hist: () => HistogramEqualization;
+    hist: () => ImageEqualization;
+    clahe: () => ImageEqualization;
 }
 
 export interface Tracking {
@@ -50,12 +52,14 @@ export class OpenCVWrapper {
     private cv: any;
     private onProgress: ((percent: number) => void) | null;
     private injectionProcess: Promise<void> | null;
+    private imageFilterSettings: ImageFilterSettings;
 
     public constructor() {
         this.initialized = false;
         this.cv = null;
         this.onProgress = null;
         this.injectionProcess = null;
+        this.imageFilterSettings = new ImageFilterSettings();
     }
 
     private checkInitialization(): void {
@@ -188,7 +192,7 @@ export class OpenCVWrapper {
                 const jsContours: number[][] = [];
                 try {
                     cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
-                    // morpth transform to get better contour including all the pixels
+                    // morph transform to get better contour including all the pixels
                     cv.dilate(
                         expanded,
                         expanded,
@@ -299,6 +303,7 @@ export class OpenCVWrapper {
         this.checkInitialization();
         return {
             hist: () => new HistogramEqualizationImplementation(this.cv),
+            clahe: () => new CLAHEqualizationImplementation(this.cv),
         };
     }
 

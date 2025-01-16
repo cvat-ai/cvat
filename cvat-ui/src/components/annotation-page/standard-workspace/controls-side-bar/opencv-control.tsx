@@ -7,10 +7,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
-import Icon, { AreaChartOutlined, ScissorOutlined } from '@ant-design/icons';
+import Icon, { AreaChartOutlined, BarChartOutlined, ScissorOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
+import InputNumber from 'antd/lib/input-number';
 import Progress from 'antd/lib/progress';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
@@ -38,7 +39,7 @@ import ApproximationAccuracy, {
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
 import { enableImageFilter as enableImageFilterAction, disableImageFilter as disableImageFilterAction, switchToolsBlockerState } from 'actions/settings-actions';
-import { ImageFilter, ImageFilterAlias, hasFilter } from 'utils/image-processing';
+import { ImageFilter, ImageFilterAlias, ImageFilterSettings } from 'utils/image-processing';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -84,6 +85,7 @@ interface State {
     activeTracker: OpenCVTracker | null;
     trackers: OpenCVTracker[];
     lastTrackedFrame: number | null;
+    imageFilterSettings: ImageFilterSettings;
 }
 
 const core = getCore();
@@ -156,6 +158,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             trackers: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking) : [],
             activeTracker: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking)[0] : null,
             lastTrackedFrame: null,
+            imageFilterSettings: new ImageFilterSettings(),
         };
     }
 
@@ -579,35 +582,123 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         );
     }
 
-    private renderImageContent():JSX.Element {
+    private renderImageContent(): JSX.Element {
         const { enableImageFilter, disableImageFilter, filters } = this.props;
-        return (
-            <Row justify='start'>
-                <Col>
-                    <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
-                        <Button
-                            className={
-                                hasFilter(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION) ?
-                                    'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
-                            }
-                            onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                if (!hasFilter(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION)) {
-                                    enableImageFilter({
-                                        modifier: openCVWrapper.imgproc.hist(),
-                                        alias: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
+        const { imageFilterSettings } = this.state;
+
+        const claheContent = (
+            <div>
+                <Row align='middle' gutter={8}>
+                    <Col span={12}>Clip Limit:</Col>
+                    <Col span={12}>
+                        <InputNumber
+                            min={1}
+                            max={255}
+                            step={1}
+                            value={imageFilterSettings.claheClipLimit}
+                            onChange={(value) => {
+                                if (value !== null) {
+                                    imageFilterSettings.claheClipLimit = value;
+                                    this.setState({
+                                        imageFilterSettings,
                                     });
-                                } else {
-                                    const button = e.target as HTMLElement;
-                                    button.blur();
-                                    disableImageFilter(ImageFilterAlias.HISTOGRAM_EQUALIZATION);
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    }, imageFilterSettings);
                                 }
                             }}
-                        >
-                            <AreaChartOutlined />
-                        </Button>
-                    </CVATTooltip>
-                </Col>
-            </Row>
+                        />
+                    </Col>
+                </Row>
+                <Row align='middle' gutter={8}>
+                    <Col span={12}>Tile Columns:</Col>
+                    <Col span={12}>
+                        <InputNumber
+                            min={1}
+                            max={128}
+                            value={imageFilterSettings.claheTileGridSize.columns}
+                            onChange={(value) => {
+                                if (value !== null) {
+                                    imageFilterSettings.claheTileGridSize.columns = value;
+                                    this.setState({
+                                        imageFilterSettings,
+                                    });
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    }, imageFilterSettings);
+                                }
+                            }}
+                        />
+                    </Col>
+                </Row>
+                <Row align='middle' gutter={8}>
+                    <Col span={12}>Tile Rows:</Col>
+                    <Col span={12}>
+                        <InputNumber
+                            min={1}
+                            max={128}
+                            value={imageFilterSettings.claheTileGridSize.rows}
+                            onChange={(value) => {
+                                if (value !== null) {
+                                    imageFilterSettings.claheTileGridSize.rows = value;
+                                    this.setState({
+                                        imageFilterSettings,
+                                    });
+                                    enableImageFilter({
+                                        modifier: openCVWrapper.imgproc.clahe(),
+                                        alias: ImageFilterAlias.CLAHE,
+                                    }, imageFilterSettings);
+                                }
+                            }}
+                        />
+                    </Col>
+                </Row>
+            </div>
+        );
+
+        return (
+            <Tabs
+                defaultActiveKey='none'
+                onChange={(key) => {
+                    filters.values().forEach((filter: ImageFilter) => {
+                        if (key !== filter.alias) {
+                            disableImageFilter(filter.alias);
+                        }
+                    });
+                    if (key === 'none') {
+                        filters.values().forEach((filter: ImageFilter) => disableImageFilter(filter.alias));
+                    } else if (key === ImageFilterAlias.HISTOGRAM_EQUALIZATION) {
+                        enableImageFilter({
+                            modifier: openCVWrapper.imgproc.hist(),
+                            alias: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
+                        }, imageFilterSettings);
+                    } else if (key === ImageFilterAlias.CLAHE) {
+                        enableImageFilter({
+                            modifier: openCVWrapper.imgproc.clahe(),
+                            alias: ImageFilterAlias.CLAHE,
+                        }, imageFilterSettings);
+                    }
+                }}
+                items={[
+                    {
+                        label: 'None',
+                        key: 'none',
+                    },
+                    {
+                        label: 'Histogram Eq',
+                        key: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
+                        icon: <AreaChartOutlined />,
+                    },
+                    {
+                        label: 'CLAHE',
+                        key: ImageFilterAlias.CLAHE,
+                        icon: <BarChartOutlined />,
+                        children: claheContent,
+                    },
+                ]}
+            />
         );
     }
 
