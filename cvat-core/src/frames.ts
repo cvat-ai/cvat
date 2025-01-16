@@ -207,7 +207,7 @@ export class FramesMetaData {
         if (initialData.frames.length === 1) {
             // it may be a videofile or one image
             framesInfo = frameNumbers.map(() => initialData.frames[0]);
-        } else if (this.includedFrames.length) {
+        } else if (this.includedFrames) {
             // is a ground truth job, keep only meta related to the job
             framesInfo = this.includedFrames.map((includedFrame) => this.getJobRelativeFrameNumber(includedFrame))
                 .map((jobRelativeFrame: number) => initialData.frames[jobRelativeFrame]);
@@ -286,7 +286,7 @@ export class FramesMetaData {
 
     getDataFrameNumbers(): number[] {
         if (this.includedFrames) {
-            return [...this.includedFrames];
+            return this.includedFrames.slice(0);
         }
 
         return range(this.startFrame, this.stopFrame + 1, this.frameStep);
