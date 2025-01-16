@@ -105,7 +105,6 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
                 acc[frameNumbers[idx]] = {
                     width: frameInfo.width,
                     height: frameInfo.height,
-                    filename: frameInfo.name,
                 };
                 return acc;
             }, {}),
