@@ -12,12 +12,12 @@ class LogViewerPermission(OpenPolicyAgentPermission):
     has_analytics_access: bool
 
     class Scopes(StrEnum):
-        VIEW = 'view'
+        VIEW = "view"
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == 'analytics':
+        if view.basename == "analytics":
             for scope in cls.get_scopes(request, view, obj):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj)
                 permissions.append(self)
@@ -33,20 +33,22 @@ class LogViewerPermission(OpenPolicyAgentPermission):
             obj=obj,
             has_analytics_access=request.user.profile.has_analytics_access,
             **iam_context,
-            **kwargs
+            **kwargs,
         )
 
     def __init__(self, has_analytics_access=False, **kwargs):
         super().__init__(**kwargs)
-        self.payload['input']['auth']['user']['has_analytics_access'] = has_analytics_access
-        self.url = settings.IAM_OPA_DATA_URL + '/analytics/allow'
+        self.payload["input"]["auth"]["user"]["has_analytics_access"] = has_analytics_access
+        self.url = settings.IAM_OPA_DATA_URL + "/analytics/allow"
 
     @staticmethod
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
-        return [{
-            'list': Scopes.VIEW,
-        }[view.action]]
+        return [
+            {
+                "list": Scopes.VIEW,
+            }[view.action]
+        ]
 
     def get_resource(self):
         return None

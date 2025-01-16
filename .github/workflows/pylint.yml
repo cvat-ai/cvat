@@ -2,7 +2,7 @@ name: Pylint
 on: pull_request
 jobs:
   Linter:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # TODO: update pylint to 3.x and change this back to ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - id: files

@@ -17,11 +17,7 @@ line-length = 100
 target-version = ['py39']
 extend-exclude = """
 # TODO: get rid of these
-^/cvat/apps/(
-    dataset_manager|dataset_repo|engine|events
-    |health|iam|lambda_manager|log_viewer
-    |organizations|webhooks
-)/
+^/cvat/apps/(dataset_manager|engine)/
 | ^/cvat/settings/
 | ^/serverless/
 | ^/utils/dataset_manifest/

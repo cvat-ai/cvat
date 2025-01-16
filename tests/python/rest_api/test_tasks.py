@@ -45,7 +45,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
+from shared.fixtures.init import container_exec_cvat
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -2681,7 +2681,7 @@ class TestPostTaskData:
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
 
-class _SourceDataType(str, Enum):
+class _SourceDataType(Enum):
     images = "images"
     video = "video"
 
@@ -5315,12 +5315,9 @@ class TestImportTaskAnnotations:
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        platform = request.config.getoption("--platform")
-        assert platform in ("kube", "local")
-        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
         for _ in range(12):
             sleep(2)
-            result, _ = func(command)
+            result, _ = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break
@@ -6493,7 +6490,7 @@ class TestPatchExportFrames(TestTaskData):
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)
 
-            yield (spec, task, f"CVAT for {media_type} 1.1")
+            yield (spec, task, f"CVAT for {media_type.value} 1.1")
 
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])

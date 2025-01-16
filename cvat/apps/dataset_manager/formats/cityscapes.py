@@ -6,7 +6,7 @@
 import os.path as osp
 
 from datumaro.components.dataset import Dataset
-from datumaro.plugins.cityscapes_format import write_label_map
+from datumaro.plugins.data_formats.cityscapes import write_label_map
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
