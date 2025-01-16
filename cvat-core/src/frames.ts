@@ -10,7 +10,7 @@ import {
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { SerializedFramesMetaData } from './server-response-types';
-import { Exception, ArgumentError, DataError } from './exceptions';
+import { ArgumentError, DataError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
 
@@ -880,20 +880,6 @@ export async function getFrame(
         deleted: frame in meta.deletedFrames,
         jobID,
     });
-}
-
-export async function getDeletedFrames(instanceType: 'job' | 'task', id: number): Promise<Record<number, boolean>> {
-    if (instanceType === 'job') {
-        const meta = await frameDataCache[id].getMeta();
-        return meta.deletedFrames;
-    }
-
-    if (instanceType === 'task') {
-        const meta = await serverProxy.frames.getMeta('task', id);
-        return Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true]));
-    }
-
-    throw new Exception(`getDeletedFrames is not implemented for ${instanceType}`);
 }
 
 export async function deleteFrame(jobID: number, frame: number): Promise<void> {

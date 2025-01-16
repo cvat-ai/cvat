@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ import {
     DataError, ArgumentError, ScriptingError,
 } from './exceptions';
 import { Label } from './labels';
+import { FramesMetaData } from './frames';
 import {
     colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType, JobType,
 } from './enums';
@@ -61,9 +62,7 @@ function computeNewSource(currentSource: Source): Source {
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
-    frameMeta: {
-        deleted_frames: Record<number, boolean>;
-    };
+    frameMeta: FramesMetaData;
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -960,7 +959,7 @@ export class Track extends Drawn {
         let last = Number.MIN_SAFE_INTEGER;
 
         for (const frame of frames) {
-            if (frame in this.frameMeta.deleted_frames) {
+            if (this.frameMeta.deletedFrames[frame]) {
                 continue;
             }
 

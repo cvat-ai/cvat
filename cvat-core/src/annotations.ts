@@ -1,18 +1,18 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
-import AnnotationsCollection, { FrameMeta } from './annotations-collection';
+import AnnotationsCollection from './annotations-collection';
 import AnnotationsSaver from './annotations-saver';
 import AnnotationsHistory from './annotations-history';
 import { checkObjectType } from './common';
 import Project from './project';
 import { Task, Job } from './session';
 import { ArgumentError } from './exceptions';
-import { getDeletedFrames } from './frames';
+import { getFramesMeta } from './frames';
 import { JobType } from './enums';
 
 const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
@@ -88,20 +88,13 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         const serializedAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
 
         // Get meta information about frames
-        const startFrame = session instanceof Job ? session.startFrame : 0;
-        const stopFrame = session instanceof Job ? session.stopFrame : session.size - 1;
-        const frameMeta: Partial<FrameMeta> = {};
-        for (let i = startFrame; i <= stopFrame; i++) {
-            frameMeta[i] = await session.frames.get(i);
-        }
-        frameMeta.deleted_frames = await getDeletedFrames(sessionType, session.id);
-
+        const frameMeta = await getFramesMeta(sessionType, session.id);
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
             labels: session.labels,
             history,
-            stopFrame,
-            frameMeta: frameMeta as FrameMeta,
+            stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
+            frameMeta,
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             dimension: session.dimension,
         });

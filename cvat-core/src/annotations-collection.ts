@@ -1,8 +1,9 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { FramesMetaData } from 'frames';
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
     MaskShape, BasicInjection,
@@ -22,7 +23,6 @@ import {
     HistoryActions, ShapeType, ObjectType, colors, Source, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
-import { Job } from './session';
 
 const validateAttributesList = (
     attributes: { spec_id: number, value: string }[],
@@ -48,14 +48,10 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
-export type FrameMeta = Record<number, Awaited<ReturnType<Job['frames']['get']>>> & {
-    deleted_frames: Record<number, boolean>
-};
-
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: FrameMeta;
+    private frameMeta: FramesMetaData;
     private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
@@ -71,7 +67,7 @@ export default class Collection {
         history: AnnotationHistory;
         stopFrame: number;
         dimension: DimensionType;
-        frameMeta: Collection['frameMeta'];
+        frameMeta: FramesMetaData;
         jobType: JobType;
     }) {
         this.stopFrame = data.stopFrame;
@@ -96,6 +92,7 @@ export default class Collection {
         this.groups = {
             max: 0,
         }; // it is an object to we can pass it as an argument by a reference
+
         this.injection = {
             labels: this.labels,
             groups: this.groups,
@@ -239,9 +236,13 @@ export default class Collection {
     }
 
     public get(frame: number, allTracks: boolean, filters: object[]): ObjectState[] {
+        if (this.frameMeta.deletedFrames[frame]) {
+            return [];
+        }
+
         const { tracks } = this;
-        const shapes = this.shapes[frame] || [];
-        const tags = this.tags[frame] || [];
+        const shapes = this.shapes[frame] ?? [];
+        const tags = this.tags[frame] ?? [];
 
         const objects = [].concat(tracks, shapes, tags);
         const visible = [];
@@ -923,7 +924,7 @@ export default class Collection {
                     count -= 1;
                 }
                 for (let i = start + 1; lastIsKeyframe ? i < stop : i <= stop; i++) {
-                    if (this.frameMeta.deleted_frames[i]) {
+                    if (this.frameMeta.deletedFrames[i]) {
                         count--;
                     }
                 }
@@ -936,7 +937,7 @@ export default class Collection {
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
-                .filter((frame) => !this.frameMeta.deleted_frames[frame]);
+                .filter((frame) => !this.frameMeta.deletedFrames[frame]);
 
             let prevKeyframe = keyframes[0];
             let visible = false;
@@ -987,19 +988,19 @@ export default class Collection {
             }
 
             const { name: label } = object.label;
-            if (objectType === 'tag' && !this.frameMeta.deleted_frames[object.frame]) {
+            if (objectType === 'tag' && !this.frameMeta.deletedFrames[object.frame]) {
                 labels[label].tag++;
                 labels[label].manually++;
                 labels[label].total++;
             } else if (objectType === 'track') {
                 scanTrack(object);
-            } else if (!this.frameMeta.deleted_frames[object.frame]) {
+            } else if (!this.frameMeta.deletedFrames[object.frame]) {
                 const { shapeType } = object as Shape;
                 labels[label][shapeType].shape++;
                 labels[label].manually++;
                 labels[label].total++;
                 if (shapeType === ShapeType.SKELETON) {
-                    (object as SkeletonShape).elements.forEach((element) => {
+                    (object as unknown as SkeletonShape).elements.forEach((element) => {
                         const combinedName = [label, element.label.name].join(sep);
                         labels[combinedName][element.shapeType].shape++;
                         labels[combinedName].manually++;
@@ -1292,7 +1293,7 @@ export default class Collection {
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+            if (!allowDeletedFrames && this.frameMeta.deletedFrames[frame]) {
                 continue;
             }
 
@@ -1359,7 +1360,7 @@ export default class Collection {
         if (!annotationsFilters) {
             let frame = frameFrom;
             while (predicate(frame)) {
-                if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                if (!allowDeletedFrames && this.frameMeta.deletedFrames[frame]) {
                     frame = update(frame);
                     continue;
                 }
@@ -1374,7 +1375,7 @@ export default class Collection {
         const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
 
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+            if (!allowDeletedFrames && this.frameMeta.deletedFrames[frame]) {
                 continue;
             }
 
