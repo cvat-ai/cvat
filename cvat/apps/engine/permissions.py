@@ -23,7 +23,6 @@ from cvat.apps.iam.permissions import (
 from cvat.apps.organizations.models import Organization
 
 from .models import AnnotationGuide, CloudStorage, Issue, Job, Label, Project, Task, User, Comment
-from cvat.apps.engine.utils import is_dataset_export
 
 
 def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
