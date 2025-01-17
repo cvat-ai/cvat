@@ -3,12 +3,55 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
+from datetime import datetime
 from pathlib import Path
+from typing import Any, ClassVar
+from uuid import UUID, uuid4
 
+from attrs import asdict, field, frozen, validators
 from django.apps import AppConfig, apps
+from django.conf import settings
+from redis import Redis
 
-from cvat.apps.redis_handler.models import RedisMigration
 from cvat.apps.redis_handler.redis_migrations import BaseMigration
+
+
+def to_datetime(value: float | str | datetime):
+    if isinstance(value, datetime):
+        return value
+    elif isinstance(value, str):
+        value = float(value)
+
+    return datetime.fromtimestamp(value)
+
+
+def to_uuid(value: str | UUID) -> UUID:
+    if isinstance(value, UUID):
+        return value
+
+    return UUID(value)
+
+
+@frozen
+class AppliedMigration:
+    SORTED_SET_KEY: ClassVar[str] = "cvat:applied_migrations:"
+    KEY_PREFIX: ClassVar[str] = "cvat:applied_migration:"
+
+    name: str = field(validator=[validators.instance_of(str), validators.max_len(128)])
+    app_label: str = field(validator=[validators.instance_of(str), validators.max_len(128)])
+    applied_date: datetime = field(
+        validator=[validators.instance_of(datetime)], converter=to_datetime
+    )
+    identifier: UUID = field(factory=uuid4, converter=to_uuid)
+
+    def get_key(self) -> str:
+        return self.KEY_PREFIX + str(self.identifier)
+
+    def to_dict(self) -> dict[str, Any]:
+        d = asdict(self, filter=lambda a, _: a.name != "identifier")
+        d["applied_date"] = self.applied_date.timestamp()
+
+        return d
 
 
 class LoaderError(Exception):
@@ -24,9 +67,11 @@ class MigrationLoader:
             app_config.label: app_config for app_config in self._find_app_configs()
         }
         self._disk_migrations_per_app: dict[str, list[str]] = {}
+        self._applied_migrations: list[AppliedMigration] = []
         self._unapplied_migrations: list[BaseMigration] = []
 
         self._load_from_disk()
+        self._init_applied_migrations()
         self._init_unapplied_migrations()
 
     def _find_app_configs(self) -> list[AppConfig]:
@@ -44,13 +89,28 @@ class MigrationLoader:
                 migration_name = migration_file.stem
                 (self._disk_migrations_per_app.setdefault(app_label, [])).append(migration_name)
 
-    def _init_unapplied_migrations(self):
-        applied_migrations = RedisMigration.objects.all()
+    def _init_applied_migrations(self):
+        conn = Redis(
+            host=settings.REDIS_INMEM_SETTINGS["HOST"],
+            port=settings.REDIS_INMEM_SETTINGS["PORT"],
+            db=settings.REDIS_INMEM_SETTINGS["DB"],
+            password=settings.REDIS_INMEM_SETTINGS["PASSWORD"],
+        )
+        applied_migration_keys = [
+            i.decode("utf-8") for i in conn.zrange(AppliedMigration.SORTED_SET_KEY, 0, -1)
+        ]
+        for key in applied_migration_keys:
+            self._applied_migrations.append(
+                AppliedMigration(
+                    **{k.decode("utf-8"): v.decode("utf-8") for k, v in conn.hgetall(key).items()}
+                )
+            )
 
+    def _init_unapplied_migrations(self):
         for app_label, migration_names in self._disk_migrations_per_app.items():
             app_config = self._app_config_mapping[app_label]
             app_applied_migrations = {
-                m.name for m in applied_migrations if m.app_label == app_config.label
+                m.name for m in self._applied_migrations if m.app_label == app_config.label
             }
             app_unapplied_migrations = sorted(set(migration_names) - app_applied_migrations)
             for migration_name in app_unapplied_migrations:

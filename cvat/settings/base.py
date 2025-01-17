@@ -283,7 +283,7 @@ redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
 redis_inmem_password = os.getenv('CVAT_REDIS_INMEM_PASSWORD', '')
 
-shared_queue_settings = {
+REDIS_INMEM_SETTINGS = {
     'HOST': redis_inmem_host,
     'PORT': redis_inmem_port,
     'DB': 0,
@@ -292,39 +292,39 @@ shared_queue_settings = {
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '4h',
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '4h',
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '24h',
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.CLEANING.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '2h',
     },
     CVAT_QUEUES.CHUNKS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '5m',
     },
 }
