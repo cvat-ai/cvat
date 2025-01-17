@@ -26,8 +26,8 @@ from unittest.mock import MagicMock, patch
 import av
 import numpy as np
 from attr import define, field
-from datumaro.components.dataset import Dataset
 from datumaro.components.comparator import EqualityComparator
+from datumaro.components.dataset import Dataset
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status

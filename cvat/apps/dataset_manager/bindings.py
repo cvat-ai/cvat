@@ -17,7 +17,6 @@ from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
 import datumaro as dm
-import datumaro.components.media
 import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
@@ -2124,7 +2123,7 @@ def match_dm_item(
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
-    if frame_number is None and isinstance(item.media, dm.components.media.Image):
+    if frame_number is None and isinstance(item.media, dm.Image):
         frame_number = instance_data.match_frame(item.id + item.media.ext, root_hint)
     if frame_number is None:
         frame_number = instance_data.match_frame(item.id, root_hint, path_has_ext=False)
@@ -2466,12 +2465,12 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
 
         root_paths = set()
         for dataset_item in subset_dataset:
-            if isinstance(dataset_item.media, dm.components.media.Image) and dataset_item.media.has_data:
+            if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
                 dataset_files['media'].append(dataset_item.media.path)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
-            elif isinstance(dataset_item.media, dm.components.media.PointCloud):
+            elif isinstance(dataset_item.media, dm.PointCloud):
                 dataset_files['media'].append(dataset_item.media)
                 data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
