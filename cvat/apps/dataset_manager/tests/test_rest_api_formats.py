@@ -26,8 +26,8 @@ from unittest.mock import MagicMock, patch
 import av
 import numpy as np
 from attr import define, field
+from datumaro.components.comparator import EqualityComparator
 from datumaro.components.dataset import Dataset
-from datumaro.components.operations import ExactComparator
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -119,10 +119,13 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 def compare_datasets(expected: Dataset, actual: Dataset):
     # we need this function to allow for a bit of variation in the rotation attribute
-    comparator = ExactComparator(ignored_attrs=["rotation"])
-    _, unmatched, expected_extra, actual_extra, errors = comparator.compare_datasets(
-        expected, actual
-    )
+    comparator = EqualityComparator(ignored_attrs=["rotation"])
+
+    output = comparator.compare_datasets(expected, actual)
+    unmatched = output["mismatches"]
+    expected_extra = output["a_extra_items"]
+    actual_extra = output["b_extra_items"]
+    errors = output["errors"]
     assert not unmatched, f"Datasets have unmatched items: {unmatched}"
     assert not actual_extra, f"Actual has following extra items: {actual_extra}"
     assert not expected_extra, f"Expected has following extra items: {expected_extra}"
