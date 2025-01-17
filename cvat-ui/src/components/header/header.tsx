@@ -260,14 +260,6 @@ function HeaderComponent(props: Props): JSX.Element {
                         <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
-                        <Text strong>Core version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.core}`}</Text>
-                    </p>
-                    <p>
-                        <Text strong>Canvas version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.canvas}`}</Text>
-                    </p>
-                    <p>
                         <Text strong>UI version:</Text>
                         <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>

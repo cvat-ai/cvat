@@ -2804,12 +2804,7 @@ class _VideoTaskSpec(_TaskSpecBase):
             return frame
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_cvat_data_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
-class TestTaskData:
+class _TestTasksBase:
     _USERNAME = "admin1"
 
     def _uploaded_images_task_fxt_base(
@@ -3288,7 +3283,14 @@ class TestTaskData:
         key=lambda fxt_ref: fxt_ref.fixture,
     )
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_cvat_data_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+class TestTaskData(_TestTasksBase):
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -3315,7 +3317,7 @@ class TestTaskData:
         # This test has to check all the task frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -3359,7 +3361,7 @@ class TestTaskData:
         # This test has to check all the task chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
@@ -3427,7 +3429,7 @@ class TestTaskData:
         # This test has to check all the task meta availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: _TaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
 
@@ -3467,7 +3469,7 @@ class TestTaskData:
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", _tasks_with_simple_gt_job_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_simple_gt_job_cases)
     def test_can_get_simple_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -3523,7 +3525,7 @@ class TestTaskData:
                 # there are placeholders on the non-included places
                 assert len(job_meta.frames) == task_spec.size
 
-    @parametrize("task_spec, task_id", _tasks_with_honeypots_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_honeypots_cases)
     def test_can_get_honeypot_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             gt_jobs = get_paginated_collection(
@@ -3560,7 +3562,7 @@ class TestTaskData:
         # This test has to check the job meta for all jobs, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _tasks_with_consensus_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_consensus_cases)
     def test_can_get_consensus_replica_job_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -3593,7 +3595,7 @@ class TestTaskData:
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -3643,7 +3645,7 @@ class TestTaskData:
         # This test has to check all the job chunks availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
         _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))
@@ -6642,8 +6644,7 @@ class TestImportWithComplexFilenames:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
-class TestPatchExportFrames(TestTaskData):
-
+class TestPatchExportFrames(_TestTasksBase):
     @fixture(scope="class")
     @parametrize("media_type", [_SourceDataType.images, _SourceDataType.video])
     @parametrize("step", [5])
