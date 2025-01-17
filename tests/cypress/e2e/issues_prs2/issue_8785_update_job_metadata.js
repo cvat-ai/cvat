@@ -9,17 +9,6 @@ import { taskName } from '../../support/const';
 context('The UI remains stable even when the metadata request fails.', () => {
     const issueId = '8785';
 
-    function clickDeleteFrame() {
-        cy.get('.cvat-player-delete-frame').click();
-        cy.get('.cvat-modal-delete-frame').within(() => {
-            cy.contains('button', 'Delete').click();
-        });
-    }
-    function clickSave() {
-        cy.get('button').contains('Save').click({ force: true });
-        cy.get('button').contains('Save').trigger('mouseout');
-    }
-
     before(() => {
         cy.checkDeletedFrameVisibility();
         cy.openTaskJob(taskName);
@@ -44,10 +33,10 @@ context('The UI remains stable even when the metadata request fails.', () => {
 
             cy.intercept(routeMatcher, badResponse).as('patchError');
 
-            clickDeleteFrame();
+            cy.clickDeleteFrame();
             cy.get('.cvat-player-restore-frame').should('be.visible');
 
-            clickSave();
+            cy.clickSave();
             cy.wait('@patchError').then((intercept) => {
                 expect(intercept.response.body).to.equal(badResponse.body);
                 expect(intercept.response.statusCode).to.equal(badResponse.statusCode);

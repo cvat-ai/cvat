@@ -5,7 +5,6 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
-import { clickDeleteFrame, clickSave } from '../../support/utils_e2e';
 
 context('UI and job metadata work correctly when deleting frames', () => {
     const chunkReloadPeriod = 100; // 100 ms
@@ -34,11 +33,11 @@ context('UI and job metadata work correctly when deleting frames', () => {
             });
 
             // Delete frame, ignore new request
-            clickDeleteFrame();
+            cy.clickDeleteFrame();
             cy.get('.cvat-player-restore-frame').should('not.exist'); // ???: not sure about this one, it might be visible
 
             // Save and intercept request to confirm validate deleted frames
-            clickSave();
+            cy.clickSave();
             cy.wait('@patchMeta').then((interceptor) => {
                 cy.get(`@${frameAlias}`).then((frameNum) => {
                     expect(interceptor.response.body).to.haveOwnProperty('deleted_frames');
