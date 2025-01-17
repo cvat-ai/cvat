@@ -4,29 +4,35 @@
 #
 # SPDX-License-Identifier: MIT
 
-import numpy as np
 import os.path as osp
 import tempfile
 import zipfile
 from io import BytesIO
 
 import datumaro
-from datumaro.components.dataset import Dataset, DatasetItem
+import numpy as np
 from datumaro.components.annotation import Mask
+from datumaro.components.dataset import Dataset, DatasetItem
 from django.contrib.auth.models import Group, User
-
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import (CvatTaskOrJobDataExtractor,
-                                                TaskData, find_dataset_root)
+from cvat.apps.dataset_manager.bindings import (
+    CvatTaskOrJobDataExtractor,
+    TaskData,
+    find_dataset_root,
+)
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import (
-    get_paginated_collection, ForceLogin, generate_image_file, ApiTestBase
+    ApiTestBase,
+    ForceLogin,
+    generate_image_file,
+    get_paginated_collection,
 )
+
 
 class _DbTestBase(ApiTestBase):
     def setUp(self):
@@ -86,6 +92,7 @@ class _DbTestBase(ApiTestBase):
             task = response.data
 
         return task
+
 
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
@@ -255,7 +262,7 @@ class TaskExportTest(_DbTestBase):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = osp.join(temp_dir, format_name)
             dm.task.export_task(task["id"], file_path,
-                format_name, **export_args)
+                format_name=format_name, **export_args)
 
             check(file_path)
 
@@ -290,11 +297,12 @@ class TaskExportTest(_DbTestBase):
             'LFW 1.0',
             'Cityscapes 1.0',
             'Open Images V6 1.0',
-            'YOLOv8 Classification 1.0',
-            'YOLOv8 Oriented Bounding Boxes 1.0',
-            'YOLOv8 Detection 1.0',
-            'YOLOv8 Pose 1.0',
-            'YOLOv8 Segmentation 1.0',
+            'Ultralytics YOLO Classification 1.0',
+            'Ultralytics YOLO Oriented Bounding Boxes 1.0',
+            'Ultralytics YOLO Detection 1.0',
+            'Ultralytics YOLO Detection Track 1.0',
+            'Ultralytics YOLO Pose 1.0',
+            'Ultralytics YOLO Segmentation 1.0',
         })
 
     def test_import_formats_query(self):
@@ -327,11 +335,11 @@ class TaskExportTest(_DbTestBase):
             'Open Images V6 1.0',
             'Datumaro 1.0',
             'Datumaro 3D 1.0',
-            'YOLOv8 Classification 1.0',
-            'YOLOv8 Oriented Bounding Boxes 1.0',
-            'YOLOv8 Detection 1.0',
-            'YOLOv8 Pose 1.0',
-            'YOLOv8 Segmentation 1.0',
+            'Ultralytics YOLO Classification 1.0',
+            'Ultralytics YOLO Oriented Bounding Boxes 1.0',
+            'Ultralytics YOLO Detection 1.0',
+            'Ultralytics YOLO Pose 1.0',
+            'Ultralytics YOLO Segmentation 1.0',
         })
 
     def test_exports(self):
@@ -381,11 +389,11 @@ class TaskExportTest(_DbTestBase):
             # ('KITTI 1.0', 'kitti') format does not support empty annotations
             ('LFW 1.0', 'lfw'),
             # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
-            ('YOLOv8 Classification 1.0', 'yolov8_classification'),
-            ('YOLOv8 Oriented Bounding Boxes 1.0', 'yolov8_oriented_boxes'),
-            ('YOLOv8 Detection 1.0', 'yolov8_detection'),
-            ('YOLOv8 Pose 1.0', 'yolov8_pose'),
-            ('YOLOv8 Segmentation 1.0', 'yolov8_segmentation'),
+            ('Ultralytics YOLO Classification 1.0', 'yolo_ultralytics_classification'),
+            ('Ultralytics YOLO Oriented Bounding Boxes 1.0', 'yolo_ultralytics_oriented_boxes'),
+            ('Ultralytics YOLO Detection 1.0', 'yolo_ultralytics_detection'),
+            ('Ultralytics YOLO Pose 1.0', 'yolo_ultralytics_pose'),
+            ('Ultralytics YOLO Segmentation 1.0', 'yolo_ultralytics_segmentation'),
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
@@ -520,6 +528,72 @@ class TaskExportTest(_DbTestBase):
             self.assertTrue(frame.frame in range(6, 10))
         self.assertEqual(i + 1, 4)
 
+    def _delete_job_frames(self, job_id: int, deleted_frames: list[int]):
+        with ForceLogin(self.user, self.client):
+            response = self.client.patch(
+                f"/api/jobs/{job_id}/data/meta?org=",
+                data=dict(deleted_frames=deleted_frames),
+                format="json"
+            )
+            assert response.status_code == status.HTTP_200_OK, response.status_code
+
+    def test_track_keyframes_on_deleted_frames_do_not_affect_later_frames(self):
+        images = self._generate_task_images(4)
+        task = self._generate_task(images)
+        job = self._get_task_jobs(task["id"])[0]
+
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "source": "manual",
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1, 2, 3, 4],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [],
+                        },
+                        {
+                            "frame": 1,
+                            "points": [5, 6, 7, 8],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": True,
+                            "attributes": [],
+                        },
+                        {
+                            "frame": 2,
+                            "points": [9, 10, 11, 12],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [],
+                        },
+                    ]
+                },
+            ]
+        }
+        self._put_api_v2_job_id_annotations(job["id"], annotations)
+        self._delete_job_frames(job["id"], [2])
+
+        task_ann = TaskAnnotation(task["id"])
+        task_ann.init_from_db()
+        task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task["id"]))
+        extractor = CvatTaskOrJobDataExtractor(task_data)
+        dm_dataset = Dataset.from_extractors(extractor)
+
+        assert len(dm_dataset.get("image_3").annotations) == 0
+
+
 class FrameMatchingTest(_DbTestBase):
     def _generate_task_images(self, paths): # pylint: disable=no-self-use
         f = BytesIO()
@@ -604,13 +678,11 @@ class FrameMatchingTest(_DbTestBase):
                 task = self._generate_task(images)
                 task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
-                dataset = [
-                    datumaro.components.extractor.DatasetItem(
-                        id=osp.splitext(p)[0])
-                    for p in dataset_paths]
+                dataset = [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
 
                 root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
+
 
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
@@ -914,7 +986,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             if import_format == "CVAT 1.1":
                 export_format = "CVAT for images 1.1"
 
-            dm.task.export_task(task["id"], file_path, export_format)
+            dm.task.export_task(task["id"], file_path, format_name=export_format)
             expected_ann = TaskAnnotation(task["id"])
             expected_ann.init_from_db()
 

@@ -1,6 +1,7 @@
-import cvat.apps.engine.models
-from django.db import migrations, models
 import django.utils.timezone
+from django.db import migrations, models
+
+import cvat.apps.engine.models
 
 
 def add_created_date_to_existing_jobs(apps, schema_editor):

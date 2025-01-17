@@ -4,13 +4,33 @@
 
 from __future__ import annotations
 
-import attrs
-
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
+
+import attrs
 from rq.job import Job as RQJob
 
-from .models import RequestAction, RequestTarget, RequestSubresource
+from .models import RequestAction, RequestSubresource, RequestTarget
+
+
+class RQMeta:
+    @staticmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+        return [
+            RQJobMetaField.FORMATTED_EXCEPTION,
+            RQJobMetaField.PROGRESS,
+            RQJobMetaField.TASK_PROGRESS,
+            RQJobMetaField.STATUS
+        ]
+
+    @classmethod
+    def reset_meta_on_retry(cls, meta_to_update: dict[RQJobMetaField, Any]) -> dict[RQJobMetaField, Any]:
+        resettable_fields = cls.get_resettable_fields()
+
+        return {
+            k: v for k, v in meta_to_update.items() if k not in resettable_fields
+        }
 
 class RQJobMetaField:
     # common fields
@@ -28,7 +48,8 @@ class RQJobMetaField:
     # export specific fields
     RESULT_URL = 'result_url'
     FUNCTION_ID = 'function_id'
-
+    EXCEPTION_TYPE = 'exc_type'
+    EXCEPTION_ARGS = 'exc_args'
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return rq_job.meta.get(RQJobMetaField.USER, {}).get('id') == user_id

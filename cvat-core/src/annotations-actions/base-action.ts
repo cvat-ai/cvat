@@ -9,6 +9,7 @@ import { Job, Task } from '../session';
 export enum ActionParameterType {
     SELECT = 'select',
     NUMBER = 'number',
+    CHECKBOX = 'checkbox',
 }
 
 // For SELECT values should be a list of possible options
@@ -52,7 +53,7 @@ export function validateClientIDs(collection: Partial<SerializedCollection>) {
         collection.tracks ?? [],
         collection.tags ?? [],
     ).forEach((object) => {
-        // clientID is required to correct collection filtering and commiting in annotations actions logic
+        // clientID is required to correct collection filtering and committing in annotations actions logic
         if (typeof object.clientID !== 'number') {
             throw new Error('ClientID is undefined when running annotations action, but required');
         }

@@ -28,7 +28,7 @@ import {
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType, Job, JobType } from 'cvat-core-wrapper';
+import { Job } from 'cvat-core-wrapper';
 import {
     CombinedState,
     FrameSpeed,
@@ -225,10 +225,12 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
+    private isWaitingForPlayDelay: boolean;
     private unblock: any;
 
     constructor(props: Props) {
         super(props);
+        this.isWaitingForPlayDelay = false;
         this.inputFrameRef = React.createRef<HTMLInputElement>();
     }
 
@@ -270,13 +272,57 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             if (this.autoSaveInterval) window.clearInterval(this.autoSaveInterval);
             this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
         }
-        this.play();
+        this.handlePlayIfNecessary();
     }
 
     public componentWillUnmount(): void {
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
         this.unblock();
+    }
+
+    private async handlePlayIfNecessary(): Promise<void> {
+        const {
+            jobInstance,
+            frameNumber,
+            frameDelay,
+            frameFetching,
+            playing,
+            canvasIsReady,
+            onSwitchPlay,
+            onChangeFrame,
+        } = this.props;
+
+        const { stopFrame } = jobInstance;
+
+        if (playing && canvasIsReady && !frameFetching && !this.isWaitingForPlayDelay) {
+            this.isWaitingForPlayDelay = true;
+            try {
+                await new Promise((resolve) => {
+                    setTimeout(resolve, frameDelay);
+                });
+
+                const { playing: currentPlaying, showDeletedFrames } = this.props;
+
+                if (currentPlaying) {
+                    const nextCandidate = frameNumber + 1;
+                    if (nextCandidate > stopFrame) {
+                        onSwitchPlay(false);
+                        return;
+                    }
+
+                    const next = await jobInstance.frames
+                        .search({ notDeleted: !showDeletedFrames }, nextCandidate, stopFrame);
+                    if (next !== null && isAbleToChangeFrame(next)) {
+                        onChangeFrame(next, currentPlaying);
+                    } else {
+                        onSwitchPlay(false);
+                    }
+                }
+            } finally {
+                this.isWaitingForPlayDelay = false;
+            }
+        }
     }
 
     private undo = (): void => {
@@ -568,60 +614,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         }
         return undefined;
     };
-
-    private play(): void {
-        const {
-            jobInstance,
-            frameSpeed,
-            frameNumber,
-            frameDelay,
-            frameFetching,
-            playing,
-            canvasIsReady,
-            onSwitchPlay,
-            onChangeFrame,
-        } = this.props;
-
-        if (playing && canvasIsReady && !frameFetching) {
-            if (frameNumber < jobInstance.stopFrame) {
-                let framesSkipped = 0;
-                if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
-                    framesSkipped = 1;
-                }
-                if (frameSpeed === FrameSpeed.Fastest && frameNumber + 2 < jobInstance.stopFrame) {
-                    framesSkipped = 2;
-                }
-
-                setTimeout(async () => {
-                    const { playing: stillPlaying } = this.props;
-                    if (stillPlaying) {
-                        if (isAbleToChangeFrame()) {
-                            if (jobInstance.type === JobType.GROUND_TRUTH) {
-                                const newFrame = await jobInstance.frames.search(
-                                    { notDeleted: true },
-                                    frameNumber + 1,
-                                    jobInstance.stopFrame,
-                                );
-                                if (newFrame !== null) {
-                                    onChangeFrame(newFrame, stillPlaying);
-                                } else {
-                                    onSwitchPlay(false);
-                                }
-                            } else {
-                                onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                            }
-                        } else if (jobInstance.dimension === DimensionType.DIMENSION_2D) {
-                            onSwitchPlay(false);
-                        } else {
-                            setTimeout(() => this.play(), frameDelay);
-                        }
-                    }
-                }, frameDelay);
-            } else {
-                onSwitchPlay(false);
-            }
-        }
-    }
 
     private autoSave(): void {
         const { autoSave, saving, onSaveAnnotation } = this.props;

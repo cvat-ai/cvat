@@ -360,8 +360,12 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
         headers: {
             'Content-type': 'application/json',
         },
+    }).then((response) => {
+        expect(response.status).to.eq(201);
+        expect(response.body.username).to.eq(userSpec.username);
+        expect(response.body.email).to.eq(userSpec.email);
+        return cy.wrap();
     });
-    return cy.wrap();
 });
 
 Cypress.Commands.add('headlessLogout', () => {
@@ -907,6 +911,14 @@ Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) =>
         cy.get('#validationMode').within(() => {
             cy.contains(qualityConfigurationParams.validationMode).click();
         });
+    }
+    if (qualityConfigurationParams.validationFramesPercent) {
+        cy.get('#validationFramesPercent').clear();
+        cy.get('#validationFramesPercent').type(qualityConfigurationParams.validationFramesPercent);
+    }
+    if (qualityConfigurationParams.validationFramesPerJobPercent) {
+        cy.get('#validationFramesPerJobPercent').clear();
+        cy.get('#validationFramesPerJobPercent').type(qualityConfigurationParams.validationFramesPerJobPercent);
     }
 });
 
@@ -1673,6 +1685,14 @@ Cypress.Commands.add('hideTooltips', () => {
             cy.get('.ant-tooltip').invoke('hide');
         }
     });
+});
+
+Cypress.Commands.add('checkDeletedFrameVisibility', () => {
+    cy.openSettings();
+    cy.get('.cvat-workspace-settings-show-deleted').within(() => {
+        cy.get('[type="checkbox"]').should('not.be.checked').check();
+    });
+    cy.closeSettings();
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {

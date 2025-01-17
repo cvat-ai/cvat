@@ -5,23 +5,22 @@
 
 from __future__ import annotations
 
-import os
-import sysconfig
-import tempfile
-import shutil
-import zipfile
 import io
 import itertools
+import os
+import shutil
 import struct
+import sysconfig
+import tempfile
+import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
-from contextlib import ExitStack, closing, contextmanager
+from collections.abc import Generator, Iterable, Iterator, Sequence
+from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import (
-    Any, Callable, ContextManager, Generator, Iterable, Iterator, Optional, Protocol,
-    Sequence, Tuple, TypeVar, Union
-)
+from random import shuffle
+from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
 import av
 import av.codec
@@ -29,19 +28,19 @@ import av.container
 import av.video.stream
 import numpy as np
 from natsort import os_sorted
-from pyunpack import Archive
 from PIL import Image, ImageFile, ImageOps
-from random import shuffle
-from cvat.apps.engine.utils import rotate_image
-from cvat.apps.engine.models import DimensionType, SortingMethod
+from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
+
+from cvat.apps.engine.models import DimensionType, SortingMethod
+from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -100,6 +99,12 @@ def image_size_within_orientation(img: Image.Image):
 
 def has_exif_rotation(img: Image.Image):
     return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
+
+
+def load_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
+    with Image.open(image[0]) as pil_img:
+        pil_img.load()
+        return pil_img, image[1], image[2]
 
 _T = TypeVar("_T")
 
@@ -606,7 +611,7 @@ class VideoReader(IMediaReader):
         *,
         frame_filter: Union[bool, Iterable[int]] = True,
         video_stream: Optional[av.video.stream.VideoStream] = None,
-    ) -> Iterator[Tuple[av.VideoFrame, str, int]]:
+    ) -> Iterator[tuple[av.VideoFrame, str, int]]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
         'True' means using the frames configured in the reader object.
@@ -667,14 +672,14 @@ class VideoReader(IMediaReader):
                     if next_frame_filter_frame is None:
                         return
 
-    def __iter__(self) -> Iterator[Tuple[av.VideoFrame, str, int]]:
+    def __iter__(self) -> Iterator[tuple[av.VideoFrame, str, int]]:
         return self.iterate_frames()
 
     def get_progress(self, pos):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
         return _AvVideoReading().read_av_container(self._source_path[0])
 
     def _decode_stream(
@@ -765,7 +770,7 @@ class VideoReaderWithManifest:
 
         self.allow_threading = allow_threading
 
-    def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
         return _AvVideoReading().read_av_container(self.source_path)
 
     def _decode_stream(
@@ -837,12 +842,14 @@ class IChunkWriter(ABC):
         if isinstance(source_image, av.VideoFrame):
             image = source_image.to_image()
         elif isinstance(source_image, io.IOBase):
-            with Image.open(source_image) as _img:
-                image = ImageOps.exif_transpose(_img)
+            image, _, _ = load_image((source_image, None, None))
         elif isinstance(source_image, Image.Image):
-            image = ImageOps.exif_transpose(source_image)
+            image = source_image
 
         assert image is not None
+
+        if has_exif_rotation(image):
+            image = ImageOps.exif_transpose(image)
 
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
@@ -868,16 +875,14 @@ class IChunkWriter(ABC):
             image = Image.fromarray(image, mode="L") # 'L' := Unsigned Integer 8, Grayscale
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
 
-        converted_image = image.convert('RGB')
+        if image.mode != 'RGB' and image.mode != 'L':
+            image = image.convert('RGB')
 
-        try:
-            buf = io.BytesIO()
-            converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
-            buf.seek(0)
-            width, height = converted_image.size
-            return width, height, buf
-        finally:
-            converted_image.close()
+        buf = io.BytesIO()
+        image.save(buf, format='JPEG', quality=quality, optimize=True)
+        buf.seek(0)
+
+        return image.width, image.height, buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -1026,11 +1031,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor = Tuple[av.VideoFrame, Any, Any]
+    FrameDescriptor = tuple[av.VideoFrame, Any, Any]
 
     def _peek_first_frame(
         self, frame_iter: Iterator[FrameDescriptor]
-    ) -> Tuple[Optional[FrameDescriptor], Iterator[FrameDescriptor]]:
+    ) -> tuple[Optional[FrameDescriptor], Iterator[FrameDescriptor]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, '__next__'):
@@ -1041,7 +1046,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
     def save_as_chunk(
         self, images: Iterator[FrameDescriptor], chunk_path: str
-    ) -> Sequence[Tuple[int, int]]:
+    ) -> Sequence[tuple[int, int]]:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception('no images to save')

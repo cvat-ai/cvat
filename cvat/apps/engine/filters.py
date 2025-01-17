@@ -3,29 +3,30 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, Tuple, List, Iterator, Optional, Iterable
-from functools import reduce
-import operator
 import json
+import operator
+from collections.abc import Iterable, Iterator
+from functools import reduce
+from textwrap import dedent
+from typing import Any, Optional
 
+from django.db.models import Q
+from django.db.models.query import QuerySet
+from django.utils.encoding import force_str
+from django.utils.translation import gettext_lazy as _
 from django_filters import FilterSet
 from django_filters import filters as djf
 from django_filters.filterset import BaseFilterSet
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
-from django.db.models.query import QuerySet
-from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_str
-from rest_framework.request import Request
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
-from textwrap import dedent
+from rest_framework.request import Request
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
 
-def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> Dict[str, str]:
+def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> dict[str, str]:
     if fields is None:
         fields = getattr(view, DEFAULT_FILTER_FIELDS_ATTR, None) or []
 
@@ -134,7 +135,7 @@ class OrderingFilter(filters.OrderingFilter):
         }] if ordering_fields else []
 
 class JsonLogicFilter(filters.BaseFilterBackend):
-    Rules = Dict[str, Any]
+    Rules = dict[str, Any]
     filter_param = 'filter'
     filter_title = _('Filter')
     filter_description = _(dedent("""
@@ -191,7 +192,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         return rules
 
     def apply_filter(self,
-        queryset: QuerySet, parsed_rules: Rules, *, lookup_fields: Dict[str, Any]
+        queryset: QuerySet, parsed_rules: Rules, *, lookup_fields: dict[str, Any]
     ) -> QuerySet:
         try:
             q_object = self._build_Q(parsed_rules, lookup_fields)
@@ -362,7 +363,7 @@ class _NestedAttributeHandler:
         __setattr__ = dict.__setitem__
         __delattr__ = dict.__delitem__
 
-        def __init__(self, dct: Dict):
+        def __init__(self, dct: dict):
             for key, value in dct.items():
                 if isinstance(value, dict):
                     value = self.__class__(value)
@@ -454,7 +455,7 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
     ?sort=-field1,-field2
     """
 
-    def get_ordering(self, request, queryset, view) -> Tuple[List[str], bool]:
+    def get_ordering(self, request, queryset, view) -> tuple[list[str], bool]:
         ordering = super().get_ordering(request, queryset, view)
         result, reverse = [], False
         for field in ordering:
