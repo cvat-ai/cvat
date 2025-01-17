@@ -30,7 +30,7 @@
                 "background": {
                   "activeOnStart": true,
                   "beginsPattern": "webpack-dev-server",
-                  "endsPattern": "Compiled"
+                  "endsPattern": "compiled"
                 }
             }
         }
