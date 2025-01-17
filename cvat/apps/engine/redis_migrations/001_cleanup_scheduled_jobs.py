@@ -10,8 +10,8 @@ from cvat.apps.redis_handler.redis_migrations import BaseMigration
 
 
 class Migration(BaseMigration):
-    @staticmethod
-    def run():
+    @classmethod
+    def run(cls):
         scheduler: Scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
 
         for job in scheduler.get_jobs():

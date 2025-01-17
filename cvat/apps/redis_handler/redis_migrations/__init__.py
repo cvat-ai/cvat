@@ -21,6 +21,6 @@ class BaseMigration(metaclass=ABCMeta):
     name: str = field(validator=[validators.instance_of(str)])
     app_label: str = field(validator=[validators.instance_of(str)])
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def run() -> None: ...
+    def run(cls) -> None: ...
