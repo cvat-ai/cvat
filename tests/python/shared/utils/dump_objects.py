@@ -3,16 +3,34 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import re
+from datetime import timezone
 from http import HTTPStatus
+from typing import Any
 
 from config import ASSETS_DIR, get_method
+from dateutil.parser import ParserError, parse
 
 
-def clean_json(data: str) -> str:
+def clean_list_response(data: dict[str, Any]) -> dict[str, Any]:
     # truncate milliseconds to 3 digit precision to align with data.json
-    data = re.sub(r'(\.\d{3})\d{3}Z"', r'\g<1>000Z"', data)
-    data = data.rstrip()
+    # "2023-03-30T09:37:31.615123Z" ->
+    # "2023-03-30T09:37:31.615000Z"
+
+    for result in data["results"]:
+        for k, v in result.items():
+            if not isinstance(v, str):
+                continue
+
+            try:
+                parsed_date = parse(v)
+            except ParserError:
+                continue
+
+            parsed_date = parsed_date.replace(
+                microsecond=parsed_date.microsecond - (parsed_date.microsecond % 1000)
+            )
+            result[k] = parsed_date.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
     return data
 
 
@@ -40,7 +58,7 @@ if __name__ == "__main__":
 
         filename = f"{obj}s.json".replace("/", "_")
         with open(ASSETS_DIR / filename, "w") as f:
-            f.write(clean_json(json.dumps(response.json(), indent=2, sort_keys=True)))
+            f.write(json.dumps(clean_list_response(response.json()), indent=2, sort_keys=True))
 
         if obj in ["job", "task"]:
             annotations[obj] = {}
