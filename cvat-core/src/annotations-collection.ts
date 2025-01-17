@@ -8,6 +8,7 @@ import {
     MaskShape, BasicInjection, SkeletonShape,
     SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
+    InterpolationNotPossibleError,
 } from './annotations-objects';
 import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
@@ -251,12 +252,17 @@ export default class Collection {
                 continue;
             }
 
-            const stateData = object.get(frame);
-            if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
-                continue;
+            try {
+                const stateData = object.get(frame);
+                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
+                    continue;
+                }
+                visible.push(stateData);
+            } catch (error: unknown) {
+                if (!(error instanceof InterpolationNotPossibleError)) {
+                    throw error;
+                }
             }
-
-            visible.push(stateData);
         }
 
         const objectStates = [];
