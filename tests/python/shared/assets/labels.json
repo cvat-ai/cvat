@@ -1,5 +1,5 @@
 {
-  "count": 44,
+  "count": 46,
   "next": null,
   "previous": null,
   "results": [
@@ -871,6 +871,50 @@
       "parent_id": null,
       "sublabels": [],
       "task_id": 29,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "",
+          "id": 16,
+          "input_type": "text",
+          "mutable": false,
+          "name": "src",
+          "values": [
+            ""
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 78,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 30,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "",
+          "id": 17,
+          "input_type": "text",
+          "mutable": false,
+          "name": "src",
+          "values": [
+            ""
+          ]
+        }
+      ],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 79,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 30,
       "type": "any"
     }
   ]

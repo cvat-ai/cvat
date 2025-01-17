@@ -5,8 +5,9 @@
 import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -25,9 +26,14 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
+import Collapse from 'antd/lib/collapse';
+import { collapseRegularJob } from 'actions/jobs-actions';
 import JobActionsMenu from './job-actions-menu';
+
+function formatDate(value: Moment): string {
+    return value.format('MMM Do YYYY HH:mm');
+}
 
 interface Props {
     job: Job;
@@ -105,6 +111,7 @@ function JobItem(props: Props): JSX.Element {
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
 
     const { stage } = job;
+    const dispatch = useDispatch();
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);
     const now = moment(moment.now());
@@ -116,43 +123,69 @@ function JobItem(props: Props): JSX.Element {
     }
     const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
+    const jobName = `Job #${job.id}`;
+
+    let childJobs: Job[] = [];
+    if (task.consensusEnabled) {
+        childJobs = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === job.id).reverse();
+    }
+    const consensusJobViews: React.JSX.Element[] = childJobs.map((eachJob: Job) => (
+        <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
+    ));
+
+    const regularJobViewUncollapse = useSelector((state: CombinedState) => state.jobs.regularJobViewUncollapse);
+    const regularJobUncollapsed = regularJobViewUncollapse[job.id];
+    const handleCollapseChange = async (): Promise<void> => {
+        await dispatch(collapseRegularJob(job.id, !regularJobUncollapsed));
+    };
+
+    let tag = null;
+    if (job.type === JobType.GROUND_TRUTH) {
+        tag = (
+            <Col offset={1}>
+                <Tag color='#ED9C00'>Ground truth</Tag>
+            </Col>
+        );
+    } else if (job.consensusReplicas) {
+        tag = (
+            <Col offset={1}>
+                <Tag color='#1890FF'>Consensus</Tag>
+            </Col>
+        );
+    }
+
     return (
         <Col span={24}>
             <Card className='cvat-job-item' style={{ ...style }} data-row-id={job.id}>
                 <Row align='middle'>
-                    <Col span={7}>
+                    <Col span={6}>
                         <Row>
                             <Col>
-                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{`Job #${job.id}`}</Link>
+                                <Link to={`/tasks/${job.taskId}/jobs/${job.id}`}>{jobName}</Link>
                             </Col>
-                            {
-                                job.type === JobType.GROUND_TRUTH ? (
-                                    <Col offset={1}>
-                                        <Tag color='#ED9C00'>Ground truth</Tag>
-                                    </Col>
-                                ) : (
-                                    <Col className='cvat-job-item-issues-summary-icon'>
-                                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
-                                            <QuestionCircleOutlined />
-                                        </CVATTooltip>
-                                    </Col>
-                                )
-                            }
+                            {tag}
+                            {job.type !== JobType.GROUND_TRUTH && (
+                                <Col className='cvat-job-item-issues-summary-icon'>
+                                    <CVATTooltip title={<ReviewSummaryComponent jobInstance={job} />}>
+                                        <QuestionCircleOutlined />
+                                    </CVATTooltip>
+                                </Col>
+                            )}
                         </Row>
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
-                                <Text>Created on </Text>
-                                <Text type='secondary'>{`${created.format('MMMM Do YYYY HH:mm')}`}</Text>
+                                <Text>Created: </Text>
+                                <Text type='secondary'>{`${formatDate(created)}`}</Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
-                                <Text>Last updated </Text>
-                                <Text type='secondary'>{`${updated.format('MMMM Do YYYY HH:mm')}`}</Text>
+                                <Text>Updated: </Text>
+                                <Text type='secondary'>{`${formatDate(updated)}`}</Text>
                             </Col>
                         </Row>
                     </Col>
-                    <Col span={11}>
+                    <Col span={12}>
                         <Row className='cvat-job-item-selects' justify='space-between'>
                             <Col>
                                 <Row>
@@ -208,15 +241,11 @@ function JobItem(props: Props): JSX.Element {
                                                 onJobUpdate(job, { state: newValue });
                                             }}
                                         >
-                                            <Select.Option value={JobState.NEW}>
-                                                {JobState.NEW}
-                                            </Select.Option>
+                                            <Select.Option value={JobState.NEW}>{JobState.NEW}</Select.Option>
                                             <Select.Option value={JobState.IN_PROGRESS}>
                                                 {JobState.IN_PROGRESS}
                                             </Select.Option>
-                                            <Select.Option value={JobState.REJECTED}>
-                                                {JobState.REJECTED}
-                                            </Select.Option>
+                                            <Select.Option value={JobState.REJECTED}>{JobState.REJECTED}</Select.Option>
                                             <Select.Option value={JobState.COMPLETED}>
                                                 {JobState.COMPLETED}
                                             </Select.Option>
@@ -233,7 +262,11 @@ function JobItem(props: Props): JSX.Element {
                                     <Col>
                                         <Icon component={DurationIcon} />
                                         <Text>Duration: </Text>
-                                        <Text type='secondary'>{`${moment.duration(now.diff(created)).humanize()}`}</Text>
+                                        <Text type='secondary'>
+                                            {`${moment
+                                                .duration(now.diff(created))
+                                                .humanize()}`}
+                                        </Text>
                                     </Col>
                                 </Row>
                                 <Row>
@@ -245,19 +278,17 @@ function JobItem(props: Props): JSX.Element {
                                         </Text>
                                     </Col>
                                 </Row>
-                                {
-                                    job.type !== JobType.GROUND_TRUTH && (
-                                        <Row>
-                                            <Col>
-                                                <Icon component={FramesIcon} />
-                                                <Text>Frame range: </Text>
-                                                <Text type='secondary' className='cvat-job-item-frame-range'>
-                                                    {`${job.startFrame}-${job.stopFrame}`}
-                                                </Text>
-                                            </Col>
-                                        </Row>
-                                    )
-                                }
+                                {job.type !== JobType.GROUND_TRUTH && (
+                                    <Row>
+                                        <Col>
+                                            <Icon component={FramesIcon} />
+                                            <Text>Frame range: </Text>
+                                            <Text type='secondary' className='cvat-job-item-frame-range'>
+                                                {`${job.startFrame}-${job.stopFrame}`}
+                                            </Text>
+                                        </Col>
+                                    </Row>
+                                )}
                             </Col>
                         </Row>
                     </Col>
@@ -265,10 +296,25 @@ function JobItem(props: Props): JSX.Element {
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide
+                    className='job-actions-menu'
                     overlay={<JobActionsMenu job={job} />}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
+                {childJobs.length > 0 && (
+                    <Collapse
+                        className='cvat-consensus-job-collapse'
+                        activeKey={regularJobUncollapsed ? ['1'] : []}
+                        onChange={handleCollapseChange}
+                        items={[
+                            {
+                                key: '1',
+                                label: <Text>{`${childJobs.length} Replicas`}</Text>,
+                                children: consensusJobViews,
+                            },
+                        ]}
+                    />
+                )}
             </Card>
         </Col>
     );

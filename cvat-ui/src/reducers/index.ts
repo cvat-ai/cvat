@@ -89,6 +89,9 @@ export interface JobsState {
             [tid: number]: boolean;
         };
     };
+    regularJobViewUncollapse: {
+        [jobId: number]: boolean;
+    };
 }
 
 export interface TasksState {
