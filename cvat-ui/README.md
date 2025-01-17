@@ -4,17 +4,6 @@
 
 This is a client UI for Computer Vision Annotation Tool based on React, Redux and Antd
 
-## Versioning
-
-If you make changes in this package, please do following:
-
-- After not important changes (typos, bug fixes, refactoring) do: `yarn version --patch`
-- After adding new features do: `yarn version --minor`
-- After significant UI redesign do: `yarn version --major`
-
-Important: If you have changed versions for `cvat-core`, `cvat-canvas`, `cvat-data`,
-you also need to do `yarn install` to update `package-lock.json`
-
 ## Commands
 
 - Installing dependencies:

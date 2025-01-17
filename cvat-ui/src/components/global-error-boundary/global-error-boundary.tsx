@@ -27,8 +27,6 @@ interface OwnProps {
 interface StateToProps {
     job: any | null;
     serverVersion: string;
-    coreVersion: string;
-    canvasVersion: string;
     uiVersion: string;
 }
 
@@ -53,8 +51,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         job,
         serverVersion: server.version as string,
-        coreVersion: packageVersion.core,
-        canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
     };
 }
@@ -109,7 +105,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
 
     public render(): React.ReactNode {
         const {
-            restore, job, serverVersion, coreVersion, canvasVersion, uiVersion,
+            restore, job, serverVersion, uiVersion,
         } = this.props;
 
         const { hasError, error } = this.state;
@@ -172,14 +168,6 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                             <li>
                                                 <Text strong>Server: </Text>
                                                 {serverVersion}
-                                            </li>
-                                            <li>
-                                                <Text strong>Core: </Text>
-                                                {coreVersion}
-                                            </li>
-                                            <li>
-                                                <Text strong>Canvas: </Text>
-                                                {canvasVersion}
                                             </li>
                                             <li>
                                                 <Text strong>UI: </Text>
