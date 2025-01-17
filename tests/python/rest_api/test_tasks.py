@@ -3311,6 +3311,10 @@ class TestTaskData:
             else:
                 assert len(task_meta.frames) == task_meta.size
 
+    @pytest.mark.timeout(
+        # This test has to check all the task frames availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3351,6 +3355,10 @@ class TestTaskData:
                     ),
                 )
 
+    @pytest.mark.timeout(
+        # This test has to check all the task chunks availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3415,6 +3423,10 @@ class TestTaskData:
                         ),
                     )
 
+    @pytest.mark.timeout(
+        # This test has to check all the task meta availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: _TaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
@@ -3544,6 +3556,10 @@ class TestTaskData:
             else:
                 assert len(job_meta.frames) == job_meta.size
 
+    @pytest.mark.timeout(
+        # This test has to check the job meta for all jobs, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _tasks_with_consensus_cases)
     def test_can_get_consensus_replica_job_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3573,6 +3589,10 @@ class TestTaskData:
                     )
                     assert DeepDiff(annotation_job_meta, replica_job_meta) == {}
 
+    @pytest.mark.timeout(
+        # This test has to check all the job frames availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _all_task_cases)
     def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
@@ -3619,6 +3639,10 @@ class TestTaskData:
                         ),
                     )
 
+    @pytest.mark.timeout(
+        # This test has to check all the job chunks availability, it can make many requests
+        timeout=300
+    )
     @parametrize("task_spec, task_id", _all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
