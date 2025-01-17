@@ -1704,3 +1704,13 @@ Cypress.Commands.overwrite('reload', (orig, options) => {
     orig(options);
     cy.closeModalUnsupportedPlatform();
 });
+
+Cypress.Commands.add('getCurrentFrameNumber', (alias) => {
+    cy.get('.cvat-player-frame-selector').within(() => {
+        cy.get('[role="spinbutton"]')
+            .should('have.attr', 'aria-valuenow')
+            .then((valueFrameNow) => {
+                cy.wrap(Number(valueFrameNow)).as(alias);
+            });
+    });
+});
