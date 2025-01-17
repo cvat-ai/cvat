@@ -25,7 +25,7 @@ from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.dataset_base import DEFAULT_SUBSET_NAME, DatasetBase
 from datumaro.components.importer import Importer
 from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporter
-from datumaro.util.image import Image
+from datumaro.components.media import Image
 from defusedxml import ElementTree
 
 from cvat.apps.dataset_manager.bindings import (
@@ -112,7 +112,7 @@ class CvatExtractor(DatasetBase):
                 name, ext = osp.splitext(osp.basename(file))
                 if ext.lower() in CvatPath.MEDIA_EXTS:
                     items[(subset, name)] = DatasetItem(id=name, annotations=[],
-                        image=Image(path=file), subset=subset or DEFAULT_SUBSET_NAME,
+                        media=Image(path=file), subset=subset or DEFAULT_SUBSET_NAME,
                     )
 
         if subsets == [DEFAULT_SUBSET_NAME] and not osp.isdir(osp.join(image_dir, DEFAULT_SUBSET_NAME)):
@@ -1172,9 +1172,10 @@ def load_anno(file_object, annotations):
             elif el.tag == 'image':
                 image_is_opened = True
                 frame_id = annotations.abs_frame_id(match_dm_item(
-                    DatasetItem(id=osp.splitext(el.attrib['name'])[0],
+                    DatasetItem(
+                        id=osp.splitext(el.attrib['name'])[0],
                         attributes={'frame': el.attrib['id']},
-                        image=el.attrib['name']
+                        media=Image(path=el.attrib['name'])
                     ),
                     instance_data=annotations
                 ))
