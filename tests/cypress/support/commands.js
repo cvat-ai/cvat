@@ -1704,3 +1704,25 @@ Cypress.Commands.overwrite('reload', (orig, options) => {
     orig(options);
     cy.closeModalUnsupportedPlatform();
 });
+
+Cypress.Commands.add('getCurrentFrameNumber', (alias) => {
+    cy.get('.cvat-player-frame-selector').within(() => {
+        cy.get('[role="spinbutton"]')
+            .should('have.attr', 'aria-valuenow')
+            .then((valueFrameNow) => {
+                cy.wrap(Number(valueFrameNow)).as(alias);
+            });
+    });
+});
+
+Cypress.Commands.add('clickDeleteFrame', (force = false) => {
+    cy.get('.cvat-player-delete-frame').click();
+    cy.get('.cvat-modal-delete-frame').within(() => {
+        cy.contains('button', 'Delete').click({ force });
+    });
+});
+
+Cypress.Commands.add('clickSave', (force = false) => {
+    cy.get('button').contains('Save').click({ force });
+    cy.get('button').contains('Save').trigger('mouseout');
+});
