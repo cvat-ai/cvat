@@ -20,6 +20,7 @@ cmd_init() {
     ~/manage.py migrate
 
     wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    ~/manage.py migrateredis
     ~/manage.py syncperiodicjobs
 }
 
@@ -36,6 +37,12 @@ cmd_run() {
 
     echo "waiting for migrations to complete..."
     while ! ~/manage.py migrate --check; do
+        sleep 10
+    done
+
+    wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    echo "waiting for Redis migrations to complete..."
+    while ! ~/manage.py migrateredis --check; do
         sleep 10
     done
 
