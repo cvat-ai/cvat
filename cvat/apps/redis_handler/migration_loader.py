@@ -16,7 +16,7 @@ from redis import Redis
 from cvat.apps.redis_handler.redis_migrations import BaseMigration
 
 
-def to_datetime(value: float | str | datetime):
+def to_datetime(value: float | str | datetime) -> datetime:
     if isinstance(value, datetime):
         return value
     elif isinstance(value, str):
