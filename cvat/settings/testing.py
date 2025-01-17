@@ -4,7 +4,8 @@
 
 import tempfile
 
-from .development import *
+# Inherit parent config
+from .development import *  # pylint: disable=wildcard-import
 
 DATABASES = {
     'default': {

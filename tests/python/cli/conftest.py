@@ -2,4 +2,5 @@
 #
 # SPDX-License-Identifier: MIT
 
-from sdk.fixtures import *  # pylint: disable=unused-import
+# Force execution of fixture definitions
+from sdk.fixtures import *  # pylint: disable=wildcard-import

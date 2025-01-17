@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .base import *
+# Inherit parent config
+from .base import *  # pylint: disable=wildcard-import
 
 DEBUG = False
 
