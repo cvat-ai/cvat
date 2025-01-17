@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
 import traceback
+from argparse import ArgumentParser
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -15,8 +17,21 @@ from cvat.apps.redis_handler.migration_loader import AppliedMigration, Migration
 class Command(BaseCommand):
     help = "Applies Redis migrations and records them in the database"
 
+    def add_arguments(self, parser: ArgumentParser) -> None:
+        parser.add_argument(
+            "--check",
+            action="store_true",
+            help="Checks whether Redis migrations have been applied; exits with non-zero status if not",
+        )
+
     def handle(self, *args, **options) -> None:
         loader = MigrationLoader()
+
+        if options["check"]:
+            if not loader:
+                return
+
+            sys.exit(1)
 
         if not loader:
             self.stdout.write("No migrations to apply")

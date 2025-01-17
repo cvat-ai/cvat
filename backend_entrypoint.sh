@@ -40,6 +40,12 @@ cmd_run() {
         sleep 10
     done
 
+    wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    echo "waiting for Redis migrations to complete..."
+    while ! ~/manage.py migrateredis --check; do
+        sleep 10
+    done
+
     exec supervisord -c "supervisord/$1.conf"
 }
 
