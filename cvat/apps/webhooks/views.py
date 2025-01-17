@@ -2,9 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
-                                   OpenApiTypes, extend_schema,
-                                   extend_schema_view)
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
@@ -16,8 +20,12 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .permissions import WebhookPermission
-from .serializers import (EventsSerializer, WebhookDeliveryReadSerializer,
-                          WebhookReadSerializer, WebhookWriteSerializer)
+from .serializers import (
+    EventsSerializer,
+    WebhookDeliveryReadSerializer,
+    WebhookReadSerializer,
+    WebhookWriteSerializer,
+)
 from .signals import signal_ping, signal_redelivery
 
 
@@ -34,24 +42,18 @@ from .signals import signal_ping, signal_redelivery
     update=extend_schema(
         summary="Replace a webhook",
         request=WebhookWriteSerializer,
-        responses={
-            "200": WebhookReadSerializer
-        },  # check WebhookWriteSerializer.to_representation
+        responses={"200": WebhookReadSerializer},  # check WebhookWriteSerializer.to_representation
     ),
     partial_update=extend_schema(
         summary="Update a webhook",
         request=WebhookWriteSerializer,
-        responses={
-            "200": WebhookReadSerializer
-        },  # check WebhookWriteSerializer.to_representation
+        responses={"200": WebhookReadSerializer},  # check WebhookWriteSerializer.to_representation
     ),
     create=extend_schema(
         request=WebhookWriteSerializer,
         summary="Create a webhook",
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
-        responses={
-            "201": WebhookReadSerializer
-        },  # check WebhookWriteSerializer.to_representation
+        responses={"201": WebhookReadSerializer},  # check WebhookWriteSerializer.to_representation
     ),
     destroy=extend_schema(
         summary="Delete a webhook",
@@ -71,9 +73,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
-        if self.request.path.endswith("redelivery") or self.request.path.endswith(
-            "ping"
-        ):
+        if self.request.path.endswith("redelivery") or self.request.path.endswith("ping"):
             return None
         else:
             if self.request.method in SAFE_METHODS:
@@ -109,7 +109,12 @@ class WebhookViewSet(viewsets.ModelViewSet):
         ],
         responses={"200": OpenApiResponse(EventsSerializer)},
     )
-    @action(detail=False, methods=["GET"], serializer_class=EventsSerializer)
+    @action(
+        detail=False,
+        methods=["GET"],
+        serializer_class=EventsSerializer,
+        permission_classes=[],
+    )
     def events(self, request):
         webhook_type = request.query_params.get("type", "all")
         events = None
@@ -121,9 +126,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
             events = OrganizationEvents
 
         if events is None:
-            return Response(
-                "Incorrect value of type parameter", status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response("Incorrect value of type parameter", status=status.HTTP_400_BAD_REQUEST)
 
         return Response(EventsSerializer().to_representation(events))
 
@@ -135,10 +138,8 @@ class WebhookViewSet(viewsets.ModelViewSet):
     )
     @list_action(serializer_class=WebhookDeliveryReadSerializer)
     def deliveries(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
-        queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by(
-            "-updated_date"
-        )
+        self.get_object()  # force call of check_object_permissions()
+        queryset = WebhookDelivery.objects.filter(webhook_id=pk).order_by("-updated_date")
         return make_paginated_response(
             queryset, viewset=self, serializer_type=self.serializer_class
         )  # from @action
@@ -154,11 +155,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
         serializer_class=WebhookDeliveryReadSerializer,
     )
     def retrieve_delivery(self, request, pk, delivery_id):
-        self.get_object() # force call of check_object_permissions()
+        self.get_object()  # force call of check_object_permissions()
         queryset = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
-        serializer = WebhookDeliveryReadSerializer(
-            queryset, context={"request": request}
-        )
+        serializer = WebhookDeliveryReadSerializer(queryset, context={"request": request})
         return Response(serializer.data)
 
     @extend_schema(
@@ -182,15 +181,11 @@ class WebhookViewSet(viewsets.ModelViewSet):
         request=None,
         responses={"200": WebhookDeliveryReadSerializer},
     )
-    @action(
-        detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer
-    )
+    @action(detail=True, methods=["POST"], serializer_class=WebhookDeliveryReadSerializer)
     def ping(self, request, pk):
-        instance = self.get_object() # force call of check_object_permissions()
+        instance = self.get_object()  # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
         delivery = signal_ping.send(sender=self, serializer=serializer)[0][1]
-        serializer = WebhookDeliveryReadSerializer(
-            delivery, context={"request": request}
-        )
+        serializer = WebhookDeliveryReadSerializer(delivery, context={"request": request})
         return Response(serializer.data)

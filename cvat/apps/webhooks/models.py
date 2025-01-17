@@ -53,9 +53,7 @@ class Webhook(TimestampedModel):
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
-    project = models.ForeignKey(
-        Project, null=True, on_delete=models.CASCADE, related_name="+"
-    )
+    project = models.ForeignKey(Project, null=True, on_delete=models.CASCADE, related_name="+")
     organization = models.ForeignKey(
         Organization, null=True, on_delete=models.CASCADE, related_name="+"
     )
@@ -66,9 +64,7 @@ class Webhook(TimestampedModel):
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
                 check=(
-                    models.Q(
-                        type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False
-                    )
+                    models.Q(type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False)
                     | models.Q(
                         type=WebhookTypeChoice.ORGANIZATION.value,
                         project_id__isnull=True,
@@ -80,9 +76,7 @@ class Webhook(TimestampedModel):
 
 
 class WebhookDelivery(TimestampedModel):
-    webhook = models.ForeignKey(
-        Webhook, on_delete=models.CASCADE, related_name="deliveries"
-    )
+    webhook = models.ForeignKey(Webhook, on_delete=models.CASCADE, related_name="deliveries")
     event = models.CharField(max_length=64)
 
     status_code = models.PositiveIntegerField(null=True, default=None)

@@ -2,21 +2,24 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import contextmanager
-from io import BytesIO
-from typing import Any, Callable, Dict, Iterator, Sequence, TypeVar
 import itertools
 import logging
 import os
+import shutil
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from io import BytesIO
+from pathlib import Path
+from typing import Any, Callable, TypeVar
 
+import av
+import django_rq
+import numpy as np
 from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
-from rest_framework.test import APIClient, APITestCase
-import av
-import django_rq
-import numpy as np
+from rest_framework.test import APITestCase
 
 T = TypeVar('T')
 
@@ -92,14 +95,7 @@ def clear_rq_jobs():
 
 
 class ApiTestBase(APITestCase):
-    def _clear_rq_jobs(self):
-        clear_rq_jobs()
-
-    def setUp(self):
-        super().setUp()
-        self.client = APIClient()
-
-    def tearDown(self):
+    def _clear_temp_data(self):
         # Clear server frame/chunk cache.
         # The parent class clears DB changes, and it can lead to under-cleaned task data,
         # which can affect other tests.
@@ -112,7 +108,22 @@ class ApiTestBase(APITestCase):
         # Clear any remaining RQ jobs produced by the tests executed
         self._clear_rq_jobs()
 
-        return super().tearDown()
+        # clear cache files created after previous exports
+        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        for child in export_cache_dir.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                os.remove(child)
+
+    def _clear_rq_jobs(self):
+        clear_rq_jobs()
+
+    def setUp(self):
+        self._clear_temp_data()
+
+        super().setUp()
+        self.client = self.client_class()
 
 
 def generate_image_file(filename, size=(100, 100)):
@@ -178,6 +189,6 @@ def get_paginated_collection(
 
 
 def filter_dict(
-    d: Dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
-) -> Dict[str, Any]:
+    d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> dict[str, Any]:
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}

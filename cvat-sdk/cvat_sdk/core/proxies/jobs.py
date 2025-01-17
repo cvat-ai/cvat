@@ -6,18 +6,19 @@ from __future__ import annotations
 
 import io
 import mimetypes
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from typing import TYPE_CHECKING, Optional
 
 from PIL import Image
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.annotations import AnnotationCrudMixin
 from cvat_sdk.core.proxies.issues import Issue
 from cvat_sdk.core.proxies.model_proxy import (
+    ExportDatasetMixin,
     ModelListMixin,
     ModelRetrieveMixin,
     ModelUpdateMixin,
@@ -38,6 +39,7 @@ class Job(
     _JobEntityBase,
     ModelUpdateMixin[models.IPatchedJobWriteRequest],
     AnnotationCrudMixin,
+    ExportDatasetMixin,
 ):
     _model_partial_update_arg = "patched_job_write_request"
     _put_annotations_data_param = "job_annotations_update_request"
@@ -51,7 +53,7 @@ class Job(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Upload annotations for a job in the specified format (e.g. 'YOLO ZIP 1.0').
+        Upload annotations for a job in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -66,37 +68,6 @@ class Job(
         )
 
         self._client.logger.info(f"Annotation file '{filename}' for job #{self.id} uploaded")
-
-    def export_dataset(
-        self,
-        format_name: str,
-        filename: StrPath,
-        *,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
-        include_images: bool = True,
-    ) -> None:
-        """
-        Download annotations for a job in the specified format (e.g. 'YOLO ZIP 1.0').
-        """
-
-        filename = Path(filename)
-
-        if include_images:
-            endpoint = self.api.retrieve_dataset_endpoint
-        else:
-            endpoint = self.api.retrieve_annotations_endpoint
-
-        Downloader(self._client).prepare_and_download_file_from_endpoint(
-            endpoint=endpoint,
-            filename=filename,
-            url_params={"id": self.id},
-            query_params={"format": format_name},
-            pbar=pbar,
-            status_check_period=status_check_period,
-        )
-
-        self._client.logger.info(f"Dataset for job {self.id} has been downloaded to {filename}")
 
     def get_frame(
         self,
@@ -123,7 +94,7 @@ class Job(
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[List[Image.Image]]:
+    ) -> Optional[list[Image.Image]]:
         """
         Download the requested frame numbers for a job and save images as outdir/filename_pattern
         """
@@ -155,21 +126,23 @@ class Job(
         (meta, _) = self.api.retrieve_data_meta(self.id)
         return meta
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, job_id=self.id
         )
 
-    def get_frames_info(self) -> List[models.IFrameMeta]:
+    def get_frames_info(self) -> list[models.IFrameMeta]:
         return self.get_meta().frames
 
     def remove_frames_by_ids(self, ids: Sequence[int]) -> None:
-        self._client.api_client.tasks_api.jobs_partial_update_data_meta(
+        self.api.partial_update_data_meta(
             self.id,
-            patched_data_meta_write_request=models.PatchedDataMetaWriteRequest(deleted_frames=ids),
+            patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                deleted_frames=ids
+            ),
         )
 
-    def get_issues(self) -> List[Issue]:
+    def get_issues(self) -> list[Issue]:
         return [
             Issue(self._client, m)
             for m in get_paginated_collection(

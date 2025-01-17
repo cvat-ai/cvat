@@ -174,12 +174,12 @@ context('Tests for source and target storage.', () => {
             // upload annotations from default local storage
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
-            cy.uploadAnnotations(
-                format.split(' ')[0],
-                annotationsArchiveName,
-                '.cvat-modal-content-load-job-annotation',
-                task.advancedConfiguration.sourceStorage,
-            );
+            cy.uploadAnnotations({
+                format: format.split(' ')[0],
+                filePath: 'job_annotations.zip',
+                confirmModalClassName: '.cvat-modal-content-load-job-annotation',
+                sourceStorage: task.advancedConfiguration.sourceStorage,
+            });
 
             cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
             cy.get('#cvat_canvas_shape_1').should('exist');

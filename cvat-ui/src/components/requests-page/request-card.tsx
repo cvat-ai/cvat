@@ -100,11 +100,15 @@ function constructTimestamps(request: Request): JSX.Element {
             );
         }
         case RQStatus.FAILED: {
-            return (
+            return (request.startedDate ? (
                 <Row>
                     <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
                 </Row>
-            );
+            ) : (
+                <Row>
+                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                </Row>
+            ));
         }
         case RQStatus.STARTED: {
             return (
@@ -145,7 +149,7 @@ function RequestCard(props: Props): JSX.Element {
     const dispatch = useDispatch();
 
     const linkToEntity = constructLink(request);
-    const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
+    const percent = request.status === RQStatus.FINISHED ? 100 : (request.progress ?? 0) * 100;
     const timestamps = constructTimestamps(request);
 
     const name = constructName(operation);
@@ -196,11 +200,13 @@ function RequestCard(props: Props): JSX.Element {
                                 {' '}
                             </Text>
                         </Col>
-                        <Col className='cvat-requests-name'>
-                            {linkToEntity ?
-                                (<Link to={linkToEntity}>{name}</Link>) :
-                                <Text>{name}</Text>}
-                        </Col>
+                        {name && (
+                            <Col className='cvat-requests-name'>
+                                {linkToEntity ?
+                                    (<Link to={linkToEntity}>{name}</Link>) :
+                                    <Text>{name}</Text>}
+                            </Col>
+                        )}
                     </Row>
                     {timestamps}
                 </Col>

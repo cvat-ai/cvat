@@ -8,7 +8,9 @@ import {
     getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
 import { listenExportBackupAsync, listenExportDatasetAsync } from './export-actions';
-import { RequestInstanceType, listen, requestsActions } from './requests-actions';
+import {
+    RequestInstanceType, listen, requestsActions,
+} from './requests-actions';
 import { listenImportBackupAsync, listenImportDatasetAsync } from './import-actions';
 
 const core = getCore();
@@ -28,18 +30,21 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
 
         try {
             const requests = await core.requests.list();
+            dispatch(requestsActions.getRequestsSuccess(requests));
 
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {
                     const {
                         id: rqID,
+                        status,
                         operation: {
                             type, target, format, taskID, projectID, jobID,
                         },
                     } = request;
 
-                    if (state.requests.requests[rqID]) {
+                    const isRequestFinished = [RQStatus.FINISHED, RQStatus.FAILED].includes(status);
+                    if (state.requests.requests[rqID] || isRequestFinished) {
                         return;
                     }
 
@@ -80,7 +85,6 @@ export function getRequestsAsync(query: RequestsQuery): ThunkAction {
                         }
                     }
                 });
-            dispatch(requestsActions.getRequestsSuccess(requests));
         } catch (error) {
             dispatch(requestsActions.getRequestsFailed(error));
         }

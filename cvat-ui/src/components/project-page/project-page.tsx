@@ -9,7 +9,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
-import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
 import Popover from 'antd/lib/popover';
 import Title from 'antd/lib/typography/Title';
@@ -31,6 +30,7 @@ import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
+import { ProjectNotFoundComponent } from 'components/common/not-found';
 
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
@@ -126,14 +126,7 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     if (!projectInstance) {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='There was something wrong during getting the project'
-                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
-            />
-        );
+        return <ProjectNotFoundComponent />;
     }
 
     const subsets = Array.from(

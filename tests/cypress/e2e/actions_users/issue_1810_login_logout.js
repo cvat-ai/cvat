@@ -58,24 +58,6 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
         });
 
-        it('Logout and login to task via token', () => {
-            cy.logout();
-            // get token and login to task
-            cy.request({
-                method: 'POST',
-                url: '/api/auth/login',
-                body: {
-                    username: Cypress.env('user'),
-                    email: Cypress.env('email'),
-                    password: Cypress.env('password'),
-                },
-            }).then(async (response) => {
-                const token = response.body.key;
-                cy.visit(`/auth/login-with-token/${token}?next=/tasks/${taskId}`);
-                cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
-            });
-        });
-
         it('Login via email', () => {
             cy.logout();
             login(Cypress.env('email'), Cypress.env('password'));

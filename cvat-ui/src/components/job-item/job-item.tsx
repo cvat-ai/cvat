@@ -5,9 +5,7 @@
 import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { CombinedState } from 'reducers';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
@@ -27,6 +25,8 @@ import {
 import { useIsMounted } from 'utils/hooks';
 import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
@@ -100,12 +100,15 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 
 function JobItem(props: Props): JSX.Element {
     const { job, task, onJobUpdate } = props;
-    const { stage, id } = job;
+
+    const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
+    const deleted = job.id in deletes ? deletes[job.id] === true : false;
+
+    const { stage } = job;
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);
     const now = moment(moment.now());
-    const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
-    const deleted = id in deletes ? deletes[id] === true : false;
+
     const style = {};
     if (deleted) {
         (style as any).pointerEvents = 'none';
@@ -174,6 +177,7 @@ function JobItem(props: Props): JSX.Element {
                                         </Row>
                                         <Select
                                             className='cvat-job-item-stage'
+                                            popupClassName='cvat-job-item-stage-dropdown'
                                             value={stage}
                                             onChange={(newValue: JobStage) => {
                                                 onJobUpdate(job, { stage: newValue });
@@ -198,6 +202,7 @@ function JobItem(props: Props): JSX.Element {
                                         </Row>
                                         <Select
                                             className='cvat-job-item-state'
+                                            popupClassName='cvat-job-item-state-dropdown'
                                             value={job.state}
                                             onChange={(newValue: JobState) => {
                                                 onJobUpdate(job, { state: newValue });
@@ -260,7 +265,7 @@ function JobItem(props: Props): JSX.Element {
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide
-                    overlay={<JobActionsMenu job={job} onJobUpdate={onJobUpdate} />}
+                    overlay={<JobActionsMenu job={job} />}
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>

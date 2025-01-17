@@ -9,12 +9,12 @@ import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
-import Result from 'antd/lib/result';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
+import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -78,14 +78,7 @@ function TaskPageComponent(): JSX.Element {
     }
 
     if (!taskInstance) {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='There was something wrong during getting the task'
-                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
-            />
-        );
+        return <TaskNotFoundComponent />;
     }
 
     const onUpdateTask = (task: Task): Promise<void> => (
@@ -134,7 +127,7 @@ function TaskPageComponent(): JSX.Element {
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
                     <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
-                    <JobListComponent task={taskInstance} onUpdateJob={onJobUpdate} />
+                    <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>
             <ModelRunnerModal />

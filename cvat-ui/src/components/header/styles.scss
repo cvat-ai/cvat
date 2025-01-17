@@ -60,6 +60,7 @@
 .cvat-header-menu-user-dropdown {
     display: flex;
     align-items: center;
+    cursor: pointer;
 
     .anticon.cvat-header-dropdown-icon {
         &.anticon-caret-down {

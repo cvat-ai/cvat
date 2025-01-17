@@ -41,7 +41,7 @@ simple_rules = read_rules(NAME)
 SCOPES = {rule["scope"] for rule in simple_rules}
 CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["self", "none"]
-GROUPS = ["admin", "business", "user", "worker", "none"]
+GROUPS = ["admin", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 SAME_ORG = [False, True]
 
@@ -98,14 +98,14 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
         return False
 
     if scope != "create" and not data["resource"]["is_active"]:
-        is_staff = membership == "owner" or membership == 'maintainer'
+        is_staff = membership == "owner" or membership == "maintainer"
         if is_staff:
-            if scope != 'view':
+            if scope != "view":
                 if ORG_ROLES.index(membership) >= ORG_ROLES.index(resource["role"]):
                     return False
                 if GROUPS.index(privilege) > GROUPS.index("user"):
                     return False
-                if resource["user"]['id'] == data["auth"]["user"]['id']:
+                if resource["user"]["id"] == data["auth"]["user"]["id"]:
                     return False
             return True
         return False
@@ -118,13 +118,15 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
         "scope": scope,
         "auth": {
             "user": {"id": random.randrange(0, 100), "privilege": privilege},
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            }
-            if context == "organization"
-            else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": resource,
     }

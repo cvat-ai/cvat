@@ -13,7 +13,7 @@ numpy==1.22.4
     # via opencv-python-headless
 opencv-python-headless==4.10.0.84
     # via -r utils/dataset_manifest/requirements.in
-pillow==10.4.0
+pillow==11.1.0
     # via -r utils/dataset_manifest/requirements.in
-tqdm==4.66.5
+tqdm==4.67.1
     # via -r utils/dataset_manifest/requirements.in

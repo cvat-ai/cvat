@@ -63,10 +63,6 @@ polyline.cvat_shape_drawing_opacity {
     stroke: red;
 }
 
-.cvat_canvas_threshold {
-    stroke: red;
-}
-
 .cvat_canvas_shape_selection {
     @extend .cvat_shape_action_dasharray;
     @extend .cvat_shape_action_opacity;
@@ -253,10 +249,6 @@ g.cvat_canvas_shape_occluded {
             'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K'
         ) 10 10,
         auto;
-}
-
-.cvat_canvas_interact_intermediate_shape_point {
-    pointer-events: none;
 }
 
 .svg_select_boundingRect {

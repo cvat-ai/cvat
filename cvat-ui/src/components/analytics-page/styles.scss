@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2023-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,7 @@
     min-height: $grid-unit-size * 95;
     padding: $grid-unit-size * 4;
     padding-bottom: $grid-unit-size;
+    padding-top: 0;
     border-radius: $border-radius-base;
 
     .ant-tabs {
@@ -16,9 +17,7 @@
     }
 }
 
-.cvat-task-quality-page,
-.cvat-analytics-overview,
-.cvat-project-quality-page {
+.cvat-analytics-overview {
     >.ant-row {
         margin-top: $grid-unit-size;
     }
@@ -28,19 +27,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-}
-
-.cvat-task-mean-annotation-quality {
-    .ant-statistic {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .ant-card-body {
-        padding: $grid-unit-size * 2 $grid-unit-size * 3;
-    }
 }
 
 .cvat-analytics-refresh-button {
@@ -69,8 +55,8 @@
 .cvat-analytics-settings-tooltip-inner {
     @extend .cvat-analytics-tooltip-inner;
 
-    span:not(:last-child) {
-        margin-bottom: $grid-unit-size;
+    div:not(:last-child) {
+        margin-bottom: $grid-unit-size * 2;
     }
 }
 
@@ -78,23 +64,6 @@
     @extend .cvat-analytics-tooltip-inner;
 
     min-width: $grid-unit-size * 47;
-}
-
-.cvat-analytics-download-report-button {
-    padding-left: $grid-unit-size * 2;
-    padding-right: $grid-unit-size * 2;
-
-    a {
-        color: white;
-
-        &:hover {
-            color: white;
-        }
-    }
-}
-
-.cvat-analytics-time-hint {
-    font-size: 10px;
 }
 
 .cvat-analytics-page {
@@ -105,50 +74,4 @@
     overflow-y: auto;
     width: 100%;
     height: 100%;
-    padding-bottom: $grid-unit-size * 2;
-}
-
-.cvat-task-quality-reports-hint {
-    margin-bottom: $grid-unit-size * 3;
-}
-
-.cvat-job-empty-ground-truth-item {
-    .ant-card-body {
-        padding: $grid-unit-size * 3;
-    }
-
-    .ant-btn {
-        padding-left: $grid-unit-size * 3;
-        padding-right: $grid-unit-size * 3;
-    }
-}
-
-.cvat-quality-settings-switch {
-    padding: $grid-unit-size $grid-unit-size * 1.25;
-    border: 1px solid lightgray;
-    margin-left: $grid-unit-size;
-    border-radius: $border-radius-base;
-}
-
-.cvat-quality-settings-title {
-    margin-bottom: $grid-unit-size * 2;
-    align-items: center;
-}
-
-.cvat-modal-quality-settings {
-    top: $grid-unit-size * 3;
-
-    .ant-divider {
-        margin: $grid-unit-size 0;
-    }
-
-    .ant-form-item-control-input {
-        min-height: 0;
-    }
-}
-
-.cvat-job-list-item-conflicts {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }

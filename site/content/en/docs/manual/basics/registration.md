@@ -40,7 +40,7 @@ To register, do the following:
 
 <br>A username generates from the email automatically. You can edit it if needed.
 
-![Usernname generation](/images/filling_email.gif)
+![Username generation](/images/filling_email.gif)
 
 ## User registration with social accounts
 

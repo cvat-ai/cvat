@@ -5,14 +5,6 @@
 The CVAT module written in TypeScript language.
 It presents a canvas to viewing, drawing and editing of annotations.
 
-## Versioning
-
-If you make changes in this package, please do following:
-
-- After not important changes (typos, backward compatible bug fixes, refactoring) do: `yarn version --patch`
-- After changing API (backward compatible new features) do: `yarn version --minor`
-- After changing API (changes that break backward compatibility) do: `yarn version --major`
-
 ## Commands
 
 - Building of the module from sources in the `dist` directory:
@@ -72,9 +64,9 @@ Standard JS events are used.
     - canvas.reshape
     - canvas.fit
     - canvas.regionselected => {points: number[]}
-    - canvas.dragshape => {id: number}
+    - canvas.dragshape => {duration: number, state: ObjectState}
     - canvas.roiselected => {points: number[]}
-    - canvas.resizeshape => {id: number}
+    - canvas.resizeshape => {duration: number, state: ObjectState}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
     - canvas.message => { messages: { type: 'text' | 'list'; content: string | string[]; className?: string; icon?: 'info' | 'loading' }[] | null, topic: string }
     - canvas.error => { exception: Error, domain?: string }

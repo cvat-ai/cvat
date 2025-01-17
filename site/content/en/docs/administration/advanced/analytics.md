@@ -18,6 +18,10 @@ and enhance user satisfaction.
 
 CVAT analytics are available from the top menu.
 
+Superusers and users with administrator role have access to analytics.
+Permission to access analytics can also be granted when editing a user
+on admin page by `Has access to analytics` checkbox.
+
 ![CVAT Analytics](/images/analytics_menu.jpg)
 
 > Note: CVAT analytics and monitoring are available only for on-prem solution.
@@ -65,7 +69,7 @@ docker compose up -d
 ### Ports settings
 
 If you cannot access analytics on
-development environnement,
+development environment,
 see {{< ilink "/docs/contributing/development-environment#cvat-analytics-ports" "Analytics Ports" >}}
 
 ### Events log structure
@@ -129,24 +133,24 @@ Server events:
 
 - `export:dataset`, `import:dataset`
 
+- `call:function`
+
+- `create:membership`, `update:membership`, `delete:membership`
+
+- `create:webhook`, `update:webhook`, `delete:webhook`
+
+- `create:invitation`, `delete:invitation`
+
 Client events:
 
 - `load:cvat`
 
-- `load:job`, `save:job`, `restore:job`
-
-- `upload:annotations`
+- `load:job`, `save:job`
 
 - `send:exception`
 
-- `send:task_info`
-
-- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
+- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
 `join:objects`
-
-- `change:attribute`
-
-- `change:label`
 
 - `change:frame`
 

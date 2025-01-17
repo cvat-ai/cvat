@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from typing import List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import attrs
 
@@ -22,24 +23,62 @@ class BadFunctionError(Exception):
     """
 
 
+@attrs.frozen
+class _SublabelNameMapping:
+    name: str
+
+
+@attrs.frozen
+class _LabelNameMapping(_SublabelNameMapping):
+    sublabels: Optional[Mapping[str, _SublabelNameMapping]] = attrs.field(
+        kw_only=True, default=None
+    )
+
+    def map_sublabel(self, name: str):
+        if self.sublabels is None:
+            return _SublabelNameMapping(name)
+
+        return self.sublabels.get(name)
+
+
+@attrs.frozen
+class _SpecNameMapping:
+    labels: Optional[Mapping[str, _LabelNameMapping]] = attrs.field(kw_only=True, default=None)
+
+    def map_label(self, name: str):
+        if self.labels is None:
+            return _LabelNameMapping(name)
+
+        return self.labels.get(name)
+
+
 class _AnnotationMapper:
     @attrs.frozen
-    class _MappedLabel:
+    class _LabelIdMapping:
         id: int
-        sublabel_mapping: Mapping[int, Optional[int]]
+        sublabels: Mapping[int, Optional[int]]
         expected_num_elements: int = 0
 
-    _label_mapping: Mapping[int, Optional[_MappedLabel]]
+    _label_id_mappings: Mapping[int, Optional[_LabelIdMapping]]
 
-    def _build_mapped_label(
-        self, fun_label: models.ILabel, ds_labels_by_name: Mapping[str, models.ILabel]
-    ) -> Optional[_MappedLabel]:
+    def _build_label_id_mapping(
+        self,
+        fun_label: models.ILabel,
+        ds_labels_by_name: Mapping[str, models.ILabel],
+        *,
+        allow_unmatched_labels: bool,
+        spec_nm: _SpecNameMapping,
+    ) -> Optional[_LabelIdMapping]:
         if getattr(fun_label, "attributes", None):
             raise BadFunctionError(f"label attributes are currently not supported")
 
-        ds_label = ds_labels_by_name.get(fun_label.name)
+        label_nm = spec_nm.map_label(fun_label.name)
+        if label_nm is None:
+            return None
+
+        ds_label = ds_labels_by_name.get(label_nm.name)
         if ds_label is None:
-            if not self._allow_unmatched_labels:
+            if not allow_unmatched_labels:
                 raise BadFunctionError(f"label {fun_label.name!r} is not in dataset")
 
             self._logger.info(
@@ -70,9 +109,14 @@ class _AnnotationMapper:
                         f"sublabel {fun_sl.name!r} of label {fun_label.name!r} has same ID as another sublabel ({fun_sl.id})"
                     )
 
-                ds_sl = ds_sublabels_by_name.get(fun_sl.name)
+                sublabel_nm = label_nm.map_sublabel(fun_sl.name)
+                if sublabel_nm is None:
+                    sl_map[fun_sl.id] = None
+                    continue
+
+                ds_sl = ds_sublabels_by_name.get(sublabel_nm.name)
                 if not ds_sl:
-                    if not self._allow_unmatched_labels:
+                    if not allow_unmatched_labels:
                         raise BadFunctionError(
                             f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
                         )
@@ -87,8 +131,8 @@ class _AnnotationMapper:
 
                 sl_map[fun_sl.id] = ds_sl.id
 
-        return self._MappedLabel(
-            ds_label.id, sublabel_mapping=sl_map, expected_num_elements=len(ds_label.sublabels)
+        return self._LabelIdMapping(
+            ds_label.id, sublabels=sl_map, expected_num_elements=len(ds_label.sublabels)
         )
 
     def __init__(
@@ -98,28 +142,33 @@ class _AnnotationMapper:
         ds_labels: Sequence[models.ILabel],
         *,
         allow_unmatched_labels: bool,
+        conv_mask_to_poly: bool,
+        spec_nm: _SpecNameMapping = _SpecNameMapping(),
     ) -> None:
         self._logger = logger
-        self._allow_unmatched_labels = allow_unmatched_labels
+        self._conv_mask_to_poly = conv_mask_to_poly
 
         ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
 
-        self._label_mapping = {}
+        self._label_id_mappings = {}
 
         for fun_label in fun_labels:
             if not hasattr(fun_label, "id"):
                 raise BadFunctionError(f"label {fun_label.name!r} has no ID")
 
-            if fun_label.id in self._label_mapping:
+            if fun_label.id in self._label_id_mappings:
                 raise BadFunctionError(
                     f"label {fun_label.name} has same ID as another label ({fun_label.id})"
                 )
 
-            self._label_mapping[fun_label.id] = self._build_mapped_label(
-                fun_label, ds_labels_by_name
+            self._label_id_mappings[fun_label.id] = self._build_label_id_mapping(
+                fun_label,
+                ds_labels_by_name,
+                allow_unmatched_labels=allow_unmatched_labels,
+                spec_nm=spec_nm,
             )
 
-    def validate_and_remap(self, shapes: List[models.LabeledShapeRequest], ds_frame: int) -> None:
+    def validate_and_remap(self, shapes: list[models.LabeledShapeRequest], ds_frame: int) -> None:
         new_shapes = []
 
         for shape in shapes:
@@ -138,16 +187,16 @@ class _AnnotationMapper:
             shape.frame = ds_frame
 
             try:
-                mapped_label = self._label_mapping[shape.label_id]
+                label_id_mapping = self._label_id_mappings[shape.label_id]
             except KeyError:
                 raise BadFunctionError(
                     f"function output shape with unknown label ID ({shape.label_id})"
                 )
 
-            if not mapped_label:
+            if not label_id_mapping:
                 continue
 
-            shape.label_id = mapped_label.id
+            shape.label_id = label_id_mapping.id
 
             if getattr(shape, "attributes", None):
                 raise BadFunctionError(
@@ -181,7 +230,7 @@ class _AnnotationMapper:
                         )
 
                     try:
-                        mapped_sl_id = mapped_label.sublabel_mapping[element.label_id]
+                        mapped_sl_id = label_id_mapping.sublabels[element.label_id]
                     except KeyError:
                         raise BadFunctionError(
                             f"function output shape with unknown sublabel ID ({element.label_id})"
@@ -201,14 +250,14 @@ class _AnnotationMapper:
 
                     new_elements.append(element)
 
-                if len(new_elements) != mapped_label.expected_num_elements:
+                if len(new_elements) != label_id_mapping.expected_num_elements:
                     # new_elements could only be shorter than expected,
                     # because the reverse would imply that there are more distinct sublabel IDs
                     # than are actually defined in the dataset.
-                    assert len(new_elements) < mapped_label.expected_num_elements
+                    assert len(new_elements) < label_id_mapping.expected_num_elements
 
                     raise BadFunctionError(
-                        f"function output skeleton with fewer elements than expected ({len(new_elements)} vs {mapped_label.expected_num_elements})"
+                        f"function output skeleton with fewer elements than expected ({len(new_elements)} vs {label_id_mapping.expected_num_elements})"
                     )
 
                 shape.elements[:] = new_elements
@@ -216,12 +265,19 @@ class _AnnotationMapper:
                 if getattr(shape, "elements", None):
                     raise BadFunctionError("function output non-skeleton shape with elements")
 
+                if shape.type.value == "mask" and self._conv_mask_to_poly:
+                    raise BadFunctionError(
+                        "function output mask shape despite conv_mask_to_poly=True"
+                    )
+
         shapes[:] = new_shapes
 
 
-@attrs.frozen
+@attrs.frozen(kw_only=True)
 class _DetectionFunctionContextImpl(DetectionFunctionContext):
     frame_name: str
+    conf_threshold: Optional[float] = None
+    conv_mask_to_poly: bool = False
 
 
 def annotate_task(
@@ -232,6 +288,8 @@ def annotate_task(
     pbar: Optional[ProgressReporter] = None,
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
+    conf_threshold: Optional[float] = None,
+    conv_mask_to_poly: bool = False,
 ) -> None:
     """
     Downloads data for the task with the given ID, applies the given function to it
@@ -263,10 +321,20 @@ def annotate_task(
     function declares a label in its spec that has no corresponding label in the task.
     If it's set to true, then such labels are allowed, and any annotations returned by the
     function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
+
+    The conf_threshold parameter must be None or a number between 0 and 1. It will be passed
+    to the AA function as the conf_threshold attribute of the context object.
+
+    The conv_mask_to_poly parameter will be passed to the AA function as the conv_mask_to_poly
+    attribute of the context object. If it's true, and the AA function returns any mask shapes,
+    BadFunctionError will be raised.
     """
 
     if pbar is None:
         pbar = NullProgressReporter()
+
+    if conf_threshold is not None and not 0 <= conf_threshold <= 1:
+        raise ValueError("conf_threshold must be None or a number between 0 and 1")
 
     dataset = TaskDataset(client, task_id, load_annotations=False)
 
@@ -277,6 +345,7 @@ def annotate_task(
         function.spec.labels,
         dataset.labels,
         allow_unmatched_labels=allow_unmatched_labels,
+        conv_mask_to_poly=conv_mask_to_poly,
     )
 
     shapes = []
@@ -284,12 +353,17 @@ def annotate_task(
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
             frame_shapes = function.detect(
-                _DetectionFunctionContextImpl(sample.frame_name), sample.media.load_image()
+                _DetectionFunctionContextImpl(
+                    frame_name=sample.frame_name,
+                    conf_threshold=conf_threshold,
+                    conv_mask_to_poly=conv_mask_to_poly,
+                ),
+                sample.media.load_image(),
             )
             mapper.validate_and_remap(frame_shapes, sample.frame_index)
             shapes.extend(frame_shapes)
 
-    client.logger.info("Uploading annotations to task %d", task_id)
+    client.logger.info("Uploading annotations to task %d...", task_id)
 
     if clear_existing:
         client.tasks.api.update_annotations(
@@ -301,3 +375,5 @@ def annotate_task(
             task_id,
             patched_labeled_data_request=models.PatchedLabeledDataRequest(shapes=shapes),
         )
+
+    client.logger.info("Upload complete")

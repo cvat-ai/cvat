@@ -7,12 +7,12 @@ import data.organizations
 
 # input: {
 #     "scope": <"create"|"list"|"update:desc"|"update:owner"|"update:assignee"|
-#               "view"|"delete"|"export:dataset"|"export:annotations"|
+#               "update:associated_storage"|"view"|"delete"|"export:dataset"|"export:annotations"|
 #               "import:dataset"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -56,19 +56,6 @@ allow if {
     input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.SUPERVISOR)
-}
-
-allow if {
-    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    utils.is_sandbox
-    utils.has_perm(utils.BUSINESS)
-}
-
-allow if {
-    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
 }
 
@@ -127,14 +114,14 @@ allow if {
 
 
 allow if {
-    input.scope in {utils.DELETE, utils.UPDATE_ORG}
+    input.scope in {utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow if {
-    input.scope in {utils.DELETE, utils.UPDATE_ORG}
+    input.scope in {utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.is_member
@@ -142,7 +129,7 @@ allow if {
 }
 
 allow if {
-    input.scope in {utils.DELETE, utils.UPDATE_ORG}
+    input.scope in {utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE}
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff

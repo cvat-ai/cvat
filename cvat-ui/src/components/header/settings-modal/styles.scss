@@ -18,12 +18,18 @@
 
 .cvat-workspace-settings,
 .cvat-player-settings,
+.cvat-shortcuts-settings,
 .cvat-organizations-settings {
     width: calc(100% - 24px);
     height: max-content;
     background: white;
     padding-top: 24px;
     padding-left: 24px;
+}
+
+.cvat-shortcuts-settings {
+    width: calc(100% - $grid-unit-size * 6);
+    padding-right: $grid-unit-size * 3;
 }
 
 .cvat-workspace-settings-text-content {
@@ -34,6 +40,7 @@
     user-select: none;
 }
 
+.cvat-shortcuts-setting,
 .cvat-player-setting {
     margin-bottom: $grid-unit-size * 3;
 }
@@ -77,6 +84,8 @@
 
 .cvat-settings-modal .ant-modal-body {
     padding-top: 0;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
 }
 
 .cvat-organizations-settings-list {
@@ -88,4 +97,43 @@
     div {
         width: 100%;
     }
+}
+
+.cvat-shortcuts-settings-search {
+    width: 100%;
+}
+
+.cvat-shortcuts-settings-label {
+    font-size: large;
+    font-weight: 600;
+}
+
+.cvat-shortcuts-settings-select {
+    width: 200px;
+}
+
+.cvat-shortcuts-settings-item-non-active {
+    opacity: 0.5;
+}
+
+.cvat-shortcuts-settings-item-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.cvat-shortcuts-settings-item-description {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cvat-shortcuts-settings-collapse .ant-collapse-header {
+    background-color: white;
+    border-bottom: 1px solid #ccc;
+    margin-top: $grid-unit-size;
+    padding: 0 0 $grid-unit-size !important;
+}
+
+.cvat-shortcuts-settings-collapse .ant-collapse-content-box {
+    background-color: white;
+    padding: 0 !important;
 }

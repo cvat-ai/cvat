@@ -375,34 +375,6 @@
     border-radius: $border-radius-base;
 }
 
-.cvat-label-item-setup-shortcut-button {
-    border-color: $objects-bar-icons-color;
-}
-
-.cvat-label-item-setup-shortcut-popover {
-    margin-top: -$grid-unit-size;
-    margin-bottom: -$grid-unit-size;
-
-    > div {
-        padding-top: $grid-unit-size;
-        padding-bottom: $grid-unit-size;
-
-        > div {
-            display: flex;
-            justify-content: center;
-
-            > button {
-                width: $grid-unit-size * 15;
-                overflow-x: hidden;
-
-                span:first-child {
-                    margin-right: $grid-unit-size;
-                }
-            }
-        }
-    }
-}
-
 .cvat-objects-appearance-content {
     > div {
         width: 100%;
@@ -430,7 +402,10 @@
     }
 
     button {
-        color: $text-color;
+        &:not(:disabled) {
+            color: $text-color;
+        }
+
         width: 100%;
         height: 100%;
         text-align: left;

@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import math
 from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace as namespace
-from typing import List, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -27,8 +27,10 @@ except ModuleNotFoundError:
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,
-    fxt_login: Tuple[Client, str],
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_login: tuple[Client, str],
+    fxt_logger: tuple[Logger, io.StringIO],
+    restore_redis_ondisk_per_function,
+    restore_redis_inmem_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]
@@ -45,7 +47,7 @@ class TestTaskAutoAnnotation:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.images = [
@@ -113,7 +115,7 @@ class TestTaskAutoAnnotation:
 
         def detect(
             context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
-        ) -> List[models.LabeledShapeRequest]:
+        ) -> list[models.LabeledShapeRequest]:
             assert context.frame_name in {"1.png", "2.png"}
             assert image.width == image.height == 333
             return [
@@ -167,7 +169,7 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             assert image.width == image.height == 333
             return [
                 cvataa.skeleton(
@@ -240,7 +242,7 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
             return [
                 cvataa.rectangle(
                     123,  # car
@@ -268,6 +270,77 @@ class TestTaskAutoAnnotation:
         for i in (1, 2):
             assert shapes[i].points == [5, 6, 7, 8]
             assert shapes[i].rotation == 10
+
+    def test_conf_threshold(self):
+        spec = cvataa.DetectionFunctionSpec(labels=[])
+
+        received_threshold = None
+
+        def detect(
+            context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+        ) -> list[models.LabeledShapeRequest]:
+            nonlocal received_threshold
+            received_threshold = context.conf_threshold
+            return []
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            conf_threshold=0.75,
+        )
+
+        assert received_threshold == 0.75  # python:S1244 NOSONAR
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+        )
+
+        assert received_threshold is None
+
+        for bad_threshold in [-0.1, 1.1]:
+            with pytest.raises(ValueError):
+                cvataa.annotate_task(
+                    self.client,
+                    self.task.id,
+                    namespace(spec=spec, detect=detect),
+                    conf_threshold=bad_threshold,
+                )
+
+    def test_conv_mask_to_poly(self):
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.label_spec("car", 123),
+            ],
+        )
+
+        received_cmtp = None
+
+        def detect(context, image: PIL.Image.Image) -> list[models.LabeledShapeRequest]:
+            nonlocal received_cmtp
+            received_cmtp = context.conv_mask_to_poly
+            return [cvataa.mask(123, [1, 0, 0, 0, 0])]
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            conv_mask_to_poly=False,
+        )
+
+        assert received_cmtp is False
+
+        with pytest.raises(cvataa.BadFunctionError, match=".*conv_mask_to_poly.*"):
+            cvataa.annotate_task(
+                self.client,
+                self.task.id,
+                namespace(spec=spec, detect=detect),
+                conv_mask_to_poly=True,
+            )
+
+        assert received_cmtp is True
 
     def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
         def detect(context, image):
@@ -569,14 +642,15 @@ if torchvision_models is not None:
             super().__init__()
             self._label_id = label_id
 
-        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
             assert isinstance(images, list)
             assert all(isinstance(t, torch.Tensor) for t in images)
 
             return [
                 {
-                    "boxes": torch.tensor([[1, 2, 3, 4]]),
-                    "labels": torch.tensor([self._label_id]),
+                    "boxes": torch.tensor([[1, 2, 3, 4], [5, 6, 7, 8]]),
+                    "labels": torch.tensor([self._label_id, self._label_id]),
+                    "scores": torch.tensor([0.75, 0.74]),
                 }
             ]
 
@@ -587,27 +661,83 @@ if torchvision_models is not None:
 
         return FakeTorchvisionDetector(label_id=car_label_id)
 
+    class FakeTorchvisionInstanceSegmenter(nn.Module):
+        def __init__(self, label_id: int) -> None:
+            super().__init__()
+            self._label_id = label_id
+
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
+            assert isinstance(images, list)
+            assert all(isinstance(t, torch.Tensor) for t in images)
+
+            def make_box(im, a1, a2):
+                return [im.shape[2] * a1, im.shape[1] * a1, im.shape[2] * a2, im.shape[1] * a2]
+
+            def make_mask(im, a1, a2):
+                # creates a rectangular mask with a hole
+                mask = torch.full((1, im.shape[1], im.shape[2]), 0.49)
+                mask[
+                    0,
+                    math.ceil(im.shape[1] * a1) : math.floor(im.shape[1] * a2),
+                    math.ceil(im.shape[2] * a1) : math.floor(im.shape[2] * a2),
+                ] = 0.5
+                mask[
+                    0,
+                    math.ceil(im.shape[1] * a1) + 3 : math.floor(im.shape[1] * a2) - 3,
+                    math.ceil(im.shape[2] * a1) + 3 : math.floor(im.shape[2] * a2) - 3,
+                ] = 0.49
+                return mask
+
+            return [
+                {
+                    "labels": torch.tensor([self._label_id, self._label_id]),
+                    "boxes": torch.tensor(
+                        [
+                            make_box(im, 1 / 6, 1 / 3),
+                            make_box(im, 2 / 3, 5 / 6),
+                        ]
+                    ),
+                    "masks": torch.stack(
+                        [
+                            make_mask(im, 1 / 6, 1 / 3),
+                            make_mask(im, 2 / 3, 5 / 6),
+                        ]
+                    ),
+                    "scores": torch.tensor([0.75, 0.74]),
+                }
+                for im in images
+            ]
+
+    def fake_get_instance_segmentation_model(name: str, weights, test_param):
+        assert test_param == "expected_value"
+
+        car_label_id = weights.meta["categories"].index("car")
+
+        return FakeTorchvisionInstanceSegmenter(label_id=car_label_id)
+
     class FakeTorchvisionKeypointDetector(nn.Module):
-        def __init__(self, label_id: int, keypoint_names: List[str]) -> None:
+        def __init__(self, label_id: int, keypoint_names: list[str]) -> None:
             super().__init__()
             self._label_id = label_id
             self._keypoint_names = keypoint_names
 
-        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+        def forward(self, images: list[torch.Tensor]) -> list[dict]:
             assert isinstance(images, list)
             assert all(isinstance(t, torch.Tensor) for t in images)
 
             return [
                 {
-                    "labels": torch.tensor([self._label_id]),
+                    "labels": torch.tensor([self._label_id, self._label_id]),
                     "keypoints": torch.tensor(
                         [
                             [
                                 [hash(name) % 100, 0, 1 if name.startswith("right_") else 0]
                                 for i, name in enumerate(self._keypoint_names)
-                            ]
+                            ],
+                            [[0, 0, 1] for i, name in enumerate(self._keypoint_names)],
                         ]
                     ),
+                    "scores": torch.tensor([0.75, 0.74]),
                 }
             ]
 
@@ -627,7 +757,7 @@ class TestAutoAnnotationFunctions:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.image = generate_image_file("1.png", size=(100, 100))
@@ -672,6 +802,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             td.create("fasterrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()
@@ -680,6 +811,54 @@ class TestAutoAnnotationFunctions:
         assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "car"
         assert annotations.shapes[0].type.value == "rectangle"
         assert annotations.shapes[0].points == [1, 2, 3, 4]
+
+    def test_torchvision_instance_segmentation(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(torchvision_models, "get_model", fake_get_instance_segmentation_model)
+
+        import cvat_sdk.auto_annotation.functions.torchvision_instance_segmentation as tis
+        from cvat_sdk.masks import encode_mask
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            tis.create("maskrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
+            allow_unmatched_labels=True,
+            conf_threshold=0.75,
+        )
+
+        annotations = self.task.get_annotations()
+
+        assert len(annotations.shapes) == 1
+        assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "car"
+
+        expected_bitmap = torch.zeros((100, 100), dtype=torch.bool)
+        expected_bitmap[17:33, 17:33] = True
+        expected_bitmap[20:30, 20:30] = False
+
+        assert annotations.shapes[0].type.value == "mask"
+        assert annotations.shapes[0].points == encode_mask(expected_bitmap, [16, 16, 34, 34])
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            tis.create("maskrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
+            allow_unmatched_labels=True,
+            conf_threshold=0.75,
+            conv_mask_to_poly=True,
+            clear_existing=True,
+        )
+
+        annotations = self.task.get_annotations()
+
+        assert len(annotations.shapes) == 1
+        assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "car"
+        assert annotations.shapes[0].type.value == "polygon"
+
+        # We shouldn't rely on the exact result of polygon conversion,
+        # since it depends on a 3rd-party library. Instead, we'll just
+        # check that all points are within the expected area.
+        for x, y in zip(*[iter(annotations.shapes[0].points)] * 2):
+            assert expected_bitmap[round(y), round(x)]
 
     def test_torchvision_keypoint_detection(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_keypoint_detection_model)
@@ -691,6 +870,7 @@ class TestAutoAnnotationFunctions:
             self.task.id,
             tkd.create("keypointrcnn_resnet50_fpn", "COCO_V1", test_param="expected_value"),
             allow_unmatched_labels=True,
+            conf_threshold=0.75,
         )
 
         annotations = self.task.get_annotations()

@@ -149,6 +149,7 @@ export default function UserSelector(props: Props): JSX.Element {
             onSelect={handleSelect}
             onBlur={onBlur}
             className={combinedClassName}
+            popupClassName='cvat-user-search-dropdown'
             options={users.map((user) => ({
                 value: user.id.toString(),
                 label: user.username,

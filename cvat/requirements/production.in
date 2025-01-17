@@ -1,5 +1,4 @@
 -r base.in
---no-binary lxml,xmlsec
 
 # To collect the coverage for REST API tests.
 # It will be enabled only if COVERAGE_PROCESS_START env is defined.

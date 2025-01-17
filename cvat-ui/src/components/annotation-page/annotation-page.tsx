@@ -5,7 +5,6 @@
 
 import React, { useEffect } from 'react';
 import Layout from 'antd/lib/layout';
-import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
@@ -19,12 +18,14 @@ import StandardWorkspaceComponent from 'components/annotation-page/standard-work
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
+import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
+import { EventScope } from 'cvat-core/src/enums';
 
 interface Props {
     job: Job | null | undefined;
@@ -40,7 +41,8 @@ interface Props {
 
 export default function AnnotationPageComponent(props: Props): JSX.Element {
     const {
-        job, fetching, annotationsInitialized, workspace, frameNumber, getJob, closeJob, saveLogs, changeFrame,
+        job, fetching, annotationsInitialized, workspace, frameNumber,
+        getJob, closeJob, saveLogs, changeFrame,
     } = props;
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
@@ -126,19 +128,18 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         }
     }, [job, fetching, prevJob, prevFetching]);
 
+    useEffect(() => {
+        if (job) {
+            job.logger.log(EventScope.loadWorkspace, { obj_name: workspace });
+        }
+    }, [job, workspace]);
+
     if (job === null || !annotationsInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
     if (typeof job === 'undefined') {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='Sorry, but this job was not found'
-                subTitle='Please, be sure information you tried to get exist and you have access'
-            />
-        );
+        return <JobNotFoundComponent />;
     }
 
     return (

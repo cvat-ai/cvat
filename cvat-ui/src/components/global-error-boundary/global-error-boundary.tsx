@@ -11,14 +11,12 @@ import Text from 'antd/lib/typography/Text';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Collapse from 'antd/lib/collapse';
 import TextArea from 'antd/lib/input/TextArea';
-import copy from 'copy-to-clipboard';
 import ErrorStackParser from 'error-stack-parser';
 
 import { ThunkDispatch } from 'utils/redux';
 import { resetAfterErrorAsync } from 'actions/boundaries-actions';
 import { CombinedState } from 'reducers';
 import logger, { EventScope } from 'cvat-logger';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import config from 'config';
 import { saveLogsAsync } from 'actions/annotation-actions';
 
@@ -29,8 +27,6 @@ interface OwnProps {
 interface StateToProps {
     job: any | null;
     serverVersion: string;
-    coreVersion: string;
-    canvasVersion: string;
     uiVersion: string;
 }
 
@@ -55,8 +51,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         job,
         serverVersion: server.version as string,
-        coreVersion: packageVersion.core,
-        canvasVersion: packageVersion.canvas,
         uiVersion: packageVersion.ui,
     };
 }
@@ -111,7 +105,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
 
     public render(): React.ReactNode {
         const {
-            restore, job, serverVersion, coreVersion, canvasVersion, uiVersion,
+            restore, job, serverVersion, uiVersion,
         } = this.props;
 
         const { hasError, error } = this.state;
@@ -162,23 +156,11 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             </Paragraph>
                             <ul>
                                 <li>
-                                    <CVATTooltip title='Copied!' trigger='click'>
-                                        {/* eslint-disable-next-line */}
-                                        <a
-                                            onClick={() => copy(message)}
-                                        >
-                                            {' '}
-                                            Copy
-                                            {' '}
-                                        </a>
-                                    </CVATTooltip>
-                                    the error message to clipboard
-                                </li>
-                                <li>
                                     Notify an administrator or submit the issue directly on
                                     <a href={config.GITHUB_URL}> GitHub. </a>
                                     Please, provide also:
                                     <ul>
+                                        <li>Full error message above</li>
                                         <li>Steps to reproduce the issue</li>
                                         <li>Your operating system and browser version</li>
                                         <li>CVAT version</li>
@@ -186,14 +168,6 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                                             <li>
                                                 <Text strong>Server: </Text>
                                                 {serverVersion}
-                                            </li>
-                                            <li>
-                                                <Text strong>Core: </Text>
-                                                {coreVersion}
-                                            </li>
-                                            <li>
-                                                <Text strong>Canvas: </Text>
-                                                {canvasVersion}
                                             </li>
                                             <li>
                                                 <Text strong>UI: </Text>

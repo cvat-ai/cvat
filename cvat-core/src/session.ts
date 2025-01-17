@@ -22,12 +22,14 @@ import {
     SerializedLabel, SerializedTask,
 } from './server-response-types';
 import AnnotationGuide from './guide';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
 import { Request } from './request';
 import logger from './logger';
 import Issue from './issue';
 import ObjectState from './object-state';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
+import { UpdateStatusData } from './core-types';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -170,6 +172,17 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async commit(added, removed, frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.commit,
+                        added,
+                        removed,
+                        frame,
+                    );
+                    return result;
+                },
+
                 async exportDataset(
                     format: string,
                     saveImages: boolean,
@@ -223,13 +236,18 @@ function buildDuplicatedAPI(prototype) {
                     );
                 },
                 async save() {
-                    await PluginRegistry.apiWrapper.call(
+                    const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.save,
                     );
+                    return result;
                 },
                 async cachedChunks() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
+                    return result;
+                },
+                async frameNumbers() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.frameNumbers);
                     return result;
                 },
                 async preview() {
@@ -254,11 +272,11 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
-                async chunk(chunkNumber, quality) {
+                async chunk(chunkIndex, quality) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.chunk,
-                        chunkNumber,
+                        chunkIndex,
                         quality,
                     );
                     return result;
@@ -325,7 +343,7 @@ export class Session {
             delTrackKeyframesOnly?: boolean;
         }) => Promise<void>;
         save: (
-            onUpdate ?: (message: string) => void,
+            onUpdate?: (message: string) => void,
         ) => Promise<void>;
         search: (
             frameFrom: number,
@@ -354,6 +372,11 @@ export class Session {
         }>;
         import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
         export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        commit: (
+            added: Omit<SerializedCollection, 'version'>,
+            removed: Omit<SerializedCollection, 'version'>,
+            frame: number,
+        ) => Promise<void>;
         statistics: () => Promise<Statistics>;
         hasUnsavedChanges: () => boolean;
         exportDataset: (
@@ -366,8 +389,8 @@ export class Session {
     };
 
     public actions: {
-        undo: (count: number) => Promise<number[]>;
-        redo: (count: number) => Promise<number[]>;
+        undo: (count?: number) => Promise<number[]>;
+        redo: (count?: number) => Promise<number[]>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
@@ -377,8 +400,9 @@ export class Session {
         get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
         delete: (frame: number) => Promise<void>;
         restore: (frame: number) => Promise<void>;
-        save: () => Promise<void>;
+        save: () => Promise<FramesMetaData[]>;
         cachedChunks: () => Promise<number[]>;
+        frameNumbers: () => Promise<number[]>;
         preview: () => Promise<string>;
         contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
         search: (
@@ -395,8 +419,8 @@ export class Session {
     public logger: {
         log: (
             scope: Parameters<typeof logger.log>[0],
-            payload: Parameters<typeof logger.log>[1],
-            wait: Parameters<typeof logger.log>[2],
+            payload?: Parameters<typeof logger.log>[1],
+            wait?: Parameters<typeof logger.log>[2],
         ) => ReturnType<typeof logger.log>;
     };
 
@@ -423,6 +447,7 @@ export class Session {
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
             statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
             hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
@@ -442,6 +467,7 @@ export class Session {
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
             cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
+            frameNumbers: Object.getPrototypeOf(this).frames.frameNumbers.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
@@ -454,7 +480,7 @@ export class Session {
     }
 }
 
-type InitializerType = Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>;
+type InitializerType = Readonly<Partial<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>>;
 
 export class Job extends Session {
     #data: {
@@ -663,7 +689,7 @@ export class Job extends Session {
         return this.#data.target_storage;
     }
 
-    async save(fields: any): Promise<Job> {
+    async save(fields: Record<string, any> = {}): Promise<Job> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, fields);
         return result;
     }
@@ -675,6 +701,11 @@ export class Job extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<JobValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.validationLayout);
         return result;
     }
 
@@ -727,8 +758,13 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageID: number;
+    public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
+
+    public readonly validationMode: string | null;
+    public readonly validationFramesPercent: number;
+    public readonly validationFramesPerJobPercent: number;
+    public readonly frameSelectionMethod: string;
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
@@ -775,7 +811,7 @@ export class Task extends Session {
             sorting_method: undefined,
             files: undefined,
 
-            quality_settings: undefined,
+            validation_mode: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -1103,6 +1139,9 @@ export class Task extends Session {
                 progress: {
                     get: () => data.progress,
                 },
+                validationMode: {
+                    get: () => data.validation_mode,
+                },
                 _internalData: {
                     get: () => data,
                 },
@@ -1118,8 +1157,11 @@ export class Task extends Session {
         return result;
     }
 
-    async save(options?: { requestStatusCallback?: (request: Request) => void }): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, options);
+    async save(
+        fields: Record<string, any> = {},
+        options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;
     }
 
@@ -1159,6 +1201,11 @@ export class Task extends Session {
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<TaskValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.validationLayout);
         return result;
     }
 }

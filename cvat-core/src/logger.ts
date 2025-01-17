@@ -16,9 +16,13 @@ function sleep(ms): Promise<void> {
 }
 
 function defaultUpdate(previousEvent: Event, currentPayload: JSONEventPayload): JSONEventPayload {
+    const count = Number.isInteger(previousEvent.payload.count) ? previousEvent.payload.count as number : 1;
+
     return {
         ...previousEvent.payload,
         ...currentPayload,
+        count: count + 1,
+        duration: Date.now() - previousEvent.timestamp.getTime(),
     };
 }
 
@@ -29,19 +33,14 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
-type IgnoredRules = (
-    EventScope.zoomImage | EventScope.changeAttribute |
-    EventScope.changeFrame | EventScope.exception
-);
-
 class Logger {
     public clientID: string;
     public collection: Array<Event>;
     public lastSentEvent: Event | null;
-    public ignoreRules: Record<IgnoredRules, IgnoreRule>;
+    public ignoreRules: Record<string, IgnoreRule>;
     public isActiveChecker: () => boolean;
     public saving: boolean;
-    public compressedScopes: Array<IgnoredRules>;
+    public compressedScopes: Array<EventScope>;
 
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
@@ -54,6 +53,8 @@ class Logger {
             [EventScope.zoomImage]: {
                 lastEvent: null,
                 ignore: (previousEvent: Event): boolean => {
+                    // previous event from the same scope is the latest push event in the collection
+                    // it means, no more events were pushed between the previous and this one
                     const [lastCollectionEvent] = this.collection.slice(-1);
                     return previousEvent === lastCollectionEvent;
                 },
@@ -77,16 +78,6 @@ class Logger {
                         lastTimestamp: new Date().toISOString(),
                     };
                 },
-            },
-            [EventScope.changeAttribute]: {
-                lastEvent: null,
-                ignore(previousEvent: Event, currentPayload: JSONEventPayload): boolean {
-                    return (
-                        currentPayload.object_id === previousEvent.payload.object_id &&
-                        currentPayload.id === previousEvent.payload.id
-                    );
-                },
-                update: defaultUpdate,
             },
             [EventScope.changeFrame]: {
                 lastEvent: null,
@@ -168,7 +159,7 @@ Object.defineProperties(Logger.prototype.log, {
             }
 
             if (scope in this.ignoreRules) {
-                const ignoreRule = this.ignoreRules[scope as IgnoredRules];
+                const ignoreRule = this.ignoreRules[scope];
                 const { lastEvent } = ignoreRule;
                 if (lastEvent && ignoreRule.ignore(lastEvent, payload)) {
                     lastEvent.payload = ignoreRule.update(lastEvent, payload);
@@ -189,7 +180,7 @@ Object.defineProperties(Logger.prototype.log, {
                 this.collection.push(event);
 
                 if (scope in this.ignoreRules) {
-                    this.ignoreRules[scope as IgnoredRules].lastEvent = event;
+                    this.ignoreRules[scope].lastEvent = event;
                 }
             };
 

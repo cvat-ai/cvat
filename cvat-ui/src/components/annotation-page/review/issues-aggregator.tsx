@@ -7,15 +7,15 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 
-import { ActiveControl, CombinedState } from 'reducers';
-import { Canvas } from 'cvat-canvas/src/typescript/canvas';
+import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
 import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 
-import { highlightConflict } from 'actions/annotation-actions';
+import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
@@ -41,6 +41,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         canvasIsReady,
         annotationsZLayer,
         newIssuePosition,
+        newIssueSource,
         issueFetching,
         qualityConflicts,
         objectStates,
@@ -54,7 +55,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         canvasInstance: state.annotation.canvas.instance,
         canvasIsReady: state.annotation.canvas.ready,
         annotationsZLayer: state.annotation.annotations.zLayer.cur,
-        newIssuePosition: state.review.newIssuePosition,
+        newIssuePosition: state.review.newIssue.position,
+        newIssueSource: state.review.newIssue.source,
         issueFetching: state.review.fetching.issueId,
         qualityConflicts: state.review.frameConflicts,
         objectStates: state.annotation.annotations.states,
@@ -87,6 +89,13 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
     const conflictLabels: JSX.Element[] = [];
+
+    const onCreateIssue = useCallback(() => {
+        if (canvasReady && canvasInstance.mode() === CanvasMode.SELECT_REGION) {
+            canvasInstance.selectRegion(false);
+            dispatch(updateActiveControl(ActiveControl.CURSOR));
+        }
+    }, [canvasReady, canvasInstance]);
 
     useEffect(() => {
         if (canvasReady) {
@@ -284,12 +293,13 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     return (
         <>
-            {createLeft !== null && createTop !== null ? (
+            {newIssueSource === NewIssueSource.ISSUE_TOOL && createLeft !== null && createTop !== null ? (
                 <CreateIssueDialog
                     top={createTop}
                     left={createLeft}
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
+                    onCreateIssue={onCreateIssue}
                 />
             ) : null}
             {issueDialogs}

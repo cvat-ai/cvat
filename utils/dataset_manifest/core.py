@@ -3,24 +3,24 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
-from io import StringIO
-import av
 import json
 import os
-
-from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from contextlib import closing
-from itertools import islice
-from PIL import Image
-from json.decoder import JSONDecodeError
+from enum import Enum
 from inspect import isgenerator
+from io import StringIO
+from itertools import islice
+from json.decoder import JSONDecodeError
+from typing import Any, Callable, Optional, Union
+
+import av
+from PIL import Image
 
 from .errors import InvalidManifestError, InvalidVideoError
-from .utils import SortingMethod, md5_hash, rotate_image, sort
 from .types import NamedBytesIO
-
-from typing import Any, Dict, List, Union, Optional, Iterator, Tuple, Callable
+from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 
 class VideoStreamReader:
@@ -78,7 +78,7 @@ class VideoStreamReader:
                     return False
                 return True
 
-    def __iter__(self) -> Iterator[Union[int, Tuple[int, int, str]]]:
+    def __iter__(self) -> Iterator[Union[int, tuple[int, int, str]]]:
         """
         Iterate over video frames and yield key frames or indexes.
 
@@ -143,12 +143,12 @@ class VideoStreamReader:
 
 class DatasetImagesReader:
     def __init__(self,
-        sources: Union[List[str], Iterator[NamedBytesIO]],
+        sources: Union[list[str], Iterator[NamedBytesIO]],
         *,
         start: int = 0,
         step: int = 1,
         stop: Optional[int] = None,
-        meta: Optional[Dict[str, List[str]]] = None,
+        meta: Optional[dict[str, list[str]]] = None,
         sorting_method: SortingMethod = SortingMethod.PREDEFINED,
         use_image_hash: bool = False,
         **kwargs
@@ -196,7 +196,7 @@ class DatasetImagesReader:
     def step(self, value):
         self._step = int(value)
 
-    def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> Dict[str, Any]:
+    def _get_img_properties(self, image: Union[str, NamedBytesIO]) -> dict[str, Any]:
         img = Image.open(image, mode='r')
         if self._data_dir:
             img_name = os.path.relpath(image, self._data_dir)
@@ -469,7 +469,8 @@ class _ManifestManager(ABC):
     def index(self):
         return self._index
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def data(self):
         ...
 
@@ -665,7 +666,7 @@ class ImageManifestManager(_ManifestManager):
         prefix: str = "",
         default_prefix: Optional[str] = None,
         start_index: Optional[int] = None,
-    ) -> Dict:
+    ) -> dict:
 
         if default_prefix and prefix and not (default_prefix.startswith(prefix) or prefix.startswith(default_prefix)):
             return {
@@ -727,6 +728,21 @@ class ImageManifestManager(_ManifestManager):
             'next': next_start_index,
         }
 
+    def reorder(self, reordered_images: list[str]) -> None:
+        """
+        The method takes a list of image names and reorders its content based on this new list.
+        Due to the implementation of Honeypots, the reordered list of image names may contain duplicates.
+        """
+        unique_images: dict[str, Any] = {}
+        for _, image_details in self:
+            if image_details.full_name not in unique_images:
+                unique_images[image_details.full_name] = image_details
+
+        try:
+            self.create(content=(unique_images[x] for x in reordered_images))
+        except KeyError as ex:
+            raise InvalidManifestError(f"Previous manifest does not contain {ex} image")
+
 class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):
         self._manifest = _Manifest(full_manifest_path)
@@ -751,11 +767,13 @@ class _BaseManifestValidator(ABC):
         if not _dict['type'] == self.TYPE:
             raise InvalidManifestError('Incorrect type field')
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def validators(self):
         pass
 
-    @abstractstaticmethod
+    @staticmethod
+    @abstractmethod
     def _validate_first_item(_dict):
         pass
 

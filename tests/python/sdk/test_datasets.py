@@ -5,7 +5,6 @@
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
 
 import cvat_sdk.datasets as cvatds
 import PIL.Image
@@ -21,8 +20,10 @@ from .util import restrict_api_requests
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,
-    fxt_login: Tuple[Client, str],
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_login: tuple[Client, str],
+    fxt_logger: tuple[Logger, io.StringIO],
+    restore_redis_ondisk_per_function,
+    restore_redis_inmem_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]
@@ -39,7 +40,7 @@ class TestTaskDataset:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.images = generate_image_files(10)

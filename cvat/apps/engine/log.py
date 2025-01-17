@@ -4,11 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import sys
 import os.path as osp
+import sys
 from contextlib import contextmanager
-from cvat.apps.engine.utils import directory_tree
+
 from django.conf import settings
+
+from cvat.apps.engine.utils import directory_tree
+
 
 class _LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg: str, kwargs):
@@ -59,24 +62,31 @@ def get_logger(logger_name, log_file):
 
 vlogger = logging.getLogger('vector')
 
+
+def get_migration_log_dir() -> str:
+    return settings.MIGRATIONS_LOGS_ROOT
+
+def get_migration_log_file_path(migration_name: str) -> str:
+    return osp.join(get_migration_log_dir(), f'{migration_name}.log')
+
 @contextmanager
 def get_migration_logger(migration_name):
-    migration_log_file = '{}.log'.format(migration_name)
+    migration_log_file_path = get_migration_log_file_path(migration_name)
     stdout = sys.stdout
     stderr = sys.stderr
+
     # redirect all stdout to the file
-    log_file_object = open(osp.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
-    sys.stdout = log_file_object
-    sys.stderr = log_file_object
+    with open(migration_log_file_path, 'w') as log_file_object:
+        sys.stdout = log_file_object
+        sys.stderr = log_file_object
 
-    log = logging.getLogger(migration_name)
-    log.addHandler(logging.StreamHandler(stdout))
-    log.addHandler(logging.StreamHandler(log_file_object))
-    log.setLevel(logging.INFO)
+        log = logging.getLogger(migration_name)
+        log.addHandler(logging.StreamHandler(stdout))
+        log.addHandler(logging.StreamHandler(log_file_object))
+        log.setLevel(logging.INFO)
 
-    try:
-        yield log
-    finally:
-        log_file_object.close()
-        sys.stdout = stdout
-        sys.stderr = stderr
+        try:
+            yield log
+        finally:
+            sys.stdout = stdout
+            sys.stderr = stderr

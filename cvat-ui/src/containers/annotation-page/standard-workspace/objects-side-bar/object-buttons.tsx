@@ -7,10 +7,9 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { ObjectState, Job } from 'cvat-core-wrapper';
-import { EventScope } from 'cvat-logger';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
-import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
+import { updateAnnotationsAsync, changeFrameAsync, changeHideActiveObjectAsync } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
 
@@ -30,11 +29,13 @@ interface StateToProps {
     outsideDisabled: boolean;
     hiddenDisabled: boolean;
     keyframeDisabled: boolean;
+    editedState: ObjectState | null,
 }
 
 interface DispatchToProps {
     updateAnnotations(statesToUpdate: any[]): void;
     changeFrame(frame: number): void;
+    changeHideEditedState(value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -45,6 +46,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
+            editing: { objectState: editedState },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
@@ -62,6 +64,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         objectState,
         normalizedKeyMap,
         frameNumber,
+        editedState,
         jobInstance: jobInstance as Job,
         outsideDisabled: typeof outsideDisabled === 'undefined' ? false : outsideDisabled,
         hiddenDisabled: typeof hiddenDisabled === 'undefined' ? false : hiddenDisabled,
@@ -76,6 +79,9 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
         },
         changeFrame(frame: number): void {
             dispatch(changeFrameAsync(frame));
+        },
+        changeHideEditedState(value: boolean): void {
+            dispatch(changeHideActiveObjectAsync(value));
         },
     };
 }
@@ -114,18 +120,16 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private lock = (): void => {
-        const { objectState, jobInstance, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.lockObject, { locked: true });
             objectState.lock = true;
             this.commit();
         }
     };
 
     private unlock = (): void => {
-        const { objectState, jobInstance, readonly } = this.props;
+        const { objectState, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(EventScope.lockObject, { locked: false });
             objectState.lock = false;
             this.commit();
         }
@@ -148,15 +152,23 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private show = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = false;
-        this.commit();
+        const { objectState, editedState, changeHideEditedState } = this.props;
+        if (objectState.clientID === editedState?.clientID) {
+            changeHideEditedState(false);
+        } else {
+            objectState.hidden = false;
+            this.commit();
+        }
     };
 
     private hide = (): void => {
-        const { objectState } = this.props;
-        objectState.hidden = true;
-        this.commit();
+        const { objectState, editedState, changeHideEditedState } = this.props;
+        if (objectState.clientID === editedState?.clientID) {
+            changeHideEditedState(true);
+        } else {
+            objectState.hidden = true;
+            this.commit();
+        }
     };
 
     private setOccluded = (): void => {
@@ -214,7 +226,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
 
     private changeFrame(frame: number): void {
         const { changeFrame } = this.props;
-        if (isAbleToChangeFrame()) {
+        if (isAbleToChangeFrame(frame)) {
             changeFrame(frame);
         }
     }

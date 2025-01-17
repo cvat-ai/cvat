@@ -3,7 +3,22 @@ profile = "black"
 forced_separate = ["tests"]
 line_length = 100
 skip_gitignore = true # align tool behavior with Black
+extend_skip=[
+    # Correctly ordering the imports in serverless functions would
+    # require a pyproject.toml in every function; don't bother with it for now.
+    "serverless",
+    # Sorting the imports in this file causes test failures;
+    # TODO: fix them and remove this ignore.
+    "cvat/apps/dataset_manager/formats/registry.py",
+]
 
 [tool.black]
 line-length = 100
-target-version = ['py38']
+target-version = ['py39']
+extend-exclude = """
+# TODO: get rid of these
+^/cvat/apps/(dataset_manager|engine)/
+| ^/cvat/settings/
+| ^/serverless/
+| ^/utils/dataset_manifest/
+"""

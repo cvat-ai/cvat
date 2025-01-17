@@ -8,7 +8,7 @@ set -e
 
 GENERATOR_VERSION="v6.0.1"
 
-VERSION="2.17.0"
+VERSION="2.25.1"
 LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
 DST_DIR="$(cd "$(dirname -- "$0")/.." && pwd)"

@@ -19,6 +19,8 @@ const config = {
     globalObjectsCounter: 0,
 
     requestsStatusDelay: null,
+
+    jobMetaDataReloadPeriod: 1 * 60 * 60 * 1000, // 1 hour
 };
 
 export default config;

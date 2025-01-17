@@ -1,21 +1,62 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 @import '../../base';
 
+.cvat-detector-runner-mapping-header {
+    text-align: center;
+    width: 100%;
+    margin-top: $grid-unit-size;
+    margin-bottom: $grid-unit-size * 3;
+
+    .anticon {
+        margin-right: $grid-unit-size;
+    }
+}
+
 .cvat-runner-label-mapping-row {
     margin-bottom: $grid-unit-size;
     align-items: baseline;
+
+    .anticon-delete,
+    .anticon-question-circle {
+        float: right;
+    }
 
     .ant-select {
         width: 100%;
     }
 }
 
+.cvat-labels-attributes-mapper-tree {
+    position: relative;
+    border-left: 1px solid $objects-bar-tabs-color;
+    padding-left: $grid-unit-size;
+
+    &:not(.cvat-detector-runner-mapping-header + .cvat-runner-label-mapper) {
+        &::before {
+            content: '';
+            width: $grid-unit-size * 2;
+            bottom: 50%;
+            left: -17px;
+            position: absolute;
+            border: 1px solid $objects-bar-tabs-color;
+            border-top: 0 none transparent;
+            border-right: 0 none transparent;
+        }
+    }
+}
+
 .cvat-runner-label-mapper {
+    @extend .cvat-labels-attributes-mapper-tree;
+
     width: 100%;
+
+    span {
+        text-align: center;
+    }
 
     &:has(.cvat-runner-label-mapper) {
         max-height: $grid-unit-size * 64;
@@ -25,10 +66,19 @@
     > .cvat-runner-label-mapper {
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
-        margin-left: $grid-unit-size * 2;
+        margin-left: $grid-unit-size;
     }
 
     .cvat-runner-attribute-mapper {
+        @extend .cvat-labels-attributes-mapper-tree;
+
+        border-left: 1px solid $objects-bar-tabs-color;
+        padding-left: $grid-unit-size;
+        width: 100%;
+        margin-top: $grid-unit-size * 2;
+        margin-bottom: $grid-unit-size * 2;
+        margin-left: $grid-unit-size;
+
         .cvat-runner-attribute-mapping-row {
             align-items: baseline;
             margin-bottom: $grid-unit-size;
@@ -37,11 +87,6 @@
                 width: 100%;
             }
         }
-
-        width: 100%;
-        margin-top: $grid-unit-size * 2;
-        margin-bottom: $grid-unit-size * 2;
-        margin-left: $grid-unit-size * 2;
     }
 }
 
@@ -59,8 +104,8 @@
     padding-left: $grid-unit-size * 4;
 }
 
-.detector-runner-clean-previous-annotations-wrapper,
-.detector-runner-convert-masks-to-polygons-wrapper {
+.cvat-detector-runner-clean-previous-annotations-wrapper,
+.cvat-detector-runner-convert-masks-to-polygons-wrapper {
     span {
         margin-left: $grid-unit-size;
     }

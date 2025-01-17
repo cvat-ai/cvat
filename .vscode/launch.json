@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "REST API tests: Attach to server",
             "type": "debugpy",
@@ -168,7 +169,7 @@
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
                 "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282"
+                "DJANGO_LOG_SERVER_PORT": "8282",
             },
             "args": [
                 "runserver",
@@ -178,7 +179,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole"
+            "console": "internalConsole",
         },
         {
             "name": "server: chrome",
@@ -361,6 +362,28 @@
             "console": "internalConsole"
         },
         {
+            "name": "server: RQ - chunks",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "rqworker",
+                "chunks",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
             "name": "server: migrate",
             "type": "debugpy",
             "request": "launch",
@@ -370,6 +393,22 @@
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "migrate"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: sync periodic jobs",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "syncperiodicjobs"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -405,6 +444,8 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
+                "--verbose",
+                "--no-cov", // vscode debugger might not work otherwise
                 "tests/python/rest_api/"
             ],
             "cwd": "${workspaceFolder}",
@@ -537,7 +578,8 @@
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
                 "server: RQ - analytics reports",
-                "server: RQ - cleaning"
+                "server: RQ - cleaning",
+                "server: RQ - chunks",
             ]
         }
     ]

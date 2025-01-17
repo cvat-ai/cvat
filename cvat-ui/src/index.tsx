@@ -25,6 +25,7 @@ import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
 import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
+import { navigationActions } from 'actions/navigation-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -73,6 +74,7 @@ interface DispatchToProps {
     initInvitations: () => void;
     initRequests: () => void;
     loadServerAPISchema: () => void;
+    onChangeLocation: (from: string, to: string) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -124,6 +126,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
         initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
+        onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };
 }
 

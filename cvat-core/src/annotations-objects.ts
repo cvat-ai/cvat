@@ -150,17 +150,12 @@ class Annotation {
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
-    protected withContext(frame: number): {
-        __internal: {
-            save: (data: ObjectState) => ObjectState;
-            delete: Annotation['delete'];
-        };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected withContext(_: number): {
+        delete: Annotation['delete'];
     } {
         return {
-            __internal: {
-                save: (this as any).save.bind(this, frame),
-                delete: this.delete.bind(this),
-            },
+            delete: this.delete.bind(this),
         };
     }
 
@@ -530,6 +525,17 @@ export class Shape extends Drawn {
         this.zOrder = data.z_order;
     }
 
+    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedShape;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedShape,
+        };
+    }
+
     // Method is used to export data to the server
     public toJSON(): SerializedShape | SerializedShape['elements'][0] {
         const result: SerializedShape = {
@@ -592,7 +598,7 @@ export class Shape extends Drawn {
             pinned: this.pinned,
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
 
         if (typeof this.outside !== 'undefined') {
@@ -838,6 +844,17 @@ export class Track extends Drawn {
         }, {});
     }
 
+    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedTrack;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedTrack,
+        };
+    }
+
     // Method is used to export data to the server
     public toJSON(): SerializedTrack | SerializedTrack['elements'][0] {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
@@ -931,7 +948,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -1405,6 +1422,17 @@ export class Track extends Drawn {
 }
 
 export class Tag extends Annotation {
+    protected withContext(frame: number): ReturnType<Annotation['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedTag;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedTag,
+        };
+    }
+
     // Method is used to export data to the server
     public toJSON(): SerializedTag {
         const result: SerializedTag = {
@@ -1451,7 +1479,7 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -2022,7 +2050,7 @@ export class SkeletonShape extends Shape {
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -2918,7 +2946,7 @@ export class SkeletonTrack extends Track {
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             });
-        }).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
+        }).filter(Boolean).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
     }
 
     public updateFromServerResponse(body: SerializedTrack): void {
@@ -3064,7 +3092,7 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 

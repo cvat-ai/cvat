@@ -1,31 +1,43 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) 2022-2025 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import os
+import io
+import itertools
 from collections import OrderedDict
+from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from tempfile import TemporaryDirectory
-from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
+from typing import Callable, Optional, Union
 
-from django.db import transaction
-from django.db.models.query import Prefetch
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
+from django.db import transaction
+from django.db.models.query import Prefetch, QuerySet
 from rest_framework.exceptions import ValidationError
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
+from cvat.apps.dataset_manager.bindings import (
+    CvatDatasetNotFoundError,
+    CvatImportError,
+    JobData,
+    TaskData,
+)
+from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
+from cvat.apps.dataset_manager.util import (
+    TmpDirManager,
+    add_prefetch_fields,
+    bulk_create,
+    faster_deepcopy,
+    get_cached,
+)
 from cvat.apps.engine import models, serializers
-from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.utils import chunked_list
+from cvat.apps.engine.plugins import plugin_decorator
+from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
-
-from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
-from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
-from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
 
 dlogger = DatasetLogManager()
 
@@ -77,9 +89,10 @@ def merge_table_rows(rows, keys_for_merge, field_id):
 
     return list(merged_rows.values())
 
+
 class JobAnnotation:
     @classmethod
-    def add_prefetch_info(cls, queryset):
+    def add_prefetch_info(cls, queryset: QuerySet[models.Job], prefetch_images: bool = True) -> QuerySet[models.Job]:
         assert issubclass(queryset.model, models.Job)
 
         label_qs = add_prefetch_fields(models.Label.objects.all(), [
@@ -89,6 +102,12 @@ class JobAnnotation:
         ])
         label_qs = JobData.add_prefetch_info(label_qs)
 
+        task_data_queryset = models.Data.objects.all()
+        if prefetch_images:
+            task_data_queryset = task_data_queryset.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.order_by('frame'))
+            )
+
         return queryset.select_related(
             'segment',
             'segment__task',
@@ -96,28 +115,35 @@ class JobAnnotation:
             'segment__task__project',
             'segment__task__owner',
             'segment__task__assignee',
-            'segment__task__project__owner',
-            'segment__task__project__assignee',
 
-            Prefetch('segment__task__data',
-                queryset=models.Data.objects.select_related('video').prefetch_related(
-                    Prefetch('images', queryset=models.Image.objects.order_by('frame'))
-            )),
+            Prefetch('segment__task__data', queryset=task_data_queryset),
 
             Prefetch('segment__task__label_set', queryset=label_qs),
             Prefetch('segment__task__project__label_set', queryset=label_qs),
         )
 
-    def __init__(self, pk, *, is_prefetched=False, queryset=None):
-        if queryset is None:
-            queryset = self.add_prefetch_info(models.Job.objects)
+    def __init__(
+        self,
+        pk,
+        *,
+        lock_job_in_db: bool = False,
+        queryset: QuerySet | None = None,
+        prefetch_images: bool = False,
+        db_job: models.Job | None = None
+    ):
+        assert db_job is None or lock_job_in_db is False
+        assert (db_job is None and queryset is None) or prefetch_images is False
+        assert db_job is None or queryset is None
+        if db_job is None:
+            if queryset is None:
+                queryset = self.add_prefetch_info(models.Job.objects, prefetch_images=prefetch_images)
 
-        if is_prefetched:
-            self.db_job: models.Job = queryset.select_related(
-                'segment__task'
-            ).select_for_update().get(id=pk)
-        else:
+            if lock_job_in_db:
+                queryset = queryset.select_for_update()
+
             self.db_job: models.Job = get_cached(queryset, pk=int(pk))
+        else:
+            self.db_job: models.Job = db_job
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -412,6 +438,8 @@ class JobAnnotation:
         self._save_tracks_to_db(data["tracks"])
 
     def create(self, data):
+        data = self._validate_input_annotations(data)
+
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "create")
 
@@ -419,6 +447,8 @@ class JobAnnotation:
             self._set_updated_date()
 
     def put(self, data):
+        data = self._validate_input_annotations(data)
+
         deleted_data = self._delete()
         handle_annotations_change(self.db_job, deleted_data, "delete")
 
@@ -431,12 +461,28 @@ class JobAnnotation:
             self._set_updated_date()
 
     def update(self, data):
+        data = self._validate_input_annotations(data)
+
         self._delete(data)
         self._create(data)
         handle_annotations_change(self.db_job, self.data, "update")
 
         if not self._data_is_empty(self.data):
             self._set_updated_date()
+
+    def _validate_input_annotations(self, data: Union[AnnotationIR, dict]) -> AnnotationIR:
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_job.segment.task.dimension, data)
+
+        db_data = self.db_job.segment.task.data
+
+        if data.tracks and db_data.validation_mode == models.ValidationMode.GT_POOL:
+            # Only tags and shapes can be used in tasks with GT pool
+            raise ValidationError("Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            ))
+
+        return data
 
     def _delete_job_labeledimages(self, ids__UNSAFE: list[int]) -> None:
         # ids__UNSAFE is a list, received from the user
@@ -492,13 +538,13 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, chunk_size=1000):
+            for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
-            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, chunk_size=1000):
+            for labeledshape_ids_chunk in take_by(labeledshape_ids, chunk_size=1000):
                 self._delete_job_labeledshapes(labeledshape_ids_chunk)
 
-            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, chunk_size=1000):
+            for labeledtrack_ids_chunk in take_by(labeledtrack_ids, chunk_size=1000):
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
@@ -723,16 +769,26 @@ class JobAnnotation:
     def data(self):
         return self.ir_data.data
 
-    def export(self, dst_file, exporter, host='', **options):
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         job_data = JobData(
             annotation_ir=self.ir_data,
             db_job=self.db_job,
             host=host,
         )
 
-        temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_directory_for_export(
+                instance_type=self.db_job.__class__.__name__,
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
@@ -743,9 +799,7 @@ class JobAnnotation:
         )
         self.delete()
 
-        temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -762,23 +816,34 @@ class JobAnnotation:
 
         self.create(job_data.data.slice(self.start_frame, self.stop_frame).serialize())
 
+
 class TaskAnnotation:
     def __init__(self, pk):
         self.db_task = models.Task.objects.prefetch_related(
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
 
-        # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(
-            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
-        ).order_by('id')
+        requested_job_types = [models.JobType.ANNOTATION]
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
+            requested_job_types.append(models.JobType.GROUND_TRUTH)
+
+        self.db_jobs = (
+            JobAnnotation.add_prefetch_info(models.Job.objects, prefetch_images=False)
+            .filter(segment__task_id=pk, type__in=requested_job_types)
+        )
+
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
         self.ir_data.reset()
 
-    def _patch_data(self, data, action):
-        _data = data if isinstance(data, AnnotationIR) else AnnotationIR(self.db_task.dimension, data)
+    def _patch_data(self, data: Union[AnnotationIR, dict], action: Optional[PatchAction]):
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_task.dimension, data)
+
+        if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
+            self._preprocess_input_annotations_for_gt_pool_task(data, action=action)
+
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
@@ -786,27 +851,112 @@ class TaskAnnotation:
             start = db_job.segment.start_frame
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
-            splitted_data[jid] = _data.slice(start, stop)
+            splitted_data[jid] = (data.slice(start, stop), db_job)
 
-        for jid, job_data in splitted_data.items():
-            _data = AnnotationIR(self.db_task.dimension)
+        for jid, (job_data, db_job) in splitted_data.items():
+            data = AnnotationIR(self.db_task.dimension)
             if action is None:
-                _data.data = put_job_data(jid, job_data)
+                data.data = put_job_data(jid, job_data, db_job=db_job)
             else:
-                _data.data = patch_job_data(jid, job_data, action)
-            if _data.version > self.ir_data.version:
-                self.ir_data.version = _data.version
-            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap, self.db_task.dimension)
+                data.data = patch_job_data(jid, job_data, action, db_job=db_job)
 
-    def _merge_data(self, data, start_frame, overlap, dimension):
-        annotation_manager = AnnotationManager(self.ir_data)
-        annotation_manager.merge(data, start_frame, overlap, dimension)
+            if data.version > self.ir_data.version:
+                self.ir_data.version = data.version
+
+            self._merge_data(data, jobs[jid]["start"])
+
+    def _merge_data(self, data: AnnotationIR, start_frame: int):
+        annotation_manager = AnnotationManager(self.ir_data, dimension=self.db_task.dimension)
+        annotation_manager.merge(data, start_frame, overlap=self.db_task.overlap)
 
     def put(self, data):
         self._patch_data(data, None)
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
+
+    def _preprocess_input_annotations_for_gt_pool_task(
+        self, data: Union[AnnotationIR, dict], *, action: Optional[PatchAction]
+    ) -> AnnotationIR:
+        if not isinstance(data, AnnotationIR):
+            data = AnnotationIR(self.db_task.dimension, data)
+
+        if data.tracks:
+            # Only tags and shapes are supported in tasks with GT pool
+            raise ValidationError("Tracks are not supported when task validation mode is {}".format(
+                models.ValidationMode.GT_POOL
+            ))
+
+        gt_job = self.db_task.gt_job
+        if gt_job is None:
+            raise AssertionError(f"Can't find GT job in the task {self.db_task.id}")
+
+        db_data = self.db_task.data
+        frame_step = db_data.get_frame_step()
+
+        def _to_rel_frame(abs_frame: int) -> int:
+            return (abs_frame - db_data.start_frame) // frame_step
+
+        # Copy GT pool annotations into other jobs, with replacement of any existing annotations
+        gt_abs_frame_set = sorted(gt_job.segment.frame_set)
+        task_gt_honeypots: dict[int, int] = {} # real_id -> [placeholder_id, ...]
+        task_gt_frames: set[int] = set()
+        for abs_frame, abs_real_frame in (
+            self.db_task.data.images
+            .filter(is_placeholder=True, real_frame__in=gt_abs_frame_set)
+            .values_list('frame', 'real_frame')
+            .iterator(chunk_size=1000)
+        ):
+            frame = _to_rel_frame(abs_frame)
+            task_gt_frames.add(frame)
+            task_gt_honeypots.setdefault(_to_rel_frame(abs_real_frame), []).append(frame)
+
+        gt_pool_frames = tuple(map(_to_rel_frame, gt_abs_frame_set))
+        if sorted(gt_pool_frames) != list(range(min(gt_pool_frames), max(gt_pool_frames) + 1)):
+            raise AssertionError("Expected a continuous GT pool frame set") # to be used in slice()
+
+        gt_annotations = data.slice(min(gt_pool_frames), max(gt_pool_frames))
+
+        if action and not (
+            gt_annotations.tags or gt_annotations.shapes or gt_annotations.tracks
+        ):
+            return
+
+        if not (
+            action is None or # put
+            action == PatchAction.CREATE
+        ):
+            # allow validation frame editing only with full task updates
+            raise ValidationError(
+                "Annotations on validation frames can only be edited via task import or the GT job"
+            )
+
+        task_annotation_manager = AnnotationManager(data, dimension=self.db_task.dimension)
+        task_annotation_manager.clear_frames(task_gt_frames)
+
+        for ann_type, gt_annotation in itertools.chain(
+            zip(itertools.repeat('tag'), gt_annotations.tags),
+            zip(itertools.repeat('shape'), gt_annotations.shapes),
+        ):
+            for honeypot_frame_id in task_gt_honeypots.get(
+                gt_annotation["frame"], [] # some GT frames may be unused
+            ):
+                copied_annotation = faster_deepcopy(gt_annotation)
+                copied_annotation["frame"] = honeypot_frame_id
+
+                for ann in itertools.chain(
+                    [copied_annotation], copied_annotation.get('elements', [])
+                ):
+                    ann.pop("id", None)
+
+                if ann_type == 'tag':
+                    data.add_tag(copied_annotation)
+                elif ann_type == 'shape':
+                    data.add_shape(copied_annotation)
+                else:
+                    assert False
+
+        return data
 
     def update(self, data):
         self._patch_data(data, PatchAction.UPDATE)
@@ -816,35 +966,44 @@ class TaskAnnotation:
             self._patch_data(data, PatchAction.DELETE)
         else:
             for db_job in self.db_jobs:
-                delete_job_data(db_job.id)
+                delete_job_data(db_job.id, db_job=db_job)
 
     def init_from_db(self):
         self.reset()
 
-        for db_job in self.db_jobs:
-            if db_job.type != models.JobType.ANNOTATION:
+        for db_job in self.db_jobs.select_for_update():
+            if db_job.type == models.JobType.GROUND_TRUTH and not (
+                self.db_task.data.validation_mode == models.ValidationMode.GT_POOL
+            ):
                 continue
 
-            annotation = JobAnnotation(db_job.id, is_prefetched=True)
-            annotation.init_from_db()
-            if annotation.ir_data.version > self.ir_data.version:
-                self.ir_data.version = annotation.ir_data.version
-            db_segment = db_job.segment
-            start_frame = db_segment.start_frame
-            overlap = self.db_task.overlap
-            dimension = self.db_task.dimension
-            self._merge_data(annotation.ir_data, start_frame, overlap, dimension)
+            gt_annotation = JobAnnotation(db_job.id, db_job=db_job)
+            gt_annotation.init_from_db()
+            if gt_annotation.ir_data.version > self.ir_data.version:
+                self.ir_data.version = gt_annotation.ir_data.version
 
-    def export(self, dst_file, exporter, host='', **options):
+            self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
+
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         task_data = TaskData(
             annotation_ir=self.ir_data,
             db_task=self.db_task,
             host=host,
         )
 
-        temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_directory_for_export(
+                instance_type=self.db_task.__class__.__name__,
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
@@ -855,9 +1014,7 @@ class TaskAnnotation:
         )
         self.delete()
 
-        temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -887,19 +1044,21 @@ def get_job_data(pk):
 
     return annotation.data
 
+
 @silk_profile(name="POST job data")
 @transaction.atomic
-def put_job_data(pk, data):
-    annotation = JobAnnotation(pk)
+def put_job_data(pk, data: AnnotationIR | dict, *, db_job: models.Job | None = None):
+    annotation = JobAnnotation(pk, db_job=db_job)
     annotation.put(data)
 
     return annotation.data
 
+
 @silk_profile(name="UPDATE job data")
 @plugin_decorator
 @transaction.atomic
-def patch_job_data(pk, data, action):
-    annotation = JobAnnotation(pk)
+def patch_job_data(pk, data: AnnotationIR | dict, action: PatchAction, *, db_job: models.Job | None = None):
+    annotation = JobAnnotation(pk, db_job=db_job)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
@@ -909,25 +1068,36 @@ def patch_job_data(pk, data, action):
 
     return annotation.data
 
+
 @silk_profile(name="DELETE job data")
 @transaction.atomic
-def delete_job_data(pk):
-    annotation = JobAnnotation(pk)
+def delete_job_data(pk, *, db_job: models.Job | None = None):
+    annotation = JobAnnotation(pk, db_job=db_job)
     annotation.delete()
 
-def export_job(job_id, dst_file, format_name, server_url=None, save_images=False):
+
+def export_job(
+    job_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images=False,
+    temp_dir: str | None = None,
+):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
     # more dump request received at the same time:
     # https://github.com/cvat-ai/cvat/issues/217
     with transaction.atomic():
-        job = JobAnnotation(job_id)
+        job = JobAnnotation(job_id, prefetch_images=True, lock_job_in_db=True)
         job.init_from_db()
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        job.export(f, exporter, host=server_url, save_images=save_images)
+        job.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
+
 
 @silk_profile(name="GET task data")
 @transaction.atomic
@@ -937,6 +1107,7 @@ def get_task_data(pk):
 
     return annotation.data
 
+
 @silk_profile(name="POST task data")
 @transaction.atomic
 def put_task_data(pk, data):
@@ -944,6 +1115,7 @@ def put_task_data(pk, data):
     annotation.put(data)
 
     return annotation.data
+
 
 @silk_profile(name="UPDATE task data")
 @transaction.atomic
@@ -958,13 +1130,23 @@ def patch_task_data(pk, data, action):
 
     return annotation.data
 
+
 @silk_profile(name="DELETE task data")
 @transaction.atomic
 def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
 
-def export_task(task_id, dst_file, format_name, server_url=None, save_images=False):
+
+def export_task(
+    task_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images: bool = False,
+    temp_dir: str | None = None,
+    ):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -976,7 +1158,8 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        task.export(f, exporter, host=server_url, save_images=save_images)
+        task.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
+
 
 @transaction.atomic
 def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
@@ -989,9 +1172,10 @@ def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(str(ex))
 
+
 @transaction.atomic
 def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
-    job = JobAnnotation(job_id)
+    job = JobAnnotation(job_id, prefetch_images=True)
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:

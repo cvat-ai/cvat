@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import expect_status
@@ -58,8 +58,15 @@ class Downloader:
             except ValueError:
                 file_size = None
 
-            with atomic_writer(output_path, "wb") as fd, pbar.task(
-                total=file_size, desc="Downloading", unit_scale=True, unit="B", unit_divisor=1024
+            with (
+                atomic_writer(output_path, "wb") as fd,
+                pbar.task(
+                    total=file_size,
+                    desc="Downloading",
+                    unit_scale=True,
+                    unit="B",
+                    unit_divisor=1024,
+                ),
             ):
                 while True:
                     chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
@@ -69,14 +76,12 @@ class Downloader:
                     pbar.advance(len(chunk))
                     fd.write(chunk)
 
-    def prepare_and_download_file_from_endpoint(
+    def prepare_file(
         self,
         endpoint: Endpoint,
-        filename: Path,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
+        url_params: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
         status_check_period: Optional[int] = None,
     ):
         client = self._client
@@ -91,7 +96,7 @@ class Downloader:
 
         # initialize background process
         response = client.api_client.rest_client.request(
-            method="GET",
+            method=endpoint.settings["http_method"],
             url=url,
             headers=client.api_client.get_common_headers(),
         )
@@ -106,5 +111,29 @@ class Downloader:
             rq_id, status_check_period=status_check_period
         )
 
-        downloader = Downloader(client)
-        downloader.download_file(request.result_url, output_path=filename, pbar=pbar)
+        return request
+
+    def prepare_and_download_file_from_endpoint(
+        self,
+        endpoint: Endpoint,
+        filename: Path,
+        *,
+        url_params: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        client = self._client
+
+        if status_check_period is None:
+            status_check_period = client.config.status_check_period
+
+        export_request = self.prepare_file(
+            endpoint,
+            url_params=url_params,
+            query_params=query_params,
+            status_check_period=status_check_period,
+        )
+
+        assert export_request.result_url, "Result url was not found in server response"
+        self.download_file(export_request.result_url, output_path=filename, pbar=pbar)

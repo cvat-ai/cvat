@@ -11,34 +11,42 @@ import AnnotationsHistory from './annotations-history';
 import { checkObjectType } from './common';
 import Project from './project';
 import { Task, Job } from './session';
-import { ScriptingError, ArgumentError } from './exceptions';
+import { ArgumentError } from './exceptions';
 import { getDeletedFrames } from './frames';
 import { JobType } from './enums';
 
-type WeakMapItem = { collection: AnnotationsCollection, saver: AnnotationsSaver, history: AnnotationsHistory };
-const jobCache = new WeakMap<Task | Job, WeakMapItem>();
-const taskCache = new WeakMap<Task | Job, WeakMapItem>();
+const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
+const taskCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
 
-function getCache(sessionType): WeakMap<Task | Job, WeakMapItem> {
+// save history separately as not all history actions are related to annotations (e.g. delete, restore frame are not)
+const jobHistoryCache = new WeakMap<Task | Job, AnnotationsHistory>();
+const taskHistoryCache = new WeakMap<Task | Job, AnnotationsHistory>();
+
+function getCache(sessionType: 'task' | 'job'): {
+    collection: typeof jobCollectionCache;
+    history: typeof jobHistoryCache;
+} {
     if (sessionType === 'task') {
-        return taskCache;
+        return {
+            collection: taskCollectionCache,
+            history: taskHistoryCache,
+        };
     }
 
-    if (sessionType === 'job') {
-        return jobCache;
-    }
-
-    throw new ScriptingError(`Unknown session type was received ${sessionType}`);
+    return {
+        collection: jobCollectionCache,
+        history: jobHistoryCache,
+    };
 }
 
 class InstanceNotInitializedError extends Error {}
 
-function getSession(session): WeakMapItem {
+export function getCollection(session): AnnotationsCollection {
     const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
+    const { collection } = getCache(sessionType);
 
-    if (cache.has(session)) {
-        return cache.get(session);
+    if (collection.has(session)) {
+        return collection.get(session).collection;
     }
 
     throw new InstanceNotInitializedError(
@@ -46,23 +54,37 @@ function getSession(session): WeakMapItem {
     );
 }
 
-export function getCollection(session): AnnotationsCollection {
-    return getSession(session).collection;
-}
-
 export function getSaver(session): AnnotationsSaver {
-    return getSession(session).saver;
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const { collection } = getCache(sessionType);
+
+    if (collection.has(session)) {
+        return collection.get(session).saver;
+    }
+
+    throw new InstanceNotInitializedError(
+        'Session has not been initialized yet. Call annotations.get() or annotations.clear({ reload: true }) before',
+    );
 }
 
 export function getHistory(session): AnnotationsHistory {
-    return getSession(session).history;
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const { history } = getCache(sessionType);
+
+    if (history.has(session)) {
+        return history.get(session);
+    }
+
+    const initiatedHistory = new AnnotationsHistory();
+    history.set(session, initiatedHistory);
+    return initiatedHistory;
 }
 
 async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (!cache.has(session)) {
+    if (!cache.collection.has(session)) {
         const serializedAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
 
         // Get meta information about frames
@@ -74,7 +96,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         }
         frameMeta.deleted_frames = await getDeletedFrames(sessionType, session.id);
 
-        const history = new AnnotationsHistory();
+        const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
             labels: session.labels,
             history,
@@ -87,7 +109,8 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         // eslint-disable-next-line no-unsanitized/method
         collection.import(serializedAnnotations);
         const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
-        cache.set(session, { collection, saver, history });
+        cache.collection.set(session, { collection, saver });
+        cache.history.set(session, history);
     }
 }
 
@@ -95,8 +118,12 @@ export function clearCache(session): void {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (cache.has(session)) {
-        cache.delete(session);
+    if (cache.collection.has(session)) {
+        cache.collection.delete(session);
+    }
+
+    if (cache.history.has(session)) {
+        cache.history.delete(session);
     }
 }
 
@@ -125,7 +152,9 @@ export async function clearAnnotations(
         checkObjectType('reload', reload, 'boolean', null);
 
         if (reload) {
-            cache.delete(session);
+            cache.collection.delete(session);
+            // delete history as it may relate to objects from collection we deleted above
+            cache.history.delete(session);
             return getAnnotationsFromServer(session);
         }
     }

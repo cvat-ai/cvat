@@ -15,10 +15,6 @@
     margin-top: $grid-unit-size * 2;
 }
 
-.cvat-action-runner-info:not(:first-child) {
-    margin-top: $grid-unit-size * 2;
-}
-
 .cvat-action-runner-info {
     .ant-alert {
         text-align: justify;

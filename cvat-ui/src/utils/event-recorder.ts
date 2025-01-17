@@ -5,6 +5,7 @@
 import { ServerError, getCore } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import config from 'config';
+import _ from 'lodash';
 import { platformInfo } from 'utils/platform-checker';
 
 const core = getCore();
@@ -28,6 +29,12 @@ class EventRecorder {
         core.logger.log(EventScope.loadTool, {
             location: window.location.pathname,
             platform: platformInfo(),
+            screenWidth: window.screen.width,
+            screenHeight: window.screen.height,
+            language: window.navigator.language,
+            hardwareConcurrency: _.get(window.navigator, 'hardwareConcurrency', null),
+            deviceMemory: _.get(window.navigator, 'deviceMemory', null),
+            jsHeapSizeLimit: _.get(window.performance, 'memory', { jsHeapSizeLimit: null }).jsHeapSizeLimit,
         });
     }
 

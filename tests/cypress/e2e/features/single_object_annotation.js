@@ -74,6 +74,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-single-shape-annotation-sidebar-hint').should('exist');
         cy.get('.cvat-single-shape-annotation-sidebar-ux-hints').should('exist');
+        cy.get('#cvat_canvas_wrapper').should('have.css', 'cursor', 'crosshair');
     }
 
     function openJob(params) {

@@ -2,11 +2,35 @@
 #
 # SPDX-License-Identifier: MIT
 
-import attrs
+from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
+
+import attrs
 from rq.job import Job as RQJob
+
+from .models import RequestAction, RequestSubresource, RequestTarget
+
+
+class RQMeta:
+    @staticmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+        return [
+            RQJobMetaField.FORMATTED_EXCEPTION,
+            RQJobMetaField.PROGRESS,
+            RQJobMetaField.TASK_PROGRESS,
+            RQJobMetaField.STATUS
+        ]
+
+    @classmethod
+    def reset_meta_on_retry(cls, meta_to_update: dict[RQJobMetaField, Any]) -> dict[RQJobMetaField, Any]:
+        resettable_fields = cls.get_resettable_fields()
+
+        return {
+            k: v for k, v in meta_to_update.items() if k not in resettable_fields
+        }
 
 class RQJobMetaField:
     # common fields
@@ -23,87 +47,105 @@ class RQJobMetaField:
     TASK_PROGRESS = 'task_progress'
     # export specific fields
     RESULT_URL = 'result_url'
-
+    FUNCTION_ID = 'function_id'
+    EXCEPTION_TYPE = 'exc_type'
+    EXCEPTION_ARGS = 'exc_args'
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
     return rq_job.meta.get(RQJobMetaField.USER, {}).get('id') == user_id
 
-@attrs.define(kw_only=True)
+@attrs.frozen()
 class RQId:
-    action: str = attrs.field(
-        validator=attrs.validators.instance_of(str)
+    action: RequestAction = attrs.field(
+        validator=attrs.validators.instance_of(RequestAction)
     )
-    resource: str = attrs.field(
-        validator=attrs.validators.instance_of(str)
+    target: RequestTarget = attrs.field(
+        validator=attrs.validators.instance_of(RequestTarget)
     )
     identifier: Union[int, UUID] = attrs.field(
         validator=attrs.validators.instance_of((int, UUID))
     )
-    subresource: Optional[str] = attrs.field(
+    subresource: Optional[RequestSubresource] = attrs.field(
         validator=attrs.validators.optional(
-            attrs.validators.instance_of(str)
-        )
+            attrs.validators.instance_of(RequestSubresource)
+        ),
+        kw_only=True, default=None,
     )
     user_id: Optional[int] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(int))
+        validator=attrs.validators.optional(attrs.validators.instance_of(int)),
+        kw_only=True, default=None,
     )
     format: Optional[str] = attrs.field(
-        validator=attrs.validators.optional(attrs.validators.instance_of(str))
+        validator=attrs.validators.optional(attrs.validators.instance_of(str)),
+        kw_only=True, default=None,
     )
 
+    _OPTIONAL_FIELD_REQUIREMENTS = {
+        RequestAction.AUTOANNOTATE: {"subresource": False, "format": False, "user_id": False},
+        RequestAction.CREATE: {"subresource": False, "format": False, "user_id": False},
+        RequestAction.EXPORT: {"subresource": True, "user_id": True},
+        RequestAction.IMPORT: {"subresource": True, "format": False, "user_id": False},
+    }
 
-class RQIdManager:
+    def __attrs_post_init__(self) -> None:
+        for field, req in self._OPTIONAL_FIELD_REQUIREMENTS[self.action].items():
+            if req:
+                if getattr(self, field) is None:
+                    raise ValueError(f"{field} is required for the {self.action} action")
+            else:
+                if getattr(self, field) is not None:
+                    raise ValueError(f"{field} is not allowed for the {self.action} action")
+
     # RQ ID templates:
+    # autoannotate:task-<tid>
     # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>
     # create:task-<tid>
     # export:<project|task|job>-<id>-<annotations|dataset>-in-<format>-format-by-<user_id>
     # export:<project|task>-<id>-backup-by-<user_id>
 
-    @staticmethod
-    def build(
-        action: str,
-        resource: str,
-        identifier: Union[int, UUID],
-        *,
-        subresource: Optional[str] = None,
-        user_id: Optional[int] = None,
-        anno_format: Optional[str] = None,
+    def render(
+        self,
     ) -> str:
-        if "import" == action:
-            return f"{action}:{resource}-{identifier}-{subresource}"
-        elif "export" == action:
-            if anno_format is None:
+        common_prefix = f"{self.action}:{self.target}-{self.identifier}"
+
+        if RequestAction.IMPORT == self.action:
+            return f"{common_prefix}-{self.subresource}"
+        elif RequestAction.EXPORT == self.action:
+            if self.format is None:
                 return (
-                    f"{action}:{resource}-{identifier}-{subresource}-by-{user_id}"
+                    f"{common_prefix}-{self.subresource}-by-{self.user_id}"
                 )
-            format_to_be_used_in_urls = anno_format.replace(" ", "_").replace(".", "@")
-            return f"{action}:{resource}-{identifier}-{subresource}-in-{format_to_be_used_in_urls}-format-by-{user_id}"
-        elif "create" == action:
-            assert "task" == resource
-            return f"{action}:{resource}-{identifier}"
+
+            format_to_be_used_in_urls = self.format.replace(" ", "_").replace(".", "@")
+            return f"{common_prefix}-{self.subresource}-in-{format_to_be_used_in_urls}-format-by-{self.user_id}"
+        elif self.action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
+            return common_prefix
         else:
-            raise ValueError(f"Unsupported action {action!r} was found")
+            assert False, f"Unsupported action {self.action!r} was found"
 
     @staticmethod
     def parse(rq_id: str) -> RQId:
-        action: Optional[str] = None
-        resource: Optional[str] = None
         identifier: Optional[Union[UUID, int]] = None
-        subresource: Optional[str] = None
+        subresource: Optional[RequestSubresource] = None
         user_id: Optional[int] = None
         anno_format: Optional[str] = None
 
         try:
             action_and_resource, unparsed = rq_id.split("-", maxsplit=1)
-            action, resource = action_and_resource.split(":")
+            action_str, target_str = action_and_resource.split(":")
+            action = RequestAction(action_str)
+            target = RequestTarget(target_str)
 
-            if "create" == action:
+            if action in {RequestAction.CREATE, RequestAction.AUTOANNOTATE}:
                 identifier = unparsed
-            elif "import" == action:
-                identifier, subresource = unparsed.rsplit("-", maxsplit=1)
+            elif RequestAction.IMPORT == action:
+                identifier, subresource_str = unparsed.rsplit("-", maxsplit=1)
+                subresource = RequestSubresource(subresource_str)
             else: # action == export
-                identifier, subresource, unparsed = unparsed.split("-", maxsplit=2)
-                if "backup" == subresource:
+                identifier, subresource_str, unparsed = unparsed.split("-", maxsplit=2)
+                subresource = RequestSubresource(subresource_str)
+
+                if RequestSubresource.BACKUP == subresource:
                     _, user_id = unparsed.split("-")
                 else:
                     unparsed, _, user_id = unparsed.rsplit("-", maxsplit=2)
@@ -122,7 +164,7 @@ class RQIdManager:
 
             return RQId(
                 action=action,
-                resource=resource,
+                target=target,
                 identifier=identifier,
                 subresource=subresource,
                 user_id=user_id,

@@ -48,11 +48,12 @@ module.exports = (env) => {
         },
         devServer: {
             compress: false,
-            host: process.env.CVAT_UI_HOST || 'localhost',
+            host: process.env.CVAT_UI_HOST ?? 'localhost',
             client: {
                 overlay: false,
+                webSocketURL: 'ws://0.0.0.0:0/ws',
             },
-            port: 3000,
+            port: process.env.CVAT_UI_PORT ?? 3000,
             historyApiFallback: true,
             static: {
                 directory: path.join(__dirname, 'dist'),
@@ -63,17 +64,15 @@ module.exports = (env) => {
                 'Cross-Origin-Opener-Policy': 'same-origin',
                 'Cross-Origin-Embedder-Policy': 'credentialless',
             },
-            proxy: [
-                {
-                    context: (param) =>
-                        param.match(
-                            /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
-                        ),
-                    target: env && env.API_URL,
-                    secure: false,
-                    changeOrigin: true,
-                },
-            ],
+            proxy: [{
+                context: (param) =>
+                    param.match(
+                        /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                    ),
+                target: env && env.API_URL,
+                secure: false,
+                changeOrigin: true,
+            }],
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
@@ -188,6 +187,10 @@ module.exports = (env) => {
                     {
                         from: 'src/assets/opencv_4.8.0.js',
                         to  : 'assets/opencv_4.8.0.js',
+                    },
+                    {
+                        from: 'src/assets/*.png',
+                        to  : 'assets/[name][ext]',
                     },
                     {
                         from: 'plugins/**/assets/*.(onnx|js)',

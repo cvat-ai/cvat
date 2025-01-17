@@ -7,12 +7,14 @@
 import subprocess
 import sys
 from argparse import ArgumentParser, Namespace
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import Optional, Sequence
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
+
 
 def create_arg_parser() -> ArgumentParser:
     parser = ArgumentParser(add_help=True)
@@ -35,7 +37,7 @@ def parse_args(args: Optional[Sequence[str]] = None) -> Namespace:
 def call_generator(generator_path: Path, gen_params: Namespace) -> None:
     rules_dir = generator_path.parents[2]
     subprocess.check_call(
-        [sys.executable, generator_path.relative_to(rules_dir), 'tests/configs'], cwd=rules_dir
+        [sys.executable, generator_path.relative_to(rules_dir), "tests/configs"], cwd=rules_dir
     )
 
 
@@ -52,7 +54,7 @@ def main(args: Optional[Sequence[str]] = None) -> int:
             partial(call_generator, gen_params=args),
             generator_paths,
         ):
-            pass # consume all results in order to propagate exceptions
+            pass  # consume all results in order to propagate exceptions
 
 
 if __name__ == "__main__":

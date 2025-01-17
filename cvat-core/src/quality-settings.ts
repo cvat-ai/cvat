@@ -1,16 +1,33 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
+import { convertDescriptions, getServerAPISchema } from './server-schema';
+
+export enum TargetMetric {
+    ACCURACY = 'accuracy',
+    PRECISION = 'precision',
+    RECALL = 'recall',
+}
+
+export enum PointSizeBase {
+    IMAGE_SIZE = 'image_size',
+    GROUP_BBOX_SIZE = 'group_bbox_size',
+}
 
 export default class QualitySettings {
     #id: number;
+    #targetMetric: TargetMetric;
+    #targetMetricThreshold: number;
+    #maxValidationsPerJob: number;
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
+    #pointSizeBase: PointSizeBase;
     #lineThickness: number;
     #lowOverlapThreshold: number;
     #orientedLines: boolean;
@@ -21,12 +38,18 @@ export default class QualitySettings {
     #objectVisibilityThreshold: number;
     #panopticComparison: boolean;
     #compareAttributes: boolean;
+    #emptyIsAnnotated: boolean;
+    #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
         this.#task = initialData.task;
+        this.#targetMetric = initialData.target_metric as TargetMetric;
+        this.#targetMetricThreshold = initialData.target_metric_threshold;
+        this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
+        this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
         this.#lowOverlapThreshold = initialData.low_overlap_threshold;
         this.#orientedLines = initialData.compare_line_orientation;
@@ -37,6 +60,8 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
+        this.#emptyIsAnnotated = initialData.empty_is_annotated;
+        this.#descriptions = initialData.descriptions;
     }
 
     get id(): number {
@@ -61,6 +86,14 @@ export default class QualitySettings {
 
     set oksSigma(newVal: number) {
         this.#oksSigma = newVal;
+    }
+
+    get pointSizeBase(): PointSizeBase {
+        return this.#pointSizeBase;
+    }
+
+    set pointSizeBase(newVal: PointSizeBase) {
+        this.#pointSizeBase = newVal;
     }
 
     get lineThickness(): number {
@@ -143,10 +176,53 @@ export default class QualitySettings {
         this.#compareAttributes = newVal;
     }
 
+    get targetMetric(): TargetMetric {
+        return this.#targetMetric;
+    }
+
+    set targetMetric(newVal: TargetMetric) {
+        this.#targetMetric = newVal;
+    }
+
+    get targetMetricThreshold(): number {
+        return this.#targetMetricThreshold;
+    }
+
+    set targetMetricThreshold(newVal: number) {
+        this.#targetMetricThreshold = newVal;
+    }
+
+    get maxValidationsPerJob(): number {
+        return this.#maxValidationsPerJob;
+    }
+
+    set maxValidationsPerJob(newVal: number) {
+        this.#maxValidationsPerJob = newVal;
+    }
+
+    get emptyIsAnnotated(): boolean {
+        return this.#emptyIsAnnotated;
+    }
+
+    set emptyIsAnnotated(newVal: boolean) {
+        this.#emptyIsAnnotated = newVal;
+    }
+
+    get descriptions(): Record<string, string> {
+        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
+            const camelCaseKey = _.camelCase(key);
+            acc[camelCaseKey] = this.#descriptions[key];
+            return acc;
+        }, {});
+
+        return descriptions;
+    }
+
     public toJSON(): SerializedQualitySettingsData {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
             oks_sigma: this.#oksSigma,
+            point_size_base: this.#pointSizeBase,
             line_thickness: this.#lineThickness,
             low_overlap_threshold: this.#lowOverlapThreshold,
             compare_line_orientation: this.#orientedLines,
@@ -157,6 +233,10 @@ export default class QualitySettings {
             object_visibility_threshold: this.#objectVisibilityThreshold,
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
+            target_metric: this.#targetMetric,
+            target_metric_threshold: this.#targetMetricThreshold,
+            max_validations_per_job: this.#maxValidationsPerJob,
+            empty_is_annotated: this.#emptyIsAnnotated,
         };
 
         return result;
@@ -172,9 +252,13 @@ Object.defineProperties(QualitySettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
-            const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
-            return new QualitySettings(result);
+        value: async function implementation(): Promise<QualitySettings> {
+            const result = await serverProxy.analytics.quality.settings.update(
+                this.id, this.toJSON(),
+            );
+            const schema = await getServerAPISchema();
+            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+            return new QualitySettings({ ...result, descriptions });
         },
     },
 });

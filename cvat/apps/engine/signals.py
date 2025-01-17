@@ -1,17 +1,17 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 import functools
 import shutil
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
-from .models import CloudStorage, Data, Job, Profile, Project, StatusChoice, Task, Asset
-
+from .models import Asset, CloudStorage, Data, Job, Profile, Project, StatusChoice, Task
 
 # TODO: need to log any problems reported by shutil.rmtree when the new
 # analytics feature is available. Now the log system can write information
@@ -36,13 +36,28 @@ def __save_job_handler(instance, created, **kwargs):
         db_task.status = status
         db_task.save(update_fields=["status", "updated_date"])
 
-@receiver(post_save, sender=User,
-    dispatch_uid=__name__ + ".save_user_handler")
-def __save_user_handler(instance, **kwargs):
+
+@receiver(post_save, sender=User, dispatch_uid=__name__ + ".save_user_handler")
+def __save_user_handler(instance: User, **kwargs):
+    should_access_analytics = instance.is_superuser or instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
     if not hasattr(instance, 'profile'):
         profile = Profile()
         profile.user = instance
+        profile.has_analytics_access = should_access_analytics
         profile.save()
+    elif should_access_analytics and not instance.profile.has_analytics_access:
+        instance.profile.has_analytics_access = True
+        instance.profile.save()
+
+
+@receiver(m2m_changed, sender=User.groups.through, dispatch_uid=__name__ + ".m2m_user_groups_change_handler")
+def __m2m_user_groups_change_handler(sender, instance: User, action: str, **kwargs):
+    if action == 'post_add':
+        is_admin = instance.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
+        if is_admin and hasattr(instance, 'profile') and not instance.profile.has_analytics_access:
+            instance.profile.has_analytics_access = True
+            instance.profile.save()
+
 
 @receiver(post_delete, sender=Project,
     dispatch_uid=__name__ + ".delete_project_handler")

@@ -11,9 +11,9 @@ import Form from 'antd/lib/form';
 import { FormListFieldData, FormListOperation } from 'antd/lib/form/FormList';
 import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
+import Alert from 'antd/lib/alert';
 import Tooltip from 'antd/lib/tooltip';
 import config from 'config';
-import { Alert } from 'antd';
 
 interface Props {
     form: any;

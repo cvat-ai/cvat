@@ -7,13 +7,15 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from cvat_sdk.api_client import apis, models
-from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import ProgressReporter
 from cvat_sdk.core.proxies.model_proxy import (
+    DownloadBackupMixin,
+    ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -37,6 +39,8 @@ class Project(
     models.IProjectRead,
     ModelUpdateMixin[models.IPatchedProjectWriteRequest],
     ModelDeleteMixin,
+    ExportDatasetMixin,
+    DownloadBackupMixin,
 ):
     _model_partial_update_arg = "patched_project_write_request"
 
@@ -49,7 +53,7 @@ class Project(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Import dataset for a project in the specified format (e.g. 'YOLO ZIP 1.0').
+        Import dataset for a project in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -65,65 +69,11 @@ class Project(
 
         self._client.logger.info(f"Annotation file '{filename}' for project #{self.id} uploaded")
 
-    def export_dataset(
-        self,
-        format_name: str,
-        filename: StrPath,
-        *,
-        pbar: Optional[ProgressReporter] = None,
-        status_check_period: Optional[int] = None,
-        include_images: bool = True,
-    ) -> None:
-        """
-        Download annotations for a project in the specified format (e.g. 'YOLO ZIP 1.0').
-        """
-
-        filename = Path(filename)
-
-        if include_images:
-            endpoint = self.api.retrieve_dataset_endpoint
-        else:
-            endpoint = self.api.retrieve_annotations_endpoint
-
-        Downloader(self._client).prepare_and_download_file_from_endpoint(
-            endpoint=endpoint,
-            filename=filename,
-            url_params={"id": self.id},
-            query_params={"format": format_name},
-            pbar=pbar,
-            status_check_period=status_check_period,
-        )
-
-        self._client.logger.info(f"Dataset for project {self.id} has been downloaded to {filename}")
-
-    def download_backup(
-        self,
-        filename: StrPath,
-        *,
-        status_check_period: int = None,
-        pbar: Optional[ProgressReporter] = None,
-    ) -> None:
-        """
-        Download a project backup
-        """
-
-        filename = Path(filename)
-
-        Downloader(self._client).prepare_and_download_file_from_endpoint(
-            self.api.retrieve_backup_endpoint,
-            filename=filename,
-            pbar=pbar,
-            status_check_period=status_check_period,
-            url_params={"id": self.id},
-        )
-
-        self._client.logger.info(f"Backup for project {self.id} has been downloaded to {filename}")
-
     def get_annotations(self) -> models.ILabeledData:
         (annotations, _) = self.api.retrieve_annotations(self.id)
         return annotations
 
-    def get_tasks(self) -> List[Task]:
+    def get_tasks(self) -> list[Task]:
         return [
             Task(self._client, m)
             for m in get_paginated_collection(
@@ -131,7 +81,7 @@ class Project(
             )
         ]
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
             self._client.api_client.labels_api.list_endpoint, project_id=self.id
         )
@@ -148,6 +98,7 @@ class ProjectsRepo(
     ModelCreateMixin[Project, models.IProjectWriteRequest],
     ModelListMixin[Project],
     ModelRetrieveMixin[Project],
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Project
 

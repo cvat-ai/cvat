@@ -5,15 +5,19 @@
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
-    find_dataset_root, match_dm_item)
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    find_dataset_root,
+    match_dm_item,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 
 
 class KeepTracks(ItemTransform):
