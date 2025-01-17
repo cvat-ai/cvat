@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
 import datumaro as dm
+import datumaro.components.media
 import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
@@ -2123,8 +2124,8 @@ def match_dm_item(
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
-    if frame_number is None and item.has_image:
-        frame_number = instance_data.match_frame(item.id + item.image.ext, root_hint)
+    if frame_number is None and isinstance(item.media, dm.components.media.Image):
+        frame_number = instance_data.match_frame(item.id + item.media.ext, root_hint)
     if frame_number is None:
         frame_number = instance_data.match_frame(item.id, root_hint, path_has_ext=False)
     if frame_number is None:
