@@ -1086,7 +1086,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
 
         return returned_values
 
-    def match_boxes(self, item_a, item_b):
+    def match_boxes(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         def _to_polygon(bbox_ann: dm.Bbox):
             points = bbox_ann.as_polygon()
             angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
@@ -1109,7 +1109,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             else:
                 return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
         return self._match_segments(
             dm.AnnotationType.bbox,
             item_a,
@@ -1117,13 +1117,13 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             distance=partial(_bbox_iou, img_h=img_h, img_w=img_w),
         )
 
-    def match_segmentations(self, item_a, item_b):
+    def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         def _get_segmentations(item):
             return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
                 dm.AnnotationType.mask, item
             )
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         def _find_instances(annotations):
             # Group instance annotations by label.
@@ -1269,17 +1269,17 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
 
         return returned_values
 
-    def match_lines(self, item_a, item_b):
+    def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         matcher = _LineMatcher(
             oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
-            scale=np.prod(item_a.image.size),
+            scale=np.prod(item_a.media_as(dm.Image).size),
         )
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=matcher.distance
         )
 
-    def match_points(self, item_a, item_b):
+    def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
@@ -1293,7 +1293,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
                     if ann.type == dm.AnnotationType.points:
                         instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         def _distance(a: dm.Points, b: dm.Points) -> float:
             a_bbox = instance_map[id(a)][1]
@@ -1656,7 +1656,7 @@ class _Comparator:
             else:
                 assert False
 
-        img_h, img_w = item.image.size
+        img_h, img_w = item.media_as(dm.Image).size
         covered_ids = _find_covered_segments(
             segms, img_w=img_w, img_h=img_h, visibility_threshold=self.coverage_threshold
         )
@@ -1866,7 +1866,7 @@ class DatasetComparator:
             line_matcher = _LineMatcher(
                 torso_r=self.settings.line_thickness,
                 oriented=True,
-                scale=np.prod(gt_item.image.size),
+                scale=np.prod(gt_item.media_as(dm.Image).size),
             )
 
             for gt_ann, ds_ann in itertools.chain(matches, mismatches):
