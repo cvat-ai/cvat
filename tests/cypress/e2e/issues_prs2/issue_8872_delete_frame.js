@@ -10,20 +10,24 @@ context('UI and job metadata work correctly when deleting frames', () => {
     const chunkReloadPeriod = 100; // 100 ms
     let defaultJobMetadataReloadPreiod;
 
-    before(() => {
-        cy.openTaskJob(taskName);
-        cy.window().then((window) => {
-            defaultJobMetadataReloadPreiod = window.cvat.config.jobMetaDataReloadPeriod;
-            window.cvat.config.jobMetaDataReloadPeriod = chunkReloadPeriod;
-        });
-    });
-
     describe('Attempt to delete any frame after repeated request to /data/meta/', () => {
+        before(() => {
+            cy.window().then((window) => {
+                defaultJobMetadataReloadPreiod = window.cvat.config.jobMetaDataReloadPeriod;
+                window.cvat.config.jobMetaDataReloadPeriod = chunkReloadPeriod;
+            });
+        });
+
         it('Elapse job metadata reload period, delete a frame, validate UI state is and request body ', () => {
             cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
             cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
 
+            // Intercept first request after loading the job
+            cy.openTaskJob(taskName);
+            cy.wait('@getMeta');
+
             const frameAlias = 'oldCurrentFrame';
+
             cy.goToNextFrame(1);
             cy.wait('@getMeta').then((interceptor) => {
                 expect(interceptor.response.body).to.haveOwnProperty('frames');
