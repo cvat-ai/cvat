@@ -162,6 +162,11 @@ REPLACEMENT_RULES = [
         re.compile(r"^cvat-sdk==[\d.]+$", re.M),
         lambda v, m: f"cvat-sdk=={v.major}.{v.minor}.{v.patch}",
     ),
+    ReplacementRule(
+        "cvat-ui/package.json",
+        re.compile(r'^  "version": "[\d.]+",$', re.M),
+        lambda v, m: f'  "version": "{v.major}.{v.minor}.{v.patch}",',
+    ),
 ]
 
 
