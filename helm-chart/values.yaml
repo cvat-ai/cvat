@@ -143,6 +143,8 @@ cvat:
     imagePullPolicy: Always
     permissionFix:
       enabled: true
+    initSecretKey:
+      enabled: false
     service:
       annotations: {}
       spec:
