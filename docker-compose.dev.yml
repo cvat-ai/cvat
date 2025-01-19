@@ -98,6 +98,7 @@ services:
         https_proxy:
         no_proxy:
         socks_proxy:
+        CLIENT_PLUGINS: ${CLIENT_PLUGINS}
       dockerfile: Dockerfile.ui
 
   cvat_clickhouse:
