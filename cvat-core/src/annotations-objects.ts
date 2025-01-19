@@ -54,7 +54,9 @@ function computeNewSource(currentSource: Source): Source {
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
     }
-
+    if (currentSource === Source.GT) {
+        return Source.GT;
+    }
     return Source.MANUAL;
 }
 
