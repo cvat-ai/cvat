@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,9 +61,7 @@ function computeNewSource(currentSource: Source): Source {
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
-    frameMeta: {
-        deleted_frames: Record<number, boolean>;
-    };
+    framesInfo: Readonly<Record<number, Readonly<{ width: number; height: number; }>>>
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -72,6 +70,7 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
+    isFrameDeleted: (frame: number) => boolean;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -394,7 +393,8 @@ class Annotation {
 }
 
 class Drawn extends Annotation {
-    protected frameMeta: AnnotationInjection['frameMeta'];
+    protected isFrameDeleted: (frame: number) => boolean;
+    protected framesInfo: AnnotationInjection['framesInfo'];
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
@@ -402,7 +402,8 @@ class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
-        this.frameMeta = injection.frameMeta;
+        this.isFrameDeleted = injection.isFrameDeleted;
+        this.framesInfo = injection.framesInfo;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
         this.pinned = true;
@@ -487,16 +488,10 @@ class Drawn extends Annotation {
             checkObjectType('points', data.points, null, Array);
             checkNumberOfPoints(this.shapeType, data.points);
             // cut points
-            const { width, height, filename } = this.frameMeta[frame];
+            const { width, height } = this.framesInfo[frame];
             fittedPoints = this.fitPoints(data.points, data.rotation, width, height);
-            let check = true;
-            if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                check = false;
-            }
-            if (check) {
-                if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                    fittedPoints = [];
-                }
+            if (this.dimension === DimensionType.DIMENSION_2D && !checkShapeArea(this.shapeType, fittedPoints)) {
+                fittedPoints = [];
             }
         }
 
@@ -960,7 +955,7 @@ export class Track extends Drawn {
         let last = Number.MIN_SAFE_INTEGER;
 
         for (const frame of frames) {
-            if (frame in this.frameMeta.deleted_frames) {
+            if (this.isFrameDeleted(frame)) {
                 continue;
             }
 
@@ -2216,7 +2211,7 @@ export class MaskShape extends Shape {
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         const [left, top, right, bottom] = this.points.slice(-4);
-        const { width, height } = this.frameMeta[this.frame];
+        const { width, height } = this.framesInfo[this.frame];
         if (left >= width || top >= height || right >= width || bottom >= height) {
             this.points = cropMask(this.points, width, height);
         }
@@ -2229,7 +2224,7 @@ export class MaskShape extends Shape {
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
-            const { width, height } = this.frameMeta[frame];
+            const { width, height } = this.framesInfo[frame];
             return cropMask(data.points, width, height);
         }
 
@@ -2610,7 +2605,7 @@ class PolyTrack extends Track {
                 return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
             }
 
-            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): void {
+            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): Point2D[] {
                 const threshold = baseLength / (2 * N);
                 const minimized = [interpolatedPoints[startInterpolated]];
                 let latestPushed = startInterpolated;

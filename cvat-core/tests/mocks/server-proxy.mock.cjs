@@ -379,7 +379,7 @@ class ServerProxy {
                 const task = tasksDummyData.results.find((task) => task.id === id);
                 const jobs = jobsDummyData.results.filter((job) => job.task_id === id);
                 const jobsMeta = jobs.map((job) => frameMetaDummyData[job.id]).flat();
-                let framesMeta = jobsMeta.map((jobMeta) => jobMeta.frames);
+                let framesMeta = jobsMeta.map((jobMeta) => jobMeta.frames).flat();
                 if (task.mode === 'interpolation') {
                     framesMeta = [framesMeta[0]];
                 }
@@ -388,11 +388,11 @@ class ServerProxy {
                     chunk_size: jobsMeta[0].chunk_size                    ,
                     size: task.size,
                     image_quality: task.image_quality,
-                    start_frame: task.start_frame,
-                    stop_frame: task.stop_frame,
+                    start_frame: Math.min(...jobsMeta.map((meta) => meta.start_frame)),
+                    stop_frame: Math.max(...jobsMeta.map((meta) => meta.stop_frame)),
                     frames: framesMeta,
                     deleted_frames: [],
-                    included_frames: [],
+                    included_frames: null,
                 };
             }
 
