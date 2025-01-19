@@ -89,6 +89,9 @@ export interface JobsState {
             [tid: number]: boolean;
         };
     };
+    regularJobViewUncollapse: {
+        [tid: number]: boolean;
+    };
 }
 
 export interface TasksState {
@@ -168,6 +171,16 @@ export interface ImportState {
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
+}
+
+export interface ConsensusState {
+    fetching: boolean;
+    consensusSettings: any | null;
+    taskInstance: any | null;
+    jobInstance: any | null;
+    mergingConsensus: {
+        [tid: string]: boolean;
+    };
 }
 
 export interface FormatsState {
@@ -476,6 +489,7 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             importing: null | ErrorState;
             moving: null | ErrorState;
+            mergingConsensus: null | ErrorState;
         };
         jobs: {
             updating: null | ErrorState;
@@ -599,6 +613,7 @@ export interface NotificationsState {
             loadingDone: null | NotificationState;
             importingDone: null | NotificationState;
             movingDone: null | NotificationState;
+            mergingConsensusDone: null | NotificationState;
         };
         models: {
             inferenceDone: null | NotificationState;
@@ -1018,6 +1033,7 @@ export interface CombinedState {
     review: ReviewState;
     export: ExportState;
     import: ImportState;
+    consensus: ConsensusState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     invitations: InvitationsState;

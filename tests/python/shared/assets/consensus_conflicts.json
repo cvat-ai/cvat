@@ -1,0 +1,28 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "annotation_ids": [],
+      "frame": 1,
+      "id": 3,
+      "report_id": 2,
+      "type": "failed_label_voting"
+    },
+    {
+      "annotation_ids": [],
+      "frame": 1,
+      "id": 2,
+      "report_id": 2,
+      "type": "failed_label_voting"
+    },
+    {
+      "annotation_ids": [],
+      "frame": 1,
+      "id": 1,
+      "report_id": 2,
+      "type": "failed_label_voting"
+    }
+  ]
+}
