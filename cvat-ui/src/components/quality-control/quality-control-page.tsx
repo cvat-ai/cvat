@@ -398,7 +398,9 @@ function QualityControlPage(): JSX.Element {
                     ),
                 });
             }
+        }
 
+        if (qualitySettings) {
             tabsItems.push({
                 key: 'settings',
                 label: 'Settings',

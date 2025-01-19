@@ -28,6 +28,7 @@ services:
   cvat_worker_quality_reports: *backend-settings
   cvat_worker_webhooks: *backend-settings
   cvat_worker_chunks: *backend-settings
+  cvat_worker_consensus: *backend-settings
 
 secrets:
   postgres_password:

@@ -3,6 +3,10 @@ package quality_utils
 import rego.v1
 
 
+is_job_assignee(job_data, auth_data) if {
+    job_data.assignee.id == auth_data.user.id
+}
+
 is_task_owner(task_data, auth_data) if {
     task_data.owner.id == auth_data.user.id
 }
@@ -37,4 +41,12 @@ is_task_staff(task_data, project_data, auth_data) if {
 
 is_task_staff(task_data, project_data, auth_data) if {
     is_task_assignee(task_data, auth_data)
+}
+
+is_job_staff(job_data, task_data, project_data, auth_data) if {
+    is_task_staff(task_data, project_data, auth_data)
+}
+
+is_job_staff(job_data, task_data, project_data, auth_data) if {
+    is_job_assignee(job_data, auth_data)
 }
