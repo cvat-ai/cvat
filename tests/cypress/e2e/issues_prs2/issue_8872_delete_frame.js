@@ -19,6 +19,13 @@ context('UI and job metadata work correctly when deleting frames', () => {
         });
 
         it('Elapse job metadata reload period, delete a frame, validate UI state is and request body ', () => {
+            let frameNum = null;
+            function getCurrentFrameNumber() {
+                cy.get('.cvat-player-frame-selector').within(() => cy.get('[role="spinbutton"]')
+                    .should('have.attr', 'aria-valuenow')
+                    .then((valueFrameNow) => { frameNum = Number(valueFrameNow); }));
+            }
+
             cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
             cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
 
@@ -26,40 +33,32 @@ context('UI and job metadata work correctly when deleting frames', () => {
             // Ensure first request is sent after loading the job
             cy.wait('@getMeta');
 
-            const frameAlias = 'oldCurrentFrame';
-
             cy.goToNextFrame(1);
-            cy.wait('@getMeta').then(() => {
-                // enqueue current frame number
-                // save it in context
-                cy.getCurrentFrameNumber(frameAlias);
-            });
+            cy.wait('@getMeta');
+            getCurrentFrameNumber();
 
             cy.clickDeleteFrame();
             cy.get('.cvat-player-restore-frame').should('not.exist');
-            cy.wait('@getMeta');
 
             // Save and intercept request to confirm validate deleted frames
             cy.clickSave();
-            cy.get(`@${frameAlias}`).then((frameNum) => {
-                cy.wait('@patchMeta').then((interceptDeleted) => {
-                    const deletedFrames = interceptDeleted.request.body.deleted_frames;
+            cy.wait('@patchMeta').then((interceptDeleted) => {
+                const deletedFrames = interceptDeleted.request.body.deleted_frames;
 
-                    // Check old frame is unavailable
-                    cy.checkFrameNum(frameNum + 1);
+                // Check old frame is unavailable
+                cy.checkFrameNum(frameNum + 1);
 
-                    // Check deleted frame are correct
-                    expect(deletedFrames).to.include(frameNum);
-                });
-                // Restore state and save
-                // Validate UI and that no frames are marked deleted
-                cy.contains('.cvat-annotation-header-button', 'Undo').click();
-                cy.clickSave();
-                cy.wait('@patchMeta').then((interceptRestored) => {
-                    const deletedFrames = interceptRestored.request.body.deleted_frames;
-                    cy.wrap(deletedFrames).should('be.empty');
-                    cy.checkFrameNum(frameNum);
-                });
+                // Check deleted frame are correct
+                expect(deletedFrames).to.include(frameNum);
+            });
+            // Restore state and save
+            // Validate UI and that no frames are marked deleted
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.clickSave();
+            cy.wait('@patchMeta').then((interceptRestored) => {
+                const deletedFrames = interceptRestored.request.body.deleted_frames;
+                cy.wrap(deletedFrames).should('be.empty');
+                cy.checkFrameNum(frameNum);
             });
         });
         after(() => {
