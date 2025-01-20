@@ -33,24 +33,24 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         finishWithButton: true,
     };
 
-    // const createRectangleTrack2Points = {
-    //     points: 'By 2 Points',
-    //     type: 'Track',
-    //     firstX: 430,
-    //     firstY: 40,
-    //     secondX: 640,
-    //     secondY: 145,
-    //     labelName,
-    // };
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        firstX: 82,
-        firstY: 129,
-        secondX: 107,
+        firstX: 430,
+        firstY: 40,
+        secondX: 640,
         secondY: 145,
         labelName,
     };
+    // const createRectangleTrack2Points = {
+    //     points: 'By 2 Points',
+    //     type: 'Track',
+    //     firstX: 82,
+    //     firstY: 129,
+    //     secondX: 107,
+    //     secondY: 145,
+    //     labelName,
+    // };
 
     const keyCodeN = 78;
     const pointsMap = [
@@ -68,7 +68,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 5000;
     const height = 5000;
-    const delta = 157;
+    const delta = 3;
     const posX = 10;
     const posY = 10;
     const color = 'gray';
@@ -88,6 +88,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTaskJob(taskName);
+
+        // TODO: generate big image with text using OffscreenCanvas and save it using jimp
     });
 
     describe(`Testing case "${caseId}"`, () => {
