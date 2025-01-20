@@ -985,7 +985,7 @@ export default class Collection {
             }
 
             const { name: label } = object.label;
-            if (objectType === 'tag' && !this.injection.isFrameDeleted(object.frame)) {
+            if (objectType === 'tag' && !this.injection.framesInfo.isFrameDeleted(object.frame)) {
                 labels[label].tag++;
                 labels[label].manually++;
                 labels[label].total++;
