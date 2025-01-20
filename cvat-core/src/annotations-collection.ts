@@ -68,7 +68,6 @@ export default class Collection {
         dimension: DimensionType;
         framesInfo: BasicInjection['framesInfo'];
         jobType: JobType;
-        isFrameDeleted: (frame: number) => boolean;
     }) {
         this.stopFrame = data.stopFrame;
 
@@ -101,7 +100,6 @@ export default class Collection {
             jobType: data.jobType,
             groupColors: {},
             nextClientID: () => ++config.globalObjectsCounter,
-            isFrameDeleted: data.isFrameDeleted,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
         };
@@ -236,7 +234,7 @@ export default class Collection {
     }
 
     public get(frame: number, allTracks: boolean, filters: object[]): ObjectState[] {
-        if (this.injection.isFrameDeleted(frame)) {
+        if (this.injection.framesInfo.isFrameDeleted(frame)) {
             return [];
         }
 
@@ -929,7 +927,7 @@ export default class Collection {
                     count -= 1;
                 }
                 for (let i = start + 1; lastIsKeyframe ? i < stop : i <= stop; i++) {
-                    if (this.injection.isFrameDeleted(i)) {
+                    if (this.injection.framesInfo.isFrameDeleted(i)) {
                         count--;
                     }
                 }
@@ -942,7 +940,7 @@ export default class Collection {
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
-                .filter((frame) => !this.injection.isFrameDeleted(frame));
+                .filter((frame) => !this.injection.framesInfo.isFrameDeleted(frame));
 
             let prevKeyframe = keyframes[0];
             let visible = false;
@@ -999,7 +997,7 @@ export default class Collection {
                 labels[label].total++;
             } else if (objectType === 'track') {
                 scanTrack(object);
-            } else if (!this.injection.isFrameDeleted(object.frame)) {
+            } else if (!this.injection.framesInfo.isFrameDeleted(object.frame)) {
                 const { shapeType } = object as Shape;
                 labels[label][shapeType].shape++;
                 labels[label].manually++;
@@ -1298,7 +1296,7 @@ export default class Collection {
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-            if (!allowDeletedFrames && this.injection.isFrameDeleted(frame)) {
+            if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
                 continue;
             }
 
@@ -1365,7 +1363,7 @@ export default class Collection {
         if (!annotationsFilters) {
             let frame = frameFrom;
             while (predicate(frame)) {
-                if (!allowDeletedFrames && this.injection.isFrameDeleted(frame)) {
+                if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
                     frame = update(frame);
                     continue;
                 }
@@ -1380,7 +1378,7 @@ export default class Collection {
         const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
 
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-            if (!allowDeletedFrames && this.injection.isFrameDeleted(frame)) {
+            if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
                 continue;
             }
 
