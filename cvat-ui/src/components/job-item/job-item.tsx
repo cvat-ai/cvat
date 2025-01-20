@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import moment, { Moment } from 'moment';
+import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -31,7 +31,7 @@ import Collapse from 'antd/lib/collapse';
 import { collapseRegularJob } from 'actions/jobs-actions';
 import JobActionsMenu from './job-actions-menu';
 
-function formatDate(value: Moment): string {
+function formatDate(value: moment.Moment): string {
     return value.format('MMM Do YYYY HH:mm');
 }
 
