@@ -1315,8 +1315,10 @@ class AnnotationGuide(TimestampedModel):
     is_public = models.BooleanField(default=False)
 
     @property
-    def target(self):
-        return self.project or self.task
+    def target(self) -> Task | Project:
+        target = self.project or self.task
+        assert target # one of the fields must be set
+        return target
 
     @property
     def organization_id(self):
