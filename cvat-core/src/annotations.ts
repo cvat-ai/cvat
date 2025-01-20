@@ -97,17 +97,19 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,
             dimension: session.dimension,
-            isFrameDeleted: session instanceof Job ?
-                (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :
-                (frame: number) => !!frameMeta.deletedFrames[frame],
-            framesInfo: frameMeta.frames.reduce((acc, frameInfo, idx) => {
-                // keep only static information
-                acc[frameNumbers[idx]] = {
-                    width: frameInfo.width,
-                    height: frameInfo.height,
-                };
-                return acc;
-            }, {}),
+            framesInfo: {
+                isFrameDeleted: session instanceof Job ?
+                    (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :
+                    (frame: number) => !!frameMeta.deletedFrames[frame],
+                ...frameMeta.frames.reduce((acc, frameInfo, idx) => {
+                    // keep only static information
+                    acc[frameNumbers[idx]] = {
+                        width: frameInfo.width,
+                        height: frameInfo.height,
+                    };
+                    return acc;
+                }, {}),
+            },
             history,
         });
 

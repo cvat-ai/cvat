@@ -58,10 +58,18 @@ function computeNewSource(currentSource: Source): Source {
     return Source.MANUAL;
 }
 
+type FrameInfo = {
+    width: number;
+    height: number;
+};
+
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
-    framesInfo: Readonly<Record<number, Readonly<{ width: number; height: number; }>>>
+    framesInfo: Readonly<{
+        [index: number]: Readonly<FrameInfo>;
+        isFrameDeleted: (frame: number) => boolean;
+    }>;
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -70,7 +78,6 @@ export interface BasicInjection {
     jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
-    isFrameDeleted: (frame: number) => boolean;
 }
 
 type AnnotationInjection = BasicInjection & {
@@ -393,7 +400,6 @@ class Annotation {
 }
 
 class Drawn extends Annotation {
-    protected isFrameDeleted: (frame: number) => boolean;
     protected framesInfo: AnnotationInjection['framesInfo'];
     protected descriptions: string[];
     public hidden: boolean;
@@ -402,7 +408,6 @@ class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
-        this.isFrameDeleted = injection.isFrameDeleted;
         this.framesInfo = injection.framesInfo;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
@@ -955,7 +960,7 @@ export class Track extends Drawn {
         let last = Number.MIN_SAFE_INTEGER;
 
         for (const frame of frames) {
-            if (this.isFrameDeleted(frame)) {
+            if (this.framesInfo.isFrameDeleted(frame)) {
                 continue;
             }
 
