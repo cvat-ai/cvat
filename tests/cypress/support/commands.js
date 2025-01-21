@@ -345,7 +345,7 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
-    cy.request({
+    return cy.request({
         method: 'POST',
         url: '/api/auth/register',
         body: {
