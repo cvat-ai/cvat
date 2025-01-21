@@ -274,7 +274,7 @@ context('Ground truth jobs', () => {
             createAndOpenTask(serverFiles, defaultValidationParams).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
-                cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
+                cy.get('.cvat-quality-control-management-tab-summary').should('exist').and('be.visible');
             });
         });
 
@@ -283,7 +283,7 @@ context('Ground truth jobs', () => {
         });
 
         it('Check management page contents.', () => {
-            cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist');
+            cy.get('.cvat-quality-control-management-tab-summary').should('exist');
             cy.contains('.cvat-allocation-summary-excluded', '0').should('exist');
             cy.contains('.cvat-allocation-summary-total', '3').should('exist');
             cy.contains('.cvat-allocation-summary-active', '3').should('exist');

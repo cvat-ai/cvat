@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) 2023-2025 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,13 +32,15 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         ],
         finishWithButton: true,
     };
-    const createOpencvTrackerShape = {
+
+    const createRectangleTrack2Points = {
+        points: 'By 2 Points',
+        type: 'Track',
+        firstX: 430,
+        firstY: 40,
+        secondX: 640,
+        secondY: 145,
         labelName,
-        tracker: 'TrackerMIL',
-        pointsMap: [
-            { x: 430, y: 40 },
-            { x: 640, y: 145 },
-        ],
     };
 
     const keyCodeN = 78;
@@ -209,27 +211,25 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
+            cy.createRectangle(createRectangleTrack2Points);
             // We will start testing tracking from 2-d frame because it's a bit unstable on inintialization
-            cy.createOpenCVTrack(createOpencvTrackerShape);
-            cy.goToNextFrame(1);
-            cy.get('.cvat-tracking-notice').should('not.exist');
-            cy.get('#cvat_canvas_shape_3')
+            cy.useOpenCVTracker({ tracker: 'TrackerMIL', targetFrame: 4 });
+            cy.get('#cvat_canvas_shape_4')
                 .then((shape) => {
                     const x = Math.round(shape.attr('x'));
                     const y = Math.round(shape.attr('y'));
-                    for (let i = 2; i < imagesCount; i++) {
+                    for (let i = 1; i < imagesCount; i++) {
                         cy.goToNextFrame(i);
-                        cy.get('.cvat-tracking-notice').should('not.exist');
                         // In the beginning of this test we created images with text
                         // On each frame text is moved by 5px on x and y axis,
                         // so we expect shape to be close to real text positions
-                        cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
-                            expect(parseFloat(xVal)).to.be.closeTo(x + (i - 1) * 5, 3.0);
+                        cy.get('#cvat_canvas_shape_4').invoke('attr', 'x').then((xVal) => {
+                            expect(parseFloat(xVal)).to.be.closeTo(x + i * 5, 3.0);
                         });
-                        cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
-                            expect(parseFloat(yVal)).to.be.closeTo(y + (i - 1) * 5, 3.0);
+                        cy.get('#cvat_canvas_shape_4').invoke('attr', 'y').then((yVal) => {
+                            expect(parseFloat(yVal)).to.be.closeTo(y + i * 5, 3.0);
                         });
-                        cy.get('#cvat-objects-sidebar-state-item-3')
+                        cy.get('#cvat-objects-sidebar-state-item-4')
                             .should('contain', 'RECTANGLE TRACK')
                             .within(() => {
                                 cy.get('.cvat-object-item-button-keyframe-enabled').should('exist');

@@ -103,9 +103,9 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
-                    { value: 'annotation', title: 'annotation' },
-                    { value: 'ground_truth', title: 'ground_truth' },
-                    { value: 'consensus', title: 'consensus' },
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'consensus', title: 'Consensus' },
                 ],
             },
         },

@@ -998,6 +998,7 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
             "task_id",
             "project_id",
             "type",
+            "parent_job_id",
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):

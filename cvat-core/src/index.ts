@@ -196,9 +196,6 @@ export default interface CVATCore {
         requestsStatusDelay: typeof config.requestsStatusDelay;
         jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
     },
-    client: {
-        version: string;
-    };
     enums,
     exceptions: {
         Exception: typeof Exception,

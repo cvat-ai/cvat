@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import pjson from '../../package.json';
 import { Canvas3dController, Canvas3dControllerImpl } from './canvas3dController';
 import {
     Canvas3dModel,
@@ -21,8 +20,6 @@ import {
     Canvas3dView, Canvas3dViewImpl, ViewsDOM, CameraAction,
 } from './canvas3dView';
 import { Master } from './master';
-
-const Canvas3dVersion = pjson.version;
 
 interface Canvas3d {
     html(): ViewsDOM;
@@ -125,7 +122,7 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
+    Canvas3dImpl as Canvas3d, ViewType, MouseInteraction, CameraAction, Mode as CanvasMode,
 };
 
 export type { ViewsDOM };
