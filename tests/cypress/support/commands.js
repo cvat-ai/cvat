@@ -36,7 +36,7 @@ Cypress.Commands.add('logout', () => {
     cy.get('.cvat-header-menu-user-dropdown-user').click();
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
-    cy.clearAllCookies();
+    cy.clearCookies();
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
     cy.contains('Sign in').should('exist');
@@ -369,8 +369,7 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
 });
 
 Cypress.Commands.add('headlessLogout', () => {
-    cy.clearAllCookies();
-    cy.clearAllLocalStorage();
+    cy.clearCookies();
 });
 
 Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
