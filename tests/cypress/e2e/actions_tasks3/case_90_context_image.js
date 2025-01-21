@@ -14,7 +14,7 @@ context('Context images for 2D tasks.', () => {
     const pathToArchive = `../../${__dirname}/assets/case_90/case_90_context_image.zip`;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, pathToArchive);
         cy.openTaskJob(taskName);

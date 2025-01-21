@@ -11,7 +11,7 @@ context('Changing a label name via label constructor.', () => {
     const secondLabelName = `Second case ${caseId}`;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').click();

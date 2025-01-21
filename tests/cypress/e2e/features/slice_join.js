@@ -47,7 +47,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
     let jobID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.headlessCreateTask({
             labels: [

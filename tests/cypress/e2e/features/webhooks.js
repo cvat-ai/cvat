@@ -48,7 +48,7 @@ context('Webhooks pipeline.', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.createOrganization(organizationParams);
         cy.visit('/projects');

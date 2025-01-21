@@ -25,7 +25,7 @@ context('Creating a task with only bounding boxes', () => {
     let taskID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(
             imagesFolder,

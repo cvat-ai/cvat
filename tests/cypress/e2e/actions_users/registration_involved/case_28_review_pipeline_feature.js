@@ -57,15 +57,12 @@ context('Review pipeline feature', () => {
 
     before(() => {
         cy.headlessLogout();
-
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
 
         // register additional users
-        cy.headlessLogout();
         for (const user of Object.values(additionalUsers)) {
             cy.headlessCreateUser(user);
-            cy.headlessLogout();
         }
 
         // create main task

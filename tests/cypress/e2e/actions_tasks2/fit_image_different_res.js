@@ -12,7 +12,7 @@ context('Correct behaviour of fit when navigating between frames with different 
     let jobID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask({

@@ -14,7 +14,7 @@ context('Dump annotation if cuboid created.', () => {
     const labelName = 'label';
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.headlessCreateTask({
             labels: [{ name: labelName, attributes: [], type: 'cuboid' }],

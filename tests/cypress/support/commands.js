@@ -265,7 +265,7 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
 });
 
 Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password = Cypress.env('password')) => {
-    cy.visit('/');
+    cy.visit('/auth/login');
     cy.get('#root').should('exist').and('be.visible');
     cy.window().then(async ($win) => {
         await $win.cvat.server.login(username, password);
@@ -344,29 +344,32 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateUser', (userSpec) => (
-    cy.request({
-        method: 'POST',
-        url: '/api/auth/register',
-        body: {
-            confirmations: [],
-            password1: userSpec.password,
-            password2: userSpec.password,
-            email: userSpec.email,
-            first_name: userSpec.firstName,
-            last_name: userSpec.lastName,
-            username: userSpec.username,
-        },
-        headers: {
-            'Content-type': 'application/json',
-        },
-    }).then((response) => {
-        expect(response.status).to.eq(201);
+Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    cy.intercept('POST', '/api/auth/register**', (req) => {
+        req.continue((res) => {
+            delete res.headers['set-cookie'];
+        });
+    }).as('registerRequest');
+
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.register(
+            userSpec.username,
+            userSpec.firstName,
+            userSpec.lastName,
+            userSpec.email,
+            userSpec.password,
+            [],
+        );
+        return cy.wrap();
+    });
+
+    cy.wait('@registerRequest').then((interception) => {
+        const { response } = interception;
+        expect(response.statusCode).to.eq(201);
         expect(response.body.username).to.eq(userSpec.username);
         expect(response.body.email).to.eq(userSpec.email);
-        return cy.wrap();
-    })
-));
+    });
+});
 
 Cypress.Commands.add('headlessLogout', () => {
     cy.clearCookies();
