@@ -462,7 +462,7 @@ class TaskPermission(OpenPolicyAgentPermission):
     def create_scope_view(cls, request, task: Union[int, Task], iam_context=None):
         if isinstance(task, int):
             try:
-                task = Task.objects.select_related("organization").get(id=task)
+                task = Task.objects.get(id=task)
             except Task.DoesNotExist as ex:
                 raise ValidationError(str(ex))
 
