@@ -54,7 +54,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
     });
 
     after(() => {
-        cy.clearAllCookies();
+        cy.headlessLogout();
         if (taskID !== null) {
             cy.getAuthKey().then((response) => {
                 const authKey = response.body.key;
