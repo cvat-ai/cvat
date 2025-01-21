@@ -86,7 +86,7 @@ context('New organization pipeline.', () => {
     }
 
     before(() => {
-        cy.visit('/');
+        cy.visit('auth/login');
         cy.login();
         cy.imageGenerator(
             imagesFolder,

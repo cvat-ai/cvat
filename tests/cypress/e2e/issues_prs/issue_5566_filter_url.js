@@ -26,7 +26,7 @@ context('The filter in the URL is correctly escaped', () => {
     }
 
     before(() => {
-        cy.visit('/');
+        cy.visit('auth/login');
         cy.login();
 
         cy.goToProjectsList();
