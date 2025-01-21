@@ -47,7 +47,10 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, import_resource_from_cloud_storage
+from cvat.apps.engine.cloud_provider import (
+    db_storage_to_storage_instance,
+    import_resource_from_cloud_storage,
+)
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
