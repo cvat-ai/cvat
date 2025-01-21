@@ -753,7 +753,6 @@ class JobPermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = None
         if self.obj:
-            organization_id = None
             if self.obj.segment.task.project:
                 organization_id = self.obj.segment.task.project.organization_id
             else:
