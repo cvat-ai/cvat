@@ -16,12 +16,14 @@ import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/v
 import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
+import BrushTools from 'components/annotation-page/canvas/views/canvas2d/brush-tools';
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
         <Layout hasSider className='cvat-standard-workspace'>
             <ControlsSideBarContainer />
             <CanvasLayout />
+            <BrushTools />
             <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
             <PropagateConfirmComponent />
             <CanvasContextMenuContainer />

@@ -64,7 +64,6 @@ import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import ImageSetupsContent from './image-setups-content';
-import BrushTools from './brush-tools';
 import CanvasTipsComponent from './canvas-hints';
 
 const cvat = getCore();
@@ -1143,8 +1142,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         height: '100%',
                     }}
                 />
-
-                <BrushTools />
 
                 <Popover
                     destroyTooltipOnHide
