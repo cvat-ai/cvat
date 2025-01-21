@@ -1129,12 +1129,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
             });
 
-            let startPoint = null;
-
+            let startCenter = null;
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
-                startPoint = { x: shape.x(), y: shape.y() };
+                const { cx, cy } = shape.bbox();
+                startCenter = { x: cx, y: cy };
                 start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
@@ -1170,10 +1170,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 onDragEnd();
                 this.draggableShape = null;
-                const endPoint = { x: shape.x(), y: shape.y() };
+                const { cx, cy } = shape.bbox();
 
-                const dx2 = (startPoint.x - endPoint.x) ** 2;
-                const dy2 = (startPoint.y - endPoint.y) ** 2;
+                const dx2 = (startCenter.x - cx) ** 2;
+                const dy2 = (startCenter.y - cy) ** 2;
                 if (Math.sqrt(dx2 + dy2) > 0) {
                     if (state.shapeType === 'mask') {
                         const { points } = state;
