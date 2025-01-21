@@ -92,7 +92,7 @@ context('Tests for source and target storage.', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);

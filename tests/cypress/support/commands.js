@@ -265,7 +265,7 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
 });
 
 Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password = Cypress.env('password')) => {
-    cy.visit('auth/login');
+    cy.visit('/auth/login');
     cy.get('#root').should('exist').and('be.visible');
     cy.window().then(async ($win) => {
         await $win.cvat.server.login(username, password);

@@ -14,7 +14,7 @@ context('Create a task with files from remote sources.', () => {
     const correctUrl = wrongUrl.replace('cvatt.jpg', 'cvat.jpg');
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').click();

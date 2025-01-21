@@ -14,7 +14,7 @@ const project = {
 
 context('List of export formats for a project without tasks is not empty', () => {
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.goToProjectsList();
         cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);

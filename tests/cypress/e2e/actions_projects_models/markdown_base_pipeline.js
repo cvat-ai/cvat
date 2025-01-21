@@ -40,7 +40,7 @@ context('Basic markdown pipeline', () => {
 
     before(() => {
         cy.headlessLogout();
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
 
         for (const user of Object.values(additionalUsers)) {

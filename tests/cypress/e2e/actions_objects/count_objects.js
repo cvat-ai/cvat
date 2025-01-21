@@ -22,7 +22,7 @@ context('Count total annotation, issues and labels', () => {
     const serverFiles = ['images/image_1.jpg'];
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask({

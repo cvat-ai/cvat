@@ -69,7 +69,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const extension = 'jpg';
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         for (let i = 0; i < imagesCount; i++) {
             cy.imageGenerator(imagesFolder, imageFileName + i, width, height, color, posX + i * 5,

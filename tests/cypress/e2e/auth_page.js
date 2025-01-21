@@ -6,7 +6,7 @@
 
 describe('Check server availability', () => {
     it('Server web interface is available', () => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
     });
 
     it('"/auth/login" contains in the URL', () => {

@@ -62,7 +62,7 @@ context('Import and export annotations: specify source and target storage in mod
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);

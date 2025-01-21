@@ -32,7 +32,7 @@ context('Cloud storage.', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 

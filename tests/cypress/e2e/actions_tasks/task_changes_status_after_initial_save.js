@@ -24,7 +24,7 @@ context('Task status updated after initial save.', () => {
 
     before(() => {
         cy.headlessLogout();
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask({

@@ -87,7 +87,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
     });
 
     beforeEach(() => {

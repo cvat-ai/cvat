@@ -24,7 +24,7 @@ context('Create a task with set an issue tracker.', () => {
     const incorrectBugTrackerUrl = 'somebugtracker.info/task12';
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
