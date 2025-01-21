@@ -21,7 +21,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
 
     before(() => {
         cy.headlessLogout();
-        cy.visit('auth/login');
+        cy.visit('/');
     });
 
     describe(`Testing issue "${issueId}"`, () => {
