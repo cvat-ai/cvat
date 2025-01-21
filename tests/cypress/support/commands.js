@@ -344,7 +344,7 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+Cypress.Commands.add('headlessCreateUser', (userSpec) => (
     cy.request({
         method: 'POST',
         url: '/api/auth/register',
@@ -365,8 +365,8 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
         expect(response.body.username).to.eq(userSpec.username);
         expect(response.body.email).to.eq(userSpec.email);
         return cy.wrap();
-    });
-});
+    })
+));
 
 Cypress.Commands.add('headlessLogout', () => {
     cy.clearCookies();
