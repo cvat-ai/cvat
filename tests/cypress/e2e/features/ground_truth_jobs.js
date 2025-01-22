@@ -375,7 +375,20 @@ context('Ground truth jobs', () => {
 
         it('Check management table .csv representation is available for download', () => {
             cy.get('.cvat-quality-table-dowload-button').click();
-            cy.verifyDownload(`allocation-table-task_${taskID}.csv`);
+
+            const expectedFileName = `allocation-table-task_${taskID}.csv`;
+            cy.verifyDownload(expectedFileName);
+
+            const downloadsFolder = Cypress.config('downloadsFolder');
+            const filePath = `${downloadsFolder}/${expectedFileName}`;
+            cy.readFile(filePath).then((csv) => {
+                const rows = csv.split('\n');
+                expect(rows.length).to.equal(4); // 3 frames + header
+                expect(rows[0]).to.include('frame,name,active'); // Check header
+                rows.slice(1).forEach((row, index) => {
+                    expect(row).to.include(`images/image_${index + 1}.jpg`);
+                });
+            });
         });
     });
 
