@@ -335,7 +335,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
 Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
     cy.window().then(async ($win) => {
         const project = new $win.cvat.classes.Project({
-            ...projectSpe,
+            ...projectSpec,
         });
 
         const result = await project.save();
