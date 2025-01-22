@@ -21,6 +21,7 @@ const defaultState: JobsState = {
     activities: {
         deletes: {},
     },
+    regularJobViewUncollapse: {},
 };
 
 export default (state: JobsState = defaultState, action: JobsActions): JobsState => {
@@ -161,6 +162,28 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
             return {
                 ...state,
                 fetching: false,
+            };
+        }
+        case JobsActionTypes.COLLAPSE_REGULAR_JOB: {
+            const { jobID } = action.payload;
+            state.regularJobViewUncollapse[jobID] = true;
+
+            return {
+                ...state,
+                regularJobViewUncollapse: {
+                    ...state.regularJobViewUncollapse,
+                },
+            };
+        }
+        case JobsActionTypes.UNCOLLAPSE_REGULAR_JOB: {
+            const { jobID } = action.payload;
+            state.regularJobViewUncollapse[jobID] = false;
+
+            return {
+                ...state,
+                regularJobViewUncollapse: {
+                    ...state.regularJobViewUncollapse,
+                },
             };
         }
         default: {

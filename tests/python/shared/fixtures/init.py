@@ -341,9 +341,8 @@ def delete_compose_files(container_name_files):
 def wait_for_services(num_secs: int = 300) -> None:
     for i in range(num_secs):
         logger.debug(f"waiting for the server to load ... ({i})")
-        response = requests.get(get_server_url("api/server/health/", format="json"))
-
         try:
+            response = requests.get(get_server_url("api/server/health/", format="json"))
             statuses = response.json()
             logger.debug(f"server status: \n{statuses}")
 
@@ -417,7 +416,7 @@ def session_start(
     cvat_root_dir=CVAT_ROOT_DIR,
     cvat_db_dir=CVAT_DB_DIR,
     extra_dc_files=None,
-    waiting_time=300,
+    waiting_time=900,
 ):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")

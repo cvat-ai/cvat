@@ -1,0 +1,35 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
+      "conflict_count": 0,
+      "consensus_report_id": 1,
+      "consensus_score": 89,
+      "id": 1,
+      "task_id": 30
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 6,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/6",
+        "username": "worker1"
+      },
+      "conflict_count": 0,
+      "consensus_report_id": 1,
+      "consensus_score": 100,
+      "id": 2,
+      "task_id": 30
+    }
+  ]
+}

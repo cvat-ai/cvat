@@ -780,6 +780,7 @@ class JobData(CommonData):
                 ("start_frame", str(self._db_data.start_frame + db_segment.start_frame * self._frame_step)),
                 ("stop_frame", str(self._db_data.start_frame + db_segment.stop_frame * self._frame_step)),
                 ("frame_filter", self._db_data.frame_filter),
+                ("parent_job_id", str(self._db_job.parent_job_id)),
                 ("segments", [
                     ("segment", OrderedDict([
                         ("id", str(db_segment.id)),
@@ -2178,6 +2179,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.mask: ShapeType.MASK
     }
 
+    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
+
     track_formats = [
         'cvat',
         'datumaro',
@@ -2258,7 +2261,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                        if ann.attributes.get('source', '').lower() in sources else 'manual'
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2272,7 +2275,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else 'manual'
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2344,7 +2347,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     for n, v in element.attributes.items()
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else 'manual'
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
