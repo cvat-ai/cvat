@@ -660,6 +660,7 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 
     'ENUM_NAME_OVERRIDES': {
+        'LabelType': 'cvat.apps.engine.models.LabelType',
         'ShapeType': 'cvat.apps.engine.models.ShapeType',
         'OperationStatus': 'cvat.apps.engine.models.StateChoice',
         'ChunkType': 'cvat.apps.engine.models.DataChoice',

@@ -8487,8 +8487,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `bbox` - BBOX
+            * `ellipse` - ELLIPSE
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `points` - POINTS
+            * `cuboid` - CUBOID
+            * `cuboid_3d` - CUBOID_3D
+            * `skeleton` - SKELETON
+            * `tag` - TAG
+            * `any` - ANY
         svg:
           type: string
         sublabels:
@@ -8531,6 +8544,30 @@ components:
             a parent label
       required:
       - name
+    LabelType:
+      enum:
+      - bbox
+      - ellipse
+      - polygon
+      - polyline
+      - points
+      - cuboid
+      - cuboid_3d
+      - skeleton
+      - tag
+      - any
+      type: string
+      description: |-
+        * `bbox` - BBOX
+        * `ellipse` - ELLIPSE
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `points` - POINTS
+        * `cuboid` - CUBOID
+        * `cuboid_3d` - CUBOID_3D
+        * `skeleton` - SKELETON
+        * `tag` - TAG
+        * `any` - ANY
     LabeledData:
       type: object
       properties:
@@ -9589,8 +9626,21 @@ components:
           description: Delete the label. Only applicable in the PATCH methods of a
             project or a task.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `bbox` - BBOX
+            * `ellipse` - ELLIPSE
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `points` - POINTS
+            * `cuboid` - CUBOID
+            * `cuboid_3d` - CUBOID_3D
+            * `skeleton` - SKELETON
+            * `tag` - TAG
+            * `any` - ANY
         svg:
           type: string
         sublabels:
@@ -10764,8 +10814,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `bbox` - BBOX
+            * `ellipse` - ELLIPSE
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `points` - POINTS
+            * `cuboid` - CUBOID
+            * `cuboid_3d` - CUBOID_3D
+            * `skeleton` - SKELETON
+            * `tag` - TAG
+            * `any` - ANY
         has_parent:
           type: boolean
       required:
@@ -10804,8 +10867,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `bbox` - BBOX
+            * `ellipse` - ELLIPSE
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `points` - POINTS
+            * `cuboid` - CUBOID
+            * `cuboid_3d` - CUBOID_3D
+            * `skeleton` - SKELETON
+            * `tag` - TAG
+            * `any` - ANY
         has_parent:
           type: boolean
       required:
