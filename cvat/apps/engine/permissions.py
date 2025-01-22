@@ -776,7 +776,6 @@ class JobPermission(OpenPolicyAgentPermission):
                 raise ValidationError("task_id is not specified")
             task = Task.objects.get(id=self.task_id)
 
-            organization_id = None
             if task.project:
                 organization_id = task.project.organization_id
             else:
@@ -836,7 +835,6 @@ class CommentPermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = None
         def get_common_data(db_issue):
-            organization_id = None
             if db_issue.job.segment.task.project:
                 organization_id = db_issue.job.segment.task.project.organization_id
             else:
@@ -929,7 +927,6 @@ class IssuePermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = None
         def get_common_data(db_job):
-            organization_id = None
             if db_job.segment.task.project:
                 organization_id = db_job.segment.task.project.organization_id
             else:
@@ -1055,7 +1052,6 @@ class LabelPermission(OpenPolicyAgentPermission):
         data = None
 
         if self.obj:
-            organization_id = None
             if self.obj.project:
                 organization_id = self.obj.project.organization_id
             else:
