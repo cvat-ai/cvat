@@ -270,8 +270,8 @@ Cypress.Commands.add('headlessLogin', ({
     nextURL,
 } = {}) => {
     cy.window().then((win) => {
-        cy.headlessLogout().then(() => {
-            return win.cvat.server.login(
+        cy.headlessLogout().then(() => (
+            win.cvat.server.login(
                 username || Cypress.env('user'),
                 password || Cypress.env('password'),
             ).then(() => win.cvat.users.get({ self: true }).then((users) => {
@@ -280,8 +280,8 @@ Cypress.Commands.add('headlessLogin', ({
                 }
 
                 return users[0];
-            }));
-        });
+            }))
+        ));
     });
 });
 
