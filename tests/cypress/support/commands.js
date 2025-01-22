@@ -269,9 +269,6 @@ Cypress.Commands.add('headlessLogin', ({
     password,
     nextURL,
 } = {}) => {
-    username = username || Cypress.env('user');
-    password = password || Cypress.env('password');
-
     cy.window().then((win) => {
         cy.headlessLogout().then(() => {
             if (!win.cvat) {
@@ -280,15 +277,16 @@ Cypress.Commands.add('headlessLogin', ({
                 cy.get('#root').should('exist').and('be.visible');
             }
 
-            return win.cvat.server.login(username, password)
-                .then(() => win.cvat.users.get({ self: true })
-                .then((users) => {
-                    if (nextURL) {
-                        cy.visit(nextURL);
-                    }
+            return win.cvat.server.login(
+                username || Cypress.env('user'),
+                password || Cypress.env('password'),
+            ).then(() => win.cvat.users.get({ self: true }).then((users) => {
+                if (nextURL) {
+                    cy.visit(nextURL);
+                }
 
-                    return users[0];
-                }))
+                return users[0];
+            }));
         });
     });
 });
