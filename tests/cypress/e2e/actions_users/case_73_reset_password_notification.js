@@ -9,7 +9,7 @@ context('Reset password notification.', () => {
     const dummyEmail = 'admin@local.local';
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
     });
 
     describe(`Testing case "${caseId}"`, () => {

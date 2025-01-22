@@ -53,7 +53,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
     };
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, project.label, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);

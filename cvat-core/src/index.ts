@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -189,9 +189,6 @@ export default interface CVATCore {
         requestsStatusDelay: typeof config.requestsStatusDelay;
         jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
     },
-    client: {
-        version: string;
-    };
     enums,
     exceptions: {
         Exception: typeof Exception,
