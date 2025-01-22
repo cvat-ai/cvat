@@ -22,7 +22,7 @@ from cvat.apps.iam.permissions import (
 )
 from cvat.apps.organizations.models import Organization
 
-from .models import AnnotationGuide, CloudStorage, Issue, Job, Label, Project, Task, User, Comment
+from .models import AnnotationGuide, CloudStorage, Comment, Issue, Job, Label, Project, Task, User
 
 
 def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
@@ -1119,15 +1119,14 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
         data = {}
         if self.obj:
             db_target = self.obj.target
-            organization_id = self.obj.organization_id
             data.update({
                 'id': self.obj.id,
                 'target': {
-                    'owner': { 'id': getattr(db_target, "owner_id", None) },
-                    'assignee': { 'id': getattr(db_target, "assignee_id", None) },
-                    'is_job_staff': db_target.is_job_staff(self.user_id) if db_target else False,
+                    'owner': { 'id': db_target.owner_id },
+                    'assignee': { 'id': db_target.assignee_id },
+                    'is_job_staff': db_target.is_job_staff(self.user_id),
                 },
-                'organization': { 'id': organization_id }
+                'organization': { 'id': self.obj.organization_id }
             })
         elif self.scope == __class__.Scopes.CREATE:
             db_target = None
