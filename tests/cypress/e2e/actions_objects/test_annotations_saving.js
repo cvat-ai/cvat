@@ -37,8 +37,10 @@ context('Test annotations saving works correctly', () => {
     }
 
     before(() => {
-        cy.headlessLogin();
-        cy.visit('/tasks/create');
+        cy.visit('/auth/login').then(() => {
+            cy.headlessLogin({ nextURL: '/tasks/create' });
+        });
+
         cy.get('#name').type(taskName);
         cy.addNewLabel({ name: generalLabel.name });
         cy.addNewSkeletonLabel(skeletonLabel);

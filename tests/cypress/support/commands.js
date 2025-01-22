@@ -271,12 +271,6 @@ Cypress.Commands.add('headlessLogin', ({
 } = {}) => {
     cy.window().then((win) => {
         cy.headlessLogout().then(() => {
-            if (!win.cvat) {
-                // application was not yet initialized
-                cy.visit('/auth/login');
-                cy.get('#root').should('exist').and('be.visible');
-            }
-
             return win.cvat.server.login(
                 username || Cypress.env('user'),
                 password || Cypress.env('password'),
@@ -341,7 +335,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
 Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
     cy.window().then(async ($win) => {
         const project = new $win.cvat.classes.Project({
-            ...projectSpec,
+            ...projectSpe,
         });
 
         const result = await project.save();
