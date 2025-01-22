@@ -270,18 +270,27 @@ Cypress.Commands.add('headlessLogin', ({
     nextURL,
 } = {}) => {
     username = username ?? Cypress.env('user');
-    password = username ?? Cypress.env('password');
-    nextURL = username ?? '/';
+    password = password ?? Cypress.env('password');
 
-    cy.headlessLogout();
-    cy.visit('/auth/login');
-    cy.get('#root').should('exist').and('be.visible');
-    cy.window().then((win) => (
-        win.cvat.server.login(username, password).then(() => {
-            cy.visit(nextURL);
-            return cy.wrap();
-        })
-    ));
+    cy.window().then((win) => {
+        cy.headlessLogout().then(() => {
+            if (!win.cvat) {
+                // application was not yet initialized
+                cy.visit('/auth/login');
+                cy.get('#root').should('exist').and('be.visible');
+            }
+
+            return win.cvat.server.login(username, password)
+                .then(() => win.cvat.users.get({ self: true })
+                .then((users) => {
+                    if (nextURL) {
+                        cy.visit(nextURL);
+                    }
+
+                    return users[0];
+                }))
+        });
+    });
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
@@ -379,6 +388,8 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
 });
 
 Cypress.Commands.add('headlessLogout', () => {
+    // currently it is supposed that headlessLogout does not need core initialized to perform its logic
+    // this may be improved in the future, but now this behaviour is enough
     cy.clearCookies();
 });
 
