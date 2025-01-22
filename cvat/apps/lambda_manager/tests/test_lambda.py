@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -1100,6 +1100,18 @@ class LambdaTestCases(_LambdaTestCaseBase):
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_api_v2_lambda_functions_create_detector_all_shapes_unmapped(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "mapping": {"person": {"name": "person"}},
+        }
+        response = self._post_request(
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), [])
 
     def test_api_v2_lambda_functions_create_detector_without_task(self):
         data = {

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,7 +22,8 @@ from datumaro.components.annotation import (
     Skeleton,
 )
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.extractor import DEFAULT_SUBSET_NAME, Extractor, Importer
+from datumaro.components.dataset_base import DEFAULT_SUBSET_NAME, DatasetBase
+from datumaro.components.importer import Importer
 from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporter
 from datumaro.util.image import Image
 from defusedxml import ElementTree
@@ -50,7 +51,7 @@ class CvatPath:
 
     BUILTIN_ATTRS = {'occluded', 'outside', 'keyframe', 'track_id'}
 
-class CvatExtractor(Extractor):
+class CvatExtractor(DatasetBase):
     _SUPPORTED_SHAPES = ('box', 'polygon', 'polyline', 'points', 'skeleton')
 
     def __init__(self, path, subsets=None):

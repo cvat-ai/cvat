@@ -26,6 +26,9 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
 
+EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
+os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
+
 JOBS_ROOT = os.path.join(DATA_ROOT, 'jobs')
 os.makedirs(JOBS_ROOT, exist_ok=True)
 

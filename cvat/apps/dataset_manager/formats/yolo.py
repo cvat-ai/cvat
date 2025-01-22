@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 import os.path as osp
@@ -7,7 +7,7 @@ from glob import glob
 from typing import Callable, Optional
 
 from datumaro.components.annotation import AnnotationType
-from datumaro.components.extractor import DatasetItem
+from datumaro.components.dataset_base import DatasetItem
 from datumaro.components.project import Dataset
 from pyunpack import Archive
 

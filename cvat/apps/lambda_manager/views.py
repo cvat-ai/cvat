@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -479,8 +479,6 @@ class LambdaFunction:
 
         response = self.gateway.invoke(self, payload)
 
-        response_filtered = []
-
         def check_attr_value(value, db_attr):
             if db_attr is None:
                 return False
@@ -509,6 +507,8 @@ class LambdaFunction:
             return attributes
 
         if self.kind == FunctionKind.DETECTOR:
+            response_filtered = []
+
             for item in response:
                 item_label = item["label"]
                 if item_label not in mapping:
@@ -534,7 +534,8 @@ class LambdaFunction:
                             db_label.attributespec_set.values(),
                         )
                 response_filtered.append(item)
-                response = response_filtered
+
+            response = response_filtered
 
         return response
 

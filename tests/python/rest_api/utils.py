@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -196,7 +196,7 @@ def export_dataset(
     ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     save_images: bool,
-    max_retries: int = 50,
+    max_retries: int = 300,
     interval: float = 0.1,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,

@@ -1,6 +1,6 @@
 
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -262,7 +262,7 @@ class TaskExportTest(_DbTestBase):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = osp.join(temp_dir, format_name)
             dm.task.export_task(task["id"], file_path,
-                format_name, **export_args)
+                format_name=format_name, **export_args)
 
             check(file_path)
 
@@ -678,10 +678,7 @@ class FrameMatchingTest(_DbTestBase):
                 task = self._generate_task(images)
                 task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
-                dataset = [
-                    datumaro.components.extractor.DatasetItem(
-                        id=osp.splitext(p)[0])
-                    for p in dataset_paths]
+                dataset = [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
 
                 root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
@@ -989,7 +986,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             if import_format == "CVAT 1.1":
                 export_format = "CVAT for images 1.1"
 
-            dm.task.export_task(task["id"], file_path, export_format)
+            dm.task.export_task(task["id"], file_path, format_name=export_format)
             expected_ann = TaskAnnotation(task["id"])
             expected_ann.init_from_db()
 

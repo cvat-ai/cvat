@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,8 +50,8 @@ context('Test default value for an attribute', () => {
     }
 
     before(() => {
-        cy.headlessLogin();
-        cy.visit('/tasks/create');
+        cy.visit('/auth/login');
+        cy.headlessLogin({ nextURL: '/tasks/create' });
         cy.get('#name').type(taskName);
         cy.addNewLabel({ name: label }, attributes);
         cy.selectFilesFromShare(serverFiles);
