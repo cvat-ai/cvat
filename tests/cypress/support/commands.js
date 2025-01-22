@@ -269,8 +269,8 @@ Cypress.Commands.add('headlessLogin', ({
     password,
     nextURL,
 } = {}) => {
-    username = username ?? Cypress.env('user');
-    password = password ?? Cypress.env('password');
+    username = username || Cypress.env('user');
+    password = password || Cypress.env('password');
 
     cy.window().then((win) => {
         cy.headlessLogout().then(() => {
