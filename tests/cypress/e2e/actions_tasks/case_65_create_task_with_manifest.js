@@ -20,7 +20,7 @@ context('Create an annotation task with manifest.', () => {
     ];
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 
