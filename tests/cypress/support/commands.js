@@ -269,6 +269,7 @@ Cypress.Commands.add('headlessLogin', ({
     password,
     nextURL,
 } = {}) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.window().then((win) => {
         cy.headlessLogout().then(() => (
             win.cvat.server.login(

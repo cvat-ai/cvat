@@ -50,10 +50,8 @@ context('Test default value for an attribute', () => {
     }
 
     before(() => {
-        cy.visit('/auth/login').then(() => {
-            cy.headlessLogin({ nextURL: '/tasks/create' });
-        });
-
+        cy.visit('/auth/login');
+        cy.headlessLogin({ nextURL: '/tasks/create' });
         cy.get('#name').type(taskName);
         cy.addNewLabel({ name: label }, attributes);
         cy.selectFilesFromShare(serverFiles);
