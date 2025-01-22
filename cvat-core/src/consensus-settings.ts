@@ -5,6 +5,7 @@
 import { SerializedConsensusSettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
+import { convertDescriptions, getServerAPISchema } from './server-schema';
 
 export default class ConsensusSettings {
     #id: number;
@@ -74,9 +75,13 @@ Object.defineProperties(ConsensusSettings.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
-            const result = await serverProxy.consensus.settings.update(this.id, this.toJSON());
-            return new ConsensusSettings(result);
+        value: async function implementation(): Promise<ConsensusSettings> {
+            const result = await serverProxy.consensus.settings.update(
+                this.id, this.toJSON(),
+            );
+            const schema = await getServerAPISchema();
+            const descriptions = convertDescriptions(schema.components.schemas.ConsensusSettings.properties);
+            return new ConsensusSettings({ ...result, descriptions });
         },
     },
 });

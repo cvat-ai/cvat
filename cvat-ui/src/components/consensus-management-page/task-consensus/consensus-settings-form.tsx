@@ -23,7 +23,7 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
     const { form, settings, onSave } = props;
 
     const initialValues = {
-        quorum: settings.quorum,
+        quorum: settings.quorum * 100,
         iouThreshold: settings.iouThreshold * 100,
     };
 
