@@ -72,16 +72,16 @@ class StatusChoice(str, Enum):
         return self.value
 
 class LabelType(str, Enum):
-    BBOX = 'bbox'
+    ANY = 'any'
+    CUBOID = 'cuboid'
     ELLIPSE = 'ellipse'
+    MASK = 'mask'
+    POINTS = 'points'
     POLYGON = 'polygon'
     POLYLINE = 'polyline'
-    POINTS = 'points'
-    CUBOID = 'cuboid'
-    CUBOID_3D = 'cuboid_3d'
+    RECTANGLE = 'rectangle'
     SKELETON = 'skeleton'
     TAG = 'tag'
-    ANY = 'any'
 
     @classmethod
     def choices(cls):
@@ -946,7 +946,7 @@ class Label(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
-    type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
+    type = models.CharField(max_length=32, choices=LabelType.choices(), default=LabelType.ANY)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sublabels')
 
     def __str__(self):

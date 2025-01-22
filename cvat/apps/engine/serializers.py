@@ -418,7 +418,7 @@ class LabelSerializer(SublabelSerializer):
             try:
                 db_label = models.Label.create(
                     name=validated_data.get('name'),
-                    type=validated_data.get('type'),
+                    type=validated_data.get('type', models.LabelType.ANY),
                     parent=parent_label,
                     **parent_info
                 )

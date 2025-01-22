@@ -40,7 +40,7 @@ For what is `rle`, see [Run-length encoding](https://en.wikipedia.org/wiki/Run-l
       <labels>
         <label>
           <name>String: name of the label (e.g. car, person)</name>
-          <type>String: any, bbox, cuboid, cuboid_3d, ellipse, mask, polygon, polyline, points, skeleton, tag</type>
+          <type>String: any, bbox, cuboid, ellipse, mask, polygon, polyline, points, skeleton, tag</type>
           <attributes>
             <attribute>
               <name>String: attribute name</name>
