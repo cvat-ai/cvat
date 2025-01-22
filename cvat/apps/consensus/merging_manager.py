@@ -114,6 +114,7 @@ class _TaskMerger:
                 quorum=math.ceil(self._settings.quorum * len(consensus_datasets)),
                 sigma=comparison_parameters.oks_sigma,
                 torso_r=comparison_parameters.line_thickness,
+                included_annotation_types=comparison_parameters.included_annotation_types,
             )
         )
         merged_dataset = merger(consensus_datasets)
