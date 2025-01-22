@@ -14,3 +14,10 @@ Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, colo
     count,
     extension,
 }));
+
+Cypress.Commands.add('generateImageFromCanvas', (blb) => cy.task('generateImageFromCanvas', { blb }));
+//     canvas,
+//     directory,
+//     fileName,
+//     extension,
+// }));

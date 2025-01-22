@@ -66,8 +66,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 5;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 5000;
-    const height = 5000;
+    const width = 400;
+    const height = 400;
     const delta = 3;
     const posX = 10;
     const posY = 10;
