@@ -45,7 +45,7 @@ it('Prepare for testing', () => {
         });
     }); // NOTE: chaining off of .each is not recommended by docs
     cy.then(() => {
-        if (listItems.indexOf(`${taskName}lolkek`) === -1) {
+        if (listItems.indexOf(taskName) === -1) {
             cy.task('log', "A task doesn't exist. Creating.");
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
