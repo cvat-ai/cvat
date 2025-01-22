@@ -1697,6 +1697,19 @@ Cypress.Commands.add('checkDeletedFrameVisibility', () => {
     cy.closeSettings();
 });
 
+Cypress.Commands.add('checkCsvFileContent', (expectedFileName, header, rowsCount, checkRow = null) => {
+    const downloadsFolder = Cypress.config('downloadsFolder');
+    const filePath = `${downloadsFolder}/${expectedFileName}`;
+    cy.readFile(filePath).then((csv) => {
+        const rows = csv.split('\n');
+        expect(rows.length).to.equal(rowsCount);
+        expect(rows[0]).to.include(header);
+        if (checkRow) {
+            rows.slice(1).forEach(checkRow);
+        }
+    });
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();
