@@ -8,7 +8,7 @@ fail() {
 }
 
 wait_for_db() {
-    ~/wait-for-it.sh "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
+    wait-for-it "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
 }
 
 cmd_bash() {
@@ -18,6 +18,9 @@ cmd_bash() {
 cmd_init() {
     wait_for_db
     ~/manage.py migrate
+
+    wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    ~/manage.py syncperiodicjobs
 }
 
 cmd_run() {

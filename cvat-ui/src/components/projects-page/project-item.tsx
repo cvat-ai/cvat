@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,8 @@ import Button from 'antd/lib/button';
 import Badge from 'antd/lib/badge';
 import { MoreOutlined } from '@ant-design/icons';
 
-import { CombinedState, Project } from 'reducers';
+import { CombinedState } from 'reducers';
+import { Project } from 'cvat-core-wrapper';
 import { useCardHeightHOC, usePlugins } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import ProjectActionsMenuComponent from './actions-menu';

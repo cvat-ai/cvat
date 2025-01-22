@@ -1,3 +1,5 @@
-cvat-sdk~=2.17.0
+cvat-sdk==2.25.1
+
+attrs>=24.2.0
 Pillow>=10.3.0
 setuptools>=70.0.0 # not directly required, pinned by Snyk to avoid a vulnerability

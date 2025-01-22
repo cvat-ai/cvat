@@ -1,11 +1,5 @@
 FROM node:lts-slim AS cvat-ui
 
-ARG WA_PAGE_VIEW_HIT
-ARG UI_APP_CONFIG
-ARG CLIENT_PLUGINS
-ARG DISABLE_SOURCE_MAPS
-ARG SOURCE_MAPS_TOKEN
-
 ENV TERM=xterm \
     LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
@@ -29,12 +23,19 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
+
+ARG UI_APP_CONFIG
+ARG CLIENT_PLUGINS
+ARG DISABLE_SOURCE_MAPS
+ARG SOURCE_MAPS_TOKEN
+
 RUN CLIENT_PLUGINS="${CLIENT_PLUGINS}" \
 DISABLE_SOURCE_MAPS="${DISABLE_SOURCE_MAPS}" \
 UI_APP_CONFIG="${UI_APP_CONFIG}" \
 SOURCE_MAPS_TOKEN="${SOURCE_MAPS_TOKEN}" yarn run build:cvat-ui
 
-FROM nginx:1.25.4-alpine3.18
+FROM nginx:1.26.1-alpine3.19-slim
+
 # Replace default.conf configuration to remove unnecessary rules
 COPY cvat-ui/react_nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=cvat-ui /tmp/cvat-ui/dist /usr/share/nginx/html/

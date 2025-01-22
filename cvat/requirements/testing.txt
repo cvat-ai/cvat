@@ -6,7 +6,6 @@
 #    pip-compile-multi
 #
 -r development.txt
-
 coverage==7.2.3
     # via -r cvat/requirements/testing.in
 fakeredis[lua]==2.10.3
@@ -15,5 +14,3 @@ lupa==1.14.1
     # via fakeredis
 sortedcontainers==2.4.0
     # via fakeredis
-
-# The following packages are considered to be unsafe in a requirements file:

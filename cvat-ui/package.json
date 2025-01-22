@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.64.3",
+  "version": "2.25.1",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "@ant-design/compatible": "^5.1.2",
-    "@ant-design/icons": "^4.6.3",
+    "@ant-design/icons": "^5.5.2",
     "@react-awesome-query-builder/antd": "^6.5.2",
     "@types/json-logic-js": "^2.0.2",
     "@types/lru-cache": "^7.10.10",
@@ -38,7 +38,6 @@
     "@uiw/react-md-editor": "^3.22.0",
     "antd": "5.17.1",
     "chart.js": "^4.3.0",
-    "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "link:./../cvat-canvas",
     "cvat-canvas3d": "link:./../cvat-canvas3d",
     "cvat-core": "link:./../cvat-core",

@@ -14,6 +14,15 @@ cvat:
           value: cvat.settings.testing_rest
     worker:
       import:
+        replicas: 1
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+      export:
+        replicas: 1
+      chunks:
+        replicas: 1
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
@@ -22,10 +31,18 @@ cvat:
       additionalEnv:
         - name: DJANGO_SETTINGS_MODULE
           value: cvat.settings.testing_rest
+    annotation:
+      replicas: 0
     # Images are already present in the node
     imagePullPolicy: Never
   frontend:
     imagePullPolicy: Never
+
+redis:
+  master:
+    # The "flushall" command, which we use in tests, is disabled in helm by default
+    # https://artifacthub.io/packages/helm/bitnami/redis#redis-master-configuration-parameters
+    disableCommands: []
 
 keydb:
   resources:

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { ProjectsState } from '.';
 
 const defaultState: ProjectsState = {
+    fetchingTimestamp: Date.now(),
     initialized: false,
     fetching: false,
     count: 0,
@@ -59,6 +60,7 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
         case ProjectsActionTypes.GET_PROJECTS:
             return {
                 ...state,
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 initialized: false,
                 fetching: true,
                 count: 0,

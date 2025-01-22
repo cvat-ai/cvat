@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,16 +18,25 @@ import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
 
-import { CombinedState, NavigationType, ObjectType } from 'reducers';
+import {
+    ActiveControl, CombinedState, NavigationType, ObjectType,
+} from 'reducers';
+import { labelShapeType } from 'reducers/annotation-reducer';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { Job, Label, LabelType } from 'cvat-core-wrapper';
+import {
+    Job, Label, LabelType, ShapeType,
+} from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, setNavigationType,
     removeObjectAsync, finishCurrentJobAsync,
+    changeHideActiveObjectAsync, updateActiveControl, ShapeTypeToControl,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -162,6 +171,36 @@ const reducer = (state: State, action: ActionUnion<typeof actionCreators>): Stat
     return state;
 };
 
+const componentShortcuts = {
+    SWITCH_DRAW_MODE_SINGLE_SHAPE: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+    CANCEL_SINGLE_SHAPE: {
+        name: 'Cancel',
+        description: 'Cancel any active canvas mode',
+        sequences: ['esc'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+    DELETE_OBJECT_SINGLE_SHAPE: {
+        name: 'Delete object',
+        description: 'Delete an active object. Use shift to force delete of locked objects',
+        sequences: ['del', 'shift+del'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+    HIDE_MASK_SINGLE_SHAPE: {
+        name: 'Hide mask',
+        description: 'Hide currently edited mask',
+        sequences: ['h'],
+        scope: ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
+
 function SingleShapeSidebar(): JSX.Element {
     const appDispatch = useDispatch();
     const store = useStore<CombinedState>();
@@ -176,6 +215,9 @@ function SingleShapeSidebar(): JSX.Element {
         navigationType,
         annotations,
         activatedStateID,
+        editedState,
+        activeControl,
+        activeObjectHidden,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
@@ -187,14 +229,17 @@ function SingleShapeSidebar(): JSX.Element {
         navigationType: _state.annotation.player.navigationType,
         annotations: _state.annotation.annotations.states,
         activatedStateID: _state.annotation.annotations.activatedStateID,
+        editedState: _state.annotation.editing.objectState,
+        activeControl: _state.annotation.canvas.activeControl,
+        activeObjectHidden: _state.annotation.canvas.activeObjectHidden,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
         autoNextFrame: true,
         nextFrame: null,
         saveOnFinish: true,
-        pointsCountIsPredefined: true,
-        pointsCount: defaultPointsCount || 1,
+        pointsCountIsPredefined: defaultPointsCount !== null,
+        pointsCount: defaultPointsCount ?? 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
         labelType: LabelType.ANY,
@@ -207,11 +252,15 @@ function SingleShapeSidebar(): JSX.Element {
     canvasInitializerRef.current = (): void => {
         const canvas = store.getState().annotation.canvas.instance as Canvas;
         if (isCanvasReady && canvas.mode() !== CanvasMode.DRAW && state.label && state.labelType !== LabelType.ANY) {
+            appDispatch(updateActiveControl(
+                ShapeTypeToControl[state.labelType],
+            ));
             // we remember active object type and active label
             // to assign these values in default drawdone event listener
             appDispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeLabelID: state.label.id,
+                activeShapeType: labelShapeType(state.label),
             }));
 
             canvas.draw({
@@ -344,27 +393,28 @@ function SingleShapeSidebar(): JSX.Element {
         trigger: null,
     };
 
-    const subKeyMap = {
-        CANCEL: keyMap.CANCEL,
-        DELETE_OBJECT: keyMap.DELETE_OBJECT,
-        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-    };
-
-    const handlers = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
+    const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        CANCEL_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
         },
-        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+        SWITCH_DRAW_MODE_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });
         },
-        DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+        DELETE_OBJECT_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             const objectStateToRemove = annotations.find((_state) => _state.clientID === activatedStateID);
             if (objectStateToRemove) {
                 appDispatch(removeObjectAsync(objectStateToRemove, event?.shiftKey || false));
+            }
+        },
+        HIDE_MASK_SINGLE_SHAPE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (editedState?.shapeType === ShapeType.MASK || activeControl === ActiveControl.DRAW_MASK) {
+                const hide = editedState ? !editedState.hidden : !activeObjectHidden;
+                appDispatch(changeHideActiveObjectAsync(hide));
             }
         },
     };
@@ -385,7 +435,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     return (
         <Layout.Sider {...siderProps}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row>
                     <Col>
@@ -447,7 +497,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.CANCEL_SINGLE_SHAPE
+                                                    } `}
+                                                </Text>
                                                 to reset drawing process
                                             </Text>
                                         </li>
@@ -457,7 +511,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.SWITCH_DRAW_MODE_SINGLE_SHAPE
+                                                    } `}
+                                                </Text>
                                                 to finish drawing process
                                             </Text>
                                         </li>
@@ -466,7 +524,11 @@ function SingleShapeSidebar(): JSX.Element {
                                         <li>
                                             <Text>
                                                 Press
-                                                <Text strong>{` ${normalizedKeyMap.DELETE_OBJECT} `}</Text>
+                                                <Text strong>
+                                                    {` ${
+                                                        normalizedKeyMap.DELETE_OBJECT_SINGLE_SHAPE
+                                                    } `}
+                                                </Text>
                                                 to delete current object
                                             </Text>
                                         </li>

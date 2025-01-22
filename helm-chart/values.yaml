@@ -42,7 +42,21 @@ cvat:
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
+      readinessProbe:
+        enabled: true
+        periodSeconds: 15
+        initialDelaySeconds: 15
+      livenessProbe:
+        enabled: true
+        periodSeconds: 15
+        failureThreshold: 5
+        initialDelaySeconds: 60
     worker:
+      livenessProbe:
+        enabled: true
+        periodSeconds: 120
+        initialDelaySeconds: 30
+        timeoutSeconds: 10
       export:
         replicas: 2
         labels: {}
@@ -103,6 +117,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      chunks:
+        replicas: 2
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -120,8 +144,7 @@ cvat:
     permissionFix:
       enabled: true
     service:
-      annotations:
-        traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+      annotations: {}
       spec:
         type: ClusterIP
         ports:
@@ -172,6 +195,14 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
     service:
       type: ClusterIP
       ports:
@@ -216,6 +247,14 @@ cvat:
     #     name: tmp
     #     subPath: test
     composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    readinessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
+    livenessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
     service:
       type: ClusterIP
       ports:
@@ -266,6 +305,14 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
     defaultStorage:
       enabled: true
 #     storageClassName: default
@@ -428,7 +475,7 @@ ingress:
   ##   kubernetes.io/ingress.class: nginx
   ##
   annotations: {}
-  ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## @param ingress.className IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##

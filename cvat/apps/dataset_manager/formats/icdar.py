@@ -1,21 +1,19 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import zipfile
 
-from datumaro.components.annotation import (AnnotationType, Caption, Label,
-    LabelCategories)
+from datumaro.components.annotation import AnnotationType, Caption, Label, LabelCategories
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 
 
 class AddLabelToAnns(ItemTransform):

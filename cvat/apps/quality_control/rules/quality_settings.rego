@@ -6,11 +6,11 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"view"> or null,
+#     "scope": <"list"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,

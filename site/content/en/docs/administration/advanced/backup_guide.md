@@ -20,13 +20,11 @@ Docker volumes are used to store all CVAT data:
 - `cvat_keys`: used to store the [Django secret key](https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-SECRET_KEY).
   Mounted into `cvat` container by `/home/django/keys` path.
 
-- `cvat_logs`: used to store logs of CVAT backend processes managed by supevisord.
+- `cvat_logs`: used to store logs of CVAT backend processes managed by the supervisord service.
   Mounted into `cvat` container by `/home/django/logs` path.
 
-- `cvat_events`: this is an optional volume that is used only when
-  {{< ilink "/docs/administration/advanced/analytics" "Analytics component" >}}
-  is enabled and is used to store Elasticsearch database files.
-  Mounted into `cvat_elasticsearch` container by `/usr/share/elasticsearch/data` path.
+- `cvat_events_db`: this volume is used to store Clickhouse database files.
+  Mounted into `cvat_clickhouse` container by `/var/lib/clickhouse` path.
 
 ## How to backup all CVAT data
 
@@ -45,15 +43,14 @@ Backup data:
 mkdir backup
 docker run --rm --name temp_backup --volumes-from cvat_db -v $(pwd)/backup:/backup ubuntu tar -czvf /backup/cvat_db.tar.gz /var/lib/postgresql/data
 docker run --rm --name temp_backup --volumes-from cvat_server -v $(pwd)/backup:/backup ubuntu tar -czvf /backup/cvat_data.tar.gz /home/django/data
-# [optional]
-docker run --rm --name temp_backup --volumes-from cvat_elasticsearch -v $(pwd)/backup:/backup ubuntu tar -czvf /backup/cvat_events.tar.gz /usr/share/elasticsearch/data
+docker run --rm --name temp_backup --volumes-from cvat_clickhouse -v $(pwd)/backup:/backup ubuntu tar -czvf /backup/cvat_events_db.tar.gz /var/lib/clickhouse
 ```
 
 Make sure the backup archives have been created, the output of `ls backup` command should look like this:
 
 ```shell
 ls backup
-cvat_data.tar.gz  cvat_db.tar.gz  cvat_events.tar.gz
+cvat_data.tar.gz  cvat_db.tar.gz  cvat_events_db.tar.gz
 ```
 
 ## How to restore CVAT from backup
@@ -77,8 +74,7 @@ Restore data:
 cd <path_to_backup_folder>
 docker run --rm --name temp_backup --volumes-from cvat_db -v $(pwd):/backup ubuntu bash -c "cd /var/lib/postgresql/data && tar -xvf /backup/cvat_db.tar.gz --strip 4"
 docker run --rm --name temp_backup --volumes-from cvat_server -v $(pwd):/backup ubuntu bash -c "cd /home/django/data && tar -xvf /backup/cvat_data.tar.gz --strip 3"
-# [optional]
-docker run --rm --name temp_backup --volumes-from cvat_elasticsearch -v $(pwd):/backup ubuntu bash -c "cd /usr/share/elasticsearch/data && tar -xvf /backup/cvat_events.tar.gz --strip 4"
+docker run --rm --name temp_backup --volumes-from cvat_clickhouse -v $(pwd):/backup ubuntu bash -c "cd /var/lib/clickhouse && tar -xvf /backup/cvat_events_db.tar.gz --strip 3"
 ```
 
 After that run CVAT as usual:

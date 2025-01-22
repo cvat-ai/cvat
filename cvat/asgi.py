@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -24,6 +24,7 @@ application = get_asgi_application()
 
 
 if debug.is_debugging_enabled():
+
     class DebuggerApp(ASGIHandler):
         """
         Support for VS code debugger

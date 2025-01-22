@@ -2,9 +2,11 @@ import os
 import sys
 import traceback
 
-from django.db import migrations
 from django.conf import settings
+from django.db import migrations
+
 from cvat.apps.engine.log import get_migration_logger
+
 
 def delete_previews(apps, schema_editor):
     migration_name = os.path.splitext(os.path.basename(__file__))[0]

@@ -4,7 +4,6 @@
 /share/
 /static/
 /db.sqlite3
-/.*env*
 /keys
 /logs
 /profiles
@@ -21,6 +20,11 @@ __pycache__
 .coverage
 .husky/
 .python-version
+tmp*cvat/
+temp*/
+
+# Ignore generated test files
+docker-compose.tests.yml
 
 # Ignore npm logs file
 npm-debug.log*
@@ -49,6 +53,8 @@ yarn-error.log*
 
 # Ignore all the installed packages
 node_modules
+/*env*/
+/.*env*
 
 # Ignore all js dists
 cvat-data/dist

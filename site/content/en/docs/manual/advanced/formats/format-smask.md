@@ -10,7 +10,7 @@ like semantic segmentation, instance segmentation, and panoptic segmentation.
 
 Segmentation Mask in CVAT is
 a format created by CVAT engineers
-inside the [Pascal VOC](docs/manual/advanced/formats/format-voc/)
+inside the [Pascal VOC](/docs/manual/advanced/formats/format-voc/)
 
 ## Segmentation mask export
 

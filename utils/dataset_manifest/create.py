@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import argparse
 import os
-import sys
 import re
+import sys
 from glob import glob
 
 from tqdm import tqdm
 
-from utils import detect_related_images, is_image, is_video, SortingMethod
+from utils import SortingMethod, detect_related_images, is_image, is_video
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -98,5 +99,5 @@ def main():
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(base_dir)
-    from dataset_manifest.core import VideoManifestManager, ImageManifestManager
+    from dataset_manifest.core import ImageManifestManager, VideoManifestManager
     main()

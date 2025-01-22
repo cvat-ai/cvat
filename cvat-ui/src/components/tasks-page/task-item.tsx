@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -238,6 +238,9 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const onViewAnalytics = (): void => {
             history.push(`/tasks/${taskInstance.id}/analytics`);
         };
+        const onViewQualityControl = (): void => {
+            history.push(`/tasks/${taskInstance.id}/quality-control`);
+        };
 
         return (
             <Col span={3}>
@@ -267,6 +270,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             <ActionsMenuContainer
                                 taskInstance={taskInstance}
                                 onViewAnalytics={onViewAnalytics}
+                                onViewQualityControl={onViewQualityControl}
                             />
                         )}
                     >

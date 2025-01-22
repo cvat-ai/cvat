@@ -1,10 +1,10 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { Input } from 'antd';
+import Input from 'antd/lib/input';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { CombinedState, ModelsQuery } from 'reducers';
 import { usePlugins } from 'utils/hooks';
