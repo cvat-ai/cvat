@@ -37,11 +37,11 @@ context('UI and job metadata work correctly when deleting frames', () => {
             cy.wait('@getMeta');
             getCurrentFrameNumber();
 
-            cy.clickDeleteFrame();
+            cy.clickDeleteFrameAnnotationView();
             cy.get('.cvat-player-restore-frame').should('not.exist');
 
             // Save and intercept request to confirm validate deleted frames
-            cy.clickSave();
+            cy.clickSaveAnnotationView();
             cy.wait('@patchMeta').then((interceptDeleted) => {
                 const deletedFrames = interceptDeleted.request.body.deleted_frames;
 
@@ -54,7 +54,7 @@ context('UI and job metadata work correctly when deleting frames', () => {
             // Restore state and save
             // Validate UI and that no frames are marked deleted
             cy.contains('.cvat-annotation-header-button', 'Undo').click();
-            cy.clickSave();
+            cy.clickSaveAnnotationView();
             cy.wait('@patchMeta').then((interceptRestored) => {
                 const deletedFrames = interceptRestored.request.body.deleted_frames;
                 cy.wrap(deletedFrames).should('be.empty');

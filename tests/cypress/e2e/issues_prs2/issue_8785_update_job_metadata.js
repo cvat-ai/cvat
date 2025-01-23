@@ -28,15 +28,15 @@ context('The UI remains stable even when the metadata request fails.', () => {
             const routeMatcher = {
                 url: '/api/jobs/**/data/meta**',
                 method: 'PATCH',
-                times: 1, // cancels the intercept without retries
+                times: 1, // cancels the intercept without retriesf
             };
 
             cy.intercept(routeMatcher, badResponse).as('patchError');
 
-            cy.clickDeleteFrame();
+            cy.clickDeleteFrameAnnotationView();
             cy.get('.cvat-player-restore-frame').should('be.visible');
 
-            cy.clickSave();
+            cy.clickSaveAnnotationView();
             cy.wait('@patchError').then((intercept) => {
                 expect(intercept.response.body).to.equal(badResponse.body);
                 expect(intercept.response.statusCode).to.equal(badResponse.statusCode);
