@@ -29,6 +29,15 @@
             "database": "${workspaceFolder:cvat}/db.sqlite3"
         }
     ],
+    "python.analysis.exclude": [
+        // VS Code defaults
+        "**/node_modules",
+        "**/__pycache__",
+        ".git",
+
+        "cvat-cli/build",
+        "cvat-sdk/build",
+    ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"

@@ -20,7 +20,14 @@ To install a prebuilt package, run the following command in the terminal:
 pip install cvat-sdk
 ```
 
-To use the PyTorch adapter, request the `pytorch` extra:
+To use the `cvat_sdk.masks` module, request the `masks` extra:
+
+```bash
+pip install "cvat-sdk[masks]"
+```
+
+To use the PyTorch adapter or the built-in PyTorch-based auto-annotation functions,
+request the `pytorch` extra:
 
 ```bash
 pip install "cvat-sdk[pytorch]"

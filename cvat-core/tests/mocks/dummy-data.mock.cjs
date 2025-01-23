@@ -1257,8 +1257,6 @@ const tasksDummyData = {
                 url: 'http://localhost:7000/api/jobs?task_id=102',
             },
             image_quality: 50,
-            start_frame: 0,
-            stop_frame: 0,
             frame_filter: '',
         },
         {
@@ -1290,8 +1288,6 @@ const tasksDummyData = {
                 url: 'http://localhost:7000/api/jobs?task_id=100',
             },
             image_quality: 50,
-            start_frame: 0,
-            stop_frame: 0,
             frame_filter: '',
         },
         {
@@ -1323,8 +1319,6 @@ const tasksDummyData = {
                 url: 'http://localhost:7000/api/jobs?task_id=101',
             },
             image_quality: 50,
-            start_frame: 0,
-            stop_frame: 5001,
             frame_filter: '',
         },
         {
@@ -2815,6 +2809,7 @@ const frameMetaDummyData = {
         stop_frame: 8,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1920,
@@ -2862,6 +2857,7 @@ const frameMetaDummyData = {
         stop_frame: 74,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1920,
@@ -2877,6 +2873,7 @@ const frameMetaDummyData = {
         stop_frame: 4999,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -2892,6 +2889,7 @@ const frameMetaDummyData = {
         stop_frame: 5001,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -2927,7 +2925,8 @@ const frameMetaDummyData = {
             name: '730443-under-the-sea-wallpapers-1920x1080-windows-10.jpg',
             related_files: 0
         }],
-        deleted_frames: []
+        deleted_frames: [],
+        included_frames: null,
     },
     100: {
         chunk_size: 36,
@@ -2937,6 +2936,7 @@ const frameMetaDummyData = {
         stop_frame: 8,
         frame_filter: '',
         deleted_frames: [7, 8],
+        included_frames: null,
         frames: [
             {
                 width: 1920,
@@ -2999,6 +2999,7 @@ const frameMetaDummyData = {
         stop_frame: 994,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3014,6 +3015,7 @@ const frameMetaDummyData = {
         stop_frame: 1489,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3044,6 +3046,7 @@ const frameMetaDummyData = {
         stop_frame: 2479,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3059,6 +3062,7 @@ const frameMetaDummyData = {
         stop_frame: 2974,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3074,6 +3078,7 @@ const frameMetaDummyData = {
         stop_frame: 3469,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3089,6 +3094,7 @@ const frameMetaDummyData = {
         stop_frame: 3964,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3104,6 +3110,7 @@ const frameMetaDummyData = {
         stop_frame: 4459,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3119,6 +3126,7 @@ const frameMetaDummyData = {
         stop_frame: 4954,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3134,6 +3142,7 @@ const frameMetaDummyData = {
         stop_frame: 5001,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1888,
@@ -3149,6 +3158,7 @@ const frameMetaDummyData = {
         stop_frame: 0,
         frame_filter: '',
         deleted_frames: [],
+        included_frames: null,
         frames: [
             {
                 width: 1920,

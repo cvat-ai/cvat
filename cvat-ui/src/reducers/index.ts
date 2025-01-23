@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrap
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
-    Request, TargetMetric, ValidationLayout,
+    Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -38,6 +38,7 @@ interface Preview {
 }
 
 export interface ProjectsState {
+    fetchingTimestamp: number;
     initialized: boolean;
     fetching: boolean;
     count: number;
@@ -75,6 +76,7 @@ export interface JobsQuery {
 }
 
 export interface JobsState {
+    fetchingTimestamp: number;
     query: JobsQuery;
     fetching: boolean;
     count: number;
@@ -90,6 +92,7 @@ export interface JobsState {
 }
 
 export interface TasksState {
+    fetchingTimestamp: number;
     initialized: boolean;
     fetching: boolean;
     moveTask: {
@@ -269,14 +272,16 @@ export interface PluginsState {
         qualityControlPage: {
             overviewTab: ((props: {
                 task: Task;
-                targetMetric: TargetMetric;
+                qualitySettings: QualitySettings;
             }) => JSX.Element)[];
 
             allocationTable: ((
                 props: {
                     task: Task;
-                    gtJob: Job;
+                    gtJobId: number;
                     gtJobMeta: FramesMetaData;
+                    qualitySettings: QualitySettings;
+                    validationLayout: TaskValidationLayout;
                     onDeleteFrames: (frames: number[]) => void;
                     onRestoreFrames: (frames: number[]) => void;
                 }) => JSX.Element)[];
@@ -333,8 +338,6 @@ export interface PluginsState {
 export interface AboutState {
     server: any;
     packageVersion: {
-        core: string;
-        canvas: string;
         ui: string;
     };
     fetching: boolean;
@@ -692,6 +695,10 @@ export enum NavigationType {
     EMPTY = 'empty',
 }
 
+export interface EditingState {
+    objectState: ObjectState | null;
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -717,6 +724,7 @@ export interface AnnotationState {
         instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
+        activeObjectHidden: boolean;
     };
     job: {
         openTime: null | number;
@@ -724,13 +732,14 @@ export interface AnnotationState {
         requestedId: number | null;
         meta: FramesMetaData | null;
         instance: Job | null | undefined;
+        frameNumbers: number[];
         queryParameters: {
             initialOpenGuide: boolean;
             defaultLabel: string | null;
             defaultPointsCount: number | null;
         };
         groundTruthInfo: {
-            validationLayout: ValidationLayout | null;
+            validationLayout: JobValidationLayout | null;
             groundTruthJobFramesMeta: FramesMetaData | null;
             groundTruthInstance: Job | null;
         },
@@ -758,7 +767,7 @@ export interface AnnotationState {
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
         activeInteractorParameters?: MLModel['params']['canvas'];
-        activeShapeType: ShapeType;
+        activeShapeType: ShapeType | null;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
         activeNumOfPoints?: number;
@@ -766,6 +775,7 @@ export interface AnnotationState {
         activeObjectType: ObjectType;
         activeInitialState?: any;
     };
+    editing: EditingState;
     annotations: {
         activatedStateID: number | null;
         activatedElementID: number | null;

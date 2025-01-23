@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,14 +12,14 @@ context('Review pipeline feature', () => {
             username: 'annotator',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'annotator@local.local',
+            email: 'annotator@local.local',
             password: 'UfdU21!dds',
         },
         reviewer: {
             username: 'reviewer',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'reviewer@local.local',
+            email: 'reviewer@local.local',
             password: 'Fv5Df3#f55g',
         },
     };
@@ -57,15 +57,11 @@ context('Review pipeline feature', () => {
 
     before(() => {
         cy.headlessLogout();
-
-        cy.visit('auth/login');
-        cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
+        cy.visit('/auth/login');
 
         // register additional users
-        cy.headlessLogout();
         for (const user of Object.values(additionalUsers)) {
             cy.headlessCreateUser(user);
-            cy.headlessLogout();
         }
 
         // create main task

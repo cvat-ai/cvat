@@ -58,7 +58,7 @@ context('Move a task between projects.', () => {
             imagesCount,
         );
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
     });
 

@@ -2,12 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os.path as osp
-from hashlib import blake2s
 import itertools
 import operator
+import os.path as osp
+from hashlib import blake2s
 
 from datumaro.util.os_util import make_file_name
+
 
 def get_color_from_index(index):
     def get_bit(number, index):

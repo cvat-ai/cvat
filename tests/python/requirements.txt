@@ -4,9 +4,11 @@ pytest-cases==3.6.13
 pytest-timeout==2.1.0
 pytest-cov==4.1.0
 requests==2.32.2
-deepdiff==5.6.0
-boto3==1.17.61
+deepdiff==7.0.1
+boto3==1.35.95
 Pillow==10.3.0
 python-dateutil==2.8.2
-pyyaml==6.0.0
-numpy==1.22.0
+pyyaml==6.0.2
+numpy==2.0.0
+
+# TODO: update pytest to 7.0.0 and pytest-timeout to 2.3.1 (better debug in vscode)

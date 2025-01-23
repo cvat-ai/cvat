@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -58,12 +58,18 @@ function computeNewSource(currentSource: Source): Source {
     return Source.MANUAL;
 }
 
+type FrameInfo = {
+    width: number;
+    height: number;
+};
+
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
-    frameMeta: {
-        deleted_frames: Record<number, boolean>;
-    };
+    framesInfo: Readonly<{
+        [index: number]: Readonly<FrameInfo>;
+        isFrameDeleted: (frame: number) => boolean;
+    }>;
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -78,6 +84,8 @@ type AnnotationInjection = BasicInjection & {
     parentID?: number;
     readOnlyFields?: string[];
 };
+
+export class InterpolationNotPossibleError extends Error {}
 
 class Annotation {
     public clientID: number;
@@ -150,17 +158,12 @@ class Annotation {
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
-    protected withContext(frame: number): {
-        __internal: {
-            save: (data: ObjectState) => ObjectState;
-            delete: Annotation['delete'];
-        };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected withContext(_: number): {
+        delete: Annotation['delete'];
     } {
         return {
-            __internal: {
-                save: (this as any).save.bind(this, frame),
-                delete: this.delete.bind(this),
-            },
+            delete: this.delete.bind(this),
         };
     }
 
@@ -399,7 +402,7 @@ class Annotation {
 }
 
 class Drawn extends Annotation {
-    protected frameMeta: AnnotationInjection['frameMeta'];
+    protected framesInfo: AnnotationInjection['framesInfo'];
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
@@ -407,7 +410,7 @@ class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
-        this.frameMeta = injection.frameMeta;
+        this.framesInfo = injection.framesInfo;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
         this.pinned = true;
@@ -492,16 +495,10 @@ class Drawn extends Annotation {
             checkObjectType('points', data.points, null, Array);
             checkNumberOfPoints(this.shapeType, data.points);
             // cut points
-            const { width, height, filename } = this.frameMeta[frame];
+            const { width, height } = this.framesInfo[frame];
             fittedPoints = this.fitPoints(data.points, data.rotation, width, height);
-            let check = true;
-            if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                check = false;
-            }
-            if (check) {
-                if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                    fittedPoints = [];
-                }
+            if (this.dimension === DimensionType.DIMENSION_2D && !checkShapeArea(this.shapeType, fittedPoints)) {
+                fittedPoints = [];
             }
         }
 
@@ -528,6 +525,17 @@ export class Shape extends Drawn {
         this.occluded = data.occluded || false;
         this.outside = data.outside || false;
         this.zOrder = data.z_order;
+    }
+
+    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedShape;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedShape,
+        };
     }
 
     // Method is used to export data to the server
@@ -592,7 +600,7 @@ export class Shape extends Drawn {
             pinned: this.pinned,
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
 
         if (typeof this.outside !== 'undefined') {
@@ -838,6 +846,17 @@ export class Track extends Drawn {
         }, {});
     }
 
+    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedTrack;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedTrack,
+        };
+    }
+
     // Method is used to export data to the server
     public toJSON(): SerializedTrack | SerializedTrack['elements'][0] {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
@@ -931,7 +950,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -943,7 +962,7 @@ export class Track extends Drawn {
         let last = Number.MIN_SAFE_INTEGER;
 
         for (const frame of frames) {
-            if (frame in this.frameMeta.deleted_frames) {
+            if (this.framesInfo.isFrameDeleted(frame)) {
                 continue;
             }
 
@@ -1397,14 +1416,22 @@ export class Track extends Drawn {
             };
         }
 
-        throw new DataError(
-            'No one left position or right position was found. ' +
-                `Interpolation impossible. Client ID: ${this.clientID}`,
-        );
+        throw new InterpolationNotPossibleError();
     }
 }
 
 export class Tag extends Annotation {
+    protected withContext(frame: number): ReturnType<Annotation['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedTag;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedTag,
+        };
+    }
+
     // Method is used to export data to the server
     public toJSON(): SerializedTag {
         const result: SerializedTag = {
@@ -1451,7 +1478,7 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -2022,7 +2049,7 @@ export class SkeletonShape extends Shape {
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -2188,7 +2215,7 @@ export class MaskShape extends Shape {
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         const [left, top, right, bottom] = this.points.slice(-4);
-        const { width, height } = this.frameMeta[this.frame];
+        const { width, height } = this.framesInfo[this.frame];
         if (left >= width || top >= height || right >= width || bottom >= height) {
             this.points = cropMask(this.points, width, height);
         }
@@ -2201,7 +2228,7 @@ export class MaskShape extends Shape {
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
-            const { width, height } = this.frameMeta[frame];
+            const { width, height } = this.framesInfo[frame];
             return cropMask(data.points, width, height);
         }
 
@@ -2582,7 +2609,7 @@ class PolyTrack extends Track {
                 return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
             }
 
-            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): void {
+            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): Point2D[] {
                 const threshold = baseLength / (2 * N);
                 const minimized = [interpolatedPoints[startInterpolated]];
                 let latestPushed = startInterpolated;
@@ -3064,7 +3091,7 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -3247,10 +3274,7 @@ export class SkeletonTrack extends Track {
             };
         }
 
-        throw new DataError(
-            'No one left position or right position was found. ' +
-                `Interpolation impossible. Client ID: ${this.clientID}`,
-        );
+        throw new InterpolationNotPossibleError();
     }
 }
 

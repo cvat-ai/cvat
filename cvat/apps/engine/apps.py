@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ class EngineConfig(AppConfig):
 
         # Required to define signals in application
         import cvat.apps.engine.signals
+
         # Required in order to silent "unused-import" in pyflake
         assert cvat.apps.engine.signals
 

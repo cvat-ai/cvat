@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -47,13 +47,14 @@ export interface SerializedUser {
     first_name: string;
     last_name: string;
     email?: string;
-    groups?: ('user' | 'business' | 'admin')[];
+    groups?: ('user' | 'admin')[];
     is_staff?: boolean;
     is_superuser?: boolean;
     is_active?: boolean;
     last_login?: string;
     date_joined?: string;
     email_verification_required: boolean;
+    has_analytics_access: boolean;
 }
 
 interface SerializedStorage {
@@ -246,6 +247,7 @@ export interface SerializedQualitySettingsData {
     max_validations_per_job?: number;
     iou_threshold?: number;
     oks_sigma?: number;
+    point_size_base?: string;
     line_thickness?: number;
     low_overlap_threshold?: number;
     compare_line_orientation?: boolean;
@@ -256,6 +258,7 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+    empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
 }
 
@@ -503,29 +506,36 @@ export interface SerializedAPISchema {
 }
 
 export interface SerializedRequest {
-    id?: string;
+    id: string;
+    message: string;
     status: string;
-    operation?: {
+    operation: {
         target: string;
         type: string;
-        format: string;
+        format: string | null;
         job_id: number | null;
         task_id: number | null;
         project_id: number | null;
+        function_id: string | null;
     };
     progress?: number;
-    message: string;
     result_url?: string;
     result_id?: number;
-    created_date?: string;
+    created_date: string;
     started_date?: string;
     finished_date?: string;
     expiry_date?: string;
-    owner?: any;
+    owner: any;
 }
 
-export interface SerializedValidationLayout {
+export interface SerializedJobValidationLayout {
     honeypot_count?: number;
     honeypot_frames?: number[];
     honeypot_real_frames?: number[];
+}
+
+export interface SerializedTaskValidationLayout extends SerializedJobValidationLayout {
+    mode: 'gt' | 'gt_pool' | null;
+    validation_frames?: number[];
+    disabled_frames?: number[];
 }

@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -472,7 +472,7 @@ export class EditHandlerImpl implements EditHandler {
 
             const paintHandler = this.editLine.remember('_paintHandler');
 
-            for (const point of (paintHandler as any).set.members) {
+            for (const point of paintHandler.set.members) {
                 point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
                 point.attr('r', `${this.controlPointsSize / geometry.scale}`);
             }

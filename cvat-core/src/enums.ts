@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier = MIT
 
@@ -148,6 +148,7 @@ export enum HistoryActions {
     REMOVED_OBJECT = 'Removed object',
     REMOVED_FRAME = 'Removed frame',
     RESTORED_FRAME = 'Restored frame',
+    COMMIT_ANNOTATIONS = 'Commit annotations',
 }
 
 export enum ModelKind {

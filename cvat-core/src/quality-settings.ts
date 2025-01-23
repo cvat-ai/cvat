@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,6 +14,11 @@ export enum TargetMetric {
     RECALL = 'recall',
 }
 
+export enum PointSizeBase {
+    IMAGE_SIZE = 'image_size',
+    GROUP_BBOX_SIZE = 'group_bbox_size',
+}
+
 export default class QualitySettings {
     #id: number;
     #targetMetric: TargetMetric;
@@ -22,6 +27,7 @@ export default class QualitySettings {
     #task: number;
     #iouThreshold: number;
     #oksSigma: number;
+    #pointSizeBase: PointSizeBase;
     #lineThickness: number;
     #lowOverlapThreshold: number;
     #orientedLines: boolean;
@@ -32,6 +38,7 @@ export default class QualitySettings {
     #objectVisibilityThreshold: number;
     #panopticComparison: boolean;
     #compareAttributes: boolean;
+    #emptyIsAnnotated: boolean;
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
@@ -42,6 +49,7 @@ export default class QualitySettings {
         this.#maxValidationsPerJob = initialData.max_validations_per_job;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
+        this.#pointSizeBase = initialData.point_size_base as PointSizeBase;
         this.#lineThickness = initialData.line_thickness;
         this.#lowOverlapThreshold = initialData.low_overlap_threshold;
         this.#orientedLines = initialData.compare_line_orientation;
@@ -52,6 +60,7 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
+        this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#descriptions = initialData.descriptions;
     }
 
@@ -77,6 +86,14 @@ export default class QualitySettings {
 
     set oksSigma(newVal: number) {
         this.#oksSigma = newVal;
+    }
+
+    get pointSizeBase(): PointSizeBase {
+        return this.#pointSizeBase;
+    }
+
+    set pointSizeBase(newVal: PointSizeBase) {
+        this.#pointSizeBase = newVal;
     }
 
     get lineThickness(): number {
@@ -183,6 +200,14 @@ export default class QualitySettings {
         this.#maxValidationsPerJob = newVal;
     }
 
+    get emptyIsAnnotated(): boolean {
+        return this.#emptyIsAnnotated;
+    }
+
+    set emptyIsAnnotated(newVal: boolean) {
+        this.#emptyIsAnnotated = newVal;
+    }
+
     get descriptions(): Record<string, string> {
         const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
             const camelCaseKey = _.camelCase(key);
@@ -197,6 +222,7 @@ export default class QualitySettings {
         const result: SerializedQualitySettingsData = {
             iou_threshold: this.#iouThreshold,
             oks_sigma: this.#oksSigma,
+            point_size_base: this.#pointSizeBase,
             line_thickness: this.#lineThickness,
             low_overlap_threshold: this.#lowOverlapThreshold,
             compare_line_orientation: this.#orientedLines,
@@ -210,6 +236,7 @@ export default class QualitySettings {
             target_metric: this.#targetMetric,
             target_metric_threshold: this.#targetMetricThreshold,
             max_validations_per_job: this.#maxValidationsPerJob,
+            empty_is_annotated: this.#emptyIsAnnotated,
         };
 
         return result;

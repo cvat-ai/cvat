@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -58,7 +58,6 @@ class TestGetCloudStorage:
         "group, is_owner, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
             ("user", True, True),
         ],
     )
@@ -302,7 +301,6 @@ class TestPatchCloudStorage:
         "group, is_owner, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
             ("worker", True, True),
         ],
     )
@@ -387,7 +385,6 @@ class TestGetCloudStoragePreview:
         "group, is_owner, is_allow",
         [
             ("admin", False, True),
-            ("business", False, False),
             ("user", True, True),
         ],
     )

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,7 +40,7 @@ type ServerMapping = Record<string, {
 export interface DetectorRequestBody {
     mapping: ServerMapping;
     cleanup: boolean;
-    convMaskToPoly: boolean;
+    conv_mask_to_poly: boolean;
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {
@@ -235,7 +235,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                 runInference(model, {
                                     mapping: serverMapping,
                                     cleanup,
-                                    convMaskToPoly: convertMasksToPolygons,
+                                    conv_mask_to_poly: convertMasksToPolygons,
                                 });
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });

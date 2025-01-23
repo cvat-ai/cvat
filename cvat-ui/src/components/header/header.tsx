@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -260,14 +260,6 @@ function HeaderComponent(props: Props): JSX.Element {
                         <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
-                        <Text strong>Core version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.core}`}</Text>
-                    </p>
-                    <p>
-                        <Text strong>Canvas version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.canvas}`}</Text>
-                    </p>
-                    <p>
                         <Text strong>UI version:</Text>
                         <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
@@ -513,7 +505,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         Models
                     </Button>
                 ) : null}
-                {isAnalyticsPluginActive && user.isSuperuser ? (
+                {isAnalyticsPluginActive && user.hasAnalyticsAccess ? (
                     <Button
                         className={getButtonClassName('analytics', false)}
                         type='link'

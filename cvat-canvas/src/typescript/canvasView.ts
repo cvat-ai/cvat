@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -243,6 +243,53 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.canvas.dispatchEvent(event);
+    }
+
+    private resetViewPosition(clientID: number): void {
+        const drawnState = this.drawnStates[clientID];
+        const drawnShape = this.svgShapes[clientID];
+
+        if (drawnState && drawnShape) {
+            const { shapeType, points } = drawnState;
+            const translatedPoints: number[] = this.translateToCanvas(points);
+            const stringified = stringifyPoints(translatedPoints);
+            if (shapeType === 'cuboid') {
+                drawnShape.attr('points', stringified);
+            } else if (['polygon', 'polyline', 'points'].includes(shapeType)) {
+                (drawnShape as SVG.PolyLine | SVG.Polygon).plot(stringified);
+                if (shapeType === 'points') {
+                    this.selectize(false, drawnShape);
+                    this.setupPoints(drawnShape as SVG.PolyLine, drawnState);
+                }
+            } else if (shapeType === 'rectangle') {
+                const [xtl, ytl, xbr, ybr] = translatedPoints;
+                drawnShape.rotate(0);
+                drawnShape.size(xbr - xtl, ybr - ytl).move(xtl, ytl);
+                drawnShape.rotate(drawnState.rotation);
+            } else if (shapeType === 'ellipse') {
+                const [cx, cy, rightX, topY] = translatedPoints;
+                const [rx, ry] = [rightX - cx, cy - topY];
+                drawnShape.rotate(0);
+                drawnShape.size(rx * 2, ry * 2).center(cx, cy);
+                drawnShape.rotate(drawnState.rotation);
+            } else if (shapeType === 'skeleton') {
+                drawnShape.rotate(0);
+                for (const child of (drawnShape as SVG.G).children()) {
+                    if (child.type === 'circle') {
+                        const childClientID = child.attr('data-client-id');
+                        const element = drawnState.elements.find((el: any) => el.clientID === childClientID);
+                        const [x, y] = this.translateToCanvas(element.points);
+                        child.center(x, y);
+                    }
+                }
+                drawnShape.rotate(drawnState.rotation);
+            } else if (shapeType === 'mask') {
+                const [left, top] = points.slice(-4);
+                drawnShape.move(this.geometry.offset + left, this.geometry.offset + top);
+            } else {
+                throw new Error('Not implemented');
+            }
+        }
     }
 
     private onInteraction = (
@@ -1082,9 +1129,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
             });
 
+            let startCenter = null;
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
+                const { cx, cy } = shape.bbox();
+                startCenter = { x: cx, y: cy };
                 start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
@@ -1112,17 +1162,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
                     setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                 }
-            }).on('dragend', (e: CustomEvent): void => {
+            }).on('dragend', (): void => {
                 if (aborted) {
+                    this.resetViewPosition(state.clientID);
                     return;
                 }
 
                 onDragEnd();
                 this.draggableShape = null;
-                const p1 = e.detail.handler.startPoints.point;
-                const p2 = e.detail.p;
-                const dx2 = (p1.x - p2.x) ** 2;
-                const dy2 = (p1.y - p2.y) ** 2;
+                const { cx, cy } = shape.bbox();
+
+                const dx2 = (startCenter.x - cx) ** 2;
+                const dy2 = (startCenter.y - cy) ** 2;
                 if (Math.sqrt(dx2 + dy2) > 0) {
                     if (state.shapeType === 'mask') {
                         const { points } = state;
@@ -1172,6 +1223,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.draggableShape = null;
                 aborted = true;
                 // disable internal drag events of SVG.js
+                // call chain is (mouseup -> SVG.handler.end -> SVG.handler.drag -> dragend)
                 window.dispatchEvent(new MouseEvent('mouseup'));
             });
         } else {
@@ -1303,6 +1355,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 })
                 .on('resizedone', (): void => {
                     if (aborted) {
+                        this.resetViewPosition(state.clientID);
                         return;
                     }
 
@@ -1359,7 +1412,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     onResizeEnd();
                     aborted = true;
                     this.resizableShape = null;
-                    // disable internal drag events of SVG.js
+                    // disable internal resize events of SVG.js
+                    // call chain is (mouseup -> SVG.handler.end -> SVG.handler.resize-> resizeend)
                     window.dispatchEvent(new MouseEvent('mouseup'));
                 });
         } else {
@@ -1600,12 +1654,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
             this.controller.fit();
-            this.canvas.dispatchEvent(
-                new CustomEvent('canvas.fit', {
-                    bubbles: false,
-                    cancelable: true,
-                }),
-            );
             e.preventDefault();
         });
 
@@ -1845,6 +1893,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }),
             );
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
+            if (reason === UpdateReasons.IMAGE_FITTED) {
+                this.canvas.dispatchEvent(
+                    new CustomEvent('canvas.fit', {
+                        bubbles: false,
+                        cancelable: true,
+                    }),
+                );
+            }
+
             this.moveCanvas();
             this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_ROTATED) {
@@ -1867,15 +1924,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.gridPattern.setAttribute('height', `${size.height}`);
         } else if (reason === UpdateReasons.SHAPE_FOCUSED) {
             const { padding, clientID } = this.controller.focusData;
+            const drawnState = this.drawnStates[clientID];
             const object = this.svgShapes[clientID];
-            if (object) {
-                const bbox: SVG.BBox = object.bbox();
-                this.onFocusRegion(
-                    bbox.x - padding,
-                    bbox.y - padding,
-                    bbox.width + padding * 2,
-                    bbox.height + padding * 2,
-                );
+            if (drawnState && object) {
+                const { offset } = this.geometry;
+                let [x, y, width, height] = [0, 0, 0, 0];
+
+                if (drawnState.shapeType === 'mask') {
+                    const [xtl, ytl, xbr, ybr] = drawnState.points.slice(-4);
+                    x = xtl + offset;
+                    y = ytl + offset;
+                    width = xbr - xtl + 1;
+                    height = ybr - ytl + 1;
+                } else {
+                    const bbox: SVG.BBox = object.bbox();
+                    ({
+                        x, y, width, height,
+                    } = bbox);
+                }
+
+                this.onFocusRegion(x - padding, y - padding, width + padding * 2, height + padding * 2);
             }
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.activate(this.controller.activeElement);
@@ -2815,6 +2883,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shapeView = window.document.getElementById(`cvat_canvas_shape_${clientID}`);
             if (shapeView) shapeView.classList.remove(this.getHighlightClassname());
         });
+        const redrawMasks = (highlightedElements.elementsIDs.length !== 0 ||
+            this.highlightedElements.elementsIDs.length !== 0);
+
         if (highlightedElements.elementsIDs.length) {
             this.highlightedElements = { ...highlightedElements };
             this.canvas.classList.add('cvat-canvas-highlight-enabled');
@@ -2829,9 +2900,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             };
             this.canvas.classList.remove('cvat-canvas-highlight-enabled');
         }
-        const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
-        this.deleteObjects(masks);
-        this.addObjects(masks);
+        if (redrawMasks) {
+            const masks = Object.values(this.drawnStates).filter((state) => state.shapeType === 'mask');
+            this.deleteObjects(masks);
+            this.addObjects(masks);
+        }
         if (this.highlightedElements.elementsIDs.length) {
             this.deactivate();
             const clientID = this.highlightedElements.elementsIDs[0];
@@ -3401,7 +3474,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return skeleton;
     }
 
-    private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {
+    private setupPoints(basicPolyline: SVG.PolyLine, state: any | DrawnState): any {
         this.selectize(true, basicPolyline);
 
         const group: SVG.G = basicPolyline

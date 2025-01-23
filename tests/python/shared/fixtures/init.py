@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
-from typing import List, Union
+from typing import Union
 
 import pytest
 import requests
@@ -158,17 +158,27 @@ def docker_exec(container, command, capture_output=True):
     return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
-def docker_exec_cvat(command: Union[List[str], str]):
+def docker_exec_cvat(command: Union[list[str], str]):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def kube_exec_cvat(command: Union[List[str], str]):
+def kube_exec_cvat(command: Union[list[str], str]):
     pod_name = _kube_get_server_pod_name()
     base = f"kubectl exec {pod_name} --"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
+
+
+def container_exec_cvat(request: pytest.FixtureRequest, command: Union[list[str], str]):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        return docker_exec_cvat(command)
+    elif platform == "kube":
+        return kube_exec_cvat(command)
+    else:
+        assert False, "unknown platform"
 
 
 def kube_exec_cvat_db(command):
@@ -260,9 +270,10 @@ def kube_restore_redis_inmem():
         [
             "sh",
             "-c",
-            'redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "*" |'
-            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
-            'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del',
+            'export REDISCLI_AUTH="${REDIS_PASSWORD}" && '
+            'redis-cli -e --scan --pattern "*" | '
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" | '
+            "xargs -r redis-cli -e del",
         ]
     )
 
@@ -273,7 +284,7 @@ def docker_restore_redis_ondisk():
 
 def kube_restore_redis_ondisk():
     kube_exec_redis_ondisk(
-        ["sh", "-c", 'redis-cli -e -p 6666 -a "${CVAT_REDIS_ONDISK_PASSWORD}" flushall']
+        ["sh", "-c", 'REDISCLI_AUTH="${CVAT_REDIS_ONDISK_PASSWORD}" redis-cli -e -p 6666 flushall']
     )
 
 
@@ -300,9 +311,10 @@ def dump_db():
 
 def create_compose_files(container_name_files):
     for filename in container_name_files:
-        with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
-            filename, "w"
-        ) as ndcf:
+        with (
+            open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf,
+            open(filename, "w") as ndcf,
+        ):
             dc_config = yaml.safe_load(dcf)
 
             for service_name, service_config in dc_config["services"].items():

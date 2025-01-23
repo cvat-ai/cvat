@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { RQStatus } from 'cvat-core-wrapper';
 
 interface OwnProps {
     taskInstance: any;
@@ -46,9 +47,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         formats: { annotationFormats },
     } = state;
 
+    const inference = state.models.inferences[tid];
+
     return {
         annotationFormats,
-        inferenceIsActive: tid in state.models.inferences,
+        inferenceIsActive: inference &&
+            ![RQStatus.FAILED, RQStatus.FINISHED].includes(inference.status),
     };
 }
 

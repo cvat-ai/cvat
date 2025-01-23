@@ -1,19 +1,31 @@
 # Command-line client for CVAT
 
-A simple command line interface for working with CVAT tasks. At the moment it
+A simple command line interface for working with CVAT. At the moment it
 implements a basic feature set but may serve as the starting point for a more
 comprehensive CVAT administration tool in the future.
 
-Overview of functionality:
+The following subcommands are supported:
 
-- Create a new task (supports name, bug tracker, project, labels JSON, local/share/remote files)
-- Delete tasks (supports deleting a list of task IDs)
-- List all tasks (supports basic CSV or JSON output)
-- Download JPEG frames (supports a list of frame IDs)
-- Dump annotations (supports all formats via format string)
-- Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0')
-- Export and download a whole task
-- Import a task
+- Projects:
+  - `create` - create a new project
+  - `delete` - delete projects
+  - `ls` - list all projects
+
+- Tasks:
+  - `create` - create a new task
+  - `create-from-backup` - create a task from a backup file
+  - `delete` - delete tasks
+  - `ls` - list all tasks
+  - `frames` - download frames from a task
+  - `export-dataset` - export a task as a dataset
+  - `import-dataset` - import annotations into a task from a dataset
+  - `backup` - back up a task
+  - `auto-annotate` - automatically annotate a task using a local function
+
+- Functions (Enterprise/Cloud only):
+  - `create-native` - create a function that can be powered by an agent
+  - `delete` - delete a function
+  - `run-agent` - process requests for a native function
 
 ## Installation
 
@@ -21,29 +33,25 @@ Overview of functionality:
 
 ## Usage
 
-```bash
-$ cvat-cli --help
+The general form of a CLI command is:
 
-usage: cvat-cli [-h] [--version] [--auth USER:[PASS]]
-  [--server-host SERVER_HOST] [--server-port SERVER_PORT] [--debug]
-  {create,delete,ls,frames,dump,upload,export,import} ...
+```console
+$ cvat-cli <common options> <resource> <action> <options>
+```
 
-Perform common operations related to CVAT tasks.
+where:
 
-positional arguments:
-  {create,delete,ls,frames,dump,upload,export,import}
+- `<common options>` are options shared between all subcommands;
+- `<resource>` is a CVAT resource, such as `task`;
+- `<action>` is the action to do with the resource, such as `create`;
+- `<options>` is any options specific to a particular resource and action.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  --auth USER:[PASS]    defaults to the current user and supports the PASS
-                        environment variable or password prompt
-                        (default: current user)
-  --server-host SERVER_HOST
-                        host (default: localhost)
-  --server-port SERVER_PORT
-                        port (default: 8080)
-  --debug               show debug output
+You can list available subcommands and options using the `--help` option:
+
+```
+$ cvat-cli --help # get help on available common options and resources
+$ cvat-cli <resource> --help # get help on actions for the given resource
+$ cvat-cli <resource> <action> --help # get help on action-specific options
 ```
 
 ## Examples
@@ -51,7 +59,7 @@ optional arguments:
 Create a task with local images:
 
 ```bash
-cvat-cli --auth user create
+cvat-cli --auth user task create
     --labels '[{"name": "car"}, {"name": "person"}]'
     "test_task"
     "local"
@@ -63,5 +71,5 @@ List tasks on a custom server with auth:
 ```bash
 cvat-cli --auth admin:password \
     --server-host cvat.my.server.com --server-port 30123 \
-    ls
+    task ls
 ```

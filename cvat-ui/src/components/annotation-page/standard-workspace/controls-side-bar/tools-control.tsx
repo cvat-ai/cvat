@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1254,8 +1254,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
 
-                        // The function call endpoint doesn't support the cleanup and convMaskToPoly parameters.
-                        const { cleanup, convMaskToPoly, ...restOfBody } = body;
+                        // The function call endpoint doesn't support the cleanup and conv_mask_to_poly parameters.
+                        const { cleanup, conv_mask_to_poly: convMaskToPoly, ...restOfBody } = body;
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...restOfBody, frame, job: jobInstance.id,

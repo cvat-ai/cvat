@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,8 +7,11 @@ import zipfile
 
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor, detect_dataset,
-                                                import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
 

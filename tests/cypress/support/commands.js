@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@ Cypress.Commands.add('logout', () => {
     cy.get('.cvat-header-menu-user-dropdown-user').click();
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
-    cy.clearAllCookies();
+    cy.clearCookies();
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
     cy.contains('Sign in').should('exist');
@@ -178,6 +178,7 @@ Cypress.Commands.add(
         projectName = '',
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
+        qualityConfigurationParams = null,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -214,6 +215,9 @@ Cypress.Commands.add(
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
+            }
+            if (qualityConfigurationParams) {
+                cy.configureTaskQualityMode(qualityConfigurationParams);
             }
             cy.get('.cvat-submit-continue-task-button').scrollIntoView();
             cy.get('.cvat-submit-continue-task-button').click();
@@ -260,11 +264,25 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
     selectServerFiles(serverFiles);
 });
 
-Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password = Cypress.env('password')) => {
-    cy.visit('/');
-    cy.get('#root').should('exist').and('be.visible');
-    cy.window().then(async ($win) => {
-        await $win.cvat.server.login(username, password);
+Cypress.Commands.add('headlessLogin', ({
+    username,
+    password,
+    nextURL,
+} = {}) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then((win) => {
+        cy.headlessLogout().then(() => (
+            win.cvat.server.login(
+                username || Cypress.env('user'),
+                password || Cypress.env('password'),
+            ).then(() => win.cvat.users.get({ self: true }).then((users) => {
+                if (nextURL) {
+                    cy.visit(nextURL);
+                }
+
+                return users[0];
+            }))
+        ));
     });
 });
 
@@ -291,7 +309,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
+Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().then(async ($win) => {
         const task = new $win.cvat.classes.Task({
             ...taskSpec,
@@ -310,7 +328,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
             task.remoteFiles = dataSpec.remote_files;
         }
 
-        const result = await task.save();
+        const result = await task.save(extras || {});
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
@@ -341,28 +359,32 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
-    cy.request({
-        method: 'POST',
-        url: '/api/auth/register',
-        body: {
-            confirmations: [],
-            password1: userSpec.password,
-            password2: userSpec.password,
-            email: userSpec.email,
-            first_name: userSpec.firstName,
-            last_name: userSpec.lastName,
-            username: userSpec.username,
-        },
-        headers: {
-            'Content-type': 'application/json',
-        },
-    });
-    return cy.wrap();
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.intercept('POST', '/api/auth/register**', (req) => {
+        req.continue((response) => {
+            delete response.headers['set-cookie'];
+            expect(response.statusCode).to.eq(201);
+            expect(response.body.username).to.eq(userSpec.username);
+            expect(response.body.email).to.eq(userSpec.email);
+        });
+    }).as('registerRequest');
+
+    return cy.window().then((win) => (
+        win.cvat.server.register(
+            userSpec.username,
+            userSpec.firstName,
+            userSpec.lastName,
+            userSpec.email,
+            userSpec.password,
+            [],
+        )
+    ));
 });
 
 Cypress.Commands.add('headlessLogout', () => {
-    cy.clearAllCookies();
-    cy.clearAllLocalStorage();
+    // currently it is supposed that headlessLogout does not need core initialized to perform its logic
+    // this may be improved in the future, but now this behaviour is enough
+    cy.clearCookies();
 });
 
 Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
@@ -897,6 +919,23 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     }
 });
 
+Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
+    cy.contains('Quality').click();
+    if (qualityConfigurationParams.validationMode) {
+        cy.get('#validationMode').within(() => {
+            cy.contains(qualityConfigurationParams.validationMode).click();
+        });
+    }
+    if (qualityConfigurationParams.validationFramesPercent) {
+        cy.get('#validationFramesPercent').clear();
+        cy.get('#validationFramesPercent').type(qualityConfigurationParams.validationFramesPercent);
+    }
+    if (qualityConfigurationParams.validationFramesPerJobPercent) {
+        cy.get('#validationFramesPerJobPercent').clear();
+        cy.get('#validationFramesPerJobPercent').type(qualityConfigurationParams.validationFramesPerJobPercent);
+    }
+});
+
 Cypress.Commands.add('removeAnnotations', () => {
     cy.contains('.cvat-annotation-header-button', 'Menu').click();
     cy.get('.cvat-annotation-menu').within(() => {
@@ -1272,7 +1311,7 @@ Cypress.Commands.add('exportTask', ({
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
-    cy.contains('button', 'OK').click();
+    cy.contains('.cvat-modal-export-task button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
 });
@@ -1565,6 +1604,7 @@ Cypress.Commands.add('startMaskDrawing', () => {
 Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-brush').click();
     cy.get('.cvat-brush-tools-finish').click();
+    cy.hideTooltips();
 });
 
 Cypress.Commands.add('sliceShape', (
@@ -1659,6 +1699,14 @@ Cypress.Commands.add('hideTooltips', () => {
             cy.get('.ant-tooltip').invoke('hide');
         }
     });
+});
+
+Cypress.Commands.add('checkDeletedFrameVisibility', () => {
+    cy.openSettings();
+    cy.get('.cvat-workspace-settings-show-deleted').within(() => {
+        cy.get('[type="checkbox"]').should('not.be.checked').check();
+    });
+    cy.closeSettings();
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {

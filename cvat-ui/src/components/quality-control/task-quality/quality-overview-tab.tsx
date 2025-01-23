@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,13 +6,13 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 
 import config from 'config';
-import { TargetMetric, Task } from 'cvat-core-wrapper';
+import { QualitySettings, Task } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
 
 interface Props {
     task: Task;
-    targetMetric: TargetMetric;
+    qualitySettings: QualitySettings;
 }
 
 function QualityOverviewTab(): JSX.Element {

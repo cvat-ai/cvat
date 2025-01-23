@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -63,7 +63,7 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                                 return (<>Unknown status received</>);
                             }
 
-                            return <>Automatic annotation accomplisted</>;
+                            return <>Automatic annotation accomplished</>;
                         })()}
                     </Text>
                 </div>

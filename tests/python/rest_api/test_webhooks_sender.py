@@ -1,10 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 from http import HTTPStatus
-from time import sleep
+from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
@@ -65,9 +65,11 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
     return response.json()
 
 
-def get_deliveries(webhook_id, expected_count=1):
+def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
+    start_time = time()
+
     delivery_response = {}
-    for _ in range(10):
+    while True:
         response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
         assert response.status_code == HTTPStatus.OK
 
@@ -75,6 +77,9 @@ def get_deliveries(webhook_id, expected_count=1):
         if deliveries["count"] == expected_count:
             delivery_response = json.loads(deliveries["results"][0]["response"])
             break
+
+        if time() - start_time > timeout:
+            raise TimeoutError("Failed to get deliveries within the specified time interval")
 
         sleep(1)
 

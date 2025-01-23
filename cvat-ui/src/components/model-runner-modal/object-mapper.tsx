@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,7 +40,7 @@ function ObjectMapperComponent(props: Props): JSX.Element {
     const [rightValue, setRightValue] = useState<object | null>(null);
 
     const setMappingWrapper = (updated: Props['defaultMapping']): void => {
-        // if we prefer useEffect instead of this approch
+        // if we prefer useEffect instead of this approach
         // component will be rerendered first with extras that depends on parent state
         // these extras will use outdated information in this case
         onUpdateMapping(updated);

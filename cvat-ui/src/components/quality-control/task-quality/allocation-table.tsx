@@ -1,28 +1,32 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { range } from 'lodash';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { Row, Col } from 'antd/lib/grid';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
-import Text from 'antd/lib/typography/Text';
 import { Key } from 'antd/lib/table/interface';
 import Icon, { DeleteOutlined } from '@ant-design/icons';
 
 import { RestoreIcon } from 'icons';
-import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
+import {
+    Task, FramesMetaData, TaskValidationLayout, QualitySettings,
+} from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { sorter } from 'utils/quality';
+import { sorter, tablePaginationPageSize } from 'utils/quality';
+import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
+import QualityTableHeader from './quality-table-header';
 
 interface Props {
     task: Task;
-    gtJob: Job;
+    gtJobId: number;
     gtJobMeta: FramesMetaData;
+    validationLayout: TaskValidationLayout;
+    qualitySettings: QualitySettings;
+    pageSizeData: { width: number, height: number };
     onDeleteFrames: (frames: number[]) => void;
     onRestoreFrames: (frames: number[]) => void;
 }
@@ -33,53 +37,12 @@ interface RowData {
     active: boolean;
 }
 
-interface TableRowData extends RowData {
-    key: Key;
-}
+const FRAME_NAME_WIDTH_COEF = 0.70;
 
-// Temporary solution: this function is necessary in one of plugins which imports it directly from CVAT code
-// Further this solution should be re-designed
-// Until then, *DO NOT RENAME/REMOVE* this exported function
-export function getAllocationTableContents(gtJobMeta: FramesMetaData, gtJob: Job): TableRowData[] {
-    // A workaround for meta "includedFrames" using source data numbers
-    // TODO: remove once meta is migrated to relative frame numbers
-
-    const jobFrameNumbers = gtJobMeta.getDataFrameNumbers().map((dataFrameNumber: number) => (
-        gtJobMeta.getJobRelativeFrameNumber(dataFrameNumber) + gtJob.startFrame
-    ));
-
-    const jobDataSegmentFrameNumbers = range(
-        gtJobMeta.startFrame, gtJobMeta.stopFrame + 1, gtJobMeta.frameStep,
-    );
-
-    let includedIndex = 0;
-    const result: TableRowData[] = [];
-    for (let index = 0; index < jobDataSegmentFrameNumbers.length; ++index) {
-        const dataFrameID = jobDataSegmentFrameNumbers[index];
-
-        if (gtJobMeta.includedFrames && !gtJobMeta.includedFrames.includes(dataFrameID)) {
-            continue;
-        }
-
-        const frameID = jobFrameNumbers[includedIndex];
-
-        result.push({
-            key: frameID,
-            frame: frameID,
-            name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
-            active: !(frameID in gtJobMeta.deletedFrames),
-        });
-
-        ++includedIndex;
-    }
-
-    return result;
-}
-
-function AllocationTable(props: Readonly<Props>): JSX.Element {
+function AllocationTable(props: Readonly<Props>): JSX.Element | null {
     const {
-        task, gtJob, gtJobMeta,
-        onDeleteFrames, onRestoreFrames,
+        task, gtJobId, gtJobMeta, validationLayout,
+        onDeleteFrames, onRestoreFrames, pageSizeData,
     } = props;
 
     const history = useHistory();
@@ -88,14 +51,46 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
         selectedRows: [],
     });
 
-    const data = getAllocationTableContents(gtJobMeta, gtJob);
+    const { disabledFrames } = validationLayout;
+    const data = validationLayout.validationFrames.map((frame: number, index: number) => ({
+        key: frame,
+        frame,
+        name: gtJobMeta.frames[
+            // - gt job meta starts from the 0 task frame;
+            // - honeypot gt job meta starts from the job start frame;
+            (validationLayout.mode === ValidationMode.GT) ? frame : index
+        ]?.name ?? gtJobMeta.frames[0].name,
+        active: !disabledFrames.includes(frame),
+    }));
+
+    const [filteredData, setFilteredData] = useState(data);
+
+    const handleSearch = (query: string): void => {
+        const lowerCaseQuery = query.toLowerCase();
+        const filtered = data.filter((item) => item.name.toLowerCase().includes(lowerCaseQuery));
+        setFilteredData(filtered);
+    };
+
+    const handleDownload = () => {
+        const filename = `allocation-table-task_${task.id}.csv`;
+        const csvContent = filteredData.map(({ key, ...rest }) => rest);
+        return { filename, data: csvContent };
+    };
+
+    const { width: pageWidth, height: pageHeight } = pageSizeData;
+    const frameNameWidth = FRAME_NAME_WIDTH_COEF * pageWidth;
+    const defaultPageSize = tablePaginationPageSize(pageHeight);
+
+    if (!pageWidth || !pageHeight) {
+        return null;
+    }
 
     const columns = [
         {
             title: 'Frame',
             dataIndex: 'frame',
             key: 'frame',
-            width: 50,
+            align: 'center' as const,
             sorter: sorter('frame'),
             render: (frame: number): JSX.Element => (
                 <div>
@@ -104,7 +99,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                         type='link'
                         onClick={(e: React.MouseEvent): void => {
                             e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${frame}`);
+                            history.push(`/tasks/${task.id}/jobs/${gtJobId}?frame=${frame}`);
                         }}
                     >
                         {`#${frame}`}
@@ -116,33 +111,38 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
-            width: 300,
+            align: 'center' as const,
             sorter: sorter('name'),
-            render: (name: string, record: RowData) => (
-                <CVATTooltip title={name}>
-                    <Button
-                        className='cvat-open-frame-button'
-                        type='link'
-                        onClick={(e: React.MouseEvent): void => {
-                            e.preventDefault();
-                            history.push(`/tasks/${task.id}/jobs/${gtJob.id}?frame=${record.frame}`);
-                        }}
-                    >
-                        {name}
-                    </Button>
-                </CVATTooltip>
-            ),
+            width: frameNameWidth,
+            render: (name: string, record: RowData) => {
+                const link = `/tasks/${task.id}/jobs/${gtJobId}?frame=${record.frame}`;
+                return (
+                    <CVATTooltip title={name}>
+                        <Button
+                            style={{ width: frameNameWidth }}
+                            className='cvat-open-frame-button'
+                            type='link'
+                            onClick={(e: React.MouseEvent): void => {
+                                e.preventDefault();
+                                history.push(link);
+                            }}
+                            href={link}
+                        >
+                            {name}
+                        </Button>
+                    </CVATTooltip>
+                );
+            },
         },
         {
             title: 'Actions',
             dataIndex: 'active',
             key: 'actions',
-            align: 'center' as const,
-            width: 20,
             filters: [
                 { text: 'Active', value: true },
                 { text: 'Excluded', value: false },
             ],
+            align: 'center' as const,
             sorter: sorter('active'),
             onFilter: (value: boolean | Key, record: RowData) => record.active === value,
             render: (active: boolean, record: RowData): JSX.Element => (
@@ -164,40 +164,38 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
 
     return (
         <div className='cvat-frame-allocation-list'>
-            <Row justify='start' align='middle' className='cvat-frame-allocation-actions'>
-                <Col>
-                    <Text className='cvat-text-color cvat-frame-allocation-header'> Frames </Text>
-                </Col>
-                {
+            <QualityTableHeader
+                title='Frames'
+                onSearch={handleSearch}
+                onDownload={handleDownload}
+                actions={
                     selection.selectedRowKeys.length !== 0 ? (
                         <>
-                            <Col className='cvat-allocation-selection-frame-delete'>
-                                <DeleteOutlined
-                                    onClick={() => {
-                                        const framesToUpdate = selection.selectedRows
-                                            .filter((frameData) => frameData.active)
-                                            .map((frameData) => frameData.frame);
-                                        onDeleteFrames(framesToUpdate);
-                                        setSelection({ selectedRowKeys: [], selectedRows: [] });
-                                    }}
-                                />
-                            </Col>
-                            <Col className='cvat-allocation-selection-frame-restore'>
-                                <Icon
-                                    onClick={() => {
-                                        const framesToUpdate = selection.selectedRows
-                                            .filter((frameData) => !frameData.active)
-                                            .map((frameData) => frameData.frame);
-                                        onRestoreFrames(framesToUpdate);
-                                        setSelection({ selectedRowKeys: [], selectedRows: [] });
-                                    }}
-                                    component={RestoreIcon}
-                                />
-                            </Col>
+                            <DeleteOutlined
+                                className='cvat-allocation-selection-frame-delete'
+                                onClick={() => {
+                                    const framesToUpdate = selection.selectedRows
+                                        .filter((frameData) => frameData.active)
+                                        .map((frameData) => frameData.frame);
+                                    onDeleteFrames(framesToUpdate);
+                                    setSelection({ selectedRowKeys: [], selectedRows: [] });
+                                }}
+                            />
+                            <Icon
+                                className='cvat-allocation-selection-frame-restore'
+                                onClick={() => {
+                                    const framesToUpdate = selection.selectedRows
+                                        .filter((frameData) => !frameData.active)
+                                        .map((frameData) => frameData.frame);
+                                    onRestoreFrames(framesToUpdate);
+                                    setSelection({ selectedRowKeys: [], selectedRows: [] });
+                                }}
+                                component={RestoreIcon}
+                            />
                         </>
                     ) : null
                 }
-            </Row>
+            />
             <Table
                 className='cvat-frame-allocation-table'
                 rowClassName={(rowData) => {
@@ -207,7 +205,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                     return 'cvat-allocation-frame-row';
                 }}
                 columns={columns}
-                dataSource={data}
+                dataSource={filteredData}
                 rowSelection={{
                     selectedRowKeys: selection.selectedRowKeys,
                     onChange: (selectedRowKeys: Key[], selectedRows: RowData[]) => {
@@ -219,7 +217,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element {
                     },
                 }}
                 size='small'
-                pagination={{ showSizeChanger: true }}
+                pagination={{ showSizeChanger: true, defaultPageSize }}
             />
         </div>
     );

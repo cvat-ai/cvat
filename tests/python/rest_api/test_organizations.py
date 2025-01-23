@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -31,7 +31,6 @@ class TestMetadataOrganizations:
         [
             ("admin", None, None),
             ("user", None, False),
-            ("business", None, False),
             ("worker", None, False),
             (None, "owner", True),
             (None, "maintainer", True),
@@ -79,7 +78,6 @@ class TestGetOrganizations:
         [
             ("admin", None, None, True),
             ("user", None, False, False),
-            ("business", None, False, False),
             ("worker", None, False, False),
             (None, "owner", True, True),
             (None, "maintainer", True, True),
@@ -182,7 +180,6 @@ class TestPatchOrganizations:
         [
             ("admin", None, None, True),
             ("user", None, False, False),
-            ("business", None, False, False),
             ("worker", None, False, False),
             (None, "owner", True, True),
             (None, "maintainer", True, True),
@@ -239,7 +236,6 @@ class TestDeleteOrganizations:
             (None, "worker", True, False),
             (None, "supervisor", True, False),
             ("user", None, False, False),
-            ("business", None, False, False),
             ("worker", None, False, False),
         ],
     )

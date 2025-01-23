@@ -1,8 +1,6 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-
-from typing import List
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.models as models
@@ -17,7 +15,7 @@ spec = cvataa.DetectionFunctionSpec(
 
 def detect(
     context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
-) -> List[models.LabeledShapeRequest]:
+) -> list[models.LabeledShapeRequest]:
     return [
         cvataa.rectangle(0, [1, 2, 3, 4]),
     ]

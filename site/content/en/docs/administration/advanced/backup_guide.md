@@ -20,7 +20,7 @@ Docker volumes are used to store all CVAT data:
 - `cvat_keys`: used to store the [Django secret key](https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-SECRET_KEY).
   Mounted into `cvat` container by `/home/django/keys` path.
 
-- `cvat_logs`: used to store logs of CVAT backend processes managed by supervisord.
+- `cvat_logs`: used to store logs of CVAT backend processes managed by the supervisord service.
   Mounted into `cvat` container by `/home/django/logs` path.
 
 - `cvat_events_db`: this volume is used to store Clickhouse database files.
