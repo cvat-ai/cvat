@@ -1706,3 +1706,25 @@ Cypress.Commands.overwrite('reload', (orig, options) => {
     orig(options);
     cy.closeModalUnsupportedPlatform();
 });
+
+Cypress.Commands.add('createTaskFromArchive', (taskName, labelName, archiveName, projectName = null) => {
+    cy.get('.cvat-create-task-dropdown').click();
+    cy.get('.cvat-create-task-button').click();
+    cy.get('[id="name"]').clear();
+    cy.get('[id="name"]').type(taskName);
+    if (projectName) {
+        cy.get('.cvat-project-search-field').first().within(() => {
+            cy.get('[type="search"]').type(projectName);
+        });
+    }
+    cy.get('.cvat-constructor-viewer-new-item').click();
+    cy.get('[placeholder="Label name"]').type(labelName);
+    cy.contains('button', 'Continue').click();
+    // Archive name is relative to cypress/fixtures
+    cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
+    cy.contains('button', 'Submit & Continue').click();
+    cy.get('.cvat-notification-create-task-success').should('exist').within(() => {
+        cy.get('.anticon-close').click();
+    });
+    cy.get('.cvat-notification-create-task-fail').should('not.exist');
+});
