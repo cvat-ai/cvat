@@ -7,7 +7,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { Row, Col } from 'antd/lib/grid';
-import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
@@ -20,6 +19,7 @@ import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
+import CVATTag, { TagType } from 'components/common/cvat-tag';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
@@ -142,7 +142,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                             </Text>
                         </div>
                     )}
-                    {consensusEnabled && <Tag color='#1890ff'>Consensus</Tag>}
+                    {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                 </Col>
                 <Col>
                     <Text type='secondary'>Assigned to</Text>

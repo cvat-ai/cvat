@@ -4,14 +4,14 @@
 
 import './styles.scss';
 
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
-import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
 import Dropdown from 'antd/lib/dropdown';
 import Icon from '@ant-design/icons';
@@ -28,7 +28,7 @@ import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import Collapse from 'antd/lib/collapse';
-import { collapseRegularJob } from 'actions/jobs-actions';
+import CVATTag, { TagType } from 'components/common/cvat-tag';
 import JobActionsMenu from './job-actions-menu';
 
 function formatDate(value: moment.Moment): string {
@@ -39,6 +39,9 @@ interface Props {
     job: Job;
     task: Task;
     onJobUpdate: (job: Job, fields: Parameters<Job['save']>[0]) => void;
+    childJobs?: Job[];
+    defaultCollapsed?: boolean;
+    onCollapseChange?: (jobID: number, collapsed: boolean) => void;
 }
 
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
@@ -105,13 +108,14 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
 }
 
 function JobItem(props: Props): JSX.Element {
-    const { job, task, onJobUpdate } = props;
+    const {
+        job, task, onJobUpdate, childJobs, defaultCollapsed, onCollapseChange,
+    } = props;
 
     const deletes = useSelector((state: CombinedState) => state.jobs.activities.deletes);
     const deleted = job.id in deletes ? deletes[job.id] === true : false;
 
     const { stage } = job;
-    const dispatch = useDispatch();
     const created = moment(job.createdDate);
     const updated = moment(job.updatedDate);
     const now = moment(moment.now());
@@ -125,34 +129,30 @@ function JobItem(props: Props): JSX.Element {
     const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     const jobName = `Job #${job.id}`;
 
-    let childJobs: Job[] = [];
-    if (task.consensusEnabled) {
-        childJobs = task.jobs.filter((eachJob: Job) => eachJob.parentJobId === job.id).reverse();
-    }
-    const consensusJobViews: React.JSX.Element[] = childJobs.map((eachJob: Job) => (
+    const childJobViews: React.JSX.Element[] = childJobs ? childJobs.map((eachJob: Job) => (
         <JobItem key={eachJob.id} job={eachJob} task={task} onJobUpdate={onJobUpdate} />
-    ));
-
-    const regularJobViewUncollapse = useSelector((state: CombinedState) => state.jobs.regularJobViewUncollapse);
-    const regularJobUncollapsed = regularJobViewUncollapse[job.id];
-    const handleCollapseChange = async (): Promise<void> => {
-        await dispatch(collapseRegularJob(job.id, !regularJobUncollapsed));
-    };
+    )) : [];
 
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
         tag = (
             <Col offset={1}>
-                <Tag color='#ED9C00'>Ground truth</Tag>
+                <CVATTag type={TagType.GROUND_TRUTH} />
             </Col>
         );
     } else if (job.consensusReplicas) {
         tag = (
             <Col offset={1}>
-                <Tag color='#1890FF'>Consensus</Tag>
+                <CVATTag type={TagType.CONSENSUS} />
             </Col>
         );
     }
+
+    const onCollapse = useCallback((keys: string | string[]) => {
+        if (onCollapseChange) {
+            onCollapseChange(job.id, Array.isArray(keys) ? keys.length === 0 : keys === '');
+        }
+    }, [onCollapseChange]);
 
     return (
         <Col span={24}>
@@ -301,16 +301,16 @@ function JobItem(props: Props): JSX.Element {
                 >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
-                {childJobs.length > 0 && (
+                {childJobViews.length > 0 && (
                     <Collapse
                         className='cvat-consensus-job-collapse'
-                        activeKey={regularJobUncollapsed ? ['1'] : []}
-                        onChange={handleCollapseChange}
+                        defaultActiveKey={defaultCollapsed ? [] : ['1']}
+                        onChange={onCollapse}
                         items={[
                             {
                                 key: '1',
-                                label: <Text>{`${childJobs.length} Replicas`}</Text>,
-                                children: consensusJobViews,
+                                label: <Text>{`${childJobViews.length} Replicas`}</Text>,
+                                children: childJobViews,
                             },
                         ]}
                     />
@@ -319,5 +319,13 @@ function JobItem(props: Props): JSX.Element {
         </Col>
     );
 }
+
+JobItem.defaultProps = {
+    childJobs: [],
+};
+
+JobItem.propTypes = {
+    childJobs: PropTypes.arrayOf(PropTypes.instanceOf(Job)),
+};
 
 export default React.memo(JobItem);

@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
@@ -73,15 +73,7 @@ function TaskPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
-    if (fetchingTask) {
-        return <Spin size='large' className='cvat-spinner' />;
-    }
-
-    if (!taskInstance) {
-        return <TaskNotFoundComponent />;
-    }
-
-    const onUpdateTask = (task: Task): Promise<void> => (
+    const onUpdateTask = useCallback((task: Task): Promise<void> => (
         new Promise((resolve, reject) => {
             setUpdatingTask(true);
             task.save().then((updatedTask: Task) => {
@@ -98,9 +90,9 @@ function TaskPageComponent(): JSX.Element {
                 setUpdatingTask(false);
             });
         })
-    );
+    ), []);
 
-    const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
+    const onJobUpdate = useCallback((job: Job, data: Parameters<Job['save']>[0]): void => {
         setUpdatingTask(true);
         dispatch(updateJobAsync(job, data)).then(() => {
             // if one of jobs changes, task will have its updated_date bumped
@@ -114,7 +106,15 @@ function TaskPageComponent(): JSX.Element {
                 description: error.toString(),
             });
         });
-    };
+    }, []);
+
+    if (fetchingTask) {
+        return <Spin size='large' className='cvat-spinner' />;
+    }
+
+    if (!taskInstance) {
+        return <TaskNotFoundComponent />;
+    }
 
     return (
         <div className='cvat-task-page'>
