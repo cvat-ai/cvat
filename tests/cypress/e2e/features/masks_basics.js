@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
     let jobID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.headlessCreateTask({
             labels: [{ name: 'mask label', attributes: [], type: 'any' }],
