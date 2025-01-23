@@ -618,7 +618,7 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_detect(
             lambda context, image: [
                 cvataa.shape(
-                    456,
+                    123,
                     type="rectangle",
                     elements=[cvataa.keypoint(12, [1, 2])],
                 ),
@@ -754,39 +754,26 @@ class TestAutoAnnotationFunctions:
         fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
+
+        self.image_dir = tmp_path / "images"
+        self.image_dir.mkdir()
+
+    def _create_task(self, labels):
         self.image = generate_image_file("1.png", size=(100, 100))
-
-        image_dir = tmp_path / "images"
-        image_dir.mkdir()
-
-        image_path = image_dir / self.image.name
+        image_path = self.image_dir / self.image.name
         image_path.write_bytes(self.image.getbuffer())
 
         self.task = self.client.tasks.create_from_data(
-            models.TaskWriteRequest(
-                "Auto-annotation test task",
-                labels=[
-                    models.PatchedLabelRequest(
-                        name="person",
-                        type="skeleton",
-                        sublabels=[
-                            models.SublabelRequest(name="left_eye"),
-                            models.SublabelRequest(name="right_eye"),
-                        ],
-                    ),
-                    models.PatchedLabelRequest(name="car"),
-                ],
-            ),
+            models.TaskWriteRequest("Auto-annotation test task", labels=labels),
             resources=[image_path],
         )
 
         task_labels = self.task.get_labels()
         self.task_labels_by_id = {label.id: label for label in task_labels}
 
-        person_label = next(label for label in task_labels if label.name == "person")
-        self.person_sublabels_by_id = {sl.id: sl for sl in person_label.sublabels}
-
     def test_torchvision_detection(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task([models.PatchedLabelRequest(name="car", type="rectangle")])
+
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_detection_model)
 
         import cvat_sdk.auto_annotation.functions.torchvision_detection as td
@@ -807,6 +794,8 @@ class TestAutoAnnotationFunctions:
         assert annotations.shapes[0].points == [1, 2, 3, 4]
 
     def test_torchvision_instance_segmentation(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task([models.PatchedLabelRequest(name="car")])
+
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_instance_segmentation_model)
 
         import cvat_sdk.auto_annotation.functions.torchvision_instance_segmentation as tis
@@ -855,6 +844,23 @@ class TestAutoAnnotationFunctions:
             assert expected_bitmap[round(y), round(x)]
 
     def test_torchvision_keypoint_detection(self, monkeypatch: pytest.MonkeyPatch):
+        self._create_task(
+            [
+                models.PatchedLabelRequest(
+                    name="person",
+                    type="skeleton",
+                    sublabels=[
+                        models.SublabelRequest(name="left_eye"),
+                        models.SublabelRequest(name="right_eye"),
+                    ],
+                ),
+            ]
+        )
+        person_label = next(
+            label for label in self.task_labels_by_id.values() if label.name == "person"
+        )
+        person_sublabels_by_id = {sl.id: sl for sl in person_label.sublabels}
+
         monkeypatch.setattr(torchvision_models, "get_model", fake_get_keypoint_detection_model)
 
         import cvat_sdk.auto_annotation.functions.torchvision_keypoint_detection as tkd
@@ -876,13 +882,13 @@ class TestAutoAnnotationFunctions:
 
         elements = sorted(
             annotations.shapes[0].elements,
-            key=lambda e: self.person_sublabels_by_id[e.label_id].name,
+            key=lambda e: person_sublabels_by_id[e.label_id].name,
         )
 
-        assert self.person_sublabels_by_id[elements[0].label_id].name == "left_eye"
+        assert person_sublabels_by_id[elements[0].label_id].name == "left_eye"
         assert elements[0].points[0] == hash("left_eye") % 100
         assert elements[0].occluded
 
-        assert self.person_sublabels_by_id[elements[1].label_id].name == "right_eye"
+        assert person_sublabels_by_id[elements[1].label_id].name == "right_eye"
         assert elements[1].points[0] == hash("right_eye") % 100
         assert not elements[1].occluded
