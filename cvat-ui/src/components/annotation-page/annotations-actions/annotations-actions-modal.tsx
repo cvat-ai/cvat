@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,6 @@ const core = getCore();
 interface State {
     actions: BaseAction[];
     activeAction: BaseAction | null;
-    initialized: boolean;
     fetching: boolean;
     progress: number | null;
     progressMessage: string | null;
@@ -50,7 +49,6 @@ interface State {
 }
 
 enum ReducerActionType {
-    SET_INITIALIZED = 'SET_INITIALIZED',
     SET_ANNOTATIONS_ACTIONS = 'SET_ANNOTATIONS_ACTIONS',
     SET_ACTIVE_ANNOTATIONS_ACTION = 'SET_ACTIVE_ANNOTATIONS_ACTION',
     UPDATE_PROGRESS = 'UPDATE_PROGRESS',
@@ -65,9 +63,6 @@ enum ReducerActionType {
 }
 
 export const reducerActions = {
-    setInitialized: (initialized: boolean) => (
-        createAction(ReducerActionType.SET_INITIALIZED, { initialized })
-    ),
     setAnnotationsActions: (actions: BaseAction[]) => (
         createAction(ReducerActionType.SET_ANNOTATIONS_ACTIONS, { actions })
     ),
@@ -105,7 +100,6 @@ export const reducerActions = {
 
 const defaultState = {
     actions: [],
-    initialized: false,
     fetching: false,
     activeAction: null,
     progress: null,
@@ -119,23 +113,13 @@ const defaultState = {
 };
 
 const reducer = (state: State = { ...defaultState }, action: ActionUnion<typeof reducerActions>): State => {
-    if (action.type === ReducerActionType.SET_INITIALIZED) {
-        return {
-            ...state,
-            initialized: action.payload.initialized,
-        };
-    }
-
     if (action.type === ReducerActionType.SET_ANNOTATIONS_ACTIONS) {
         const { actions } = action.payload;
-        const { targetObjectState } = state;
 
-        const filteredActions = targetObjectState ? actions
-            .filter((_action) => _action.isApplicableForObject(targetObjectState)) : actions;
         return {
             ...state,
             actions,
-            activeAction: filteredActions[0] ?? null,
+            activeAction: state.activeAction ?? actions[0] ?? null,
         };
     }
 
@@ -246,7 +230,6 @@ type ActionParameterProps = NonNullable<BaseAction['parameters']>[keyof BaseActi
 
 const componentStorage = createStore(reducer, {
     actions: [],
-    initialized: false,
     fetching: false,
     activeAction: null,
     progress: null,
@@ -319,15 +302,16 @@ function ActionParameterComponent(props: ActionParameterProps & { onChange: (val
 interface Props {
     onClose: () => void;
     targetObjectState?: ObjectState;
+    defaultAnnotationAction?: string;
 }
 
 function AnnotationsActionsModalContent(props: Props): JSX.Element {
-    const { onClose, targetObjectState: defaultTargetObjectState } = props;
+    const { onClose, targetObjectState: defaultTargetObjectState, defaultAnnotationAction } = props;
     const dispatch = useDispatch();
     const storage = getCVATStore();
     const cancellationRef = useRef<boolean>(false);
     const {
-        initialized, actions, activeAction, fetching, targetObjectState, cancelled,
+        actions, activeAction, fetching, targetObjectState, cancelled,
         progress, progressMessage, frameFrom, frameTo, actionParameters, modalVisible,
     } = useSelector((state: State) => ({ ...state }), shallowEqual);
 
@@ -337,20 +321,25 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
     const currentFrameAction = activeAction instanceof BaseCollectionAction || targetObjectState !== null;
 
     useEffect(() => {
-        dispatch(reducerActions.setVisible(true));
-        dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
-        dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
-        dispatch(reducerActions.updateTargetObjectState(defaultTargetObjectState ?? null));
-    }, []);
+        core.actions.list().then((list: BaseAction[]) => {
+            dispatch(reducerActions.setAnnotationsActions(list));
 
-    useEffect(() => {
-        if (!initialized) {
-            core.actions.list().then((list: BaseAction[]) => {
-                dispatch(reducerActions.setAnnotationsActions(list));
-                dispatch(reducerActions.setInitialized(true));
-            });
-        }
-    }, [initialized]);
+            if (defaultAnnotationAction) {
+                const defaultAction = list.find((action) => action.name === defaultAnnotationAction);
+                if (
+                    defaultAction &&
+                    (!defaultTargetObjectState || defaultAction.isApplicableForObject(defaultTargetObjectState))
+                ) {
+                    dispatch(reducerActions.setActiveAnnotationsAction(defaultAction));
+                }
+            }
+
+            dispatch(reducerActions.setVisible(true));
+            dispatch(reducerActions.updateFrameFrom(jobInstance.startFrame));
+            dispatch(reducerActions.updateFrameTo(jobInstance.stopFrame));
+            dispatch(reducerActions.updateTargetObjectState(defaultTargetObjectState ?? null));
+        });
+    }, []);
 
     return (
         <Modal
@@ -643,14 +632,23 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
 
 const MemoizedAnnotationsActionsModalContent = React.memo(AnnotationsActionsModalContent);
 
-export function openAnnotationsActionModal(objectState?: ObjectState): void {
+export function openAnnotationsActionModal({
+    defaultObjectState,
+    defaultAnnotationAction,
+}: {
+    defaultObjectState?: ObjectState,
+    defaultAnnotationAction?: string,
+} = {}): void {
+    window.document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
     const div = window.document.createElement('div');
     window.document.body.append(div);
     const root = createRoot(div);
     root.render(
         <Provider store={componentStorage}>
             <MemoizedAnnotationsActionsModalContent
-                targetObjectState={objectState}
+                targetObjectState={defaultObjectState}
+                defaultAnnotationAction={defaultAnnotationAction}
                 onClose={() => {
                     root.unmount();
                     div.remove();

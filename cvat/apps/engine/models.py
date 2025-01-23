@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import uuid
+from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import cached_property
@@ -21,6 +22,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
+from django.db.models.base import ModelBase
 from django.db.models.fields import FloatField
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
@@ -430,6 +432,25 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+class ABCModelMeta(ABCMeta, ModelBase):
+    pass
+
+class FileSystemRelatedModel(metaclass=ABCModelMeta):
+    @abstractmethod
+    def get_dirname(self) -> str:
+        ...
+
+    def get_tmp_dirname(self) -> str:
+        """
+        The method returns a directory that is only used
+        to store temporary files or folders related to the object
+        """
+        dir_path = os.path.join(self.get_dirname(), "tmp")
+        os.makedirs(dir_path, exist_ok=True)
+
+        return dir_path
+
+
 @transaction.atomic(savepoint=False)
 def clear_annotations_in_jobs(job_ids):
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
@@ -441,6 +462,7 @@ def clear_annotations_in_jobs(job_ids):
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
@@ -466,7 +488,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
             frame__in=frames_batch,
         ).delete()
 
-class Project(TimestampedModel):
+class Project(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -490,11 +512,8 @@ class Project(TimestampedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), "tmp")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -544,7 +563,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(TimestampedModel):
+class Task(TimestampedModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -590,11 +609,8 @@ class Task(TimestampedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.TASKS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), "tmp")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -838,7 +854,7 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel):
+class Job(TimestampedModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -856,7 +872,6 @@ class Job(TimestampedModel):
         default=StageChoice.ANNOTATION)
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
-
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
 
@@ -866,11 +881,8 @@ class Job(TimestampedModel):
     def get_source_storage(self) -> Optional[Storage]:
         return self.segment.task.source_storage
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.JOBS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), 'tmp')
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -1303,8 +1315,10 @@ class AnnotationGuide(TimestampedModel):
     is_public = models.BooleanField(default=False)
 
     @property
-    def target(self):
-        return self.project or self.task
+    def target(self) -> Task | Project:
+        target = self.project or self.task
+        assert target # one of the fields must be set
+        return target
 
     @property
     def organization_id(self):
