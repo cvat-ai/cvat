@@ -1,10 +1,11 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { Dispatch, ActionCreator } from 'redux';
-import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import {
+    ActionUnion, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
 import { CloudStoragesQuery, CloudStorage } from 'reducers';
 import { filterNull } from 'utils/filter-null';
@@ -104,7 +105,7 @@ const cloudStoragesActions = {
 export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
 
 export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(cloudStoragesActions.getCloudStorages());
         dispatch(cloudStoragesActions.updateCloudStoragesGettingQuery(query));
 
@@ -129,7 +130,7 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
 }
 
 export function deleteCloudStorageAsync(cloudStorageInstance: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             dispatch(cloudStoragesActions.deleteCloudStorage(cloudStorageInstance.id));
             await cloudStorageInstance.delete();
@@ -143,7 +144,7 @@ export function deleteCloudStorageAsync(cloudStorageInstance: any): ThunkAction 
 }
 
 export function createCloudStorageAsync(data: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         const cloudStorageInstance = new cvat.classes.CloudStorage(data);
 
         dispatch(cloudStoragesActions.createCloudStorage());
@@ -157,7 +158,7 @@ export function createCloudStorageAsync(data: any): ThunkAction {
 }
 
 export function updateCloudStorageAsync(data: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         const cloudStorageInstance = new cvat.classes.CloudStorage(data);
 
         dispatch(cloudStoragesActions.updateCloudStorage());
@@ -171,7 +172,7 @@ export function updateCloudStorageAsync(data: any): ThunkAction {
 }
 
 export function loadCloudStorageContentAsync(cloudStorage: CloudStorage): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(cloudStoragesActions.loadCloudStorageContent());
         try {
             const result = await cloudStorage.getContent();
@@ -183,7 +184,7 @@ export function loadCloudStorageContentAsync(cloudStorage: CloudStorage): ThunkA
 }
 
 export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(cloudStoragesActions.getCloudStorageStatus(cloudStorage.id));
         try {
             const result = await cloudStorage.getStatus();
@@ -195,7 +196,7 @@ export function getCloudStorageStatusAsync(cloudStorage: CloudStorage): ThunkAct
 }
 
 export function getCloudStoragePreviewAsync(cloudStorage: CloudStorage): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(cloudStoragesActions.getCloudStoragePreview(cloudStorage.id));
         try {
             const result = await cloudStorage.preview();

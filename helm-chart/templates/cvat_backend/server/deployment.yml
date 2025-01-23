@@ -59,11 +59,26 @@ spec:
           - name: ALLOWED_HOSTS
             value: {{ $localValues.envs.ALLOWED_HOSTS | squote}}
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           ports:
           - containerPort: 8080
+          {{- if $localValues.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if $localValues.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
           volumeMounts:
           {{- if .Values.cvat.backend.defaultStorage.enabled }}
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}

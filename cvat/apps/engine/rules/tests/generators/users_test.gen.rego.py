@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -41,7 +41,7 @@ simple_rules = read_rules(NAME)
 SCOPES = {rule["scope"] for rule in simple_rules}
 CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = ["self", "none"]
-GROUPS = ["admin", "business", "user", "worker", "none"]
+GROUPS = ["admin", "user", "worker", "none"]
 ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 
 
@@ -52,6 +52,7 @@ def RESOURCES(scope):
         return [
             {"id": random.randrange(300, 400), "membership": {"role": role}} for role in ORG_ROLES
         ]
+
 
 def eval_rule(scope, context, ownership, privilege, membership, data):
     if privilege == "admin":
@@ -81,13 +82,15 @@ def get_data(scope, context, ownership, privilege, membership, resource):
         "scope": scope,
         "auth": {
             "user": {"id": random.randrange(0, 100), "privilege": privilege},
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            }
-            if context == "organization"
-            else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": resource,
     }

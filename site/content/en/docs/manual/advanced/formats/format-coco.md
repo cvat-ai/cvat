@@ -57,7 +57,7 @@ such as `instances`, `panoptic`, `image_info`, `labels`, `captions`, or `stuff`.
 
 ## COCO import
 
-Uplod format: a single unpacked `*.json` or a zip archive with the structure described above or
+Upload format: a single unpacked `*.json` or a zip archive with the structure described above or
 [here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -50,8 +50,8 @@ context('Test default value for an attribute', () => {
     }
 
     before(() => {
-        cy.headlessLogin();
-        cy.visit('/tasks/create');
+        cy.visit('/auth/login');
+        cy.headlessLogin({ nextURL: '/tasks/create' });
         cy.get('#name').type(taskName);
         cy.addNewLabel({ name: label }, attributes);
         cy.selectFilesFromShare(serverFiles);
@@ -62,7 +62,7 @@ context('Test default value for an attribute', () => {
             expect(interception.response.statusCode).to.equal(201);
             taskID = interception.response.body.id;
         });
-        cy.wait('@getJobsRequest', { requestTimeout: 10000 }).then((interception) => {
+        cy.wait('@getJobsRequest').then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobID = interception.response.body.results[0].id;
         });

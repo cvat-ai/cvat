@@ -1,14 +1,14 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from typing import Optional, Union, cast
 
 from django.conf import settings
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
@@ -18,6 +18,7 @@ from .models import AnnotationConflict, QualityReport, QualitySettings
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]
     job_owner_id: Optional[int]
+    task_id: Optional[int]
 
     class Scopes(StrEnum):
         LIST = "list"
@@ -29,7 +30,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
     def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
-        return cls(**iam_context, scope="view:status", job_owner_id=job_owner_id)
+        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, job_owner_id=job_owner_id)
 
     @classmethod
     def create_scope_view(cls, request, report: Union[int, QualityReport], iam_context=None):
@@ -59,11 +60,42 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
                 elif scope == Scopes.CREATE:
+                    # Note: POST /api/quality/reports is used to initiate report creation and to check the process status
+                    rq_id = request.query_params.get("rq_id")
                     task_id = request.data.get("task_id")
-                    if task_id is not None:
-                        permissions.append(TaskPermission.create_scope_view(request, task_id))
 
-                    permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
+                    if not (task_id or rq_id):
+                        raise PermissionDenied("Either task_id or rq_id must be specified")
+
+                    if rq_id:
+                        # There will be another check for this case during request processing
+                        continue
+
+                    if task_id is not None:
+                        # The request may have a different org or org unset
+                        # Here we need to retrieve iam_context for this user, based on the task_id
+                        try:
+                            task = Task.objects.get(id=task_id)
+                        except Task.DoesNotExist:
+                            raise ValidationError("The specified task does not exist")
+
+                        iam_context = get_iam_context(request, task)
+
+                        permissions.append(
+                            TaskPermission.create_scope_view(request, task, iam_context=iam_context)
+                        )
+
+                    permissions.append(
+                        cls.create_base_perm(
+                            request,
+                            view,
+                            scope,
+                            iam_context,
+                            obj,
+                            task_id=task_id,
+                        )
+                    )
+
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
@@ -85,41 +117,54 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 "create": Scopes.CREATE,
                 "retrieve": Scopes.VIEW,
                 "data": Scopes.VIEW,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
         data = None
 
-        if self.obj:
-            task = self.obj.get_task()
-            if task.project:
-                organization = task.project.organization
+        if self.obj or self.scope == self.Scopes.CREATE:
+            task: Optional[Task] = None
+            project: Optional[Project] = None
+            obj_id: Optional[int] = None
+
+            if self.obj:
+                obj_id = self.obj.id
+                task = self.obj.get_task()
+            elif self.scope == self.Scopes.CREATE and self.task_id:
+                try:
+                    task = Task.objects.get(id=self.task_id)
+                except Task.DoesNotExist:
+                    raise ValidationError("The specified task does not exist")
+
+            if task and task.project:
+                project = task.project
+                organization_id = project.organization_id
             else:
-                organization = task.organization
+                organization_id = task.organization_id
 
             data = {
-                "id": self.obj.id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "id": obj_id,
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": project.owner_id},
+                        "assignee": {"id": project.assignee_id},
                     }
-                    if task.project
+                    if project
                     else None
                 ),
             }
         elif self.scope == self.Scopes.VIEW_STATUS:
-            data = {"owner": self.job_owner_id}
+            data = {"owner": {"id": self.job_owner_id}}
 
         return data
 
@@ -158,7 +203,7 @@ class AnnotationConflictPermission(OpenPolicyAgentPermission):
         return [
             {
                 "list": Scopes.LIST,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
@@ -225,7 +270,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                 "list": Scopes.LIST,
                 "retrieve": Scopes.VIEW,
                 "partial_update": Scopes.UPDATE,
-            }.get(view.action, None)
+            }[view.action]
         ]
 
     def get_resource(self):
@@ -234,25 +279,25 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         if self.obj:
             task = self.obj.task
             if task.project:
-                organization = task.project.organization
+                organization_id = task.project.organization_id
             else:
-                organization = task.organization
+                organization_id = task.organization_id
 
             data = {
                 "id": self.obj.id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": task.project.owner_id},
+                        "assignee": {"id": task.project.assignee_id},
                     }
                     if task.project
                     else None

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ import { CombinedState, ModelsQuery } from 'reducers';
 import { MLModel } from 'cvat-core-wrapper';
 import { ModelProviders } from 'cvat-core/src/enums';
 import { getModelsAsync } from 'actions/models-actions';
+import dimensions from 'utils/dimensions';
 import DeployedModelItem from './deployed-model-item';
 
 export const PAGE_SIZE = 12;
@@ -33,21 +34,43 @@ export default function DeployedModelsListComponent(props: Props): JSX.Element {
     const detectors = useSelector((state: CombinedState) => state.models.detectors);
     const trackers = useSelector((state: CombinedState) => state.models.trackers);
     const reid = useSelector((state: CombinedState) => state.models.reid);
-    const classifiers = useSelector((state: CombinedState) => state.models.classifiers);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
 
     const dispatch = useDispatch();
     const { query } = props;
     const { page } = query;
-    const models = [...interactors, ...detectors, ...trackers, ...reid, ...classifiers];
-    const items = setUpModelsList(models, page)
-        .map((model): JSX.Element => <DeployedModelItem key={model.id} model={model} />);
+    const models = setUpModelsList(
+        [...interactors, ...detectors, ...trackers, ...reid],
+        page,
+    );
+
+    const groupedModels = models.reduce(
+        (acc: MLModel[][], storage: MLModel, index: number): MLModel[][] => {
+            if (index && index % 4) {
+                acc[acc.length - 1].push(storage);
+            } else {
+                acc.push([storage]);
+            }
+            return acc;
+        },
+        [],
+    );
 
     return (
         <>
             <Row justify='center' align='top'>
-                <Col md={22} lg={18} xl={16} xxl={16} className='cvat-models-list'>
-                    {items}
+                <Col {...dimensions} className='cvat-models-list'>
+                    {groupedModels.map(
+                        (instances: MLModel[]): JSX.Element => (
+                            <Row key={instances[0].id}>
+                                {instances.map((model: MLModel) => (
+                                    <Col span={6} key={model.id}>
+                                        <DeployedModelItem model={model} />
+                                    </Col>
+                                ))}
+                            </Row>
+                        ),
+                    )}
                 </Col>
             </Row>
             <Row justify='center' align='middle'>

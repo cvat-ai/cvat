@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,6 +35,21 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
+function convertTrackedShape(shape: SerializedTrack['shapes'][0]): TrackedShape {
+    return {
+        serverID: shape.id,
+        occluded: shape.occluded,
+        zOrder: shape.z_order,
+        points: shape.points,
+        outside: shape.outside,
+        rotation: shape.rotation || 0,
+        attributes: shape.attributes.reduce((attributeAccumulator, attr) => {
+            attributeAccumulator[attr.spec_id] = attr.value;
+            return attributeAccumulator;
+        }, {}),
+    };
+}
+
 function computeNewSource(currentSource: Source): Source {
     if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
         return Source.SEMI_AUTO;
@@ -43,12 +58,18 @@ function computeNewSource(currentSource: Source): Source {
     return Source.MANUAL;
 }
 
+type FrameInfo = {
+    width: number;
+    height: number;
+};
+
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
-    frameMeta: {
-        deleted_frames: Record<number, boolean>;
-    };
+    framesInfo: Readonly<{
+        [index: number]: Readonly<FrameInfo>;
+        isFrameDeleted: (frame: number) => boolean;
+    }>;
     history: AnnotationHistory;
     groupColors: Record<number, string>;
     parentID?: number;
@@ -63,6 +84,8 @@ type AnnotationInjection = BasicInjection & {
     parentID?: number;
     readOnlyFields?: string[];
 };
+
+export class InterpolationNotPossibleError extends Error {}
 
 class Annotation {
     public clientID: number;
@@ -135,17 +158,12 @@ class Annotation {
         injection.groups.max = Math.max(injection.groups.max, this.group);
     }
 
-    protected withContext(frame: number): {
-        __internal: {
-            save: (data: ObjectState) => ObjectState;
-            delete: Annotation['delete'];
-        };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected withContext(_: number): {
+        delete: Annotation['delete'];
     } {
         return {
-            __internal: {
-                save: (this as any).save.bind(this, frame),
-                delete: this.delete.bind(this),
-            },
+            delete: this.delete.bind(this),
         };
     }
 
@@ -330,7 +348,7 @@ class Annotation {
         this.serverID = undefined;
     }
 
-    public updateServerID(body: any): void {
+    public updateFromServerResponse(body: SerializedShape | SerializedTag | SerializedTrack): void {
         this.serverID = body.id;
     }
 
@@ -384,7 +402,7 @@ class Annotation {
 }
 
 class Drawn extends Annotation {
-    protected frameMeta: AnnotationInjection['frameMeta'];
+    protected framesInfo: AnnotationInjection['framesInfo'];
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
@@ -392,7 +410,7 @@ class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
-        this.frameMeta = injection.frameMeta;
+        this.framesInfo = injection.framesInfo;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
         this.pinned = true;
@@ -477,16 +495,10 @@ class Drawn extends Annotation {
             checkObjectType('points', data.points, null, Array);
             checkNumberOfPoints(this.shapeType, data.points);
             // cut points
-            const { width, height, filename } = this.frameMeta[frame];
+            const { width, height } = this.framesInfo[frame];
             fittedPoints = this.fitPoints(data.points, data.rotation, width, height);
-            let check = true;
-            if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                check = false;
-            }
-            if (check) {
-                if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                    fittedPoints = [];
-                }
+            if (this.dimension === DimensionType.DIMENSION_2D && !checkShapeArea(this.shapeType, fittedPoints)) {
+                fittedPoints = [];
             }
         }
 
@@ -513,6 +525,17 @@ export class Shape extends Drawn {
         this.occluded = data.occluded || false;
         this.outside = data.outside || false;
         this.zOrder = data.z_order;
+    }
+
+    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedShape;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedShape,
+        };
     }
 
     // Method is used to export data to the server
@@ -577,7 +600,7 @@ export class Shape extends Drawn {
             pinned: this.pinned,
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
 
         if (typeof this.outside !== 'undefined') {
@@ -817,22 +840,21 @@ export class Track extends Drawn {
         injection: AnnotationInjection,
     ) {
         super(data, clientID, color, injection);
-        this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
-            shapeAccumulator[value.frame] = {
-                serverID: value.id,
-                occluded: value.occluded,
-                zOrder: value.z_order,
-                points: value.points,
-                outside: value.outside,
-                rotation: value.rotation || 0,
-                attributes: value.attributes.reduce((attributeAccumulator, attr) => {
-                    attributeAccumulator[attr.spec_id] = attr.value;
-                    return attributeAccumulator;
-                }, {}),
-            };
-
-            return shapeAccumulator;
+        this.shapes = data.shapes.reduce((acc, shape) => {
+            acc[shape.frame] = convertTrackedShape(shape);
+            return acc;
         }, {});
+    }
+
+    protected withContext(frame: number): ReturnType<Drawn['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedTrack;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedTrack,
+        };
     }
 
     // Method is used to export data to the server
@@ -928,7 +950,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -940,7 +962,7 @@ export class Track extends Drawn {
         let last = Number.MIN_SAFE_INTEGER;
 
         for (const frame of frames) {
-            if (frame in this.frameMeta.deleted_frames) {
+            if (this.framesInfo.isFrameDeleted(frame)) {
                 continue;
             }
 
@@ -998,11 +1020,14 @@ export class Track extends Drawn {
         return result;
     }
 
-    public updateServerID(body: SerializedTrack): void {
+    public updateFromServerResponse(body: SerializedTrack): void {
         this.serverID = body.id;
+        this.frame = body.frame;
+        const updatedShapes = {};
         for (const shape of body.shapes) {
-            this.shapes[shape.frame].serverID = shape.id;
+            updatedShapes[shape.frame] = convertTrackedShape(shape);
         }
+        this.shapes = updatedShapes;
     }
 
     public clearServerID(): void {
@@ -1391,14 +1416,22 @@ export class Track extends Drawn {
             };
         }
 
-        throw new DataError(
-            'No one left position or right position was found. ' +
-                `Interpolation impossible. Client ID: ${this.clientID}`,
-        );
+        throw new InterpolationNotPossibleError();
     }
 }
 
 export class Tag extends Annotation {
+    protected withContext(frame: number): ReturnType<Annotation['withContext']> & {
+        save: (data: ObjectState) => ObjectState;
+        export: () => SerializedTag;
+    } {
+        return {
+            ...super.withContext(frame),
+            save: this.save.bind(this, frame),
+            export: this.toJSON.bind(this) as () => SerializedTag,
+        };
+    }
+
     // Method is used to export data to the server
     public toJSON(): SerializedTag {
         const result: SerializedTag = {
@@ -1445,7 +1478,7 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -1936,8 +1969,7 @@ export class SkeletonShape extends Shape {
             return null;
         }
 
-        // The shortest distance from point to an edge
-        return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+        return Math.min.apply(null, distances);
     }
 
     // Method is used to export data to the server
@@ -2017,15 +2049,15 @@ export class SkeletonShape extends Shape {
             hidden: elements.every((el) => el.hidden),
             frame,
             source: this.source,
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
-    public updateServerID(body: SerializedShape): void {
-        Shape.prototype.updateServerID.call(this, body);
+    public updateFromServerResponse(body: SerializedShape): void {
+        Shape.prototype.updateFromServerResponse.call(this, body);
         for (const element of body.elements) {
-            const thisElement = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
-            thisElement.updateServerID(element);
+            const context = this.elements.find((_element: Shape) => _element.label.id === element.label_id);
+            context.updateFromServerResponse(element);
         }
     }
 
@@ -2182,6 +2214,11 @@ export class MaskShape extends Shape {
 
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
+        const [left, top, right, bottom] = this.points.slice(-4);
+        const { width, height } = this.framesInfo[this.frame];
+        if (left >= width || top >= height || right >= width || bottom >= height) {
+            this.points = cropMask(this.points, width, height);
+        }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
         this.getMasksOnFrame = injection.getMasksOnFrame;
         this.pinned = true;
@@ -2191,7 +2228,7 @@ export class MaskShape extends Shape {
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
-            const { width, height } = this.frameMeta[frame];
+            const { width, height } = this.framesInfo[frame];
             return cropMask(data.points, width, height);
         }
 
@@ -2339,12 +2376,16 @@ export class MaskShape extends Shape {
                     redoWithUnderlyingPixels();
                     redo();
                 },
-                [this.clientID, ...clientIDs], frame,
+                [this.clientID, ...clientIDs],
+                frame,
             );
         } else {
             this.history.do(
                 HistoryActions.CHANGED_POINTS,
-                undo, redo, [this.clientID], frame,
+                undo,
+                redo,
+                [this.clientID],
+                frame,
             );
         }
     }
@@ -2568,7 +2609,7 @@ class PolyTrack extends Track {
                 return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
             }
 
-            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): void {
+            function minimizeSegment(baseLength: number, N: number, startInterpolated, stopInterpolated): Point2D[] {
                 const threshold = baseLength / (2 * N);
                 const minimized = [interpolatedPoints[startInterpolated]];
                 let latestPushed = startInterpolated;
@@ -2904,14 +2945,14 @@ export class SkeletonTrack extends Track {
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
             });
-        }).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
+        }).filter(Boolean).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
     }
 
-    public updateServerID(body: SerializedTrack): void {
-        Track.prototype.updateServerID.call(this, body);
+    public updateFromServerResponse(body: SerializedTrack): void {
+        Track.prototype.updateFromServerResponse.call(this, body);
         for (const element of body.elements) {
-            const thisElement = this.elements.find((_element: Track) => _element.label.id === element.label_id);
-            thisElement.updateServerID(element);
+            const context = this.elements.find((_element: Track) => _element.label.id === element.label_id);
+            context.updateFromServerResponse(element);
         }
     }
 
@@ -2989,6 +3030,12 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): SerializedTrack {
         const result: SerializedTrack = Track.prototype.toJSON.call(this);
+
+        result.shapes = result.shapes.map((shape) => ({
+            ...shape,
+            points: [],
+        }));
+
         result.elements = this.elements.map((el) => ({
             ...el.toJSON(),
             source: this.source,
@@ -3010,7 +3057,7 @@ export class SkeletonTrack extends Track {
         return result;
     }
 
-    public get(frame: number): Omit<Required<SerializedData>, 'parentID'> {
+    public get(frame: number): Required<SerializedData> {
         const { prev, next } = this.boundedKeyframes(frame);
         const position = this.getPosition(frame, prev, next);
         const elements = this.elements.map((element) => ({
@@ -3023,6 +3070,7 @@ export class SkeletonTrack extends Track {
 
         return {
             ...position,
+            parentID: null,
             keyframe: position.keyframe || elements.some((el) => el.keyframe),
             attributes: this.getAttributes(frame),
             descriptions: [...this.descriptions],
@@ -3043,7 +3091,7 @@ export class SkeletonTrack extends Track {
             occluded: elements.every((el) => el.occluded),
             lock: elements.every((el) => el.lock),
             hidden: elements.every((el) => el.hidden),
-            ...this.withContext(frame),
+            __internal: this.withContext(frame),
         };
     }
 
@@ -3198,7 +3246,7 @@ export class SkeletonTrack extends Track {
 
     protected getPosition(
         targetFrame: number, leftKeyframe: number | null, rightKeyframe: number | null,
-    ): Omit<InterpolatedPosition, 'points'> & { keyframe: boolean } {
+    ): InterpolatedPosition & { keyframe: boolean } {
         const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
         const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
         const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
@@ -3210,6 +3258,7 @@ export class SkeletonTrack extends Track {
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
                 keyframe: targetFrame in this.shapes,
+                points: [],
             };
         }
 
@@ -3221,13 +3270,11 @@ export class SkeletonTrack extends Track {
                 zOrder: singlePosition.zOrder,
                 keyframe: targetFrame in this.shapes,
                 outside: singlePosition === rightPosition ? true : singlePosition.outside,
+                points: [],
             };
         }
 
-        throw new DataError(
-            'No one left position or right position was found. ' +
-                `Interpolation impossible. Client ID: ${this.clientID}`,
-        );
+        throw new InterpolationNotPossibleError();
     }
 }
 

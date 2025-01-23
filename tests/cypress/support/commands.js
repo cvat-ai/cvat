@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@ Cypress.Commands.add('logout', () => {
     cy.get('.cvat-header-menu-user-dropdown-user').click();
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
-    cy.clearAllCookies();
+    cy.clearCookies();
     cy.visit('/auth/login');
     cy.url().should('not.include', '?next=');
     cy.contains('Sign in').should('exist');
@@ -171,13 +171,14 @@ Cypress.Commands.add(
         attrName = 'Some attr name',
         textDefaultValue = 'Some default value for type Text',
         image = 'image.png',
-        multiAttrParams,
-        advancedConfigurationParams,
+        multiAttrParams = null,
+        advancedConfigurationParams = null,
         forProject = false,
         attachToProject = false,
-        projectName,
+        projectName = '',
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
+        qualityConfigurationParams = null,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -208,16 +209,22 @@ Cypress.Commands.add(
                 cy.get('.cvat-project-search-field').first().within(() => {
                     cy.get('[type="search"]').should('have.value', projectName);
                 });
-                cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
+                cy.get('.cvat-project-subset-field').type(`${projectSubsetFieldValue}{Enter}`);
                 cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
             cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
             if (advancedConfigurationParams) {
                 cy.advancedConfiguration(advancedConfigurationParams);
             }
-            cy.contains('button', 'Submit & Continue').click();
+            if (qualityConfigurationParams) {
+                cy.configureTaskQualityMode(qualityConfigurationParams);
+            }
+            cy.get('.cvat-submit-continue-task-button').scrollIntoView();
+            cy.get('.cvat-submit-continue-task-button').click();
             if (expectedResult === 'success') {
                 cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+            } else if (expectedResult === 'fail') {
+                cy.get('.cvat-notification-notice-create-task-failed').should('exist').find('[data-icon="close"]').click();
             }
             if (!forProject) {
                 cy.goToTaskList();
@@ -257,28 +264,42 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
     selectServerFiles(serverFiles);
 });
 
-Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password = Cypress.env('password')) => {
-    cy.visit('/');
-    cy.get('#root').should('exist').and('be.visible');
-    cy.window().then(async ($win) => {
-        await $win.cvat.server.login(username, password);
+Cypress.Commands.add('headlessLogin', ({
+    username,
+    password,
+    nextURL,
+} = {}) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then((win) => {
+        cy.headlessLogout().then(() => (
+            win.cvat.server.login(
+                username || Cypress.env('user'),
+                password || Cypress.env('password'),
+            ).then(() => win.cvat.users.get({ self: true }).then((users) => {
+                if (nextURL) {
+                    cy.visit(nextURL);
+                }
+
+                return users[0];
+            }))
+        ));
     });
 });
 
-Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
+Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
-        await job.annotations.clear(true);
+        await job.annotations.clear({ reload: true });
 
         const objectStates = objects
             .map((object) => new $win.cvat.classes
                 .ObjectState({
                     frame: object.frame,
-                    objectType: $win.cvat.enums.ObjectType[object.objectType],
-                    shapeType: $win.cvat.enums.ShapeType[object.shapeType],
+                    objectType: object.objectType,
+                    shapeType: object.shapeType,
                     points: $win.Array.from(object.points),
                     occluded: object.occluded,
-                    label: job.labels[0],
+                    label: job.labels.find((label) => label.name === object.labelName),
                     zOrder: 0,
                 }));
 
@@ -288,7 +309,7 @@ Cypress.Commands.add('headlessCreateObject', (objects, jobID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
+Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().then(async ($win) => {
         const task = new $win.cvat.classes.Task({
             ...taskSpec,
@@ -307,7 +328,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
             task.remoteFiles = dataSpec.remote_files;
         }
 
-        const result = await task.save();
+        const result = await task.save(extras || {});
         return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
@@ -330,24 +351,53 @@ Cypress.Commands.add('headlessDeleteProject', (projectID) => {
     });
 });
 
-Cypress.Commands.add('headlessCreateUser', (userSpec) => {
-    cy.request({
-        method: 'POST',
-        url: '/api/auth/register',
-        body: {
-            confirmations: [],
-            password1: userSpec.password,
-            password2: userSpec.password,
-            email: userSpec.email,
-            first_name: userSpec.firstName,
-            last_name: userSpec.lastName,
-            username: userSpec.username,
-        },
-        headers: {
-            'Content-type': 'application/json',
-        },
+Cypress.Commands.add('headlessDeleteTask', (taskID) => {
+    cy.window().then(async ($win) => {
+        const [task] = await $win.cvat.tasks.get({ id: taskID });
+        await task.delete();
     });
-    return cy.wrap();
+});
+
+Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.intercept('POST', '/api/auth/register**', (req) => {
+        req.continue((response) => {
+            delete response.headers['set-cookie'];
+            expect(response.statusCode).to.eq(201);
+            expect(response.body.username).to.eq(userSpec.username);
+            expect(response.body.email).to.eq(userSpec.email);
+        });
+    }).as('registerRequest');
+
+    return cy.window().then((win) => (
+        win.cvat.server.register(
+            userSpec.username,
+            userSpec.firstName,
+            userSpec.lastName,
+            userSpec.email,
+            userSpec.password,
+            [],
+        )
+    ));
+});
+
+Cypress.Commands.add('headlessLogout', () => {
+    // currently it is supposed that headlessLogout does not need core initialized to perform its logic
+    // this may be improved in the future, but now this behaviour is enough
+    cy.clearCookies();
+});
+
+Cypress.Commands.add('headlessCreateJob', (jobSpec) => {
+    cy.window().then(async ($win) => {
+        const data = {
+            ...jobSpec,
+        };
+
+        const job = new $win.cvat.classes.Job(data);
+
+        const result = await job.save(data);
+        return cy.wrap({ jobID: result.id });
+    });
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
@@ -869,6 +919,23 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     }
 });
 
+Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
+    cy.contains('Quality').click();
+    if (qualityConfigurationParams.validationMode) {
+        cy.get('#validationMode').within(() => {
+            cy.contains(qualityConfigurationParams.validationMode).click();
+        });
+    }
+    if (qualityConfigurationParams.validationFramesPercent) {
+        cy.get('#validationFramesPercent').clear();
+        cy.get('#validationFramesPercent').type(qualityConfigurationParams.validationFramesPercent);
+    }
+    if (qualityConfigurationParams.validationFramesPerJobPercent) {
+        cy.get('#validationFramesPerJobPercent').clear();
+        cy.get('#validationFramesPerJobPercent').type(qualityConfigurationParams.validationFramesPerJobPercent);
+    }
+});
+
 Cypress.Commands.add('removeAnnotations', () => {
     cy.contains('.cvat-annotation-header-button', 'Menu').click();
     cy.get('.cvat-annotation-menu').within(() => {
@@ -886,12 +953,11 @@ Cypress.Commands.add('confirmUpdate', (modalWindowClassName) => {
 });
 
 Cypress.Commands.add(
-    'uploadAnnotations', (
-        format,
-        filePath,
-        confirmModalClassName,
-        sourceStorage = null,
-        useDefaultLocation = true,
+    'uploadAnnotations', ({
+        format, filePath, confirmModalClassName,
+        sourceStorage = null, useDefaultLocation = true, waitAnnotationsGet = true,
+        expectedResult = 'success',
+    },
     ) => {
         cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
         cy.contains('.cvat-modal-import-dataset-option-item', format).click();
@@ -924,9 +990,16 @@ Cypress.Commands.add(
         cy.confirmUpdate(confirmModalClassName);
         cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
         cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-        cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
-        cy.contains('Annotations have been loaded').should('be.visible');
-        cy.closeNotification('.ant-notification-notice-info');
+        if (waitAnnotationsGet) {
+            cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
+        }
+        if (expectedResult === 'success') {
+            cy.contains('Annotations have been loaded').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-info');
+        } else if (expectedResult === 'fail') {
+            cy.contains('Could not upload annotation').should('be.visible');
+            cy.closeNotification('.ant-notification-notice-error');
+        }
     },
 );
 
@@ -1073,6 +1146,7 @@ Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
             for (let j = 0; j < additionalLabels.length; j++) {
                 cy.get('[placeholder="Label name"]').type(additionalLabels[j]);
                 cy.contains('button', 'Continue').click();
+                cy.contains('button', 'Continue').trigger('mouseout');
             }
             cy.contains('button', 'Cancel').click();
         }
@@ -1139,7 +1213,7 @@ Cypress.Commands.add('interactMenu', (choice) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('setJobState', (choice) => {
+Cypress.Commands.add('updateJobStateOnAnnotationView', (choice) => {
     cy.interactMenu('Change job state');
     cy.get('.cvat-annotation-menu-job-state-submenu')
         .should('not.have.class', 'ant-zoom-big').within(() => {
@@ -1154,12 +1228,26 @@ Cypress.Commands.add('setJobState', (choice) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
+Cypress.Commands.add('setJobState', (jobID, state) => {
+    cy.get('.cvat-task-job-list')
+        .contains('a', `Job #${jobID}`)
+        .parents('.cvat-job-item')
+        .find('.cvat-job-item-state').click();
+    cy.get('.cvat-job-item-state-dropdown')
+        .should('be.visible')
+        .not('.ant-select-dropdown-hidden')
+        .within(() => {
+            cy.get(`[title="${state}"]`).click();
+        });
+    cy.get('.cvat-spinner').should('not.exist');
+});
+
 Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.get('.cvat-task-job-list')
         .contains('a', `Job #${jobID}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-stage').click();
-    cy.get('.ant-select-dropdown')
+    cy.get('.cvat-job-item-stage-dropdown')
         .should('be.visible')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
@@ -1223,17 +1311,31 @@ Cypress.Commands.add('exportTask', ({
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
-    cy.contains('button', 'OK').click();
+    cy.contains('.cvat-modal-export-task button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
 });
 
 Cypress.Commands.add('exportJob', ({
     type, format, archiveCustomName,
-    targetStorage = null, useDefaultLocation = true,
+    targetStorage = null, useDefaultLocation = true, jobOnTaskPage = null,
 }) => {
-    cy.interactMenu('Export job dataset');
+    if (!jobOnTaskPage) {
+        cy.interactMenu('Export job dataset');
+    } else {
+        cy.get('.cvat-job-item').contains('a', `Job #${jobOnTaskPage}`)
+            .parents('.cvat-job-item')
+            .find('.cvat-job-item-more-button')
+            .click();
+        cy.contains('Export annotations').click();
+    }
     cy.get('.cvat-modal-export-job').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .not('.ant-slide-up')
+        .within(() => {
+            cy.contains('.cvat-modal-export-option-item', format).scrollIntoView();
+        });
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-job').find('.cvat-modal-export-select').should('contain.text', format);
     if (type === 'dataset') {
@@ -1254,9 +1356,38 @@ Cypress.Commands.add('exportJob', ({
             cy.get('.cvat-cloud-storage-select-provider').click();
         }
     }
-    cy.contains('button', 'OK').click();
+    cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-job-start');
+});
+
+Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
+    if (expectNotification) {
+        cy.verifyNotification();
+    }
+    cy.get('.cvat-header-requests-button').click();
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-requests-list').should('be.visible');
+    cy.get('.cvat-requests-card').first().within(() => {
+        cy.get('.cvat-requests-page-actions-button').click();
+    });
+    cy.intercept('GET', '**=download').as('download');
+    cy.get('.ant-dropdown')
+        .not('.ant-dropdown-hidden')
+        .within(() => {
+            cy.contains('[role="menuitem"]', 'Download').click();
+        });
+    cy.wait('@download', { requestTimeout: 10000 })
+        .then((download) => {
+            const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+            // need to remove quotes
+            return filename.substring(1, filename.length - 1);
+        });
+});
+
+Cypress.Commands.add('goBack', () => {
+    cy.go('back');
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('renameTask', (oldName, newName) => {
@@ -1473,6 +1604,7 @@ Cypress.Commands.add('startMaskDrawing', () => {
 Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-brush').click();
     cy.get('.cvat-brush-tools-finish').click();
+    cy.hideTooltips();
 });
 
 Cypress.Commands.add('sliceShape', (
@@ -1567,6 +1699,14 @@ Cypress.Commands.add('hideTooltips', () => {
             cy.get('.ant-tooltip').invoke('hide');
         }
     });
+});
+
+Cypress.Commands.add('checkDeletedFrameVisibility', () => {
+    cy.openSettings();
+    cy.get('.cvat-workspace-settings-show-deleted').within(() => {
+        cy.get('[type="checkbox"]').should('not.be.checked').check();
+    });
+    cy.closeSettings();
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {

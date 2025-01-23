@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ import '@modules/@react-awesome-query-builder/antd/css/styles.css';
 import {
     DownOutlined, FilterFilled, FilterOutlined,
 } from '@ant-design/icons';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Space from 'antd/lib/space';
 import Button from 'antd/lib/button';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
@@ -88,7 +88,7 @@ export default function ResourceFilterHOC(
     };
 
     function isValidTree(tree: ImmutableTree): boolean {
-        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
+        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree, config);
     }
 
     function unite(filters: string[]): string {
@@ -202,11 +202,12 @@ export default function ResourceFilterHOC(
             <div className='cvat-resource-page-filters'>
                 {
                     predefinedFilters && onPredefinedVisibleChange ? (
-                        <Dropdown
-                            destroyPopupOnHide
-                            visible={predefinedVisible}
+                        <Popover
+                            destroyTooltipOnHide
+                            open={predefinedVisible}
+                            overlayInnerStyle={{ padding: 0 }}
                             placement='bottomLeft'
-                            overlay={(
+                            content={(
                                 <div className='cvat-resource-page-predefined-filters-list'>
                                     {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
                                         <Checkbox
@@ -249,22 +250,23 @@ export default function ResourceFilterHOC(
                                     <FilterFilled /> :
                                     <FilterOutlined />}
                             </Button>
-                        </Dropdown>
+                        </Popover>
                     ) : null
                 }
-                <Dropdown
-                    disabled={disabled}
+                <Popover
                     placement='bottomRight'
-                    visible={builderVisible}
-                    destroyPopupOnHide
-                    overlay={(
+                    open={builderVisible}
+                    destroyTooltipOnHide
+                    overlayInnerStyle={{ padding: 0 }}
+                    content={(
                         <div className='cvat-resource-page-filters-builder'>
                             { Object.keys(recentFilters).length ? (
-                                <Dropdown
+                                <Popover
                                     placement='bottomRight'
-                                    visible={recentVisible}
-                                    destroyPopupOnHide
-                                    overlay={(
+                                    open={recentVisible}
+                                    destroyTooltipOnHide
+                                    overlayInnerStyle={{ padding: 0 }}
+                                    content={(
                                         <div className='cvat-resource-page-recent-filters-list'>
                                             <Menu selectable={false}>
                                                 {Object.keys(recentFilters).map((key: string): JSX.Element | null => {
@@ -307,7 +309,7 @@ export default function ResourceFilterHOC(
                                         Recent
                                         <DownOutlined />
                                     </Button>
-                                </Dropdown>
+                                </Popover>
                             ) : null}
 
                             <Query
@@ -357,13 +359,18 @@ export default function ResourceFilterHOC(
                         </div>
                     )}
                 >
-                    <Button className='cvat-switch-filters-constructor-button' type='default' onClick={() => onBuilderVisibleChange(!builderVisible)}>
+                    <Button
+                        disabled={disabled}
+                        className='cvat-switch-filters-constructor-button'
+                        type='default'
+                        onClick={() => onBuilderVisibleChange(!builderVisible)}
+                    >
                         Filter
                         { appliedFilter.built || appliedFilter.recent ?
                             <FilterFilled /> :
                             <FilterOutlined />}
                     </Button>
-                </Dropdown>
+                </Popover>
                 <Button
                     className='cvat-clear-filters-button'
                     disabled={!(appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) || disabled}

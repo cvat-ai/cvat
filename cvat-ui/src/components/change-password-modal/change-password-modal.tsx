@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -54,7 +55,7 @@ function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.E
             okType='primary'
             okText='Submit'
             footer={null}
-            visible={visible}
+            open={visible}
             destroyOnClose
             onCancel={onClose}
         >

@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ from .base import DerivedMetricBase
 
 
 class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
-    _description = "Metric shows the annotation speed in objects per hour for the Task."
+    _description = "Metric shows annotation speed in the task as number of objects per hour."
     _query = None
 
     def calculate(self):
@@ -52,4 +52,4 @@ class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
 
 
 class ProjectAnnotationSpeed(TaskAnnotationSpeed):
-    _description = "Metric shows the annotation speed in objects per hour for the Project."
+    _description = "Metric shows annotation speed in the project as number of objects per hour."

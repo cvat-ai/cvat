@@ -12,7 +12,7 @@ import data.organizations
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -252,4 +252,24 @@ allow if {
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    utils.is_sandbox
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.VIEW_VALIDATION_LAYOUT, utils.UPDATE_VALIDATION_LAYOUT}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.MAINTAINER)
+    utils.has_perm(utils.USER)
 }

@@ -1,19 +1,20 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
-import Result from 'antd/lib/result';
 import notification from 'antd/lib/notification';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
+import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -31,45 +32,39 @@ function TaskPageComponent(): JSX.Element {
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
     const [updatingTask, setUpdatingTask] = useState(false);
-    const mounted = useRef(false);
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
 
-    const receieveTask = (): void => {
+    const receieveTask = (): Promise<Task[]> => {
         if (Number.isInteger(id)) {
-            core.tasks.get({ id })
-                .then(([task]: Task[]) => {
-                    if (task && mounted.current) {
-                        setTaskInstance(task);
-                    }
-                }).catch((error: Error) => {
-                    if (mounted.current) {
-                        notification.error({
-                            message: 'Could not receive the requested task from the server',
-                            description: error.toString(),
-                        });
-                    }
-                }).finally(() => {
-                    if (mounted.current) {
-                        setFetchingTask(false);
-                    }
+            const promise = core.tasks.get({ id });
+            promise.then(([task]: Task[]) => {
+                if (task) {
+                    setTaskInstance(task);
+                }
+            }).catch((error: Error) => {
+                notification.error({
+                    message: 'Could not receive the requested task from the server',
+                    description: error.toString(),
                 });
-        } else {
-            notification.error({
-                message: 'Could not receive the requested task from the server',
-                description: `Requested task id "${id}" is not valid`,
             });
-            setFetchingTask(false);
+
+            return promise;
         }
+
+        notification.error({
+            message: 'Could not receive the requested task from the server',
+            description: `Requested task id "${id}" is not valid`,
+        });
+
+        return Promise.reject();
     };
 
     useEffect(() => {
-        receieveTask();
+        receieveTask().finally(() => {
+            setFetchingTask(false);
+        });
         dispatch(getInferenceStatusAsync());
-        mounted.current = true;
-        return () => {
-            mounted.current = false;
-        };
     }, []);
 
     useEffect(() => {
@@ -83,23 +78,14 @@ function TaskPageComponent(): JSX.Element {
     }
 
     if (!taskInstance) {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='There was something wrong during getting the task'
-                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
-            />
-        );
+        return <TaskNotFoundComponent />;
     }
 
     const onUpdateTask = (task: Task): Promise<void> => (
         new Promise((resolve, reject) => {
             setUpdatingTask(true);
             task.save().then((updatedTask: Task) => {
-                if (mounted.current) {
-                    setTaskInstance(updatedTask);
-                }
+                setTaskInstance(updatedTask);
                 resolve();
             }).catch((error: Error) => {
                 notification.error({
@@ -109,28 +95,24 @@ function TaskPageComponent(): JSX.Element {
                 });
                 reject();
             }).finally(() => {
-                if (mounted.current) {
-                    setUpdatingTask(false);
-                }
+                setUpdatingTask(false);
             });
         })
     );
 
-    const onJobUpdate = (job: Job): void => {
+    const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
         setUpdatingTask(true);
-        job.save().then(() => {
-            if (mounted.current) {
-                receieveTask();
-            }
+        dispatch(updateJobAsync(job, data)).then(() => {
+            // if one of jobs changes, task will have its updated_date bumped
+            // but generally we do not use this field anywhere on the page
+            // so, as a kind of optimization we do not fetch the task again
+            setUpdatingTask(false);
         }).catch((error: Error) => {
+            setUpdatingTask(false);
             notification.error({
                 message: 'Could not update the job',
                 description: error.toString(),
             });
-        }).finally(() => {
-            if (mounted.current) {
-                setUpdatingTask(false);
-            }
         });
     };
 
@@ -145,7 +127,7 @@ function TaskPageComponent(): JSX.Element {
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
                     <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
-                    <JobListComponent task={taskInstance} onUpdateJob={onJobUpdate} />
+                    <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>
             <ModelRunnerModal />

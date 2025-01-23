@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ import { ProjectsActionTypes } from 'actions/projects-actions';
 import { TasksState } from '.';
 
 const defaultState: TasksState = {
+    fetchingTimestamp: Date.now(),
     initialized: false,
     fetching: false,
     moveTask: {
@@ -43,6 +44,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     ...state.activities,
                     deletes: {},
                 },
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 initialized: false,
                 fetching: true,
                 count: 0,

@@ -5,7 +5,7 @@ on:
       - 'master'
       - 'develop'
   pull_request:
-    types: [ready_for_review, opened, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -59,7 +59,7 @@ jobs:
 
       - name: Deploy
         if: github.ref == 'refs/heads/develop'
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public

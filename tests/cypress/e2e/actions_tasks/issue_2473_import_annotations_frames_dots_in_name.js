@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +33,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         secondY: 450,
     };
 
-    const dumpType = 'YOLO';
+    const dumpType = 'YOLO 1.1';
     let annotationArchiveName = '';
 
     function confirmUpdate(modalWindowClassName) {
@@ -60,7 +61,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -95,9 +96,8 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.get('.cvat-modal-export-job').contains('button', 'OK').click();
             cy.get('.cvat-notification-notice-export-job-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-job-start');
-            cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@dumpAnnotations').its('response.statusCode').should('equal', 201);
-            cy.verifyNotification();
+            cy.downloadExport();
+            cy.goBack();
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
@@ -114,7 +114,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             uploadAnnotation(
-                dumpType.split(' ')[0],
+                dumpType,
                 annotationArchiveName,
                 '.cvat-modal-content-load-job-annotation',
             );

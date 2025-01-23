@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +9,9 @@ context('Regression tests', () => {
     let jobID = null;
 
     const taskPayload = {
-        name: 'Test annotations actions',
+        name: 'Regression tests',
         labels: [{
-            name: 'label 1',
+            name: 'car',
             attributes: [],
             type: 'any',
         }],
@@ -29,57 +29,78 @@ context('Regression tests', () => {
     };
 
     const rectanglePayload = {
-        frame: 99,
-        objectType: 'SHAPE',
-        shapeType: 'RECTANGLE',
-        points: [250, 64, 491, 228],
+        shapeType: 'rectangle',
         occluded: false,
+        labelName: taskPayload.labels[0].name,
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
             taskID = response.taskID;
             [jobID] = response.jobIDs;
 
-            cy.headlessCreateObject([rectanglePayload], jobID);
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.headlessCreateObjects([
+                {
+                    ...rectanglePayload, frame: 99, points: [250, 64, 491, 228], objectType: 'shape',
+                },
+                {
+                    ...rectanglePayload, frame: 0, points: [10, 10, 30, 30], objectType: 'track',
+                },
+            ], jobID);
         });
     });
 
-    describe('Regression tests', () => {
-        it('UI does not crash if to activate an object while frame fetching', () => {
-            cy.reload();
-            cy.get('.cvat-player-last-button').click();
+    describe('UI does not crash', () => {
+        beforeEach(() => {
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('not.exist');
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+        });
 
+        it('UI does not crash if to activate an object while frame fetching', () => {
             cy.intercept('GET', '/api/jobs/**/data?**', (req) => {
                 req.continue((res) => {
-                    res.setDelay(1000);
+                    res.setDelay(3000);
                 });
             }).as('delayedRequest');
 
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-            cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat-player-last-button').click();
+
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove');
+            cy.get('#cvat-objects-sidebar-state-item-1').should('not.have.class', 'cvat-objects-sidebar-state-active-item');
 
             cy.wait('@delayedRequest');
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
+
+        it('UI does not crash if to navigate during an element resizing (issue 1922)', { scrollBehavior: false }, () => {
+            cy.get('#cvat_canvas_shape_2').then(([el]) => {
+                const rect = el.getBoundingClientRect();
+
+                cy.get('body').trigger('mousemove', rect.x + rect.width / 2, rect.y + rect.height / 2);
+                cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
+
+                cy.get('body').trigger('mousedown', rect.right, rect.bottom, { button: 0 });
+                cy.get('body').trigger('mousemove', rect.right + 100, rect.bottom + 100);
+
+                cy.get('body').type('f'); // go to next frame
+                cy.get('body').trigger('mouseup');
+
+                // Page with the error is missing
+                cy.get('.cvat-global-boundary').should('not.exist');
+                cy.checkFrameNum(0);
+            });
+        });
     });
 
     after(() => {
+        if (taskID !== null) {
+            cy.headlessDeleteTask(taskID);
+        }
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
-            cy.request({
-                method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
-            });
-        });
     });
 });

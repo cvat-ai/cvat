@@ -1,5 +1,5 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,7 +31,7 @@ context('Create mutli tasks.', () => {
         cy.get('.cvat-create-multi-tasks-progress', { timeout: 50000 }).should('exist')
             .contains(`Total: ${videoFiles.videos.length}`);
         cy.contains('button', 'Cancel');
-        cy.get('.cvat-create-multi-tasks-state').should('exist')
+        cy.get('.cvat-create-multi-tasks-state', { timeout: 50000 }).should('exist')
             .contains('Finished');
         cy.get('.cvat-notification-create-task-success').within(() => {
             cy.get('.ant-notification-notice-close').click();
@@ -44,7 +44,7 @@ context('Create mutli tasks.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 

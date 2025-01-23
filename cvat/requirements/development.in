@@ -1,10 +1,6 @@
 -r base.in
 
-black>=24.1
 django-extensions==3.0.8
-django-silk==5.0.3
-pylint-django==2.5.3
-pylint-plugin-utils==0.7
-pylint==2.14.5
+django-silk==5.*
 rope==0.17.0
 snakeviz==2.1.0

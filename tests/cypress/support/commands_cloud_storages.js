@@ -1,5 +1,5 @@
-// Copyright (C) 2022 CVAT.ai Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,10 +24,12 @@ Cypress.Commands.add('attachS3Bucket', (data) => {
     cy.get('#endpoint_url').type(data.endpointUrl);
     cy.get('#endpoint_url').should('have.attr', 'value', data.endpointUrl);
 
-    cy.get('.cvat-add-manifest-button').should('be.visible').click();
-    cy.get('[placeholder="manifest.jsonl"]').should('exist').should('have.attr', 'value', '');
-    cy.get('[placeholder="manifest.jsonl"]').type(data.manifest);
-    cy.get('[placeholder="manifest.jsonl"]').should('have.attr', 'value', data.manifest);
+    if (data.manifest) {
+        cy.get('.cvat-add-manifest-button').should('be.visible').click();
+        cy.get('[placeholder="manifest.jsonl"]').should('exist').should('have.attr', 'value', '');
+        cy.get('[placeholder="manifest.jsonl"]').type(data.manifest);
+        cy.get('[placeholder="manifest.jsonl"]').should('have.attr', 'value', data.manifest);
+    }
     cy.intercept('POST', /\/api\/cloudstorages.*/).as('createCloudStorage');
     cy.get('.cvat-cloud-storage-form').within(() => {
         cy.contains('button', 'Submit').click();

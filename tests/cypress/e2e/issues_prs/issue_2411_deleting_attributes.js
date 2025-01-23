@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +35,7 @@ context('Wrong attribute is removed in label constructor.', () => {
     ];
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 
@@ -64,6 +64,7 @@ context('Wrong attribute is removed in label constructor.', () => {
                     .eq(1)
                     .within(() => {
                         cy.get('.cvat-attribute-name-input')
+                            .find('input')
                             .invoke('val')
                             .then((placeholderNameValue) => {
                                 expect(placeholderNameValue).to.be.equal('hair_color');
@@ -74,6 +75,7 @@ context('Wrong attribute is removed in label constructor.', () => {
                     .eq(0)
                     .within(() => {
                         cy.get('.cvat-attribute-name-input')
+                            .find('input')
                             .invoke('val')
                             .then((placeholderNameValue) => {
                                 expect(placeholderNameValue).to.be.equal('lower_body');
@@ -83,6 +85,7 @@ context('Wrong attribute is removed in label constructor.', () => {
                     .eq(1)
                     .within(() => {
                         cy.get('.cvat-attribute-name-input')
+                            .find('input')
                             .invoke('val')
                             .then((placeholderNameValue) => {
                                 expect(placeholderNameValue).to.be.equal('cellphone');
@@ -96,6 +99,7 @@ context('Wrong attribute is removed in label constructor.', () => {
                     .eq(1)
                     .within(() => {
                         cy.get('.cvat-attribute-name-input')
+                            .find('input')
                             .invoke('val')
                             .then((placeholderNameValue) => {
                                 expect(placeholderNameValue).to.be.equal('cellphone');
@@ -106,6 +110,7 @@ context('Wrong attribute is removed in label constructor.', () => {
                     .eq(0)
                     .within(() => {
                         cy.get('.cvat-attribute-name-input')
+                            .find('input')
                             .invoke('val')
                             .then((placeholderNameValue) => {
                                 expect(placeholderNameValue).to.be.equal('lower_body');

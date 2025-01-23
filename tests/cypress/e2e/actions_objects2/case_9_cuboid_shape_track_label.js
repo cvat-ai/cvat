@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -187,9 +187,9 @@ context('Actions on Cuboid', () => {
             cy.get('.cvat-canvas-container').trigger('mouseup', 500, 100);
 
             cy.get('.cvat-canvas-container') // frCenter
-                .trigger('mouseenter', 465, 180);
+                .trigger('mouseenter', 470, 180);
             cy.get('.cvat_canvas_selected_point').should('exist');
-            cy.get('.cvat-canvas-container').trigger('mousedown', 465, 180, { which: 1 });
+            cy.get('.cvat-canvas-container').trigger('mousedown', 470, 180, { which: 1 });
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 180);
             cy.get('.cvat-canvas-container').trigger('mouseup', 500, 180);
 

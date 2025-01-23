@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,6 @@ interface StateToProps {
     task: any;
     detectors: MLModel[];
     reid: MLModel[];
-    classifiers: MLModel[];
 }
 
 interface DispatchToProps {
@@ -34,14 +33,13 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const { detectors, reid, classifiers } = models;
+    const { detectors, reid } = models;
 
     return {
         visible: models.modelRunnerIsVisible,
         task: models.modelRunnerTask,
         reid,
         detectors,
-        classifiers,
     };
 }
 
@@ -58,10 +56,10 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
-        reid, detectors, classifiers, task, visible, runInference, closeDialog,
+        reid, detectors, task, visible, runInference, closeDialog,
     } = props;
 
-    const models = [...reid, ...detectors, ...classifiers];
+    const models = [...reid, ...detectors];
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
 
     useEffect(() => {
@@ -79,7 +77,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     return (
         <Modal
             destroyOnClose
-            visible={visible}
+            open={visible}
             footer={[]}
             onCancel={(): void => closeDialog()}
             maskClosable

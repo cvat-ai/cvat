@@ -1,19 +1,23 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
-    find_dataset_root, match_dm_item)
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    find_dataset_root,
+    match_dm_item,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
-from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
+from .transformations import MaskToPolygonTransformation, RotatedBoxesToPolygons
 
 
 class KeepTracks(ItemTransform):
@@ -110,6 +114,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     Archive(src_file.name).extractall(temp_dir)
 
+    detect_dataset(temp_dir, format_name='mots', importer=dm_env.importers.get('mots'))
     dataset = Dataset.import_from(temp_dir, 'mots', env=dm_env)
     dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
     if load_data_callback is not None:

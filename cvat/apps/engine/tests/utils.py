@@ -1,20 +1,25 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import contextmanager
-from io import BytesIO
-from typing import Any, Callable, Dict, Iterator, Sequence, TypeVar
 import itertools
 import logging
 import os
+import shutil
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from io import BytesIO
+from pathlib import Path
+from typing import Any, Callable, TypeVar
 
+import av
+import django_rq
+import numpy as np
+from django.conf import settings
 from django.core.cache import caches
 from django.http.response import HttpResponse
 from PIL import Image
-from rest_framework.test import APIClient, APITestCase
-import av
-import numpy as np
+from rest_framework.test import APITestCase
 
 T = TypeVar('T')
 
@@ -46,12 +51,51 @@ class ForceLogin:
             self.client.logout()
 
 
-class ApiTestBase(APITestCase):
-    def setUp(self):
-        super().setUp()
-        self.client = APIClient()
+def clear_rq_jobs():
+    for queue_name in settings.RQ_QUEUES:
+        queue = django_rq.get_queue(queue_name)
 
-    def tearDown(self):
+        # Remove actual jobs
+        queue.empty()
+
+        # Clean up the registries
+        for registry in [
+            queue.failed_job_registry,
+            queue.finished_job_registry,
+            queue.started_job_registry,
+            queue.scheduled_job_registry,
+        ]:
+            for job_id in registry.get_job_ids():
+                registry.remove(job_id)
+
+        # Remove orphaned jobs that can't be normally reported by DjangoRQ
+        # https://github.com/rq/django-rq/issues/73
+        for key in queue.connection.keys('rq:job:*'):
+            job_id = key.decode().split('rq:job:', maxsplit=1)[1]
+            job = queue.fetch_job(job_id)
+            if not job:
+                # The job can belong to a different queue, using the same connection
+                continue
+
+            job.delete()
+
+        # Clean up the scheduler, if any
+        try:
+            scheduler = django_rq.get_scheduler(queue_name, queue)
+        except ImportError:
+            # If the scheduler is not enabled, an exception is thrown
+            continue
+
+        try:
+            scheduler.acquire_lock()
+            for job in scheduler.get_jobs():
+                scheduler.cancel(job)
+        finally:
+            scheduler.remove_lock()
+
+
+class ApiTestBase(APITestCase):
+    def _clear_temp_data(self):
         # Clear server frame/chunk cache.
         # The parent class clears DB changes, and it can lead to under-cleaned task data,
         # which can affect other tests.
@@ -61,7 +105,25 @@ class ApiTestBase(APITestCase):
         for cache in caches.all(initialized_only=True):
             cache.clear()
 
-        return super().tearDown()
+        # Clear any remaining RQ jobs produced by the tests executed
+        self._clear_rq_jobs()
+
+        # clear cache files created after previous exports
+        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        for child in export_cache_dir.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                os.remove(child)
+
+    def _clear_rq_jobs(self):
+        clear_rq_jobs()
+
+    def setUp(self):
+        self._clear_temp_data()
+
+        super().setUp()
+        self.client = self.client_class()
 
 
 def generate_image_file(filename, size=(100, 100)):
@@ -127,6 +189,6 @@ def get_paginated_collection(
 
 
 def filter_dict(
-    d: Dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
-) -> Dict[str, Any]:
+    d: dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> dict[str, Any]:
     return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}

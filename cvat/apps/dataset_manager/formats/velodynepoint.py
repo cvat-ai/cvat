@@ -1,21 +1,23 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import zipfile
 
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, \
-    import_dm_annotations
-from .registry import dm_env
-
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
 
-from .registry import exporter, importer
+from .registry import dm_env, exporter, importer
+
 
 class RemoveTrackingInformation(ItemTransform):
     def transform_item(self, item):
@@ -42,6 +44,7 @@ def _export_images(dst_file, temp_dir, task_data, save_images=False):
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     if zipfile.is_zipfile(src_file):
         zipfile.ZipFile(src_file).extractall(temp_dir)
+        detect_dataset(temp_dir, format_name='kitti_raw', importer=dm_env.importers.get('kitti_raw'))
         dataset = Dataset.import_from(temp_dir, 'kitti_raw', env=dm_env)
     else:
         dataset = Dataset.import_from(src_file.name, 'kitti_raw', env=dm_env)

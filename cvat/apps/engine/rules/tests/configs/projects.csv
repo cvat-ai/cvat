@@ -44,3 +44,8 @@ update:organization,"Project, Organization",Sandbox,"None, Assignee",,PATCH,/pro
 update:organization,"Project, Organization",Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
 update:organization,"Project, Organization",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
 update:organization,"Project, Organization",Organization,Owner,,PATCH,/projects/{id},Worker,Worker
+update:associated_storage,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
+update:associated_storage,Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:associated_storage,Project,Organization,None,,PATCH,/projects/{id},Admin,N/A
+update:associated_storage,Project,Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:associated_storage,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Worker

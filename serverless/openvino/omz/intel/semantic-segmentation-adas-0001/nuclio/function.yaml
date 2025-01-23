@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Semantic segmentation for ADAS
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 0, "name": "road", "type": "mask" },

@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,7 +35,7 @@ export function thresholdFromAccuracy(approxPolyAccuracy: number): number {
     let threshold = 0;
     if (approxPolyMaxDistance > 0) {
         if (approxPolyMaxDistance <= 8) {
-            // −2.75x+7y+1=0 linear made from two points (1; 0.25) and (8; 3)
+            // -2.75x+7y+1=0 linear made from two points (1; 0.25) and (8; 3)
             threshold = (2.75 * approxPolyMaxDistance - 1) / 7;
         } else {
             // 4 for 9, 8 for 10, 16 for 11, 32 for 12, 64 for 13
@@ -62,7 +63,9 @@ function ApproximationAccuracy(props: Props): React.ReactPortal | null {
                         max={MAX_ACCURACY}
                         step={1}
                         dots
-                        tooltipVisible={false}
+                        tooltip={{
+                            open: false,
+                        }}
                         onChange={onChange}
                         marks={marks}
                     />
