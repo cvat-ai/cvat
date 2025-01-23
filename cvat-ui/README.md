@@ -6,7 +6,7 @@ This is a client UI for Computer Vision Annotation Tool based on React, Redux an
 
 ## Commands
 
-- Installing dependencies from core workspace
+- Installing dependencies:
 
 ```bash
 yarn --frozen-lockfile
