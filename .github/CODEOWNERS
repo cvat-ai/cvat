@@ -47,7 +47,7 @@
 Dockerfile*     @azhavoro
 docker-compose* @azhavoro
 .*              @azhavoro
-.js             @bsekachev
+*.js             @bsekachev
 *.conf          @azhavoro
 *.sh            @azhavoro
 /supervisord/   @azhavoro
