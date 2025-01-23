@@ -178,7 +178,7 @@ class LabelMatcher(AnnotationMatcher):
         return a_label == b_label
 
     def match_annotations(self, sources):
-        return [sum(sources, [])]
+        return [list(itertools.chain.from_iterable(sources))]
 
 
 CacheKey = tuple[int, int]
@@ -230,15 +230,18 @@ class CachedSimilarityFunction:
 @define(kw_only=True, slots=False)
 class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
     pairwise_dist: float = 0.9
-    cluster_dist: float = -1.0
+    cluster_dist: float | None = None
     categories: dm.CategoriesInfo
-    _distance_comparator: DistanceComparator = field(init=False)
+    _comparator: DistanceComparator = field(init=False)
     _distance: CachedSimilarityFunction = field(init=False)
 
     def __attrs_post_init__(self):
-        self._distance_comparator = DistanceComparator(
+        if self.cluster_dist is None:
+            self.cluster_dist = self.pairwise_dist
+
+        self._comparator = DistanceComparator(
             categories=self.categories,
-            iou_threshold=self._context.conf.pairwise_dist,
+            iou_threshold=self.pairwise_dist,
             oks_sigma=self._context.conf.sigma,
             line_torso_radius=self._context.conf.torso_r,
         )
@@ -263,8 +266,8 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
     def _match_segments(
         self,
         t,
-        item_a: list[dm.Annotation],
-        item_b: list[dm.Annotation],
+        item_a: Sequence[dm.Annotation],
+        item_b: Sequence[dm.Annotation],
         *,
         distance: SimilarityFunction | None = None,
         label_matcher: Callable[[dm.Annotation, dm.Annotation], bool] | None = None,
@@ -281,9 +284,10 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
         if dist_thresh is None:
             dist_thresh = self.pairwise_dist
 
+        # TODO: try to use real items
         item_a = dm.DatasetItem(id=1, annotations=item_a)
         item_b = dm.DatasetItem(id=2, annotations=item_b)
-        return self._distance_comparator.match_segments(
+        return self._comparator.match_segments(
             t=t,
             item_a=item_a,
             item_b=item_b,
@@ -295,19 +299,15 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def match_annotations_two_sources(
+    def match_annotations_between_two_sources(
         self, source_a: list[dm.Annotation], source_b: list[dm.Annotation]
     ) -> list[dm.Annotation]: ...
 
     def match_annotations(self, sources):
         distance = self.distance
-        pairwise_dist = self.pairwise_dist
         cluster_dist = self.cluster_dist
 
-        if cluster_dist < 0:
-            cluster_dist = pairwise_dist
-
-        id_segm = {id(a): (a, id(s)) for s in sources for a in s}
+        id_segm = {id(ann): (ann, id(source)) for source in sources for ann in source}
 
         def _is_close_enough(cluster, extra_id):
             # check if whole cluster IoU will not be broken
@@ -333,7 +333,7 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
             # matches further sources of same frame for matching annotations
             for src_b in sources[a_idx + 1 :]:
                 # an annotation can be adjacent to multiple annotations
-                matches = self.match_annotations_two_sources(src_a, src_b)
+                matches = self.match_annotations_between_two_sources(src_a, src_b)
                 for a, b in matches:
                     adjacent[id(a)].append(id(b))
 
@@ -378,8 +378,8 @@ class BboxMatcher(ShapeMatcher):
                 return dm.ops.bbox_iou(a, b)
             else:
                 return segment_iou(
-                    self._distance_comparator.to_polygon(a),
-                    self._distance_comparator.to_polygon(b),
+                    self._comparator.to_polygon(a),
+                    self._comparator.to_polygon(b),
                     img_h=img_h,
                     img_w=img_w,
                 )
@@ -387,7 +387,9 @@ class BboxMatcher(ShapeMatcher):
         img_h, img_w = self._context.get_item_media_dims(id(a))
         return _bbox_iou(a, b, img_h=img_h, img_w=img_w)
 
-    def match_annotations_two_sources(self, source_a: list[dm.Bbox], source_b: list[dm.Bbox]):
+    def match_annotations_between_two_sources(
+        self, source_a: list[dm.Bbox], source_b: list[dm.Bbox]
+    ):
         return self._match_segments(dm.AnnotationType.bbox, source_a, source_b)[0]
 
 
@@ -406,7 +408,7 @@ class PolygonMatcher(ShapeMatcher):
         b_segm = _get_segment(b)
         return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
 
-    def match_annotations_two_sources(
+    def match_annotations_between_two_sources(
         self, item_a: list[Union[dm.Polygon, dm.Mask]], item_b: list[Union[dm.Polygon, dm.Mask]]
     ):
         def _get_segments(annotations):
@@ -517,7 +519,7 @@ class PointsMatcher(ShapeMatcher):
 
     def _distance_func(self, a, b):
         for instance_group in [[a], [b]]:
-            instance_bbox = self._distance_comparator.instance_bbox(instance_group)
+            instance_bbox = self._comparator.instance_bbox(instance_group)
 
             for ann in instance_group:
                 if ann.type == dm.AnnotationType.points:
@@ -557,7 +559,7 @@ class PointsMatcher(ShapeMatcher):
                     sigma=self.sigma,
                     scale=scale,
                 ),
-                dist_thresh=self._distance_comparator.iou_threshold,
+                dist_thresh=self._comparator.iou_threshold,
                 label_matcher=lambda ai, bi: True,
             )
 
@@ -578,7 +580,9 @@ class PointsMatcher(ShapeMatcher):
                 len(matched_points) + len(a_extra) + len(b_extra)
             )
 
-    def match_annotations_two_sources(self, item_a: list[dm.Points], item_b: list[dm.Points]):
+    def match_annotations_between_two_sources(
+        self, item_a: list[dm.Points], item_b: list[dm.Points]
+    ):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
@@ -605,7 +609,7 @@ class SkeletonMatcher(ShapeMatcher):
             return self.distance(a, b)
         return matcher.distance(a, b)
 
-    def match_annotations_two_sources(
+    def match_annotations_between_two_sources(
         self, a_skeletons: list[dm.Skeleton], b_skeletons: list[dm.Skeleton]
     ):
         if not a_skeletons and not b_skeletons:
@@ -621,7 +625,7 @@ class SkeletonMatcher(ShapeMatcher):
         for source, source_points in [(a_skeletons, a_points), (b_skeletons, b_points)]:
             for skeleton in source:
                 skeleton_info = skeleton_infos.setdefault(
-                    skeleton.label, self._distance_comparator._get_skeleton_info(skeleton.label)
+                    skeleton.label, self._comparator._get_skeleton_info(skeleton.label)
                 )
 
                 # Merge skeleton points into item_a single list
@@ -653,7 +657,7 @@ class SkeletonMatcher(ShapeMatcher):
 
         for source in [a_skeletons, b_skeletons]:
             for instance_group in dm.ops.find_instances(source):
-                instance_bbox = self._distance_comparator.instance_bbox(instance_group)
+                instance_bbox = self._comparator.instance_bbox(instance_group)
 
                 instance_group = [
                     self.skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
@@ -688,12 +692,14 @@ class LineMatcher(ShapeMatcher):
     def _distance_func(self, item_a, item_b):
         img_h, img_w = self._context.get_item_media_dims(id(item_a))
         matcher = LineMatcherQualityReports(
-            torso_r=self._distance_comparator.line_torso_radius,
+            torso_r=self._comparator.line_torso_radius,
             scale=np.prod([img_h, img_w]),
         )
         return matcher.distance(item_a, item_b)
 
-    def match_annotations_two_sources(self, item_a: list[dm.PolyLine], item_b: list[dm.PolyLine]):
+    def match_annotations_between_two_sources(
+        self, item_a: list[dm.PolyLine], item_b: list[dm.PolyLine]
+    ):
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
         )[0]
@@ -769,18 +775,16 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
 
     def _merge_cluster_shape_mean_box_nearest(self, cluster):
         mbbox = dm.Bbox(*mean_bbox(cluster))
-        a = cluster[0]
-        img_h, img_w = self._context.get_item_media_dims(id(a))
+        img_h, img_w = self._context.get_item_media_dims(id(cluster[0]))
+
         dist = []
         for s in cluster:
-            if isinstance(s, dm.Points) or isinstance(s, dm.PolyLine):
-                s = self._distance_comparator.to_polygon(dm.Bbox(*s.get_bbox()))
+            if isinstance(s, (dm.Points, dm.PolyLine)):
+                s = self._comparator.to_polygon(dm.Bbox(*s.get_bbox()))
             elif isinstance(s, dm.Bbox):
-                s = self._distance_comparator.to_polygon(s)
+                s = self._comparator.to_polygon(s)
             dist.append(
-                segment_iou(
-                    self._distance_comparator.to_polygon(mbbox), s, img_h=img_h, img_w=img_w
-                )
+                segment_iou(self._comparator.to_polygon(mbbox), s, img_h=img_h, img_w=img_w)
             )
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
         return cluster[nearest_pos]
