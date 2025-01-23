@@ -264,11 +264,25 @@ Cypress.Commands.add('selectFilesFromShare', (serverFiles) => {
     selectServerFiles(serverFiles);
 });
 
-Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password = Cypress.env('password')) => {
-    cy.visit('/auth/login');
-    cy.get('#root').should('exist').and('be.visible');
-    cy.window().then(async ($win) => {
-        await $win.cvat.server.login(username, password);
+Cypress.Commands.add('headlessLogin', ({
+    username,
+    password,
+    nextURL,
+} = {}) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
+    cy.window().then((win) => {
+        cy.headlessLogout().then(() => (
+            win.cvat.server.login(
+                username || Cypress.env('user'),
+                password || Cypress.env('password'),
+            ).then(() => win.cvat.users.get({ self: true }).then((users) => {
+                if (nextURL) {
+                    cy.visit(nextURL);
+                }
+
+                return users[0];
+            }))
+        ));
     });
 });
 
@@ -345,33 +359,31 @@ Cypress.Commands.add('headlessDeleteTask', (taskID) => {
 });
 
 Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.intercept('POST', '/api/auth/register**', (req) => {
-        req.continue((res) => {
-            delete res.headers['set-cookie'];
+        req.continue((response) => {
+            delete response.headers['set-cookie'];
+            expect(response.statusCode).to.eq(201);
+            expect(response.body.username).to.eq(userSpec.username);
+            expect(response.body.email).to.eq(userSpec.email);
         });
     }).as('registerRequest');
 
-    cy.window().then(async ($win) => {
-        await $win.cvat.server.register(
+    return cy.window().then((win) => (
+        win.cvat.server.register(
             userSpec.username,
             userSpec.firstName,
             userSpec.lastName,
             userSpec.email,
             userSpec.password,
             [],
-        );
-        return cy.wrap();
-    });
-
-    cy.wait('@registerRequest').then((interception) => {
-        const { response } = interception;
-        expect(response.statusCode).to.eq(201);
-        expect(response.body.username).to.eq(userSpec.username);
-        expect(response.body.email).to.eq(userSpec.email);
-    });
+        )
+    ));
 });
 
 Cypress.Commands.add('headlessLogout', () => {
+    // currently it is supposed that headlessLogout does not need core initialized to perform its logic
+    // this may be improved in the future, but now this behaviour is enough
     cy.clearCookies();
 });
 
