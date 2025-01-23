@@ -1433,7 +1433,7 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     if (action === 'restore') {
         cy.get('.cvat-player-restore-frame').click();
     } else if (action === 'delete') {
-        cy.clickDeleteFrame();
+        cy.clickDeleteFrameAnnotationView();
     }
     cy.saveJob('PATCH', 200);
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);

@@ -28,7 +28,7 @@ context('The UI remains stable even when the metadata request fails.', () => {
             const routeMatcher = {
                 url: '/api/jobs/**/data/meta**',
                 method: 'PATCH',
-                times: 1, // cancels the intercept without retriesf
+                times: 1, // cancels the intercept without retries
             };
 
             cy.intercept(routeMatcher, badResponse).as('patchError');
