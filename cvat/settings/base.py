@@ -40,7 +40,7 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
-SECRET_KEY = os.environ.get("DJANGO_APP_SECRET", "")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 def generate_secret_key():
     """
