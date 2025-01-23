@@ -362,6 +362,8 @@ redis:
 
 nuclio:
   enabled: false
+  dashboard:
+    containerBuilderKind: kaniko
 # See https://github.com/nuclio/nuclio/blob/master/hack/k8s/helm/nuclio/values.yaml for more info
 #  registry:
 #    loginUrl: someurl
