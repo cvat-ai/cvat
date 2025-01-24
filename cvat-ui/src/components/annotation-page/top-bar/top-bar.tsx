@@ -61,6 +61,7 @@ interface Props {
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
+    onCopyFrameFileNameIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
@@ -117,6 +118,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onSliderChange,
         onInputChange,
         onURLIconClick,
+        onCopyFrameFileNameIconClick,
         onUndoClick,
         onRedoClick,
         onFinishDraw,
@@ -171,6 +173,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onSliderChange={onSliderChange}
             onInputChange={onInputChange}
             onURLIconClick={onURLIconClick}
+            onCopyFrameFileNameIconClick={onCopyFrameFileNameIconClick}
             onDeleteFrame={onDeleteFrame}
             onRestoreFrame={onRestoreFrame}
             switchNavigationBlocked={switchNavigationBlocked}
