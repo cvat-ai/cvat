@@ -131,7 +131,7 @@ spec:
         {{- if .Values.cvat.backend.defaultStorage.enabled }}
         - name: cvat-backend-data
           persistentVolumeClaim:
-            claimName: "{{ .Release.Name }}-backend-data"
+            claimName: {{ default (printf "%s-backend-data" .Release.Name) .Values.cvat.backend.defaultStorage.existingClaimName | quote}}
         {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
         - name: cvat-backend-per-service-cache
           emptyDir: {}
