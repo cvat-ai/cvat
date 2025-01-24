@@ -164,16 +164,16 @@ class TestProjectUsecases(TestDatasetExport):
 
     @pytest.mark.parametrize("convert", [True, False])
     def test_can_create_project_from_dataset_with_polygons_to_masks_param(
-            self, fxt_coco_dataset: Path, convert: bool
+            self, fxt_camvid_dataset: Path, convert: bool
         ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
         project = self.client.projects.create_from_dataset(
             spec=models.ProjectWriteRequest(name="project with data"),
-            dataset_path=fxt_coco_dataset,
-            dataset_format="COCO 1.0",
-            conv_mask_to_poly=False,
+            dataset_path=fxt_camvid_dataset,
+            dataset_format="Camvid 1.0",
+            conv_mask_to_poly=convert,
             pbar=pbar,
         )
 
