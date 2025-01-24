@@ -413,8 +413,7 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/jobs/**').as(as);
-    cy.get('button').contains('Save').click({ force: true });
-    cy.get('button').contains('Save').trigger('mouseout');
+    cy.clickSaveAnnotationView();
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
@@ -1434,10 +1433,7 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     if (action === 'restore') {
         cy.get('.cvat-player-restore-frame').click();
     } else if (action === 'delete') {
-        cy.get('.cvat-player-delete-frame').click();
-        cy.get('.cvat-modal-delete-frame').within(() => {
-            cy.contains('button', 'Delete').click();
-        });
+        cy.clickDeleteFrameAnnotationView();
     }
     cy.saveJob('PATCH', 200);
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
@@ -1717,4 +1713,16 @@ Cypress.Commands.overwrite('visit', (orig, url, options) => {
 Cypress.Commands.overwrite('reload', (orig, options) => {
     orig(options);
     cy.closeModalUnsupportedPlatform();
+});
+
+Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
+    cy.get('.cvat-player-delete-frame').click();
+    cy.get('.cvat-modal-delete-frame').within(() => {
+        cy.contains('button', 'Delete').click();
+    });
+});
+
+Cypress.Commands.add('clickSaveAnnotationView', () => {
+    cy.get('button').contains('Save').click();
+    cy.get('button').contains('Save').trigger('mouseout');
 });
