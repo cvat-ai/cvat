@@ -13,7 +13,6 @@ import attrs
 import datumaro as dm
 import numpy as np
 from attrs import define, field
-from datumaro.components.annotation import AnnotationType
 from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
@@ -102,20 +101,20 @@ class IntersectMerge(dm.ops.IntersectMerge):
             fields = attrs.fields_dict(c)
             return c(**{k: v for k, v in kwargs.items() if k in fields}, context=self)
 
-        def _for_type(t: AnnotationType, **kwargs) -> AnnotationMatcher:
-            if t is AnnotationType.label:
+        def _for_type(t: dm.AnnotationType, **kwargs) -> AnnotationMatcher:
+            if t is dm.AnnotationType.label:
                 return _make(LabelMerger, **kwargs)
-            elif t is AnnotationType.bbox:
+            elif t is dm.AnnotationType.bbox:
                 return _make(BboxMerger, **kwargs)
-            elif t is AnnotationType.mask:
+            elif t is dm.AnnotationType.mask:
                 return _make(MaskMerger, **kwargs)
-            elif t is AnnotationType.polygon or t is AnnotationType.mask:
+            elif t is dm.AnnotationType.polygon or t is dm.AnnotationType.mask:
                 return _make(PolygonMerger, **kwargs)
-            elif t is AnnotationType.polyline:
+            elif t is dm.AnnotationType.polyline:
                 return _make(LineMerger, **kwargs)
-            elif t is AnnotationType.points:
+            elif t is dm.AnnotationType.points:
                 return _make(PointsMerger, **kwargs)
-            elif t is AnnotationType.skeleton:
+            elif t is dm.AnnotationType.skeleton:
                 return _make(SkeletonMerger, **kwargs)
             else:
                 raise AssertionError(f"Annotation type {t} is not supported")
@@ -130,9 +129,9 @@ class IntersectMerge(dm.ops.IntersectMerge):
                         for a in inst
                         if a.type
                         in {
-                            AnnotationType.polygon,
-                            AnnotationType.mask,
-                            AnnotationType.bbox,
+                            dm.AnnotationType.polygon,
+                            dm.AnnotationType.mask,
+                            dm.AnnotationType.bbox,
                         }
                     ]
                 )
