@@ -63,7 +63,8 @@ from cvat.apps.quality_control.serializers import (
 )
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = (
-        AnnotationConflict.objects.select_related(
+        AnnotationConflict.objects
+        .prefetch_related(
             "report",
             "report__parent",
             "report__job",
@@ -72,11 +73,8 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             "report__job__segment__task__organization",
             "report__task",
             "report__task__organization",
-        )
-        .prefetch_related(
             "annotation_ids",
         )
-        .all()
     )
 
     iam_organization_field = [
