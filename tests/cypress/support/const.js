@@ -43,7 +43,7 @@ it('Prepare for testing', () => {
         cy.wrap($el).invoke('text').then((text) => {
             listItems.push(text);
         });
-    }); // NOTE: chaining off of .each is not recommended by docs
+    }); // NOTE:  chaining off of .each is not recommended by docs
     cy.then(() => {
         if (listItems.indexOf(taskName) === -1) {
             cy.task('log', "A task doesn't exist. Creating.");
