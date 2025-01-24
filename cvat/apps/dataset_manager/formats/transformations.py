@@ -4,9 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import math
-from functools import lru_cache
 from itertools import chain
-from typing import Any, NamedTuple
 
 import cv2
 import datumaro as dm
@@ -105,19 +103,6 @@ class MaskConverter:
 
 
 class EllipsesToMasks:
-    class _LazyEllipseParams(NamedTuple):
-        ellipse: Any
-        img_h: int
-        img_w: int
-
-        def __hash__(self):
-            return id(self)
-
-
-    @lru_cache
-    def _cached_convert(params: _LazyEllipseParams):
-        return EllipsesToMasks._convert(*params)
-
     @staticmethod
     def _convert(ellipse, img_h, img_w):
         cx, cy, rightX, topY = ellipse.points
@@ -127,16 +112,17 @@ class EllipsesToMasks:
         axis = (round(rx), round(ry))
         angle = ellipse.rotation
         mat = np.zeros((img_h, img_w), dtype=np.uint8)
+
+        # TODO: has bad performance for big masks, try to find a better solution
         cv2.ellipse(mat, center, axis, angle, 0, 360, 255, thickness=-1)
+
         rle = mask_utils.encode(np.asfortranarray(mat))
         return rle
 
     @staticmethod
     def convert_ellipse(ellipse, img_h, img_w):
-        params = EllipsesToMasks._LazyEllipseParams(ellipse, img_h, img_w)
-
         def _lazy_convert():
-            return EllipsesToMasks._cached_convert(params)
+            return EllipsesToMasks._convert(ellipse, img_h, img_w)
 
         return dm.RleMask(rle=_lazy_convert, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)
