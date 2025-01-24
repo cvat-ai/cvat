@@ -2537,9 +2537,7 @@ class QualityReportUpdateManager:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(
-            db_model=models.QualityReport, objects=db_job_reports, flt_param={}
-        )
+        db_job_reports = bulk_create(db_model=models.QualityReport, objects=db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2554,9 +2552,7 @@ class QualityReportUpdateManager:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(
-            db_model=models.AnnotationConflict, objects=db_conflicts, flt_param={}
-        )
+        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objects=db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2572,7 +2568,7 @@ class QualityReportUpdateManager:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids, flt_param={})
+        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids)
 
         return db_task_report
 
