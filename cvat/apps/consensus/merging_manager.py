@@ -40,6 +40,9 @@ class _TaskMerger:
     _settings: ConsensusSettings
 
     def check_merging_available(self, *, parent_job_id: int | None = None):
+        if not self._task.consensus_replicas:
+            raise MergingNotAvailable("Consensus is not enabled in this task")
+
         if self._task.dimension != DimensionType.DIM_2D:
             raise MergingNotAvailable("Merging is only supported in 2d tasks")
 
@@ -49,13 +52,13 @@ class _TaskMerger:
         if not self._jobs:
             raise MergingNotAvailable(
                 f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage or "
-                f"no {JobType.CONSENSUS} jobs in {StageChoice.ANNOTATION} - {StateChoice.NEW} state"
-                " found"
+                f"no {JobType.CONSENSUS} jobs "
+                f"not in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state found"
             )
 
         if parent_job_id:
-            consensus_job_info = self._jobs.get(parent_job_id)
-            if not consensus_job_info:
+            parent_job_info = self._jobs.get(parent_job_id)
+            if not parent_job_info:
                 raise MergingNotAvailable(
                     f"No annotated consensus jobs found for parent job {parent_job_id}. "
                     f"Make sure at least one consensus job is not "
