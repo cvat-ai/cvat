@@ -21,6 +21,8 @@ class TorchvisionFunction:
     def spec(self) -> cvataa.DetectionFunctionSpec:
         return cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec(cat, i) for i, cat in enumerate(self._weights.meta["categories"])
+                cvataa.label_spec(cat, i)
+                for i, cat in enumerate(self._weights.meta["categories"])
+                if cat != "N/A"
             ]
         )
