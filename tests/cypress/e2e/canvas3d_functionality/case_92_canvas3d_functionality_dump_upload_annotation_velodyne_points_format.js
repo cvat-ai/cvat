@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -93,8 +93,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.closeNotification('.ant-notification-notice-info');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Save').trigger('mouseout');
+            cy.clickSaveAnnotationView();
         });
 
         it('Upload annotation to task.', () => {
@@ -114,8 +113,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Save').trigger('mouseout');
+            cy.clickSaveAnnotationView();
         });
     });
 });

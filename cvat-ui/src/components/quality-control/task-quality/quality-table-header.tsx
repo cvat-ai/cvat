@@ -1,4 +1,4 @@
-// Copyright (C) 2025 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -45,12 +45,12 @@ function QualityTableHeader(props: TableHeaderProps): JSX.Element {
     };
 
     return (
-        <Row justify='start' align='middle' className='cvat-frame-allocation-actions'>
+        <Row justify='start' align='middle' className='cvat-quality-table-header'>
             <Col>
-                <Text className='cvat-text-color cvat-frame-allocation-header'>{title}</Text>
+                <Text className='cvat-text-color cvat-quality-table-header-title'>{title}</Text>
             </Col>
             <Col>
-                <DownloadOutlined onClick={handleDownload} />
+                <DownloadOutlined className='cvat-quality-table-dowload-button' onClick={handleDownload} />
             </Col>
             <Col>{actions}</Col>
             {!!onSearch && (

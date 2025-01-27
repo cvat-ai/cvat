@@ -11,7 +11,7 @@ context('Add/delete labels and attributes.', () => {
     const textDefaultValue = 'Some default value for type Text';
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').click();

@@ -25,7 +25,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
     const directoryToArchive = imagesFolder;
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
