@@ -53,6 +53,7 @@ if __name__ == "__main__":
         "quality/report",
         "quality/conflict",
         "quality/setting",
+        "consensus/setting",
     ]:
         response = get_method("admin1", f"{obj}s", page_size="all")
 

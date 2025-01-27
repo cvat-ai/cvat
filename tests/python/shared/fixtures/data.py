@@ -234,6 +234,12 @@ def quality_settings():
 
 
 @pytest.fixture(scope="session")
+def consensus_settings():
+    with open(ASSETS_DIR / "consensus_settings.json") as f:
+        return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
 def users_by_name(users):
     return {user["username"]: user for user in users}
 

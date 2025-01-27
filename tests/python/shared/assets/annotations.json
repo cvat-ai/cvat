@@ -5555,6 +5555,101 @@
       "tags": [],
       "tracks": [],
       "version": 0
+    },
+    "51": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "52": {
+      "shapes": [
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j2 f1 (30) a1"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 201,
+          "label_id": 80,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            295.39537490125076,
+            129.95137884321593,
+            379.50821517094846,
+            194.85735007494986
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "53": {
+      "shapes": [
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j1 f1 (30) a1"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 202,
+          "label_id": 80,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            339.7698654372325,
+            132.6006021587964,
+            397.3904725511202,
+            175.6504810369879
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        },
+        {
+          "attributes": [
+            {
+              "spec_id": 18,
+              "value": "j2 f1 (30) a2"
+            }
+          ],
+          "elements": [],
+          "frame": 0,
+          "group": 0,
+          "id": 203,
+          "label_id": 80,
+          "occluded": false,
+          "outside": false,
+          "points": [
+            529.1893325012752,
+            65.70771344037712,
+            597.4068328774865,
+            119.35448558089229
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
     }
   },
   "task": {
@@ -9209,6 +9304,12 @@
           "z_order": 0
         }
       ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "31": {
+      "shapes": [],
       "tags": [],
       "tracks": [],
       "version": 0
