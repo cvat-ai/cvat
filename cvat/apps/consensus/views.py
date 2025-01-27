@@ -134,7 +134,12 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                     )
 
                 return Response(data=str(exc_info), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            elif rq_job_status in (RqJobStatus.QUEUED, RqJobStatus.STARTED, RqJobStatus.SCHEDULED):
+            elif rq_job_status in (
+                RqJobStatus.QUEUED,
+                RqJobStatus.STARTED,
+                RqJobStatus.SCHEDULED,
+                RqJobStatus.DEFERRED,
+            ):
                 return Response(status=status.HTTP_202_ACCEPTED)
             elif rq_job_status == RqJobStatus.FINISHED:
                 rq_job.delete()

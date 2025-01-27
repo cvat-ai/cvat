@@ -308,7 +308,12 @@ class QualityReportViewSet(
                 message = str(rq_job.exc_info)
                 rq_job.delete()
                 raise ValidationError(message)
-            elif rq_job_status in (RqJobStatus.QUEUED, RqJobStatus.STARTED, RqJobStatus.SCHEDULED):
+            elif rq_job_status in (
+                RqJobStatus.QUEUED,
+                RqJobStatus.STARTED,
+                RqJobStatus.SCHEDULED,
+                RqJobStatus.DEFERRED,
+            ):
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             elif rq_job_status == RqJobStatus.FINISHED:
                 return_value = rq_job.return_value()
