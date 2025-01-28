@@ -878,7 +878,10 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         default=StateChoice.NEW)
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
-    parent_job = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='child_jobs')
+    parent_job = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='child_jobs', related_query_name="child_job"
+    )
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage

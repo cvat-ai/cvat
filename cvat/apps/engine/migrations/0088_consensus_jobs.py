@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="child_jobs",
+                related_query_name="child_job",
                 to="engine.job",
             ),
         ),
