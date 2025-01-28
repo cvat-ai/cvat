@@ -46,6 +46,17 @@ const createRectangleShape2Points = {
     secondY: (fY + h),
 };
 
+function clickSave() {
+    cy.get('button').contains('Save').click({ force: true });
+    cy.get('button').contains('Save').trigger('mouseout');
+}
+function clickDeleteFrame() {
+    cy.get('.cvat-player-delete-frame').click();
+    cy.get('.cvat-modal-delete-frame').within(() => {
+        cy.contains('button', 'Delete').click();
+    });
+}
+
 class Shape {
     constructor(x, y, wi, he, shapeType) {
         this.firstX = x; this.firstY = y;
@@ -113,6 +124,13 @@ function shapeToImage(shape, imgScale, imgLeft, imgTop) {
     };
 }
 
+// function clickUndo() {
+//     cy.contains('.cvat-annotation-header-button', 'Undo').click();
+// }
+// function clickFirst() {
+//     cy.get('.cvat-player-first-button').click();
+// }
+
 describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
     context('Create any track, check if track works correctly after deleting some frames', () => {
         let imgScale;
@@ -120,6 +138,25 @@ describe('Description: user error, Could not receive frame 43 No one left positi
         let offsetY;
         let left;
         let top;
+        const stash = {};
+        function saveShape(num) {
+            cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
+                cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
+                    stash[num] = { x: parseFloat(x), y: parseFloat(y) };
+                });
+            });
+        }
+        function compareShape(num) {
+            const { x, y } = stash[num];
+            cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
+                expect(parseFloat(xVal)).to.be.closeTo(x, 3.0);
+                cy.task('log', `compare: ${x} - ${xVal}`);
+            });
+            cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
+                expect(parseFloat(yVal)).to.be.closeTo(y, 3.0);
+                cy.task('log', `compare: ${y} - ${yVal}`);
+            });
+        }
         before(() => {
             cy.visit('/auth/login');
             cy.login();
@@ -138,70 +175,73 @@ describe('Description: user error, Could not receive frame 43 No one left positi
                         top = Number($canvas.style.top.replace('px', ''));
                     });
             }).then(() => {
-                // const s = shapeToImage(createRectangleShape2Points, offsetX, offsetY, imgScale, left, top);
-                // cy.task('log', JSON.stringify(s));
-                // cy.createRectangle(new Shape(10, 10, 40, 40));
-                // cy.createRectangle(new Shape(20, 20, 40, 40));
-                // cy.createRectangle(new Shape(40, 40, 40, 40));
-                // cy.createRectangle(new Shape(60, 60, 40, 40));
-                // cy.createRectangle(new Shape(70, 70, 40, 40));
-                cy.task('log', `scale: ${imgScale}, offsetX: ${offsetX}, offsetY: ${offsetY}, left:${left}, top:${top}`);
-            });
-            // TODO: compare runtimes of cy.createTaskFromArchive vs cy.headlessCreateTask
-        });
-        it('Create track and change its positions on frames 2 and 4', () => {
-            // es-lint disable-next-block
-            /*
-            - draw rectangle
-            - learn to drag rectangle to any position
-            - learn to drag rectangle to positions relative to the cvat_canvas_background (corners, sides, middle)
-            -
-            */
-            // Init rectangle
-            let shape = shapeToImage(createRectangleShape2Points, imgScale, left, top);
-            cy.createRectangle(shape);
-            // cy.saveJob();
-            const stash = {};
-            function saveShape(num) {
-                cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
-                    cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
-                        stash[num] = { x: parseFloat(x), y: parseFloat(y) };
-                    });
-                });
-            }
-            function compareShape(num) {
-                const { x, y } = stash[num];
-                cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
-                    expect(parseFloat(xVal)).to.be.closeTo(x, 3.0);
-                });
-                cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
-                    expect(parseFloat(yVal)).to.be.closeTo(y, 3.0);
-                });
-            }
-            // cy.task('log', JSON.stringify(shape, null, 2));
-            // cy.task('log', '\n====================\n');
-            cy.goToNextFrame(1).then(() => saveShape(1));
-            cy.goToNextFrame(2);
-            shape = Shape.drag(shape, '.cvat_canvas_shape', 500, 'x', imgScale, left, top);
-            cy.goToNextFrame(3).then(() => saveShape(3));
-            cy.goToNextFrame(4);
-            shape = Shape.drag(shape, '.cvat_canvas_shape', 500, 'y', imgScale, left, top);
-            // TODO: refactor shape drag
-            cy.then(() => {
-                cy.task('log', JSON.stringify(stash, null, 2));
-                cy.goToPreviousFrame(3);
+                // TODO: compare runtimes of cy.createTaskFromArchive vs cy.headlessCreateTask
+                let shape = shapeToImage(createRectangleShape2Points, imgScale, left, top);
+                cy.createRectangle(shape);
+                // cy.saveJob();
+
+                cy.task('log', JSON.stringify(shape, null, 2));
+                // cy.task('log', '\n====================\n');
+                cy.goToNextFrame(1);
+                cy.goToNextFrame(2);
+                shape = Shape.drag(shape, '.cvat_canvas_shape', 500, 'x');
+                cy.goToNextFrame(3);
+                cy.goToNextFrame(4);
+                shape = Shape.drag(shape, '.cvat_canvas_shape', 500, 'y');
+                cy.saveJob();
+
+                // Save shapes on interpolated frames' shapes
+                cy.goToPreviousFrame(3).then(() => saveShape(3));
                 cy.goToPreviousFrame(2);
-                cy.deleteFrame(); // saves job
-                cy.checkFrameNum(3);
-                compareShape(3);
-                cy.goToPreviousFrame(1);
-                compareShape(1);
+                cy.goToPreviousFrame(1).then(() => saveShape(1));
+
+                cy.task('log', `scale: ${imgScale}, offsetX: ${offsetX}, offsetY: ${offsetY}, left:${left}, top:${top}`);
+            });/* .then(() => assert(0)); */
+            // TODO: refactor shape drag
+        });
+        it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
+            // es-lint disable-next-block
+
+            cy.goToNextFrame(2);
+            clickDeleteFrame();
+            cy.checkFrameNum(3);
+            compareShape(3);
+            cy.goToPreviousFrame(1);
+            compareShape(1);
+            // cy.then(() => {
+            //     clickUndo();
+            //     clickFirst();
+            // });
+        });
+        it.skip('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
+            cy.on('uncaught:exception', (err) => {
+                const expectedMsg = 'No one left position or right position was found. Interpolation impossible. Client ID:';
+                expect(err.message).to.include(expectedMsg);
+                throw err; // FIXME: uncomment this line on commit
+                // return false;
             });
 
-            // cy.screenshot();
+            cy.checkFrameNum(0);
+            clickDeleteFrame();
+            cy.checkFrameNum(1);
+            cy.goToNextFrame(2);
+            clickDeleteFrame();
+            cy.checkFrameNum(3);
+            cy.goToNextFrame(4);
+            clickDeleteFrame();
+            clickSave();
+
+            // This might pop up after deleting or saving. But it doesn't do that on chrome.
+            cy.get('.ant-notification-notice-error').should('not.exist');
+
+            // Reopening a task with bad metadata will always throw an exception that we can catch
+            cy.goToTaskList();
+            cy.openTaskJob(taskName);
         });
-        after(() => {
-            assert(0);
-        });
+        // afterEach(() => {
+        //     clickFirst();
+        //     clickUndo(); // TODO: command to undo all changes while there are changes
+        // });
+        after(() => assert(0));
     });
 });
