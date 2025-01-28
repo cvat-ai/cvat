@@ -2,11 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from tools.test import *
 import os
 from copy import copy
+
 import jsonpickle
 import numpy as np
+import torch
+
+from tools.test import siamese_init, siamese_track
+from utils.config_helper import load_config
+from utils.load_helper import load_pretrain
 
 class ModelHandler:
     def __init__(self):
