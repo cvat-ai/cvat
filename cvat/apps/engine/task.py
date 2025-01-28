@@ -226,7 +226,9 @@ def _create_segments_and_jobs(
 
         # consensus jobs use the same `db_segment` as the regular job, thus data not duplicated in backups, exports
         for _ in range(db_task.consensus_replicas):
-            consensus_db_job = models.Job(segment=db_segment, parent_job_id=db_job.id, type=models.JobType.CONSENSUS)
+            consensus_db_job = models.Job(
+                segment=db_segment, parent_job_id=db_job.id, type=models.JobType.CONSENSUS_REPLICA
+            )
             consensus_db_job.save()
             consensus_db_job.make_dirs()
 

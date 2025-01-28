@@ -1897,7 +1897,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus
+          - consensus_replica
       tags:
       - jobs
       security:
@@ -8376,12 +8376,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus
+      - consensus_replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus` - CONSENSUS
+        * `consensus_replica` - CONSENSUS_REPLICA
     JobValidationLayoutRead:
       type: object
       properties:

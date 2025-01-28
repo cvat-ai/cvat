@@ -170,7 +170,7 @@ class SortingMethod(str, Enum):
 class JobType(str, Enum):
     ANNOTATION = 'annotation'
     GROUND_TRUTH = 'ground_truth'
-    CONSENSUS = 'consensus_replica'
+    CONSENSUS_REPLICA = 'consensus_replica'
 
     @classmethod
     def choices(cls):
