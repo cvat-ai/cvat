@@ -9,7 +9,7 @@ import cvat.apps.engine.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0086_profile_has_analytics_access"),
+        ("engine", "0087_alter_label_type"),
     ]
 
     operations = [
