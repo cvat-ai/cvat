@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="children_jobs",
+                related_name="child_jobs",
                 to="engine.job",
             ),
         ),
