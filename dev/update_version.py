@@ -9,7 +9,6 @@ from pathlib import Path
 from re import Match, Pattern
 from typing import Callable
 
-
 SUCCESS_CHAR = "\u2714"
 FAIL_CHAR = "\u2716"
 
@@ -162,6 +161,11 @@ REPLACEMENT_RULES = [
         "cvat-cli/requirements/base.txt",
         re.compile(r"^cvat-sdk==[\d.]+$", re.M),
         lambda v, m: f"cvat-sdk=={v.major}.{v.minor}.{v.patch}",
+    ),
+    ReplacementRule(
+        "cvat-ui/package.json",
+        re.compile(r'^  "version": "[\d.]+",$', re.M),
+        lambda v, m: f'  "version": "{v.major}.{v.minor}.{v.patch}",',
     ),
 ]
 

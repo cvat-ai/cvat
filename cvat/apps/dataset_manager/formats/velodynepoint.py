@@ -1,21 +1,23 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import zipfile
 
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, detect_dataset, \
-    import_dm_annotations
-from .registry import dm_env
-
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
 
-from .registry import exporter, importer
+from .registry import dm_env, exporter, importer
+
 
 class RemoveTrackingInformation(ItemTransform):
     def transform_item(self, item):

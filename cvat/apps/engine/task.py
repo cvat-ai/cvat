@@ -1,27 +1,27 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import concurrent.futures
-import itertools
 import fnmatch
+import itertools
 import os
 import re
-import rq
 import shutil
 from collections.abc import Iterator, Sequence
-from copy import deepcopy
 from contextlib import closing
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-import av
 import attrs
+import av
 import django_rq
+import rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
@@ -29,25 +29,39 @@ from django.http import HttpRequest
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
-from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
-    MEDIA_TYPES, CachingMediaIterator, IMediaReader, ImageListReader,
-    Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, RandomAccessIterator,
-    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort,
+    MEDIA_TYPES,
+    CachingMediaIterator,
+    ImageListReader,
+    IMediaReader,
+    Mpeg4ChunkWriter,
+    Mpeg4CompressedChunkWriter,
+    RandomAccessIterator,
+    ValidateDimension,
+    ZipChunkWriter,
+    ZipCompressedChunkWriter,
+    get_mime,
     load_image,
+    sort,
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.utils import (
-    av_scan_paths, format_list, get_rq_job_meta,
-    define_dependent_job, get_rq_lock_by_user, take_by
-)
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
+from cvat.apps.engine.utils import (
+    av_scan_paths,
+    define_dependent_job,
+    format_list,
+    get_rq_job_meta,
+    get_rq_lock_by_user,
+    take_by,
+)
+from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import detect_related_images
+
 from .cloud_provider import db_storage_to_storage_instance
 
 slogger = ServerLogManager(__name__)

@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ context('Correct behaviour of fit when navigating between frames with different 
     let jobID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask({

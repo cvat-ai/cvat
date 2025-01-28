@@ -28,7 +28,7 @@ For export of images:
   - Segmentation: Polygons, Masks
   - Pose: Skeletons
 - Attributes: Not supported.
-- Tracks: Not supported.
+- Tracks: Supported.
 
 The downloaded file is a .zip archive with the following structure:
 
@@ -127,6 +127,16 @@ is named to correspond with its associated image file.
 For example, `frame_000001.txt` serves as the annotation for the
 `frame_000001.jpg` image.
 
+### Track support
+
+Tracks can be saved on export for Detection by using Ultralytics YOLO Detection Track format.
+It writes track ids to the end of corresponding annotations:
+```bash
+# label_id cx cy rw rh <optional track_id>
+1 0.3 0.8 0.1 0.3 1
+2 0.7 0.2 0.3 0.1
+```
+
 ## Import
 
 Uploaded file: a zip archive of the same structure as above.
@@ -146,4 +156,14 @@ archive.zip/
    │   │    ├── image1.txt
    │   │    ├── image2.txt
    │   │    └── ...
+```
+
+### Track support
+
+Import in each of the Ultralytics YOLO formats support tracking.
+Integer track id can be added to the end of any annotation, e.g. with Detection format:
+```bash
+# label_id cx cy rw rh <optional track_id>
+1 0.3 0.8 0.1 0.3 1
+2 0.7 0.2 0.3 0.1
 ```

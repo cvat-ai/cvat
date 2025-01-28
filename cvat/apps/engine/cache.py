@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -218,17 +218,19 @@ class MediaCache:
         item_data = create_callback()
         item_data_bytes = item_data[0].getvalue()
         item = (item_data[0], item_data[1], cls._get_checksum(item_data_bytes), timestamp)
-        if item_data_bytes:
-            cache = cls._cache()
-            with get_rq_lock_for_job(
-                cls._get_queue(),
-                key,
-            ):
-                cached_item = cache.get(key)
-                if cached_item is not None and timestamp <= cached_item[3]:
-                    item = cached_item
-                else:
-                    cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
+
+        # allow empty data to be set in cache to prevent
+        # future rq jobs from being enqueued to prepare the item
+        cache = cls._cache()
+        with get_rq_lock_for_job(
+            cls._get_queue(),
+            key,
+        ):
+            cached_item = cache.get(key)
+            if cached_item is not None and timestamp <= cached_item[3]:
+                item = cached_item
+            else:
+                cache.set(key, item, timeout=cache_item_ttl or cache.default_timeout)
 
         return item
 
@@ -353,11 +355,18 @@ class MediaCache:
     def _to_data_with_mime(self, cache_item: _CacheItem) -> DataWithMime: ...
 
     @overload
-    def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]: ...
+    def _to_data_with_mime(
+        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
+    ) -> Optional[DataWithMime]: ...
 
-    def _to_data_with_mime(self, cache_item: Optional[_CacheItem]) -> Optional[DataWithMime]:
+    def _to_data_with_mime(
+        self, cache_item: Optional[_CacheItem], *, allow_none: bool = False
+    ) -> Optional[DataWithMime]:
         if not cache_item:
-            return None
+            if allow_none:
+                return None
+
+            raise ValueError("A cache item is not allowed to be None")
 
         return cache_item[:2]
 
@@ -385,7 +394,8 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_chunk_key(db_task, chunk_number, quality=quality),
-            )
+            ),
+            allow_none=True,
         )
 
     def get_or_set_task_chunk(
@@ -413,7 +423,8 @@ class MediaCache:
         return self._to_data_with_mime(
             self._get_cache_item(
                 key=self._make_segment_task_chunk_key(db_segment, chunk_number, quality=quality),
-            )
+            ),
+            allow_none=True,
         )
 
     def get_or_set_segment_task_chunk(
@@ -510,7 +521,9 @@ class MediaCache:
         self._bulk_delete_cache_items(keys_to_remove)
 
     def get_cloud_preview(self, db_storage: models.CloudStorage) -> Optional[DataWithMime]:
-        return self._to_data_with_mime(self._get_cache_item(self._make_preview_key(db_storage)))
+        return self._to_data_with_mime(
+            self._get_cache_item(self._make_preview_key(db_storage)), allow_none=True
+        )
 
     def get_or_set_cloud_preview(self, db_storage: models.CloudStorage) -> DataWithMime:
         return self._to_data_with_mime(

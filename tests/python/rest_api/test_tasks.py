@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -45,7 +45,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
+from shared.fixtures.init import container_exec_cvat
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -2681,7 +2681,7 @@ class TestPostTaskData:
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
 
-class _SourceDataType(str, Enum):
+class _SourceDataType(Enum):
     images = "images"
     video = "video"
 
@@ -2744,12 +2744,7 @@ class _VideoTaskSpec(_TaskSpecBase):
             return frame
 
 
-@pytest.mark.usefixtures("restore_db_per_class")
-@pytest.mark.usefixtures("restore_cvat_data_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
-class TestTaskData:
+class _TestTasksBase:
     _USERNAME = "admin1"
 
     def _uploaded_images_task_fxt_base(
@@ -3205,7 +3200,14 @@ class TestTaskData:
         + _tasks_with_simple_gt_job_cases
     )
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+
+@pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_cvat_data_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_after_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+class TestTaskData(_TestTasksBase):
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -3228,7 +3230,7 @@ class TestTaskData:
             else:
                 assert len(task_meta.frames) == task_meta.size
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
@@ -3268,7 +3270,7 @@ class TestTaskData:
                     ),
                 )
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_task_chunks(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
@@ -3332,7 +3334,7 @@ class TestTaskData:
                         ),
                     )
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_annotation_job_meta(self, task_spec: _TaskSpec, task_id: int):
         segment_params = self._compute_annotation_segment_params(task_spec)
 
@@ -3372,7 +3374,7 @@ class TestTaskData:
                 else:
                     assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", _tasks_with_simple_gt_job_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_simple_gt_job_cases)
     def test_can_get_simple_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -3428,7 +3430,7 @@ class TestTaskData:
                 # there are placeholders on the non-included places
                 assert len(job_meta.frames) == task_spec.size
 
-    @parametrize("task_spec, task_id", _tasks_with_honeypots_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._tasks_with_honeypots_cases)
     def test_can_get_honeypot_gt_job_meta(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             gt_jobs = get_paginated_collection(
@@ -3461,7 +3463,7 @@ class TestTaskData:
             else:
                 assert len(job_meta.frames) == job_meta.size
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     def test_can_get_job_frames(self, task_spec: _TaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
@@ -3507,7 +3509,7 @@ class TestTaskData:
                         ),
                     )
 
-    @parametrize("task_spec, task_id", _all_task_cases)
+    @parametrize("task_spec, task_id", _TestTasksBase._all_task_cases)
     @parametrize("indexing", ["absolute", "relative"])
     def test_can_get_job_chunks(self, task_spec: _TaskSpec, task_id: int, indexing: str):
         _placeholder_image = Image.fromarray(np.zeros((1, 1, 3), dtype=np.uint8))
@@ -5315,12 +5317,9 @@ class TestImportTaskAnnotations:
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
         command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        platform = request.config.getoption("--platform")
-        assert platform in ("kube", "local")
-        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
         for _ in range(12):
             sleep(2)
-            result, _ = func(command)
+            result, _ = container_exec_cvat(request, command)
             number_of_files = int(result)
             if not number_of_files:
                 break
@@ -6468,8 +6467,7 @@ class TestImportWithComplexFilenames:
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
-class TestPatchExportFrames(TestTaskData):
-
+class TestPatchExportFrames(_TestTasksBase):
     @fixture(scope="class")
     @parametrize("media_type", [_SourceDataType.images, _SourceDataType.video])
     @parametrize("step", [5])
@@ -6493,7 +6491,7 @@ class TestPatchExportFrames(TestTaskData):
         with make_sdk_client(self._USERNAME) as client:
             task = client.tasks.retrieve(task_id)
 
-            yield (spec, task, f"CVAT for {media_type} 1.1")
+            yield (spec, task, f"CVAT for {media_type.value} 1.1")
 
     @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
     @parametrize("spec, task, format_name", [fixture_ref(fxt_uploaded_media_task)])

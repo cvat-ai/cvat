@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.24.1
+  version: 2.26.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2809,16 +2809,16 @@ paths:
         schema:
           type: string
           enum:
-          - bbox
+          - any
+          - cuboid
           - ellipse
+          - mask
+          - points
           - polygon
           - polyline
-          - points
-          - cuboid
-          - cuboid_3d
+          - rectangle
           - skeleton
           - tag
-          - any
       tags:
       - labels
       security:
@@ -8487,8 +8487,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -8531,6 +8544,30 @@ components:
             a parent label
       required:
       - name
+    LabelType:
+      enum:
+      - any
+      - cuboid
+      - ellipse
+      - mask
+      - points
+      - polygon
+      - polyline
+      - rectangle
+      - skeleton
+      - tag
+      type: string
+      description: |-
+        * `any` - ANY
+        * `cuboid` - CUBOID
+        * `ellipse` - ELLIPSE
+        * `mask` - MASK
+        * `points` - POINTS
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `rectangle` - RECTANGLE
+        * `skeleton` - SKELETON
+        * `tag` - TAG
     LabeledData:
       type: object
       properties:
@@ -9589,8 +9626,21 @@ components:
           description: Delete the label. Only applicable in the PATCH methods of a
             project or a task.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -9775,12 +9825,12 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-        match_empty_frames:
+        empty_is_annotated:
           type: boolean
           default: false
           description: |
-            Count empty frames as matching. This affects target metrics like accuracy in cases
-            there are no annotations. If disabled, frames without annotations
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
     PatchedTaskValidationLayoutWriteRequest:
@@ -10282,12 +10332,12 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-        match_empty_frames:
+        empty_is_annotated:
           type: boolean
           default: false
           description: |
-            Count empty frames as matching. This affects target metrics like accuracy in cases
-            there are no annotations. If disabled, frames without annotations
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
     RegisterSerializerEx:
@@ -10764,8 +10814,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -10804,8 +10867,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:

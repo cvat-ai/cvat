@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -64,19 +64,6 @@
     @extend .cvat-analytics-tooltip-inner;
 
     min-width: $grid-unit-size * 47;
-}
-
-.cvat-analytics-download-report-button {
-    padding-left: $grid-unit-size * 2;
-    padding-right: $grid-unit-size * 2;
-
-    a {
-        color: white;
-
-        &:hover {
-            color: white;
-        }
-    }
 }
 
 .cvat-analytics-page {

@@ -1,51 +1,58 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-from collections import OrderedDict
-from collections.abc import Iterable, Sequence
-from contextlib import closing
-import warnings
-from copy import copy
-from datetime import timedelta
-from decimal import Decimal
-from inspect import isclass
 import os
 import re
 import shutil
 import string
-from tempfile import NamedTemporaryFile
 import textwrap
+import warnings
+from collections import OrderedDict
+from collections.abc import Iterable, Sequence
+from contextlib import closing
+from copy import copy
+from datetime import timedelta
+from decimal import Decimal
+from inspect import isclass
+from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Union
 
 import django_rq
-from django.conf import settings
-from django.contrib.auth.models import User, Group
-from django.db import transaction
-from django.db.models import prefetch_related_objects, Prefetch
-from django.utils import timezone
-from numpy import random
-from rest_framework import serializers, exceptions
 import rq.defaults as rq_defaults
-from rq.job import Job as RQJob, JobStatus as RQJobStatus
+from django.conf import settings
+from django.contrib.auth.models import Group, User
+from django.db import transaction
+from django.db.models import Prefetch, prefetch_related_objects
+from django.utils import timezone
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
+from numpy import random
+from rest_framework import exceptions, serializers
+from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
-from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
+from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_storage_instance
+from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 from cvat.apps.engine.utils import (
-    format_list, grouped, parse_exception_message, CvatChunkTimestampMismatchError,
-    parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse, take_by
+    CvatChunkTimestampMismatchError,
+    build_field_filter_params,
+    format_list,
+    get_list_view_name,
+    grouped,
+    parse_exception_message,
+    parse_specific_attributes,
+    reverse,
+    take_by,
 )
-
-from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
 slogger = ServerLogManager(__name__)
 
@@ -281,7 +288,7 @@ class SublabelSerializer(serializers.ModelSerializer):
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
-    type = serializers.CharField(allow_blank=True, required=False,
+    type = serializers.ChoiceField(choices=models.LabelType.choices(), required=False,
         help_text="Associated annotation type for this label")
     has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
@@ -411,7 +418,7 @@ class LabelSerializer(SublabelSerializer):
             try:
                 db_label = models.Label.create(
                     name=validated_data.get('name'),
-                    type=validated_data.get('type'),
+                    type=validated_data.get('type', models.LabelType.ANY),
                     parent=parent_label,
                     **parent_info
                 )
@@ -996,7 +1003,10 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
         from cvat.apps.engine.cache import (
-            MediaCache, Callback, enqueue_create_chunk_job, wait_for_rq_job
+            Callback,
+            MediaCache,
+            enqueue_create_chunk_job,
+            wait_for_rq_job,
         )
         from cvat.apps.engine.frame_provider import JobFrameProvider
 
@@ -1101,7 +1111,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
             if bulk_context:
-                active_validation_frame_counts = bulk_context.active_validation_frame_counts
+                frame_selector = bulk_context.honeypot_frame_selector
             else:
                 active_validation_frame_counts = {
                     validation_frame: 0 for validation_frame in task_active_validation_frames
@@ -1111,7 +1121,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     if real_frame in task_active_validation_frames:
                         active_validation_frame_counts[real_frame] += 1
 
-            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+                frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+
             requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
             requested_frames = list(map(_to_abs_frame, requested_frames))
         else:
@@ -1358,7 +1369,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         honeypot_frames: list[int],
         all_validation_frames: list[int],
         active_validation_frames: list[int],
-        validation_frame_counts: dict[int, int] | None = None
+        honeypot_frame_selector: HoneypotFrameSelector | None = None
     ):
         self.updated_honeypots: dict[int, models.Image] = {}
         self.updated_segments: list[int] = []
@@ -1370,7 +1381,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         self.honeypot_frames = honeypot_frames
         self.all_validation_frames = all_validation_frames
         self.active_validation_frames = active_validation_frames
-        self.active_validation_frame_counts = validation_frame_counts
+        self.honeypot_frame_selector = honeypot_frame_selector
 
 class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     disabled_frames = serializers.ListField(
@@ -1485,7 +1496,9 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset distribution for active validation frames
-            bulk_context.active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+            bulk_context.honeypot_frame_selector = frame_selector
 
         # Could be done using Django ORM, but using order_by() and filter()
         # would result in an extra DB request
@@ -2452,10 +2465,14 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = {task.subset for task in instance.tasks.all()}
-        task_subsets.discard('')
+
+        task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
+        task_dimension = next(
+            (task.dimension for task in instance.tasks.all() if task.dimension),
+            None
+        )
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
+        response['dimension'] = task_dimension
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):

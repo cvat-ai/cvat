@@ -1,27 +1,27 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterator, Iterable
-from functools import reduce
-from typing import Any, Optional
-import operator
 import json
+import operator
+from collections.abc import Iterable, Iterator
+from functools import reduce
+from textwrap import dedent
+from typing import Any, Optional
 
+from django.db.models import Q
+from django.db.models.query import QuerySet
+from django.utils.encoding import force_str
+from django.utils.translation import gettext_lazy as _
 from django_filters import FilterSet
 from django_filters import filters as djf
 from django_filters.filterset import BaseFilterSet
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
-from django.db.models.query import QuerySet
-from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_str
-from rest_framework.request import Request
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
-from textwrap import dedent
+from rest_framework.request import Request
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'

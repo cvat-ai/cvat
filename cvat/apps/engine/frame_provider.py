@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -15,15 +15,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
 from io import BytesIO
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, Callable, Generic, Optional, TypeVar, Union, overload
 
 import av
 import cv2

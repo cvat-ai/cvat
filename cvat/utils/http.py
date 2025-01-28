@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.conf import settings
-
 import requests
 import requests.utils
+from django.conf import settings
 
 from cvat import __version__
 

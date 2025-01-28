@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -599,7 +599,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState(true);
                 if (!readonly) {
                     if (state) {
-                        openAnnotationsActionModal(state);
+                        openAnnotationsActionModal({ defaultObjectState: state });
                     } else {
                         openAnnotationsActionModal();
                     }

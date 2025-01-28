@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -139,25 +139,25 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
             if task and task.project:
                 project = task.project
-                organization = project.organization
+                organization_id = project.organization_id
             else:
-                organization = getattr(task, "organization", None)
+                organization_id = task.organization_id
 
             data = {
                 "id": obj_id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(project.owner, "id", None)},
-                        "assignee": {"id": getattr(project.assignee, "id", None)},
+                        "owner": {"id": project.owner_id},
+                        "assignee": {"id": project.assignee_id},
                     }
                     if project
                     else None
@@ -279,25 +279,25 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         if self.obj:
             task = self.obj.task
             if task.project:
-                organization = task.project.organization
+                organization_id = task.project.organization_id
             else:
-                organization = task.organization
+                organization_id = task.organization_id
 
             data = {
                 "id": self.obj.id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": task.project.owner_id},
+                        "assignee": {"id": task.project.assignee_id},
                     }
                     if task.project
                     else None

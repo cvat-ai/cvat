@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -16,29 +16,39 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
-from attrs.converters import to_bool
 import datumaro as dm
 import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
+from attrs.converters import to_bool
 from datumaro.components.format_detection import RejectionReason
+from django.conf import settings
 from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
-from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine import models
-from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
-                                     JobType, Label, LabelType, Project, SegmentType, ShapeType,
-                                     Task)
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.models import (
+    AttributeSpec,
+    AttributeType,
+    DimensionType,
+    Job,
+    JobType,
+    Label,
+    LabelType,
+    Project,
+    SegmentType,
+    ShapeType,
+    Task,
+)
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 
-from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import MaskConverter, EllipsesToMasks
 from ..engine.log import ServerLogManager
+from .annotation import AnnotationIR, AnnotationManager, TrackManager
+from .formats.transformations import EllipsesToMasks, MaskConverter
 
 slogger = ServerLogManager(__name__)
 
@@ -1629,7 +1639,7 @@ class CVATDataExtractorMixin:
         return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
 
 
-class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
+class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         instance_data: CommonData,
@@ -1640,7 +1650,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         **kwargs
     ):
         instance_meta = instance_data.meta[instance_data.META_FIELD]
-        dm.SourceExtractor.__init__(
+        dm.SubsetBase.__init__(
             self,
             media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=instance_meta['subset'],
@@ -1738,7 +1748,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
 
-class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
+class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         project_data: ProjectData,
@@ -1748,7 +1758,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
-        dm.Extractor.__init__(
+        dm.DatasetBase.__init__(
             self, media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud
         )
         CVATDataExtractorMixin.__init__(self, **kwargs)
@@ -2175,7 +2185,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'coco',
         'coco_instances',
         'coco_person_keypoints',
-        'voc'
+        'voc',
+        'yolo_ultralytics_detection',
+        'yolo_ultralytics_segmentation',
+        'yolo_ultralytics_oriented_boxes',
+        'yolo_ultralytics_pose',
     ]
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]

@@ -1,16 +1,17 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-import attrs
-
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 from uuid import UUID
+
+import attrs
 from rq.job import Job as RQJob
 
-from .models import RequestAction, RequestTarget, RequestSubresource
+from .models import RequestAction, RequestSubresource, RequestTarget
+
 
 class RQMeta:
     @staticmethod
