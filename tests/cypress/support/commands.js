@@ -1761,3 +1761,11 @@ Cypress.Commands.add('clickSaveAnnotationView', () => {
     cy.get('button').contains('Save').click();
     cy.get('button').contains('Save').trigger('mouseout');
 });
+
+Cypress.Commands.add('clickUndo', () => {
+    cy.contains('.cvat-annotation-header-button', 'Undo').click();
+});
+
+Cypress.Commands.add('clickFirstFrame', () => {
+    cy.get('.cvat-player-first-button').click();
+});

@@ -152,7 +152,9 @@
                 "run",
                 "--headless",
                 "--browser",
-                "chrome"
+                "chrome",
+                "--spec",
+                "cypress/e2e/issues_prs2/issue_xxxx*.js"
             ],
             "outputCapture": "std",
             "console": "internalConsole"
