@@ -37,7 +37,9 @@ class ModelHandler:
 
     def decode_state(self, state):
         for k,v in state.items():
-            state[k] = jsonpickle.decode(v)
+            # The server ensures that `state` is one of the values that the function itself
+            # has previously output. Therefore it should be safe to use jsonpickle.
+            state[k] = jsonpickle.decode(v)  # nosec: B301
 
         state['net'] = copy(self.siammask)
         state['net'].zf = state['net.zf']
