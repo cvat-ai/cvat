@@ -33,11 +33,12 @@ const dirToArchive = imagesFolder;
 
 // firstX /= 2;
 // firstY /= 2;
-const [fX, fY] = [50, 50];
+const [fX, fY] = [30, 30];
 const [w, h] = [34, 23];
 const createRectangleShape2Points = {
     points: 'By 2 Points',
-    type: 'Shape',
+    // type: 'Shape',
+    type: 'Track',
     labelName,
     firstX: fX,
     firstY: fY,
@@ -46,12 +47,43 @@ const createRectangleShape2Points = {
 };
 
 class Shape {
-    constructor(x, y, wi, he) {
+    constructor(x, y, wi, he, shapeType) {
         this.firstX = x; this.firstY = y;
         this.secondX = x + wi; this.secondY = y + he;
-        this.type = 'Shape';
+        this.type = shapeType; // 'Shape' | 'Track'
         this.labelName = labelName;
         this.points = 'By 2 Points';
+    }
+
+    static drag(shape, selector, delta, axis /* imgScale, left, top */) {
+        let x0; let y0;
+        let x1; let y1;
+        cy.get(selector).then(([$el]) => {
+            ({ x: x0, y: y0 } = $el.getBoundingClientRect());
+            [x1, y1] = [x0, y0];
+            if (axis === 'x') {
+                x1 += delta;
+                shape.firstX += (delta /* / imgScale */);
+            } else if (axis === 'y') {
+                y1 += delta;
+                shape.firstY += (delta /* / imgScale */);
+            }
+        }).then(() => {
+            cy.task('log', `drag: (${x0}, ${y0}) -> (${x1}, ${y1}) : (${shape.firstX},${shape.firstY}`);
+            // cy.task('log', JSON.stringify(shape, null, 2));
+            cy.get(selector).trigger('mousemove', { scrollBehavior: false });
+            // cy.get(selector).trigger('mouseover', { scrollBehavior: false });
+            cy.get(selector).should('have.class', 'cvat_canvas_shape_activated');
+            cy.get(selector).trigger('mousedown', {
+                button: 0, which: 1, force: true, scrollBehavior: false,
+            });
+            cy.get('#cvat_canvas_background').trigger('mousemove', shape.firstX, shape.firstY, {
+                which: 1, force: true, scrollBehavior: false,
+            });
+            /* cy.invoke uses https://api.jquery.com/category/manipulation/ */
+            cy.get(selector).trigger('mouseup', { force: true, scrollBehavior: false }); // Simulate mouse release
+        });
+        return shape;
     }
 } // for testing
 
@@ -106,30 +138,18 @@ describe('Description: user error, Could not receive frame 43 No one left positi
                         top = Number($canvas.style.top.replace('px', ''));
                     });
             }).then(() => {
-                const s = shapeToImage(createRectangleShape2Points, offsetX, offsetY, imgScale, left, top);
-                cy.task('log', `scale: ${imgScale}, offsetX: ${offsetX}, offsetY: ${offsetY}, left:${left}, top:${top}`);
+                // const s = shapeToImage(createRectangleShape2Points, offsetX, offsetY, imgScale, left, top);
                 // cy.task('log', JSON.stringify(s));
                 // cy.createRectangle(new Shape(10, 10, 40, 40));
                 // cy.createRectangle(new Shape(20, 20, 40, 40));
                 // cy.createRectangle(new Shape(40, 40, 40, 40));
                 // cy.createRectangle(new Shape(60, 60, 40, 40));
                 // cy.createRectangle(new Shape(70, 70, 40, 40));
-                const fwd = (shape) => {
-                    const t = shapeToImage(shape, offsetX, offsetY, imgScale, left, top);
-                    cy.task('log', JSON.stringify(t, null, 2));
-                    return t;
-                };
-                cy.createRectangle(s);
-                cy.createRectangle(fwd(new Shape(100, 100, w, h)));
-                cy.createRectangle(fwd(new Shape(150, 150, w, h)));
-                cy.createRectangle(fwd(new Shape(350, 350, w, h)));
-                cy.createRectangle(fwd(new Shape(300, 300, w, h)));
-                // these should form a diagonal on the image
+                cy.task('log', `scale: ${imgScale}, offsetX: ${offsetX}, offsetY: ${offsetY}, left:${left}, top:${top}`);
             });
             // TODO: compare runtimes of cy.createTaskFromArchive vs cy.headlessCreateTask
-            cy.saveJob();
         });
-        it.skip('Create track and change its positions on frames 2 and 4', () => {
+        it('Create track and change its positions on frames 2 and 4', () => {
             // es-lint disable-next-block
             /*
             - draw rectangle
@@ -137,54 +157,51 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             - learn to drag rectangle to positions relative to the cvat_canvas_background (corners, sides, middle)
             -
             */
-            cy.createRectangle(createRectangleShape2Points);
-            cy.saveJob();
-            cy.get('#cvat_canvas_background').then(([$cback]) => {
-                const {
-                    x: xb, y: yb, width: wb, height: hb,
-                } = $cback.getBoundingClientRect();
-                const cmiddle = {
-                    x: (xb + wb) / 2,
-                    y: (yb + hb) / 2,
-                };
-                /* eslint-disable */
-                const c = {
-                    xb, yb, wb, hb,
-                };
-                let shapeView = {};
-                cy.get('#cvat_canvas_shape_1').then(([$el]) => {
-                    const {
-                        x, y, w, h,
-                    } = $el.getBoundingClientRect();
-                    shapeView = {
-                        x, y, w, h,
-                    };
-                }).then(() => {
-                    // Drag across frames
-                    // TODO: drag functions
-                    function dragRight(selector, delta) {
-                        let rect;
-                        cy.get(selector).invoke('getBoundingClientRect').then((r) => {
-                            rect = r;
-                        });
-                        cy.get(selector).trigger('mousedown', {
-                            button: 0, which: 1,
-                        });
-                        cy.get(selector).trigger('mousemove', { clientX: cmiddle.x, clientY: cmiddle.y }); // Simulate drag to end position
-                        cy.get(selector).trigger('mouseup', { force: true }); // Simulate mouse release
-                    }
-                    cy.goToNextFrame(1);
-
-                    for (let i = 0; i < 1; i++) {
-
-                        // eslint-disable-next-line cypress/unsafe-to-chain-command
-                    }
+            // Init rectangle
+            let shape = shapeToImage(createRectangleShape2Points, imgScale, left, top);
+            cy.createRectangle(shape);
+            // cy.saveJob();
+            const stash = {};
+            function saveShape(num) {
+                cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
+                    cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
+                        stash[num] = { x: parseFloat(x), y: parseFloat(y) };
+                    });
                 });
-                cy.screenshot();
+            }
+            function compareShape(num) {
+                const { x, y } = stash[num];
+                cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
+                    expect(parseFloat(xVal)).to.be.closeTo(x, 3.0);
+                });
+                cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
+                    expect(parseFloat(yVal)).to.be.closeTo(y, 3.0);
+                });
+            }
+            // cy.task('log', JSON.stringify(shape, null, 2));
+            // cy.task('log', '\n====================\n');
+            cy.goToNextFrame(1).then(() => saveShape(1));
+            cy.goToNextFrame(2);
+            shape = Shape.drag(shape, '.cvat_canvas_shape', 500, 'x', imgScale, left, top);
+            cy.goToNextFrame(3).then(() => saveShape(3));
+            cy.goToNextFrame(4);
+            shape = Shape.drag(shape, '.cvat_canvas_shape', 500, 'y', imgScale, left, top);
+            // TODO: refactor shape drag
+            cy.then(() => {
+                cy.task('log', JSON.stringify(stash, null, 2));
+                cy.goToPreviousFrame(3);
+                cy.goToPreviousFrame(2);
+                cy.deleteFrame(); // saves job
+                cy.checkFrameNum(3);
+                compareShape(3);
+                cy.goToPreviousFrame(1);
+                compareShape(1);
             });
+
+            // cy.screenshot();
         });
-        // after(() => {
-        //     assert(0);
-        // });
+        after(() => {
+            assert(0);
+        });
     });
 });
