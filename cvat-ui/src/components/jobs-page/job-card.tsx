@@ -55,7 +55,7 @@ function JobCardComponent(props: Props): JSX.Element {
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
         tag = 'Ground truth';
-    } else if (job.type === JobType.CONSENSUS) {
+    } else if (job.type === JobType.ANNOTATION && job.consensusReplicas > 0) {
         tag = 'Consensus';
     }
 
