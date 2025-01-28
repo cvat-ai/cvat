@@ -571,7 +571,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         toClipboard(url);
     };
 
-    private onCopyFrameFileNameIconClick = (): void => {
+    private onCopyFilenameIconClick = (): void => {
         const { frameFilename } = this.props;
 
         toClipboard(frameFilename);
@@ -668,7 +668,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
                 onURLIconClick={this.onURLIconClick}
-                onCopyFrameFileNameIconClick={this.onCopyFrameFileNameIconClick}
+                onCopyFilenameIconClick={this.onCopyFilenameIconClick}
                 onDeleteFrame={this.onDeleteFrame}
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}

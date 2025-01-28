@@ -39,7 +39,7 @@ interface Props {
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
-    onCopyFrameFileNameIconClick(): void;
+    onCopyFilenameIconClick(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
@@ -80,7 +80,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onSliderChange,
         onInputChange,
         onURLIconClick,
-        onCopyFrameFileNameIconClick,
+        onCopyFilenameIconClick,
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
@@ -190,7 +190,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                     </Col>
                     <Col className='cvat-player-frame-actions' offset={1}>
                         <CVATTooltip title='Copy frame filename'>
-                            <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFrameFileNameIconClick} />
+                            <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFilenameIconClick} />
                         </CVATTooltip>
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
