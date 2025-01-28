@@ -2270,7 +2270,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     consensus_replicas = serializers.IntegerField(
-        required=False, allow_null=True, default=0, min_value=0,
+        required=False, default=0, min_value=0,
         help_text=textwrap.dedent("""\
             The number of consensus replica jobs for each annotation job.
             Configured at task creation

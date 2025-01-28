@@ -11061,7 +11061,6 @@ components:
         consensus_replicas:
           type: integer
           minimum: 0
-          nullable: true
           default: 0
           description: |
             The number of consensus replica jobs for each annotation job.
