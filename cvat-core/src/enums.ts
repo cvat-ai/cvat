@@ -37,7 +37,7 @@ export enum JobState {
 export enum JobType {
     ANNOTATION = 'annotation',
     GROUND_TRUTH = 'ground_truth',
-    CONSENSUS = 'consensus',
+    CONSENSUS = 'consensus_replica',
 }
 
 export enum DimensionType {

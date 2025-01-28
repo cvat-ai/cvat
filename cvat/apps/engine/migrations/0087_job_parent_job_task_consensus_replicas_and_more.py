@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("annotation", "ANNOTATION"),
                     ("ground_truth", "GROUND_TRUTH"),
-                    ("consensus", "CONSENSUS"),
+                    ("consensus_replica", "CONSENSUS_REPLICA"),
                 ],
                 default=cvat.apps.engine.models.JobType["ANNOTATION"],
                 max_length=32,

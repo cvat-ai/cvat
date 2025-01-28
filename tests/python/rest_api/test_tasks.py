@@ -2715,7 +2715,7 @@ class TestPostTaskData:
             consensus_job_metas = {
                 job.id: json.loads(api_client.jobs_api.retrieve_data_meta(job.id)[1].data)
                 for job in jobs
-                if job.type == "consensus"
+                if job.type == "consensus_replica"
             }
 
         assert task.segment_size == segment_size
@@ -3573,7 +3573,7 @@ class TestTaskData(_TestTasksBase):
             # Only annotation jobs can have replicas
             annotation_jobs = [j for j in jobs if j.type == "annotation"]
             assert (
-                len([j for j in jobs if j.type == "consensus"])
+                len([j for j in jobs if j.type == "consensus_replica"])
                 == len(annotation_jobs) * task_spec.consensus_replicas
             )
 
@@ -3582,7 +3582,7 @@ class TestTaskData(_TestTasksBase):
                     api_client.jobs_api.retrieve_data_meta(job.id)[1].data
                 )
 
-                replicas = [j for j in jobs if j.type == "consensus" if j.parent_job_id == job.id]
+                replicas = [j for j in jobs if j.type == "consensus_replica" if j.parent_job_id == job.id]
                 assert len(replicas) == task_spec.consensus_replicas
 
                 for replica_job in replicas:
@@ -4915,7 +4915,7 @@ class TestWorkWithConsensusTasks:
         self, admin_user, jobs, annotations, task_id: int
     ):
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
-        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus"]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus_replica"]
 
         # Ensure there are annotations in replicas
         assert any(
@@ -4927,7 +4927,7 @@ class TestWorkWithConsensusTasks:
 
         with make_api_client(admin_user) as api_client:
             for annotation_job in task_jobs:
-                if annotation_job["type"] != "consensus":
+                if annotation_job["type"] != "consensus_replica":
                     api_client.jobs_api.destroy_annotations(annotation_job["id"])
 
             updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)

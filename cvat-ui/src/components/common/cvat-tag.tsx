@@ -7,7 +7,7 @@ import Tag from 'antd/lib/tag';
 
 export enum TagType {
     GROUND_TRUTH = 'ground_truth',
-    CONSENSUS = 'consensus',
+    CONSENSUS = 'consensus_replica',
 }
 
 interface TagProps {
