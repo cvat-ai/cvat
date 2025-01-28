@@ -105,7 +105,7 @@ export const config: Partial<Config> = {
                 listValues: [
                     { value: 'annotation', title: 'Annotation' },
                     { value: 'ground_truth', title: 'Ground truth' },
-                    { value: 'consensus_replica', title: 'Consensus' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
                 ],
             },
         },
