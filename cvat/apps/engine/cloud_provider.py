@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2023 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,7 +12,8 @@ from collections.abc import Iterator
 from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
-from typing import Any, Callable, Optional, TypeVar
+from pathlib import Path
+from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -166,17 +167,24 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
-    def download_fileobj(self, key: str) -> NamedBytesIO:
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         pass
 
-    def download_file(self, key, path):
-        file_obj = self.download_fileobj(key)
-        if isinstance(file_obj, BytesIO):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+    def download_fileobj(self, key: str) -> NamedBytesIO:
+        buf = NamedBytesIO()
+        self._download_fileobj_to_stream(key=key, stream=buf)
+        buf.seek(0)
+        buf.filename = key
+        return buf
+
+    def download_file(self, key: str, path: str) -> None:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        try:
             with open(path, 'wb') as f:
-                f.write(file_obj.getvalue())
-        else:
-            raise NotImplementedError("Unsupported type {} was found".format(type(file_obj)))
+                self._download_fileobj_to_stream(key, stream=f)
+        except Exception:
+            Path(path).unlink()
+            raise
 
     def download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int = 0) -> bytes:
         """Method downloads the required bytes range of the file.
@@ -556,16 +564,12 @@ class AWS_S3(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key: str) -> NamedBytesIO:
-        buf = NamedBytesIO()
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         self.bucket.download_fileobj(
             Key=key,
-            Fileobj=buf,
+            Fileobj=stream,
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
-        buf.seek(0)
-        buf.filename = key
-        return buf
 
     @validate_file_status
     @validate_bucket_status
@@ -761,17 +765,14 @@ class AzureBlobContainer(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key: str) -> NamedBytesIO:
-        buf = NamedBytesIO()
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         storage_stream_downloader = self._client.download_blob(
             blob=key,
             offset=None,
             length=None,
+            max_concurrency=self.MAX_CONCURRENCY,
         )
-        storage_stream_downloader.download_to_stream(buf, max_concurrency=self.MAX_CONCURRENCY)
-        buf.seek(0)
-        buf.filename = key
-        return buf
+        storage_stream_downloader.readinto(stream)
 
     @validate_file_status
     @validate_bucket_status
@@ -875,13 +876,9 @@ class GoogleCloudStorage(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key: str) -> NamedBytesIO:
-        buf = NamedBytesIO()
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         blob = self.bucket.blob(key)
-        self._client.download_blob_to_file(blob, buf)
-        buf.seek(0)
-        buf.filename = key
-        return buf
+        self._client.download_blob_to_file(blob, stream)
 
     @validate_file_status
     @validate_bucket_status
@@ -1024,9 +1021,7 @@ def import_resource_from_cloud_storage(
     **kwargs,
 ) -> Any:
     storage = db_storage_to_storage_instance(db_storage)
-
-    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
-        f.write(data.getbuffer())
+    storage.download_file(key, filename)
 
     return cleanup_func(import_func, filename, *args, **kwargs)
 

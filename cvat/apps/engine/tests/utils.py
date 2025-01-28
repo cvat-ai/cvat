@@ -1,13 +1,15 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import itertools
 import logging
 import os
+import shutil
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Callable, TypeVar
 
 import av
@@ -105,6 +107,14 @@ class ApiTestBase(APITestCase):
 
         # Clear any remaining RQ jobs produced by the tests executed
         self._clear_rq_jobs()
+
+        # clear cache files created after previous exports
+        export_cache_dir = Path(settings.EXPORT_CACHE_ROOT)
+        for child in export_cache_dir.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                os.remove(child)
 
     def _clear_rq_jobs(self):
         clear_rq_jobs()

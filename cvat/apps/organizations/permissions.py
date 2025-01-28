@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -50,7 +50,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
             membership = Membership.objects.filter(organization=self.obj, user=self.user_id).first()
             return {
                 "id": self.obj.id,
-                "owner": {"id": getattr(self.obj.owner, "id", None)},
+                "owner": {"id": self.obj.owner_id},
                 "user": {"role": membership.role if membership else None},
             }
         elif self.scope.startswith(__class__.Scopes.CREATE.value):
@@ -108,10 +108,10 @@ class InvitationPermission(OpenPolicyAgentPermission):
         data = None
         if self.obj:
             data = {
-                "owner": {"id": getattr(self.obj.owner, "id", None)},
-                "invitee": {"id": getattr(self.obj.membership.user, "id", None)},
+                "owner": {"id": self.obj.owner_id},
+                "invitee": {"id": self.obj.membership.user_id},
                 "role": self.obj.membership.role,
-                "organization": {"id": self.obj.membership.organization.id},
+                "organization": {"id": self.obj.membership.organization_id},
             }
         elif self.scope.startswith(__class__.Scopes.CREATE.value):
             data = {
@@ -181,8 +181,8 @@ class MembershipPermission(OpenPolicyAgentPermission):
             return {
                 "role": self.obj.role,
                 "is_active": self.obj.is_active,
-                "user": {"id": self.obj.user.id},
-                "organization": {"id": self.obj.organization.id},
+                "user": {"id": self.obj.user_id},
+                "organization": {"id": self.obj.organization_id},
             }
         else:
             return None

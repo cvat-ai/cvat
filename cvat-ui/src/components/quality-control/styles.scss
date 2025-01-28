@@ -1,11 +1,11 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 @import 'base';
 
 .cvat-quality-scrollbar {
-    overflow-y: auto;
+    overflow: hidden auto;
 
     &::-webkit-scrollbar {
         background-color: #fff;
@@ -37,8 +37,11 @@
 }
 
 .cvat-quality-settings-form {
+    @extend .cvat-quality-scrollbar;
+
     display: block;
     position: relative;
+    height: calc(100vh - $grid-unit-size * 30);
 
     .cvat-quality-settings-save-btn {
         position: sticky;
@@ -67,7 +70,6 @@ $excluded-background: #d9d9d973;
 .cvat-frame-allocation-list {
     width: 100%;
     height: auto;
-    margin-top: $grid-unit-size * 2;
     overflow: hidden;
 
     td.ant-table-column-sort {
@@ -75,7 +77,7 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-frame-allocation-actions {
+.cvat-quality-table-header {
     span[role='img'] {
         padding: 0 $grid-unit-size;
     }
@@ -85,7 +87,7 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-frame-allocation-header {
+.cvat-quality-table-header-title {
     margin-bottom: 0;
     font-size: 20px;
     font-weight: bold;
@@ -98,9 +100,16 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-open-frame-button {
+    text-align: left;
+
     span {
-        text-overflow: ellipsis;
+        display: block;
+        word-wrap: break-word;
+        word-break: break-word;
+        white-space: nowrap;
         overflow: hidden;
+        text-overflow: ellipsis;
+        direction: rtl;
     }
 }
 
@@ -109,10 +118,6 @@ $excluded-background: #d9d9d973;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-}
-
-.cvat-quality-control-overview-tab {
-    min-height: 50vh;
 }
 
 .cvat-annotations-quality-allocation-table-summary {
@@ -131,14 +136,58 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-frame-allocation-table .ant-table-container {
-    max-height: calc(100vh - $grid-unit-size * 61);
+    max-height: calc(100vh - $grid-unit-size * 60);
     overflow-y: auto;
+
+    .ant-table-tbody .ant-table-cell {
+        padding: $grid-unit-size * 0.5 $grid-unit-size !important;
+    }
 }
 
 .cvat-task-control-tabs {
     .ant-tabs-tabpane {
-        @extend .cvat-quality-scrollbar;
-
-        height: calc(100vh - $grid-unit-size * 33);
+        height: calc(100vh - $grid-unit-size * 30);
     }
+
+    .ant-table-pagination.ant-pagination {
+        margin-bottom: 0;
+    }
+
+    .ant-tag {
+        margin-inline-end: 0;
+    }
+}
+
+.cvat-quality-control-management-tab-summary {
+    margin-left: - $grid-unit-size;
+    margin-right: - $grid-unit-size;
+
+    > .ant-col {
+        padding: 0 $grid-unit-size;
+    }
+}
+
+.cvat-quality-control-management-tab {
+    height: 100%;
+}
+
+.cvat-quality-control-validation-mode-hint {
+    padding: $grid-unit-size 0;
+}
+
+.cvat-quality-page-header {
+    margin-top: $grid-unit-size * 2;
+}
+
+.cvat-quality-table-search-wrapper {
+    padding-bottom: $grid-unit-size * 0.5;
+
+    .ant-input, .ant-input-search-button {
+        height: $grid-unit-size * 3.5;
+    }
+}
+
+.cvat-quality-download-report-button {
+    padding-left: $grid-unit-size * 2;
+    padding-right: 0;
 }

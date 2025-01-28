@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -379,7 +379,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private runAnnotationAction = (): void => {
         const { objectState } = this.props;
-        openAnnotationsActionModal(objectState);
+        openAnnotationsActionModal({ defaultObjectState: objectState });
     };
 
     private commit(): void {

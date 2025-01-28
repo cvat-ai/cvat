@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import zipfile
 
 from datumaro.components.annotation import AnnotationType, Label, LabelCategories
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,

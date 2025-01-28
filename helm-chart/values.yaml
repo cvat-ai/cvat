@@ -139,7 +139,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: v2.25.0
+    tag: v2.26.0
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -162,7 +162,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.25.0
+    tag: v2.26.0
     imagePullPolicy: Always
     labels: {}
     #  test: test
@@ -360,6 +360,8 @@ redis:
 
 nuclio:
   enabled: false
+  dashboard:
+    containerBuilderKind: kaniko
 # See https://github.com/nuclio/nuclio/blob/master/hack/k8s/helm/nuclio/values.yaml for more info
 #  registry:
 #    loginUrl: someurl

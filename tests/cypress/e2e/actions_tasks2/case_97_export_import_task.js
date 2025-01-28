@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,7 +38,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
