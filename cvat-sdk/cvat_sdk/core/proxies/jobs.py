@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -53,7 +53,7 @@ class Job(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Upload annotations for a job in the specified format (e.g. 'YOLO ZIP 1.0').
+        Upload annotations for a job in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)

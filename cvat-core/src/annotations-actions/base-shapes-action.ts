@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -129,7 +129,7 @@ export async function run(
             }
         }
 
-        await showMessageWithPause('Commiting handled objects', 100, 1500);
+        await showMessageWithPause('Committing handled objects', 100, 1500);
         if (cancelled()) {
             return;
         }
@@ -142,7 +142,6 @@ export async function run(
 
         event.close();
     } finally {
-        throttledOnProgress('Finalizing', 100);
         await action.destroy();
     }
 }

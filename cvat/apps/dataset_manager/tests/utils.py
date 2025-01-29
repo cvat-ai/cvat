@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ import os
 import tempfile
 import unittest
 from types import TracebackType
-from typing import Optional, Type
+from typing import Optional
 
 from datumaro.util.os_util import rmfile, rmtree
 
@@ -23,7 +23,7 @@ class FileRemover:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:

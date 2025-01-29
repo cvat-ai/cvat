@@ -1,12 +1,13 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import ExitStack
-from datetime import timedelta
+
+import copy
 import io
-from itertools import product
+import json
+import logging
 import os
 import random
 import shutil
@@ -15,39 +16,57 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 from collections import defaultdict
+from contextlib import ExitStack
+from datetime import timedelta
 from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
-from unittest import mock
+from itertools import product
 from time import sleep
-import logging
-import copy
-import json
+from unittest import mock
 
 import av
 import django_rq
 import numpy as np
-from pdf2image import convert_from_bytes
-from pyunpack import Archive
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponse
+from pdf2image import convert_from_bytes
 from PIL import Image
 from pycocotools import coco as coco_loader
+from pyunpack import Archive
 from rest_framework import status
 from rest_framework.test import APIClient
+from rq.job import Job as RQJob
+from rq.queue import Queue as RQQueue
 
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
-    Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
-    StorageChoice, DimensionType, SortingMethod)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
-from cvat.apps.engine.tests.utils import get_paginated_collection
+from cvat.apps.engine.models import (
+    AttributeSpec,
+    AttributeType,
+    Data,
+    DimensionType,
+    Job,
+    Label,
+    Project,
+    Segment,
+    SortingMethod,
+    StageChoice,
+    StatusChoice,
+    StorageChoice,
+    StorageMethodChoice,
+    Task,
+)
+from cvat.apps.engine.tests.utils import (
+    ApiTestBase,
+    ForceLogin,
+    generate_image_file,
+    generate_video_file,
+    get_paginated_collection,
+)
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-
-from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin,
-    generate_image_file, generate_video_file)
 
 #suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
@@ -3089,30 +3108,47 @@ class TaskImportExportAPITestCase(ApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
+        from cvat.apps.dataset_manager.cron import (
+            cleanup_export_cache_directory,
+            clear_export_cache,
+        )
         self._create_tasks()
         task_id = self.tasks[0]["id"]
         user = self.admin
 
-        with mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(hours=10)):
+        TASK_CACHE_TTL = timedelta(hours=1)
+        with (
+            mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=TASK_CACHE_TTL),
+            mock.patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': TASK_CACHE_TTL}),
+            mock.patch(
+                "cvat.apps.dataset_manager.cron.clear_export_cache",
+                side_effect=clear_export_cache,
+            ) as mock_clear_export_cache,
+        ):
+            cleanup_export_cache_directory()
+            mock_clear_export_cache.assert_not_called()
+
             response = self._run_api_v2_tasks_id_export(task_id, user)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             response = self._run_api_v2_tasks_id_export(task_id, user)
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
-        scheduled_jobs = list(scheduler.get_jobs())
-        cleanup_job = next(
-            j for j in scheduled_jobs if j.func_name.endswith('.engine.backup._clear_export_cache')
-        )
+            queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+            rq_job_ids = queue.finished_job_registry.get_job_ids()
+            self.assertEqual(len(rq_job_ids), 1)
+            job: RQJob | None = queue.fetch_job(rq_job_ids[0])
+            self.assertFalse(job is None)
+            file_path = job.return_value()
+            self.assertTrue(os.path.isfile(file_path))
 
-        export_path = cleanup_job.kwargs['file_path']
-        self.assertTrue(os.path.isfile(export_path))
-
-        from cvat.apps.engine.backup import _clear_export_cache
-        _clear_export_cache(**cleanup_job.kwargs)
-
-        self.assertFalse(os.path.isfile(export_path))
+            with (
+                mock.patch('cvat.apps.dataset_manager.views.TASK_CACHE_TTL', new=timedelta(seconds=0)),
+                mock.patch('cvat.apps.dataset_manager.views.TTL_CONSTS', new={'task': timedelta(seconds=0)}),
+            ):
+                cleanup_export_cache_directory()
+                mock_clear_export_cache.assert_called_once()
+            self.assertFalse(os.path.exists(file_path))
 
 
 def generate_random_image_file(filename):
@@ -6127,13 +6163,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             elif annotation_format == "YOLO 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Detection 1.0":
+            elif annotation_format == "Ultralytics YOLO Detection 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Oriented Bounding Boxes 1.0":
+            elif annotation_format == "Ultralytics YOLO Oriented Bounding Boxes 1.0":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
-            elif annotation_format == "YOLOv8 Segmentation 1.0":
+            elif annotation_format == "Ultralytics YOLO Segmentation 1.0":
                 annotations["shapes"] = polygon_shapes_wo_attrs
 
             elif annotation_format == "COCO 1.0":
@@ -6382,6 +6418,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 formats['CVAT for video 1.1'] = 'CVAT 1.1'
             if 'CVAT for images 1.1' in export_formats:
                 formats['CVAT for images 1.1'] = 'CVAT 1.1'
+        if 'Ultralytics YOLO Detection 1.0' in import_formats:
+            if 'Ultralytics YOLO Detection Track 1.0' in export_formats:
+                formats['Ultralytics YOLO Detection Track 1.0'] = 'Ultralytics YOLO Detection 1.0'
         if set(import_formats) ^ set(export_formats):
             # NOTE: this may not be an error, so we should not fail
             print("The following import formats have no pair:",
@@ -6493,7 +6532,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     self.assertEqual(meta["task"]["name"], task["name"])
         elif format_name == "PASCAL VOC 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif format_name in ["YOLO 1.1", "YOLOv8 Detection 1.0", "YOLOv8 Segmentation 1.0", "YOLOv8 Oriented Bounding Boxes 1.0", "YOLOv8 Pose 1.0"]:
+        elif format_name in [
+            "YOLO 1.1", "Ultralytics YOLO Detection 1.0", "Ultralytics YOLO Segmentation 1.0",
+            "Ultralytics YOLO Oriented Bounding Boxes 1.0", "Ultralytics YOLO Pose 1.0",
+        ]:
             self.assertTrue(zipfile.is_zipfile(content))
         elif format_name in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
             self.assertTrue(zipfile.is_zipfile(content))

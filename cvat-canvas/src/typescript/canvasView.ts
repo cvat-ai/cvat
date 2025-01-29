@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1129,9 +1129,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
             });
 
+            let startCenter = null;
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
+                const { cx, cy } = shape.bbox();
+                startCenter = { x: cx, y: cy };
                 start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
@@ -1159,7 +1162,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
                     setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                 }
-            }).on('dragend', (e: CustomEvent): void => {
+            }).on('dragend', (): void => {
                 if (aborted) {
                     this.resetViewPosition(state.clientID);
                     return;
@@ -1167,10 +1170,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 onDragEnd();
                 this.draggableShape = null;
-                const p1 = e.detail.handler.startPoints.point;
-                const p2 = e.detail.p;
-                const dx2 = (p1.x - p2.x) ** 2;
-                const dy2 = (p1.y - p2.y) ** 2;
+                const { cx, cy } = shape.bbox();
+
+                const dx2 = (startCenter.x - cx) ** 2;
+                const dy2 = (startCenter.y - cy) ** 2;
                 if (Math.sqrt(dx2 + dy2) > 0) {
                     if (state.shapeType === 'mask') {
                         const { points } = state;
@@ -1651,12 +1654,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Setup event handlers
         this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
             this.controller.fit();
-            this.canvas.dispatchEvent(
-                new CustomEvent('canvas.fit', {
-                    bubbles: false,
-                    cancelable: true,
-                }),
-            );
             e.preventDefault();
         });
 
@@ -1896,6 +1893,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }),
             );
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
+            if (reason === UpdateReasons.IMAGE_FITTED) {
+                this.canvas.dispatchEvent(
+                    new CustomEvent('canvas.fit', {
+                        bubbles: false,
+                        cancelable: true,
+                    }),
+                );
+            }
+
             this.moveCanvas();
             this.transformCanvas();
         } else if (reason === UpdateReasons.IMAGE_ROTATED) {

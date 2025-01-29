@@ -1,14 +1,17 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import logging
-import sys
 import os.path as osp
+import sys
 from contextlib import contextmanager
-from cvat.apps.engine.utils import directory_tree
+
 from django.conf import settings
+
+from cvat.apps.engine.utils import directory_tree
+
 
 class _LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg: str, kwargs):

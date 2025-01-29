@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,6 +21,8 @@ class TorchvisionFunction:
     def spec(self) -> cvataa.DetectionFunctionSpec:
         return cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec(cat, i) for i, cat in enumerate(self._weights.meta["categories"])
+                cvataa.label_spec(cat, i)
+                for i, cat in enumerate(self._weights.meta["categories"])
+                if cat != "N/A"
             ]
         )

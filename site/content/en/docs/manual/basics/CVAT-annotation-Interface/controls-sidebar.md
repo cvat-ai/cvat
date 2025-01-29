@@ -10,7 +10,7 @@ description: 'Offers tools for navigating within the image, annotation tools, an
 **Navigation block** - contains tools for moving and rotating images.
 |Icon |Description |
 |-- |-- |
-|![](/images/image148.jpg)|`Cursor` (`Esc`)- a basic annotation pedacting tool. |
+|![](/images/image148.jpg)|`Cursor` (`Esc`)- a basic annotation editing tool. |
 |![](/images/image149.jpg)|`Move the image`- a tool for moving around the image without<br/> the possibility of editing.|
 |![](/images/image102.jpg)|`Rotate`- two buttons to rotate the current frame<br/> a clockwise (`Ctrl+R`) and anticlockwise (`Ctrl+Shift+R`).<br/> You can enable `Rotate all images` in the settings to rotate all the images in the job|
 

@@ -42,7 +42,6 @@
     "eslint-config-airbnb-typescript": "^17.1.0",
     "eslint-plugin-cypress": "^2.11.2",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jest": "^26.5.3",
     "eslint-plugin-jsx-a11y": "^6.3.1",
     "eslint-plugin-no-unsanitized": "^3.0.2",
     "eslint-plugin-react": "^7.33.2",
@@ -104,9 +103,6 @@
     "build:cvat-canvas3d": "yarn workspace cvat-canvas3d run build",
     "build:cvat-core": "yarn workspace cvat-core run build",
     "build:cvat-data": "yarn workspace cvat-data run build",
-    "server:cvat-canvas": "yarn workspace cvat-canvas run server",
-    "server:cvat-canvas3d": "yarn workspace cvat-canvas3d run server",
-    "server:cvat-data": "yarn workspace cvat-data run server",
     "start:cvat-ui": "yarn workspace cvat-ui run start"
   },
   "repository": {

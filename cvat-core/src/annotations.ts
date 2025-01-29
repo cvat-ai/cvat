@@ -1,18 +1,18 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
-import AnnotationsCollection, { FrameMeta } from './annotations-collection';
+import AnnotationsCollection from './annotations-collection';
 import AnnotationsSaver from './annotations-saver';
 import AnnotationsHistory from './annotations-history';
 import { checkObjectType } from './common';
 import Project from './project';
 import { Task, Job } from './session';
 import { ArgumentError } from './exceptions';
-import { getDeletedFrames } from './frames';
+import { getFramesMeta, getJobFramesMetaSync } from './frames';
 import { JobType } from './enums';
 
 const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
@@ -88,22 +88,29 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         const serializedAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
 
         // Get meta information about frames
-        const startFrame = session instanceof Job ? session.startFrame : 0;
-        const stopFrame = session instanceof Job ? session.stopFrame : session.size - 1;
-        const frameMeta: Partial<FrameMeta> = {};
-        for (let i = startFrame; i <= stopFrame; i++) {
-            frameMeta[i] = await session.frames.get(i);
-        }
-        frameMeta.deleted_frames = await getDeletedFrames(sessionType, session.id);
+        const frameMeta = await getFramesMeta(sessionType, session.id);
+        const frameNumbers = frameMeta.getSegmentFrameNumbers(session instanceof Job ? session.startFrame : 0);
 
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
-            labels: session.labels,
-            history,
-            stopFrame,
-            frameMeta: frameMeta as FrameMeta,
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
+            stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
+            labels: session.labels,
             dimension: session.dimension,
+            framesInfo: {
+                isFrameDeleted: session instanceof Job ?
+                    (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :
+                    (frame: number) => !!frameMeta.deletedFrames[frame],
+                ...frameMeta.frames.reduce((acc, frameInfo, idx) => {
+                    // keep only static information
+                    acc[frameNumbers[idx]] = {
+                        width: frameInfo.width,
+                        height: frameInfo.height,
+                    };
+                    return acc;
+                }, {}),
+            },
+            history,
         });
 
         // eslint-disable-next-line no-unsanitized/method
@@ -127,7 +134,12 @@ export function clearCache(session): void {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters): Promise<ReturnType<AnnotationsCollection['get']>> {
+export async function getAnnotations(
+    session: Job | Task,
+    frame: number,
+    allTracks: boolean,
+    filters: object[],
+): Promise<ReturnType<AnnotationsCollection['get']>> {
     try {
         return getCollection(session).get(frame, allTracks, filters);
     } catch (error) {
@@ -135,7 +147,6 @@ export async function getAnnotations(session, frame, allTracks, filters): Promis
             await getAnnotationsFromServer(session);
             return getCollection(session).get(frame, allTracks, filters);
         }
-
         throw error;
     }
 }

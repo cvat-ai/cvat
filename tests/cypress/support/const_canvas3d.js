@@ -13,7 +13,7 @@ export const advancedConfigurationParams = false;
 export const multiAttrParams = false;
 
 it('Prepare to testing', () => {
-    cy.visit('/');
+    cy.visit('/auth/login');
     cy.login();
     cy.get('.cvat-tasks-page').should('exist');
     const listItems = [];

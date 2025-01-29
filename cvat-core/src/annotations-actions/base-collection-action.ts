@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -111,7 +111,6 @@ export async function run(
         await instance.annotations.commit(created, deleted, frame);
         event.close();
     } finally {
-        wrappedOnProgress('Finalizing', 100);
         await action.destroy();
     }
 }

@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -69,15 +69,6 @@ class AnalyticsReportUpdateManager:
             return f"{self._QUEUE_JOB_PREFIX_PROJECT}{obj.id}"
         elif isinstance(obj, Job):
             return f"{self._QUEUE_JOB_PREFIX_JOB}{obj.id}"
-
-    @classmethod
-    def _get_last_report_time(cls, obj):
-        try:
-            report = obj.analytics_report
-            if report:
-                return report.created_date
-        except ObjectDoesNotExist:
-            return None
 
     def schedule_analytics_check_job(self, *, job=None, task=None, project=None, user_id):
         rq_id = self._make_queue_job_id_base(job or task or project)

@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -235,7 +235,7 @@ class QualitySettings(models.Model):
 
     compare_attributes = models.BooleanField()
 
-    match_empty_frames = models.BooleanField(default=False)
+    empty_is_annotated = models.BooleanField(default=False)
 
     target_metric = models.CharField(
         max_length=32,

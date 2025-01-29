@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -53,6 +53,7 @@ def RESOURCES(scope):
             {"id": random.randrange(300, 400), "membership": {"role": role}} for role in ORG_ROLES
         ]
 
+
 def eval_rule(scope, context, ownership, privilege, membership, data):
     if privilege == "admin":
         return True
@@ -81,13 +82,15 @@ def get_data(scope, context, ownership, privilege, membership, resource):
         "scope": scope,
         "auth": {
             "user": {"id": random.randrange(0, 100), "privilege": privilege},
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            }
-            if context == "organization"
-            else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": resource,
     }
