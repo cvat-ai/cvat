@@ -188,7 +188,7 @@ The following helpers are available for use in `detect`:
 | `keypoint`  | `SubLabeledShapeRequest` | `frame=0`, `type="points"`    |
 
 For `mask`, it is recommended to create the points list using
-the `cvat.masks.encode_mask` function, which will convert a bitmap into a
+the `cvat_sdk.masks.encode_mask` function, which will convert a bitmap into a
 list in the format that CVAT expects. For example:
 
 ```python
