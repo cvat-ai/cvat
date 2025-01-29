@@ -34,17 +34,16 @@ export const multiAttrParams = {
     type: 'Text',
 };
 
-it('Prepare for testing', () => {
+it('Prepare to testing', () => {
     cy.visit('/auth/login');
     cy.login();
     cy.get('.cvat-tasks-page').should('exist');
     const listItems = [];
-    cy.document().find('.cvat-item-task-name').each(($el) => {
-        cy.wrap($el).invoke('text').then((text) => {
-            listItems.push(text);
-        });
-    }); // NOTE: chaining off of .each is not recommended by docs
-    cy.then(() => {
+    cy.document().then((doc) => {
+        const collection = Array.from(doc.querySelectorAll('.cvat-item-task-name'));
+        for (let i = 0; i < collection.length; i++) {
+            listItems.push(collection[i].innerText);
+        }
         if (listItems.indexOf(taskName) === -1) {
             cy.task('log', "A task doesn't exist. Creating.");
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
