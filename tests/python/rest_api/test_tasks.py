@@ -2982,12 +2982,11 @@ class _TestTasksBase:
             request, random_seed=random_seed
         )
 
-    @pytest.mark.with_external_services
     @fixture(scope="class")
+    @parametrize("cloud_storage_id", [pytest.param(2, marks=pytest.mark.with_external_services)])
     def fxt_cloud_images_task_with_honeypots_and_changed_real_frames(
-        self, request: pytest.FixtureRequest, cloud_storages
+        self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        cloud_storage_id = 2
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
 
