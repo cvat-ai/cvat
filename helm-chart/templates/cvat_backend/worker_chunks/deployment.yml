@@ -64,6 +64,8 @@ spec:
           {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
           {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           volumeMounts:
+          - mountPath: /home/django/data/cache/events
+            name: cvat-backend-per-service-cache
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -86,6 +88,8 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
+        - name: cvat-backend-per-service-cache
+          emptyDir: {}
         {{- end }}
         {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
