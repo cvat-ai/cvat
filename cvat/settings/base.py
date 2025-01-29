@@ -432,7 +432,7 @@ os.makedirs(CACHE_ROOT, exist_ok=True)
 EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
 os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
 
-EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
+EVENTS_LOCAL_DB_ROOT = os.path.join(BASE_DIR, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
 EVENTS_LOCAL_DB_FILE = os.path.join(
     EVENTS_LOCAL_DB_ROOT,
