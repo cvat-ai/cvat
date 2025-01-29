@@ -80,8 +80,6 @@ spec:
             {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           volumeMounts:
-          - mountPath: /home/django/data/cache/events
-            name: cvat-backend-per-service-cache
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -108,8 +106,6 @@ spec:
           {{- end }}
           volumeMounts:
           {{- if .Values.cvat.backend.defaultStorage.enabled }}
-          - mountPath: /home/django/data/cache/events
-            name: cvat-backend-per-service-cache
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -140,8 +136,6 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
-        - name: cvat-backend-per-service-cache
-          emptyDir: {}
         {{- end }}
         {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
