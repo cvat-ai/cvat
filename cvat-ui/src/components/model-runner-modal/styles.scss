@@ -105,8 +105,9 @@
 }
 
 .cvat-detector-runner-clean-previous-annotations-wrapper,
-.cvat-detector-runner-convert-masks-to-polygons-wrapper {
-    span {
+.cvat-detector-runner-convert-masks-to-polygons-wrapper,
+.cvat-detector-runner-threshold-wrapper {
+    .ant-typography {
         margin-left: $grid-unit-size;
     }
 }

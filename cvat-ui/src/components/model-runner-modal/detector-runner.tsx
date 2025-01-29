@@ -72,6 +72,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [cleanup, setCleanup] = useState<boolean>(false);
     const [mapping, setMapping] = useState<FullMapping>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
+    const [detectorThreshold, setDetectorThreshold] = useState<number>(0.9);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
 
@@ -179,6 +180,30 @@ function DetectorRunner(props: Props): JSX.Element {
                     <Text>Clean previous annotations</Text>
                 </div>
             )}
+            {isDetector && (
+                <div className='cvat-detector-runner-threshold-wrapper'>
+                    <Row align='middle' justify='start'>
+                        <Col>
+                            <CVATTooltip title='Minimum confidence threshold for detections'>
+                                <InputNumber
+                                    min={0.01}
+                                    step={0.01}
+                                    max={1}
+                                    value={detectorThreshold}
+                                    onChange={(value: number | null) => {
+                                        if (value !== null) {
+                                            setDetectorThreshold(clamp(+value, 0.01, 1));
+                                        }
+                                    }}
+                                />
+                            </CVATTooltip>
+                        </Col>
+                        <Col>
+                            <Text>Threshold</Text>
+                        </Col>
+                    </Row>
+                </div>
+            )}
             {isReId ? (
                 <div>
                     <Row align='middle' justify='start'>
@@ -236,6 +261,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     mapping: serverMapping,
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
+                                    threshold: detectorThreshold,
                                 });
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
