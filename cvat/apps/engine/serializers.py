@@ -1432,6 +1432,11 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
+        # FIXME: this operation is not atomic and it is not protected from race conditions
+        # (basically, as many others). Currently, it's up to the user to ensure no parallel
+        # calls happen. It also affects any image access, including exports with images, backups,
+        # automatic annotation, chunk downloading, etc.
+
         db_validation_layout: models.ValidationLayout | None = (
             getattr(instance.data, 'validation_layout', None)
         )
