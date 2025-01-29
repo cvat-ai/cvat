@@ -65,5 +65,4 @@ extend-exclude = """
 )
 | ^/cvat/settings/
 | ^/serverless/
-| ^/utils/dataset_manifest/
 """

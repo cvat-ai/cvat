@@ -9,5 +9,6 @@ from typing import Protocol
 class Named(Protocol):
     filename: str
 
+
 class NamedBytesIO(BytesIO, Named):
     pass
