@@ -2938,11 +2938,11 @@ class _TestTasksBase:
         )
 
     def _images_task_with_honeypots_and_changed_real_frames_base(
-        self, request: pytest.FixtureRequest, *, random_seed: int, **kwargs
+        self, request: pytest.FixtureRequest, **kwargs
     ):
         with closing(
             self._image_task_with_honeypots_and_segments_base(
-                request, start_frame=2, step=3, random_seed=random_seed, **kwargs
+                request, start_frame=2, step=3, **kwargs
             )
         ) as gen_iter:
             task_spec, task_id = next(gen_iter)
@@ -2983,7 +2983,10 @@ class _TestTasksBase:
         )
 
     @fixture(scope="class")
-    @parametrize("cloud_storage_id", [pytest.param(2, marks=pytest.mark.with_external_services)])
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(2, marks=[pytest.mark.with_external_services, pytest.mark.timeout(60)])],
+    )
     def fxt_cloud_images_task_with_honeypots_and_changed_real_frames(
         self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
@@ -2993,7 +2996,7 @@ class _TestTasksBase:
         image_files = generate_image_files(47)
 
         for image in image_files:
-            image.name = f"test_{request.node.name}_{request.fixturename}/{image.name}"
+            image.name = f"test/{image.name}"
             image.seek(0)
 
             s3_client.create_file(data=image, filename=image.name)
@@ -3006,7 +3009,6 @@ class _TestTasksBase:
 
         yield from self._images_task_with_honeypots_and_changed_real_frames_base(
             request,
-            random_seed=12345,
             image_files=image_files,
             server_files=server_files,
             cloud_storage_id=cloud_storage_id,
