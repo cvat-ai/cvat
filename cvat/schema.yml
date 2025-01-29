@@ -2809,16 +2809,16 @@ paths:
         schema:
           type: string
           enum:
-          - bbox
+          - any
+          - cuboid
           - ellipse
+          - mask
+          - points
           - polygon
           - polyline
-          - points
-          - cuboid
-          - cuboid_3d
+          - rectangle
           - skeleton
           - tag
-          - any
       tags:
       - labels
       security:
@@ -8487,8 +8487,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -8531,6 +8544,30 @@ components:
             a parent label
       required:
       - name
+    LabelType:
+      enum:
+      - any
+      - cuboid
+      - ellipse
+      - mask
+      - points
+      - polygon
+      - polyline
+      - rectangle
+      - skeleton
+      - tag
+      type: string
+      description: |-
+        * `any` - ANY
+        * `cuboid` - CUBOID
+        * `ellipse` - ELLIPSE
+        * `mask` - MASK
+        * `points` - POINTS
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `rectangle` - RECTANGLE
+        * `skeleton` - SKELETON
+        * `tag` - TAG
     LabeledData:
       type: object
       properties:
@@ -9589,8 +9626,21 @@ components:
           description: Delete the label. Only applicable in the PATCH methods of a
             project or a task.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -10764,8 +10814,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -10804,8 +10867,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
