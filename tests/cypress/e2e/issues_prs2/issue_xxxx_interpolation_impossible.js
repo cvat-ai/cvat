@@ -146,9 +146,10 @@ describe('Description: user error, Could not receive frame 43 No one left positi
                 cy.saveJob();
             });
         });
-        it.skip('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
+        it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
             cy.goToNextFrame(2);
-            clickDeleteFrame();
+            cy.clickDeleteFrameAnnotationView();
+            cy.clickSaveAnnotationView();
             cy.checkFrameNum(3);
             compareShape(3);
             cy.goToPreviousFrame(1);
@@ -162,8 +163,7 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             });
 
             // Undo deleted frame
-            // cy.goToTaskList();
-            // cy.openTaskJob(taskName);
+            cy.clickUndo();
 
             // Delete frames 0, 2, 4. Watch out for errors
             cy.clickFirstFrame();
@@ -176,17 +176,15 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             cy.goToNextFrame(4);
             clickDeleteFrame();
             clickSave();
-            // cy.saveJob();
             // TODO: object should not be visible
+            cy.get('.cvat_canvas_shape').should('not.be.visiable');
 
-            // This might pop up after deleting or saving. But it doesn't do that on chrome.
-            // cy.get('.ant-notification-notice-error').should('not.exist');
+            // This might pop up after deleting or saving
+            cy.get('.ant-notification-notice-error').should('not.exist');
 
-            // Reopening a task with bad metadata will always throw an exception that we can catch
+            // Reopening a task with bad metadata might throw an exception that we can catch
             cy.goToTaskList();
             cy.openTaskJob(taskName);
-
-            // cy.get('.ant-notification-notice-error').should('not.exist');
         });
         after(() => {
             assert(0, 'let\'s watch a movie');
