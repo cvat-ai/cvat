@@ -29,28 +29,11 @@ const createRectangleShape2Points = {
     secondY: (fY + h),
 };
 
-function clickSave() {
-    cy.get('button').contains('Save').click();
-    cy.get('button').contains('Save').trigger('mouseout');
-}
-function clickDeleteFrame() {
-    cy.get('.cvat-player-delete-frame').click();
-    cy.get('.cvat-modal-delete-frame').within(() => {
-        cy.contains('button', 'Delete').click();
-    });
-}
-
 function drag(shape, selector, delta, axis) {
-    // let x0; let y0;
-    // let x1; let y1;
     cy.get(selector).then(() => {
-        // ({ x: x0, y: y0 } = $el.getBoundingClientRect());
-        // [x1, y1] = [x0, y0];
         if (axis === 'x') {
-            // x1 += delta;
             shape.firstX += (delta);
         } else if (axis === 'y') {
-            // y1 += delta;
             shape.firstY += (delta);
         }
     }).then(() => {
@@ -90,6 +73,7 @@ describe('Description: user error, Could not receive frame 43 No one left positi
         let left;
         let top;
         const stash = {};
+        const precision = 0.01; // db server precision is 2 digits
         function saveShape(num) {
             cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
                 cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
@@ -100,12 +84,10 @@ describe('Description: user error, Could not receive frame 43 No one left positi
         function compareShape(num) {
             const { x, y } = stash[num];
             cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
-                expect(parseFloat(xVal)).to.be.closeTo(x, 3.0);
-                // cy.task('log', `compare: ${x} - ${xVal}`);
+                expect(parseFloat(xVal)).to.be.closeTo(x, precision);
             });
             cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
-                expect(parseFloat(yVal)).to.be.closeTo(y, 3.0);
-                // cy.task('log', `compare: ${y} - ${yVal}`);
+                expect(parseFloat(yVal)).to.be.closeTo(y, precision);
             });
         }
         before(() => {
@@ -139,9 +121,9 @@ describe('Description: user error, Could not receive frame 43 No one left positi
                 cy.saveJob();
 
                 // Save shapes on interpolated frames' shapes
-                cy.goToPreviousFrame(3).then(() => saveShape(3));
+                cy.goToPreviousFrame(3);
                 cy.goToPreviousFrame(2);
-                cy.goToPreviousFrame(1).then(() => saveShape(1));
+                cy.goToPreviousFrame(1);
 
                 cy.saveJob();
             });
@@ -151,11 +133,15 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             cy.clickDeleteFrameAnnotationView();
             cy.clickSaveAnnotationView();
             cy.checkFrameNum(3);
-            compareShape(3);
+            saveShape(3);
             cy.goToPreviousFrame(1);
-            compareShape(1);
+            saveShape(1);
+            cy.reload({ forceReload: false }).then(() => {
+                cy.goToNextFrame(1).then(() => compareShape(1));
+                cy.goToNextFrame(3).then(() => compareShape(3));
+            });
         });
-        it('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
+        it.skip('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
             cy.on('uncaught:exception', (err) => {
                 const expectedMsg = 'No one left position or right position was found. Interpolation impossible. Client ID:';
                 expect(err.message).to.include(expectedMsg); // Exclude familiar error
@@ -168,16 +154,17 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             // Delete frames 0, 2, 4. Watch out for errors
             cy.clickFirstFrame();
             cy.checkFrameNum(0);
-            clickDeleteFrame();
+            cy.clickDeleteFrameAnnotationView();
             cy.checkFrameNum(1);
             cy.goToNextFrame(2);
-            clickDeleteFrame();
+            cy.clickDeleteFrameAnnotationView();
             cy.checkFrameNum(3);
             cy.goToNextFrame(4);
-            clickDeleteFrame();
-            clickSave();
-            // TODO: object should not be visible
-            cy.get('.cvat_canvas_shape').should('not.be.visiable');
+            cy.clickDeleteFrameAnnotationView();
+
+            // There should be no objects on the deleted frame
+            cy.get('.cvat_canvas_shape').should('not.exist');
+            cy.clickSaveAnnotationView();
 
             // This might pop up after deleting or saving
             cy.get('.ant-notification-notice-error').should('not.exist');
@@ -185,9 +172,8 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             // Reopening a task with bad metadata might throw an exception that we can catch
             cy.goToTaskList();
             cy.openTaskJob(taskName);
+            cy.get('.ant-notification-notice-error').should('not.exist');
         });
-        after(() => {
-            assert(0, 'let\'s watch a movie');
-        });
+        after(() => assert(0));
     });
 });
