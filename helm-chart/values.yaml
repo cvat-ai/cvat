@@ -158,7 +158,6 @@ cvat:
 #        accessModes:
 #         - ReadWriteMany
         size: 20Gi
-    disableDistinctCachePerService: false
   frontend:
     replicas: 1
     image: cvat/ui
