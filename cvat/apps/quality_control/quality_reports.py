@@ -24,7 +24,6 @@ from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
 from rest_framework.request import Request
 from rq.job import Job as RqJob
-from rq_scheduler import Scheduler as RqScheduler
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -2211,9 +2210,6 @@ class QualityReportUpdateManager:
     _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
-
-    def _get_scheduler(self) -> RqScheduler:
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
     def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
