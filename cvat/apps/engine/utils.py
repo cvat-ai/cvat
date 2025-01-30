@@ -135,7 +135,7 @@ def parse_specific_attributes(specific_attributes):
     } if parsed_specific_attributes else dict()
 
 
-def parse_exception_message(msg):
+def parse_exception_message(msg: str) -> str:
     parsed_msg = msg
     try:
         if 'ErrorDetail' in msg:
