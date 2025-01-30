@@ -309,6 +309,32 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 });
 
+Cypress.Commands.add('headlessRemoveAnnotations', (jobID) => {
+    cy.window().then(async ($win) => {
+        const job = (await $win.cvat.jobs.get({ jobID }))[0];
+        await job.annotations.clear({ reload: true });
+        await job.annotations.save();
+        return cy.wrap();
+    });
+});
+
+Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
+            method: 'PATCH',
+            data: { deleted_frames: [] },
+        });
+    });
+});
+
+Cypress.Commands.add('headlessGetJobMeta', (jobID) => {
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
+            method: 'GET',
+        });
+    });
+});
+
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().then(async ($win) => {
         const task = new $win.cvat.classes.Task({

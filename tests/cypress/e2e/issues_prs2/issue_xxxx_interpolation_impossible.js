@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+/// <reference types="cypress" />
+
 const taskName = '5frames';
 const labelName = 'label';
 const issueId = 'xxxx';
@@ -30,126 +32,120 @@ const createRectangleShape2Points = {
 };
 
 function drag(shape, selector, delta, axis) {
+    let newShape = null;
+    if (axis === 'x') {
+        newShape = {
+            ...shape,
+            firstX: shape.firstX + delta,
+        };
+    }
+    if (axis === 'y') {
+        newShape = {
+            ...shape,
+            firstY: shape.firstY + delta,
+        };
+    }
     cy.get(selector).then(() => {
-        if (axis === 'x') {
-            shape.firstX += (delta);
-        } else if (axis === 'y') {
-            shape.firstY += (delta);
-        }
-    }).then(() => {
+        assert(newShape !== null, 'Could not find axis');
         cy.get(selector).trigger('mousemove', { scrollBehavior: false });
         cy.get(selector).should('have.class', 'cvat_canvas_shape_activated');
         cy.get(selector).trigger('mousedown', {
             button: 0, which: 1, force: true, scrollBehavior: false,
         });
-        cy.get('#cvat_canvas_background').trigger('mousemove', shape.firstX, shape.firstY, {
+        cy.get('#cvat_canvas_background').trigger('mousemove', newShape.firstX, newShape.firstY, {
             which: 1, force: true, scrollBehavior: false,
         });
         /* cy.invoke uses https://api.jquery.com/category/manipulation/ */
         cy.get(selector).trigger('mouseup', { force: true, scrollBehavior: false });
     });
-    return shape;
+    return newShape;
 }
 
-function shapeToImage(shape, imgScale, imgLeft, imgTop) {
-    const shapew = Math.abs(shape.secondX - shape.firstX);
-    const shapeh = Math.abs(shape.secondY - shape.firstY);
-    const firstX = shape.firstX + imgLeft / imgScale;
-    const firstY = shape.firstY + imgTop / imgScale;
-    const secondX = firstX + shapew * imgScale;
-    const secondY = firstY + shapeh * imgScale;
+function shapeToPayload(shape, frame, label, shapeType) {
     return {
-        ...shape,
-        firstX,
-        firstY,
-        secondX,
-        secondY,
+        frame,
+        shapeType,
+        points: [shape.firstX, shape.firstY, shape.secondX, shape.secondY],
+        labelName: label,
+        objectType: shape.type.toLowerCase(),
+        occluded: false,
     };
 }
 
-describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
-    context('Create any track, check if track works correctly after deleting some frames', () => {
-        let imgScale;
-        let left;
-        let top;
-        const stash = {};
-        const precision = 0.01; // db server precision is 2 digits
-        function saveShape(num) {
-            cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
-                cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
-                    stash[num] = { x: parseFloat(x), y: parseFloat(y) };
-                });
+context('Create any track, check if track works correctly after deleting some frames', () => {
+    const precision = 0.01; // db server precision is 2 digits
+    const stash = {};
+    function storeShape(num) {
+        cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
+            cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
+                stash[num] = { x: parseFloat(x), y: parseFloat(y) };
             });
-        }
-        function compareShape(num) {
-            const { x, y } = stash[num];
-            cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
-                expect(parseFloat(xVal)).to.be.closeTo(x, precision);
-            });
-            cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
-                expect(parseFloat(yVal)).to.be.closeTo(y, precision);
-            });
-        }
+        });
+    }
+    function compareShape(num) {
+        const { x, y } = stash[num];
+        cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
+            expect(parseFloat(xVal)).to.be.closeTo(x, precision);
+        });
+        cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
+            expect(parseFloat(yVal)).to.be.closeTo(y, precision);
+        });
+    }
+    describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
+        let jobID = null;
         before(() => {
             cy.visit('/auth/login');
             cy.login();
+
+            // Create assets for task using nodeJS
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(dirToArchive, archivePath);
             cy.createTaskFromArchive(taskName, labelName, archiveName);
+
             cy.goToTaskList();
             cy.openTaskJob(taskName);
-            cy.get('.cvat-canvas-container').then(([$el]) => {
-                cy.wrap($el).find('#cvat_canvas_background')
-                    .then(([$canvas]) => {
-                        const rect = $canvas.getBoundingClientRect();
-                        imgScale = rect.width / width;
-                        left = Number($canvas.style.left.replace('px', ''));
-                        top = Number($canvas.style.top.replace('px', ''));
-                    });
+            cy.url().should('contain', 'jobs').then((url) => {
+                const last = url.lastIndexOf('/');
+                jobID = parseInt(url.slice(last + 1), 10);
             }).then(() => {
-                // Draw shape relative to image
-                let shape = shapeToImage(createRectangleShape2Points, imgScale, left, top);
-                cy.createRectangle(shape);
-
-                // Drag shape across frames to trigger interpolation
-                cy.goToNextFrame(1);
-                cy.goToNextFrame(2);
-                shape = drag(shape, '.cvat_canvas_shape', 500, 'x');
-                cy.goToNextFrame(3);
-                cy.goToNextFrame(4);
-                shape = drag(shape, '.cvat_canvas_shape', 500, 'y');
-                cy.saveJob();
-
-                // Save shapes on interpolated frames' shapes
-                cy.goToPreviousFrame(3);
-                cy.goToPreviousFrame(2);
-                cy.goToPreviousFrame(1);
-
-                cy.saveJob();
+                // Remove all annotations and draw a track rect
+                cy.headlessCreateObjects([
+                    shapeToPayload(createRectangleShape2Points, 0, labelName, 'rectangle'),
+                ],
+                jobID);
             });
         });
-        it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
+
+        beforeEach(() => {
+            // Restore all frames by patching deleted_frames to []
+            cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
+            cy.headlessRestoreAllFrames(jobID);
+            cy.wait('@patchMeta');
+
+            const shape = createRectangleShape2Points;
+
+            // Get job meta updates from the server and reload page to bring changes to UI
+            cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
+            cy.reload();
+            cy.wait('@getMeta');
+
+            // Drag
+            cy.goToNextFrame(1);
             cy.goToNextFrame(2);
-            cy.clickDeleteFrameAnnotationView();
-            cy.clickSaveAnnotationView();
-            cy.checkFrameNum(3);
-            saveShape(3);
-            cy.goToPreviousFrame(1);
-            saveShape(1);
-            cy.reload({ forceReload: false }).then(() => {
-                cy.goToNextFrame(1).then(() => compareShape(1));
-                cy.goToNextFrame(3).then(() => compareShape(3));
-            });
+            const shape2 = drag(shape, '.cvat_canvas_shape', 500, 'x');
+            cy.goToNextFrame(3);
+            cy.goToNextFrame(4);
+            // eslint-disable-next-line no-unused-vars
+            const shape3 = drag(shape2, '.cvat_canvas_shape', 500, 'y');
+            cy.saveJob();
+            cy.clickFirstFrame();
         });
-        it.skip('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
+        it('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
             cy.on('uncaught:exception', (err) => {
                 const expectedMsg = 'No one left position or right position was found. Interpolation impossible. Client ID:';
                 expect(err.message).to.include(expectedMsg); // Exclude familiar error
                 throw err;
             });
-
-            // Undo deleted frame
-            cy.clickUndo();
 
             // Delete frames 0, 2, 4. Watch out for errors
             cy.clickFirstFrame();
@@ -166,7 +162,7 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             cy.get('.cvat_canvas_shape').should('not.exist');
             cy.clickSaveAnnotationView();
 
-            // This might pop up after deleting or saving
+            // This might pop up after deleting or saving (on firefox e.g.)
             cy.get('.ant-notification-notice-error').should('not.exist');
 
             // Reopening a task with bad metadata might throw an exception that we can catch
@@ -174,6 +170,19 @@ describe('Description: user error, Could not receive frame 43 No one left positi
             cy.openTaskJob(taskName);
             cy.get('.ant-notification-notice-error').should('not.exist');
         });
-        after(() => assert(0));
+        it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
+            cy.goToNextFrame(1);
+            cy.goToNextFrame(2);
+            cy.clickDeleteFrameAnnotationView();
+            cy.clickSaveAnnotationView();
+            cy.checkFrameNum(3);
+            storeShape(3);
+            cy.goToPreviousFrame(1);
+            storeShape(1);
+            cy.reload({ forceReload: false }).then(() => {
+                cy.goToNextFrame(1).then(() => compareShape(1));
+                cy.goToNextFrame(3).then(() => compareShape(3));
+            });
+        });
     });
 });
