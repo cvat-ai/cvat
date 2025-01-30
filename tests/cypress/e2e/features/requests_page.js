@@ -14,14 +14,16 @@ context('Requests page', () => {
         manifest: 'manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
+
     const rectanglePayload = {
-        frame: 0,
         objectType: 'shape',
+        labelName: mainLabelName,
+        frame: 0,
         type: 'rectangle',
         points: [250, 64, 491, 228],
         occluded: false,
-        labelName: mainLabelName,
     };
+
     const attrName = 'requests_attr';
     const imagesCount = 3;
     const imageFileName = `image_${mainLabelName}`;
