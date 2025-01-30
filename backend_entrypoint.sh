@@ -11,6 +11,10 @@ wait_for_db() {
     wait-for-it "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
 }
 
+wait_for_redis_inmem() {
+    wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+}
+
 cmd_bash() {
     exec bash "$@"
 }
@@ -19,7 +23,7 @@ cmd_init() {
     wait_for_db
     ~/manage.py migrate
 
-    wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    wait_for_redis_inmem
     ~/manage.py migrateredis
     ~/manage.py syncperiodicjobs
 }
@@ -40,7 +44,7 @@ cmd_run() {
         sleep 10
     done
 
-    wait-for-it "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT:-6379}" -t 0
+    wait_for_redis_inmem
     echo "waiting for Redis migrations to complete..."
     while ! ~/manage.py migrateredis --check; do
         sleep 10

@@ -1,4 +1,4 @@
-# Copyright (C) 2025 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ from argparse import ArgumentParser
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
 from redis import Redis
 
 from cvat.apps.redis_handler.migration_loader import AppliedMigration, MigrationLoader
@@ -25,7 +24,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
-        loader = MigrationLoader()
+        conn = Redis(
+            host=settings.REDIS_INMEM_SETTINGS["HOST"],
+            port=settings.REDIS_INMEM_SETTINGS["PORT"],
+            db=settings.REDIS_INMEM_SETTINGS["DB"],
+            password=settings.REDIS_INMEM_SETTINGS["PASSWORD"],
+        )
+        loader = MigrationLoader(connection=conn)
 
         if options["check"]:
             if not loader:
@@ -37,40 +42,28 @@ class Command(BaseCommand):
             self.stdout.write("No migrations to apply")
             return
 
-        conn = Redis(
-            host=settings.REDIS_INMEM_SETTINGS["HOST"],
-            port=settings.REDIS_INMEM_SETTINGS["PORT"],
-            db=settings.REDIS_INMEM_SETTINGS["DB"],
-            password=settings.REDIS_INMEM_SETTINGS["PASSWORD"],
-        )
-
         for migration in loader:
-            with conn.pipeline() as pipe:
-                try:
-                    migration.run()
+            try:
+                migration.run()
 
-                    # add migration to applied ones
-                    applied_migration = AppliedMigration(
-                        name=migration.name,
-                        app_label=migration.app_label,
-                        applied_date=timezone.now(),
-                    )
-                    applied_migration_key = applied_migration.get_key()
-                    pipe.hset(applied_migration_key, mapping=applied_migration.to_dict())
-                    pipe.zadd(applied_migration.SORTED_SET_KEY, {applied_migration_key: 1})
+                # add migration to applied ones
+                applied_migration = AppliedMigration(
+                    name=migration.name,
+                    app_label=migration.app_label,
+                )
+                applied_migration.save(connection=conn)
 
-                except Exception as ex:
-                    self.stderr.write(
-                        self.style.ERROR(
-                            f"[{migration.app_label}] Failed to apply migration: {migration.name}"
-                        )
-                    )
-                    self.stderr.write(self.style.ERROR(f"\n{traceback.format_exc()}"))
-                    raise CommandError(str(ex))
-
-                pipe.execute()
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"[{migration.app_label}] Successfully applied migration: {migration.name}"
+            except Exception as ex:
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"[{migration.app_label}] Failed to apply migration: {migration.name}"
                     )
                 )
+                self.stderr.write(self.style.ERROR(f"\n{traceback.format_exc()}"))
+                raise CommandError(str(ex))
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"[{migration.app_label}] Successfully applied migration: {migration.name}"
+                )
+            )
