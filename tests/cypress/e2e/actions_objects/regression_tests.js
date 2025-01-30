@@ -47,7 +47,15 @@ context('Regression tests', () => {
                     ...rectanglePayload, frame: 99, points: [250, 64, 491, 228], objectType: 'shape',
                 },
                 {
-                    ...rectanglePayload, frame: 0, points: [10, 10, 30, 30], objectType: 'track',
+                    labelName: rectanglePayload.labelName,
+                    objectType: 'track',
+                    frame: 0,
+                    shapes: [{
+                        type: rectanglePayload.type,
+                        frame: 0,
+                        occluded: rectanglePayload.occluded,
+                        points: [10, 10, 30, 30],
+                    }],
                 },
             ], jobID);
         });
