@@ -31,20 +31,24 @@ const createRectangleShape2Points = {
     secondY: (fY + h),
 };
 
-function drag(shape, selector, delta, axis) {
-    let newShape = null;
+function translateShape(shape, delta, axis) {
     if (axis === 'x') {
-        newShape = {
+        return {
             ...shape,
             firstX: shape.firstX + delta,
         };
     }
     if (axis === 'y') {
-        newShape = {
+        return {
             ...shape,
             firstY: shape.firstY + delta,
         };
     }
+    return null;
+}
+
+function drag(shape, selector, delta, axis) {
+    const newShape = translateShape(shape, delta, axis);
     cy.get(selector).then(() => {
         assert(newShape !== null, 'Could not find axis');
         cy.get(selector).trigger('mousemove', { scrollBehavior: false });
