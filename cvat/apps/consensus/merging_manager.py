@@ -52,7 +52,7 @@ class _TaskMerger:
         if not self._jobs:
             raise MergingNotAvailable(
                 f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage or "
-                f"no {JobType.CONSENSUS} jobs "
+                f"no {JobType.CONSENSUS_REPLICA} jobs "
                 f"not in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state found"
             )
 
@@ -81,7 +81,7 @@ class _TaskMerger:
             Job.objects.prefetch_related("segment", "parent_job", "assignee")
             .filter(
                 segment__task=self._task,
-                type=JobType.CONSENSUS,
+                type=JobType.CONSENSUS_REPLICA,
                 parent_job__stage=StageChoice.ANNOTATION,
                 parent_job__isnull=False,
             )

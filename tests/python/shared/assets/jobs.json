@@ -43,7 +43,7 @@
         "location": "local"
       },
       "task_id": 31,
-      "type": "consensus",
+      "type": "consensus_replica",
       "updated_date": "2025-01-27T16:43:47.462000Z",
       "url": "http://localhost:8080/api/jobs/53"
     },
@@ -87,7 +87,7 @@
         "location": "local"
       },
       "task_id": 31,
-      "type": "consensus",
+      "type": "consensus_replica",
       "updated_date": "2025-01-27T16:43:07.696000Z",
       "url": "http://localhost:8080/api/jobs/52"
     },

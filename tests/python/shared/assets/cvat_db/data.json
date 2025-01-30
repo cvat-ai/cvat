@@ -7314,7 +7314,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 51
   }
 },
@@ -7330,7 +7330,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "completed",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 51
   }
 },
