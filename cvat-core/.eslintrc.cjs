@@ -9,7 +9,6 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.cjs',
         'webpack.config.cjs',
-        'jest.config.cjs',
         'node_modules/**',
         'dist/**',
         'tests/**/*.cjs',

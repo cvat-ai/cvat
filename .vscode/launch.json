@@ -550,20 +550,6 @@
                 "src/api.js"
             ],
             "port": 9230
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "jest debug",
-            "cwd": "${workspaceFolder}/cvat-core",
-            "program": "${workspaceFolder}/node_modules/.bin/jest",
-            "args": [
-                "--config",
-                "${workspaceFolder}/cvat-core/jest.config.cjs"
-            ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "disableOptimisticBPs": true,
         }
     ],
     "compounds": [
