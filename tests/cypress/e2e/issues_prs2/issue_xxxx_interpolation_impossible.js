@@ -36,43 +36,33 @@ function translateShape(shape, delta, axis) {
         return {
             ...shape,
             firstX: shape.firstX + delta,
+            secondX: shape.secondX + delta,
         };
     }
     if (axis === 'y') {
         return {
             ...shape,
             firstY: shape.firstY + delta,
+            secondY: shape.secondY + delta,
         };
     }
     return null;
 }
 
-function drag(shape, selector, delta, axis) {
-    const newShape = translateShape(shape, delta, axis);
-    cy.get(selector).then(() => {
-        assert(newShape !== null, 'Could not find axis');
-        cy.get(selector).trigger('mousemove', { scrollBehavior: false });
-        cy.get(selector).should('have.class', 'cvat_canvas_shape_activated');
-        cy.get(selector).trigger('mousedown', {
-            button: 0, which: 1, force: true, scrollBehavior: false,
-        });
-        cy.get('#cvat_canvas_background').trigger('mousemove', newShape.firstX, newShape.firstY, {
-            which: 1, force: true, scrollBehavior: false,
-        });
-        /* cy.invoke uses https://api.jquery.com/category/manipulation/ */
-        cy.get(selector).trigger('mouseup', { force: true, scrollBehavior: false });
-    });
-    return newShape;
-}
-
-function shapeToPayload(shape, frame, label, shapeType) {
+function shapeToPayload(shape, frame, shapeType) {
     return {
         frame,
-        shapeType,
+        type: shapeType,
         points: [shape.firstX, shape.firstY, shape.secondX, shape.secondY],
-        labelName: label,
-        objectType: shape.type.toLowerCase(),
-        occluded: false,
+    };
+}
+
+function makeTrack(shapePayloads, frame0, trackLabel) {
+    return {
+        shapes: shapePayloads,
+        frame: frame0,
+        labelName: trackLabel,
+        objectType: 'track',
     };
 }
 
@@ -97,6 +87,7 @@ context('Create any track, check if track works correctly after deleting some fr
     }
     describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
         let jobID = null;
+        const delta = 300;
         before(() => {
             cy.visit('/auth/login');
             cy.login();
@@ -113,10 +104,16 @@ context('Create any track, check if track works correctly after deleting some fr
                 jobID = parseInt(url.slice(last + 1), 10);
             }).then(() => {
                 // Remove all annotations and draw a track rect
-                cy.headlessCreateObjects([
-                    shapeToPayload(createRectangleShape2Points, 0, labelName, 'rectangle'),
-                ],
-                jobID);
+                const wrap = (shape, frame) => shapeToPayload(shape, frame, 'rectangle');
+                const shape0 = createRectangleShape2Points;
+                const shape1 = translateShape(shape0, delta, 'x');
+                const shape2 = translateShape(shape1, delta, 'y'); // TODO: fix coords, rect flies away
+                const track = makeTrack([
+                    wrap(shape0, 0),
+                    wrap(shape1, 2),
+                    wrap(shape2, 4),
+                ], 0, labelName);
+                cy.headlessCreateObjects([track], jobID);
             });
         });
 
@@ -126,21 +123,11 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.headlessRestoreAllFrames(jobID);
             cy.wait('@patchMeta');
 
-            const shape = createRectangleShape2Points;
-
             // Get job meta updates from the server and reload page to bring changes to UI
             cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
             cy.reload();
             cy.wait('@getMeta');
 
-            // Drag
-            cy.goToNextFrame(1);
-            cy.goToNextFrame(2);
-            const shape2 = drag(shape, '.cvat_canvas_shape', 500, 'x');
-            cy.goToNextFrame(3);
-            cy.goToNextFrame(4);
-            // eslint-disable-next-line no-unused-vars
-            const shape3 = drag(shape2, '.cvat_canvas_shape', 500, 'y');
             cy.saveJob();
             cy.clickFirstFrame();
         });
