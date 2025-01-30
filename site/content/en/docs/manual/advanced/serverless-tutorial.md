@@ -161,7 +161,7 @@ Finally you will get bounding boxes.
 
 `SiamMask` model is more optimized to work on Nvidia GPUs.
 
-- For more information about deploying the model for the GPU, [read on](#objects-segmentation-using-mask-rcnn).
+- For more information about deploying the model for the GPU, [read on](#object-segmentation-using-segment-anything).
 
 ### Object detection using YOLO-v3
 
