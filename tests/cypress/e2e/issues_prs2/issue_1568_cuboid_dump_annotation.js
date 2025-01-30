@@ -35,7 +35,7 @@ context('Dump annotation if cuboid created.', () => {
             const cuboidPayload = {
                 frame: 0,
                 objectType: 'shape',
-                shapeType: 'cuboid',
+                type: 'cuboid',
                 labelName,
                 points: [
                     38, 58, 38, 174, 173,

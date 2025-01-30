@@ -17,7 +17,7 @@ context('Requests page', () => {
     const rectanglePayload = {
         frame: 0,
         objectType: 'shape',
-        shapeType: 'rectangle',
+        type: 'rectangle',
         points: [250, 64, 491, 228],
         occluded: false,
         labelName: mainLabelName,

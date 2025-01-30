@@ -287,23 +287,62 @@ Cypress.Commands.add('headlessLogin', ({
 });
 
 Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
+    const convertShape = ($win, job) => (shape) => ({
+        frame: shape.frame,
+        type: shape.type,
+        points: $win.Array.from(shape.points),
+        label_id: job.labels.find((label) => label.name === shape.labelName).id,
+        occluded: shape.occluded || false,
+        outside: shape.outside || false,
+        source: shape.source || 'manual',
+        attributes: $win.Array.from(shape.attributes || []),
+        elements: $win.Array.from(shape.elements ? shape.elements.map(convertShape) : []),
+        rotation: shape.rotation || 0,
+        group: shape.group || 0,
+        z_order: shape.zOrder || 0,
+    });
+
+    const convertTag = ($win, job) => (tag) => ({
+        frame: tag.frame,
+        label_id: job.labels.find((label) => label.name === tag.labelName).id,
+        source: tag.source || 'manual',
+        attributes: $win.Array.from(tag.attributes || []),
+        group: tag.group || 0,
+    });
+
+    const convertTrack = ($win, job) => (track) => ({
+        frame: track.frame,
+        label_id: job.labels.find((label) => label.name === track.labelName).id,
+        group: track.group || 0,
+        source: track.source || 'manual',
+        attributes: $win.Array.from(track.attributes || []),
+        elements: $win.Array.from(track.elements ? track.elements.map(convertTrack) : []),
+        shapes: track.shapes.map((shape) => ({
+            attributes: $win.Array.from(shape.attributes || []),
+            points: $win.Array.from(shape.points),
+            frame: shape.frame,
+            occluded: shape.occluded || false,
+            outside: shape.outside || false,
+            rotation: shape.rotation || 0,
+            type: shape.type,
+            z_order: shape.zOrder || 0,
+        })),
+    });
+
     cy.window().then(async ($win) => {
         const job = (await $win.cvat.jobs.get({ jobID }))[0];
         await job.annotations.clear({ reload: true });
 
-        const objectStates = objects
-            .map((object) => new $win.cvat.classes
-                .ObjectState({
-                    frame: object.frame,
-                    objectType: object.objectType,
-                    shapeType: object.shapeType,
-                    points: $win.Array.from(object.points),
-                    occluded: object.occluded,
-                    label: job.labels.find((label) => label.name === object.labelName),
-                    zOrder: 0,
-                }));
+        const shapes = objects.filter((object) => object.objectType === 'shape').map(convertShape($win, job));
+        const tracks = objects.filter((object) => object.objectType === 'track').map(convertTrack($win, job));
+        const tags = objects.filter((object) => object.objectType === 'tag').map(convertTag($win, job));
 
-        await job.annotations.put($win.Array.from(objectStates));
+        await job.annotations.import($win.Array.from({
+            shapes: $win.Array.from(shapes),
+            tracks: $win.Array.from(tracks),
+            tags: $win.Array.from(tags),
+        }));
+
         await job.annotations.save();
         return cy.wrap();
     });

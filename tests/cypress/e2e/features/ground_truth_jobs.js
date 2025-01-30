@@ -442,7 +442,7 @@ context('Ground truth jobs', () => {
                     return {
                         labelName,
                         objectType: 'shape',
-                        shapeType: 'rectangle',
+                        type: 'rectangle',
                         occluded: false,
                         frame,
                         points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],

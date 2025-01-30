@@ -29,7 +29,7 @@ context('Regression tests', () => {
     };
 
     const rectanglePayload = {
-        shapeType: 'rectangle',
+        type: 'rectangle',
         occluded: false,
         labelName: taskPayload.labels[0].name,
     };
