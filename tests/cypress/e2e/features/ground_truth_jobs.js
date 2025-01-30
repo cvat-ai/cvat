@@ -440,9 +440,9 @@ context('Ground truth jobs', () => {
                 return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
                     const gtRect = groundTruthRectangles[index];
                     return {
-                        labelName,
                         objectType: 'shape',
-                        shapeType: 'rectangle',
+                        labelName,
+                        type: 'rectangle',
                         occluded: false,
                         frame,
                         points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],

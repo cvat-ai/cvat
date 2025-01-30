@@ -3,7 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.settings.production import *
+# Inherit parent config
+from cvat.settings.production import *  # pylint: disable=wildcard-import
 
 # https://github.com/pennersr/django-allauth
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
