@@ -4,6 +4,7 @@
 
 from rest_framework.parsers import BaseParser
 
+
 class TusUploadParser(BaseParser):
     # The media type is sent by TUS protocol (tus.io) for uploading files
     media_type = 'application/offset+octet-stream'

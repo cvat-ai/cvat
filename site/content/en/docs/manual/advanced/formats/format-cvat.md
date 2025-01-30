@@ -16,10 +16,13 @@ For more information, see:
 
 ## CVAT for image export
 
+ Applicable for all computer vision tasks in
+ 2D except for Video Tracking.
+
 For export of images:
 
 - Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Points, Cuboids, Ellipses, Skeletons, Tags, Masks
+  Points, Cuboids, Ellipses, Skeletons, Tags, Masks.
 - Attributes: Supported.
 - Tracks: Can be exported, but track id will be lost.
 
@@ -35,10 +38,13 @@ taskname.zip/
 
 ## CVAT for video export
 
+Applicable for all computer vision tasks
+in 2D except for Classification
+
 For export of images:
 
 - Supported annotations: Bounding Boxes, Polygons, Polylines,
-  Points, Cuboids, Ellipses, Skeletons, Masks
+  Points, Cuboids, Ellipses, Skeletons,Masks.
 - Attributes: Supported.
 - Tracks: Supported (tracks are split by frames).
 - Shapes are exported as single-frame tracks

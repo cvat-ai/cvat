@@ -2,7 +2,7 @@
 title: 'Social auth configuration'
 linkTitle: 'Social auth configuration'
 weight: 3
-description: 'Social accounts authentication for Self-Hosted solution'
+description: 'Social accounts authentication for a Self-Hosted solution'
 ---
 
 > **Note:** This is a paid feature available for [Enterprise clients](https://www.cvat.ai/pricing/on-prem).
@@ -19,19 +19,13 @@ such benefits as:
 
 Currently, we offer three options:
 
-- Authentication with Github.
-- Authentication with Google.
-- Authentication with Amazon Cognito.
+- [Authentication with Google](#authentication-with-google)
+- [Authentication with GitHub](#authentication-with-github)
+- [Authentication with Amazon Cognito](#authentication-with-amazon-cognito)
 
 With more to come soon. Stay tuned!
 
-See:
-
-- [Enable authentication with a Google account](#enable-authentication-with-a-google-account)
-- [Enable authentication with a GitHub account](#enable-authentication-with-a-github-account)
-- [Enable authentication with an Amazon Cognito](#enable-authentication-with-an-amazon-cognito)
-
-## Enable authentication with a Google account
+## Authentication with Google
 
 To enable authentication, do the following:
 
@@ -51,7 +45,7 @@ To enable authentication, do the following:
    configure: **Application name**, **Authorized JavaScript origins**, **Authorized redirect URIs**.
    <br> For example, if you plan to deploy CVAT instance on `https://localhost:8080`, add `https://localhost:8080`
    to authorized JS origins and `https://localhost:8080/api/auth/social/goolge/login/callback/` to redirect URIs.
-8. Create conпiguration file in CVAT:
+8. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
@@ -72,7 +66,7 @@ To enable authentication, do the following:
    docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
    ```
 
-## Enable authentication with a GitHub account
+## Authentication with GitHub
 
 There are 2 basic steps to enable GitHub account authentication.
 
@@ -81,7 +75,7 @@ There are 2 basic steps to enable GitHub account authentication.
    <br>For more information, see [Creating an OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app)
 3. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
    and authentication callback URL (for example: `https://localhost:8080/api/auth/social/github/login/callback/`).
-4. Create conпiguration file in CVAT:
+4. Create configuration file in CVAT:
 
    1. Create the `auth_config.yml` file with the following content:
 
@@ -106,32 +100,72 @@ There are 2 basic steps to enable GitHub account authentication.
 > but don't forget to add required permissions.
 > <br>In the **Permission** > **Account permissions** > **Email addresses** must be set to **read-only**.
 
-## Enable authentication with an Amazon Cognito
+## Authentication with Amazon Cognito
 
-To enable authentication, do the following:
+To enable authentication with Amazon Cognito for your CVAT instance, follow these steps:
 
-1. Create a user pool. For more information,
-   see [Amazon Cognito user pools](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)
-2. Fill in the name field, set the homepage URL (for example: `https://localhost:8080`),
-   and authentication callback URL (for example: `https://localhost:8080/api/auth/social/amazon-cognito/login/callback/`).
-3. Create conпiguration file in CVAT:
+1. Create an **[Amazon Cognito pool](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools.html)**
+   (_Optional_)
+1. Set up a new app client
+1. Configure social authentication in CVAT
 
-   1. Create the `auth_config.yml` file with the following content:
+Now, let’s dive deeper into how to accomplish these steps.
 
-   ```yaml
-   ---
-   social_account:
-     enabled: true
-     amazon_cognito:
-       client_id: <some_client_id>
-       client_secret: <some_client_secret>
-       domain: https://<domain-prefix>.auth.us-east-1.amazoncognito.com
-   ```
+### Amazon Cognito pool creation
 
-   2. Set `AUTH_CONFIG_PATH="<path_to_auth_config>` environment variable.
+This step is optional and should only be performed if a user pool has not already been created.
+To create a user pool, follow these instructions:
+1. Go to the [AWS Management Console](https://console.aws.amazon.com/console/home)
+1. Locate `Cognito` in the list of services
+1. Click `Create user pool`
+1. Fill in the required fields
 
-3. In a terminal, run the following command:
+### App client creation
 
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.override.yml up -d --build
-   ```
+To create a new app client, follow these steps:
+1. Go to the details page of the created user pool
+1. Find the `App clients` item in the menu on the left
+1. Click `Create app client`
+1. Fill out the form as shown bellow:
+   ![](/images/cognito_pool_1.png)
+   - `Application type`: `Traditional web application`
+   - `Application name`: Specify a desired name, or leave the autogenerated one
+   - `Return URL` (_optional_): Specify the CVAT redirect URL
+     (`<http|https>://<cvat_domain>/api/auth/social/amazon-cognito/login/callback/`).
+     This setting can also be updated or specified later after the app client is created.
+1. Navigate to the `Login pages` tab of the created app client
+1. Check the parameters in the `Managed login pages configuration` section and edit them if needed:
+   ![](/images/cognito_pool_2.png)
+   - `Allowed callback URLs`: Must be set to the CVAT redirect URL
+   - `Identity providers`: Must be specified
+   - `OAuth grant types`: The `Authorization code grant` must be selected
+   - `OpenID Connect scopes`: `OpenID`, `Profile`, `Email` scopes must be selected
+
+### Setting up social authentication in CVAT
+
+To configure social authentication in CVAT, create a configuration file
+(`auth_config.yml`) with the following content:
+  ```yaml
+  ---
+  social_account:
+    enabled: true
+    amazon_cognito:
+      client_id: <client_id>
+      client_secret: <client_secret>
+      domain: <custom-domain> or
+        https://<custom-cognito-prefix>.auth.us-east-1.amazoncognito.com
+  ```
+To find the `client_id` and `client_secret` values, navigate to the created app client page
+and check the `App client information` section. To find `domain`, look for the `Domain` item in the list on the left.
+
+Once the configuration file is updated, several environment variables must be exported before running CVAT:
+  ```bash
+  export AUTH_CONFIG_PATH="<path_to_auth_config>"
+  export CVAT_HOST="<cvat_host>"
+  # cvat_port is optional
+  export CVAT_BASE_URL="<http|https>://${CVAT_HOST}:<cvat_port>"
+  ```
+
+Start the CVAT enterprise instance as usual.
+That's it! On the CVAT login page, you should now see the option `Continue with Amazon Cognito`.
+![](/images/login_page_with_amazon_cognito.png)

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -19,9 +19,9 @@ import mimetypes
 import os
 import sys
 import tempfile
+import urllib
 from datetime import timedelta
 from enum import Enum
-import urllib
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
@@ -40,6 +40,7 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 def generate_secret_key():
     """
@@ -72,12 +73,13 @@ def generate_secret_key():
             # Discard ours and use theirs.
             pass
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ModuleNotFoundError:
-    generate_secret_key()
-    from keys.secret_key import SECRET_KEY
+if not SECRET_KEY:
+    try:
+        sys.path.append(BASE_DIR)
+        from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
+    except ModuleNotFoundError:
+        generate_secret_key()
+        from keys.secret_key import SECRET_KEY
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
@@ -134,7 +136,7 @@ REST_FRAMEWORK = {
         'cvat.apps.iam.permissions.PolicyEnforcer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.iam.authentication.TokenAuthenticationEx',
+        'rest_framework.authentication.TokenAuthentication',
         'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
@@ -177,12 +179,15 @@ REST_AUTH = {
     'OLD_PASSWORD_FIELD_ENABLED': True,
 }
 
-if to_bool(os.getenv('CVAT_ANALYTICS', False)):
+ANALYTICS_ENABLED = to_bool(os.getenv('CVAT_ANALYTICS', False))
+
+if ANALYTICS_ENABLED:
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'cvat.apps.iam.middleware.SessionRefreshMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -233,7 +238,7 @@ IAM_DEFAULT_ROLE = 'user'
 
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
-IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+IAM_ROLES = [IAM_ADMIN_ROLE, 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
@@ -273,6 +278,7 @@ class CVAT_QUEUES(Enum):
     QUALITY_REPORTS = 'quality_reports'
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
+    CHUNKS = 'chunks'
 
 redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
@@ -316,7 +322,11 @@ RQ_QUEUES = {
     },
     CVAT_QUEUES.CLEANING.value: {
         **shared_queue_settings,
-        'DEFAULT_TIMEOUT': '1h',
+        'DEFAULT_TIMEOUT': '2h',
+    },
+    CVAT_QUEUES.CHUNKS.value: {
+        **shared_queue_settings,
+        'DEFAULT_TIMEOUT': '5m',
     },
 }
 
@@ -336,6 +346,29 @@ RQ_SHOW_ADMIN_LINK = True
 RQ_EXCEPTION_HANDLERS = [
     'cvat.apps.engine.views.rq_exception_handler',
     'cvat.apps.events.handlers.handle_rq_exception',
+]
+
+PERIODIC_RQ_JOBS = [
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'clean_up_sessions',
+        'func': 'cvat.apps.iam.utils.clean_up_sessions',
+        'cron_string': '0 0 * * *',
+    },
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'cron_export_cache_directory_cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cleanup_export_cache_directory',
+        # Run twice a day (at midnight and at noon)
+        'cron_string': '0 0,12 * * *',
+    },
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'cron_tmp_directory_cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cleanup_tmp_directory',
+        # Run once a day
+        'cron_string': '0 18 * * *',
+    }
 ]
 
 # JavaScript and CSS compression
@@ -396,7 +429,10 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
 
-EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
+EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
+os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
+
+EVENTS_LOCAL_DB_ROOT = os.path.join(BASE_DIR, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
 EVENTS_LOCAL_DB_FILE = os.path.join(
     EVENTS_LOCAL_DB_ROOT,
@@ -520,12 +556,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 
-RESTRICTIONS = {
-    # allow access to analytics component to users with business role
-    # otherwise, only the administrator has access
-    'analytics_visibility': True,
-}
-
 redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 # The default port is not Redis's default port (6379).
 # This is so that a developer can run both in-mem Redis and on-disk Kvrocks on their machine
@@ -533,14 +563,20 @@ redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6666)
 redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
 
+# Sets the timeout for the expiration of data chunk in redis_ondisk
+CVAT_CHUNK_CACHE_TTL = 3600 * 24  # 1 day
+
+# Sets the timeout for the expiration of preview image in redis_ondisk
+CVAT_PREVIEW_CACHE_TTL = 3600 * 24 * 7  # 7 days
+
 CACHES = {
-   'default': {
+    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
     'media': {
-       'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
-       "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
-       'TIMEOUT' : 3600 * 24, # 1 day
+        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
+        "LOCATION": f'redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}',
+        'TIMEOUT' : CVAT_CHUNK_CACHE_TTL,
     }
 }
 
@@ -567,6 +603,8 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Forwarded host - https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-USE_X_FORWARDED_HOST
 # Is used in TUS uploads to provide correct upload endpoint
@@ -624,6 +662,7 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 
     'ENUM_NAME_OVERRIDES': {
+        'LabelType': 'cvat.apps.engine.models.LabelType',
         'ShapeType': 'cvat.apps.engine.models.ShapeType',
         'OperationStatus': 'cvat.apps.engine.models.StateChoice',
         'ChunkType': 'cvat.apps.engine.models.DataChoice',
@@ -636,7 +675,9 @@ SPECTACULAR_SETTINGS = {
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',
         'WebhookContentType': 'cvat.apps.webhooks.models.WebhookContentTypeChoice',
-        'RequestStatus': 'cvat.apps.engine.serializers.RequestStatus',
+        'RequestStatus': 'cvat.apps.engine.models.RequestStatus',
+        'ValidationMode': 'cvat.apps.engine.models.ValidationMode',
+        'FrameSelectionMethod': 'cvat.apps.engine.models.JobFrameSelectionMethod',
     },
 
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
@@ -719,7 +760,11 @@ ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))
 
 from cvat.rq_patching import update_started_job_registry_cleanup
+
 update_started_job_registry_cleanup()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
+
+# Indicates the maximum number of days a file or directory is retained in the temporary directory
+TMP_FILE_OR_DIR_RETENTION_DAYS = 3

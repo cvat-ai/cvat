@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -177,7 +177,7 @@ class TestExportResourceToS3(_S3ResourceTest):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 class TestImportResourceFromS3(_S3ResourceTest):
     @pytest.mark.usefixtures("restore_redis_inmem_per_function")
     @pytest.mark.parametrize("cloud_storage_id", [3])

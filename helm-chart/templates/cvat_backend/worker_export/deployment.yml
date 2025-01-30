@@ -61,11 +61,10 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- $probeArgs := list "export" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           volumeMounts:
-          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-          - mountPath: /home/django/data/cache
-            name: cvat-backend-per-service-cache
-          {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -95,10 +94,6 @@ spec:
           {{- end }}
           volumeMounts:
           {{- if .Values.cvat.backend.defaultStorage.enabled }}
-          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-          - mountPath: /home/django/data/cache
-            name: cvat-backend-per-service-cache
-          {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -129,10 +124,6 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
-        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
-        - name: cvat-backend-per-service-cache
-          emptyDir: {}
-        {{- end }}
         {{- end }}
         {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,6 +37,16 @@ html, body {
     z-index: 2;
     top: 0;
     left: 0;
+}
+
+.cvat-notification-link {
+    padding: 0;
+    display: inline;
+    height: auto;
+
+    span {
+        display: inline;
+    }
 }
 
 .cvat-not-found {

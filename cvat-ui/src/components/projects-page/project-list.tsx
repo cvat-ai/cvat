@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,8 @@ import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { getProjectsAsync } from 'actions/projects-actions';
-import { CombinedState, Project } from 'reducers';
+import { CombinedState } from 'reducers';
+import { Project } from 'cvat-core-wrapper';
 import dimensions from 'utils/dimensions';
 import ProjectItem from './project-item';
 

@@ -2,8 +2,10 @@
 
 import os
 import shutil
-from django.db import migrations
+
 from django.conf import settings
+from django.db import migrations
+
 from cvat.apps.engine.log import get_logger
 
 MIGRATION_NAME = os.path.splitext(os.path.basename(__file__))[0]

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -46,7 +46,7 @@ function RightGroup(props: Props): JSX.Element {
     const openGuide = useCallback(() => {
         const PADDING = Math.min(window.screen.availHeight, window.screen.availWidth) * 0.4;
         jobInstance.guide().then((guide) => {
-            if (guide?.markdown) {
+            if (guide) {
                 Modal.info({
                     icon: null,
                     width: window.screen.availWidth - PADDING,

@@ -1,8 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { numberArrayToPoints, pointsToNumberArray, Point } from '../math';
+import { numberArrayToPoints, Point } from '../math';
 
 export interface IntelligentScissorsParams {
     shape: {
@@ -10,54 +11,48 @@ export interface IntelligentScissorsParams {
     };
     canvas: {
         shapeType: 'points';
-        enableThreshold: boolean;
         enableSliding: boolean;
         allowRemoveOnlyLast: boolean;
         minPosVertices: number;
-        onChangeToolsBlockerState: (event:string)=>void;
     };
 }
 
 export interface IntelligentScissors {
-    kind: string;
-    reset(): void;
-    run(points: number[], image: ImageData, offsetX: number, offsetY: number): number[];
     params: IntelligentScissorsParams;
+    kind: string;
+    run(points: number[]): number[];
+    reset(): void;
+    setImage(image: ImageData): void;
     switchBlockMode(mode?:boolean):void;
-}
-
-function applyOffset(points: Point[], offsetX: number, offsetY: number): Point[] {
-    return points.map(
-        (point: Point): Point => ({
-            x: point.x - offsetX,
-            y: point.y - offsetY,
-        }),
-    );
 }
 
 export default class IntelligentScissorsImplementation implements IntelligentScissors {
     public kind = 'opencv_intelligent_scissors';
+
     private cv: any;
-    private onChangeToolsBlockerState: (event:string)=>void;
+    private dsize: any;
+    private originalSize: { width: number; height: number };
+
+    // @ts-ignore initialized in this.reset called from constructor
     private scissors: {
         tool: any;
         state: {
-            path: number[];
-            anchors: Record<
-            number,
-            {
-                point: Point;
-                start: number;
-            }
-            >; // point index : start index in path
+            contour: number[];
+            prevPoints: Point[];
+            contourOffsets: number[];
             image: any | null;
             blocked: boolean;
         };
     };
 
-    public constructor(cv: any, onChangeToolsBlockerState:(event:string)=>void) {
+    public constructor(cv: any) {
         this.cv = cv;
-        this.onChangeToolsBlockerState = onChangeToolsBlockerState;
+        this.dsize = new cv.Size(1024, 1024);
+        this.originalSize = {
+            width: this.dsize.width,
+            height: this.dsize.height,
+        };
+
         this.reset();
     }
 
@@ -74,8 +69,9 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             // eslint-disable-next-line new-cap
             tool: new this.cv.segmentation_IntelligentScissorsMB(),
             state: {
-                path: [],
-                anchors: {},
+                contour: [],
+                prevPoints: [],
+                contourOffsets: [],
                 image: null,
                 blocked: false,
             },
@@ -85,82 +81,99 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         this.scissors.tool.setGradientMagnitudeMaxLimit(200);
     }
 
-    public run(coordinates: number[], image: ImageData, offsetX: number, offsetY: number): number[] {
+    public setImage(image: ImageData): void {
+        const { cv, scissors } = this;
+        const { tool } = scissors;
+
+        if (!(image instanceof ImageData)) {
+            throw new Error('Image is expected to be an instance of ImageData');
+        }
+
+        const matImage = cv.matFromImageData(image);
+        const resized = new this.cv.Mat();
+        try {
+            cv.resize(matImage, resized, this.dsize);
+            tool.applyImage(resized);
+            this.originalSize = {
+                width: image.width,
+                height: image.height,
+            };
+        } finally {
+            resized.delete();
+            matImage.delete();
+        }
+    }
+
+    public run(coordinates: number[]): number[] {
         if (!Array.isArray(coordinates)) {
             throw new Error('Coordinates is expected to be an array');
         }
+
         if (!coordinates.length) {
             throw new Error('At least one point is expected');
-        }
-        if (!(image instanceof ImageData)) {
-            throw new Error('Image is expected to be an instance of ImageData');
         }
 
         const { cv, scissors } = this;
         const { tool, state } = scissors;
 
-        const points = applyOffset(numberArrayToPoints(coordinates), offsetX, offsetY);
-        if (points.length > 1) {
-            let matImage = null;
-            const contour = new cv.Mat();
+        const xScale = this.dsize.width / this.originalSize.width;
+        const yScale = this.dsize.height / this.originalSize.height;
+        const points = numberArrayToPoints(coordinates);
 
+        for (const point of points) {
+            point.x *= xScale;
+            point.y *= yScale;
+        }
+
+        if (points.length === 1) {
+            state.prevPoints = points;
+            state.contourOffsets = [0];
+            state.contour = [points[0].x / xScale, points[0].y / yScale];
+            return [...state.contour];
+        }
+        if (points.length < state.prevPoints.length) {
+            // last point was removed
+            while (points.length < state.prevPoints.length) {
+                // need to remove one or two completed points
+                state.prevPoints.pop();
+                const lastOffset = state.contourOffsets.pop();
+                state.contour = state.contour.slice(0, lastOffset);
+            }
+
+            const prevPoint = state.prevPoints[state.prevPoints.length - 1];
+            tool.buildMap(new cv.Point(prevPoint.x, prevPoint.y));
+            return state.contour;
+        }
+
+        if (points.length > state.prevPoints.length) {
+            const prevPoint = state.prevPoints[state.prevPoints.length - 1];
+            tool.buildMap(new cv.Point(prevPoint.x, prevPoint.y));
+            state.contourOffsets.push(state.contour.length);
+        }
+
+        const lastOffset = state.contourOffsets[state.contourOffsets.length - 1];
+        const curPoint = points[points.length - 1];
+        const contour = new cv.Mat();
+
+        const curSegment = [];
+        if (!state.blocked) {
             try {
-                const [prev, cur] = points.slice(-2);
-                const { x: prevX, y: prevY } = prev;
-                const { x: curX, y: curY } = cur;
-
-                const latestPointRemoved = points.length < Object.keys(state.anchors).length;
-                const latestPointReplaced = points.length === Object.keys(state.anchors).length;
-
-                if (latestPointRemoved) {
-                    for (const i of Object.keys(state.anchors).sort((a, b) => +b - +a)) {
-                        if (+i >= points.length) {
-                            state.path = state.path.slice(0, state.anchors[points.length].start);
-                            delete state.anchors[+i];
-                        }
-                    }
-                    return [...state.path];
+                tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
+                for (let row = 0; row < contour.rows; row++) {
+                    curSegment.push(contour.intAt(row, 0) / xScale, contour.intAt(row, 1) / yScale);
                 }
-
-                matImage = cv.matFromImageData(image);
-
-                if (latestPointReplaced) {
-                    state.path = state.path.slice(0, state.anchors[points.length - 1].start);
-                    delete state.anchors[points.length - 1];
-                }
-                const pathSegment = [];
-                if (!state.blocked) {
-                    tool.applyImage(matImage);
-                    tool.buildMap(new cv.Point(prevX, prevY));
-                    tool.getContour(new cv.Point(curX, curY), contour);
-
-                    for (let row = 0; row < contour.rows; row++) {
-                        pathSegment.push(contour.intAt(row, 0) + offsetX, contour.intAt(row, 1) + offsetY);
-                    }
-                } else {
-                    pathSegment.push(curX + offsetX, curY + offsetY);
-                }
-                state.anchors[points.length - 1] = {
-                    point: cur,
-                    start: state.path.length,
-                };
-                state.path.push(...pathSegment);
             } finally {
-                if (matImage) {
-                    matImage.delete();
-                }
-
                 contour.delete();
             }
         } else {
-            state.path = [];
-            state.path.push(...pointsToNumberArray(applyOffset(points.slice(-1), -offsetX, -offsetY)));
-            state.anchors[0] = {
-                point: points[0],
-                start: 0,
-            };
+            curSegment.push(curPoint.x / xScale, curPoint.y / yScale);
         }
-        return [...state.path];
+
+        state.prevPoints = [...points];
+        state.contour = state.contour.slice(0, lastOffset);
+        state.contour.push(...curSegment);
+
+        return [...state.contour];
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -176,11 +189,9 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             },
             canvas: {
                 shapeType: 'points',
-                enableThreshold: true,
                 enableSliding: true,
                 allowRemoveOnlyLast: true,
                 minPosVertices: 1,
-                onChangeToolsBlockerState: this.onChangeToolsBlockerState,
             },
         };
     }

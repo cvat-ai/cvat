@@ -53,6 +53,20 @@ spec:
           env:
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          {{- if .Values.cvat.opa.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              port: 8181
+              path: "/health?bundles"
+            {{- toYaml (omit .Values.cvat.opa.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cvat.opa.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              port: 8181
+              path: "/health?bundles"
+            {{- toYaml (omit .Values.cvat.opa.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
           {{- with .Values.cvat.opa.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}

@@ -4,13 +4,14 @@ import rego.v1
 
 import data.utils
 import data.organizations
+import data.quality_utils
 
 # input: {
-#     "scope": <"view"|"list"|"create"|"view:status"> or null,
+#     "scope": <"create"|"view"|"view:status"|"list"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
-#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#             "privilege": <"admin"|"user"|"worker"> or null
 #         },
 #         "organization": {
 #             "id": <num>,
@@ -23,7 +24,7 @@ import data.organizations
 #         } or null,
 #     },
 #     "resource": {
-#         "id": <num>,
+#         "id": <num> or null,
 #         "owner": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #         "task": {
@@ -41,6 +42,8 @@ import data.organizations
 #     }
 # }
 
+
+
 default allow := false
 
 allow if {
@@ -55,6 +58,33 @@ allow if {
 allow if {
     input.scope == utils.LIST
     organizations.is_member
+}
+
+allow if {
+    input.scope == utils.VIEW_STATUS
+    utils.is_resource_owner
+}
+
+allow if {
+    input.scope in {utils.CREATE, utils.VIEW}
+    utils.is_sandbox
+    quality_utils.is_task_staff(input.resource.task, input.resource.project, input.auth)
+    utils.has_perm(utils.WORKER)
+}
+
+allow if {
+    input.scope in {utils.CREATE, utils.VIEW}
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
+}
+
+allow if {
+    input.scope in {utils.CREATE, utils.VIEW}
+    quality_utils.is_task_staff(input.resource.task, input.resource.project, input.auth)
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.WORKER)
+    organizations.has_perm(organizations.WORKER)
 }
 
 filter := [] if { # Django Q object to filter list of entries

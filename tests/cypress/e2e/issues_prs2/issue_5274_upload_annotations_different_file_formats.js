@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,11 +53,11 @@ context('Upload annotations in different file formats', () => {
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             for (const archive of archives) {
                 cy.interactMenu('Upload annotations');
-                cy.uploadAnnotations(
-                    archive.format.split(' ')[0],
-                    `${archive.archiveCustomName}/${archive.annotationsPath}`,
-                    '.cvat-modal-content-load-job-annotation',
-                );
+                cy.uploadAnnotations({
+                    format: archive.format.split(' ')[0],
+                    filePath: `${archive.archiveCustomName}/${archive.annotationsPath}`,
+                    confirmModalClassName: '.cvat-modal-content-load-job-annotation',
+                });
 
                 cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
                 cy.get('#cvat_canvas_shape_1').should('exist');

@@ -4,7 +4,6 @@ import rego.v1
 
 # Groups
 ADMIN := "admin"
-BUSINESS := "business"
 USER := "user"
 WORKER := "worker"
 
@@ -36,6 +35,7 @@ RESEND := "resend"
 UPDATE_DESC := "update:desc"
 UPDATE_ASSIGNEE := "update:assignee"
 UPDATE_OWNER := "update:owner"
+UPDATE_ASSOCIATED_STORAGE := "update:associated_storage"
 EXPORT_ANNOTATIONS := "export:annotations"
 EXPORT_DATASET := "export:dataset"
 CREATE_IN_PROJECT := "create@project"
@@ -57,11 +57,13 @@ IMPORT_DATASET := "import:dataset"
 IMPORT_BACKUP := "import:backup"
 EXPORT_BACKUP := "export:backup"
 UPDATE_ORG := "update:organization"
+VIEW_STATUS := "view:status"
+VIEW_VALIDATION_LAYOUT := "view:validation_layout"
+UPDATE_VALIDATION_LAYOUT := "update:validation_layout"
 
 
 get_priority(privilege) := {
     ADMIN: 0,
-    BUSINESS: 50,
     USER: 75,
     WORKER: 100,
     null: 1000
@@ -73,10 +75,6 @@ has_perm(group) if {
 
 is_admin if {
     input.auth.user.privilege == ADMIN
-}
-
-is_business if {
-    input.auth.user.privilege == BUSINESS
 }
 
 is_user if {

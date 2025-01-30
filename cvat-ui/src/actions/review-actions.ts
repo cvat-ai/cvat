@@ -1,9 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
+import { NewIssueSource } from 'reducers';
 
 const cvat = getCore();
 
@@ -33,8 +35,8 @@ export enum ReviewActionTypes {
 
 export const reviewActions = {
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
-    startIssue: (position: number[]) => (
-        createAction(ReviewActionTypes.START_ISSUE, { position: cvat.classes.Issue.hull(position) })
+    startIssue: (position: number[], source = NewIssueSource.ISSUE_TOOL) => (
+        createAction(ReviewActionTypes.START_ISSUE, { position: cvat.classes.Issue.hull(position), source })
     ),
     finishIssueSuccess: (frame: number, issue: any) => (
         createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue })
@@ -78,7 +80,11 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
                 instance: jobInstance,
             },
         },
-        review: { newIssuePosition },
+        review: {
+            newIssue: {
+                position: newIssuePosition,
+            },
+        },
     } = state;
 
     try {

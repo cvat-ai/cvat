@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,6 +74,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-single-shape-annotation-sidebar-hint').should('exist');
         cy.get('.cvat-single-shape-annotation-sidebar-ux-hints').should('exist');
+        cy.get('#cvat_canvas_wrapper').should('have.css', 'cursor', 'crosshair');
     }
 
     function openJob(params) {
@@ -114,7 +115,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.headlessCreateTask({
             labels: [

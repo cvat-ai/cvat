@@ -159,7 +159,7 @@ aws s3 cp <s3://bucket-name> <yourfolder> --recursive
 ```
 
 4. After copying the files, you can create a manifest file as described in
-   {{< ilink "/docs/manual/advanced/dataset_manifest" "preapair manifest file section" >}}:
+   {{< ilink "/docs/manual/advanced/dataset_manifest" "prepare manifest file section" >}}:
 
 ```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
@@ -329,7 +329,7 @@ To create bucket, do the following:
 
    - **Storage account name**: to access container from CVAT.
    - Select a region closest to you.
-   - Select **Performance** > **Standart**.
+   - Select **Performance** > **Standard**.
    - Select **Local-redundancy storage (LRS)**.
    - Click **next: Advanced>**.
 
@@ -387,7 +387,7 @@ Use the SAS token or connection string to grant secure access to the container.
 
 To configure the credentials:
 
-1. Go to **Home** > **Resourse groups** > You resource name > Your storage account.
+1. Go to **Home** > **Resource groups** > You resource name > Your storage account.
 2. On the left menu, click **Shared access signature**.
 3. Change the following fields:
    - **Allowed services**: Enable **Blob** . Disable all other fields.

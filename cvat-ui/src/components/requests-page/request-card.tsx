@@ -1,8 +1,8 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { Row, Col } from 'antd/lib/grid';
@@ -20,10 +20,12 @@ import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import moment from 'moment';
 import { cancelRequestAsync } from 'actions/requests-async-actions';
+import { requestsActions } from 'actions/requests-actions';
 import StatusMessage from './request-status';
 
 export interface Props {
     request: Request;
+    disabled: boolean;
 }
 
 function constructLink(request: Request): string | null {
@@ -98,11 +100,15 @@ function constructTimestamps(request: Request): JSX.Element {
             );
         }
         case RQStatus.FAILED: {
-            return (
+            return (request.startedDate ? (
                 <Row>
                     <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
                 </Row>
-            );
+            ) : (
+                <Row>
+                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                </Row>
+            ));
         }
         case RQStatus.STARTED: {
             return (
@@ -136,15 +142,14 @@ const dimensions = {
 };
 
 function RequestCard(props: Props): JSX.Element {
-    const { request } = props;
+    const { request, disabled } = props;
     const { operation } = request;
     const { type } = operation;
 
     const dispatch = useDispatch();
-    const [isActive, setIsActive] = useState(true);
 
     const linkToEntity = constructLink(request);
-    const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
+    const percent = request.status === RQStatus.FINISHED ? 100 : (request.progress ?? 0) * 100;
     const timestamps = constructTimestamps(request);
 
     const name = constructName(operation);
@@ -152,7 +157,7 @@ function RequestCard(props: Props): JSX.Element {
     const percentProgress = (request.status === RQStatus.FAILED || !percent) ? '' : `${percent.toFixed(2)}%`;
 
     const style: React.CSSProperties = {};
-    if (!isActive) {
+    if (disabled) {
         style.pointerEvents = 'none';
         style.opacity = 0.5;
     }
@@ -166,7 +171,7 @@ function RequestCard(props: Props): JSX.Element {
                 const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
                 downloadAnchor.href = request.url;
                 downloadAnchor.click();
-                setIsActive(false);
+                dispatch(requestsActions.disableRequest(request));
             },
         });
     }
@@ -178,7 +183,7 @@ function RequestCard(props: Props): JSX.Element {
             label: 'Cancel',
             onClick: () => {
                 dispatch(cancelRequestAsync(request, () => {
-                    setIsActive(false);
+                    dispatch(requestsActions.disableRequest(request));
                 }));
             },
         });
@@ -195,11 +200,13 @@ function RequestCard(props: Props): JSX.Element {
                                 {' '}
                             </Text>
                         </Col>
-                        <Col className='cvat-requests-name'>
-                            {linkToEntity ?
-                                (<Link to={linkToEntity}>{name}</Link>) :
-                                <Text>{name}</Text>}
-                        </Col>
+                        {name && (
+                            <Col className='cvat-requests-name'>
+                                {linkToEntity ?
+                                    (<Link to={linkToEntity}>{name}</Link>) :
+                                    <Text>{name}</Text>}
+                            </Col>
+                        )}
                     </Row>
                     {timestamps}
                 </Col>

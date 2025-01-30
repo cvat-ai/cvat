@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,7 +34,7 @@ onmessage = (e) => {
                             .async('blob')
                             .then((fileData) => {
                                 if (!errored) {
-                                    // do not need to read the rest of block if an error already occured
+                                    // do not need to read the rest of block if an error already occurred
                                     if (dimension === dimension2D) {
                                         createImageBitmap(fileData).then((img) => {
                                             postMessage({

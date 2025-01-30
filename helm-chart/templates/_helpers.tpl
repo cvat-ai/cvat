@@ -169,3 +169,18 @@ The name of the service account to use for backend pods
       key: CLICKHOUSE_PASSWORD
 {{- end }}
 {{- end }}
+
+{{- define "cvat.backend.worker.livenessProbe" -}}
+{{- if .livenessProbe.enabled }}
+livenessProbe:
+  exec:
+    command:
+    - python
+    - manage.py
+    - workerprobe
+    {{- range .args }}
+    - {{ . }}
+    {{- end }}
+{{ toYaml (omit .livenessProbe "enabled") | indent 2}}
+{{- end }}
+{{- end }}
