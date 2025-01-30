@@ -337,11 +337,11 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
         const tracks = objects.filter((object) => object.objectType === 'track').map(convertTrack($win, job));
         const tags = objects.filter((object) => object.objectType === 'tag').map(convertTag($win, job));
 
-        await job.annotations.import($win.Array.from({
+        await job.annotations.import({
             shapes: $win.Array.from(shapes),
             tracks: $win.Array.from(tracks),
             tags: $win.Array.from(tags),
-        }));
+        });
 
         await job.annotations.save();
         return cy.wrap();
