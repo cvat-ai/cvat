@@ -22,12 +22,15 @@ import Icon, {
     UserOutlined,
     TeamOutlined,
     PlusOutlined,
-    MailOutlined,
+    MailOutlined, ShareAltOutlined, FolderAddOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
+import {
+    Form, Input, Checkbox, Select,
+} from 'antd';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 
@@ -165,6 +168,7 @@ function HeaderComponent(props: Props): JSX.Element {
         switchShortcutsModalVisible,
         switchChangePasswordModalVisible,
     } = props;
+    const [form] = Form.useForm();
 
     const {
         CHANGELOG_URL, LICENSE_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
@@ -277,7 +281,162 @@ function HeaderComponent(props: Props): JSX.Element {
             },
         });
     }, [about]);
+    // --------Begin Maxar custom plugin-------------------------
+    const handleChange = (value: string) => {
+        console.log(`selected ${value}`);
+    };
+    console.log(user.organization);
+    const showUploadToProjectModal = useCallback((): void => {
+        Modal.info({
+            title: 'Upload Chipped Images to Project',
+            style: { padding: '16px' },
+            closable: true,
+            keyboard: true,
+            content: (
+                <Form
+                    form={form}
+                    layout='vertical'
+                    initialValues={{
+                        username: user.email,
+                        bucket_name: 'mxr-as-prod-fused-shared',
+                        bucket_directory: '',
+                        crs: 'EPSG:4326',
+                        project_name: '',
+                        organization: '',
+                        batch_size: '',
+                        create_tasks: true,
+                        upload_annotations: true,
+                        use_default_attributes: true,
+                        label_attributes: '',
+                        ignore_geo: false,
+                        no_label_attributes: false,
+                    }}
+                >
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label='User'
+                                name='username'
+                            >
+                                <Input disabled />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label='Bucket Name'
+                                name='bucket_name'
+                            >
+                                <Input disabled />
+                            </Form.Item>
+                        </Col>
+                    </Row>
 
+                    <Form.Item
+                        label='Bucket Directory'
+                        name='bucket_directory'
+                        rules={[{ required: true, message: 'Please enter a bucket directory' }]}
+                    >
+                        <Input placeholder='Enter bucket directory' />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label='Project Name'
+                                name='project_name'
+                                rules={[{ required: true, message: 'Please enter a project name' }]}
+                            >
+                                <Input placeholder='Enter project name' />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label='Organization'
+                                name='organization'
+                                rules={[{ required: true, message: 'Please enter an organization name' }]}
+                            >
+                                <Input placeholder='Enter organization name' />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item
+                                label='Coordinate Reference System (CRS)'
+                                name='crs'
+                                rules={[{ required: true, message: 'Please select a CRS' }]}
+                            >
+                                <Select
+                                    placeholder='Select a CRS'
+                                    onChange={handleChange}
+                                    options={[
+                                        { value: 'EPSG:4326', label: 'WGS84 (EPSG:4326) - Global' },
+                                        { value: 'EPSG:3857', label: 'Web Mercator (EPSG:3857) - Online Maps' },
+                                        { value: 'EPSG:4269', label: 'NAD83 (EPSG:4269) - North America' },
+                                        { value: 'EPSG:27700', label: 'OSGB36 (EPSG:27700) - Great Britain' },
+                                        { value: 'EPSG:4258', label: 'ETRS89 (EPSG:4258) - Europe' },
+                                        { value: 'EPSG:4283', label: 'GDA94 (EPSG:4283) - Australia' },
+                                        { value: 'EPSG:7844', label: 'GDA2020 (EPSG:7844) - Australia (Updated)' },
+                                        { value: 'EPSG:28992', label: 'Amersfoort (EPSG:28992) - Netherlands' },
+                                    ]}
+                                />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item
+                                label='Batch Size'
+                                name='batch_size'
+                                rules={[{ required: true, message: 'Please enter a batch size' }]}
+                            >
+                                <Input placeholder='Enter batch size' />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name='create_tasks' valuePropName='checked'>
+                                <Checkbox>Create Tasks</Checkbox>
+                            </Form.Item>
+
+                            <Form.Item name='upload_annotations' valuePropName='checked'>
+                                <Checkbox>Upload Annotations</Checkbox>
+                            </Form.Item>
+
+                            <Form.Item name='use_default_attributes' valuePropName='checked'>
+                                <Checkbox>Use Default Attributes</Checkbox>
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name='ignore_geo' valuePropName='checked'>
+                                <Checkbox>Ignore Geo</Checkbox>
+                            </Form.Item>
+
+                            <Form.Item name='no_label_attributes' valuePropName='checked'>
+                                <Checkbox>No Label Attributes</Checkbox>
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Form.Item
+                        label='Label Attributes'
+                        name='label_attributes'
+                    >
+                        <Input placeholder='Enter label attributes' />
+                    </Form.Item>
+                </Form>
+            ),
+            width: 800,
+            okText: 'Submit',
+            onOk: () => {
+                form.validateFields().then((values) => {
+                    console.log('Form Values:', values);
+                }).catch((error) => {
+                    console.error('Validation Error:', error);
+                });
+            },
+        });
+    }, [form]);
+    // --------End Maxar custom plugin-------------------------
     const closeSettings = useCallback(() => {
         switchSettingsModalVisible(false);
     }, []);
@@ -417,6 +576,14 @@ function HeaderComponent(props: Props): JSX.Element {
     menuItems.push(...plugins
         .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
     );
+    const maxarMenuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
+
+    maxarMenuItems.push([{
+        key: 'uploadChipped',
+        icon: <FolderAddOutlined />,
+        onClick: () => showUploadToProjectModal(),
+        label: 'Upload',
+    }, 30]);
 
     const getButtonClassName = (value: string, highlightable = true): string => {
         // eslint-disable-next-line security/detect-non-literal-regexp
@@ -518,6 +685,31 @@ function HeaderComponent(props: Props): JSX.Element {
                         Analytics
                     </Button>
                 ) : null}
+
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    placement='bottom'
+                    menu={{
+                        items: maxarMenuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
+                            .map((menuItem) => menuItem[0]),
+                        triggerSubMenuAction: 'click',
+                        className: 'cvat-header-menu',
+                    }}
+                    className='cvat-header-menu-maxar-tools-dropdown'
+                >
+                    <span>
+                        <ShareAltOutlined className='cvat-header-dropdown-icon' />
+                        <Row>
+                            <Col span={24}>
+                                <Text strong className='cvat-header-maxar-menu-dropdown'>
+                                    Maxar Tools
+                                </Text>
+                            </Col>
+                        </Row>
+                        <CaretDownOutlined className='cvat-header-dropdown-icon' />
+                    </span>
+                </Dropdown>
             </div>
             <div className='cvat-right-header'>
                 <CVATTooltip overlay='Click to open repository'>
@@ -566,13 +758,13 @@ function HeaderComponent(props: Props): JSX.Element {
                                     {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                                 </Text>
                             </Col>
-                            { currentOrganization ? (
+                            {currentOrganization ? (
                                 <Col span={24}>
                                     <Text className='cvat-header-menu-user-dropdown-organization'>
                                         {currentOrganization.slug}
                                     </Text>
                                 </Col>
-                            ) : null }
+                            ) : null}
                         </Row>
                         <CaretDownOutlined className='cvat-header-dropdown-icon' />
                     </span>
