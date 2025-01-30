@@ -19,20 +19,6 @@ function makeKey(id: number, instance: string): string {
 
 export default (state: ConsensusState = defaultState, action: ConsensusActions): ConsensusState => {
     switch (action.type) {
-        case ConsensusActionTypes.SET_FETCHING: {
-            return {
-                ...state,
-                fetching: action.payload.fetching,
-            };
-        }
-
-        case ConsensusActionTypes.SET_CONSENSUS_SETTINGS: {
-            return {
-                ...state,
-                consensusSettings: action.payload.consensusSettings,
-            };
-        }
-
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS: {
             const { taskID } = action.payload;
             const { mergingConsensus } = state;
