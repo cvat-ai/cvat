@@ -24,7 +24,8 @@ that can _perfectly_ annotate 50% of your data equates to reducing manual annota
 Since we know DL models can help us to annotate faster, how then do we use them?
 In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
 serverless platform. There are multiple implemented functions that can be
-found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
+found in the [serverless][cvat-builtin-serverless] directory such as
+_Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
 understand how to use these functions in the UI to automatically annotate data.
@@ -217,13 +218,19 @@ results directly into database. For more details please read
 
 ### Object segmentation using Segment Anything
 
-If you have an interactor that returns masks, you can use it to segment objects. One such interactor is `Segment Anything`. Several implementations are available out of the box:
+If you have an interactor that returns masks, you can use it to segment objects.
+One such interactor is `Segment Anything`. Several implementations are available out of the box:
 
 - `serverless/pytorch/facebookresearch/sam/`  Includes two versions: one optimized for CPU and another for GPU.
 
-Deploying a serverless function optimized for GPU follows a similar process. You only need to run the `serverless/deploy_gpu.sh` script, which executes the same commands but utilizes the `function-gpu.yaml` configuration file instead of `function.yaml`. See the following sections for details on the differences.
+Deploying a serverless function optimized for GPU follows a similar process.
+You only need to run the `serverless/deploy_gpu.sh` script, which executes the
+same commands but utilizes the `function-gpu.yaml` configuration file instead of `function.yaml`.
+See the following sections for details on the differences.
 
-_Note: Please do not run several GPU functions at the same time. In many cases, it will not work out of the box. For now, you should manually schedule different functions on different GPUs and it requires source code modification. Nuclio autoscaler does not support the local platform (docker)._
+_Note: Please do not run several GPU functions at the same time. In many cases, it will not work out of the box.
+For now, you should manually schedule different functions on different GPUs and it requires source code modification.
+Nuclio autoscaler does not support the local platform (docker)._
 
 <details>
 <summary>
