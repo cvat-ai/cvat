@@ -80,8 +80,8 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             } else if (params.key === Actions.MERGE_CONSENSUS_JOBS) {
                 Modal.confirm({
                     title: 'The consensus jobs will be merged',
-                    content: 'Existing annotations in regular jobs will be updated. Continue?',
-                    className: 'cvat-modal-confirm-delete-task',
+                    content: 'Existing annotations in parent jobs will be updated. Continue?',
+                    className: 'cvat-modal-confirm-consensus-merge-task',
                     onOk: () => {
                         onClickMenu(params);
                     },
