@@ -121,6 +121,7 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
+    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {
@@ -147,6 +148,8 @@ export interface SerializedJob {
     url: string;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
+    parent_job_id: number | null;
+    consensus_replicas: number;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
