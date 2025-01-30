@@ -7,24 +7,27 @@ from copy import copy
 
 import jsonpickle
 import numpy as np
-import tools.test as impl
+import torch
 
+from tools.test import siamese_init, siamese_track
+from utils.config_helper import load_config
+from utils.load_helper import load_pretrain
 
 class ModelHandler:
     def __init__(self):
         # Setup device
-        self.device = impl.torch.device('cuda' if impl.torch.cuda.is_available() else 'cpu')
-        impl.torch.backends.cudnn.benchmark = True
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        torch.backends.cudnn.benchmark = True
 
         base_dir = os.path.abspath(os.environ.get("MODEL_PATH",
             "/opt/nuclio/SiamMask/experiments/siammask_sharp"))
         class configPath:
             config = os.path.join(base_dir, "config_davis.json")
 
-        self.config = impl.load_config(configPath)
+        self.config = load_config(configPath)
         from custom import Custom
         siammask = Custom(anchors=self.config['anchors'])
-        self.siammask = impl.load_pretrain(siammask, os.path.join(base_dir, "SiamMask_DAVIS.pth"))
+        self.siammask = load_pretrain(siammask, os.path.join(base_dir, "SiamMask_DAVIS.pth"))
         self.siammask.eval().to(self.device)
 
     def encode_state(self, state):
@@ -39,6 +42,8 @@ class ModelHandler:
 
     def decode_state(self, state):
         for k,v in state.items():
+            # The server ensures that `state` is one of the values that the function itself
+            # has previously output. Therefore it should be safe to use jsonpickle.
             state[k] = jsonpickle.decode(v)  # nosec: B301
 
         state['net'] = copy(self.siammask)
@@ -54,12 +59,12 @@ class ModelHandler:
             target_pos = np.array([(xtl + xbr) / 2, (ytl + ybr) / 2])
             target_sz = np.array([xbr - xtl, ybr - ytl])
             siammask = copy(self.siammask) # don't modify self.siammask
-            state = impl.siamese_init(image, target_pos, target_sz, siammask,
+            state = siamese_init(image, target_pos, target_sz, siammask,
                 self.config['hp'], device=self.device)
             state = self.encode_state(state)
         else: # track
             state = self.decode_state(state)
-            state = impl.siamese_track(state, image, mask_enable=True,
+            state = siamese_track(state, image, mask_enable=True,
                 refine_enable=True, device=self.device)
             shape = state['ploygon'].flatten().tolist()
             state = self.encode_state(state)

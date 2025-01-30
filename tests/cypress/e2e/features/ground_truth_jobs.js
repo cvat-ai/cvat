@@ -356,6 +356,33 @@ context('Ground truth jobs', () => {
             cy.contains('.cvat-allocation-summary-excluded', '0').should('exist');
             cy.contains('.cvat-allocation-summary-active', '3').should('exist');
         });
+
+        it('Check search feature', () => {
+            cy.get('.cvat-quality-table-search-bar input').clear();
+            serverFiles.forEach((file, index) => {
+                cy.get('.cvat-quality-table-search-bar input').type(`image_${index + 1}`);
+                cy.get('.cvat-quality-table-search-bar .ant-input-search-button').click();
+                cy.get('.cvat-allocation-frame-row').should('have.length', 1);
+                cy.get('.cvat-allocation-frame-row').within(() => {
+                    cy.contains(file).should('exist');
+                });
+                cy.get('.cvat-quality-table-search-bar input').clear();
+            });
+
+            cy.get('.cvat-quality-table-search-bar .ant-input-search-button').click();
+            cy.get('.cvat-allocation-frame-row').should('have.length', 3);
+        });
+
+        it('Check management table .csv representation is available for download', () => {
+            cy.get('.cvat-quality-control-management-tab .cvat-quality-table-dowload-button').click();
+
+            const expectedFileName = `allocation-table-task_${taskID}.csv`;
+            cy.verifyDownload(expectedFileName);
+            cy.checkCsvFileContent(expectedFileName, 'frame,name,active', 4, (row, index) => {
+                expect(row).to.include(`images/image_${index + 1}.jpg`);
+                expect(row).to.include('true');
+            });
+        });
     });
 
     describe('Regression tests', () => {
