@@ -13,7 +13,7 @@ import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import Tag from 'antd/lib/tag';
 import notification from 'antd/lib/notification';
-import { ArrowRightOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
@@ -72,7 +72,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [cleanup, setCleanup] = useState<boolean>(false);
     const [mapping, setMapping] = useState<FullMapping>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
-    const [detectorThreshold, setDetectorThreshold] = useState<number>(0.9);
+    const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
 
@@ -184,22 +184,21 @@ function DetectorRunner(props: Props): JSX.Element {
                 <div className='cvat-detector-runner-threshold-wrapper'>
                     <Row align='middle' justify='start'>
                         <Col>
-                            <CVATTooltip title='Minimum confidence threshold for detections'>
-                                <InputNumber
-                                    min={0.01}
-                                    step={0.01}
-                                    max={1}
-                                    value={detectorThreshold}
-                                    onChange={(value: number | null) => {
-                                        if (value !== null) {
-                                            setDetectorThreshold(clamp(+value, 0.01, 1));
-                                        }
-                                    }}
-                                />
-                            </CVATTooltip>
+                            <InputNumber
+                                min={0.01}
+                                step={0.01}
+                                max={1}
+                                value={detectorThreshold}
+                                onChange={(value: number | null) => {
+                                    setDetectorThreshold(value);
+                                }}
+                            />
                         </Col>
                         <Col>
                             <Text>Threshold</Text>
+                            <CVATTooltip title='Minimum confidence threshold for detections. Leave empty to use the default value specified in the model settings'>
+                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                            </CVATTooltip>
                         </Col>
                     </Row>
                 </div>
@@ -261,7 +260,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                     mapping: serverMapping,
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
-                                    threshold: detectorThreshold,
+                                    ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
                                 });
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
