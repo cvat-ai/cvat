@@ -2910,9 +2910,7 @@ class _TestTasksBase:
     def fxt_uploaded_images_task_with_segments_and_consensus(
         self, request: pytest.FixtureRequest
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
-        yield from self._image_task_fxt_base(
-            request=request, segment_size=4, job_replication=2
-        )
+        yield from self._image_task_fxt_base(request=request, segment_size=4, job_replication=2)
 
     def _image_task_with_honeypots_and_segments_base(
         self,
