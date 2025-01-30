@@ -4,7 +4,7 @@
 
 import json
 from copy import deepcopy
-from functools import partial, partialmethod
+from functools import partial
 from http import HTTPStatus
 from typing import Any, Dict, Optional, Tuple
 
@@ -45,14 +45,13 @@ class _PermissionTestBase:
                 _check_status=raise_on_error,
             )
 
-            if not raise_on_error:
-                if response.status != HTTPStatus.ACCEPTED:
-                    return response
+            if not raise_on_error and response.status != HTTPStatus.ACCEPTED:
+                return response
             assert response.status == HTTPStatus.ACCEPTED
 
             rq_id = json.loads(response.data)["rq_id"]
 
-            while True and wait_result:
+            while wait_result:
                 (_, response) = api_client.consensus_api.create_merge(
                     rq_id=rq_id, _parse_response=False
                 )
