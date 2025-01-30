@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Human pose estimation
     type: detector
-    framework: pytorch
     spec: |
       [
         {
@@ -176,8 +175,8 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat.pth.mmpose.hrnet32
-    baseImage: python:3.8
+    image: cvat.pth.mmpose.hrnet32:latest-gpu
+    baseImage: nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
     directives:
       preCopy:
@@ -186,8 +185,6 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          #value: pip install openmim torch==2.0.0+cpu torchvision==0.15.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-          #value: pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
           value: pip install openmim torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1 --extra-index-url https://download.pytorch.org/whl/cu118
         - kind: RUN
           value: mim install mmcv==2.0.1 mmdet==3.2.0 mmpose==1.2.0
@@ -206,8 +203,8 @@ spec:
       attributes:
         maxRequestBodySize: 33554432 # 32MB
 
-  resources:                                                                                  
-    limits:                                                                                        
+  resources:
+    limits:
       nvidia.com/gpu: 1
 
   platform:
