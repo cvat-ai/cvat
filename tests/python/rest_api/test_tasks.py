@@ -2855,6 +2855,7 @@ class _TestTasksBase:
         image_files: Optional[Sequence[io.BytesIO]] = None,
         server_files: Optional[Sequence[str]] = None,
         cloud_storage_id: Optional[int] = None,
+        **kwargs,
     ) -> Generator[tuple[_TaskSpec, int], None, None]:
         validation_params = models.DataRequestValidationParams._from_openapi_data(
             mode="gt_pool",
@@ -2896,6 +2897,7 @@ class _TestTasksBase:
                 validation_params=validation_params,
                 server_files=server_files,
                 cloud_storage_id=cloud_storage_id,
+                **kwargs,
             )
         ) as task_gen:
             for task_spec, task_id in task_gen:
@@ -3012,6 +3014,10 @@ class _TestTasksBase:
             image_files=image_files,
             server_files=server_files,
             cloud_storage_id=cloud_storage_id,
+            # FIXME: random sorting with frame filter and cloud images (and, optionally, honeypots)
+            # doesn't work with static cache
+            # https://github.com/cvat-ai/cvat/issues/9021
+            use_cache=True,
         )
 
     def _uploaded_images_task_with_gt_and_segments_base(
