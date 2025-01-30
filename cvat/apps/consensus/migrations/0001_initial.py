@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("engine", "0087_job_parent_job_task_consensus_replicas_and_more"),
+        ("engine", "0088_consensus_jobs"),
     ]
 
     operations = [
