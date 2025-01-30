@@ -17,7 +17,7 @@ from .models import AnnotationConflict, QualityReport, QualitySettings
 
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]
-    job_owner_id: Optional[int]
+    rq_job_owner_id: Optional[int]
     task_id: Optional[int]
 
     class Scopes(StrEnum):
@@ -103,7 +103,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         if "job_owner_id" in kwargs:
-            self.job_owner_id = int(kwargs.pop("job_owner_id"))
+            self.rq_job_owner_id = int(kwargs.pop("job_owner_id"))
 
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/quality_reports/allow"
@@ -164,7 +164,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 ),
             }
         elif self.scope == self.Scopes.VIEW_STATUS:
-            data = {"owner": {"id": self.job_owner_id}}
+            data = {"owner": {"id": self.rq_job_owner_id}}
 
         return data
 
