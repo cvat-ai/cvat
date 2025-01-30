@@ -38,7 +38,7 @@ export enum Actions {
     BACKUP_TASK = 'backup_task',
     VIEW_ANALYTICS = 'view_analytics',
     QUALITY_CONTROL = 'quality_control',
-    VIEW_CONSENSUS_ANALYTICS = 'view_consensus_analytics',
+    CONSENSUS_MANAGEMENT = 'consensus_management',
     MERGE_CONSENSUS_JOBS = 'merge_consensus_jobs',
 }
 
@@ -146,7 +146,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
     if (consensusEnabled) {
         menuItems.push([(
             <Menu.Item
-                key={Actions.VIEW_CONSENSUS_ANALYTICS}
+                key={Actions.CONSENSUS_MANAGEMENT}
             >
                 Consensus management
             </Menu.Item>

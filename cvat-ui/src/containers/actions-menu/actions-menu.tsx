@@ -121,7 +121,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             onViewAnalytics();
         } else if (action === Actions.QUALITY_CONTROL) {
             onViewQualityControl();
-        } else if (action === Actions.VIEW_CONSENSUS_ANALYTICS) {
+        } else if (action === Actions.CONSENSUS_MANAGEMENT) {
             onViewConsensusManagement();
         } else if (action === Actions.MERGE_CONSENSUS_JOBS) {
             mergeConsensusJobs(taskInstance);
