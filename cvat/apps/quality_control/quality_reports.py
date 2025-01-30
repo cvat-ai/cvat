@@ -1110,7 +1110,7 @@ class DistanceComparator(dm.components.comparator.DistanceComparator):
                 return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         img_h, img_w = item_a.media_as(dm.Image).size
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.bbox,
             item_a,
             item_b,
