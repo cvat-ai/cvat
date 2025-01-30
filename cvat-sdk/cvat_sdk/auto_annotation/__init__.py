@@ -2,7 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .driver import BadFunctionError, annotate_task
+from .driver import annotate_task
+from .exceptions import BadFunctionError
 from .interface import (
     DetectionFunction,
     DetectionFunctionContext,
