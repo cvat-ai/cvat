@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -92,8 +92,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.verifyNotification();
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Save').trigger('mouseout');
+            cy.clickSaveAnnotationView();
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
@@ -114,8 +113,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click();
-            cy.get('button').contains('Save').trigger('mouseout');
+            cy.clickSaveAnnotationView();
         });
     });
 });

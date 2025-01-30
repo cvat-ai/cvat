@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -288,7 +288,7 @@ class SublabelSerializer(serializers.ModelSerializer):
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
-    type = serializers.CharField(allow_blank=True, required=False,
+    type = serializers.ChoiceField(choices=models.LabelType.choices(), required=False,
         help_text="Associated annotation type for this label")
     has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
@@ -418,7 +418,7 @@ class LabelSerializer(SublabelSerializer):
             try:
                 db_label = models.Label.create(
                     name=validated_data.get('name'),
-                    type=validated_data.get('type'),
+                    type=validated_data.get('type', models.LabelType.ANY),
                     parent=parent_label,
                     **parent_info
                 )
@@ -2465,10 +2465,14 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = {task.subset for task in instance.tasks.all()}
-        task_subsets.discard('')
+
+        task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
+        task_dimension = next(
+            (task.dimension for task in instance.tasks.all() if task.dimension),
+            None
+        )
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
+        response['dimension'] = task_dimension
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):

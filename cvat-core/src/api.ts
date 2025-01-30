@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +39,6 @@ import {
 
 import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
 import User from './user';
-import pjson from '../package.json';
 import config from './config';
 
 import implementAPI from './api-implementation';
@@ -327,9 +326,6 @@ function build(): CVATCore {
                 config.jobMetaDataReloadPeriod = value;
             },
         },
-        client: {
-            version: `${pjson.version}`,
-        },
         enums,
         exceptions: {
             Exception,
@@ -481,7 +477,6 @@ function build(): CVATCore {
     cvat.lambda = Object.freeze(cvat.lambda);
     // logger: todo: logger storage implemented other way
     cvat.config = Object.freeze(cvat.config);
-    cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
     cvat.exceptions = Object.freeze(cvat.exceptions);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
