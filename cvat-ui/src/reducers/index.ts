@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -89,9 +89,6 @@ export interface JobsState {
         deletes: {
             [tid: number]: boolean;
         };
-    };
-    regularJobViewUncollapse: {
-        [jobId: number]: boolean;
     };
 }
 

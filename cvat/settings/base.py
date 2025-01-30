@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -40,6 +40,7 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 def generate_secret_key():
     """
@@ -72,12 +73,13 @@ def generate_secret_key():
             # Discard ours and use theirs.
             pass
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
-except ModuleNotFoundError:
-    generate_secret_key()
-    from keys.secret_key import SECRET_KEY
+if not SECRET_KEY:
+    try:
+        sys.path.append(BASE_DIR)
+        from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
+    except ModuleNotFoundError:
+        generate_secret_key()
+        from keys.secret_key import SECRET_KEY
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
@@ -436,7 +438,7 @@ os.makedirs(CACHE_ROOT, exist_ok=True)
 EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
 os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
 
-EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
+EVENTS_LOCAL_DB_ROOT = os.path.join(BASE_DIR, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
 EVENTS_LOCAL_DB_FILE = os.path.join(
     EVENTS_LOCAL_DB_ROOT,
@@ -666,6 +668,7 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 
     'ENUM_NAME_OVERRIDES': {
+        'LabelType': 'cvat.apps.engine.models.LabelType',
         'ShapeType': 'cvat.apps.engine.models.ShapeType',
         'OperationStatus': 'cvat.apps.engine.models.StateChoice',
         'ChunkType': 'cvat.apps.engine.models.DataChoice',

@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -105,7 +105,7 @@ export const config: Partial<Config> = {
                 listValues: [
                     { value: 'annotation', title: 'Annotation' },
                     { value: 'ground_truth', title: 'Ground truth' },
-                    { value: 'consensus', title: 'Consensus' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
                 ],
             },
         },

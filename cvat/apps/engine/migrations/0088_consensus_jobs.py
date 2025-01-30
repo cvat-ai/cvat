@@ -9,7 +9,7 @@ import cvat.apps.engine.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("engine", "0086_profile_has_analytics_access"),
+        ("engine", "0087_alter_label_type"),
     ]
 
     operations = [
@@ -20,7 +20,8 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name="children_jobs",
+                related_name="child_jobs",
+                related_query_name="child_job",
                 to="engine.job",
             ),
         ),
@@ -36,7 +37,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("annotation", "ANNOTATION"),
                     ("ground_truth", "GROUND_TRUTH"),
-                    ("consensus", "CONSENSUS"),
+                    ("consensus_replica", "CONSENSUS_REPLICA"),
                 ],
                 default=cvat.apps.engine.models.JobType["ANNOTATION"],
                 max_length=32,

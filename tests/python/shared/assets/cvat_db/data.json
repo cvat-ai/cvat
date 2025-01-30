@@ -7170,7 +7170,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 42
   }
 },
@@ -7186,7 +7186,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 42
   }
 },
@@ -7202,7 +7202,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 42
   }
 },
@@ -7234,7 +7234,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 46
   }
 },
@@ -7250,7 +7250,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 46
   }
 },
@@ -7266,7 +7266,7 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "consensus",
+    "type": "consensus_replica",
     "parent_job": 46
   }
 },

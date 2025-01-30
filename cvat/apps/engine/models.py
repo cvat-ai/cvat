@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -72,16 +72,16 @@ class StatusChoice(str, Enum):
         return self.value
 
 class LabelType(str, Enum):
-    BBOX = 'bbox'
+    ANY = 'any'
+    CUBOID = 'cuboid'
     ELLIPSE = 'ellipse'
+    MASK = 'mask'
+    POINTS = 'points'
     POLYGON = 'polygon'
     POLYLINE = 'polyline'
-    POINTS = 'points'
-    CUBOID = 'cuboid'
-    CUBOID_3D = 'cuboid_3d'
+    RECTANGLE = 'rectangle'
     SKELETON = 'skeleton'
     TAG = 'tag'
-    ANY = 'any'
 
     @classmethod
     def choices(cls):
@@ -170,7 +170,7 @@ class SortingMethod(str, Enum):
 class JobType(str, Enum):
     ANNOTATION = 'annotation'
     GROUND_TRUTH = 'ground_truth'
-    CONSENSUS = 'consensus'
+    CONSENSUS_REPLICA = 'consensus_replica'
 
     @classmethod
     def choices(cls):
@@ -878,7 +878,10 @@ class Job(TimestampedModel, FileSystemRelatedModel):
         default=StateChoice.NEW)
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
-    parent_job = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children_jobs')
+    parent_job = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='child_jobs', related_query_name="child_job"
+    )
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
@@ -951,7 +954,7 @@ class Label(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
-    type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
+    type = models.CharField(max_length=32, choices=LabelType.choices(), default=LabelType.ANY)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sublabels')
 
     def __str__(self):
@@ -1320,8 +1323,10 @@ class AnnotationGuide(TimestampedModel):
     is_public = models.BooleanField(default=False)
 
     @property
-    def target(self):
-        return self.project or self.task
+    def target(self) -> Task | Project:
+        target = self.project or self.task
+        assert target # one of the fields must be set
+        return target
 
     @property
     def organization_id(self):

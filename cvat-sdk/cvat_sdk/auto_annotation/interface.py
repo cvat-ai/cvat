@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -187,7 +187,7 @@ def mask(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShap
     """
     Helper factory function for LabeledShapeRequest with frame=0 and type="mask".
 
-    It's recommended to use the cvat.masks.encode_mask function to build the
+    It's recommended to use the cvat_sdk.masks.encode_mask function to build the
     points argument.
     """
     return shape(label_id, type="mask", points=points, **kwargs)

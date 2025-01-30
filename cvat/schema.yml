@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.25.1
+  version: 2.26.2
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2067,7 +2067,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus
+          - consensus_replica
       tags:
       - jobs
       security:
@@ -2986,16 +2986,16 @@ paths:
         schema:
           type: string
           enum:
-          - bbox
+          - any
+          - cuboid
           - ellipse
+          - mask
+          - points
           - polygon
           - polyline
-          - points
-          - cuboid
-          - cuboid_3d
+          - rectangle
           - skeleton
           - tag
-          - any
       tags:
       - labels
       security:
@@ -8574,12 +8574,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus
+      - consensus_replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus` - CONSENSUS
+        * `consensus_replica` - CONSENSUS_REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -8701,8 +8701,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -8745,6 +8758,30 @@ components:
             a parent label
       required:
       - name
+    LabelType:
+      enum:
+      - any
+      - cuboid
+      - ellipse
+      - mask
+      - points
+      - polygon
+      - polyline
+      - rectangle
+      - skeleton
+      - tag
+      type: string
+      description: |-
+        * `any` - ANY
+        * `cuboid` - CUBOID
+        * `ellipse` - ELLIPSE
+        * `mask` - MASK
+        * `points` - POINTS
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `rectangle` - RECTANGLE
+        * `skeleton` - SKELETON
+        * `tag` - TAG
     LabeledData:
       type: object
       properties:
@@ -9838,8 +9875,21 @@ components:
           description: Delete the label. Only applicable in the PATCH methods of a
             project or a task.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -11013,8 +11063,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -11053,8 +11116,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -11294,7 +11370,6 @@ components:
         consensus_replicas:
           type: integer
           minimum: 0
-          nullable: true
           default: 0
           description: |
             The number of consensus replica jobs for each annotation job.

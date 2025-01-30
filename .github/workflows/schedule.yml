@@ -163,9 +163,6 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'python manage.py test cvat/apps -v 2'
 
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test'
-
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
 
   e2e_testing:

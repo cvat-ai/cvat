@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -55,7 +55,7 @@ function JobCardComponent(props: Props): JSX.Element {
     let tag = null;
     if (job.type === JobType.GROUND_TRUTH) {
         tag = 'Ground truth';
-    } else if (job.type === JobType.CONSENSUS) {
+    } else if (job.type === JobType.ANNOTATION && job.consensusReplicas > 0) {
         tag = 'Consensus';
     }
 
