@@ -208,12 +208,54 @@ above. Choose the `magic wand` tool, go to the `Detectors` tab, and select
 `YOLO v3` model. Press `Annotate` button and after a couple of seconds you
 should see detection results. Do not forget to save annotations.
 
-![YOLO v3 results](/images/yolo_v3_results.jpg)
+![YOLO v3 results](/images/yolo_v3_results.png)
 
 Also it is possible to run a detector for the whole annotation task. Thus
 CVAT will run the serverless function on every frame of the task and submit
 results directly into database. For more details please read
 [the guide][cvat-auto-annotation-user-guide].
+
+### Object segmentation using Segment Anything
+
+If you have an interactor that returns masks, you can use it to segment objects. One such interactor is `Segment Anything`. Several implementations are available out of the box:
+
+- `serverless/pytorch/facebookresearch/sam/`  Includes two versions: one optimized for CPU and another for GPU.
+
+Deploying a serverless function optimized for GPU follows a similar process. You only need to run the `serverless/deploy_gpu.sh` script, which executes the same commands but utilizes the `function-gpu.yaml` configuration file instead of `function.yaml`. See the following sections for details on the differences.
+
+_Note: Please do not run several GPU functions at the same time. In many cases, it will not work out of the box. For now, you should manually schedule different functions on different GPUs and it requires source code modification. Nuclio autoscaler does not support the local platform (docker)._
+
+<details>
+<summary>
+
+```bash
+serverless/deploy_gpu.sh serverless/pytorch/facebookresearch/sam/
+```
+
+</summary>
+
+```
+25.01.30 11:02:07.034 (I)                     nuctl Deploying function {"name": "pth-facebookresearch-sam-vit-h"}
+25.01.30 11:02:07.034 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.13.0, Git commit: c4422eb772781fb50fbf017698aae96199d81388, OS: linux, Arch: amd64, Go version: go1.21.7", "name": "pth-facebookresearch-sam-vit-h"}
+25.01.30 11:02:07.159 (I)                     nuctl Staging files and preparing base images
+25.01.30 11:02:07.160 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:22.04"}
+25.01.30 11:02:07.160 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:02:07.160 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.13.0-amd64"}
+25.01.30 11:02:09.656 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+25.01.30 11:02:12.174 (I)            nuctl.platform Building docker image {"image": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:20:54.431 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.facebookresearch.sam.vit_h:latest", "registry": ""}
+25.01.30 11:20:54.431 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:20:54.431 (I)                     nuctl Build complete {"image": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:20:54.436 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-facebookresearch-sam-vit-h"}
+25.01.30 11:20:55.018 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
+25.01.30 11:20:56.719 (I)                     nuctl Function deploy complete {"functionName": "pth-facebookresearch-sam-vit-h", "httpPort": 32771, "internalInvocationURLs": ["172.18.0.22:8080"], "externalInvocationURLs": ["0.0.0.0:32771"]}
+```
+
+</details>
+
+Now you should be able to annotate objects using segment anything.
+
+![Segment Anything results](/images/interactors_SAM.gif)
 
 ## Adding your own DL models
 

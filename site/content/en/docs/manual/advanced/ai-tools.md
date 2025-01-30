@@ -185,11 +185,13 @@ To annotate with detectors, do the following:
 3. From the left drop-down select the DL model label, from the right drop-down
    select the matching label of your task.
 
-   ![](/images/image187.jpg)
+   ![](/images/detectors_tab.png)
 
 4. (Optional) If the model returns masks, and you
    need to convert masks to polygons, use the **Convert masks to polygons** toggle.
-5. Click **Annotate**.
+5. (Optional) You can specify a **Threshold** for the model. If not provided, the
+    default value from the model settings will be used.
+6. Click **Annotate**.
 
 This action will automatically annotate one frame.
 For automatic annotation of multiple frames,
