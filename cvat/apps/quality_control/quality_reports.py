@@ -1147,14 +1147,22 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
             from pycocotools import mask as mask_utils
 
+            # Merge instance groups
             object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
-            object_masks = mask_utils.decode(object_rles)
+
+            # Mask materialization can consume a lot of memory,
+            # avoid storing all the masks simultaneously
+            def _make_lazy_decode(i: int):
+                def _lazy_decode() -> dm.BinaryMaskImage:
+                    return mask_utils.decode([object_rles[i]])[:, :, 0]
+
+                return _lazy_decode
 
             return dm.CompiledMask.from_instance_masks(
                 # need to increment labels and instance ids by 1 to avoid confusion with background
                 instance_masks=(
-                    dm.Mask(image=object_masks[:, :, i], z_order=ann.z_order, label=ann.label + 1)
+                    dm.Mask(image=_make_lazy_decode(i), z_order=ann.z_order, label=ann.label + 1)
                     for i, ann in enumerate(anns)
                 ),
                 instance_ids=(iid + 1 for iid in instance_ids),
@@ -2529,9 +2537,7 @@ class QualityReportUpdateManager:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(
-            db_model=models.QualityReport, objects=db_job_reports, flt_param={}
-        )
+        db_job_reports = bulk_create(db_model=models.QualityReport, objects=db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2546,9 +2552,7 @@ class QualityReportUpdateManager:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(
-            db_model=models.AnnotationConflict, objects=db_conflicts, flt_param={}
-        )
+        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objects=db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2564,7 +2568,7 @@ class QualityReportUpdateManager:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids, flt_param={})
+        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids)
 
         return db_task_report
 
