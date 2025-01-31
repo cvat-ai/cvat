@@ -120,7 +120,7 @@ class _TaskMerger:
                 included_annotation_types=comparison_parameters.included_annotation_types,
             )
         )
-        merged_dataset = merger(consensus_datasets)
+        merged_dataset = merger(*consensus_datasets)
 
         # Delete the existing annotations in the job.
         # If we don't delete existing annotations, the imported annotations
