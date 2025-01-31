@@ -11,6 +11,8 @@ from typing import Callable, Iterable, Optional, Sequence, Union
 
 import attrs
 import datumaro as dm
+import datumaro
+import datumaro.components.merge.intersect_merge
 import numpy as np
 from attrs import define, field
 from datumaro.components.errors import FailedLabelVotingError
@@ -28,7 +30,7 @@ from cvat.apps.quality_control.quality_reports import match_segments, oks, segme
 
 
 @define(kw_only=True, slots=False)
-class IntersectMerge(dm.ops.IntersectMerge):
+class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
     @define(kw_only=True, slots=False)
     class Conf:
         pairwise_dist: float = 0.5
@@ -48,7 +50,7 @@ class IntersectMerge(dm.ops.IntersectMerge):
             if self.included_annotation_types is None:
                 self.included_annotation_types = ComparisonParameters.included_annotation_types
 
-    conf = field(converter=ensure_cls(Conf), factory=Conf)
+    conf: Conf = field(converter=ensure_cls(Conf), factory=Conf)
 
     dataset_mean_consensus_score: dict[int, float] = field(
         init=False
