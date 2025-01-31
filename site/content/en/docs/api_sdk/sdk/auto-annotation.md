@@ -63,8 +63,9 @@ class TorchvisionDetectionFunction:
         # describe the annotations
         return cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec(cat, i)
-                for i, cat in enumerate(self._weights.meta['categories'])
+                cvataa.label_spec(cat, i, type="rectangle")
+                for i, cat in enumerate(self._weights.meta["categories"])
+                if cat != "N/A"
             ]
         )
 

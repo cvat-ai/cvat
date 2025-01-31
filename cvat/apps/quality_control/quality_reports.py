@@ -12,8 +12,9 @@ from copy import deepcopy
 from functools import cached_property, partial
 from typing import Any, Callable, Optional, TypeVar, Union, cast
 
+# We use both full names for internal datumaro symbols and dm.-aliased for external ones
 import datumaro
-import datumaro as dm
+import datumaro as dm  # pylint: disable=reimported
 import datumaro.components.annotations.matcher
 import datumaro.components.comparator
 import datumaro.util.annotation_util

@@ -56,11 +56,27 @@ class _AnnotationMapper:
     class _LabelIdMapping:
         id: int
         sublabels: Mapping[int, Optional[_AnnotationMapper._SublabelIdMapping]]
-        expected_num_elements: int = 0
+        expected_num_elements: int
+        expected_type: str
 
     _SpecIdMapping: TypeAlias = Mapping[int, Optional[_LabelIdMapping]]
 
     _spec_id_mapping: _SpecIdMapping
+
+    def _get_expected_function_output_type(self, fun_label, ds_label):
+        fun_output_type = getattr(fun_label, "type", "any")
+        if fun_output_type == "any":
+            return ds_label.type
+
+        if self._conv_mask_to_poly and fun_output_type == "mask":
+            fun_output_type = "polygon"
+
+        if not self._are_label_types_compatible(fun_output_type, ds_label.type):
+            raise BadFunctionError(
+                f"label {fun_label.name!r} has type {fun_output_type!r} in the function,"
+                f" but {ds_label.type!r} in the dataset"
+            )
+        return fun_output_type
 
     def _build_label_id_mapping(
         self,
@@ -70,36 +86,37 @@ class _AnnotationMapper:
         label_nm: _LabelNameMapping,
         allow_unmatched_labels: bool,
     ) -> Optional[_LabelIdMapping]:
-        sl_map = {}
+        ds_sublabels_by_name = {ds_sl.name: ds_sl for ds_sl in ds_label.sublabels}
 
-        if getattr(fun_label, "sublabels", []):
-            ds_sublabels_by_name = {ds_sl.name: ds_sl for ds_sl in ds_label.sublabels}
+        def sublabel_mapping(fun_sl: models.ILabel) -> Optional[int]:
+            sublabel_nm = label_nm.map_sublabel(fun_sl.name)
+            if sublabel_nm is None:
+                return None
 
-            def sublabel_mapping(fun_sl: models.ILabel) -> Optional[int]:
-                sublabel_nm = label_nm.map_sublabel(fun_sl.name)
-                if sublabel_nm is None:
-                    return None
-
-                ds_sl = ds_sublabels_by_name.get(sublabel_nm.name)
-                if not ds_sl:
-                    if not allow_unmatched_labels:
-                        raise BadFunctionError(
-                            f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
-                        )
-
-                    self._logger.info(
-                        "sublabel %r of label %r is not in dataset; any annotations using it will be ignored",
-                        fun_sl.name,
-                        fun_label.name,
+            ds_sl = ds_sublabels_by_name.get(sublabel_nm.name)
+            if not ds_sl:
+                if not allow_unmatched_labels:
+                    raise BadFunctionError(
+                        f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
                     )
-                    return None
 
-                return ds_sl.id
+                self._logger.info(
+                    "sublabel %r of label %r is not in dataset; any annotations using it will be ignored",
+                    fun_sl.name,
+                    fun_label.name,
+                )
+                return None
 
-            sl_map = {fun_sl.id: sublabel_mapping(fun_sl) for fun_sl in fun_label.sublabels}
+            return ds_sl.id
 
         return self._LabelIdMapping(
-            ds_label.id, sublabels=sl_map, expected_num_elements=len(ds_label.sublabels)
+            ds_label.id,
+            sublabels={
+                fun_sl.id: sublabel_mapping(fun_sl)
+                for fun_sl in getattr(fun_label, "sublabels", [])
+            },
+            expected_num_elements=len(ds_label.sublabels),
+            expected_type=self._get_expected_function_output_type(fun_label, ds_label),
         )
 
     def _build_spec_id_mapping(
@@ -254,6 +271,12 @@ class _AnnotationMapper:
 
         shape.label_id = label_id_mapping.id
 
+        if not self._are_label_types_compatible(shape.type.value, label_id_mapping.expected_type):
+            raise BadFunctionError(
+                f"function output shape of type {shape.type.value!r}"
+                f" (expected {label_id_mapping.expected_type!r})"
+            )
+
         if shape.type.value == "mask" and self._conv_mask_to_poly:
             raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
 
@@ -268,6 +291,11 @@ class _AnnotationMapper:
 
     def validate_and_remap(self, shapes: list[models.LabeledShapeRequest], ds_frame: int) -> None:
         shapes[:] = [shape for shape in shapes if self._remap_shape(shape, ds_frame)]
+
+    @staticmethod
+    def _are_label_types_compatible(source_type: str, destination_type: str) -> bool:
+        assert source_type != "any"
+        return destination_type == "any" or destination_type == source_type
 
 
 @attrs.frozen(kw_only=True)

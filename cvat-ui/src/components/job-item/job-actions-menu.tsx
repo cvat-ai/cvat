@@ -37,7 +37,7 @@ function JobActionsMenu(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
 
-    const onClickMenuWrapper = useCallback(
+    const onClickMenu = useCallback(
         (action: MenuInfo) => {
             if (action.key === Actions.TASK) {
                 history.push(`/tasks/${job.taskId}`);
@@ -92,7 +92,7 @@ function JobActionsMenu(props: Props): JSX.Element {
     return (
         <Menu
             className='cvat-job-item-menu'
-            onClick={onClickMenuWrapper}
+            onClick={onClickMenu}
         >
             <Menu.Item key={Actions.TASK} disabled={job.taskId === null}>Go to the task</Menu.Item>
             <Menu.Item key={Actions.PROJECT} disabled={job.projectId === null}>Go to the project</Menu.Item>

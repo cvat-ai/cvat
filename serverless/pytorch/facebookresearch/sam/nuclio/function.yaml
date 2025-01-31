@@ -54,7 +54,7 @@ spec:
           value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
