@@ -16,7 +16,6 @@ import datumaro.components.merge.intersect_merge
 import datumaro.util
 import datumaro.util.annotation_util
 import numpy as np
-from attrs import define, field
 from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import find_instances, max_bbox, mean_bbox
 from datumaro.util.attrs_util import ensure_cls
@@ -29,19 +28,19 @@ from cvat.apps.quality_control.quality_reports import (
 )
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
-    @define(kw_only=True, slots=False)
+    @attrs.define(kw_only=True, slots=False)
     class Conf:
         pairwise_dist: float = 0.5
         sigma: float = 0.1
 
         output_conf_thresh: float = 0
         quorum: int = 1
-        ignored_attributes: Collection[str] = field(factory=tuple)
+        ignored_attributes: Collection[str] = attrs.field(factory=tuple)
         torso_r: float = 0.01
 
-        groups: Collection[Collection[str]] = field(factory=tuple)
+        groups: Collection[Collection[str]] = attrs.field(factory=tuple)
         close_distance: float = 0  # disabled
 
         included_annotation_types: Collection[dm.AnnotationType] = None
@@ -50,9 +49,9 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
             if self.included_annotation_types is None:
                 self.included_annotation_types = ComparisonParameters.included_annotation_types
 
-    conf: Conf = field(converter=ensure_cls(Conf), factory=Conf)
+    conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
-    dataset_mean_consensus_score: dict[int, float] = field(
+    dataset_mean_consensus_score: dict[int, float] = attrs.field(
         init=False
     )  # id(dataset) -> mean consensus score
 
@@ -147,7 +146,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         }
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class AnnotationMatcher(metaclass=ABCMeta):
     _context: IntersectMerge
 
@@ -169,7 +168,7 @@ class AnnotationMatcher(metaclass=ABCMeta):
         """
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class LabelMatcher(AnnotationMatcher):
     def distance(self, a: dm.Label, b: dm.Label) -> bool:
         a_label = self._context.get_any_label_name(a, a.label)
@@ -183,9 +182,9 @@ class LabelMatcher(AnnotationMatcher):
 CacheKey = tuple[int, int]
 
 
-@define
+@attrs.define
 class CachedSimilarityFunction:
-    cache: dict[CacheKey, float] = field(factory=dict, kw_only=True)
+    cache: dict[CacheKey, float] = attrs.field(factory=dict, kw_only=True)
 
     def __call__(self, a_ann: dm.Annotation, b_ann: dm.Annotation) -> float:
         a_ann_id = id(a_ann)
@@ -218,13 +217,13 @@ class CachedSimilarityFunction:
         self.cache.clear()
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
     pairwise_dist: float = 0.9
     cluster_dist: float | None = None
     categories: dm.CategoriesInfo
-    _comparator: DistanceComparator = field(init=False)
-    _distance: CachedSimilarityFunction = field(init=False)
+    _comparator: DistanceComparator = attrs.field(init=False)
+    _distance: CachedSimilarityFunction = attrs.field(init=False)
 
     def __attrs_post_init__(self):
         if self.cluster_dist is None:
@@ -337,35 +336,35 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
         return clusters
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class BboxMatcher(ShapeMatcher):
     def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, distances = self._comparator.match_boxes(item_a, item_b)
         return matches, distances
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class PolygonMatcher(ShapeMatcher):
     def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, distances = self._comparator.match_segmentations(item_a, item_b)
         return matches, distances
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class MaskMatcher(PolygonMatcher):
     pass
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class PointsMatcher(ShapeMatcher):
-    sigma: Optional[list] = field(default=None)
+    sigma: Optional[list] = attrs.field(default=None)
 
     def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, distances = self._comparator.match_points(item_a, item_b)
         return matches, distances
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class SkeletonMatcher(ShapeMatcher):
     sigma: float = 0.1
 
@@ -374,14 +373,14 @@ class SkeletonMatcher(ShapeMatcher):
         return matches, distances
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class LineMatcher(ShapeMatcher):
     def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, distances = self._comparator.match_lines(item_a, item_b)
         return matches, distances
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class AnnotationMerger(AnnotationMatcher, metaclass=ABCMeta):
     @abstractmethod
     def merge_clusters(
@@ -390,7 +389,7 @@ class AnnotationMerger(AnnotationMatcher, metaclass=ABCMeta):
         "Merges annotations in each cluster into a single annotation"
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class LabelMerger(AnnotationMerger, LabelMatcher):
     quorum: int = 0
 
@@ -426,9 +425,9 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
         return merged
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class ShapeMerger(AnnotationMerger, ShapeMatcher):
-    quorum = field(converter=int, default=0)
+    quorum = attrs.field(converter=int, default=0)
 
     def merge_clusters(self, clusters):
         return list(filter(lambda x: x is not None, map(self.merge_cluster, clusters)))
@@ -490,32 +489,32 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         return shape
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class BboxMerger(ShapeMerger, BboxMatcher):
     pass
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class PolygonMerger(ShapeMerger, PolygonMatcher):
     pass
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class MaskMerger(ShapeMerger, MaskMatcher):
     pass
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class PointsMerger(ShapeMerger, PointsMatcher):
     pass
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class LineMerger(ShapeMerger, LineMatcher):
     pass
 
 
-@define(kw_only=True, slots=False)
+@attrs.define(kw_only=True, slots=False)
 class SkeletonMerger(ShapeMerger, SkeletonMatcher):
     def _merge_cluster_shape_nearest(self, cluster):
         dist = {}
