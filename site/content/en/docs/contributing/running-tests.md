@@ -132,16 +132,12 @@ Extra options:
   variables in the `docker-compose.dev.yml`
 
 
-# Unit tests
+# Server unit tests
 
 **Initial steps**
 1. Install necessary Python dependencies:
    ```
    pip install -r cvat/requirements/testing.txt
-   ```
-1. Install npm dependencies:
-   ```
-   yarn --frozen-lockfile
    ```
 1. Build CVAT server image
    ```
@@ -163,13 +159,7 @@ If you want to get a code coverage report, run the next command:
    coverage run manage.py test --settings cvat.settings.testing cvat/apps -v 2
    ```
 
-1. JS tests
-   ```
-   cd cvat-core
-   yarn run test
-   ```
-
-**Debug python unit tests**
+**Debugging**
 1. Run `server: tests` debug task in VSCode
 1. If you want to debug particular tests then change the configuration
 of the corresponding task in `./vscode/launch.json`, for example:

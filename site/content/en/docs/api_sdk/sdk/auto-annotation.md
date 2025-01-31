@@ -114,6 +114,7 @@ which is an instance of `DetectionFunctionSpec`.
 that represent the labels that the AA function knows about.
 See the docstring of `DetectionFunctionSpec` for more information on the constraints
 that these objects must follow.
+`BadFunctionError` will be raised if any constraint violations are detected.
 
 `detect` must be a function/method accepting two parameters:
 

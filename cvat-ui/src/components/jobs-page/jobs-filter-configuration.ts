@@ -96,6 +96,19 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             operators: ['like'],
         },
+        type: {
+            label: 'Job Type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
+                ],
+            },
+        },
     },
 };
 
