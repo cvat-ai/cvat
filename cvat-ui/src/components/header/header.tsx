@@ -472,14 +472,24 @@ function HeaderComponent(props: Props): JSX.Element {
                         const fusedURL = generateFusedURL(values);
                         const responseData = await fetchFusedData(fusedURL);
                         console.log('API Response:', responseData);
-                        form.resetFields();
-                        Modal.success({
-                            title: 'Success',
-                            content: 'Form submitted successfully!',
-                            onOk: () => {
-                                Modal.destroyAll(); // Close all modals (alert + form popup)
-                            },
-                        });
+                        if (responseData) {
+                            form.resetFields();
+                            Modal.success({
+                                title: 'Success',
+                                content: 'Project created successfully',
+                                onOk: () => {
+                                    Modal.destroyAll(); // Close all modals (alert + form popup)
+                                },
+                            });
+                        } else {
+                            Modal.error({
+                                title: 'Project creation error',
+                                content: 'The project was not created. Please contact ipr.support@maxar.com',
+                                onOk: () => {
+                                    Modal.destroyAll(); // Close all modals (alert + form popup)
+                                },
+                            });
+                        }
                     })
                     .catch((error) => {
                         console.error('Validation Error:', error);
