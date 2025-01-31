@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ from unittest import mock, skip
 
 import requests
 from django.contrib.auth.models import Group, User
+from django.core.signing import TimestampSigner
 from django.http import HttpResponseNotFound, HttpResponseServerError
 from rest_framework import status
 
@@ -115,8 +116,8 @@ class _LambdaTestCaseBase(ApiTestBase):
                 data = []
         elif type_function == "tracker":
             data = {
-                "shape": [12.34, 34.0, 35.01, 41.99],
-                "state": {"key": "value"},
+                "shapes": [[12.34, 34.0, 35.01, 41.99]],
+                "states": [{"key": "value"}],
             }
         elif type_function == "interactor":
             data = [
@@ -779,22 +780,12 @@ class LambdaTestCases(_LambdaTestCaseBase):
         data_main_task = {
             "task": self.main_task["id"],
             "frame": 0,
-            "shape": [
-                12.12,
-                34.45,
-                54.0,
-                76.12,
-            ],
+            "shapes": [[12.12, 34.45, 54.0, 76.12]],
         }
         data_assigneed_to_user_task = {
             "task": self.assigneed_to_user_task["id"],
             "frame": 0,
-            "shape": [
-                12.12,
-                34.45,
-                54.0,
-                76.12,
-            ],
+            "shapes": [[12.12, 34.45, 54.0, 76.12]],
         }
 
         response = self._post_request(
@@ -811,6 +802,22 @@ class LambdaTestCases(_LambdaTestCaseBase):
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", None, data_main_task
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v2_lambda_functions_create_tracker_bad_signature(self):
+        signer = TimestampSigner(key="bad key")
+
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "shapes": [[12.12, 34.45, 54.0, 76.12]],
+            "states": [signer.sign("{}")],
+        }
+
+        response = self._post_request(
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.admin, data
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Invalid or expired tracker state", response.content.decode("UTF-8"))
 
     def test_api_v2_lambda_functions_create_reid(self):
         data_main_task = {
@@ -1100,6 +1107,18 @@ class LambdaTestCases(_LambdaTestCaseBase):
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_api_v2_lambda_functions_create_detector_all_shapes_unmapped(self):
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "mapping": {"person": {"name": "person"}},
+        }
+        response = self._post_request(
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), [])
 
     def test_api_v2_lambda_functions_create_detector_without_task(self):
         data = {

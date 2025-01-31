@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,6 +21,7 @@ import requests
 import rq
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.signing import BadSignature, TimestampSigner
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -161,6 +162,8 @@ class LambdaFunction:
         ("frame0", "start frame"),
         ("frame1", "end frame"),
     )
+
+    TRACKER_STATE_MAX_AGE = timedelta(hours=8)
 
     def __init__(self, gateway, data):
         # ID of the function (e.g. omz.public.yolo-v3)
@@ -461,13 +464,27 @@ class LambdaFunction:
             if max_distance:
                 payload.update({"max_distance": max_distance})
         elif self.kind == FunctionKind.TRACKER:
-            payload.update(
-                {
-                    "image": self._get_image(db_task, mandatory_arg("frame")),
-                    "shapes": data.get("shapes", []),
-                    "states": data.get("states", []),
-                }
-            )
+            signer = TimestampSigner(salt=f"cvat-tracker-state:{self.id}")
+
+            try:
+                payload.update(
+                    {
+                        "image": self._get_image(db_task, mandatory_arg("frame")),
+                        "shapes": data.get("shapes", []),
+                        "states": [
+                            (
+                                None
+                                if state is None
+                                else json.loads(
+                                    signer.unsign(state, max_age=self.TRACKER_STATE_MAX_AGE)
+                                )
+                            )
+                            for state in data.get("states", [])
+                        ],
+                    }
+                )
+            except BadSignature as ex:
+                raise ValidationError("Invalid or expired tracker state") from ex
         else:
             raise ValidationError(
                 "`{}` lambda function has incorrect type: {}".format(self.id, self.kind),
@@ -478,8 +495,6 @@ class LambdaFunction:
             interactive_function_call_signal.send(sender=self, request=request)
 
         response = self.gateway.invoke(self, payload)
-
-        response_filtered = []
 
         def check_attr_value(value, db_attr):
             if db_attr is None:
@@ -509,6 +524,8 @@ class LambdaFunction:
             return attributes
 
         if self.kind == FunctionKind.DETECTOR:
+            response_filtered = []
+
             for item in response:
                 item_label = item["label"]
                 if item_label not in mapping:
@@ -534,7 +551,16 @@ class LambdaFunction:
                             db_label.attributespec_set.values(),
                         )
                 response_filtered.append(item)
-                response = response_filtered
+
+            response = response_filtered
+        elif self.kind == FunctionKind.TRACKER:
+            response["states"] = [
+                # We could've used .sign_object, but that unconditionally applies
+                # an extra layer of Base64 encoding, bloating each state by 33%.
+                # So we just encode the state manually instead.
+                signer.sign(json.dumps(state, separators=(",", ":")))
+                for state in response["states"]
+            ]
 
         return response
 

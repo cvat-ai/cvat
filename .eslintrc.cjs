@@ -1,5 +1,5 @@
 // Copyright (C) 2018-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,7 +41,6 @@ module.exports = {
         'max-len': ['error', { code: 120, ignoreStrings: true }],
         'func-names': 0,
         'valid-typeof': 0,
-        'no-useless-constructor': 0, // sometimes constructor is necessary to generate right documentation in cvat-core
         'quotes': ['error', 'single', { "avoidEscape": true }],
         'lines-between-class-members': 0,
         'class-methods-use-this': 0,

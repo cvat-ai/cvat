@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ export const multiAttrParams = {
 };
 
 it('Prepare to testing', () => {
-    cy.visit('/');
+    cy.visit('/auth/login');
     cy.login();
     cy.goToProjectsList();
     cy.get('.cvat-projects-page').should('exist');

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,13 +39,11 @@ context('Basic markdown pipeline', () => {
     let assetID = null;
 
     before(() => {
-        cy.visit('/');
-        cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
+        cy.headlessLogout();
+        cy.visit('/auth/login');
 
-        cy.clearCookies();
         for (const user of Object.values(additionalUsers)) {
             cy.headlessCreateUser(user);
-            cy.clearCookies();
         }
 
         cy.login();

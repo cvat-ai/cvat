@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -361,7 +361,7 @@ function QualityControlPage(): JSX.Element {
     if (instance) {
         title = (
             <Col>
-                <Title level={4} className='cvat-text-color'>
+                <Title level={4} className='cvat-text-color cvat-quality-page-header'>
                     Quality control for
                     <Link to={`/tasks/${instance.id}`}>{` Task #${instance.id}`}</Link>
                 </Title>

@@ -158,7 +158,6 @@ cvat:
 #        accessModes:
 #         - ReadWriteMany
         size: 20Gi
-    disableDistinctCachePerService: false
   frontend:
     replicas: 1
     image: cvat/ui
@@ -360,6 +359,8 @@ redis:
 
 nuclio:
   enabled: false
+  dashboard:
+    containerBuilderKind: kaniko
 # See https://github.com/nuclio/nuclio/blob/master/hack/k8s/helm/nuclio/values.yaml for more info
 #  registry:
 #    loginUrl: someurl

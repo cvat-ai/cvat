@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,23 +43,29 @@ function defaultTaskSpec({
     const extras = {};
     if (validationParams) {
         const convertedParams = {};
-        if (validationParams.frames) {
-            convertedParams.frames = validationParams.frames;
+        if (validationParams.mode) {
+            convertedParams.mode = validationParams.mode;
         }
         if (validationParams.frameSelectionMethod) {
             convertedParams.frame_selection_method = validationParams.frameSelectionMethod;
         }
+        if (validationParams.randomSeed) {
+            convertedParams.random_seed = validationParams.randomSeed;
+        }
+        if (validationParams.frames) {
+            convertedParams.frames = validationParams.frames;
+        }
         if (validationParams.frameCount) {
             convertedParams.frame_count = validationParams.frameCount;
+        }
+        if (validationParams.frameShare) {
+            convertedParams.frame_share = validationParams.frameShare;
         }
         if (validationParams.framesPerJobCount) {
             convertedParams.frames_per_job_count = validationParams.framesPerJobCount;
         }
-        if (validationParams.mode) {
-            convertedParams.mode = validationParams.mode;
-        }
-        if (validationParams.randomSeed) {
-            convertedParams.random_seed = validationParams.randomSeed;
+        if (validationParams.framesPerJobShare) {
+            convertedParams.frames_per_job_share = validationParams.framesPerJobShare;
         }
 
         extras.validation_params = convertedParams;

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -71,6 +71,20 @@
     .cvat-job-item-dates-info {
         margin-top: $grid-unit-size;
     }
+
+    .cvat-consensus-job-collapse {
+        margin-top: $grid-unit-size * 1.5;
+
+        .ant-collapse-item > .ant-collapse-header {
+            align-items: center;
+        }
+    }
+
+    .job-actions-menu {
+        position: absolute;
+        top: $grid-unit-size * 6.5;
+    }
+
 }
 
 .ant-menu.cvat-job-item-menu {

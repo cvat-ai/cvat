@@ -1,15 +1,15 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import itertools
-import os
 from collections import OrderedDict
+from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from tempfile import TemporaryDirectory
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 from django.conf import settings
@@ -26,6 +26,7 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import (
+    TmpDirManager,
     add_prefetch_fields,
     bulk_create,
     faster_deepcopy,
@@ -768,16 +769,26 @@ class JobAnnotation:
     def data(self):
         return self.ir_data.data
 
-    def export(self, dst_file, exporter, host='', **options):
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         job_data = JobData(
             annotation_ir=self.ir_data,
             db_job=self.db_job,
             host=host,
         )
 
-        temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_directory_for_export(
+                instance_type=self.db_job.__class__.__name__,
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
@@ -788,9 +799,7 @@ class JobAnnotation:
         )
         self.delete()
 
-        temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -814,6 +823,7 @@ class TaskAnnotation:
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
 
+        # TODO: maybe include consensus jobs except for task export
         requested_job_types = [models.JobType.ANNOTATION]
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
@@ -975,16 +985,26 @@ class TaskAnnotation:
 
             self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
 
-    def export(self, dst_file, exporter, host='', **options):
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         task_data = TaskData(
             annotation_ir=self.ir_data,
             db_task=self.db_task,
             host=host,
         )
 
-        temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_directory_for_export(
+                instance_type=self.db_task.__class__.__name__,
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
@@ -995,9 +1015,7 @@ class TaskAnnotation:
         )
         self.delete()
 
-        temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -1059,7 +1077,15 @@ def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation.delete()
 
 
-def export_job(job_id, dst_file, format_name, server_url=None, save_images=False):
+def export_job(
+    job_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images=False,
+    temp_dir: str | None = None,
+):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -1071,7 +1097,7 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        job.export(f, exporter, host=server_url, save_images=save_images)
+        job.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
 
 
 @silk_profile(name="GET task data")
@@ -1113,7 +1139,15 @@ def delete_task_data(pk):
     annotation.delete()
 
 
-def export_task(task_id, dst_file, format_name, server_url=None, save_images=False):
+def export_task(
+    task_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images: bool = False,
+    temp_dir: str | None = None,
+    ):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -1125,7 +1159,7 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        task.export(f, exporter, host=server_url, save_images=save_images)
+        task.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
 
 
 @transaction.atomic
