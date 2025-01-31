@@ -15,10 +15,10 @@ from typing import Any, Callable, Optional, TypeVar, Union, cast
 # We use both full names for internal datumaro symbols and dm.-aliased for external ones
 import datumaro
 import datumaro as dm  # pylint: disable=reimported
-import datumaro.components.annotations.matcher  # pylint: disable=reimported
-import datumaro.components.comparator  # pylint: disable=reimported
-import datumaro.util.annotation_util  # pylint: disable=reimported
-import datumaro.util.mask_tools  # pylint: disable=reimported
+import datumaro.components.annotations.matcher
+import datumaro.components.comparator
+import datumaro.util.annotation_util
+import datumaro.util.mask_tools
 import django_rq
 import numpy as np
 import rq
