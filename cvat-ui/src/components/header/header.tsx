@@ -168,7 +168,6 @@ function HeaderComponent(props: Props): JSX.Element {
         switchShortcutsModalVisible,
         switchChangePasswordModalVisible,
     } = props;
-    const [form] = Form.useForm();
 
     const {
         CHANGELOG_URL, LICENSE_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
@@ -282,10 +281,51 @@ function HeaderComponent(props: Props): JSX.Element {
         });
     }, [about]);
     // --------Begin Maxar custom plugin-------------------------
-    const handleChange = (value: string) => {
-        console.log(`selected ${value}`);
+    const [form] = Form.useForm();
+
+    // eslint-disable-next-line max-len
+    const generateFusedURL = (values: Record<string, any>): `https://workbench.mxr-prod.fused.io/server/v1/realtime-shared/fsh_2HSFCw7zvK4PJRvfhFod2X/run/file?${string}` => {
+        const baseURL = 'https://workbench.mxr-prod.fused.io/server/v1/realtime-shared/fsh_2HSFCw7zvK4PJRvfhFod2X/run/file';
+        console.log(values);
+        // Mapping form values to URL query params
+        const params = new URLSearchParams({
+            dtype_out_raster: 'png', // Assuming default output type
+            dtype_out_vector: 'csv',
+            bucket_directory: values.bucket_directory || '',
+            crs: values.crs.replace('EPSG:', ''), // Remove 'EPSG:' from CRS
+            batch_size: values.batch_size.toString(),
+            create_tasks: values.create_tasks.toString(),
+            upload_annotations: values.upload_annotations.toString(),
+            use_default_attributes: values.use_default_attributes.toString(),
+            ignore_geo: values.ignore_geo.toString(),
+            no_label_attributes: values.no_label_attributes.toString(),
+            bucket_name: values.bucket_name || '',
+            project_name: encodeURIComponent(values.project_name || ''),
+            organization: encodeURIComponent(values.organization || ''),
+        });
+
+        return `${baseURL}?${params.toString()}`;
     };
-    console.log(user.organization);
+
+    const fetchFusedData = async (url: string): Promise<any> => {
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json(); // Assuming the response is JSON
+            console.log('Fetched Data:', data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            return null;
+        }
+    };
+
     const showUploadToProjectModal = useCallback((): void => {
         Modal.info({
             title: 'Upload Chipped Images to Project',
@@ -368,7 +408,6 @@ function HeaderComponent(props: Props): JSX.Element {
                             >
                                 <Select
                                     placeholder='Select a CRS'
-                                    onChange={handleChange}
                                     options={[
                                         { value: 'EPSG:4326', label: 'WGS84 (EPSG:4326) - Global' },
                                         { value: 'EPSG:3857', label: 'Web Mercator (EPSG:3857) - Online Maps' },
@@ -428,11 +467,23 @@ function HeaderComponent(props: Props): JSX.Element {
             width: 800,
             okText: 'Submit',
             onOk: () => {
-                form.validateFields().then((values) => {
-                    console.log('Form Values:', values);
-                }).catch((error) => {
-                    console.error('Validation Error:', error);
-                });
+                form.validateFields()
+                    .then(async (values) => {
+                        const fusedURL = generateFusedURL(values);
+                        const responseData = await fetchFusedData(fusedURL);
+                        console.log('API Response:', responseData);
+                        form.resetFields();
+                        Modal.success({
+                            title: 'Success',
+                            content: 'Form submitted successfully!',
+                            onOk: () => {
+                                Modal.destroyAll(); // Close all modals (alert + form popup)
+                            },
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Validation Error:', error);
+                    });
             },
         });
     }, [form]);
