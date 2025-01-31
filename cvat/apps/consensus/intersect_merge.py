@@ -7,7 +7,7 @@ from __future__ import annotations
 import itertools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
-from typing import Callable, Iterable, Optional, Sequence
+from typing import Iterable, Optional, Sequence
 
 import attrs
 import datumaro
@@ -25,16 +25,7 @@ from cvat.apps.engine.models import Label
 from cvat.apps.quality_control.quality_reports import (
     ComparisonParameters,
     DistanceComparator,
-    KeypointsMatcher,
-    LabelEqualityFunction,
-)
-from cvat.apps.quality_control.quality_reports import LineMatcher as LineMatcherQualityReports
-from cvat.apps.quality_control.quality_reports import (
-    ShapeSimilarityFunction,
-    _ShapeT1,
-    _ShapeT2,
     segment_iou,
-    to_rle,
 )
 
 
@@ -51,7 +42,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         torso_r: float = 0.01
 
         groups: Collection[Collection[str]] = field(factory=tuple)
-        close_distance: float = 0 # disabled
+        close_distance: float = 0  # disabled
 
         included_annotation_types: Collection[dm.AnnotationType] = None
 
@@ -68,17 +59,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
     def __call__(self, *datasets):
         self.dataset_mean_consensus_score = {id(d): [] for d in datasets}
 
-        merged = dm.Dataset(super().__call__(*datasets))
-
-        for item in merged:
-            merged.put(
-                item.wrap(
-                    annotations=[
-                        a.wrap(attributes=dict(**a.attributes, source="consensus"))
-                        for a in item.annotations
-                    ]
-                )
-            )
+        merged = super().__call__(*datasets)
 
         # now we have consensus score for all annotations in the input datasets
         for dataset_id in self.dataset_mean_consensus_score:
@@ -88,8 +69,13 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
         return merged
 
+    def _find_cluster_attrs(self, cluster, ann):
+        merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        merged_attributes["source"] = "consensus"
+        return merged_attributes
+
     def _check_annotation_distance(self, t, merged_clusters):
-        return # disabled, need to clarify how to compare merged instances correctly
+        return  # disabled, need to clarify how to compare merged instances correctly
 
     def get_ann_dataset_id(self, ann_id: int) -> int:
         return self._dataset_map[self.get_ann_source(ann_id)][1]
@@ -195,12 +181,10 @@ class LabelMatcher(AnnotationMatcher):
 
 
 CacheKey = tuple[int, int]
-SimilarityFunction = Callable[[dm.Annotation, dm.Annotation], float]
 
 
 @define
 class CachedSimilarityFunction:
-    sim_fn: SimilarityFunction
     cache: dict[CacheKey, float] = field(factory=dict, kw_only=True)
 
     def __call__(self, a_ann: dm.Annotation, b_ann: dm.Annotation) -> float:
@@ -215,13 +199,7 @@ class CachedSimilarityFunction:
             b_ann_id,
         )  # make sure the annotations have stable ids before calling this
         key = self._sort_key(key)
-        cached_value = self.cache.get(key)
-
-        if cached_value is None:
-            cached_value = self.sim_fn(a_ann, b_ann)
-            self.cache[key] = cached_value
-
-        return cached_value
+        return self.cache[key]
 
     @staticmethod
     def _sort_key(key: CacheKey) -> CacheKey:
@@ -258,63 +236,39 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
             iou_threshold=self.pairwise_dist,
             oks_sigma=self._context.conf.sigma,
             line_torso_radius=self._context.conf.torso_r,
+            panoptic_comparison=False,
         )
 
-        self._distance = CachedSimilarityFunction(self._distance_func)
-
-    @abstractmethod
-    def _distance_func(self, a: dm.Annotation, b: dm.Annotation) -> float: ...
+        self._distance = CachedSimilarityFunction()
 
     def distance(self, a, b):
         return self._distance(a, b)
 
-    def label_matcher(self, a: dm.Annotation, b: dm.Annotation) -> bool:
-        a_label = self._context.get_any_label_name(a, a.label)
-        b_label = self._context.get_any_label_name(b, b.label)
-        return a_label == b_label
+    def _match_annotations_between_two_sources(
+        self, source_a: list[dm.Annotation], source_b: list[dm.Annotation]
+    ) -> list[tuple[dm.Annotation, dm.Annotation]]:
+        if not source_a and not source_b:
+            return []
 
-    @staticmethod
-    def _get_ann_type(
-        t: dm.AnnotationType, annotations: Sequence[dm.Annotation]
-    ) -> Sequence[dm.Annotation]:
-        return [a for a in annotations if a.type == t and not a.attributes.get("outside", False)]
+        item_a = self._context.get_ann_source_item(id(source_a[0]))
+        item_b = self._context.get_ann_source_item(id(source_b[0]))
+        return self._match_annotations_between_two_items(item_a, item_b)
 
-    def _match_segments(
-        self,
-        t: dm.AnnotationType,
-        item_a: dm.DatasetItem,
-        item_b: dm.DatasetItem,
-        *,
-        distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
-        label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] | None = None,
-        a_objs: Sequence[_ShapeT1] | None = None,
-        b_objs: Sequence[_ShapeT2] | None = None,
-        dist_thresh: float | None = None,
-    ):
-        if distance is None:
-            distance = self.distance
+    def _match_annotations_between_two_items(
+        self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
+    ) -> list[tuple[dm.Annotation, dm.Annotation]]:
+        matches, distances = self.match_annotations_between_two_items(item_a, item_b)
 
-        if label_matcher is None:
-            label_matcher = self.label_matcher
+        # Remember distances
+        for (p_a_id, p_b_id), dist in distances.items():
+            self._distance.set((p_a_id, p_b_id), dist)
 
-        if dist_thresh is None:
-            dist_thresh = self.pairwise_dist
-
-        return self._comparator.match_segments(
-            t=t,
-            item_a=item_a,
-            item_b=item_b,
-            distance=distance,
-            label_matcher=label_matcher,
-            a_objs=a_objs,
-            b_objs=b_objs,
-            dist_thresh=dist_thresh,
-        )
+        return matches
 
     @abstractmethod
-    def match_annotations_between_two_sources(
-        self, source_a: list[dm.Annotation], source_b: list[dm.Annotation]
-    ) -> list[dm.Annotation]: ...
+    def match_annotations_between_two_items(
+        self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
+    ) -> tuple[list[tuple[dm.Annotation, dm.Annotation]], dict[CacheKey, float]]: ...
 
     def match_annotations(self, sources):
         distance = self.distance
@@ -346,7 +300,7 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
             # matches further sources of same frame for matching annotations
             for src_b in sources[a_idx + 1 :]:
                 # an annotation can be adjacent to multiple annotations
-                matches = self.match_annotations_between_two_sources(src_a, src_b)
+                matches = self._match_annotations_between_two_sources(src_a, src_b)
                 for a, b in matches:
                     adjacent[id(a)].append(id(b))
 
@@ -385,154 +339,16 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
 @define(kw_only=True, slots=False)
 class BboxMatcher(ShapeMatcher):
-    def _distance_func(self, a: dm.Bbox, b: dm.Bbox):
-        def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
-            if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
-                return datumaro.util.annotation_util.bbox_iou(a, b)
-            else:
-                return segment_iou(
-                    self._comparator.to_polygon(a),
-                    self._comparator.to_polygon(b),
-                    img_h=img_h,
-                    img_w=img_w,
-                )
-
-        img_h, img_w = self._context.get_item_media_dims(id(a))
-        return _bbox_iou(a, b, img_h=img_h, img_w=img_w)
-
-    def match_annotations_between_two_sources(
-        self, source_a: list[dm.Bbox], source_b: list[dm.Bbox]
-    ):
-        if not source_a or not source_b:
-            return []
-
-        item_a = self._context.get_ann_source_item(id(source_a[0]))
-        item_b = self._context.get_ann_source_item(id(source_b[0]))
-        return self._match_segments(
-            dm.AnnotationType.bbox, item_a, item_b, a_objs=source_a, b_objs=source_b
-        )[0]
+    def match_annotations_between_two_items(self, item_a, item_b):
+        matches, _, _, _, distances = self._comparator.match_boxes(item_a, item_b)
+        return matches, distances
 
 
 @define(kw_only=True, slots=False)
 class PolygonMatcher(ShapeMatcher):
-    def _distance_func(self, a: dm.Polygon | dm.Mask, b: dm.Polygon | dm.Mask):
-        from pycocotools import mask as mask_utils
-
-        def _get_segment(ann: dm.Polygon | dm.Mask):
-            img_h, img_w = self._context.get_item_media_dims(id(ann))
-            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w)]
-            rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
-            return rle
-
-        a_segm = _get_segment(a)
-        b_segm = _get_segment(b)
-        return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
-
-    def match_annotations_between_two_sources(
-        self, source_a: list[dm.Polygon | dm.Mask], source_b: list[dm.Polygon | dm.Mask]
-    ):
-        def _get_segments(annotations):
-            return self._get_ann_type(dm.AnnotationType.polygon, annotations) + self._get_ann_type(
-                dm.AnnotationType.mask, annotations
-            )
-
-        def _find_instances(annotations):
-            # Group instance annotations by label.
-            # Annotations with the same label and group will be merged,
-            # and considered a single object in comparison
-            instances = []
-            instance_map = {}  # ann id -> instance id
-            for ann_group in datumaro.util.annotation_util.find_instances(annotations):
-                ann_group = sorted(ann_group, key=lambda a: a.label)
-                for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
-                    label_group = list(label_group)
-                    instance_id = len(instances)
-                    instances.append(label_group)
-                    for ann in label_group:
-                        instance_map[id(ann)] = instance_id
-
-            return instances, instance_map
-
-        a_segments = _get_segments(source_a)
-        b_segments = _get_segments(source_b)
-
-        if not a_segments or not b_segments:
-            return []
-
-        a_instances, _ = _find_instances(a_segments)
-        b_instances, _ = _find_instances(b_segments)
-
-        item_a = self._context.get_ann_source_item(id(source_a[0]))
-        item_b = self._context.get_ann_source_item(id(source_b[0]))
-        img_h, img_w = item_a.media_as(dm.Image).size
-
-        a_compiled_mask = None
-        b_compiled_mask = None
-
-        segment_cache = {}
-
-        def _get_segment(
-            obj_id: int, *, compiled_mask: Optional[dm.CompiledMask] = None, instances
-        ):
-            key = (id(instances), obj_id)
-            rle = segment_cache.get(key)
-
-            if rle is None:
-                from pycocotools import mask as mask_utils
-
-                if compiled_mask is not None:
-                    mask = compiled_mask.extract(obj_id + 1)
-
-                    rle = mask_utils.encode(mask)
-                else:
-                    # Create merged RLE for the instance shapes
-                    object_anns = instances[obj_id]
-                    object_rle_groups = [
-                        to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
-                    ]
-                    rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
-
-                segment_cache[key] = rle
-
-            return rle
-
-        def _segment_comparator(a_inst_id: int, b_inst_id: int) -> float:
-            a_segm = _get_segment(a_inst_id, compiled_mask=a_compiled_mask, instances=a_instances)
-            b_segm = _get_segment(b_inst_id, compiled_mask=b_compiled_mask, instances=b_instances)
-
-            from pycocotools import mask as mask_utils
-
-            return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
-
-        def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
-            # labels are the same in the instance annotations
-            # instances are required to have the same labels in all shapes
-            a = a_instances[a_inst_id][0]
-            b = b_instances[b_inst_id][0]
-            return a.label == b.label
-
-        results = self._match_segments(
-            dm.AnnotationType.polygon,
-            item_a,
-            item_b,
-            a_objs=range(len(a_instances)),
-            b_objs=range(len(b_instances)),
-            distance=_segment_comparator,
-            label_matcher=_label_matcher,
-        )
-
-        # restore results for original annotations
-        matched = results[0]
-
-        # i_x ~ instance idx in _x
-        # ia_x ~ instance annotation in _x
-        matched = [
-            (ia_a, ia_b)
-            for (i_a, i_b) in matched
-            for (ia_a, ia_b) in itertools.product(a_instances[i_a], b_instances[i_b])
-        ]
-
-        return matched
+    def match_annotations_between_two_items(self, item_a, item_b):
+        matches, _, _, _, distances = self._comparator.match_segmentations(item_a, item_b)
+        return matches, distances
 
 
 @define(kw_only=True, slots=False)
@@ -544,97 +360,25 @@ class MaskMatcher(PolygonMatcher):
 class PointsMatcher(ShapeMatcher):
     sigma: Optional[list] = field(default=None)
 
-    def _distance_func(self, a: dm.Points, b: dm.Points) -> float:
-        item_a = self._context.get_ann_source_item(id(a))
-        item_b = self._context.get_ann_source_item(id(b))
-
-        self.match_annotations_between_two_sources(
-            self._get_ann_type(dm.AnnotationType.points, item_a.annotations),
-            self._get_ann_type(dm.AnnotationType.points, item_b.annotations),
-        )
-
-        return self._distance.cache[self._distance._sort_key((id(a), id(b)))]
-
-    def match_annotations_between_two_sources(
-        self, source_a: list[dm.Points], source_b: list[dm.Points]
-    ):
-        if not source_a or not source_b:
-            return []
-
-        item_a = self._context.get_ann_source_item(id(source_a[0]))
-        item_b = self._context.get_ann_source_item(id(source_b[0]))
-
+    def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, distances = self._comparator.match_points(item_a, item_b)
-
-        # Remember distances
-        for (p_a_id, p_b_id), dist in distances.items():
-            self._distance.set((p_a_id, p_b_id), dist)
-
-        return matches
+        return matches, distances
 
 
 @define(kw_only=True, slots=False)
 class SkeletonMatcher(ShapeMatcher):
     sigma: float = 0.1
 
-    def _distance_func(self, a: dm.Skeleton, b: dm.Skeleton) -> float:
-        item_a = self._context.get_ann_source_item(id(a))
-        item_b = self._context.get_ann_source_item(id(b))
-
-        assert item_a is item_b
-        item_a = item_a.wrap(annotations=[a])
-        item_b = item_b.wrap(annotations=[b])
-
-        self.match_annotations_between_two_items(item_a, item_b)
-
-        return self._distance.cache[self._distance._sort_key((id(a), id(b)))]
-
-    def match_annotations_between_two_sources(
-        self, sources_a: list[dm.Skeleton], sources_b: list[dm.Skeleton]
-    ):
-        if not sources_a and not sources_b:
-            return []
-
-        item_a = self._context.get_ann_source_item(id(sources_a[0]))
-        item_b = self._context.get_ann_source_item(id(sources_b[0]))
-        return self.match_annotations_between_two_items(item_a, item_b)
-
-    def match_annotations_between_two_items(
-        self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
-    ):
+    def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, distances = self._comparator.match_skeletons(item_a, item_b)
-
-        # Remember distances
-        for (p_a_id, p_b_id), dist in distances.items():
-            self._distance.set((p_a_id, p_b_id), dist)
-
-        return matches
-
+        return matches, distances
 
 
 @define(kw_only=True, slots=False)
 class LineMatcher(ShapeMatcher):
-    def _distance_func(self, a: dm.PolyLine, b: dm.PolyLine) -> float:
-        img_h, img_w = self._context.get_item_media_dims(id(a))
-        matcher = LineMatcherQualityReports(
-            torso_r=self._comparator.line_torso_radius,
-            scale=np.prod([img_h, img_w]),
-        )
-        return matcher.distance(a, b)
-
-    def match_annotations_between_two_sources(
-        self, source_a: list[dm.PolyLine], source_b: list[dm.PolyLine]
-    ):
-        if not source_a or not source_b:
-            return []
-
-        return self._match_segments(
-            dm.AnnotationType.polyline,
-            self._context.get_ann_source_item(id(source_a[0])),
-            self._context.get_ann_source_item(id(source_b[0])),
-            a_objs=source_a,
-            b_objs=source_b,
-        )[0]
+    def match_annotations_between_two_items(self, item_a, item_b):
+        matches, _, _, _, distances = self._comparator.match_lines(item_a, item_b)
+        return matches, distances
 
 
 @define(kw_only=True, slots=False)
