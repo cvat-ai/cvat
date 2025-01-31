@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import _ from 'lodash';
-import React, { useEffect } from 'react';
+import _, { debounce } from 'lodash';
+import React, { useCallback, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
@@ -38,8 +38,8 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
     const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
     const dispatch = useDispatch();
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
+    const saveSettings = useCallback(
+        debounce(() => {
             const settingsForSaving: any = {
                 shortcuts: {
                     keyMap: {},
@@ -70,11 +70,10 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
             }
 
             localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
-        }, SAVE_SETTINGS_DELAY);
+        }, SAVE_SETTINGS_DELAY), []);
 
-        return () => {
-            clearTimeout(handler);
-        };
+    useEffect(() => {
+        saveSettings();
     }, [settings, shortcuts]);
 
     useEffect(() => {
