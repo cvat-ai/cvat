@@ -114,6 +114,7 @@ which is an instance of `DetectionFunctionSpec`.
 that represent the labels that the AA function knows about.
 See the docstring of `DetectionFunctionSpec` for more information on the constraints
 that these objects must follow.
+`BadFunctionError` will be raised if any constraint violations are detected.
 
 `detect` must be a function/method accepting two parameters:
 
@@ -188,7 +189,7 @@ The following helpers are available for use in `detect`:
 | `keypoint`  | `SubLabeledShapeRequest` | `frame=0`, `type="points"`    |
 
 For `mask`, it is recommended to create the points list using
-the `cvat.masks.encode_mask` function, which will convert a bitmap into a
+the `cvat_sdk.masks.encode_mask` function, which will convert a bitmap into a
 list in the format that CVAT expects. For example:
 
 ```python
