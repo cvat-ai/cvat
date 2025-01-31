@@ -847,7 +847,8 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
         for idx, skeleton1 in enumerate(cluster):
             skeleton_distance = 0
             for skeleton2 in cluster:
-                skeleton_distance += self.distance(skeleton1, skeleton2)
+                # (1 - x) because it's actually a similarity function
+                skeleton_distance += 1 - self.distance(skeleton1, skeleton2)
 
             dist[idx] = skeleton_distance / len(cluster)
 
