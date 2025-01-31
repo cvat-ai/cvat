@@ -14,7 +14,7 @@ import attrs
 # We use both full names for internal datumaro symbols and dm.-aliased for external ones
 import datumaro
 import datumaro as dm  # pylint: disable=reimported
-import datumaro.components.merge.intersect_merge
+import datumaro.components.merge.intersect_merge  # pylint: disable=reimported
 import numpy as np
 from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
