@@ -313,7 +313,7 @@ class MediaCache:
 
     @staticmethod
     def _make_cache_key_prefix(
-        obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage]
+        obj: Union[models.Task, models.Segment, models.Job, models.CloudStorage],
     ) -> str:
         if isinstance(obj, models.Task):
             return f"task_{obj.id}"
