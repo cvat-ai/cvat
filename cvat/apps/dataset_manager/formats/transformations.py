@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -104,7 +104,7 @@ class MaskConverter:
 
 class EllipsesToMasks:
     @staticmethod
-    def convert_ellipse(ellipse, img_h, img_w):
+    def _convert(ellipse, img_h, img_w):
         cx, cy, rightX, topY = ellipse.points
         rx = rightX - cx
         ry = cy - topY
@@ -112,9 +112,19 @@ class EllipsesToMasks:
         axis = (round(rx), round(ry))
         angle = ellipse.rotation
         mat = np.zeros((img_h, img_w), dtype=np.uint8)
+
+        # TODO: has bad performance for big masks, try to find a better solution
         cv2.ellipse(mat, center, axis, angle, 0, 360, 255, thickness=-1)
+
         rle = mask_utils.encode(np.asfortranarray(mat))
-        return dm.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
+        return rle
+
+    @staticmethod
+    def convert_ellipse(ellipse, img_h, img_w):
+        def _lazy_convert():
+            return EllipsesToMasks._convert(ellipse, img_h, img_w)
+
+        return dm.RleMask(rle=_lazy_convert, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)
 
 

@@ -1,14 +1,14 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Hashable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
 import requests
 from cvat_sdk.api_client import apis, models
@@ -196,7 +196,7 @@ def export_dataset(
     ],  # make this parameter required to be sure that all tests was updated and both API versions are used
     *,
     save_images: bool,
-    max_retries: int = 50,
+    max_retries: int = 300,
     interval: float = 0.1,
     format: str = "CVAT for images 1.1",  # pylint: disable=redefined-builtin
     **kwargs,
@@ -605,3 +605,12 @@ def parse_frame_step(frame_filter: str) -> int:
 
 def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
     return stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step
+
+
+_T = TypeVar("_T")
+
+
+def unique(
+    it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
+) -> Iterable[_T]:
+    return {key(v): v for v in it}.values()

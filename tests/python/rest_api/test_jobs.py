@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -998,6 +998,7 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
             "task_id",
             "project_id",
             "type",
+            "parent_job_id",
         ),
     )
     def test_can_use_simple_filter_for_object_list(self, field):

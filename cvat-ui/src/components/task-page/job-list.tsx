@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,6 +35,10 @@ interface Props {
 const PAGE_SIZE = 10;
 function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
+
+    // consensus jobs will be under the collapse view
+    result = result.filter((job) => job.parentJobId === null);
+
     if (query.sort) {
         let sort = query.sort.split(',');
         const orders = sort.map((elem: string) => (elem.startsWith('-') ? 'desc' : 'asc'));
@@ -83,6 +87,33 @@ function JobListComponent(props: Props): JSX.Element {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
+
+    const [jobChildMapping, setJobChildMapping] = useState<Record<number, Job[]>>({});
+    useEffect(() => {
+        if (taskInstance.consensusEnabled) {
+            const mapping = jobs.reduce((acc, job) => {
+                if (job.parentJobId === null && !acc[job.id]) {
+                    acc[job.id] = [];
+                } else if (job.parentJobId !== null) {
+                    if (!acc[job.parentJobId]) {
+                        acc[job.parentJobId] = [];
+                    }
+                    acc[job.parentJobId].push(job);
+                }
+                return acc;
+            }, {} as Record<number, Job[]>);
+            setJobChildMapping(mapping);
+        }
+    }, [taskInstance]);
+
+    const [uncollapsedJobs, setUncollapsedJobs] = useState<Record<number, boolean>>({});
+    const onCollapseChange = useCallback((jobId: number) => {
+        setUncollapsedJobs((prevState) => ({
+            ...prevState,
+            [jobId]: !prevState[jobId],
+        }));
+    }, []);
+
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
     const filteredJobs = setUpJobsList(jobs, query);
     const jobViews = filteredJobs
@@ -93,6 +124,9 @@ function JobListComponent(props: Props): JSX.Element {
                 job={job}
                 task={taskInstance}
                 onJobUpdate={onJobUpdate}
+                childJobs={jobChildMapping[job.id] || []}
+                defaultCollapsed={!uncollapsedJobs[job.id]}
+                onCollapseChange={onCollapseChange}
             />
         ));
     useEffect(() => {

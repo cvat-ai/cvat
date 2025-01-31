@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -40,6 +40,90 @@ def _common_setup(
     api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
+
+
+class TestDetectionFunctionSpec:
+    def _test_bad_spec(self, exc_match: str, **kwargs) -> None:
+        with pytest.raises(cvataa.BadFunctionError, match=exc_match):
+            cvataa.DetectionFunctionSpec(**kwargs)
+
+    def test_attributes(self):
+        self._test_bad_spec(
+            "currently not supported",
+            labels=[
+                cvataa.label_spec(
+                    "car",
+                    123,
+                    attributes=[
+                        models.AttributeRequest(
+                            "age",
+                            mutable=False,
+                            input_type="number",
+                            values=["0", "100", "1"],
+                            default_value="0",
+                        )
+                    ],
+                ),
+            ],
+        )
+
+    def test_label_without_id(self):
+        self._test_bad_spec(
+            "label .+ has no ID",
+            labels=[
+                models.PatchedLabelRequest(
+                    name="car",
+                ),
+            ],
+        )
+
+    def test_duplicate_label_id(self):
+        self._test_bad_spec(
+            "same ID as another label",
+            labels=[
+                cvataa.label_spec("car", 123),
+                cvataa.label_spec("bicycle", 123),
+            ],
+        )
+
+    def test_non_skeleton_sublabels(self):
+        self._test_bad_spec(
+            "should be 'skeleton'",
+            labels=[
+                cvataa.label_spec(
+                    "car",
+                    123,
+                    sublabels=[models.SublabelRequest("wheel", id=1)],
+                ),
+            ],
+        )
+
+    def test_sublabel_without_id(self):
+        self._test_bad_spec(
+            "sublabel .+ of label .+ has no ID",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "car",
+                    123,
+                    [models.SublabelRequest("wheel")],
+                ),
+            ],
+        )
+
+    def test_duplicate_sublabel_id(self):
+        self._test_bad_spec(
+            "same ID as another sublabel",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat",
+                    123,
+                    [
+                        cvataa.keypoint_spec("head", 1),
+                        cvataa.keypoint_spec("tail", 1),
+                    ],
+                ),
+            ],
+        )
 
 
 class TestTaskAutoAnnotation:
@@ -342,119 +426,29 @@ class TestTaskAutoAnnotation:
 
         assert received_cmtp is True
 
-    def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
+    def _test_spec_dataset_mismatch(
+        self, exc_match: str, spec: cvataa.DetectionFunctionSpec
+    ) -> None:
         def detect(context, image):
             assert False
 
         with pytest.raises(cvataa.BadFunctionError, match=exc_match):
             cvataa.annotate_task(self.client, self.task.id, namespace(spec=spec, detect=detect))
 
-    def test_attributes(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    cvataa.label_spec(
-                        "car",
-                        123,
-                        attributes=[
-                            models.AttributeRequest(
-                                "age",
-                                mutable=False,
-                                input_type="number",
-                                values=["0", "100", "1"],
-                                default_value="0",
-                            )
-                        ],
-                    ),
-                ],
-            ),
-            "currently not supported",
-        )
-
     def test_label_not_in_dataset(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[cvataa.label_spec("dog", 123)],
-            ),
+        self._test_spec_dataset_mismatch(
             "not in dataset",
-        )
-
-    def test_label_without_id(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                    ),
-                ],
-            ),
-            "label .+ has no ID",
-        )
-
-    def test_duplicate_label_id(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    cvataa.label_spec("car", 123),
-                    cvataa.label_spec("bicycle", 123),
-                ],
-            ),
-            "same ID as another label",
-        )
-
-    def test_non_skeleton_sublabels(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    cvataa.label_spec(
-                        "car",
-                        123,
-                        sublabels=[models.SublabelRequest("wheel", id=1)],
-                    ),
-                ],
-            ),
-            "should be 'skeleton'",
-        )
-
-    def test_sublabel_without_id(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    cvataa.skeleton_label_spec(
-                        "car",
-                        123,
-                        [models.SublabelRequest("wheel")],
-                    ),
-                ],
-            ),
-            "sublabel .+ of label .+ has no ID",
-        )
-
-    def test_duplicate_sublabel_id(self):
-        self._test_bad_function_spec(
-            cvataa.DetectionFunctionSpec(
-                labels=[
-                    cvataa.skeleton_label_spec(
-                        "cat",
-                        123,
-                        [
-                            cvataa.keypoint_spec("head", 1),
-                            cvataa.keypoint_spec("tail", 1),
-                        ],
-                    ),
-                ],
-            ),
-            "same ID as another sublabel",
+            cvataa.DetectionFunctionSpec(labels=[cvataa.label_spec("dog", 123)]),
         )
 
     def test_sublabel_not_in_dataset(self):
-        self._test_bad_function_spec(
+        self._test_spec_dataset_mismatch(
+            "not in dataset",
             cvataa.DetectionFunctionSpec(
                 labels=[
                     cvataa.skeleton_label_spec("cat", 123, [cvataa.keypoint_spec("nose", 1)]),
                 ],
             ),
-            "not in dataset",
         )
 
     def _test_bad_function_detect(self, detect, exc_match: str) -> None:
