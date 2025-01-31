@@ -1312,6 +1312,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
+        if not a_points and not b_points:
+            results = [[], [], [], []]
+
+            if self.return_distances:
+                results.append({})
+
+            return tuple(results)
+
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
             source_instances = datumaro.util.annotation_util.find_instances(source_anns)
@@ -1414,7 +1422,12 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_a)
         b_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_b)
         if not a_skeletons and not b_skeletons:
-            return [], [], [], []
+            results = [[], [], [], []]
+
+            if self.return_distances:
+                results.append({})
+
+            return tuple(results)
 
         # Convert skeletons to point lists for comparison
         # This is required to compute correct per-instance distance

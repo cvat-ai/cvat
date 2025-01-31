@@ -7,12 +7,14 @@ from __future__ import annotations
 import itertools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
-from typing import Callable, Iterable, Optional, Sequence, Union
+from typing import Callable, Iterable, Optional, Sequence
 
 import attrs
-import datumaro as dm
 import datumaro
+import datumaro as dm
 import datumaro.components.merge.intersect_merge
+import datumaro.util
+import datumaro.util.annotation_util
 import numpy as np
 from attrs import define, field
 from datumaro.components.errors import FailedLabelVotingError
@@ -24,9 +26,16 @@ from cvat.apps.quality_control.quality_reports import (
     ComparisonParameters,
     DistanceComparator,
     KeypointsMatcher,
+    LabelEqualityFunction,
 )
 from cvat.apps.quality_control.quality_reports import LineMatcher as LineMatcherQualityReports
-from cvat.apps.quality_control.quality_reports import match_segments, oks, segment_iou, to_rle
+from cvat.apps.quality_control.quality_reports import (
+    ShapeSimilarityFunction,
+    _ShapeT1,
+    _ShapeT2,
+    segment_iou,
+    to_rle,
+)
 
 
 @define(kw_only=True, slots=False)
@@ -42,7 +51,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         torso_r: float = 0.01
 
         groups: Collection[Collection[str]] = field(factory=tuple)
-        close_distance: float = 0.75
+        close_distance: float = 0 # disabled
 
         included_annotation_types: Collection[dm.AnnotationType] = None
 
@@ -56,10 +65,10 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         init=False
     )  # id(dataset) -> mean consensus score
 
-    def __call__(self, datasets):
+    def __call__(self, *datasets):
         self.dataset_mean_consensus_score = {id(d): [] for d in datasets}
 
-        merged = super().__call__(datasets)
+        merged = dm.Dataset(super().__call__(*datasets))
 
         for item in merged:
             merged.put(
@@ -79,19 +88,25 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
         return merged
 
+    def _check_annotation_distance(self, t, merged_clusters):
+        return # disabled, need to clarify how to compare merged instances correctly
+
     def get_ann_dataset_id(self, ann_id: int) -> int:
         return self._dataset_map[self.get_ann_source(ann_id)][1]
 
-    def get_item_media_dims(self, ann_id: int) -> tuple[int, int]:
-        return self._item_map[self._ann_map[ann_id][1]][0].image.size
+    def get_ann_source_item(self, ann_id: int) -> dm.DatasetItem:
+        return self._item_map[self._ann_map[ann_id][1]][0]
 
-    def get_label_id(self, label):
+    def get_item_media_dims(self, ann_id: int) -> tuple[int, int]:
+        return self.get_ann_source_item(ann_id).media_as(dm.Image).size
+
+    def get_label_id(self, label: str) -> int:
         return self._get_label_id(label)
 
-    def get_src_label_name(self, ann, label_id):
+    def get_src_label_name(self, ann: dm.Annotation, label_id: int) -> str:
         return self._get_src_label_name(ann, label_id)
 
-    def get_dataset_source_id(self, dataset_id: int):
+    def get_dataset_source_id(self, dataset_id: int) -> int:
         return self._dataset_map[dataset_id][1]
 
     def dataset_count(self) -> int:
@@ -144,9 +159,6 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
             t: _for_type(t, instance_map=instance_map, categories=self._categories)
             for t in self.conf.included_annotation_types
         }
-
-    def get_any_label_name(self, ann: dm.Annotation, label_id: int) -> str:
-        return self._get_any_label_name(ann, label_id)
 
 
 @define(kw_only=True, slots=False)
@@ -242,6 +254,7 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
         self._comparator = DistanceComparator(
             categories=self.categories,
+            return_distances=True,
             iou_threshold=self.pairwise_dist,
             oks_sigma=self._context.conf.sigma,
             line_torso_radius=self._context.conf.torso_r,
@@ -249,8 +262,8 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
         self._distance = CachedSimilarityFunction(self._distance_func)
 
-    def _distance_func(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> float:
-        return dm.ops.segment_iou(item_a, item_b)
+    @abstractmethod
+    def _distance_func(self, a: dm.Annotation, b: dm.Annotation) -> float: ...
 
     def distance(self, a, b):
         return self._distance(a, b)
@@ -261,19 +274,21 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
         return a_label == b_label
 
     @staticmethod
-    def _get_ann_type(t, annotations: Sequence[dm.Annotation]) -> Sequence[dm.Annotation]:
+    def _get_ann_type(
+        t: dm.AnnotationType, annotations: Sequence[dm.Annotation]
+    ) -> Sequence[dm.Annotation]:
         return [a for a in annotations if a.type == t and not a.attributes.get("outside", False)]
 
     def _match_segments(
         self,
-        t,
-        item_a: Sequence[dm.Annotation],
-        item_b: Sequence[dm.Annotation],
+        t: dm.AnnotationType,
+        item_a: dm.DatasetItem,
+        item_b: dm.DatasetItem,
         *,
-        distance: SimilarityFunction | None = None,
-        label_matcher: Callable[[dm.Annotation, dm.Annotation], bool] | None = None,
-        a_objs: Sequence[dm.Annotation] | None = None,
-        b_objs: Sequence[dm.Annotation] | None = None,
+        distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] | None = None,
+        a_objs: Sequence[_ShapeT1] | None = None,
+        b_objs: Sequence[_ShapeT2] | None = None,
         dist_thresh: float | None = None,
     ):
         if distance is None:
@@ -285,9 +300,6 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
         if dist_thresh is None:
             dist_thresh = self.pairwise_dist
 
-        # TODO: try to use real items
-        item_a = dm.DatasetItem(id=1, annotations=item_a)
-        item_b = dm.DatasetItem(id=2, annotations=item_b)
         return self._comparator.match_segments(
             t=t,
             item_a=item_a,
@@ -376,7 +388,7 @@ class BboxMatcher(ShapeMatcher):
     def _distance_func(self, a: dm.Bbox, b: dm.Bbox):
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
-                return dm.ops.bbox_iou(a, b)
+                return datumaro.util.annotation_util.bbox_iou(a, b)
             else:
                 return segment_iou(
                     self._comparator.to_polygon(a),
@@ -391,7 +403,14 @@ class BboxMatcher(ShapeMatcher):
     def match_annotations_between_two_sources(
         self, source_a: list[dm.Bbox], source_b: list[dm.Bbox]
     ):
-        return self._match_segments(dm.AnnotationType.bbox, source_a, source_b)[0]
+        if not source_a or not source_b:
+            return []
+
+        item_a = self._context.get_ann_source_item(id(source_a[0]))
+        item_b = self._context.get_ann_source_item(id(source_b[0]))
+        return self._match_segments(
+            dm.AnnotationType.bbox, item_a, item_b, a_objs=source_a, b_objs=source_b
+        )[0]
 
 
 @define(kw_only=True, slots=False)
@@ -399,9 +418,9 @@ class PolygonMatcher(ShapeMatcher):
     def _distance_func(self, a: dm.Polygon | dm.Mask, b: dm.Polygon | dm.Mask):
         from pycocotools import mask as mask_utils
 
-        def _get_segment(item):
-            img_h, img_w = self._context.get_item_media_dims(id(item))
-            object_rle_groups = [to_rle(item, img_h=img_h, img_w=img_w)]
+        def _get_segment(ann: dm.Polygon | dm.Mask):
+            img_h, img_w = self._context.get_item_media_dims(id(ann))
+            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w)]
             rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
             return rle
 
@@ -410,22 +429,20 @@ class PolygonMatcher(ShapeMatcher):
         return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
 
     def match_annotations_between_two_sources(
-        self, item_a: list[Union[dm.Polygon, dm.Mask]], item_b: list[Union[dm.Polygon, dm.Mask]]
+        self, source_a: list[dm.Polygon | dm.Mask], source_b: list[dm.Polygon | dm.Mask]
     ):
         def _get_segments(annotations):
             return self._get_ann_type(dm.AnnotationType.polygon, annotations) + self._get_ann_type(
                 dm.AnnotationType.mask, annotations
             )
 
-        img_h, img_w = self._context.get_item_media_dims(id(item_a[0]))
-
         def _find_instances(annotations):
             # Group instance annotations by label.
             # Annotations with the same label and group will be merged,
-            # and considered item_a single object in comparison
+            # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in dm.ops.find_instances(annotations):
+            for ann_group in datumaro.util.annotation_util.find_instances(annotations):
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -436,8 +453,18 @@ class PolygonMatcher(ShapeMatcher):
 
             return instances, instance_map
 
-        a_instances, _ = _find_instances(_get_segments(item_a))
-        b_instances, _ = _find_instances(_get_segments(item_b))
+        a_segments = _get_segments(source_a)
+        b_segments = _get_segments(source_b)
+
+        if not a_segments or not b_segments:
+            return []
+
+        a_instances, _ = _find_instances(a_segments)
+        b_instances, _ = _find_instances(b_segments)
+
+        item_a = self._context.get_ann_source_item(id(source_a[0]))
+        item_b = self._context.get_ann_source_item(id(source_b[0]))
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         a_compiled_mask = None
         b_compiled_mask = None
@@ -516,193 +543,97 @@ class MaskMatcher(PolygonMatcher):
 @define(kw_only=True, slots=False)
 class PointsMatcher(ShapeMatcher):
     sigma: Optional[list] = field(default=None)
-    instance_map = field(converter=dict)
 
-    def _distance_func(self, a, b):
-        for instance_group in [[a], [b]]:
-            instance_bbox = self._comparator.instance_bbox(instance_group)
+    def _distance_func(self, a: dm.Points, b: dm.Points) -> float:
+        item_a = self._context.get_ann_source_item(id(a))
+        item_b = self._context.get_ann_source_item(id(b))
 
-            for ann in instance_group:
-                if ann.type == dm.AnnotationType.points:
-                    self.instance_map[id(ann)] = [instance_group, instance_bbox]
+        self.match_annotations_between_two_sources(
+            self._get_ann_type(dm.AnnotationType.points, item_a.annotations),
+            self._get_ann_type(dm.AnnotationType.points, item_b.annotations),
+        )
 
-        img_h, img_w = self._context.get_item_media_dims(id(a))
-        a_bbox = self.instance_map[id(a)][1]
-        b_bbox = self.instance_map[id(b)][1]
-        a_area = a_bbox[2] * a_bbox[3]
-        b_area = b_bbox[2] * b_bbox[3]
-
-        if a_area == 0 and b_area == 0:
-            # Simple case: singular points without bbox
-            # match them in the image space
-            return oks(a, b, sigma=self.sigma, scale=img_h * img_w)
-
-        else:
-            # Complex case: multiple points, grouped points, points with item_a bbox
-            # Try to align points and then return the metric
-            # match them in their bbox space
-
-            if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
-                return 0
-
-            bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-            scale = bbox[2] * bbox[3]
-
-            a_points = np.reshape(a.points, (-1, 2))
-            b_points = np.reshape(b.points, (-1, 2))
-
-            matches, mismatches, a_extra, b_extra = match_segments(
-                range(len(a_points)),
-                range(len(b_points)),
-                distance=lambda ai, bi: oks(
-                    dm.Points(a_points[ai]),
-                    dm.Points(b_points[bi]),
-                    sigma=self.sigma,
-                    scale=scale,
-                ),
-                dist_thresh=self._comparator.iou_threshold,
-                label_matcher=lambda ai, bi: True,
-            )
-
-            # the exact array is determined by the label matcher
-            # all the points will have the same match status,
-            # because there is only 1 shared label for all the points
-            matched_points = matches + mismatches
-
-            a_sorting_indices = [ai for ai, _ in matched_points]
-            a_points = a_points[a_sorting_indices]
-
-            b_sorting_indices = [bi for _, bi in matched_points]
-            b_points = b_points[b_sorting_indices]
-
-            # Compute oks for 2 groups of points, matching points aligned
-            dists = np.linalg.norm(a_points - b_points, axis=1)
-            return np.sum(np.exp(-(dists**2) / (2 * scale * (2 * self.sigma) ** 2))) / (
-                len(matched_points) + len(a_extra) + len(b_extra)
-            )
+        return self._distance.cache[self._distance._sort_key((id(a), id(b)))]
 
     def match_annotations_between_two_sources(
-        self, item_a: list[dm.Points], item_b: list[dm.Points]
+        self, source_a: list[dm.Points], source_b: list[dm.Points]
     ):
-        a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
-        b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
+        if not source_a or not source_b:
+            return []
 
-        return self._match_segments(
-            dm.AnnotationType.points,
-            item_a,
-            item_b,
-            a_objs=a_points,
-            b_objs=b_points,
-            distance=self.distance,
-        )[0]
+        item_a = self._context.get_ann_source_item(id(source_a[0]))
+        item_b = self._context.get_ann_source_item(id(source_b[0]))
+
+        matches, _, _, _, distances = self._comparator.match_points(item_a, item_b)
+
+        # Remember distances
+        for (p_a_id, p_b_id), dist in distances.items():
+            self._distance.set((p_a_id, p_b_id), dist)
+
+        return matches
 
 
 @define(kw_only=True, slots=False)
 class SkeletonMatcher(ShapeMatcher):
-    return_distances: bool = True
     sigma: float = 0.1
-    instance_map = field(factory=dict)
-    skeleton_map = field(factory=dict)
 
-    def _distance_func(self, a, b):
-        matcher = KeypointsMatcher(instance_map=self.instance_map, sigma=self.sigma)
-        if isinstance(a, dm.Skeleton) and isinstance(b, dm.Skeleton):
-            return self.distance(a, b)
-        return matcher.distance(a, b)
+    def _distance_func(self, a: dm.Skeleton, b: dm.Skeleton) -> float:
+        item_a = self._context.get_ann_source_item(id(a))
+        item_b = self._context.get_ann_source_item(id(b))
+
+        assert item_a is item_b
+        item_a = item_a.wrap(annotations=[a])
+        item_b = item_b.wrap(annotations=[b])
+
+        self.match_annotations_between_two_items(item_a, item_b)
+
+        return self._distance.cache[self._distance._sort_key((id(a), id(b)))]
 
     def match_annotations_between_two_sources(
-        self, a_skeletons: list[dm.Skeleton], b_skeletons: list[dm.Skeleton]
+        self, sources_a: list[dm.Skeleton], sources_b: list[dm.Skeleton]
     ):
-        if not a_skeletons and not b_skeletons:
+        if not sources_a and not sources_b:
             return []
 
-        # Convert skeletons to point lists for comparison
-        # This is required to compute correct per-instance distance
-        # It is assumed that labels are the same in the datasets
-        skeleton_infos = {}
-        points_map = {}
-        a_points = []
-        b_points = []
-        for source, source_points in [(a_skeletons, a_points), (b_skeletons, b_points)]:
-            for skeleton in source:
-                skeleton_info = skeleton_infos.setdefault(
-                    skeleton.label, self._comparator._get_skeleton_info(skeleton.label)
-                )
+        item_a = self._context.get_ann_source_item(id(sources_a[0]))
+        item_b = self._context.get_ann_source_item(id(sources_b[0]))
+        return self.match_annotations_between_two_items(item_a, item_b)
 
-                # Merge skeleton points into item_a single list
-                # The list is ordered by skeleton_info
-                skeleton_points = [
-                    next((p for p in skeleton.elements if p.label == sub_label), None)
-                    for sub_label in skeleton_info
-                ]
+    def match_annotations_between_two_items(
+        self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
+    ):
+        matches, _, _, _, distances = self._comparator.match_skeletons(item_a, item_b)
 
-                # Build item_a single Points object for further comparisons
-                merged_points = dm.Points()
-                merged_points.points = np.ravel(
-                    [p.points if p else [0, 0] for p in skeleton_points]
-                )
-                merged_points.visibility = np.ravel(
-                    [p.visibility if p else [dm.Points.Visibility.absent] for p in skeleton_points]
-                )
-                merged_points.label = skeleton.label
-                # no per-point attributes currently in CVAT
+        # Remember distances
+        for (p_a_id, p_b_id), dist in distances.items():
+            self._distance.set((p_a_id, p_b_id), dist)
 
-                if all(v == dm.Points.Visibility.absent for v in merged_points.visibility):
-                    # The whole skeleton is outside, exclude it
-                    self.skeleton_map[id(skeleton)] = None
-                    continue
+        return matches
 
-                points_map[id(merged_points)] = skeleton
-                self.skeleton_map[id(skeleton)] = merged_points
-                source_points.append(merged_points)
-
-        for source in [a_skeletons, b_skeletons]:
-            for instance_group in dm.ops.find_instances(source):
-                instance_bbox = self._comparator.instance_bbox(instance_group)
-
-                instance_group = [
-                    self.skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
-                    for a in instance_group
-                    if not isinstance(a, dm.Skeleton) or self.skeleton_map[id(a)] is not None
-                ]
-                for ann in instance_group:
-                    self.instance_map[id(ann)] = [instance_group, instance_bbox]
-
-        results = self._match_segments(
-            dm.AnnotationType.points,
-            a_skeletons,
-            b_skeletons,
-            a_objs=a_points,
-            b_objs=b_points,
-            distance=self.distance,
-        )
-
-        # Map points back to skeletons
-        if self.return_distances:
-            distances = self._distance
-            for p_a_id, p_b_id in distances.keys():
-                if p_a_id in points_map and p_b_id in points_map:
-                    dist = distances.pop((p_a_id, p_b_id))
-                    distances.set((id(points_map[p_a_id]), id(points_map[p_b_id])), dist)
-
-        return [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in results[0]]
 
 
 @define(kw_only=True, slots=False)
 class LineMatcher(ShapeMatcher):
-    def _distance_func(self, item_a, item_b):
-        img_h, img_w = self._context.get_item_media_dims(id(item_a))
+    def _distance_func(self, a: dm.PolyLine, b: dm.PolyLine) -> float:
+        img_h, img_w = self._context.get_item_media_dims(id(a))
         matcher = LineMatcherQualityReports(
             torso_r=self._comparator.line_torso_radius,
             scale=np.prod([img_h, img_w]),
         )
-        return matcher.distance(item_a, item_b)
+        return matcher.distance(a, b)
 
     def match_annotations_between_two_sources(
-        self, item_a: list[dm.PolyLine], item_b: list[dm.PolyLine]
+        self, source_a: list[dm.PolyLine], source_b: list[dm.PolyLine]
     ):
+        if not source_a or not source_b:
+            return []
+
         return self._match_segments(
-            dm.AnnotationType.polyline, item_a, item_b, distance=self.distance
+            dm.AnnotationType.polyline,
+            self._context.get_ann_source_item(id(source_a[0])),
+            self._context.get_ann_source_item(id(source_b[0])),
+            a_objs=source_a,
+            b_objs=source_b,
         )[0]
 
 
