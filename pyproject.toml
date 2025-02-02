@@ -22,7 +22,6 @@ extend-exclude = """
         annotation.py
         |apps.py
         |bindings.py
-        |formats/
         |project.py
         |serializers.py
         |task.py
