@@ -484,6 +484,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component());
 
+        const { history } = this.props;
+        history.listen(() => {
+            notification.destroy();
+        });
         const queryParams = new URLSearchParams(location.search);
         const authParams = authQuery(queryParams);
 
