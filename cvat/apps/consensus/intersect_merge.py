@@ -58,7 +58,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
     def __call__(self, *datasets):
         self.dataset_mean_consensus_score = {id(d): [] for d in datasets}
 
-        merged = super().__call__(*datasets)
+        merged = dm.Dataset(super().__call__(*datasets))
 
         # now we have consensus score for all annotations in the input datasets
         for dataset_id in self.dataset_mean_consensus_score:
