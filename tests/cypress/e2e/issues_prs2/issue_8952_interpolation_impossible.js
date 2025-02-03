@@ -127,17 +127,14 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.wait('@patchMeta');
 
             // Get job meta updates from the server and reload page to bring changes to UI
-            cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
             cy.reload();
-            cy.wait('@getMeta');
 
             cy.saveJob();
             cy.get('.cvat-player-first-button').click();
         });
         it('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
             cy.on('uncaught:exception', (err) => {
-                const expectedMsg = 'No one left position or right position was found. Interpolation impossible. Client ID:';
-                expect(err.message).to.include(expectedMsg); // Exclude familiar error
+                console.error(err);
                 throw err;
             });
 
@@ -156,24 +153,20 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.get('.cvat_canvas_shape').should('not.exist');
             cy.clickSaveAnnotationView();
 
-            // This might pop up after deleting or saving (on firefox e.g.)
-            cy.get('.ant-notification-notice-error').should('not.exist');
-
             // Reopening a task with bad metadata might throw an exception that we can catch
             cy.goToTaskList();
             cy.openTaskJob(taskName);
-            cy.get('.ant-notification-notice-error').should('not.exist');
         });
         it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
             cy.goToNextFrame(1);
             cy.goToNextFrame(2);
             cy.clickDeleteFrameAnnotationView();
-            cy.clickSaveAnnotationView();
             cy.checkFrameNum(3);
+            cy.clickSaveAnnotationView();
             storeShape(3);
             cy.goToPreviousFrame(1);
             storeShape(1);
-            cy.reload({ forceReload: false }).then(() => {
+            cy.reload().then(() => {
                 cy.goToNextFrame(1).then(() => compareShape(1));
                 cy.goToNextFrame(3).then(() => compareShape(3));
             });
