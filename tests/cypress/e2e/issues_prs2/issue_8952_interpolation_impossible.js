@@ -121,10 +121,7 @@ context('Create any track, check if track works correctly after deleting some fr
         });
 
         beforeEach(() => {
-            // Restore all frames by patching deleted_frames to []
-            cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
             cy.headlessRestoreAllFrames(jobID);
-            cy.wait('@patchMeta');
 
             // Get job meta updates from the server and reload page to bring changes to UI
             cy.reload();

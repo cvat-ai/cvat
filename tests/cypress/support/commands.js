@@ -358,12 +358,14 @@ Cypress.Commands.add('headlessRemoveAnnotations', (jobID) => {
 });
 
 Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
+    cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
     cy.window().then(async ($win) => {
         await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
             method: 'PATCH',
             data: { deleted_frames: [] },
         });
     });
+    cy.wait('@patchMeta');
 });
 
 Cypress.Commands.add('headlessGetJobMeta', (jobID) => {
