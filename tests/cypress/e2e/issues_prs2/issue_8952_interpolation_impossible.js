@@ -19,53 +19,31 @@ const imageFileName = `image_${issueId}`;
 const archiveName = `${imageFileName}.zip`;
 const archivePath = `cypress/fixtures/${archiveName}`;
 const imagesFolder = `cypress/fixtures/${imageFileName}`;
-const dirToArchive = imagesFolder;
 
-const [fX, fY] = [30, 30];
-const [w, h] = [34, 23];
-const createRectangleShape2Points = {
-    points: 'By 2 Points',
-    type: 'Track',
-    labelName,
-    firstX: fX,
-    firstY: fY,
-    secondX: (fX + w),
-    secondY: (fY + h),
+const [xtl, ytl, xbr, ybr] = [
+    30, 30,
+    30 + 34, 30 + 23,
+];
+const rect = {
+    xtl, ytl, xbr, ybr,
 };
 
 function translateShape(shape, delta, axis) {
     if (axis === 'x') {
         return {
             ...shape,
-            firstX: shape.firstX + delta,
-            secondX: shape.secondX + delta,
+            xtl: xtl + delta,
+            xbr: xbr + delta,
         };
     }
     if (axis === 'y') {
         return {
             ...shape,
-            firstY: shape.firstY + delta,
-            secondY: shape.secondY + delta,
+            ytl: ytl + delta,
+            ybr: ybr + delta,
         };
     }
     return null;
-}
-
-function shapeToPayload(shape, frame, shapeType) {
-    return {
-        frame,
-        type: shapeType,
-        points: [shape.firstX, shape.firstY, shape.secondX, shape.secondY],
-    };
-}
-
-function makeTrack(shapePayloads, frame0, trackLabel) {
-    return {
-        shapes: shapePayloads,
-        frame: frame0,
-        labelName: trackLabel,
-        objectType: 'track',
-    };
 }
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
@@ -96,8 +74,7 @@ context('Create any track, check if track works correctly after deleting some fr
 
             // Create assets for task using nodeJS
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-            cy.createZipArchive(dirToArchive, archivePath);
-            // cy.createTaskFromArchive(taskName, labelName, archiveName);
+            cy.createZipArchive(imagesFolder, archivePath);
             cy.createAnnotationTask(
                 taskName,
                 labelName,
@@ -113,15 +90,32 @@ context('Create any track, check if track works correctly after deleting some fr
                 jobID = parseInt(url.slice(last + 1), 10);
             }).then(() => {
                 // Remove all annotations and draw a track rect
-                const wrap = (shape, frame) => shapeToPayload(shape, frame, 'rectangle');
-                const shape0 = createRectangleShape2Points;
+                const shape0 = rect;
                 const shape1 = translateShape(shape0, delta, 'x');
-                const shape2 = translateShape(shape1, delta, 'y'); // TODO: fix coords, rect flies away
-                const track = makeTrack([
-                    wrap(shape0, 0),
-                    wrap(shape1, 2),
-                    wrap(shape2, 4),
-                ], 0, labelName);
+                const shape2 = translateShape(shape1, delta, 'y');
+                const track = {
+                    shapes: [
+                        {
+                            frame: 0,
+                            type: 'rectangle',
+                            points: Object.values(shape0),
+                            // ECMAScript guarantees chronological order of keys
+                        },
+                        {
+                            frame: 2,
+                            type: 'rectangle',
+                            points: Object.values(shape1),
+                        },
+                        {
+                            frame: 4,
+                            type: 'rectangle',
+                            points: Object.values(shape2),
+                        },
+                    ],
+                    frame: 0,
+                    labelName,
+                    objectType: 'track',
+                };
                 cy.headlessCreateObjects([track], jobID);
             });
         });
