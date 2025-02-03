@@ -425,7 +425,9 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         label = self._context.get_label_id(label)
         return label, score
 
-    def _merge_cluster_shape_mean_box_nearest(self, cluster):
+    def _merge_cluster_shape_mean_box_nearest(
+        self, cluster: Sequence[dm.Annotation]
+    ) -> dm.Annotation:
         mbbox = dm.Bbox(*mean_bbox(cluster))
         img_h, img_w = self._context.get_item_media_dims(id(cluster[0]))
 
@@ -441,8 +443,12 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         nearest_pos, _ = max(enumerate(dist), key=lambda e: e[1])
         return cluster[nearest_pos]
 
+    def merge_cluster_shape_mean_nearest(self, cluster: Sequence[dm.Annotation]) -> dm.Annotation:
+        return self._merge_cluster_shape_mean_box_nearest(cluster)
+
     def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
-        shape = self._merge_cluster_shape_mean_box_nearest(cluster)
+        shape = self.merge_cluster_shape_mean_nearest(cluster)
+
         for ann in cluster:
             dataset_id = self._context.get_ann_source(id(ann))
             self._context.dataset_mean_consensus_score.setdefault(dataset_id, []).append(
@@ -493,19 +499,14 @@ class LineMerger(ShapeMerger, LineMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class SkeletonMerger(ShapeMerger, SkeletonMatcher):
-    def _merge_cluster_shape_nearest(self, cluster):
+    def merge_cluster_shape_mean_nearest(self, cluster):
         dist = {}
-        for idx, skeleton1 in enumerate(cluster):
-            skeleton_distance = 0
-            for skeleton2 in cluster:
+        for idx, a in enumerate(cluster):
+            a_cluster_distance = 0
+            for b in cluster:
                 # (1 - x) because it's actually a similarity function
-                skeleton_distance += 1 - self.distance(skeleton1, skeleton2)
+                a_cluster_distance += 1 - self.distance(a, b)
 
-            dist[idx] = skeleton_distance / len(cluster)
+            dist[idx] = a_cluster_distance / len(cluster)
 
         return cluster[min(dist, key=dist.get)]
-
-    def merge_cluster_shape(self, cluster):
-        shape = self._merge_cluster_shape_nearest(cluster)
-        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
-        return shape, shape_score
