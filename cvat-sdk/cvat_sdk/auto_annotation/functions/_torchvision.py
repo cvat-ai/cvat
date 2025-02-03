@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,6 +10,8 @@ import cvat_sdk.auto_annotation as cvataa
 
 
 class TorchvisionFunction:
+    _label_type = "any"
+
     def __init__(self, model_name: str, weights_name: str = "DEFAULT", **kwargs) -> None:
         weights_enum = torchvision.models.get_model_weights(model_name)
         self._weights = weights_enum[weights_name]
@@ -21,6 +23,8 @@ class TorchvisionFunction:
     def spec(self) -> cvataa.DetectionFunctionSpec:
         return cvataa.DetectionFunctionSpec(
             labels=[
-                cvataa.label_spec(cat, i) for i, cat in enumerate(self._weights.meta["categories"])
+                cvataa.label_spec(cat, i, type=self._label_type)
+                for i, cat in enumerate(self._weights.meta["categories"])
+                if cat != "N/A"
             ]
         )

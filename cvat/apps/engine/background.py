@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -23,6 +23,7 @@ from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.util import extend_export_file_lifetime
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
@@ -330,7 +331,7 @@ class DatasetExportManager(_ResourceExportManager):
                         acquire_timeout=LOCK_ACQUIRE_TIMEOUT,
                     ):
                         if osp.exists(file_path) and not is_result_outdated():
-                            dm.util.extend_export_file_lifetime(file_path)
+                            extend_export_file_lifetime(file_path)
 
                             return Response(status=status.HTTP_201_CREATED)
 
@@ -545,6 +546,10 @@ class BackupExportManager(_ResourceExportManager):
         rq_job: Optional[RQJob],
         queue: DjangoRQ,
     ) -> Optional[Response]:
+
+        def is_result_outdated() -> bool:
+            return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < last_instance_update_time
+
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
 
@@ -604,25 +609,36 @@ class BackupExportManager(_ResourceExportManager):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                elif not os.path.exists(file_path):
-                    return Response(
-                        "The export result is not found",
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
                 if action == "download":
-                    filename = self.export_args.filename or build_backup_file_name(
-                        class_name=self.resource,
-                        identifier=self.db_instance.name,
-                        timestamp=timestamp,
-                        extension=os.path.splitext(file_path)[1],
-                    )
+                    with dm.util.get_export_cache_lock(
+                        file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                    ):
+                        if not os.path.exists(file_path):
+                            return Response(
+                                "The backup file has been expired, please retry backing up",
+                                status=status.HTTP_404_NOT_FOUND,
+                            )
 
-                    rq_job.delete()
-                    return sendfile(
-                        self.request, file_path, attachment=True, attachment_filename=filename
-                    )
+                        filename = self.export_args.filename or build_backup_file_name(
+                            class_name=self.resource,
+                            identifier=self.db_instance.name,
+                            timestamp=timestamp,
+                            extension=os.path.splitext(file_path)[1],
+                        )
 
-                return Response(status=status.HTTP_201_CREATED)
+                        rq_job.delete()
+                        return sendfile(
+                            self.request, file_path, attachment=True, attachment_filename=filename
+                        )
+                with dm.util.get_export_cache_lock(
+                    file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                ):
+                    if osp.exists(file_path) and not is_result_outdated():
+                        extend_export_file_lifetime(file_path)
+                        return Response(status=status.HTTP_201_CREATED)
+
+                cancel_and_delete(rq_job)
+                return None
             else:
                 raise NotImplementedError(
                     f"Export to {self.export_args.location} location is not implemented yet"
@@ -697,9 +713,8 @@ class BackupExportManager(_ResourceExportManager):
 
         func = self.export_callback
         func_args = (
-            self.db_instance,
+            self.db_instance.id,
             Exporter,
-            "{}_backup.zip".format(self.resource),
             logger,
             cache_ttl,
         )

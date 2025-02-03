@@ -7,3 +7,4 @@ profile = "black"
 forced_separate = ["tests"]
 line_length = 100
 skip_gitignore = true # align tool behavior with Black
+known_first_party = ["cvat_sdk"]

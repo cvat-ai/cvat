@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.24.1
+  version: 2.26.2
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1804,7 +1804,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'].
+           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
         schema:
           type: string
       - name: org
@@ -1829,6 +1829,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: parent_job_id
+        in: query
+        description: A simple equality filter for the parent_job_id field
+        schema:
+          type: integer
       - name: project_id
         in: query
         description: A simple equality filter for the project_id field
@@ -1851,7 +1856,8 @@ paths:
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
           [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'']'
+          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
+          ''parent_job_id'']'
         schema:
           type: string
       - name: stage
@@ -1891,6 +1897,7 @@ paths:
           enum:
           - annotation
           - ground_truth
+          - consensus_replica
       tags:
       - jobs
       security:
@@ -2809,16 +2816,16 @@ paths:
         schema:
           type: string
           enum:
-          - bbox
+          - any
+          - cuboid
           - ellipse
+          - mask
+          - points
           - polygon
           - polyline
-          - points
-          - cuboid
-          - cuboid_3d
+          - rectangle
           - skeleton
           - tag
-          - any
       tags:
       - labels
       security:
@@ -8335,6 +8342,13 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        parent_job_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        consensus_replicas:
+          type: integer
+          readOnly: true
       required:
       - issues
       - labels
@@ -8362,10 +8376,12 @@ components:
       enum:
       - annotation
       - ground_truth
+      - consensus_replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
+        * `consensus_replica` - CONSENSUS_REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -8487,8 +8503,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -8531,6 +8560,30 @@ components:
             a parent label
       required:
       - name
+    LabelType:
+      enum:
+      - any
+      - cuboid
+      - ellipse
+      - mask
+      - points
+      - polygon
+      - polyline
+      - rectangle
+      - skeleton
+      - tag
+      type: string
+      description: |-
+        * `any` - ANY
+        * `cuboid` - CUBOID
+        * `ellipse` - ELLIPSE
+        * `mask` - MASK
+        * `points` - POINTS
+        * `polygon` - POLYGON
+        * `polyline` - POLYLINE
+        * `rectangle` - RECTANGLE
+        * `skeleton` - SKELETON
+        * `tag` - TAG
     LabeledData:
       type: object
       properties:
@@ -9589,8 +9642,21 @@ components:
           description: Delete the label. Only applicable in the PATCH methods of a
             project or a task.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         svg:
           type: string
         sublabels:
@@ -9775,12 +9841,12 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-        match_empty_frames:
+        empty_is_annotated:
           type: boolean
           default: false
           description: |
-            Count empty frames as matching. This affects target metrics like accuracy in cases
-            there are no annotations. If disabled, frames without annotations
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
     PatchedTaskValidationLayoutWriteRequest:
@@ -10282,12 +10348,12 @@ components:
         compare_attributes:
           type: boolean
           description: Enables or disables annotation attribute comparison
-        match_empty_frames:
+        empty_is_annotated:
           type: boolean
           default: false
           description: |
-            Count empty frames as matching. This affects target metrics like accuracy in cases
-            there are no annotations. If disabled, frames without annotations
+            Consider empty frames annotated as "empty". This affects target metrics like
+            accuracy in cases there are no annotations. If disabled, frames without annotations
             are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
             This will also add virtual annotations to empty frames in the comparison results.
     RegisterSerializerEx:
@@ -10764,8 +10830,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -10804,8 +10883,21 @@ components:
           description: The list of attributes. If you want to remove an attribute,
             you need to recreate the label and specify the remaining attributes.
         type:
-          type: string
-          description: Associated annotation type for this label
+          allOf:
+          - $ref: '#/components/schemas/LabelType'
+          description: |-
+            Associated annotation type for this label
+
+            * `any` - ANY
+            * `cuboid` - CUBOID
+            * `ellipse` - ELLIPSE
+            * `mask` - MASK
+            * `points` - POINTS
+            * `polygon` - POLYGON
+            * `polyline` - POLYLINE
+            * `rectangle` - RECTANGLE
+            * `skeleton` - SKELETON
+            * `tag` - TAG
         has_parent:
           type: boolean
       required:
@@ -10947,6 +11039,9 @@ components:
           nullable: true
           description: Describes how the task validation is performed. Configured
             at task creation
+        consensus_enabled:
+          type: boolean
+          readOnly: true
       required:
       - jobs
       - labels
@@ -11039,6 +11134,13 @@ components:
           allOf:
           - $ref: '#/components/schemas/StorageRequest'
           nullable: true
+        consensus_replicas:
+          type: integer
+          minimum: 0
+          default: 0
+          description: |
+            The number of consensus replica jobs for each annotation job.
+            Configured at task creation
       required:
       - name
     TasksSummary:

@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -13,6 +13,9 @@ from functools import cached_property, partial
 from typing import Any, Callable, Optional, Union, cast
 
 import datumaro as dm
+import datumaro.components.annotations.matcher
+import datumaro.components.comparator
+import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import django_rq
 import numpy as np
@@ -215,10 +218,11 @@ class ComparisonParameters(_Serializable):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
-    match_empty_frames: bool = False
+    empty_is_annotated: bool = False
     """
-    Consider unannotated (empty) frames as matching. If disabled, quality metrics, such as accuracy,
-    will be 0 if both GT and DS frames have no annotations. When enabled, they will be 1 instead.
+    Consider unannotated (empty) frames virtually annotated as "nothing".
+    If disabled, quality metrics, such as accuracy, will be 0 if both GT and DS frames
+    have no annotations. When enabled, they will be 1 instead.
     This will also add virtual annotations to empty frames in the comparison results.
     """
 
@@ -660,7 +664,7 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
 def _match_segments(
     a_segms,
     b_segms,
-    distance=dm.ops.segment_iou,
+    distance=dm.util.annotation_util.segment_iou,
     dist_thresh=1.0,
     label_matcher=lambda a, b: a.label == b.label,
 ):
@@ -739,7 +743,7 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
     if not scale:
         if bbox is None:
-            bbox = dm.ops.mean_bbox([a, b])
+            bbox = dm.util.annotation_util.mean_bbox([a, b])
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
@@ -749,14 +753,14 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
 
 @define(kw_only=True)
-class _KeypointsMatcher(dm.ops.PointsMatcher):
+class _KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+        if dm.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
 
-        bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+        bbox = dm.util.annotation_util.mean_bbox([a_bbox, b_bbox])
         return _OKS(
             a,
             b,
@@ -805,7 +809,7 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
 
 @define(kw_only=True)
-class _LineMatcher(dm.ops.LineMatcher):
+class _LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
     EPSILON = 1e-7
 
     torso_r: float = 0.25
@@ -952,7 +956,7 @@ class _LineMatcher(dm.ops.LineMatcher):
         return a_new_points, b_new_points
 
 
-class _DistanceComparator(dm.ops.DistanceComparator):
+class _DistanceComparator(dm.components.comparator.DistanceComparator):
     def __init__(
         self,
         categories: dm.CategoriesInfo,
@@ -993,7 +997,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
     def _instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
     ) -> tuple[float, float, float, float]:
-        return dm.ops.max_bbox(
+        return dm.util.annotation_util.max_bbox(
             a.get_bbox() if isinstance(a, dm.Skeleton) else a
             for a in instance_anns
             if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
@@ -1047,7 +1051,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         item_a,
         item_b,
         *,
-        distance: Callable = dm.ops.segment_iou,
+        distance: Callable = dm.util.annotation_util.segment_iou,
         label_matcher: Callable = None,
         a_objs: Optional[Sequence[dm.Annotation]] = None,
         b_objs: Optional[Sequence[dm.Annotation]] = None,
@@ -1082,7 +1086,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         return returned_values
 
-    def match_boxes(self, item_a, item_b):
+    def match_boxes(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         def _to_polygon(bbox_ann: dm.Bbox):
             points = bbox_ann.as_polygon()
             angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
@@ -1101,11 +1105,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
-                return dm.ops.bbox_iou(a, b)
+                return dm.util.annotation_util.bbox_iou(a, b)
             else:
                 return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
         return self._match_segments(
             dm.AnnotationType.bbox,
             item_a,
@@ -1113,13 +1117,13 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             distance=partial(_bbox_iou, img_h=img_h, img_w=img_w),
         )
 
-    def match_segmentations(self, item_a, item_b):
+    def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         def _get_segmentations(item):
             return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
                 dm.AnnotationType.mask, item
             )
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         def _find_instances(annotations):
             # Group instance annotations by label.
@@ -1127,7 +1131,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in dm.ops.find_instances(annotations):
+            for ann_group in dm.util.annotation_util.find_instances(annotations):
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -1146,14 +1150,22 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
             from pycocotools import mask as mask_utils
 
+            # Merge instance groups
             object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
-            object_masks = mask_utils.decode(object_rles)
+
+            # Mask materialization can consume a lot of memory,
+            # avoid storing all the masks simultaneously
+            def _make_lazy_decode(i: int):
+                def _lazy_decode() -> dm.BinaryMaskImage:
+                    return mask_utils.decode([object_rles[i]])[:, :, 0]
+
+                return _lazy_decode
 
             return dm.CompiledMask.from_instance_masks(
                 # need to increment labels and instance ids by 1 to avoid confusion with background
                 instance_masks=(
-                    dm.Mask(image=object_masks[:, :, i], z_order=ann.z_order, label=ann.label + 1)
+                    dm.Mask(image=_make_lazy_decode(i), z_order=ann.z_order, label=ann.label + 1)
                     for i, ann in enumerate(anns)
                 ),
                 instance_ids=(iid + 1 for iid in instance_ids),
@@ -1265,23 +1277,23 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         return returned_values
 
-    def match_lines(self, item_a, item_b):
+    def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         matcher = _LineMatcher(
             oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
-            scale=np.prod(item_a.image.size),
+            scale=np.prod(item_a.media_as(dm.Image).size),
         )
         return self._match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=matcher.distance
         )
 
-    def match_points(self, item_a, item_b):
+    def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
-            source_instances = dm.ops.find_instances(source_anns)
+            source_instances = dm.util.annotation_util.find_instances(source_anns)
             for instance_group in source_instances:
                 instance_bbox = self._instance_bbox(instance_group)
 
@@ -1289,7 +1301,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                     if ann.type == dm.AnnotationType.points:
                         instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         def _distance(a: dm.Points, b: dm.Points) -> float:
             a_bbox = instance_map[id(a)][1]
@@ -1311,11 +1323,11 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 elif self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
                     # match points in their bbox space
 
-                    if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+                    if dm.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
                         # this early exit may not work for points forming an axis-aligned line
                         return 0
 
-                    bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
+                    bbox = dm.util.annotation_util.mean_bbox([a_bbox, b_bbox])
                     scale = bbox[2] * bbox[3]
                 else:
                     assert False, f"Unknown point size base {self.point_size_base}"
@@ -1426,7 +1438,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
-            for instance_group in dm.ops.find_instances(source):
+            for instance_group in dm.util.annotation_util.find_instances(source):
                 instance_bbox = self._instance_bbox(instance_group)
 
                 instance_group = [
@@ -1582,7 +1594,7 @@ class _Comparator:
     def find_groups(
         self, item: dm.DatasetItem
     ) -> tuple[dict[int, list[dm.Annotation]], dict[int, int]]:
-        ann_groups = dm.ops.find_instances(
+        ann_groups = dm.util.annotation_util.find_instances(
             [
                 ann
                 for ann in item.annotations
@@ -1652,7 +1664,7 @@ class _Comparator:
             else:
                 assert False
 
-        img_h, img_w = item.image.size
+        img_h, img_w = item.media_as(dm.Image).size
         covered_ids = _find_covered_segments(
             segms, img_w=img_w, img_h=img_h, visibility_threshold=self.coverage_threshold
         )
@@ -1862,7 +1874,7 @@ class DatasetComparator:
             line_matcher = _LineMatcher(
                 torso_r=self.settings.line_thickness,
                 oriented=True,
-                scale=np.prod(gt_item.image.size),
+                scale=np.prod(gt_item.media_as(dm.Image).size),
             )
 
             for gt_ann, ds_ann in itertools.chain(matches, mismatches):
@@ -1977,15 +1989,20 @@ class DatasetComparator:
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        if self.settings.match_empty_frames and not gt_item.annotations and not ds_item.annotations:
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames
-            valid_labels_count = 1
-            total_labels_count = 1
+            if not gt_item.annotations and not ds_item.annotations:
+                valid_labels_count = 1
+                total_labels_count = 1
 
-            valid_shapes_count = 1
-            total_shapes_count = 1
-            ds_shapes_count = 1
-            gt_shapes_count = 1
+                valid_shapes_count = 1
+                total_shapes_count = 1
+
+            if not ds_item.annotations:
+                ds_shapes_count = 1
+
+            if not gt_item.annotations:
+                gt_shapes_count = 1
 
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
             annotations=self._generate_frame_annotations_summary(
@@ -2078,12 +2095,17 @@ class DatasetComparator:
     ) -> ComparisonReportAnnotationsSummary:
         summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
 
-        if self.settings.match_empty_frames and summary.total_count == 0:
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames
-            summary.valid_count = 1
-            summary.total_count = 1
-            summary.ds_count = 1
-            summary.gt_count = 1
+            if not summary.total_count:
+                summary.valid_count = 1
+                summary.total_count = 1
+
+            if not summary.ds_count:
+                summary.ds_count = 1
+
+            if not summary.gt_count:
+                summary.gt_count = 1
 
         return summary
 
@@ -2108,14 +2130,26 @@ class DatasetComparator:
             ),
         )
         mean_ious = []
-        empty_frame_count = 0
+        empty_gt_frames = set()
+        empty_ds_frames = set()
         confusion_matrix_labels, confusion_matrix, _ = self._make_zero_confusion_matrix()
 
-        for frame_result in frame_summaries.values():
+        for frame_id, frame_result in frame_summaries.items():
             confusion_matrix += frame_result.annotations.confusion_matrix.rows
 
-            if not np.any(frame_result.annotations.confusion_matrix.rows):
-                empty_frame_count += 1
+            if self.settings.empty_is_annotated and not np.any(
+                frame_result.annotations.confusion_matrix.rows[
+                    np.triu_indices_from(frame_result.annotations.confusion_matrix.rows)
+                ]
+            ):
+                empty_ds_frames.add(frame_id)
+
+            if self.settings.empty_is_annotated and not np.any(
+                frame_result.annotations.confusion_matrix.rows[
+                    np.tril_indices_from(frame_result.annotations.confusion_matrix.rows)
+                ]
+            ):
+                empty_gt_frames.add(frame_id)
 
             if annotation_components is None:
                 annotation_components = deepcopy(frame_result.annotation_components)
@@ -2128,13 +2162,13 @@ class DatasetComparator:
             confusion_matrix, confusion_matrix_labels
         )
 
-        if self.settings.match_empty_frames and empty_frame_count:
+        if self.settings.empty_is_annotated:
             # Add virtual annotations for empty frames,
             # they are not included in the confusion matrix
-            annotation_summary.valid_count += empty_frame_count
-            annotation_summary.total_count += empty_frame_count
-            annotation_summary.ds_count += empty_frame_count
-            annotation_summary.gt_count += empty_frame_count
+            annotation_summary.valid_count += len(empty_ds_frames & empty_gt_frames)
+            annotation_summary.total_count += len(empty_ds_frames | empty_gt_frames)
+            annotation_summary.ds_count += len(empty_ds_frames)
+            annotation_summary.gt_count += len(empty_gt_frames)
 
         # Cannot be computed in accumulate()
         annotation_components.shape.mean_iou = np.mean(mean_ious)
@@ -2506,9 +2540,7 @@ class QualityReportUpdateManager:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(
-            db_model=models.QualityReport, objects=db_job_reports, flt_param={}
-        )
+        db_job_reports = bulk_create(db_model=models.QualityReport, objects=db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2523,9 +2555,7 @@ class QualityReportUpdateManager:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(
-            db_model=models.AnnotationConflict, objects=db_conflicts, flt_param={}
-        )
+        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objects=db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2541,7 +2571,7 @@ class QualityReportUpdateManager:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids, flt_param={})
+        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids)
 
         return db_task_report
 

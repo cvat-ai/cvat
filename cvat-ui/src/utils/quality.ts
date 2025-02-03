@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,4 +35,18 @@ export function sorter(path: string) {
 
         return 1;
     };
+}
+
+export function tablePaginationPageSize(pageHeight: number): number {
+    if (pageHeight > 1600) {
+        return 100;
+    }
+    if (pageHeight > 1100) {
+        return 50;
+    }
+    if (pageHeight > 950) {
+        return 20;
+    }
+
+    return 10;
 }

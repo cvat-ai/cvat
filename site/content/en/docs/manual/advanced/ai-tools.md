@@ -185,11 +185,13 @@ To annotate with detectors, do the following:
 3. From the left drop-down select the DL model label, from the right drop-down
    select the matching label of your task.
 
-   ![](/images/image187.jpg)
+   ![](/images/detectors_tab.png)
 
 4. (Optional) If the model returns masks, and you
    need to convert masks to polygons, use the **Convert masks to polygons** toggle.
-5. Click **Annotate**.
+5. (Optional) You can specify a **Threshold** for the model. If not provided, the
+    default value from the model settings will be used.
+6. Click **Annotate**.
 
 This action will automatically annotate one frame.
 For automatic annotation of multiple frames,
@@ -205,7 +207,6 @@ see {{< ilink "/docs/manual/advanced/automatic-annotation" "Automatic annotation
 | Faster RCNN                    | The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[GitHub: Faster RCNN](https://github.com/ShaoqingRen/faster_rcnn) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf)                                                                                             |
 | YOLO v3                        | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[GitHub: YOLO v3](https://github.com/ultralytics/yolov3) <li>[Site: YOLO v3](https://docs.ultralytics.com/#yolov3) <li>[Paper: YOLO v3](https://arxiv.org/pdf/1804.02767v1.pdf)                                                                                                      |
 | Semantic segmentation for ADAS | This is a segmentation network to classify each pixel into 20 classes. <br><br> For more information, see: <li>[Site: ADAS](https://docs.openvino.ai/2019_R1/_semantic_segmentation_adas_0001_description_semantic_segmentation_adas_0001.html)                                                                                                                                                                                |
-| Mask RCNN with Tensorflow      | Mask RCNN version with Tensorflow. The model generates polygons for each instance of an object in the image. <br><br> For more information, see: <li>[GitHub: Mask RCNN](https://github.com/matterport/Mask_RCNN) <li>[Paper: Mask RCNN](https://arxiv.org/pdf/1703.06870.pdf)                                                                                                                                                 |
 | Faster RCNN with Tensorflow    | Faster RCNN version with Tensorflow. The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[Site: Faster RCNN with Tensorflow](https://docs.openvino.ai/2021.4/omz_models_model_faster_rcnn_inception_v2_coco.html) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf) |
 | RetinaNet                      | Pytorch implementation of RetinaNet object detection. <br> <br><br> For more information, see: <li>[Specification: RetinaNet](https://paperswithcode.com/lib/detectron2/retinanet) <li>[Paper: RetinaNet](https://arxiv.org/pdf/1708.02002.pdf)<li>[Documentation: RetinaNet](https://detectron2.readthedocs.io/en/latest/tutorials/training.html)                                                                             |
 | Face Detection                 | Face detector based on MobileNetV2 as a backbone for indoor and outdoor scenes shot by a front-facing camera. <br> <br><br> For more information, see: <li>[Site: Face Detection 0205](https://docs.openvino.ai/latest/omz_models_model_face_detection_0205.html)                                                                                                                                                              |

@@ -20,6 +20,11 @@ __pycache__
 .coverage
 .husky/
 .python-version
+/tmp*cvat/
+/temp*/
+
+# Ignore generated test files
+docker-compose.tests.yml
 
 # Ignore npm logs file
 npm-debug.log*
@@ -60,8 +65,6 @@ cvat-ui/dist
 
 # produced by npm run docs in cvat-core
 cvat-core/docs
-# produced by npm run test in cvat-core
-cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 

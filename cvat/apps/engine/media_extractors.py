@@ -1,24 +1,25 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-import os
-import sysconfig
-import tempfile
-import shutil
-import zipfile
 import io
 import itertools
+import os
+import shutil
 import struct
+import sysconfig
+import tempfile
+import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
+from random import shuffle
 from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
 import av
@@ -27,19 +28,19 @@ import av.container
 import av.video.stream
 import numpy as np
 from natsort import os_sorted
-from pyunpack import Archive
 from PIL import Image, ImageFile, ImageOps
-from random import shuffle
-from cvat.apps.engine.utils import rotate_image
-from cvat.apps.engine.models import DimensionType, SortingMethod
+from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
+
+from cvat.apps.engine.models import DimensionType, SortingMethod
+from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 

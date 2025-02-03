@@ -1,26 +1,23 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
+from __future__ import annotations
 
 import logging
 from collections.abc import Mapping, Sequence
 from typing import Optional
 
 import attrs
+from typing_extensions import TypeAlias
 
 import cvat_sdk.models as models
 from cvat_sdk.core import Client
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.datasets.task_dataset import TaskDataset
 
+from .exceptions import BadFunctionError
 from .interface import DetectionFunction, DetectionFunctionContext, DetectionFunctionSpec
-
-
-class BadFunctionError(Exception):
-    """
-    An exception that signifies that an auto-detection function has violated some constraint
-    set by its interface.
-    """
 
 
 @attrs.frozen
@@ -53,87 +50,109 @@ class _SpecNameMapping:
 
 
 class _AnnotationMapper:
+    _SublabelIdMapping: TypeAlias = int
+
     @attrs.frozen
     class _LabelIdMapping:
         id: int
-        sublabels: Mapping[int, Optional[int]]
-        expected_num_elements: int = 0
+        sublabels: Mapping[int, Optional[_AnnotationMapper._SublabelIdMapping]]
+        expected_num_elements: int
+        expected_type: str
 
-    _label_id_mappings: Mapping[int, Optional[_LabelIdMapping]]
+    _SpecIdMapping: TypeAlias = Mapping[int, Optional[_LabelIdMapping]]
+
+    _spec_id_mapping: _SpecIdMapping
+
+    def _get_expected_function_output_type(self, fun_label, ds_label):
+        fun_output_type = getattr(fun_label, "type", "any")
+        if fun_output_type == "any":
+            return ds_label.type
+
+        if self._conv_mask_to_poly and fun_output_type == "mask":
+            fun_output_type = "polygon"
+
+        if not self._are_label_types_compatible(fun_output_type, ds_label.type):
+            raise BadFunctionError(
+                f"label {fun_label.name!r} has type {fun_output_type!r} in the function,"
+                f" but {ds_label.type!r} in the dataset"
+            )
+        return fun_output_type
 
     def _build_label_id_mapping(
         self,
         fun_label: models.ILabel,
-        ds_labels_by_name: Mapping[str, models.ILabel],
+        ds_label: models.ILabel,
         *,
+        label_nm: _LabelNameMapping,
         allow_unmatched_labels: bool,
-        spec_nm: _SpecNameMapping,
     ) -> Optional[_LabelIdMapping]:
-        if getattr(fun_label, "attributes", None):
-            raise BadFunctionError(f"label attributes are currently not supported")
+        ds_sublabels_by_name = {ds_sl.name: ds_sl for ds_sl in ds_label.sublabels}
 
-        label_nm = spec_nm.map_label(fun_label.name)
-        if label_nm is None:
-            return None
+        def sublabel_mapping(fun_sl: models.ILabel) -> Optional[int]:
+            sublabel_nm = label_nm.map_sublabel(fun_sl.name)
+            if sublabel_nm is None:
+                return None
 
-        ds_label = ds_labels_by_name.get(label_nm.name)
-        if ds_label is None:
-            if not allow_unmatched_labels:
-                raise BadFunctionError(f"label {fun_label.name!r} is not in dataset")
+            ds_sl = ds_sublabels_by_name.get(sublabel_nm.name)
+            if not ds_sl:
+                if not allow_unmatched_labels:
+                    raise BadFunctionError(
+                        f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
+                    )
 
-            self._logger.info(
-                "label %r is not in dataset; any annotations using it will be ignored",
-                fun_label.name,
-            )
-            return None
-
-        sl_map = {}
-
-        if getattr(fun_label, "sublabels", []):
-            fun_label_type = getattr(fun_label, "type", "any")
-            if fun_label_type != "skeleton":
-                raise BadFunctionError(
-                    f"label {fun_label.name!r} with sublabels has type {fun_label_type!r} (should be 'skeleton')"
+                self._logger.info(
+                    "sublabel %r of label %r is not in dataset; any annotations using it will be ignored",
+                    fun_sl.name,
+                    fun_label.name,
                 )
+                return None
 
-            ds_sublabels_by_name = {ds_sl.name: ds_sl for ds_sl in ds_label.sublabels}
-
-            for fun_sl in fun_label.sublabels:
-                if not hasattr(fun_sl, "id"):
-                    raise BadFunctionError(
-                        f"sublabel {fun_sl.name!r} of label {fun_label.name!r} has no ID"
-                    )
-
-                if fun_sl.id in sl_map:
-                    raise BadFunctionError(
-                        f"sublabel {fun_sl.name!r} of label {fun_label.name!r} has same ID as another sublabel ({fun_sl.id})"
-                    )
-
-                sublabel_nm = label_nm.map_sublabel(fun_sl.name)
-                if sublabel_nm is None:
-                    sl_map[fun_sl.id] = None
-                    continue
-
-                ds_sl = ds_sublabels_by_name.get(sublabel_nm.name)
-                if not ds_sl:
-                    if not allow_unmatched_labels:
-                        raise BadFunctionError(
-                            f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
-                        )
-
-                    self._logger.info(
-                        "sublabel %r of label %r is not in dataset; any annotations using it will be ignored",
-                        fun_sl.name,
-                        fun_label.name,
-                    )
-                    sl_map[fun_sl.id] = None
-                    continue
-
-                sl_map[fun_sl.id] = ds_sl.id
+            return ds_sl.id
 
         return self._LabelIdMapping(
-            ds_label.id, sublabels=sl_map, expected_num_elements=len(ds_label.sublabels)
+            ds_label.id,
+            sublabels={
+                fun_sl.id: sublabel_mapping(fun_sl)
+                for fun_sl in getattr(fun_label, "sublabels", [])
+            },
+            expected_num_elements=len(ds_label.sublabels),
+            expected_type=self._get_expected_function_output_type(fun_label, ds_label),
         )
+
+    def _build_spec_id_mapping(
+        self,
+        fun_labels: Sequence[models.ILabel],
+        ds_labels: Sequence[models.ILabel],
+        *,
+        spec_nm: _SpecNameMapping,
+        allow_unmatched_labels: bool,
+    ) -> _SpecIdMapping:
+        ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
+
+        def label_id_mapping(fun_label: models.ILabel) -> Optional[self._LabelIdMapping]:
+            label_nm = spec_nm.map_label(fun_label.name)
+            if label_nm is None:
+                return None
+
+            ds_label = ds_labels_by_name.get(label_nm.name)
+            if ds_label is None:
+                if not allow_unmatched_labels:
+                    raise BadFunctionError(f"label {fun_label.name!r} is not in dataset")
+
+                self._logger.info(
+                    "label %r is not in dataset; any annotations using it will be ignored",
+                    fun_label.name,
+                )
+                return None
+
+            return self._build_label_id_mapping(
+                fun_label,
+                ds_label,
+                label_nm=label_nm,
+                allow_unmatched_labels=allow_unmatched_labels,
+            )
+
+        return {fun_label.id: label_id_mapping(fun_label) for fun_label in fun_labels}
 
     def __init__(
         self,
@@ -148,129 +167,135 @@ class _AnnotationMapper:
         self._logger = logger
         self._conv_mask_to_poly = conv_mask_to_poly
 
-        ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
+        self._spec_id_mapping = self._build_spec_id_mapping(
+            fun_labels, ds_labels, spec_nm=spec_nm, allow_unmatched_labels=allow_unmatched_labels
+        )
 
-        self._label_id_mappings = {}
+    def _remap_element(
+        self,
+        element: models.SubLabeledShapeRequest,
+        ds_frame: int,
+        label_id_mapping: _LabelIdMapping,
+        seen_sl_ids: set[int],
+    ) -> bool:
+        if hasattr(element, "id"):
+            raise BadFunctionError("function output shape element with preset id")
 
-        for fun_label in fun_labels:
-            if not hasattr(fun_label, "id"):
-                raise BadFunctionError(f"label {fun_label.name!r} has no ID")
+        if hasattr(element, "source"):
+            raise BadFunctionError("function output shape element with preset source")
+        element.source = "auto"
 
-            if fun_label.id in self._label_id_mappings:
-                raise BadFunctionError(
-                    f"label {fun_label.name} has same ID as another label ({fun_label.id})"
-                )
-
-            self._label_id_mappings[fun_label.id] = self._build_label_id_mapping(
-                fun_label,
-                ds_labels_by_name,
-                allow_unmatched_labels=allow_unmatched_labels,
-                spec_nm=spec_nm,
+        if element.frame != 0:
+            raise BadFunctionError(
+                f"function output shape element with unexpected frame number ({element.frame})"
             )
 
+        element.frame = ds_frame
+
+        if element.type.value != "points":
+            raise BadFunctionError(
+                f"function output skeleton with element type other than 'points' ({element.type.value})"
+            )
+
+        try:
+            mapped_sl_id = label_id_mapping.sublabels[element.label_id]
+        except KeyError:
+            raise BadFunctionError(
+                f"function output shape with unknown sublabel ID ({element.label_id})"
+            )
+
+        if not mapped_sl_id:
+            return False
+
+        if mapped_sl_id in seen_sl_ids:
+            raise BadFunctionError(
+                "function output skeleton with multiple elements with same sublabel"
+            )
+
+        element.label_id = mapped_sl_id
+
+        seen_sl_ids.add(mapped_sl_id)
+
+        return True
+
+    def _remap_elements(
+        self, shape: models.LabeledShapeRequest, ds_frame: int, label_id_mapping: _LabelIdMapping
+    ) -> None:
+        if shape.type.value == "skeleton":
+            seen_sl_ids = set()
+
+            shape.elements[:] = [
+                element
+                for element in shape.elements
+                if self._remap_element(element, ds_frame, label_id_mapping, seen_sl_ids)
+            ]
+
+            if len(shape.elements) != label_id_mapping.expected_num_elements:
+                # There could only be fewer elements than expected,
+                # because the reverse would imply that there are more distinct sublabel IDs
+                # than are actually defined in the dataset.
+                assert len(shape.elements) < label_id_mapping.expected_num_elements
+
+                raise BadFunctionError(
+                    "function output skeleton with fewer elements than expected"
+                    f" ({len(shape.elements)} vs {label_id_mapping.expected_num_elements})"
+                )
+        else:
+            if getattr(shape, "elements", None):
+                raise BadFunctionError("function output non-skeleton shape with elements")
+
+    def _remap_shape(self, shape: models.LabeledShapeRequest, ds_frame: int) -> bool:
+        if hasattr(shape, "id"):
+            raise BadFunctionError("function output shape with preset id")
+
+        if hasattr(shape, "source"):
+            raise BadFunctionError("function output shape with preset source")
+        shape.source = "auto"
+
+        if shape.frame != 0:
+            raise BadFunctionError(
+                f"function output shape with unexpected frame number ({shape.frame})"
+            )
+
+        shape.frame = ds_frame
+
+        try:
+            label_id_mapping = self._spec_id_mapping[shape.label_id]
+        except KeyError:
+            raise BadFunctionError(
+                f"function output shape with unknown label ID ({shape.label_id})"
+            )
+
+        if not label_id_mapping:
+            return False
+
+        shape.label_id = label_id_mapping.id
+
+        if not self._are_label_types_compatible(shape.type.value, label_id_mapping.expected_type):
+            raise BadFunctionError(
+                f"function output shape of type {shape.type.value!r}"
+                f" (expected {label_id_mapping.expected_type!r})"
+            )
+
+        if shape.type.value == "mask" and self._conv_mask_to_poly:
+            raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
+
+        if getattr(shape, "attributes", None):
+            raise BadFunctionError(
+                "function output shape with attributes, which is not yet supported"
+            )
+
+        self._remap_elements(shape, ds_frame, label_id_mapping)
+
+        return True
+
     def validate_and_remap(self, shapes: list[models.LabeledShapeRequest], ds_frame: int) -> None:
-        new_shapes = []
+        shapes[:] = [shape for shape in shapes if self._remap_shape(shape, ds_frame)]
 
-        for shape in shapes:
-            if hasattr(shape, "id"):
-                raise BadFunctionError("function output shape with preset id")
-
-            if hasattr(shape, "source"):
-                raise BadFunctionError("function output shape with preset source")
-            shape.source = "auto"
-
-            if shape.frame != 0:
-                raise BadFunctionError(
-                    f"function output shape with unexpected frame number ({shape.frame})"
-                )
-
-            shape.frame = ds_frame
-
-            try:
-                label_id_mapping = self._label_id_mappings[shape.label_id]
-            except KeyError:
-                raise BadFunctionError(
-                    f"function output shape with unknown label ID ({shape.label_id})"
-                )
-
-            if not label_id_mapping:
-                continue
-
-            shape.label_id = label_id_mapping.id
-
-            if getattr(shape, "attributes", None):
-                raise BadFunctionError(
-                    "function output shape with attributes, which is not yet supported"
-                )
-
-            new_shapes.append(shape)
-
-            if shape.type.value == "skeleton":
-                new_elements = []
-                seen_sl_ids = set()
-
-                for element in shape.elements:
-                    if hasattr(element, "id"):
-                        raise BadFunctionError("function output shape element with preset id")
-
-                    if hasattr(element, "source"):
-                        raise BadFunctionError("function output shape element with preset source")
-                    element.source = "auto"
-
-                    if element.frame != 0:
-                        raise BadFunctionError(
-                            f"function output shape element with unexpected frame number ({element.frame})"
-                        )
-
-                    element.frame = ds_frame
-
-                    if element.type.value != "points":
-                        raise BadFunctionError(
-                            f"function output skeleton with element type other than 'points' ({element.type.value})"
-                        )
-
-                    try:
-                        mapped_sl_id = label_id_mapping.sublabels[element.label_id]
-                    except KeyError:
-                        raise BadFunctionError(
-                            f"function output shape with unknown sublabel ID ({element.label_id})"
-                        )
-
-                    if not mapped_sl_id:
-                        continue
-
-                    if mapped_sl_id in seen_sl_ids:
-                        raise BadFunctionError(
-                            "function output skeleton with multiple elements with same sublabel"
-                        )
-
-                    element.label_id = mapped_sl_id
-
-                    seen_sl_ids.add(mapped_sl_id)
-
-                    new_elements.append(element)
-
-                if len(new_elements) != label_id_mapping.expected_num_elements:
-                    # new_elements could only be shorter than expected,
-                    # because the reverse would imply that there are more distinct sublabel IDs
-                    # than are actually defined in the dataset.
-                    assert len(new_elements) < label_id_mapping.expected_num_elements
-
-                    raise BadFunctionError(
-                        f"function output skeleton with fewer elements than expected ({len(new_elements)} vs {label_id_mapping.expected_num_elements})"
-                    )
-
-                shape.elements[:] = new_elements
-            else:
-                if getattr(shape, "elements", None):
-                    raise BadFunctionError("function output non-skeleton shape with elements")
-
-                if shape.type.value == "mask" and self._conv_mask_to_poly:
-                    raise BadFunctionError(
-                        "function output mask shape despite conv_mask_to_poly=True"
-                    )
-
-        shapes[:] = new_shapes
+    @staticmethod
+    def _are_label_types_compatible(source_type: str, destination_type: str) -> bool:
+        assert source_type != "any"
+        return destination_type == "any" or destination_type == source_type
 
 
 @attrs.frozen(kw_only=True)

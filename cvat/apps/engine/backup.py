@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,50 +8,85 @@ import mimetypes
 import os
 import re
 import shutil
-import tempfile
 import uuid
+from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
+from copy import deepcopy
+from datetime import timedelta
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Union
+from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
 
 import django_rq
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
-
 from rest_framework import serializers, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.bindings import CvatImportError
+from cvat.apps.dataset_manager.util import (
+    ExportCacheManager,
+    TmpDirManager,
+    extend_export_file_lifetime,
+    get_export_cache_lock,
+)
+from cvat.apps.dataset_manager.views import (
+    EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+    EXPORT_CACHE_LOCK_TTL,
+    EXPORT_LOCKED_RETRY_INTERVAL,
+    LockNotAvailableError,
+    log_exception,
+    retry_current_rq_job,
+)
 from cvat.apps.engine import models
-from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, JobWriteSerializer,
-    LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
-    LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
-    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer,
-    ValidationParamsSerializer)
-from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job,
-    get_rq_job_meta, import_resource_with_clean_up_after,
-    define_dependent_job, get_rq_lock_by_user,
-)
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
-from cvat.apps.engine.models import (
-    StorageChoice, StorageMethodChoice, DataChoice, Project, Location,
-    RequestAction, RequestTarget, RequestSubresource,
-)
-from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.models import (
+    DataChoice,
+    Location,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    StorageChoice,
+    StorageMethodChoice,
+)
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.dataset_manager.views import get_export_cache_dir, log_exception
-from cvat.apps.dataset_manager.bindings import CvatImportError
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.serializers import (
+    AnnotationGuideWriteSerializer,
+    AssetWriteSerializer,
+    AttributeSerializer,
+    DataSerializer,
+    JobWriteSerializer,
+    LabeledDataSerializer,
+    LabelSerializer,
+    ProjectFileSerializer,
+    ProjectReadSerializer,
+    RqIdSerializer,
+    SegmentSerializer,
+    SimpleJobSerializer,
+    TaskFileSerializer,
+    TaskReadSerializer,
+    ValidationParamsSerializer,
+)
+from cvat.apps.engine.task import JobFileMapping, _create_thread
+from cvat.apps.engine.utils import (
+    av_scan_paths,
+    define_dependent_job,
+    get_rq_job_meta,
+    get_rq_lock_by_user,
+    import_resource_with_clean_up_after,
+    process_failed_job,
+)
 
 slogger = ServerLogManager(__name__)
 
@@ -189,6 +224,7 @@ class _TaskBackupBase(_BackupBase):
             'status',
             'subset',
             'labels',
+            'consensus_replicas',
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -301,14 +337,18 @@ class _TaskBackupBase(_BackupBase):
         return annotations
 
     def _get_db_jobs(self):
-        if self._db_task:
-            db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
-            db_segments.sort(key=lambda i: i.job_set.first().id)
-            db_jobs = (s.job_set.first() for s in db_segments)
-            return db_jobs
-        return ()
+        if not self._db_task:
+            return
 
-class _ExporterBase():
+        db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
+        db_segments.sort(key=lambda i: i.job_set.first().id)
+
+        for db_segment in db_segments:
+            yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
+
+class _ExporterBase(metaclass=ABCMeta):
+    ModelClass: ClassVar[models.Project | models.Task]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -336,7 +376,22 @@ class _ExporterBase():
                     target_dir=target_dir,
                 )
 
+    @abstractmethod
+    def export_to(self, file: str | ZipFile, target_dir: str | None = None):
+        ...
+
+    @classmethod
+    def get_object(cls, pk: int) -> models.Project | models.Task:
+        # FUTURE-FIXME: need to check permissions one more time when background task is called
+        try:
+            return cls.ModelClass.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            raise ValidationError(f'Such a {cls.ModelClass.__name__.lower()} does not exist')
+
+
 class TaskExporter(_ExporterBase, _TaskBackupBase):
+    ModelClass: ClassVar[models.Task] = models.Task
+
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
 
@@ -409,7 +464,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
-            task = self._prepare_task_meta(task_serializer.data)
+            serialized_task = task_serializer.data
+            if serialized_task.pop('consensus_enabled', False):
+                serialized_task['consensus_replicas'] = self._db_task.consensus_replicas
+
+            task = self._prepare_task_meta(serialized_task)
             task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
             for label in task['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
@@ -417,30 +476,39 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return task
 
         def serialize_segment(db_segment):
-            db_job = db_segment.job_set.first()
-            job_serializer = SimpleJobSerializer(db_job)
-            for field in ('url', 'assignee'):
-                job_serializer.fields.pop(field)
-            job_data = self._prepare_job_meta(job_serializer.data)
-
             segment_serializer = SegmentSerializer(db_segment)
             segment_serializer.fields.pop('jobs')
-            segment = segment_serializer.data
-            segment_type = segment.pop("type")
-            segment.update(job_data)
+            serialized_segment = segment_serializer.data
 
+            segment_type = serialized_segment.pop("type")
             if (
                 self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE
                 or self._db_data.validation_mode == models.ValidationMode.GT_POOL
             ):
-                segment.update(serialize_segment_file_names(db_segment))
+                serialized_segment.update(serialize_segment_file_names(db_segment))
 
-            return segment
+            return serialized_segment
 
         def serialize_jobs():
             db_segments = list(self._db_task.segment_set.all())
             db_segments.sort(key=lambda i: i.job_set.first().id)
-            return (serialize_segment(s) for s in db_segments)
+
+            serialized_jobs = []
+            for db_segment in db_segments:
+                serialized_segment = serialize_segment(db_segment)
+
+                db_jobs = list(db_segment.job_set.all())
+                db_jobs.sort(key=lambda v: v.id)
+                for db_job in db_jobs:
+                    job_serializer = SimpleJobSerializer(db_job)
+                    for field in ('url', 'assignee'):
+                        job_serializer.fields.pop(field)
+
+                    serialized_job = self._prepare_job_meta(job_serializer.data)
+                    serialized_job.update(deepcopy(serialized_segment))
+                    serialized_jobs.append(serialized_job)
+
+            return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
             if self._db_task.mode == 'annotation':
@@ -522,7 +590,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_annotations(zip_obj, target_dir)
         self._write_annotation_guide(zip_obj, target_dir)
 
-    def export_to(self, file, target_dir=None):
+    def export_to(self, file: str | ZipFile, target_dir: str | None = None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
                 self._db_task.data.storage == StorageChoice.SHARE:
             raise Exception('The task cannot be exported because it does not contain any raw data')
@@ -738,7 +806,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         job_file_mapping = None
         if data.pop('custom_segments', False):
             job_file_mapping = self._parse_segment_frames(jobs=[
-                v for v in jobs if v.get('type') != models.JobType.GROUND_TRUTH
+                v for v in jobs if v.get('type') == models.JobType.ANNOTATION
             ])
 
             for d in [self._manifest, data]:
@@ -853,7 +921,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 })
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type == models.JobType.ANNOTATION:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
                 continue
             else:
                 assert False
@@ -888,7 +956,6 @@ class _ProjectBackupBase(_BackupBase):
     def _prepare_project_meta(self, project):
         allowed_fields = {
             'bug_tracker',
-            'deimension',
             'labels',
             'name',
             'status',
@@ -897,9 +964,11 @@ class _ProjectBackupBase(_BackupBase):
         return self._prepare_meta(allowed_fields, project)
 
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
+    ModelClass: ClassVar[models.Project] = models.Project
+
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.project[pk])
-        self._db_project = models.Project.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
+        self._db_project = self.ModelClass.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
@@ -934,8 +1003,8 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
         zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(project))
 
-    def export_to(self, filename):
-        with ZipFile(filename, 'w') as output_file:
+    def export_to(self, file: str, target_dir: str | None = None):
+        with ZipFile(file, 'w') as output_file:
             self._write_annotation_guide(output_file)
             self._write_manifest(output_file)
             self._write_tasks(output_file)
@@ -1016,37 +1085,64 @@ def _import_project(filename, user, org_id):
     db_project = project_importer.import_project()
     return db_project.id
 
-def create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
+
+def create_backup(
+    instance_id: int,
+    Exporter: Type[ProjectExporter | TaskExporter],
+    logger: Logger,
+    cache_ttl: timedelta,
+):
+    db_instance = Exporter.get_object(instance_id)
+    instance_type = db_instance.__class__.__name__
+    instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
+
+    output_path = ExportCacheManager.make_backup_file_path(
+        instance_id=db_instance.id,
+        instance_type=instance_type,
+        instance_timestamp=instance_timestamp
+    )
+
     try:
-        cache_dir = get_export_cache_dir(db_instance)
-        output_path = os.path.join(cache_dir, output_path)
+        with get_export_cache_lock(
+            output_path,
+            block=True,
+            acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+            ttl=EXPORT_CACHE_LOCK_TTL,
+        ):
+            # output_path includes timestamp of the last update
+            if os.path.exists(output_path):
+                extend_export_file_lifetime(output_path)
+                return output_path
 
-        instance_time = timezone.localtime(db_instance.updated_date).timestamp()
-        if not (os.path.exists(output_path) and \
-                instance_time <= os.path.getmtime(output_path)):
-            os.makedirs(cache_dir, exist_ok=True)
-            with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
-                temp_file = os.path.join(temp_dir, 'dump')
-                exporter = Exporter(db_instance.id)
-                exporter.export_to(temp_file)
-                os.replace(temp_file, output_path)
+        with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
+            temp_file = os.path.join(tmp_dir, 'dump')
+            exporter = Exporter(db_instance.id)
+            exporter.export_to(temp_file)
 
-            archive_ctime = os.path.getctime(output_path)
-            scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.IMPORT_DATA.value)
-            cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
-                func=_clear_export_cache,
-                file_path=output_path,
-                file_ctime=archive_ctime,
-                logger=logger)
+            with get_export_cache_lock(
+                output_path,
+                block=True,
+                acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+                ttl=EXPORT_CACHE_LOCK_TTL,
+            ):
+                shutil.move(temp_file, output_path)
+
             logger.info(
-                "The {} '{}' is backuped at '{}' "
-                "and available for downloading for the next {}. "
-                "Export cache cleaning job is enqueued, id '{}'".format(
-                    "project" if isinstance(db_instance, Project) else 'task',
-                    db_instance.name, output_path, cache_ttl,
-                    cleaning_job.id))
+                f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
+                f"and available for downloading for the next {cache_ttl}."
+            )
 
         return output_path
+    except LockNotAvailableError:
+        # Need to retry later if the lock was not available
+        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
+        logger.info(
+            "Failed to acquire export cache lock. Retrying in {}".format(
+                EXPORT_LOCKED_RETRY_INTERVAL
+            )
+        )
+        raise
+
     except Exception:
         log_exception(logger)
         raise
@@ -1137,7 +1233,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 def get_backup_dirname():
-    return settings.TMP_FILES_ROOT
+    return TmpDirManager.TMP_ROOT
 
 def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
@@ -1193,15 +1289,3 @@ def import_task(request, queue_name, filename=None):
         location_conf=location_conf,
         filename=filename
     )
-
-def _clear_export_cache(file_path: str, file_ctime: float, logger: Logger) -> None:
-    try:
-        if os.path.exists(file_path) and os.path.getctime(file_path) == file_ctime:
-            os.remove(file_path)
-
-            logger.info(
-                "Export cache file '{}' successfully removed" \
-                .format(file_path))
-    except Exception:
-        log_exception(logger)
-        raise

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -120,7 +120,7 @@ context('Ground truth jobs', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 
@@ -274,7 +274,7 @@ context('Ground truth jobs', () => {
             createAndOpenTask(serverFiles, defaultValidationParams).then(() => {
                 cy.visit(`/tasks/${taskID}/quality-control#management`);
                 cy.get('.cvat-quality-control-management-tab').should('exist').and('be.visible');
-                cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist').and('be.visible');
+                cy.get('.cvat-quality-control-management-tab-summary').should('exist').and('be.visible');
             });
         });
 
@@ -283,7 +283,7 @@ context('Ground truth jobs', () => {
         });
 
         it('Check management page contents.', () => {
-            cy.get('.cvat-annotations-quality-allocation-table-summary').should('exist');
+            cy.get('.cvat-quality-control-management-tab-summary').should('exist');
             cy.contains('.cvat-allocation-summary-excluded', '0').should('exist');
             cy.contains('.cvat-allocation-summary-total', '3').should('exist');
             cy.contains('.cvat-allocation-summary-active', '3').should('exist');
@@ -356,6 +356,33 @@ context('Ground truth jobs', () => {
             cy.contains('.cvat-allocation-summary-excluded', '0').should('exist');
             cy.contains('.cvat-allocation-summary-active', '3').should('exist');
         });
+
+        it('Check search feature', () => {
+            cy.get('.cvat-quality-table-search-bar input').clear();
+            serverFiles.forEach((file, index) => {
+                cy.get('.cvat-quality-table-search-bar input').type(`image_${index + 1}`);
+                cy.get('.cvat-quality-table-search-bar .ant-input-search-button').click();
+                cy.get('.cvat-allocation-frame-row').should('have.length', 1);
+                cy.get('.cvat-allocation-frame-row').within(() => {
+                    cy.contains(file).should('exist');
+                });
+                cy.get('.cvat-quality-table-search-bar input').clear();
+            });
+
+            cy.get('.cvat-quality-table-search-bar .ant-input-search-button').click();
+            cy.get('.cvat-allocation-frame-row').should('have.length', 3);
+        });
+
+        it('Check management table .csv representation is available for download', () => {
+            cy.get('.cvat-quality-control-management-tab .cvat-quality-table-dowload-button').click();
+
+            const expectedFileName = `allocation-table-task_${taskID}.csv`;
+            cy.verifyDownload(expectedFileName);
+            cy.checkCsvFileContent(expectedFileName, 'frame,name,active', 4, (row, index) => {
+                expect(row).to.include(`images/image_${index + 1}.jpg`);
+                expect(row).to.include('true');
+            });
+        });
     });
 
     describe('Regression tests', () => {
@@ -413,9 +440,9 @@ context('Ground truth jobs', () => {
                 return cy.headlessCreateObjects(groundTruthFrames.map((frame, index) => {
                     const gtRect = groundTruthRectangles[index];
                     return {
-                        labelName,
                         objectType: 'shape',
-                        shapeType: 'rectangle',
+                        labelName,
+                        type: 'rectangle',
                         occluded: false,
                         frame,
                         points: [gtRect.firstX, gtRect.firstY, gtRect.secondX, gtRect.secondY],

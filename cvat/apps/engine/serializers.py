@@ -1,51 +1,58 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-from collections import OrderedDict
-from collections.abc import Iterable, Sequence
-from contextlib import closing
-import warnings
-from copy import copy
-from datetime import timedelta
-from decimal import Decimal
-from inspect import isclass
 import os
 import re
 import shutil
 import string
-from tempfile import NamedTemporaryFile
 import textwrap
+import warnings
+from collections import OrderedDict
+from collections.abc import Iterable, Sequence
+from contextlib import closing
+from copy import copy
+from datetime import timedelta
+from decimal import Decimal
+from inspect import isclass
+from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Union
 
 import django_rq
-from django.conf import settings
-from django.contrib.auth.models import User, Group
-from django.db import transaction
-from django.db.models import prefetch_related_objects, Prefetch
-from django.utils import timezone
-from numpy import random
-from rest_framework import serializers, exceptions
 import rq.defaults as rq_defaults
-from rq.job import Job as RQJob, JobStatus as RQJobStatus
+from django.conf import settings
+from django.contrib.auth.models import Group, User
+from django.db import transaction
+from django.db.models import Prefetch, prefetch_related_objects
+from django.utils import timezone
+from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
+from numpy import random
+from rest_framework import exceptions, serializers
+from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
-from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
+from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_storage_instance
+from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
-from cvat.apps.engine.rq_job_handler import RQJobMetaField, RQId
 from cvat.apps.engine.utils import (
-    format_list, grouped, parse_exception_message, CvatChunkTimestampMismatchError,
-    parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse, take_by
+    CvatChunkTimestampMismatchError,
+    build_field_filter_params,
+    format_list,
+    get_list_view_name,
+    grouped,
+    parse_exception_message,
+    parse_specific_attributes,
+    reverse,
+    take_by,
 )
-
-from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
 slogger = ServerLogManager(__name__)
 
@@ -151,13 +158,15 @@ class _CollectionSummarySerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
         fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
-        fields['count'].source = self._collection_key + '.count'
+        if not fields['count'].source:
+            fields['count'].source = self._collection_key + '.count'
         return fields
 
     def get_attribute(self, instance):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
+    count = serializers.IntegerField(source='total_jobs_count', default=0)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
@@ -281,7 +290,7 @@ class SublabelSerializer(serializers.ModelSerializer):
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
-    type = serializers.CharField(allow_blank=True, required=False,
+    type = serializers.ChoiceField(choices=models.LabelType.choices(), required=False,
         help_text="Associated annotation type for this label")
     has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
@@ -411,7 +420,7 @@ class LabelSerializer(SublabelSerializer):
             try:
                 db_label = models.Label.create(
                     name=validated_data.get('name'),
-                    type=validated_data.get('type'),
+                    type=validated_data.get('type', models.LabelType.ANY),
                     parent=parent_label,
                     **parent_info
                 )
@@ -628,6 +637,8 @@ class JobReadSerializer(serializers.ModelSerializer):
     issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    parent_job_id = serializers.ReadOnlyField(allow_null=True)
+    consensus_replicas = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = models.Job
@@ -636,13 +647,21 @@ class JobReadSerializer(serializers.ModelSerializer):
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage', 'assignee_updated_date')
+            'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
+            'consensus_replicas'
+        )
         read_only_fields = fields
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if instance.type == models.JobType.ANNOTATION:
+            data['consensus_replicas'] = instance.segment.task.consensus_replicas
+        else:
+            data['consensus_replicas'] = 0
 
         if request := self.context.get('request'):
             perm = TaskPermission.create_scope_view(request, instance.segment.task)
@@ -996,7 +1015,10 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
     @transaction.atomic
     def update(self, instance: models.Job, validated_data: dict[str, Any]) -> models.Job:
         from cvat.apps.engine.cache import (
-            MediaCache, Callback, enqueue_create_chunk_job, wait_for_rq_job
+            Callback,
+            MediaCache,
+            enqueue_create_chunk_job,
+            wait_for_rq_job,
         )
         from cvat.apps.engine.frame_provider import JobFrameProvider
 
@@ -1101,7 +1123,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
             if bulk_context:
-                active_validation_frame_counts = bulk_context.active_validation_frame_counts
+                frame_selector = bulk_context.honeypot_frame_selector
             else:
                 active_validation_frame_counts = {
                     validation_frame: 0 for validation_frame in task_active_validation_frames
@@ -1111,7 +1133,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                     if real_frame in task_active_validation_frames:
                         active_validation_frame_counts[real_frame] += 1
 
-            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+                frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+
             requested_frames = frame_selector.select_next_frames(segment_honeypots_count)
             requested_frames = list(map(_to_abs_frame, requested_frames))
         else:
@@ -1358,7 +1381,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         honeypot_frames: list[int],
         all_validation_frames: list[int],
         active_validation_frames: list[int],
-        validation_frame_counts: dict[int, int] | None = None
+        honeypot_frame_selector: HoneypotFrameSelector | None = None
     ):
         self.updated_honeypots: dict[int, models.Image] = {}
         self.updated_segments: list[int] = []
@@ -1370,7 +1393,7 @@ class _TaskValidationLayoutBulkUpdateContext:
         self.honeypot_frames = honeypot_frames
         self.all_validation_frames = all_validation_frames
         self.active_validation_frames = active_validation_frames
-        self.active_validation_frame_counts = validation_frame_counts
+        self.honeypot_frame_selector = honeypot_frame_selector
 
 class TaskValidationLayoutWriteSerializer(serializers.Serializer):
     disabled_frames = serializers.ListField(
@@ -1485,7 +1508,9 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset distribution for active validation frames
-            bulk_context.active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            active_validation_frame_counts = { f: 0 for f in active_validation_frames }
+            frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
+            bulk_context.honeypot_frame_selector = frame_selector
 
         # Could be done using Django ORM, but using order_by() and filter()
         # would result in an extra DB request
@@ -2209,6 +2234,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
         source='data.validation_mode', required=False, allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation"
     )
+    consensus_enabled = serializers.BooleanField(
+        source='get_consensus_enabled', required=False, read_only=True
+    )
 
     class Meta:
         model = models.Task
@@ -2217,13 +2245,21 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date', 'validation_mode'
+            'assignee_updated_date', 'validation_mode', 'consensus_enabled',
         )
         read_only_fields = fields
         extra_kwargs = {
             'organization': { 'allow_null': True },
             'overlap': { 'allow_null': True },
         }
+
+    def get_consensus_enabled(self, instance: models.Task) -> bool:
+        return instance.consensus_replicas > 0
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+        return representation
 
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -2233,18 +2269,37 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    consensus_replicas = serializers.IntegerField(
+        required=False, default=0, min_value=0,
+        help_text=textwrap.dedent("""\
+            The number of consensus replica jobs for each annotation job.
+            Configured at task creation
+        """)
+    )
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
+        fields = (
+            'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage'
+            'target_storage', 'source_storage', 'consensus_replicas',
         )
-        write_once_fields = ('overlap', 'segment_size')
+        write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate_consensus_replicas(self, value):
+        max_replicas = settings.MAX_CONSENSUS_REPLICAS
+        if value and (value == 1 or value < 0 or value > max_replicas):
+            raise serializers.ValidationError(
+                f"Consensus replicas must be 0 "
+                f"or a positive number more than 1 and less than {max_replicas + 1}, "
+                f"got {value}"
+            )
+
+        return value or 0
 
     # pylint: disable=no-self-use
     @transaction.atomic
@@ -2452,10 +2507,14 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = {task.subset for task in instance.tasks.all()}
-        task_subsets.discard('')
+
+        task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
+        task_dimension = next(
+            (task.dimension for task in instance.tasks.all() if task.dimension),
+            None
+        )
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
+        response['dimension'] = task_dimension
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):

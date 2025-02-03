@@ -1,31 +1,36 @@
 
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import numpy as np
 import os.path as osp
 import tempfile
 import zipfile
 from io import BytesIO
 
 import datumaro
-from datumaro.components.dataset import Dataset, DatasetItem
+import numpy as np
 from datumaro.components.annotation import Mask
+from datumaro.components.dataset import Dataset, DatasetItem
 from django.contrib.auth.models import Group, User
-
 from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.annotation import AnnotationIR
-from cvat.apps.dataset_manager.bindings import (CvatTaskOrJobDataExtractor,
-                                                TaskData, find_dataset_root)
+from cvat.apps.dataset_manager.bindings import (
+    CvatTaskOrJobDataExtractor,
+    TaskData,
+    find_dataset_root,
+)
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 from cvat.apps.engine.tests.utils import (
-    get_paginated_collection, ForceLogin, generate_image_file, ApiTestBase
+    ApiTestBase,
+    ForceLogin,
+    generate_image_file,
+    get_paginated_collection,
 )
 
 
@@ -257,7 +262,7 @@ class TaskExportTest(_DbTestBase):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = osp.join(temp_dir, format_name)
             dm.task.export_task(task["id"], file_path,
-                format_name, **export_args)
+                format_name=format_name, **export_args)
 
             check(file_path)
 
@@ -292,11 +297,12 @@ class TaskExportTest(_DbTestBase):
             'LFW 1.0',
             'Cityscapes 1.0',
             'Open Images V6 1.0',
-            'YOLOv8 Classification 1.0',
-            'YOLOv8 Oriented Bounding Boxes 1.0',
-            'YOLOv8 Detection 1.0',
-            'YOLOv8 Pose 1.0',
-            'YOLOv8 Segmentation 1.0',
+            'Ultralytics YOLO Classification 1.0',
+            'Ultralytics YOLO Oriented Bounding Boxes 1.0',
+            'Ultralytics YOLO Detection 1.0',
+            'Ultralytics YOLO Detection Track 1.0',
+            'Ultralytics YOLO Pose 1.0',
+            'Ultralytics YOLO Segmentation 1.0',
         })
 
     def test_import_formats_query(self):
@@ -329,11 +335,11 @@ class TaskExportTest(_DbTestBase):
             'Open Images V6 1.0',
             'Datumaro 1.0',
             'Datumaro 3D 1.0',
-            'YOLOv8 Classification 1.0',
-            'YOLOv8 Oriented Bounding Boxes 1.0',
-            'YOLOv8 Detection 1.0',
-            'YOLOv8 Pose 1.0',
-            'YOLOv8 Segmentation 1.0',
+            'Ultralytics YOLO Classification 1.0',
+            'Ultralytics YOLO Oriented Bounding Boxes 1.0',
+            'Ultralytics YOLO Detection 1.0',
+            'Ultralytics YOLO Pose 1.0',
+            'Ultralytics YOLO Segmentation 1.0',
         })
 
     def test_exports(self):
@@ -383,11 +389,11 @@ class TaskExportTest(_DbTestBase):
             # ('KITTI 1.0', 'kitti') format does not support empty annotations
             ('LFW 1.0', 'lfw'),
             # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
-            ('YOLOv8 Classification 1.0', 'yolov8_classification'),
-            ('YOLOv8 Oriented Bounding Boxes 1.0', 'yolov8_oriented_boxes'),
-            ('YOLOv8 Detection 1.0', 'yolov8_detection'),
-            ('YOLOv8 Pose 1.0', 'yolov8_pose'),
-            ('YOLOv8 Segmentation 1.0', 'yolov8_segmentation'),
+            ('Ultralytics YOLO Classification 1.0', 'yolo_ultralytics_classification'),
+            ('Ultralytics YOLO Oriented Bounding Boxes 1.0', 'yolo_ultralytics_oriented_boxes'),
+            ('Ultralytics YOLO Detection 1.0', 'yolo_ultralytics_detection'),
+            ('Ultralytics YOLO Pose 1.0', 'yolo_ultralytics_pose'),
+            ('Ultralytics YOLO Segmentation 1.0', 'yolo_ultralytics_segmentation'),
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
@@ -672,10 +678,7 @@ class FrameMatchingTest(_DbTestBase):
                 task = self._generate_task(images)
                 task_data = TaskData(AnnotationIR('2d'),
                     Task.objects.get(pk=task["id"]))
-                dataset = [
-                    datumaro.components.extractor.DatasetItem(
-                        id=osp.splitext(p)[0])
-                    for p in dataset_paths]
+                dataset = [DatasetItem(id=osp.splitext(p)[0]) for p in dataset_paths]
 
                 root = find_dataset_root(dataset, task_data)
                 self.assertEqual(expected, root)
@@ -983,7 +986,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             if import_format == "CVAT 1.1":
                 export_format = "CVAT for images 1.1"
 
-            dm.task.export_task(task["id"], file_path, export_format)
+            dm.task.export_task(task["id"], file_path, format_name=export_format)
             expected_ann = TaskAnnotation(task["id"])
             expected_ann.init_from_db()
 

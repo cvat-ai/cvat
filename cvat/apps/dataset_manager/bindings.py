@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -16,29 +16,39 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
-from attrs.converters import to_bool
 import datumaro as dm
 import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
+from attrs.converters import to_bool
 from datumaro.components.format_detection import RejectionReason
+from django.conf import settings
 from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
-from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine import models
-from cvat.apps.engine.frame_provider import TaskFrameProvider, FrameQuality, FrameOutputType
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job,
-                                     JobType, Label, LabelType, Project, SegmentType, ShapeType,
-                                     Task)
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.models import (
+    AttributeSpec,
+    AttributeType,
+    DimensionType,
+    Job,
+    JobType,
+    Label,
+    LabelType,
+    Project,
+    SegmentType,
+    ShapeType,
+    Task,
+)
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 
-from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import MaskConverter, EllipsesToMasks
 from ..engine.log import ServerLogManager
+from .annotation import AnnotationIR, AnnotationManager, TrackManager
+from .formats.transformations import EllipsesToMasks, MaskConverter
 
 slogger = ServerLogManager(__name__)
 
@@ -1629,7 +1639,7 @@ class CVATDataExtractorMixin:
         return self.convert_annotations(cvat_frame_anno, label_attrs, map_label)
 
 
-class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
+class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         instance_data: CommonData,
@@ -1640,7 +1650,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         **kwargs
     ):
         instance_meta = instance_data.meta[instance_data.META_FIELD]
-        dm.SourceExtractor.__init__(
+        dm.SubsetBase.__init__(
             self,
             media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud,
             subset=instance_meta['subset'],
@@ -1738,7 +1748,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         return self.convert_annotations(cvat_frame_anno,
             label_attrs, map_label, self._format_type, self._dimension)
 
-class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
+class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
     def __init__(
         self,
         project_data: ProjectData,
@@ -1748,7 +1758,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
-        dm.Extractor.__init__(
+        dm.DatasetBase.__init__(
             self, media_type=dm.Image if dimension == DimensionType.DIM_2D else dm.PointCloud
         )
         CVATDataExtractorMixin.__init__(self, **kwargs)
@@ -2113,8 +2123,8 @@ def match_dm_item(
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
-    if frame_number is None and item.has_image:
-        frame_number = instance_data.match_frame(item.id + item.image.ext, root_hint)
+    if frame_number is None and isinstance(item.media, dm.Image):
+        frame_number = instance_data.match_frame(item.id + item.media.ext, root_hint)
     if frame_number is None:
         frame_number = instance_data.match_frame(item.id, root_hint, path_has_ext=False)
     if frame_number is None:
@@ -2168,6 +2178,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.mask: ShapeType.MASK
     }
 
+    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
+
     track_formats = [
         'cvat',
         'datumaro',
@@ -2175,7 +2187,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         'coco',
         'coco_instances',
         'coco_person_keypoints',
-        'voc'
+        'voc',
+        'yolo_ultralytics_detection',
+        'yolo_ultralytics_segmentation',
+        'yolo_ultralytics_oriented_boxes',
+        'yolo_ultralytics_pose',
     ]
 
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
@@ -2244,7 +2260,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                        if ann.attributes.get('source', '').lower() in sources else 'manual'
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2258,7 +2274,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else 'manual'
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2330,7 +2346,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     for n, v in element.attributes.items()
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else 'manual'
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
@@ -2451,20 +2467,20 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
 
         root_paths = set()
         for dataset_item in subset_dataset:
-            if dataset_item.image and dataset_item.image.has_data:
-                dataset_files['media'].append(dataset_item.image.path)
-                data_root = dataset_item.image.path.rsplit(dataset_item.id, 1)
+            if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
+                dataset_files['media'].append(dataset_item.media.path)
+                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
-            elif dataset_item.point_cloud:
-                dataset_files['media'].append(dataset_item.point_cloud)
-                data_root = dataset_item.point_cloud.rsplit(dataset_item.id, 1)
+            elif isinstance(dataset_item.media, dm.PointCloud):
+                dataset_files['media'].append(dataset_item.media)
+                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
 
-            if isinstance(dataset_item.related_images, list):
-                dataset_files['media'] += \
-                    list(map(lambda ri: ri.path, dataset_item.related_images))
+                if isinstance(dataset_item.media.extra_images, list):
+                    dataset_files['media'] += \
+                        list(map(lambda ri: ri.path, dataset_item.media.extra_images))
 
         if len(root_paths):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep

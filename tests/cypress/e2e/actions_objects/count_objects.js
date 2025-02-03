@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,7 +22,7 @@ context('Count total annotation, issues and labels', () => {
     const serverFiles = ['images/image_1.jpg'];
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask({

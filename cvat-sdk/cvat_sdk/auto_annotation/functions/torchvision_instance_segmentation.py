@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -50,6 +50,8 @@ def _generate_shapes(
 
 
 class _TorchvisionInstanceSegmentationFunction(TorchvisionFunction):
+    _label_type = "mask"
+
     def detect(
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledShapeRequest]:

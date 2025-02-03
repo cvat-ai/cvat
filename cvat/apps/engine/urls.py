@@ -1,16 +1,15 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import path, include
-from . import views
+from django.conf import settings
+from django.urls import include, path
+from django.views.generic import RedirectView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework import routers
 
-from django.views.generic import RedirectView
-from django.conf import settings
-
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from . import views
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('projects', views.ProjectViewSet)

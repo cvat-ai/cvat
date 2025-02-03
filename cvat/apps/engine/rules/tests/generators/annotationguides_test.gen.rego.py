@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -107,11 +107,15 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
         "scope": scope,
         "auth": {
             "user": {"id": random.randrange(0, 100), "privilege": privilege},
-            "organization": {
-                "id": random.randrange(100, 200),
-                "owner": {"id": random.randrange(200, 300)},
-                "user": {"role": membership},
-            } if context == "organization" else None,
+            "organization": (
+                {
+                    "id": random.randrange(100, 200),
+                    "owner": {"id": random.randrange(200, 300)},
+                    "user": {"role": membership},
+                }
+                if context == "organization"
+                else None
+            ),
         },
         "resource": resource,
     }
@@ -172,19 +176,18 @@ def is_valid(scope, context, ownership, privilege, membership, resource, same_or
     if context == "sandbox" and same_org:
         return False
 
-
     return True
 
 
 def gen_test_rego(name):
     with open(f"{name}_test.gen.rego", "wt") as f:
         f.write(f"package {name}\nimport rego.v1\n\n")
-        for scope, context, ownership, privilege, membership, same_org, in product(
-            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG,
+        for scope, context, ownership, privilege, membership, same_org in product(
+            SCOPES, CONTEXTS, OWNERSHIPS, GROUPS, ORG_ROLES, SAME_ORG
         ):
             for resource in RESOURCES(scope):
                 if not is_valid(
-                    scope, context, ownership, privilege, membership, resource, same_org,
+                    scope, context, ownership, privilege, membership, resource, same_org
                 ):
                     continue
 
@@ -192,7 +195,7 @@ def gen_test_rego(name):
                     scope, context, ownership, privilege, membership, resource, same_org
                 )
                 test_name = get_name(
-                    scope, context, ownership, privilege, membership, resource, same_org,
+                    scope, context, ownership, privilege, membership, resource, same_org
                 )
                 result = eval_rule(scope, context, ownership, privilege, membership, data)
                 f.write(

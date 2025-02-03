@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -30,19 +30,40 @@ class EventSerializer(serializers.Serializer):
 
 class ClientEventsSerializer(serializers.Serializer):
     ALLOWED_SCOPES = {
-        'client': frozenset((
-            'load:cvat', 'load:job', 'save:job','load:workspace',
-            'upload:annotations', # TODO: remove in next releases
-            'lock:object', # TODO: remove in next releases
-            'change:attribute', # TODO: remove in next releases
-            'change:label', # TODO: remove in next releases
-            'send:exception', 'join:objects', 'change:frame',
-            'draw:object', 'paste:object', 'copy:object', 'propagate:object',
-            'drag:object', 'resize:object', 'delete:object',
-            'merge:objects', 'split:objects', 'group:objects', 'slice:object',
-            'zoom:image', 'fit:image', 'rotate:image', 'action:undo', 'action:redo',
-            'debug:info', 'run:annotations_action', 'click:element',
-        )),
+        "client": frozenset(
+            (
+                "load:cvat",
+                "load:job",
+                "save:job",
+                "load:workspace",
+                "upload:annotations",  # TODO: remove in next releases
+                "lock:object",  # TODO: remove in next releases
+                "change:attribute",  # TODO: remove in next releases
+                "change:label",  # TODO: remove in next releases
+                "send:exception",
+                "join:objects",
+                "change:frame",
+                "draw:object",
+                "paste:object",
+                "copy:object",
+                "propagate:object",
+                "drag:object",
+                "resize:object",
+                "delete:object",
+                "merge:objects",
+                "split:objects",
+                "group:objects",
+                "slice:object",
+                "zoom:image",
+                "fit:image",
+                "rotate:image",
+                "action:undo",
+                "action:redo",
+                "debug:info",
+                "run:annotations_action",
+                "click:element",
+            )
+        ),
     }
 
     events = EventSerializer(many=True, default=[])
@@ -72,18 +93,24 @@ class ClientEventsSerializer(serializers.Serializer):
             scope = event["scope"]
             source = event.get("source", "client")
             if scope not in ClientEventsSerializer.ALLOWED_SCOPES.get(source, []):
-                raise serializers.ValidationError({"scope": f"Event scope **{scope}** is not allowed from {source}"})
+                raise serializers.ValidationError(
+                    {"scope": f"Event scope **{scope}** is not allowed from {source}"}
+                )
 
             try:
                 payload = json.loads(event.get("payload", "{}"))
             except json.JSONDecodeError:
-                raise serializers.ValidationError({ "payload": "JSON payload is not valid in passed event" })
+                raise serializers.ValidationError(
+                    {"payload": "JSON payload is not valid in passed event"}
+                )
 
-            event.update({
-                "timestamp": event["timestamp"] + time_correction,
-                "source": source,
-                "payload": json.dumps(payload),
-                **(user_and_org_data if source == 'client' else {})
-            })
+            event.update(
+                {
+                    "timestamp": event["timestamp"] + time_correction,
+                    "source": source,
+                    "payload": json.dumps(payload),
+                    **(user_and_org_data if source == "client" else {}),
+                }
+            )
 
         return data
