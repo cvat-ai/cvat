@@ -407,7 +407,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
     def merge_clusters(self, clusters):
         return list(filter(lambda x: x is not None, map(self.merge_cluster, clusters)))
 
-    def find_cluster_label(self, cluster: Sequence[dm.Annotation]) -> tuple[int, float]:
+    def find_cluster_label(self, cluster: Sequence[dm.Annotation]) -> tuple[int | None, float]:
         votes = {}
         for s in cluster:
             label = self._context.get_src_label_name(s, s.label)
@@ -419,8 +419,10 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         if count < self.quorum:
             self._context.add_item_error(FailedLabelVotingError, votes)
             label = None
+        else:
+            label = self._context.get_label_id(label)
+
         score = score / self._context.dataset_count()
-        label = self._context.get_label_id(label)
         return label, score
 
     def _merge_cluster_shape_mean_box_nearest(
