@@ -432,7 +432,7 @@ os.makedirs(CACHE_ROOT, exist_ok=True)
 EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
 os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
 
-EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
+EVENTS_LOCAL_DB_ROOT = os.path.join(BASE_DIR, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
 EVENTS_LOCAL_DB_FILE = os.path.join(
     EVENTS_LOCAL_DB_ROOT,
@@ -662,6 +662,7 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 
     'ENUM_NAME_OVERRIDES': {
+        'LabelType': 'cvat.apps.engine.models.LabelType',
         'ShapeType': 'cvat.apps.engine.models.ShapeType',
         'OperationStatus': 'cvat.apps.engine.models.StateChoice',
         'ChunkType': 'cvat.apps.engine.models.DataChoice',
