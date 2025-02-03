@@ -15,7 +15,6 @@ import attrs
 import datumaro
 import datumaro as dm  # pylint: disable=reimported
 import datumaro.components.merge.intersect_merge  # pylint: disable=reimported
-import numpy as np
 from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
