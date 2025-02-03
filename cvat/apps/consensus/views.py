@@ -140,7 +140,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                 RqJobStatus.SCHEDULED,
                 RqJobStatus.DEFERRED,
             ):
-                return Response(status=status.HTTP_202_ACCEPTED)
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             elif rq_job_status == RqJobStatus.FINISHED:
                 rq_job.delete()
                 return Response(status=status.HTTP_201_CREATED)
