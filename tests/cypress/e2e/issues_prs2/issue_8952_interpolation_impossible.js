@@ -1,17 +1,3 @@
-// Copyright 2025 azureuser
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -143,7 +129,7 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.wait('@getMeta');
 
             cy.saveJob();
-            cy.clickFirstFrame();
+            cy.get('.cvat-player-first-button').click();
         });
         it('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
             cy.on('uncaught:exception', (err) => {
@@ -153,7 +139,7 @@ context('Create any track, check if track works correctly after deleting some fr
             });
 
             // Delete frames 0, 2, 4. Watch out for errors
-            cy.clickFirstFrame();
+            cy.get('.cvat-player-first-button').click();
             cy.checkFrameNum(0);
             cy.clickDeleteFrameAnnotationView();
             cy.checkFrameNum(1);
