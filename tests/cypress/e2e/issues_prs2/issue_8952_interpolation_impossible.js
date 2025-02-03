@@ -6,7 +6,9 @@
 
 const taskName = '5frames';
 const labelName = 'label';
-const issueId = 'xxxx';
+const attrName = 'attr1';
+const textDefaultValue = 'Some text';
+const issueId = '8952';
 const imagesCount = 5;
 const width = 400;
 const height = 400;
@@ -95,7 +97,14 @@ context('Create any track, check if track works correctly after deleting some fr
             // Create assets for task using nodeJS
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(dirToArchive, archivePath);
-            cy.createTaskFromArchive(taskName, labelName, archiveName);
+            // cy.createTaskFromArchive(taskName, labelName, archiveName);
+            cy.createAnnotationTask(
+                taskName,
+                labelName,
+                attrName,
+                textDefaultValue,
+                archiveName,
+            );
 
             cy.goToTaskList();
             cy.openTaskJob(taskName);
