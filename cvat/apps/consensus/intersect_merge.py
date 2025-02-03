@@ -217,6 +217,10 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
             oks_sigma=self._context.conf.sigma,
             line_torso_radius=self._context.conf.torso_r,
             panoptic_comparison=False,
+            # allow_groups=True is not supported. Requires significant logic changes in
+            # the whole merging algorithm, as it's likely to produce clusters with annotations
+            # from the same source or some new annotations (instances).
+            allow_groups=False,
         )
 
         self._distance = CachedSimilarityFunction()

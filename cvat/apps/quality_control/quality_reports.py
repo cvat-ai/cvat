@@ -992,6 +992,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
+        allow_groups: bool = True,
     ):
         super().__init__(iou_threshold=iou_threshold)
         self.categories = categories
@@ -1014,6 +1015,12 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         self.panoptic_comparison = panoptic_comparison
         "Compare only the visible parts of polygons and masks"
+
+        self.allow_groups = allow_groups
+        """
+        When comparing grouped annotations, consider all the group elements with the same label
+        as the same annotation, if applicable. Affects polygons, masks, and points
+        """
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -1148,12 +1155,18 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         img_h, img_w = item_a.media_as(dm.Image).size
 
         def _find_instances(annotations):
-            # Group instance annotations by label.
-            # Annotations with the same label and group will be merged,
-            # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in datumaro.util.annotation_util.find_instances(annotations):
+
+            if self.allow_groups:
+                # Group instance annotations by label.
+                # Annotations with the same label and group will be merged,
+                # and considered a single object in comparison
+                groups = datumaro.util.annotation_util.find_instances(annotations)
+            else:
+                groups = [[a] for a in annotations]  # ignore groups
+
+            for ann_group in groups:
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -1323,7 +1336,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
-            source_instances = datumaro.util.annotation_util.find_instances(source_anns)
+            if self.allow_groups:
+                # Group instance annotations by label.
+                # Annotations with the same label and group will be merged,
+                # and considered a single object in comparison
+                source_instances = datumaro.util.annotation_util.find_instances(source_anns)
+            else:
+                source_instances = [[a] for a in source_anns]  # ignore groups
+
             for instance_group in source_instances:
                 instance_bbox = self.instance_bbox(instance_group)
 
