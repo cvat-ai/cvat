@@ -48,16 +48,14 @@ function translateShape(shape, delta, axis) {
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
     const precision = 0.01; // db server precision is 2 digits
-    const stash = {};
-    function storeShape(num) {
-        cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((x) => {
-            cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((y) => {
-                stash[num] = { x: parseFloat(x), y: parseFloat(y) };
-            });
-        });
+    function readShapeCoords() {
+        return cy.get('.cvat_canvas_shape').invoke('attr', 'x')
+            .then((x) => cy.get('.cvat_canvas_shape').invoke('attr', 'y')
+                .then((y) => ({ x: parseFloat(x), y: parseFloat(y) }),
+                ),
+            );
     }
-    function compareShape(num) {
-        const { x, y } = stash[num];
+    function validateShapeCoords({ x, y }) {
         cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
             expect(parseFloat(xVal)).to.be.closeTo(x, precision);
         });
@@ -75,13 +73,7 @@ context('Create any track, check if track works correctly after deleting some fr
             // Create assets for task using nodeJS
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(imagesFolder, archivePath);
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                archiveName,
-            );
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
 
             cy.goToTaskList();
             cy.openTaskJob(taskName);
@@ -160,12 +152,19 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.clickDeleteFrameAnnotationView();
             cy.checkFrameNum(3);
             cy.clickSaveAnnotationView();
-            storeShape(3);
-            cy.goToPreviousFrame(1);
-            storeShape(1);
+
+            let pos3 = null;
+            readShapeCoords().then((posOnFrame3) => {
+                pos3 = posOnFrame3;
+                cy.goToPreviousFrame(1);
+            });
+            let pos1 = null;
+            readShapeCoords().then((posOnFrame1) => {
+                pos1 = posOnFrame1;
+            });
             cy.reload().then(() => {
-                cy.goToNextFrame(1).then(() => compareShape(1));
-                cy.goToNextFrame(3).then(() => compareShape(3));
+                cy.goToNextFrame(1).then(() => validateShapeCoords(pos1));
+                cy.goToNextFrame(3).then(() => validateShapeCoords(pos3));
             });
         });
     });
