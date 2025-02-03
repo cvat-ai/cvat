@@ -25,15 +25,10 @@ from cvat.apps.dataset_manager.bindings import (
     TaskData,
 )
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import (
-    TmpDirManager,
-    add_prefetch_fields,
-    bulk_create,
-    faster_deepcopy,
-    get_cached,
-)
+from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
@@ -296,7 +291,6 @@ class JobAnnotation:
             bulk_create(
                 db_model=models.LabeledTrackAttributeVal,
                 objects=db_track_attr_vals,
-                flt_param={}
             )
 
             for db_shape in db_shapes:
@@ -314,7 +308,6 @@ class JobAnnotation:
             bulk_create(
                 db_model=models.TrackedShapeAttributeVal,
                 objects=db_shape_attr_vals,
-                flt_param={}
             )
 
             shape_idx = 0
@@ -367,7 +360,6 @@ class JobAnnotation:
             bulk_create(
                 db_model=models.LabeledShapeAttributeVal,
                 objects=db_attr_vals,
-                flt_param={}
             )
 
             for shape, db_shape in zip(shapes, db_shapes):
@@ -410,8 +402,7 @@ class JobAnnotation:
 
         bulk_create(
             db_model=models.LabeledImageAttributeVal,
-            objects=db_attr_vals,
-            flt_param={}
+            objects=db_attr_vals
         )
 
         for tag, db_tag in zip(tags, db_tags):

@@ -1153,7 +1153,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task_data.client_files.bulk_create([
             ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
             for cf in client_files
-        ])
+        ], batch_size=settings.DEFAULT_DB_BULK_CREATE_BATCH_SIZE)
 
     def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
