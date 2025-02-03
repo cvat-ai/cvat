@@ -105,7 +105,7 @@
         "id": 52,
         "location": "local"
       },
-      "updated_date": "2025-01-14T17:26:01.139000Z",
+      "updated_date": "2025-02-03T15:25:42.641000Z",
       "url": "http://localhost:8080/api/tasks/30",
       "validation_mode": "gt_pool"
     },

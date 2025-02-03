@@ -646,6 +646,15 @@ class TestMerging(_PermissionTestBase):
                 frame=parent_job["start_frame"],
                 label_id=task_labels[0]["id"],
                 points=[0, 0, 2, 2],
+                attributes=[
+                    {"spec_id": attr["id"], "value": attr["default_value"]}
+                    for attr in task_labels[0]["attributes"]
+                ],
+                rotation=0,
+                z_order=0,
+                occluded=False,
+                outside=False,
+                group=0,
             )
 
             # Should be used < quorum times
@@ -672,7 +681,45 @@ class TestMerging(_PermissionTestBase):
             merged_annotations = json.loads(
                 api_client.jobs_api.retrieve_annotations(parent_job["id"])[1].data
             )
-            assert compare_annotations(
-                merged_annotations,
-                {"version": 0, "tags": [], "shapes": [bbox1.to_dict()], "tracks": []},
+            assert (
+                compare_annotations(
+                    merged_annotations,
+                    {"version": 0, "tags": [], "shapes": [bbox1.to_dict()], "tracks": []},
+                )
+                == {}
             )
+
+    @pytest.mark.parametrize("job_id", [42])
+    def test_unmodified_job_produces_same_annotations(self, admin_user, annotations, job_id: int):
+        old_annotations = annotations["job"][str(job_id)]
+
+        self.merge(job_id=job_id, user=admin_user)
+
+        with make_api_client(admin_user) as api_client:
+            new_annotations = json.loads(api_client.jobs_api.retrieve_annotations(job_id)[1].data)
+
+            assert compare_annotations(old_annotations, new_annotations) == {}
+
+    @pytest.mark.parametrize("job_id", [42])
+    def test_modified_job_produces_different_annotations(
+        self, admin_user, annotations, jobs, consensus_settings, job_id: int
+    ):
+        settings = next(
+            s for s in consensus_settings if s["task_id"] == jobs.map[job_id]["task_id"]
+        )
+        old_annotations = annotations["job"][str(job_id)]
+
+        with make_api_client(admin_user) as api_client:
+            api_client.consensus_api.partial_update_settings(
+                settings["id"],
+                patched_consensus_settings_request=models.PatchedConsensusSettingsRequest(
+                    quorum=0.6
+                ),
+            )
+
+        self.merge(job_id=job_id, user=admin_user)
+
+        with make_api_client(admin_user) as api_client:
+            new_annotations = json.loads(api_client.jobs_api.retrieve_annotations(job_id)[1].data)
+
+            assert compare_annotations(old_annotations, new_annotations) != {}

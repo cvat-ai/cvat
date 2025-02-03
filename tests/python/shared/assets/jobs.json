@@ -386,7 +386,7 @@
       },
       "stage": "annotation",
       "start_frame": 0,
-      "state": "new",
+      "state": "in progress",
       "status": "annotation",
       "stop_frame": 4,
       "target_storage": {
@@ -396,7 +396,7 @@
       },
       "task_id": 30,
       "type": "consensus_replica",
-      "updated_date": "2025-01-14T17:19:51.388000Z",
+      "updated_date": "2025-02-03T15:22:52.241000Z",
       "url": "http://localhost:8080/api/jobs/45"
     },
     {
@@ -484,7 +484,7 @@
       },
       "task_id": 30,
       "type": "consensus_replica",
-      "updated_date": "2025-01-14T17:26:01.233000Z",
+      "updated_date": "2025-02-03T15:25:32.413000Z",
       "url": "http://localhost:8080/api/jobs/43"
     },
     {
@@ -518,7 +518,7 @@
       },
       "stage": "annotation",
       "start_frame": 0,
-      "state": "in progress",
+      "state": "completed",
       "status": "annotation",
       "stop_frame": 4,
       "target_storage": {
@@ -528,7 +528,7 @@
       },
       "task_id": 30,
       "type": "annotation",
-      "updated_date": "2025-01-14T17:25:16.549000Z",
+      "updated_date": "2025-02-03T15:25:42.655000Z",
       "url": "http://localhost:8080/api/jobs/42"
     },
     {
