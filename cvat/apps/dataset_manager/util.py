@@ -9,13 +9,13 @@ import os.path as osp
 import re
 import tempfile
 import zipfile
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Generator
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any, TypeVar
+from typing import Any
 
 import attrs
 import django_rq

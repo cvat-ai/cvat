@@ -281,7 +281,7 @@ class JobAnnotation:
 
             db_tracks = bulk_create(
                 db_model=models.LabeledTrack,
-                objects=db_tracks,
+                objs=db_tracks,
                 flt_param={"job_id": self.db_job.id}
             )
 
@@ -290,7 +290,7 @@ class JobAnnotation:
 
             bulk_create(
                 db_model=models.LabeledTrackAttributeVal,
-                objects=db_track_attr_vals,
+                objs=db_track_attr_vals,
             )
 
             for db_shape in db_shapes:
@@ -298,7 +298,7 @@ class JobAnnotation:
 
             db_shapes = bulk_create(
                 db_model=models.TrackedShape,
-                objects=db_shapes,
+                objs=db_shapes,
                 flt_param={"track__job_id": self.db_job.id}
             )
 
@@ -307,7 +307,7 @@ class JobAnnotation:
 
             bulk_create(
                 db_model=models.TrackedShapeAttributeVal,
-                objects=db_shape_attr_vals,
+                objs=db_shape_attr_vals,
             )
 
             shape_idx = 0
@@ -350,7 +350,7 @@ class JobAnnotation:
 
             db_shapes = bulk_create(
                 db_model=models.LabeledShape,
-                objects=db_shapes,
+                objs=db_shapes,
                 flt_param={"job_id": self.db_job.id}
             )
 
@@ -359,7 +359,7 @@ class JobAnnotation:
 
             bulk_create(
                 db_model=models.LabeledShapeAttributeVal,
-                objects=db_attr_vals,
+                objs=db_attr_vals,
             )
 
             for shape, db_shape in zip(shapes, db_shapes):
@@ -393,7 +393,7 @@ class JobAnnotation:
 
         db_tags = bulk_create(
             db_model=models.LabeledImage,
-            objects=db_tags,
+            objs=db_tags,
             flt_param={"job_id": self.db_job.id}
         )
 
@@ -402,7 +402,7 @@ class JobAnnotation:
 
         bulk_create(
             db_model=models.LabeledImageAttributeVal,
-            objects=db_attr_vals
+            objs=db_attr_vals
         )
 
         for tag, db_tag in zip(tags, db_tags):
