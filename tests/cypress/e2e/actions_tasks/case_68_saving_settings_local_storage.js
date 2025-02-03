@@ -18,11 +18,11 @@ context('Saving setting to local storage.', () => {
         cy.get('.cvat-workspace-settings-show-interpolated').find('[type="checkbox"]')[method]();
         cy.get('.cvat-workspace-settings-show-text-always').find('[type="checkbox"]')[method]();
         cy.get('.cvat-workspace-settings-autoborders').find('[type="checkbox"]')[method]();
-        cy.saveSettings();
-        cy.get('.cvat-notification-notice-save-settings-success')
-            .should('exist')
-            .find('[data-icon="close"]')
-            .click();
+        cy.closeSettings();
+        cy.window().then((window) => {
+            const { localStorage } = window;
+            cy.wrap(localStorage.getItem('clientSettings')).should('exist').and('not.be.null');
+        });
     }
 
     function testCheckedSettings(checked = false) {

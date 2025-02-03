@@ -155,8 +155,6 @@ context('Customizable Shortcuts', () => {
 
     describe('Saving, Clearing and Restoring to Default', () => {
         it('Saving shortcuts and checking if they persist', () => {
-            cy.openSettings();
-            cy.saveSettings();
             cy.reload();
             cy.openSettings();
             cy.contains('Shortcuts').click();
@@ -183,7 +181,11 @@ context('Customizable Shortcuts', () => {
             cy.get(
                 '.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().should('exist').and('be.visible');
             cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select .ant-select-selection-overflow-item').first().contains('f1');
-            cy.saveSettings();
+            cy.closeSettings();
+            cy.window().then((window) => {
+                const { localStorage } = window;
+                cy.wrap(localStorage.getItem('clientSettings')).should('exist').and('not.be.null');
+            });
         });
         it('Modifying a shortcut via local storage and testing if its conflict is resolved', () => {
             cy.window().then((window) => {

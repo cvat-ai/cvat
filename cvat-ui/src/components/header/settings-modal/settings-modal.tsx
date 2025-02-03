@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import _, { debounce } from 'lodash';
-import React, { useCallback, useEffect } from 'react';
+import _ from 'lodash';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
@@ -29,52 +29,48 @@ interface SettingsModalProps {
     onClose(): void;
 }
 
-const SAVE_SETTINGS_DELAY = 2000;
-
 function SettingsModal(props: SettingsModalProps): JSX.Element {
     const { visible, onClose } = props;
 
     const settings = useSelector((state: CombinedState) => state.settings);
     const shortcuts = useSelector((state: CombinedState) => state.shortcuts);
+    const [settingsInitialized, setSettingsInitialized] = useState(false);
     const dispatch = useDispatch();
 
-    const saveSettings = useCallback(
-        debounce(() => {
-            const settingsForSaving: any = {
-                shortcuts: {
-                    keyMap: {},
-                },
-                imageFilters: [],
-            };
-            for (const [key, value] of Object.entries(settings)) {
-                if (['player', 'workspace'].includes(key)) {
-                    settingsForSaving[key] = value;
-                }
-                if (key === 'imageFilters') {
-                    const filters = [];
-                    for (const filter of value) {
-                        filters.push({
-                            alias: filter.alias,
-                            params: filter.modifier.serialize(),
-                        });
-                    }
-                    settingsForSaving.imageFilters = filters;
-                }
-            }
-            for (const [key] of Object.entries(shortcuts.keyMap)) {
-                if (key in shortcuts.defaultState) {
-                    settingsForSaving.shortcuts.keyMap[key] = {
-                        sequences: shortcuts.keyMap[key].sequences,
-                    };
-                }
-            }
-
-            localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
-        }, SAVE_SETTINGS_DELAY), []);
-
     useEffect(() => {
-        saveSettings();
-    }, [settings, shortcuts]);
+        if (!settingsInitialized) return;
+
+        const settingsForSaving: any = {
+            shortcuts: {
+                keyMap: {},
+            },
+            imageFilters: [],
+        };
+        for (const [key, value] of Object.entries(settings)) {
+            if (['player', 'workspace'].includes(key)) {
+                settingsForSaving[key] = value;
+            }
+            if (key === 'imageFilters') {
+                const filters = [];
+                for (const filter of value) {
+                    filters.push({
+                        alias: filter.alias,
+                        params: filter.modifier.serialize(),
+                    });
+                }
+                settingsForSaving.imageFilters = filters;
+            }
+        }
+        for (const [key] of Object.entries(shortcuts.keyMap)) {
+            if (key in shortcuts.defaultState) {
+                settingsForSaving.shortcuts.keyMap[key] = {
+                    sequences: shortcuts.keyMap[key].sequences,
+                };
+            }
+        }
+
+        localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
+    }, [setSettingsInitialized, settings, shortcuts]);
 
     useEffect(() => {
         try {
@@ -149,6 +145,8 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                 message: 'Failed to load settings from local storage',
                 className: 'cvat-notification-notice-load-settings-fail',
             });
+        } finally {
+            setSettingsInitialized(true);
         }
     }, []);
 
