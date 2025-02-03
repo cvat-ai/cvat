@@ -51,22 +51,8 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
-    dataset_mean_consensus_score: dict[int, float] = attrs.field(
-        init=False
-    )  # id(dataset) -> mean consensus score
-
     def __call__(self, *datasets):
-        self.dataset_mean_consensus_score = {id(d): [] for d in datasets}
-
-        merged = dm.Dataset(super().__call__(*datasets))
-
-        # now we have consensus score for all annotations in the input datasets
-        for dataset_id in self.dataset_mean_consensus_score:
-            self.dataset_mean_consensus_score[dataset_id] = np.mean(
-                self.dataset_mean_consensus_score[dataset_id]
-            )
-
-        return merged
+        return dm.Dataset(super().__call__(*datasets))
 
     def _find_cluster_attrs(self, cluster, ann):
         merged_attributes = super()._find_cluster_attrs(cluster, ann)
@@ -460,12 +446,6 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
 
     def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
         shape = self.merge_cluster_shape_mean_nearest(cluster)
-
-        for ann in cluster:
-            dataset_id = self._context.get_ann_source(id(ann))
-            self._context.dataset_mean_consensus_score.setdefault(dataset_id, []).append(
-                max(0, self.distance(ann, shape))
-            )
         shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
 
