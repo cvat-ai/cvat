@@ -19,7 +19,6 @@ from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
-from cvat.apps.engine.models import Label
 from cvat.apps.quality_control.quality_reports import (
     ComparisonParameters,
     DistanceComparator,
@@ -390,7 +389,7 @@ class LabelMerger(AnnotationMerger, LabelMatcher):
                 continue
 
             merged.append(
-                Label(
+                dm.Label(
                     self._context.get_label_id(label),
                     attributes={"score": count / self._context.dataset_count()},
                 )
