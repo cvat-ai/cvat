@@ -15,9 +15,16 @@ Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, colo
     extension,
 }));
 
-Cypress.Commands.add('generateImageFromCanvas', (blb) => cy.task('generateImageFromCanvas', { blb }));
-//     canvas,
-//     directory,
-//     fileName,
-//     extension,
-// }));
+Cypress.Commands.add('generateImageFromCanvas', (directory, fileName, width, height, color, posX, posY, message, textWidth, textHeightPx, extension = 'png') => cy.task('generateImageFromCanvas', {
+    directory,
+    fileName,
+    width,
+    height,
+    color,
+    posX,
+    posY,
+    message,
+    textWidth,
+    textHeightPx,
+    extension,
+}));

@@ -8,8 +8,18 @@ exports.imageGenerator = imageGenerator;
 exports.generateImageFromCanvas = generateImageFromCanvas;
 
 const path = require('path');
-// const fs = require('fs');
+const { spawn } = require('node:child_process');
+// const { spawn } = require('node:buffer');
+const fs = require('fs-extra');
 const jimp = require('jimp');
+const { createCanvas } = require('canvas');
+
+const mkdir = (dirPath) => {
+    const cmd = spawn('mkdir', ['-p', dirPath], { shell: true });
+    cmd.on('exit', () => {
+        console.log(`mkdir:info:${dirPath} created`);
+    });
+};
 
 function createImage(width, height, color) {
     return new Promise((resolve, reject) => {
@@ -21,58 +31,41 @@ function createImage(width, height, color) {
     });
 }
 
-function createImageFromBuffer(buf) {
-    return new Promise((resolve, reject) => {
-        // eslint-disable-next-line new-cap, no-new
-        new jimp(buf, ((err, img) => {
-            if (err) reject(err);
-            resolve(img);
-        }));
+async function generateImageFromCanvas(args) {
+    const {
+        directory, fileName, width, height, color, posX, posY, message, textWidth, textHeightPx, extension,
+
+    } = args;
+    console.error(args);
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.font = `${textHeightPx}px Impact`;
+    ctx.fillStyle = color;
+    ctx.fillText(message, posX, posY, textWidth);
+    // for (let i = 0, px = posX, py = posY; i < 10; i++, px += 100, py += 200) {
+    // ctx.fillText('B', py, px, textWidth);
+    // }
+
+    mkdir(directory);
+    const file = path.join(directory, `${fileName}.${extension}`);
+    const mimeType = extension === 'jpg' ? 'image/jpeg' : `image/${extension}`;
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    fs.writeFile(file, canvas.toBuffer(mimeType), (err) => {
+        if (err) {
+            console.log('ERROR FROM WRITING FILE:');
+            console.log(err);
+        } else {
+            console.log(`Image saved as ${file}`);
+        }
     });
-}
 
-async function generateImageFromCanvas(blb) {
-    // const {
-    //     canvas, directory, fileName, extension,
-    // } = args;
-    // const text = 'Hello #';
-    // const width = 500;
-    // const height = 500;
-    try {
-        const buf = Buffer.from(blb, 'binary');
-        const img = await createImageFromBuffer(buf);
-        img.write('/home/azureuser/cvat_testing/tests/cypress/fixtures/out.png');
-        // sharp({
-        //     create: {p
-        //         width,
-        //         height,
-        //         channels: 4,
-        //         background: {
-        //             r: 255, g: , b: 255, alpha: 1,
-        //         }, // белый фон
-        //     },
-        //     text: {
-        //         text,
-        //         font: 'Arial',
-        //         fontSize: 100,
-        //         fill: '#000000', // цвет текста (чёрный)
-        //         x: Math.floor(width / 2), // расположение по оси X (центр)
-        //         y: Math.floor(height / 2), // расположение по оси Y (центр)
-        //         align: 'center', // выравнивание
-        //         baseline: 'middle', // выравнивание по середине по вертикали
-        //     },
-        // }).png().toFile('/home/azureuser/cvat_testing/tests/cypress/fixtures/out.png');
+    // out.on('finish', () => console.log('Image saved as output.png'));
 
-        // .toFile('output.png', (err, info) => {
-        //     if (err) {
-        //         console.error('Ошибка при создании изображения:', err);
-        //     } else {
-        //         console.log('Изображение создано:', info);
-        //     }
-        // });
-        // eslint-disable-next-line no-empty
-    } catch (e) {}
-    return null;
+    // eslint-disable-next-line no-empty
+    return fs.pathExists(file);
 }
 
 function appendText(image, posX, posY, message, index) {
