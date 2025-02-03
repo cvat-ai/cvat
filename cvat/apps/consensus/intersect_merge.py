@@ -7,7 +7,7 @@ from __future__ import annotations
 import itertools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
-from typing import Iterable, Sequence
+from typing import ClassVar, Iterable, Sequence
 
 import attrs
 
@@ -326,14 +326,22 @@ class BboxMatcher(ShapeMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class PolygonMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.polygon
+
     def match_annotations_between_two_items(self, item_a, item_b):
+        item_a = item_a.wrap(
+            annotations=[a for a in item_a.annotations if a.type == self._annotation_type]
+        )
+        item_b = item_b.wrap(
+            annotations=[a for a in item_b.annotations if a.type == self._annotation_type]
+        )
         matches, _, _, _, distances = self._comparator.match_segmentations(item_a, item_b)
         return matches, distances
 
 
 @attrs.define(kw_only=True, slots=False)
 class MaskMatcher(PolygonMatcher):
-    pass
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.mask
 
 
 @attrs.define(kw_only=True, slots=False)
