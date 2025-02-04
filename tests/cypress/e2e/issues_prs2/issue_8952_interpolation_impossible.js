@@ -147,8 +147,7 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.openTaskJob(taskName);
         });
         it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
-            cy.goToNextFrame(1);
-            cy.goToNextFrame(2);
+            cy.goCheckFrameNumber(2);
             cy.clickDeleteFrameAnnotationView();
             cy.checkFrameNum(3);
             cy.clickSaveAnnotationView();
