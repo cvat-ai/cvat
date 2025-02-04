@@ -20,28 +20,32 @@ const archiveName = `${imageFileName}.zip`;
 const archivePath = `cypress/fixtures/${archiveName}`;
 const imagesFolder = `cypress/fixtures/${imageFileName}`;
 
-const [xtl, ytl, xbr, ybr] = [
-    30, 30,
-    30 + 34, 30 + 23,
+const rect = [
+    30,
+    30,
+    30 + 34,
+    30 + 23,
 ];
-const rect = {
-    xtl, ytl, xbr, ybr,
-};
+// const rect = {
+//     xtl, ytl, xbr, ybr,
+// };
 
-function translateShape(shape, delta, axis) {
+function translatePoints(points, delta, axis) {
     if (axis === 'x') {
-        return {
-            ...shape,
-            xtl: xtl + delta,
-            xbr: xbr + delta,
-        };
+        return [
+            points[0] + delta,
+            points[1],
+            points[2] + delta,
+            points[3],
+        ];
     }
     if (axis === 'y') {
-        return {
-            ...shape,
-            ytl: ytl + delta,
-            ybr: ybr + delta,
-        };
+        return [
+            points[0],
+            points[1] + delta,
+            points[2],
+            points[3] + delta,
+        ];
     }
     return null;
 }
@@ -83,26 +87,25 @@ context('Create any track, check if track works correctly after deleting some fr
                 jobID = parseInt(url.slice(last + 1), 10);
             }).then(() => {
                 // Remove all annotations and draw a track rect
-                const shape0 = rect;
-                const shape1 = translateShape(shape0, delta, 'x');
-                const shape2 = translateShape(shape1, delta, 'y');
+                const points0 = rect;
+                const points1 = translatePoints(points0, delta, 'x');
+                const points2 = translatePoints(points1, delta, 'y');
                 const track = {
                     shapes: [
                         {
                             frame: 0,
                             type: 'rectangle',
-                            points: Object.values(shape0),
-                            // ECMAScript guarantees chronological order of keys
+                            points: points0,
                         },
                         {
                             frame: 2,
                             type: 'rectangle',
-                            points: Object.values(shape1),
+                            points: points1,
                         },
                         {
                             frame: 4,
                             type: 'rectangle',
-                            points: Object.values(shape2),
+                            points: points2,
                         },
                     ],
                     frame: 0,
