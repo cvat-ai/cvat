@@ -122,11 +122,6 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.get('.cvat-player-first-button').click();
         });
         it('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
-            cy.on('uncaught:exception', (err) => {
-                console.error(err);
-                throw err;
-            });
-
             // Delete frames 0, 2, 4. Watch out for errors
             cy.get('.cvat-player-first-button').click();
             cy.checkFrameNum(0);
