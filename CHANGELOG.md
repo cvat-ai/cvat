@@ -16,6 +16,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.27.0'></a>
+## \[2.27.0\] - 2025-02-04
+
+### Added
+
+- Saving drawn shape on submit in `single shape` mode
+  (<https://github.com/cvat-ai/cvat/pull/8807>)
+
+- An option to create tasks with consensus jobs
+  (<https://github.com/cvat-ai/cvat/pull/8939>)
+
+- \[SDK\] The shapes output by auto-annotation functions are now checked
+  for compatibility with the function's and the task's label specs
+  (<https://github.com/cvat-ai/cvat/pull/9005>)
+
+- A `threshold` parameter to UI detector runner
+  (<https://github.com/cvat-ai/cvat/pull/9011>)
+
+### Changed
+
+- `DetectorFunctionSpec` will now raise `BadFunctionError` if it detects
+  any violations of the documented constraints on the labels
+  (<https://github.com/cvat-ai/cvat/pull/9020>)
+
+### Fixed
+
+- Improved performance and memory utilization for quality reports in tasks with ellipses and masks
+  (<https://github.com/cvat-ai/cvat/pull/8990>)
+
+- \[Compose\] An outdated version of Traefik is no longer used in
+  deployments with HTTPS enabled
+  (<https://github.com/cvat-ai/cvat/pull/9028>)
+
 <a id='changelog-2.26.1'></a>
 ## \[2.26.1\] - 2025-01-29
 
