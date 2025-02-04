@@ -30,7 +30,7 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
     const directoryToArchive = imagesFolder;
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, task.name, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);

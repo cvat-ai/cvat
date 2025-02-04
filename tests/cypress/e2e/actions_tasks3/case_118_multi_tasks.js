@@ -44,7 +44,7 @@ context('Create mutli tasks.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 

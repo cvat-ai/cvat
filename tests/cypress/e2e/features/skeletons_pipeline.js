@@ -37,7 +37,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
     let taskID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(
             imagesFolder,
@@ -54,7 +54,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
     });
 
     after(() => {
-        cy.clearAllCookies();
+        cy.headlessLogout();
         if (taskID !== null) {
             cy.getAuthKey().then((response) => {
                 const authKey = response.body.key;

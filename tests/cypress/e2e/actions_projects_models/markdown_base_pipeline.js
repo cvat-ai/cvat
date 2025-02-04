@@ -39,13 +39,11 @@ context('Basic markdown pipeline', () => {
     let assetID = null;
 
     before(() => {
-        cy.visit('/');
-        cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
+        cy.headlessLogout();
+        cy.visit('/auth/login');
 
-        cy.clearCookies();
         for (const user of Object.values(additionalUsers)) {
             cy.headlessCreateUser(user);
-            cy.clearCookies();
         }
 
         cy.login();

@@ -24,7 +24,7 @@ context('Connected file share.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 

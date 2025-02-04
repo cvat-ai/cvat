@@ -115,7 +115,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.headlessCreateTask({
             labels: [

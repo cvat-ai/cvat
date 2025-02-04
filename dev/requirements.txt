@@ -1,4 +1,4 @@
-black==24.*
+black==25.*
 isort==5.*
 pylint-django==2.5.3
 pylint-plugin-utils==0.7

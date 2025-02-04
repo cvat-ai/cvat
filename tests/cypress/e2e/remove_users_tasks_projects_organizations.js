@@ -1,14 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 let authKey = '';
-
-before(() => {
-    cy.clearAllCookies();
-});
 
 describe('Delete users, tasks, projects, organizations created during the tests run.', () => {
     it('Get token', () => {

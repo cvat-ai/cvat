@@ -95,7 +95,7 @@ context('Analytics pipeline', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
     });

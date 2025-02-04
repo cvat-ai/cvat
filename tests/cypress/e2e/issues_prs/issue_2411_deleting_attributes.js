@@ -35,7 +35,7 @@ context('Wrong attribute is removed in label constructor.', () => {
     ];
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 

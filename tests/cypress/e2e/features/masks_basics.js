@@ -37,7 +37,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
     let jobID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.headlessCreateTask({
             labels: [{ name: 'mask label', attributes: [], type: 'any' }],

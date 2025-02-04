@@ -37,7 +37,7 @@ context('Testing annotations actions workflow', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
