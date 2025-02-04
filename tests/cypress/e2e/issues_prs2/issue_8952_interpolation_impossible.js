@@ -47,20 +47,21 @@ function translateShape(shape, delta, axis) {
 }
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
-    const precision = 0.01; // db server precision is 2 digits
     function readShapeCoords() {
-        return cy.get('.cvat_canvas_shape').invoke('attr', 'x')
-            .then((x) => cy.get('.cvat_canvas_shape').invoke('attr', 'y')
-                .then((y) => ({ x: parseFloat(x), y: parseFloat(y) }),
-                ),
-            );
+        return cy.get('.cvat_canvas_shape').then(($shape) => ({
+            x: +$shape.attr('x'),
+            y: +$shape.attr('y'),
+        }));
     }
     function validateShapeCoords({ x, y }) {
-        cy.get('.cvat_canvas_shape').invoke('attr', 'x').then((xVal) => {
-            expect(parseFloat(xVal)).to.be.closeTo(x, precision);
-        });
-        cy.get('.cvat_canvas_shape').invoke('attr', 'y').then((yVal) => {
-            expect(parseFloat(yVal)).to.be.closeTo(y, precision);
+        const precision = 0.01; // db server precision is 2 digits
+        cy.get('.cvat_canvas_shape').then(($shape) => {
+            const [xVal, yVal] = [
+                +$shape.attr('x'),
+                +$shape.attr('y'),
+            ];
+            expect(xVal).to.be.closeTo(x, precision);
+            expect(yVal).to.be.closeTo(y, precision);
         });
     }
     describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
