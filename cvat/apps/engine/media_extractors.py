@@ -184,14 +184,17 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
         value = super().__getitem__(idx)
         value_size = self._get_object_size(value)
 
-        while (
-            len(self._cache) + 1 > self.max_cache_entries or
-            self.used_cache_memory + value_size > self.max_cache_memory
-        ):
+        def can_put_item_in_cache():
+            return (
+                len(self._cache) + 1 <= self.max_cache_entries and
+                self.used_cache_memory + value_size <= self.max_cache_memory
+            )
+
+        while len(self._cache) > 0 and not can_put_item_in_cache():
             min_key = min(self._cache.keys())
             self._cache.pop(min_key)
 
-        if self.used_cache_memory + value_size <= self.max_cache_memory:
+        if can_put_item_in_cache():
             self._cache[idx] = self._CacheItem(value, value_size)
 
         return value
