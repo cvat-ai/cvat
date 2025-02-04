@@ -4095,6 +4095,7 @@ class TestTaskBackups:
             assert exc.status == HTTPStatus.BAD_REQUEST
             assert "Backup of a task without data is not allowed" == exc.body.encode()
 
+    @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
         cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
         task_spec = {
