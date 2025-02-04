@@ -1765,8 +1765,8 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase):
                 return Status.AVAILABLE
 
             @classmethod
-            def create_file(cls, key, bytes):
-                cls._files[key] = bytes
+            def create_file(cls, key, _bytes):
+                cls._files[key] = _bytes
 
             def get_file_status(self, key):
                 return Status.AVAILABLE if key in self._files else Status.NOT_FOUND
