@@ -4,11 +4,11 @@
 
 import json
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Hashable, Iterator, Sequence
 from copy import deepcopy
 from http import HTTPStatus
 from time import sleep
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Iterable, Optional, TypeVar, Union
 
 import requests
 from cvat_sdk.api_client import apis, models
@@ -605,3 +605,12 @@ def parse_frame_step(frame_filter: str) -> int:
 
 def calc_end_frame(start_frame: int, stop_frame: int, frame_step: int) -> int:
     return stop_frame - ((stop_frame - start_frame) % frame_step) + frame_step
+
+
+_T = TypeVar("_T")
+
+
+def unique(
+    it: Union[Iterator[_T], Iterable[_T]], *, key: Callable[[_T], Hashable] = None
+) -> Iterable[_T]:
+    return {key(v): v for v in it}.values()

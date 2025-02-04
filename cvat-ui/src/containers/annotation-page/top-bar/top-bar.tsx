@@ -41,6 +41,7 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
+import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
 
 interface StateToProps {
@@ -547,15 +548,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onFinishDraw = (): void => {
         const { activeControl, canvasInstance } = this.props;
-        if (
-            [ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl) &&
-            canvasInstance instanceof Canvas
-        ) {
-            canvasInstance.interact({ enabled: false });
-            return;
-        }
-
-        canvasInstance.draw({ enabled: false });
+        finishDraw(canvasInstance, activeControl);
     };
 
     private onSwitchToolsBlockerState = (): void => {
