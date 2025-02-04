@@ -332,7 +332,7 @@ RQ_QUEUES = {
         'DEFAULT_TIMEOUT': '5m',
     },
     CVAT_QUEUES.CONSENSUS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
 }
