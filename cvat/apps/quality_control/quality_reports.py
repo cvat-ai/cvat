@@ -39,9 +39,9 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
-from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     DimensionType,
     Image,
