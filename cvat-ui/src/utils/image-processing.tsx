@@ -11,6 +11,7 @@ export interface ImageProcessing {
 
     processImage: (src: ImageData, frameNumber: number) => ImageData;
     configure: (options: object) => void;
+    serialize: () => any;
 }
 
 /* eslint @typescript-eslint/no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
@@ -23,6 +24,10 @@ export class BaseImageFilter implements ImageProcessing {
     }
 
     configure(_options: object): void {}
+
+    serialize(): any {
+        return {};
+    }
 }
 
 export interface ImageFilter {

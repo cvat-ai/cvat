@@ -34,6 +34,12 @@ export default class GammaCorrection extends FabricFilter {
         this.#gamma = newGamma;
     }
 
+    public serialize(): GammaFilterOptions {
+        return {
+            gamma: this.#gamma,
+        };
+    }
+
     get gamma(): number {
         return this.#gamma[0];
     }

@@ -717,12 +717,6 @@ Cypress.Commands.add('closeSettings', () => {
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
-Cypress.Commands.add('saveSettings', () => {
-    cy.get('.cvat-settings-modal').within(() => {
-        cy.contains('button', 'Save').click();
-    });
-});
-
 Cypress.Commands.add('changeWorkspace', (mode) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
