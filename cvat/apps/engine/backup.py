@@ -399,14 +399,14 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
 
-        self._db_task = (
+        self._db_task: models.Task = (
             models.Task.objects
             .prefetch_related('data__images', 'annotation_guide__assets')
             .select_related('data__video', 'data__validation_layout', 'annotation_guide')
             .get(pk=pk)
         )
 
-        self._db_data = self._db_task.data
+        self._db_data: models.Data = self._db_task.data
         self._version = version
 
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
@@ -448,7 +448,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
             assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
+            assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
             media_files = [im.path for im in self._db_data.images.all()]
             cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
             with tempfile.TemporaryDirectory() as tmp_dir:
