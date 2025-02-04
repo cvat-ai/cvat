@@ -2829,13 +2829,16 @@ class _TestTasksBase:
             **({"consensus_replicas": job_replication} if job_replication else {}),
         }
 
-        assert bool(image_files) ^ bool(
-            frame_count
-        ), "Expected only one of 'image_files' and 'frame_count'"
-        if not image_files:
-            image_files = generate_image_files(frame_count)
-        elif not frame_count:
-            frame_count = len(image_files)
+        if server_files is not None:
+            assert (
+                image_files is not None
+            ), "'server_files' must be used together with 'image_files'"
+        else:
+            assert bool(image_files) ^ bool(
+                frame_count
+            ), "Expected only one of 'image_files' and 'frame_count'"
+            if not image_files:
+                image_files = generate_image_files(frame_count)
 
         images_data = [f.getvalue() for f in image_files]
 
