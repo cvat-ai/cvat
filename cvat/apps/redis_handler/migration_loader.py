@@ -36,7 +36,10 @@ class AppliedMigration:
     )
 
     def get_key(self) -> str:
-        return f"{self.KEY_PREFIX}{self.app_label}.{self.name}"
+        return f"{self.app_label}.{self.name}"
+
+    def get_key_with_prefix(self) -> str:
+        return self.KEY_PREFIX + self.get_key()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -44,11 +47,9 @@ class AppliedMigration:
         }
 
     def save(self, *, connection: Redis) -> None:
-        migration_key = self.get_key()
-
         with connection.pipeline() as pipe:
-            pipe.hset(migration_key, mapping=self.to_dict())
-            pipe.sadd(self.SET_KEY, migration_key)
+            pipe.hset(self.get_key_with_prefix(), mapping=self.to_dict())
+            pipe.sadd(self.SET_KEY, self.get_key())
             pipe.execute()
 
 
@@ -93,7 +94,7 @@ class MigrationLoader:
             i.decode("utf-8") for i in self._connection.smembers(AppliedMigration.SET_KEY)
         ]
         for key in applied_migration_keys:
-            app_label, migration_name = key[len(AppliedMigration.KEY_PREFIX) :].split(".")
+            app_label, migration_name = key.split(".")
             self._applied_migrations.setdefault(app_label, set()).add(migration_name)
 
     def _init_unapplied_migrations(self):
@@ -104,7 +105,9 @@ class MigrationLoader:
             )
             for migration_name in app_unapplied_migrations:
                 MigrationClass = self.get_migration_class(app_config.name, migration_name)
-                self._unapplied_migrations.append(MigrationClass(migration_name, app_config.label))
+                self._unapplied_migrations.append(
+                    MigrationClass(migration_name, app_config.label, connection=self._connection)
+                )
 
     def get_migration_class(self, app_name: str, migration_name: str) -> BaseMigration:
         migration_module_path = ".".join([app_name, self.REDIS_MIGRATIONS_DIR_NAME, migration_name])
