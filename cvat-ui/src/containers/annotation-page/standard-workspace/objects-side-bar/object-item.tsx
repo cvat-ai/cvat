@@ -419,8 +419,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
-                zIndexForwards={this.zIndexForwards}
-                zIndexBackwards={this.zIndexBackwards}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}
