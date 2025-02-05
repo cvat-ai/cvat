@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.26.2
+  version: 2.27.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2673,6 +2673,11 @@ paths:
           description: ''
     patch:
       operationId: jobs_partial_update_validation_layout
+      description: |2
+
+        WARNING: this operation is not protected from race conditions.
+        It's up to the user to ensure no parallel calls to this operation happen.
+        It affects image access, including exports with images, backups, chunk downloading etc.
       summary: Allows updating current validation configuration
       parameters:
       - in: path
@@ -6156,6 +6161,11 @@ paths:
           description: ''
     patch:
       operationId: tasks_partial_update_validation_layout
+      description: |2
+
+        WARNING: this operation is not protected from race conditions.
+        It's up to the user to ensure no parallel calls to this operation happen.
+        It affects image access, including exports with images, backups, chunk downloading etc.
       summary: Allows updating current validation configuration
       parameters:
       - in: path

@@ -1823,6 +1823,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(
         methods=["PATCH"],
         summary="Allows updating current validation configuration",
+        description=textwrap.dedent("""
+            WARNING: this operation is not protected from race conditions.
+            It's up to the user to ensure no parallel calls to this operation happen.
+            It affects image access, including exports with images, backups, chunk downloading etc.
+        """),
         request=TaskValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
@@ -2429,6 +2434,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(
         methods=["PATCH"],
         summary="Allows updating current validation configuration",
+        description=textwrap.dedent("""
+            WARNING: this operation is not protected from race conditions.
+            It's up to the user to ensure no parallel calls to this operation happen.
+            It affects image access, including exports with images, backups, chunk downloading etc.
+        """),
         request=JobValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(JobValidationLayoutReadSerializer),
