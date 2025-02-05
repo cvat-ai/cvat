@@ -404,13 +404,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.style.cursor = '';
         this.mode = Mode.IDLE;
         if (state && points) {
+            const updatedRotation = typeof rotation === 'number' ? rotation : state.rotation;
+
+            // we need to store data that have been just updated
+            // as this information is used to define "updated" objects in diff logic during canvas objects setup
+            // if because of any reason updating was actually rejected somewhere, we must reset view inside this logic
+            if (Number.isInteger(state.parentID)) {
+                const { elements } = this.drawnStates[state.parentID];
+                const drawnElement = elements.find((el) => el.clientID === state.clientID);
+                drawnElement.updated = Date.now();
+                drawnElement.points = points;
+
+                this.drawnStates[state.parentID].updated = drawnElement.updated;
+                this.drawnStates[state.parentID].points = elements.map((el) => el.points).flat();
+            } else {
+                this.drawnStates[state.clientID].updated = Date.now();
+                this.drawnStates[state.clientID].points = points;
+                this.drawnStates[state.clientID].rotation = updatedRotation;
+            }
+
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     state,
                     points,
-                    rotation: typeof rotation === 'number' ? rotation : state.rotation,
+                    rotation: updatedRotation,
                 },
             });
 
