@@ -6895,9 +6895,16 @@ components:
         version:
           type: string
           maxLength: 64
+        logo:
+          type: string
+        title:
+          type: string
+          maxLength: 1024
       required:
       - description
+      - logo
       - name
+      - title
       - version
     AcceptInvitationRead:
       type: object
