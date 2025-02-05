@@ -7,7 +7,6 @@
   "dependencies": {
     "@cypress/code-coverage": "^3.9.10",
     "archiver": "^5.3.0",
-    "canvas": "^3.1.0",
     "cy-verify-downloads": "^0.0.5",
     "cypress": "^13.10.0",
     "cypress-file-upload": "^5.0.8",
