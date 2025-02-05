@@ -1,5 +1,5 @@
 {
-  "count": 46,
+  "count": 47,
   "next": null,
   "previous": null,
   "results": [
@@ -915,6 +915,28 @@
       "parent_id": null,
       "sublabels": [],
       "task_id": 30,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "",
+          "id": 18,
+          "input_type": "text",
+          "mutable": false,
+          "name": "src",
+          "values": [
+            ""
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 80,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 31,
       "type": "any"
     }
   ]

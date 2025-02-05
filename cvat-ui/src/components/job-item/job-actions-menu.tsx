@@ -3,18 +3,21 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
-
+import { LoadingOutlined } from '@ant-design/icons';
 import { exportActions } from 'actions/export-actions';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
 import { Job, JobType } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
+import { mergeTaskSpecificConsensusJobsAsync } from 'actions/consensus-actions';
+import { CombinedState } from 'reducers';
 
 interface Props {
     job: Job;
+    consensusJobsPresent: boolean;
 }
 
 export enum Actions {
@@ -24,11 +27,12 @@ export enum Actions {
     IMPORT_JOB = 'import_job',
     EXPORT_JOB = 'export_job',
     VIEW_ANALYTICS = 'view_analytics',
+    MERGE_SPECIFIC_CONSENSUS_JOBS = 'merge_specific_consensus_jobs',
     DELETE = 'delete',
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
-    const { job } = props;
+    const { job, consensusJobsPresent } = props;
 
     const dispatch = useDispatch();
     const history = useHistory();
@@ -49,6 +53,20 @@ function JobActionsMenu(props: Props): JSX.Element {
                 dispatch(exportActions.openExportDatasetModal(job));
             } else if (action.key === Actions.VIEW_ANALYTICS) {
                 history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
+            } else if (action.key === Actions.MERGE_SPECIFIC_CONSENSUS_JOBS) {
+                Modal.confirm({
+                    title: 'The consensus job will be merged',
+                    content: 'Existing annotations in the parent job will be updated. Continue?',
+                    className: 'cvat-modal-confirm-consensus-merge-job',
+                    onOk: () => {
+                        dispatch(mergeTaskSpecificConsensusJobsAsync(job));
+                    },
+                    okButtonProps: {
+                        type: 'primary',
+                        danger: true,
+                    },
+                    okText: 'Merge',
+                });
             } else if (action.key === Actions.DELETE) {
                 Modal.confirm({
                     title: `The job ${job.id} will be deleted`,
@@ -68,6 +86,9 @@ function JobActionsMenu(props: Props): JSX.Element {
         [job],
     );
 
+    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.mergingConsensus);
+    const isTaskInMergingConsensus = mergingConsensus[`job_${job.id}`];
+
     return (
         <Menu
             className='cvat-job-item-menu'
@@ -79,6 +100,15 @@ function JobActionsMenu(props: Props): JSX.Element {
             <Menu.Item key={Actions.IMPORT_JOB}>Import annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_JOB}>Export annotations</Menu.Item>
             <Menu.Item key={Actions.VIEW_ANALYTICS}>View analytics</Menu.Item>
+            {consensusJobsPresent && job.parentJobId === null && (
+                <Menu.Item
+                    key={Actions.MERGE_SPECIFIC_CONSENSUS_JOBS}
+                    disabled={isTaskInMergingConsensus}
+                    icon={isTaskInMergingConsensus && <LoadingOutlined />}
+                >
+                    Merge consensus job
+                </Menu.Item>
+            )}
             <Menu.Divider />
             <Menu.Item
                 key={Actions.DELETE}
