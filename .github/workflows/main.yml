@@ -280,7 +280,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-            node-version: '18.x'
+            node-version: '22.x'
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v4
