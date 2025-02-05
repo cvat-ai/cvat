@@ -410,9 +410,8 @@ jobs:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
-      - name: Build images
+      - name: Load images
         run: |
-          export SHELL=/bin/bash
           eval $(minikube -p minikube docker-env)
           docker load --input /tmp/cvat_server/image.tar
           docker load --input /tmp/cvat_ui/image.tar
