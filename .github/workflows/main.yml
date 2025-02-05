@@ -426,10 +426,13 @@ jobs:
           helm dependency update
 
       - name: Deploy to minikube
-        working-directory: helm-chart
         run: |
-          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> test.values.yaml
-          helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace . -f cvat.values.yaml -f test.values.yaml
+          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
+          helm upgrade release-${{ github.run_id }}-${{ github.run_attempt }} --install helm-chart \
+            -f helm-chart/cvat.values.yaml \
+            -f helm-chart/test.values.yaml \
+            --set cvat.backend.tag=${{ env.CVAT_VERSION }} \
+            --set cvat.frontend.tag=${{ env.CVAT_VERSION }}
 
       - name: Update test config
         run: |
