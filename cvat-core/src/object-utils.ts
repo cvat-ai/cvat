@@ -99,8 +99,9 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
             ymax = Math.max(ymax, points[i + 1]);
         }
 
-        if (shapeType === ShapeType.POLYLINE) {
+        if ([ShapeType.POLYLINE, ShapeType.SKELETON].includes(shapeType)) {
             // horizontal / vertical lines have one of dimensions equal to zero
+            // skeleton also may be a line in a corner case
             const length = Math.max(xmax - xmin, ymax - ymin);
             return length >= MIN_SHAPE_SIZE;
         }
