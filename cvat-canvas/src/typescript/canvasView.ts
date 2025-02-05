@@ -404,23 +404,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.style.cursor = '';
         this.mode = Mode.IDLE;
         if (state && points) {
-            const updatedRotation = typeof rotation === 'number' ? rotation : state.rotation;
-
-            // we need to store data that have been just updated
+            // we need to store "updated" and set "points" to an empty array
             // as this information is used to define "updated" objects in diff logic during canvas objects setup
             // if because of any reason updating was actually rejected somewhere, we must reset view inside this logic
+
+            // there is one more deeper issue:
+            // somewhere canvas updates drawn views and then sends request,
+            // updating internal CVAT state (e.g. drag, resize)
+            // somewhere, however, it just sends request to update internal CVAT state
+            // (e.g. remove point, edit polygon/polyline)
+            // if object view was not changed by canvas and points accepted as is without any changes
+            // the view will not be updated during objects setup if we just set points as is here
+            // that is why we need to set points to an empty array (something that can't normally come from CVAT)
+            // I do not think it can be easily fixed now, hovewer in the future we should refactor code
             if (Number.isInteger(state.parentID)) {
                 const { elements } = this.drawnStates[state.parentID];
                 const drawnElement = elements.find((el) => el.clientID === state.clientID);
                 drawnElement.updated = Date.now();
-                drawnElement.points = points;
+                drawnElement.points = [];
 
                 this.drawnStates[state.parentID].updated = drawnElement.updated;
-                this.drawnStates[state.parentID].points = elements.map((el) => el.points).flat();
+                this.drawnStates[state.parentID].points = [];
             } else {
                 this.drawnStates[state.clientID].updated = Date.now();
-                this.drawnStates[state.clientID].points = points;
-                this.drawnStates[state.clientID].rotation = updatedRotation;
+                this.drawnStates[state.clientID].points = [];
             }
 
             const event: CustomEvent = new CustomEvent('canvas.edited', {
@@ -429,7 +436,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 detail: {
                     state,
                     points,
-                    rotation: updatedRotation,
+                    rotation: typeof rotation === 'number' ? rotation : state.rotation,
                 },
             });
 
