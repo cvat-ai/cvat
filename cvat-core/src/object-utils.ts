@@ -79,37 +79,39 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
         return area >= 1;
     }
 
+    let width = 0;
+    let height = 0;
+
     if (shapeType === ShapeType.RECTANGLE) {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl) >= MIN_SHAPE_SIZE && (ybr - ytl) >= MIN_SHAPE_SIZE;
-    }
-
-    if (shapeType === ShapeType.ELLIPSE) {
+        [width, height] = [xbr - xtl, ybr - ytl];
+    } else if (shapeType === ShapeType.ELLIPSE) {
         const [cx, cy, rightX, topY] = points;
-        const [width, height] = [(rightX - cx) * 2, (cy - topY) * 2];
-        return width >= MIN_SHAPE_SIZE && height >= MIN_SHAPE_SIZE;
+        [width, height] = [(rightX - cx) * 2, (cy - topY) * 2];
+    } else {
+        // polygon, polyline, cuboid, skeleton
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            xmin = Math.min(xmin, points[i]);
+            xmax = Math.max(xmax, points[i]);
+            ymin = Math.min(ymin, points[i + 1]);
+            ymax = Math.max(ymax, points[i + 1]);
+        }
+
+        if (shapeType === ShapeType.POLYLINE) {
+            // horizontal / vertical lines have one of dimensions equal to zero
+            const length = Math.max(xmax - xmin, ymax - ymin);
+            return length >= MIN_SHAPE_SIZE;
+        }
+
+        [width, height] = [xmax - xmin, ymax - ymin];
     }
 
-    // polygon, polyline, cuboid, skeleton
-    let xmin = Number.MAX_SAFE_INTEGER;
-    let xmax = Number.MIN_SAFE_INTEGER;
-    let ymin = Number.MAX_SAFE_INTEGER;
-    let ymax = Number.MIN_SAFE_INTEGER;
-
-    for (let i = 0; i < points.length - 1; i += 2) {
-        xmin = Math.min(xmin, points[i]);
-        xmax = Math.max(xmax, points[i]);
-        ymin = Math.min(ymin, points[i + 1]);
-        ymax = Math.max(ymax, points[i + 1]);
-    }
-
-    if (shapeType === ShapeType.POLYLINE) {
-        // horizontal / vertical lines have one of dimensions equal to zero
-        const length = Math.max(xmax - xmin, ymax - ymin);
-        return length >= MIN_SHAPE_SIZE;
-    }
-
-    return (xmax - xmin) >= MIN_SHAPE_SIZE && (ymax - ymin) >= MIN_SHAPE_SIZE;
+    return width >= MIN_SHAPE_SIZE && height >= MIN_SHAPE_SIZE;
 }
 
 export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0): number[] {
