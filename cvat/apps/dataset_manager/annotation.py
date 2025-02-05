@@ -202,9 +202,10 @@ class AnnotationManager:
     def to_shapes(self,
         end_frame: int,
         *,
-        included_frames: Optional[Sequence[int]] = None,
+        deleted_frames: Sequence[int] | None = None,
+        included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
     ) -> list:
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
@@ -212,9 +213,15 @@ class AnnotationManager:
         if included_frames is not None:
             shapes = [s for s in shapes if s["frame"] in included_frames]
 
-        return shapes + tracks.to_shapes(end_frame,
-            included_frames=included_frames, include_outside=include_outside,
-            use_server_track_ids=use_server_track_ids
+        if deleted_frames is not None:
+            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
+
+        return shapes + tracks.to_shapes(
+            end_frame,
+            included_frames=included_frames,
+            deleted_frames=deleted_frames,
+            include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids,
         )
 
     def to_tracks(self):
@@ -464,6 +471,7 @@ class ShapeManager(ObjectManager):
 class TrackManager(ObjectManager):
     def to_shapes(self, end_frame: int, *,
         included_frames: Optional[Sequence[int]] = None,
+        deleted_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
         use_server_track_ids: bool = False
     ) -> list:
@@ -479,6 +487,7 @@ class TrackManager(ObjectManager):
                 self.dimension,
                 include_outside=include_outside,
                 included_frames=included_frames,
+                deleted_frames=deleted_frames,
             ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
@@ -498,10 +507,12 @@ class TrackManager(ObjectManager):
                 element_included_frames = set(track_shapes.keys())
                 if included_frames is not None:
                     element_included_frames = element_included_frames.intersection(included_frames)
-                element_shapes = track_elements.to_shapes(end_frame,
+                element_shapes = track_elements.to_shapes(
+                    end_frame,
                     included_frames=element_included_frames,
+                    deleted_frames=deleted_frames,
                     include_outside=True, # elements are controlled by the parent shape
-                    use_server_track_ids=use_server_track_ids
+                    use_server_track_ids=use_server_track_ids,
                 )
 
                 for shape in element_shapes:
@@ -588,8 +599,13 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(
-        track, start_frame, end_frame, dimension, *,
+        track,
+        start_frame,
+        end_frame,
+        dimension,
+        *,
         included_frames: Optional[Sequence[int]] = None,
+        deleted_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
     ):
         def copy_shape(source, frame, points=None, rotation=None):
@@ -930,7 +946,7 @@ class TrackManager(ObjectManager):
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
-            if included_frames is not None and curr_frame not in included_frames:
+            if deleted_frames is not None and curr_frame in deleted_frames:
                 continue
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
@@ -981,6 +997,8 @@ class TrackManager(ObjectManager):
 
         shapes = [
             shape for shape in shapes
+
+            if deleted_frames is None or shape["frame"] not in deleted_frames
 
             # After interpolation there can be a finishing frame
             # outside of the task boundaries. Filter it out to avoid errors.
