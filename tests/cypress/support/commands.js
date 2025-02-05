@@ -349,7 +349,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
 });
 
 Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
-    cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
+    cy.intercept('PATCH', `/api/jobs/${jobID}/data/meta**`).as('patchMeta');
     cy.window().then(async ($win) => {
         await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
             method: 'PATCH',
