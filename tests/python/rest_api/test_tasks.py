@@ -4162,6 +4162,34 @@ class TestTaskBackups:
             assert exc.status == HTTPStatus.BAD_REQUEST
             assert "Backup of a task without data is not allowed" == exc.body.encode()
 
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, tasks):
+        cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
+        task_spec = {
+            "name": "Task with files from cloud storage",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": False,
+            "cloud_storage_id": 1,
+            "server_files": cloud_storage_content,
+        }
+        task_id, _ = create_task(self.user, task_spec, data_spec)
+
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"cloud_task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+        self._test_can_restore_task_from_backup(task_id)
+
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
         task_id = next(t for t in tasks if t["mode"] == mode)["id"]
