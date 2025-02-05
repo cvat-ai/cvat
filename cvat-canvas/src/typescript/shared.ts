@@ -100,7 +100,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .fill('white')
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
-            let text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
+            let text = `${Math.floor(shape.width())}x${Math.floor(shape.height())}px`;
             if (shape.type === 'rect' || shape.type === 'ellipse') {
                 let rotation = shape.transform().rotation || 0;
                 // be sure, that rotation in range [0; 360]
