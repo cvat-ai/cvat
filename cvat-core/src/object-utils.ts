@@ -67,9 +67,7 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
 }
 
 export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean {
-    const MIN_SHAPE_LENGTH = 3;
-    const MIN_SHAPE_AREA = 9;
-    const MIN_MASK_SHAPE_AREA = 1;
+    const MIN_SHAPE_SIZE = 1;
 
     if (shapeType === ShapeType.POINTS) {
         return true;
@@ -78,15 +76,21 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
     if (shapeType === ShapeType.MASK) {
         const [left, top, right, bottom] = points.slice(-4);
         const area = (right - left + 1) * (bottom - top + 1);
-        return area >= MIN_MASK_SHAPE_AREA;
+        return area >= 1;
+    }
+
+    if (shapeType === ShapeType.RECTANGLE) {
+        const [xtl, ytl, xbr, ybr] = points;
+        return (xbr - xtl) >= MIN_SHAPE_SIZE && (ybr - ytl) >= MIN_SHAPE_SIZE;
     }
 
     if (shapeType === ShapeType.ELLIPSE) {
         const [cx, cy, rightX, topY] = points;
-        const [rx, ry] = [rightX - cx, cy - topY];
-        return rx * ry * Math.PI > MIN_SHAPE_AREA;
+        const [width, height] = [(rightX - cx) * 2, (cy - topY) * 2];
+        return width >= MIN_SHAPE_SIZE && height >= MIN_SHAPE_SIZE;
     }
 
+    // polygon, polyline, cuboid, skeleton
     let xmin = Number.MAX_SAFE_INTEGER;
     let xmax = Number.MIN_SAFE_INTEGER;
     let ymin = Number.MAX_SAFE_INTEGER;
@@ -100,12 +104,12 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
     }
 
     if (shapeType === ShapeType.POLYLINE) {
+        // horizontal / vertical lines have one of dimensions equal to zero
         const length = Math.max(xmax - xmin, ymax - ymin);
-        return length >= MIN_SHAPE_LENGTH;
+        return length >= MIN_SHAPE_SIZE;
     }
 
-    const area = (xmax - xmin) * (ymax - ymin);
-    return area >= MIN_SHAPE_AREA;
+    return (xmax - xmin) >= MIN_SHAPE_SIZE && (ymax - ymin) >= MIN_SHAPE_SIZE;
 }
 
 export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0): number[] {
