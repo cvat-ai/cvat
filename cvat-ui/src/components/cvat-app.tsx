@@ -325,6 +325,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadServerAPISchema();
         }
 
+        if (!aboutInitialized && !aboutFetching) {
+            loadAbout();
+            return;
+        }
+
         if (user == null || !user.isVerified || !user.id) {
             return;
         }
@@ -335,10 +340,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
-        }
-
-        if (!aboutInitialized && !aboutFetching) {
-            loadAbout();
         }
 
         if (organizationInitialized && !requestsInitialized && !requestsFetching) {

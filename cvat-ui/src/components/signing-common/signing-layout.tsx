@@ -4,11 +4,11 @@
 
 import './styles.scss';
 import React from 'react';
+import { useSelector } from 'react-redux';
 import Layout from 'antd/lib/layout';
 import { Col, Row } from 'antd/lib/grid';
-import { CVATLogo } from 'icons';
-import Icon from '@ant-design/icons';
 import Title from 'antd/lib/typography/Title';
+import CVATLogo from 'components/common/cvat-logo';
 import SVGSigningBackground from '../../assets/signing-background.svg';
 
 interface SignInLayoutComponentProps {
@@ -51,6 +51,8 @@ export const formSizes: FormSizes = {
 function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
     const { children } = props;
     const { Content, Header } = Layout;
+    const title = useSelector((state: any) => state.about.server.title);
+
     const titleSizes = {
         xs: { span: 0 },
         sm: { span: 0 },
@@ -73,7 +75,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
             <Header className='cvat-signing-header'>
                 <Row justify='center' align='middle'>
                     <Col {...logoSizes}>
-                        <Icon className='cvat-logo-icon' component={CVATLogo} />
+                        <CVATLogo />
                     </Col>
                 </Row>
             </Header>
@@ -81,8 +83,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
                 <Content>
                     <Row justify='center' align='middle' style={{ height: '100%' }}>
                         <Col {...titleSizes} className='cvat-signing-title'>
-                            <Title>Open Data</Title>
-                            <Title>Annotation Platform</Title>
+                            <Title>{title}</Title>
                         </Col>
                         {children}
                     </Row>
