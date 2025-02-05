@@ -2441,11 +2441,6 @@ class QualityReportUpdateManager:
 
         return task_report.id
 
-    def _get_current_job(self):
-        from rq import get_current_job
-
-        return get_current_job()
-
     def _compute_task_report(
         self, task: Task, job_reports: dict[int, ComparisonReport]
     ) -> ComparisonReport:
