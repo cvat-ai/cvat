@@ -73,16 +73,13 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
         return true;
     }
 
-    if (shapeType === ShapeType.MASK) {
-        const [left, top, right, bottom] = points.slice(-4);
-        const area = (right - left + 1) * (bottom - top + 1);
-        return area >= 1;
-    }
-
     let width = 0;
     let height = 0;
 
-    if (shapeType === ShapeType.RECTANGLE) {
+    if (shapeType === ShapeType.MASK) {
+        const [left, top, right, bottom] = points.slice(-4);
+        [width, height] = [right - left + 1, bottom - top + 1];
+    } else if (shapeType === ShapeType.RECTANGLE) {
         const [xtl, ytl, xbr, ybr] = points;
         [width, height] = [xbr - xtl, ybr - ytl];
     } else if (shapeType === ShapeType.ELLIPSE) {
