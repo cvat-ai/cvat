@@ -26,9 +26,6 @@ const rect = [
     30 + 34,
     30 + 23,
 ];
-// const rect = {
-//     xtl, ytl, xbr, ybr,
-// };
 
 function translatePoints(points, delta, axis) {
     if (axis === 'x') {
@@ -47,7 +44,7 @@ function translatePoints(points, delta, axis) {
             points[3] + delta,
         ];
     }
-    return null;
+    return points;
 }
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
@@ -57,6 +54,7 @@ context('Create any track, check if track works correctly after deleting some fr
             y: +$shape.attr('y'),
         }));
     }
+
     function validateShapeCoords({ x, y }) {
         const precision = 0.01; // db server precision is 2 digits
         cy.get('.cvat_canvas_shape').then(($shape) => {
@@ -68,6 +66,7 @@ context('Create any track, check if track works correctly after deleting some fr
             expect(yVal).to.be.closeTo(y, precision);
         });
     }
+
     describe('Description: user error, Could not receive frame 43 No one left position or right position was found. Interpolation impossible', () => {
         let jobID = null;
         const delta = 300;
@@ -125,6 +124,7 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.saveJob();
             cy.get('.cvat-player-first-button').click();
         });
+
         it('Delete interpolated frames 0, 2, 4. Error should not appear', () => {
             // Delete frames 0, 2, 4. Watch out for errors
             cy.get('.cvat-player-first-button').click();
@@ -145,6 +145,7 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.goToTaskList();
             cy.openTaskJob(taskName);
         });
+
         it('Change track positions on frames 2 and 4. Delete frame. Confirm same shape positions', () => {
             cy.goCheckFrameNumber(2);
             cy.clickDeleteFrameAnnotationView();
