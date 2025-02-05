@@ -53,7 +53,7 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
 
     if (shapeType === 'polygon') {
         const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
-        return width >= consts.SIZE_THRESHOLD && height > consts.SIZE_THRESHOLD && points.length >= 3 * 2;
+        return (width >= consts.SIZE_THRESHOLD || height > consts.SIZE_THRESHOLD) && points.length >= 3 * 2;
     }
 
     if (shapeType === 'polyline') {

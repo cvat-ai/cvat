@@ -99,11 +99,10 @@ export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean 
             ymax = Math.max(ymax, points[i + 1]);
         }
 
-        if ([ShapeType.POLYLINE, ShapeType.SKELETON].includes(shapeType)) {
-            // horizontal / vertical lines have one of dimensions equal to zero
-            // skeleton also may be a line in a corner case
-            const length = Math.max(xmax - xmin, ymax - ymin);
-            return length >= MIN_SHAPE_SIZE;
+        if ([ShapeType.POLYLINE, ShapeType.SKELETON, ShapeType.POLYGON].includes(shapeType)) {
+            // for polyshapes consider at least one dimension
+            // skeleton in corner cases may be a regular polyshape
+            return Math.max(xmax - xmin, ymax - ymin) >= MIN_SHAPE_SIZE;
         }
 
         [width, height] = [xmax - xmin, ymax - ymin];
