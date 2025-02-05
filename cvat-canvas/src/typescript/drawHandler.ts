@@ -46,7 +46,8 @@ interface FinalCoordinates {
 
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
-        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        const [xtl, ytl, xbr, ybr] = points;
+        const [width, height] = [xbr - xtl, ybr - ytl];
         return width >= consts.SIZE_THRESHOLD && height >= consts.SIZE_THRESHOLD;
     }
 
