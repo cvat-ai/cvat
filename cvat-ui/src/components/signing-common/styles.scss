@@ -41,7 +41,7 @@ $social-google-background: #4286f5;
     width: 100%;
 
     .cvat-logo-icon {
-        fill: white;
+        filter: brightness(0) invert(1);
     }
 }
 

@@ -189,6 +189,12 @@ _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
 _RETRY_AFTER_TIMEOUT = 10
 
+ICON_FILE = "assets/logo.svg"
+
+def get_logo() -> str:
+    with open(osp.join(osp.dirname(__file__), ICON_FILE)) as f:
+        return f.read()
+
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -210,15 +216,11 @@ class ServerViewSet(viewsets.ViewSet):
     def about(request):
         from cvat import __version__ as cvat_version
         about = {
-            "name": "Computer Vision Annotation Tool",
+            "name": settings.ABOUT_INFO["name"],
+            "title": settings.ABOUT_INFO["title"],
+            "description": settings.ABOUT_INFO["description"],
             "version": cvat_version,
-            "description": "CVAT is completely re-designed and re-implemented " +
-                "version of Video Annotation Tool from Irvine, California " +
-                "tool. It is free, online, interactive video and image annotation " +
-                "tool for computer vision. It is being used by our team to " +
-                "annotate million of objects with different properties. Many UI " +
-                "and UX decisions are based on feedbacks from professional data " +
-                "annotation team."
+            "logo": get_logo(),
         }
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):

@@ -768,3 +768,15 @@ CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
 
 # Indicates the maximum number of days a file or directory is retained in the temporary directory
 TMP_FILE_OR_DIR_RETENTION_DAYS = 3
+
+ABOUT_INFO = {
+    "name": "Computer Vision Annotation Tool",
+    "title": "Open Data Annotation Platform",
+    "description": "CVAT is completely re-designed and re-implemented " +
+                "version of Video Annotation Tool from Irvine, California " +
+                "tool. It is free, online, interactive video and image annotation " +
+                "tool for computer vision. It is being used by our team to " +
+                "annotate million of objects with different properties. Many UI " +
+                "and UX decisions are based on feedbacks from professional data " +
+                "annotation team.",
+}
