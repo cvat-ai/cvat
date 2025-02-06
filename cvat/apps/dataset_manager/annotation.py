@@ -599,15 +599,23 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(
-        track,
-        start_frame,
-        end_frame,
-        dimension,
+        track: dict,
+        start_frame: int,
+        end_frame: int,
+        dimension: DimensionType | str,
         *,
         included_frames: Optional[Sequence[int]] = None,
         deleted_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
     ):
+        # If a task or contains deleted frames that contain track keyframes,
+        # these keyframes should be excluded from the interpolation.
+        # In jobs having specific frames included (e.g. GT jobs),
+        # deleted frames should not be confused with included frames during track interpolation.
+        # Deleted frames affect existing shapes in tracks.
+        # Included frames filter the resulting annotations after interpolation
+        # to produce the requested track frames.
+
         def copy_shape(source, frame, points=None, rotation=None):
             copied = source.copy()
             copied["attributes"] = faster_deepcopy(source["attributes"])
