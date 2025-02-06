@@ -279,36 +279,22 @@ class JobAnnotation:
                 if elements or parent_track is None:
                     track["elements"] = elements
 
-            db_tracks = bulk_create(
-                db_model=models.LabeledTrack,
-                objs=db_tracks,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_tracks = bulk_create(models.LabeledTrack, db_tracks)
 
             for db_attr_val in db_track_attr_vals:
                 db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
 
-            bulk_create(
-                db_model=models.LabeledTrackAttributeVal,
-                objs=db_track_attr_vals,
-            )
+            bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_tracks[db_shape.track_id].id
 
-            db_shapes = bulk_create(
-                db_model=models.TrackedShape,
-                objs=db_shapes,
-                flt_param={"track__job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.TrackedShape, db_shapes)
 
             for db_attr_val in db_shape_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.TrackedShapeAttributeVal,
-                objs=db_shape_attr_vals,
-            )
+            bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals,)
 
             shape_idx = 0
             for track, db_track in zip(tracks, db_tracks):
@@ -348,19 +334,12 @@ class JobAnnotation:
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
 
-            db_shapes = bulk_create(
-                db_model=models.LabeledShape,
-                objs=db_shapes,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.LabeledShape, db_shapes)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.LabeledShapeAttributeVal,
-                objs=db_attr_vals,
-            )
+            bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
@@ -391,19 +370,12 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(
-            db_model=models.LabeledImage,
-            objs=db_tags,
-            flt_param={"job_id": self.db_job.id}
-        )
+        db_tags = bulk_create(models.LabeledImage, db_tags)
 
         for db_attr_val in db_attr_vals:
             db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
-        bulk_create(
-            db_model=models.LabeledImageAttributeVal,
-            objs=db_attr_vals
-        )
+        bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id

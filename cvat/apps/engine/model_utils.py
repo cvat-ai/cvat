@@ -35,8 +35,6 @@ def bulk_create(
     update_conflicts: bool | None = ...,
     update_fields: Sequence[str] | None = ...,
     unique_fields: Sequence[str] | None = ...,
-    *,
-    flt_param: dict[str, Any] | None = None,
 ) -> list[_ModelT]:
     "Like Django's Model.objects.bulk_create(), but applies the default batch size"
 
@@ -56,19 +54,7 @@ def bulk_create(
     if not objs:
         return []
 
-    flt_param = flt_param or {}
-
-    if flt_param:
-        if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
-            return db_model.objects.bulk_create(objs, batch_size=batch_size, **kwargs)
-        else:
-            # imitate RETURNING
-            ids = list(db_model.objects.filter(**flt_param).values_list("id", flat=True))
-            db_model.objects.bulk_create(objs, batch_size=batch_size, **kwargs)
-
-            return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
-    else:
-        return db_model.objects.bulk_create(objs, batch_size=batch_size, **kwargs)
+    return db_model.objects.bulk_create(objs, batch_size=batch_size, **kwargs)
 
 
 def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
