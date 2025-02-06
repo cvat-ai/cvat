@@ -67,16 +67,6 @@ $excluded-background: #d9d9d973;
     }
 }
 
-.cvat-frame-allocation-list {
-    width: 100%;
-    height: auto;
-    overflow: hidden;
-
-    td.ant-table-column-sort {
-        background: none;
-    }
-}
-
 .cvat-quality-table-header {
     span[role='img'] {
         padding: 0 $grid-unit-size;
