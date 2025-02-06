@@ -132,14 +132,14 @@ const componentShortcuts = {
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     TO_BACKGROUND: {
-        name: 'To background',
-        description: 'Put an active object "farther" from the user (decrease z axis value)',
+        name: 'Move to previous layer',
+        description: 'Move the active object one layer backward (decrease z-order value)',
         sequences: ['-', '_'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_FOREGROUND: {
-        name: 'To foreground',
-        description: 'Put an active object "closer" to the user (increase z axis value)',
+        name: 'Move to next layer',
+        description: 'Move the active object one layer forward (increase z-order value)',
         sequences: ['+', '='],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
