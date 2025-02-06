@@ -420,13 +420,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (Number.isInteger(state.parentID)) {
                 const { elements } = this.drawnStates[state.parentID];
                 const drawnElement = elements.find((el) => el.clientID === state.clientID);
-                drawnElement.updated = Date.now();
+                drawnElement.updated = 0;
                 drawnElement.points = [];
 
-                this.drawnStates[state.parentID].updated = drawnElement.updated;
+                this.drawnStates[state.parentID].updated = 0;
                 this.drawnStates[state.parentID].points = [];
             } else {
-                this.drawnStates[state.clientID].updated = Date.now();
+                this.drawnStates[state.clientID].updated = 0;
                 this.drawnStates[state.clientID].points = [];
             }
 
