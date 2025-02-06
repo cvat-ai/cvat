@@ -181,7 +181,7 @@ function ToBackgroundItem(props: ItemProps): JSX.Element {
                 className='cvat-object-item-menu-to-background'
             >
                 <Icon component={BackgroundIcon} />
-                To background
+                Move to previous layer
             </Button>
         </CVATTooltip>
     );
@@ -198,7 +198,7 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
                 className='cvat-object-item-menu-to-foreground'
             >
                 <Icon component={ForegroundIcon} />
-                To foreground
+                Move to next layer
             </Button>
         </CVATTooltip>
     );
