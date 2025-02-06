@@ -69,26 +69,29 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const width = 400;
     const height = 400;
     const delta = 3;
+    const maxTextWidth = 2000;
+    const textHeightPx = 70;
     const posX = 10;
-    const posY = 200;
-    const maxTextWidth = 200;
-    const textHeightPx = 300;
+    const posY = 10; // TODO: determine scale of picture
     const archiveName = `${imageFileName}.zip`;
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const extension = 'jpg';
+    const color = 'grey';
+    const textColor = 'black';
     const fontSize = textHeightPx;
 
     before(() => {
         cy.visit('/auth/login');
         cy.login();
         for (let i = 0; i < imagesCount; i++) {
+            cy.task('log', `x:${posX + i * 5}, y:${posY + i * 5}`);
             // cy.imageGenerator(imagesFolder, imageFileName + i, width, height, color, posX + i * 5,
             //     posY + i * 5, labelName, 1, extension);
             cy.makeCustomImage(imagesFolder, `${imageFileName}_${i}`,
-                width, height, fontSize, 'white', 'grey',
-                posX + i * 5, posY + i * 5, labelName, extension, maxTextWidth);
+                width, height, fontSize, color, textColor,
+                posX + i * 5, posY + i * 5, `${labelName}. Num ${i}`, extension, maxTextWidth);
             /* TODO:
                 1. recreate scale and position of the text as it was previously with jimp but now with canvas
                     - side quest: draw from ofscreencanvas
@@ -99,7 +102,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         cy.openTaskJob(taskName);
     });
 
-    describe.skip(`Testing case "${caseId}"`, () => {
+    describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             cy.interactOpenCVControlButton();
             cy.get('.cvat-opencv-control-popover').within(() => {

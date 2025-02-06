@@ -1792,6 +1792,7 @@ Cypress.Commands.add('makeCustomImage', (directory, fileName,
         ctx.font = `${fontSize}px Impact`;
 
         ctx.fillStyle = textColor;
+        ctx.textBaseline = 'top'; // so that text aligns with tracking coords
         ctx.fillText(message, posX, posY, maxWidth);
 
         cy.bufferToImage(directory, fileName, extension,
