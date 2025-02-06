@@ -202,7 +202,7 @@ class LambdaFunction:
             for label in spec:
                 parsed_label = {
                     "name": label["name"],
-                    "type": label.get("type", "unknown"),
+                    "type": label.get("type", "any"),
                     "attributes": parse_attributes(label.get("attributes", [])),
                 }
                 if parsed_label["type"] == "skeleton":
@@ -312,7 +312,7 @@ class LambdaFunction:
             return (
                 model_type == db_type
                 or (db_type == "any" and model_type != "skeleton")
-                or (model_type == "unknown" and db_type != "skeleton")
+                or (model_type == "any" and db_type != "skeleton")
                 or any(
                     [
                         model_type in compatible and db_type in compatible
