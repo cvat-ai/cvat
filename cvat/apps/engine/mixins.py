@@ -329,7 +329,7 @@ class UploadMixin:
                 extra_headers={'Location': urljoin(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
-    def append_tus_chunk(self, request, file_id):
+    def append_tus_chunk(self, request: PatchedRequest, file_id: str):
         tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
             if tus_file.exists():
