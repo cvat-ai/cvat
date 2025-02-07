@@ -3443,9 +3443,9 @@ class TaskDataAPITestCase(ApiTestBase):
 
         return response
 
-    def _get_task_creation_status(self, tid, user, *, headers=None):
+    def _get_task_creation_status(self, rq_id: str, user: str, *, headers: dict | None = None):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/tasks/{}/status'.format(tid),
+            response = self.client.get('/api/requests/{}'.format(rq_id),
                 **{'HTTP_' + k: v for k, v in (headers or {}).items()})
 
         return response
@@ -3525,7 +3525,7 @@ class TaskDataAPITestCase(ApiTestBase):
                                         expected_storage_method=None,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
                                         dimension=DimensionType.DIM_2D,
-                                        expected_task_creation_status_state='Finished',
+                                        expected_task_creation_status_state='finished',
                                         expected_task_creation_status_reason=None,
                                         *,
                                         send_data_callback=None,
@@ -3552,18 +3552,19 @@ class TaskDataAPITestCase(ApiTestBase):
         # post data for the task
         response = send_data_callback(task_id, user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
+        rq_id = response.data['rq_id']
 
         if get_status_callback:
             max_number_of_attempt = 100
-            state = None
-            while state not in ('Failed', 'Finished'):
+            task_creation_status = None
+            while task_creation_status not in ('failed', 'finished'):
                 assert max_number_of_attempt, "Too much time to create a task"
-                response = get_status_callback(task_id, user)
-                state = response.data['state']
+                response = get_status_callback(rq_id, user)
+                task_creation_status = response.data['status']
                 sleep(0.1)
                 max_number_of_attempt -= 1
-            self.assertEqual(state, expected_task_creation_status_state)
-            if expected_task_creation_status_state == 'Failed':
+            self.assertEqual(task_creation_status, expected_task_creation_status_state)
+            if expected_task_creation_status_state == 'failed':
                 self.assertIn(expected_task_creation_status_reason, response.data['message'])
                 return
 
@@ -4235,7 +4236,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                     image_sizes,
                     expected_uploaded_data_location=StorageChoice.SHARE,
-                    expected_task_creation_status_state='Failed',
+                    expected_task_creation_status_state='failed',
                     expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
@@ -4404,7 +4405,7 @@ class TaskDataAPITestCase(ApiTestBase):
                     task_data["server_files[1]"] = manifest_name
                 else:
                     kwargs.update({
-                        'expected_task_creation_status_state': 'Failed',
+                        'expected_task_creation_status_state': 'failed',
                         'expected_task_creation_status_reason': "Can't find upload manifest file",
                     })
 
@@ -4473,7 +4474,7 @@ class TaskDataAPITestCase(ApiTestBase):
                         task_data[f"client_files[1]"] = es.enter_context(open(manifest_path))
                     else:
                         kwargs.update({
-                            'expected_task_creation_status_state': 'Failed',
+                            'expected_task_creation_status_state': 'failed',
                             'expected_task_creation_status_reason': "Can't find upload manifest file",
                         })
                     self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
