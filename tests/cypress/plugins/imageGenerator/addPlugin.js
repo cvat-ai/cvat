@@ -8,7 +8,6 @@ exports.imageGenerator = imageGenerator;
 exports.bufferToImage = bufferToImage;
 
 const path = require('path');
-const { spawn } = require('node:child_process');
 const fs = require('fs-extra');
 const jimp = require('jimp');
 
@@ -57,20 +56,13 @@ async function imageGenerator(args) {
     return null;
 }
 
-const mkdir = (dirPath) => {
-    const cmd = spawn('mkdir', ['-p', dirPath], { shell: true });
-    cmd.on('exit', () => {
-        console.log(`mkdir:info:${dirPath} created`);
-    });
-};
-
 async function bufferToImage(args) {
     const {
         directory, fileName, extension, buffer,
     } = args;
     let file = null;
     try {
-        mkdir(directory);
+        fs.mkdirp(directory);
         file = path.join(directory, `${fileName}.${extension}`);
         const image = await createImageFromBuffer(Buffer.from(buffer.data));
         image.write(file);
