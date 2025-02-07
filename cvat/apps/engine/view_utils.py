@@ -7,7 +7,6 @@
 from typing import Optional
 
 from django.db.models.query import QuerySet
-from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
