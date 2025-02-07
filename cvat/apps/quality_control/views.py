@@ -21,7 +21,7 @@ from rq.job import JobStatus as RQJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.rq_job_handler import RQMeta
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.quality_control import quality_reports as qc
@@ -294,7 +294,7 @@ class QualityReportViewSet(
             if (
                 not rq_job
                 or not QualityReportPermission.create_scope_check_status(
-                    request, job_owner_id=rq_job.meta[RQJobMetaField.USER]["id"]
+                    request, job_owner_id=RQMeta.from_job(rq_job).user.id
                 )
                 .check_access()
                 .allow

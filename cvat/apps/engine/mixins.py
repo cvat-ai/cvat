@@ -13,14 +13,13 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from typing import Any, Callable, Optional
+from typing import Callable
 from unittest import mock
 from urllib.parse import urljoin
 
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
-from django.http import HttpRequest
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
@@ -28,6 +27,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from cvat.apps.engine.middleware import PatchedRequest
 
 from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
@@ -416,27 +416,7 @@ class PartialUpdateModelMixin:
         with mock.patch.object(self, 'update', new=self._update, create=True):
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
 
-
 class DatasetMixin:
-    def export_dataset_v1(
-        self,
-        request,
-        save_images: bool,
-        *,
-        get_data: Optional[Callable[[int], dict[str, Any]]] = None,
-    ) -> Response:
-        if request.query_params.get("format"):
-            callback = self.get_export_callback(save_images)
-
-            dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
-            return dataset_export_manager.export()
-
-        if not get_data:
-            return Response("Format is not specified", status=status.HTTP_400_BAD_REQUEST)
-
-        data = get_data(self._object.pk)
-        return Response(data)
-
     @extend_schema(
         summary='Initialize process to export resource as a dataset in a specific format',
         description=dedent("""\
@@ -466,14 +446,33 @@ class DatasetMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
-    def export_dataset_v2(self, request: HttpRequest, pk: int):
+    def initialize_dataset_export(self, request: PatchedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
         save_images = is_dataset_export(request)
         callback = self.get_export_callback(save_images)
 
-        dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=2)
-        return dataset_export_manager.export()
+        export_manager = DatasetExportManager(self._object, request)
+        export_manager.initialize_export_args(export_callback=callback, save_images=save_images)
+
+        return export_manager.export()
+
+    @extend_schema(summary='Download a prepared dataset file',
+        parameters=[
+            OpenApiParameter('rq_id', description='Request ID',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+        ],
+        responses={
+            '200': OpenApiResponse(description='Download of file started'),
+            '204': OpenApiResponse(description='No prepared dataset file related with provider request ID'),
+        },
+        exclude=True, # private API endpoint that should be used only as result_url
+    )
+    @action(methods=['GET'], detail=True, url_path='dataset/download')
+    def download_dataset(self, request: PatchedRequest, pk: int):
+        obj = self.get_object()  # force to call check_object_permissions
+        export_manager = DatasetExportManager(obj, request)
+        return export_manager.download_file()
 
     # FUTURE-TODO: migrate to new API
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_factory):
@@ -508,19 +507,8 @@ class DatasetMixin:
 
 
 class BackupMixin:
-    def export_backup_v1(self, request: HttpRequest) -> Response:
-        db_object = self.get_object() # force to call check_object_permissions
-
-        export_backup_manager = BackupExportManager(db_object, request, version=1)
-        response = export_backup_manager.export()
-
-        if request.query_params.get('action') != 'download':
-            response.headers['Deprecated'] = True
-
-        return response
-
     # FUTURE-TODO: migrate to new API
-    def import_backup_v1(self, request: HttpRequest, import_func: Callable) -> Response:
+    def import_backup_v1(self, request: PatchedRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -554,11 +542,29 @@ class BackupMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
-    def export_backup_v2(self, request: HttpRequest, pk: int):
+    def initialize_backup_export(self, request: PatchedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
+        export_manager = BackupExportManager(db_object, request)
+        export_manager.initialize_export_args()
+        return export_manager.export()
 
-        export_backup_manager = BackupExportManager(db_object, request, version=2)
-        return export_backup_manager.export()
+
+    @extend_schema(summary='Download a prepared backup file',
+        parameters=[
+            OpenApiParameter('rq_id', description='Request ID',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+        ],
+        responses={
+            '200': OpenApiResponse(description='Download of file started'),
+            '204': OpenApiResponse(description='No prepared backup file related with provider request ID'),
+        },
+        exclude=True, # private API endpoint that should be used only as result_url
+    )
+    @action(methods=['GET'], detail=True, url_path='backup/download')
+    def download_backup(self, request: PatchedRequest, pk: int):
+        obj = self.get_object()  # force to call check_object_permissions
+        export_manager = BackupExportManager(obj, request)
+        return export_manager.download_file()
 
 
 class CsrfWorkaroundMixin(APIView):

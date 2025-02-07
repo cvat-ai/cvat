@@ -17,6 +17,9 @@ from logging import Logger
 from tempfile import NamedTemporaryFile
 from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
+from cvat.apps.engine.middleware import PatchedRequest
+from rq.job import Job as RQJob
+from cvat.apps.engine.rq_job_handler import RQMeta
 
 import django_rq
 from django.conf import settings
@@ -59,7 +62,7 @@ from cvat.apps.engine.models import (
     StorageMethodChoice,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -1131,11 +1134,10 @@ def create_backup(
         log_exception(logger)
         raise
 
-def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
-    rq_job = queue.fetch_job(rq_id)
 
-    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get(RQJobMetaField.USER, {}).get('id')) and user_id_from_meta != request.user.id:
-        return Response(status=status.HTTP_403_FORBIDDEN)
+
+def _import(importer, request: PatchedRequest, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
+    rq_job: RQJob = queue.fetch_job(rq_id)
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
@@ -1185,6 +1187,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 func=func,
                 args=func_args,
                 job_id=rq_id,
+                # TODO:
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=None)
@@ -1194,6 +1197,10 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
     else:
+        rq_job_meta = RQMeta.from_job(rq_job)
+        if rq_job_meta.user.id != request.user.id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
         if rq_job.is_finished:
             project_id = rq_job.return_value()
             rq_job.delete()

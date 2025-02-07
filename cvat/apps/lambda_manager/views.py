@@ -34,6 +34,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.engine.rq_job_handler import RQMeta
 from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -45,9 +46,9 @@ from cvat.apps.engine.models import (
     SourceType,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq_job_handler import RQId, RQMeta
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.engine.utils import define_dependent_job, get_rq_lock_by_user
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind
@@ -615,17 +616,13 @@ class LambdaQueue:
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = RQMeta.build_base(request=request, db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task))
+            RQMeta.update_lambda_info(meta, function_id=lambda_func.id)
+
             rq_job = queue.create_job(
                 LambdaJob(None),
                 job_id=rq_id,
-                meta={
-                    **get_rq_job_meta(
-                        request,
-                        db_obj=(Job.objects.get(pk=job) if job else Task.objects.get(pk=task)),
-                    ),
-                    RQJobMetaField.FUNCTION_ID: lambda_func.id,
-                    "lambda": True,
-                },
+                meta=meta,
                 kwargs={
                     "function": lambda_func,
                     "threshold": threshold,
@@ -648,7 +645,7 @@ class LambdaQueue:
     def fetch_job(self, pk):
         queue = self._get_queue()
         rq_job = queue.fetch_job(pk)
-        if rq_job is None or not rq_job.meta.get("lambda"):
+        if rq_job is None or not RQMeta.from_job(rq_job).lambda_:
             raise ValidationError(
                 "{} lambda job is not found".format(pk), code=status.HTTP_404_NOT_FOUND
             )
@@ -891,10 +888,11 @@ class LambdaJob:
     # progress is in [0, 1] range
     def _update_progress(progress):
         job = rq.get_current_job()
+        rq_job_meta = RQMeta.from_job(job)
         # If the job has been deleted, get_status will return None. Thus it will
         # exist the loop.
-        job.meta["progress"] = int(progress * 100)
-        job.save_meta()
+        rq_job_meta.progress = int(progress * 100)
+        rq_job_meta.save()
 
         return job.get_status()
 

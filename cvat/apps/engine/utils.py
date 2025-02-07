@@ -220,6 +220,7 @@ def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, block
         blocking_timeout=blocking_timeout,
     )
 
+# TODO: delete
 def get_rq_job_meta(
     request: HttpRequest,
     db_obj: Any,
@@ -382,11 +383,10 @@ def build_backup_file_name(
     class_name: str,
     identifier: str | int,
     timestamp: str,
-    extension: str = "{}",
 ) -> str:
-    # "<project|task>_<name>_backup_<timestamp>.zip"
-    return "{}_{}_backup_{}{}".format(
-        class_name, identifier, timestamp, extension,
+    # "<project|task>_<name>_backup_<timestamp>"
+    return "{}_{}_backup_{}".format(
+        class_name, identifier, timestamp,
     ).lower()
 
 def build_annotations_file_name(
@@ -396,12 +396,11 @@ def build_annotations_file_name(
     timestamp: str,
     format_name: str,
     is_annotation_file: bool = True,
-    extension: str = "{}",
 ) -> str:
-    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
-    return "{}_{}_{}_{}_{}{}".format(
+    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>"
+    return "{}_{}_{}_{}_{}".format(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
-        timestamp, format_name, extension,
+        timestamp, format_name
     ).lower()
 
 

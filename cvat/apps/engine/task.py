@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
+from cvat.apps.engine.rq_job_handler import RQMeta
 
 import attrs
 import av
@@ -53,7 +54,6 @@ from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
     format_list,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     take_by,
 )
@@ -83,7 +83,7 @@ def create(
             func=_create_thread,
             args=(db_task.pk, data),
             job_id=rq_id,
-            meta=get_rq_job_meta(request=request, db_obj=db_task),
+            meta=RQMeta.build_base(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
@@ -107,13 +107,14 @@ class SegmentsParams(NamedTuple):
 
 def _copy_data_from_share_point(
     server_files: list[str],
+    *,
     upload_dir: str,
     server_dir: Optional[str] = None,
     server_files_exclude: Optional[list[str]] = None,
+    rq_job_meta: RQMeta,
 ):
-    job = rq.get_current_job()
-    job.meta['status'] = 'Data are being copied from source..'
-    job.save_meta()
+    rq_job_meta.status = 'Data are being copied from source..'
+    rq_job_meta.save()
 
     filtered_server_files = server_files.copy()
 
@@ -201,8 +202,9 @@ def _create_segments_and_jobs(
     job_file_mapping: Optional[JobFileMapping] = None,
 ):
     rq_job = rq.get_current_job()
-    rq_job.meta['status'] = 'Task is being saved in database'
-    rq_job.save_meta()
+    rq_job_meta = RQMeta.from_job(rq_job)
+    rq_job_meta.status = 'Task is being saved in database'
+    rq_job_meta.save()
 
     segments, segment_size, overlap = _generate_segment_params(
         db_task=db_task, job_file_mapping=job_file_mapping,
@@ -433,7 +435,7 @@ def _validate_scheme(url):
     if parsed_url.scheme not in ALLOWED_SCHEMES:
         raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
 
-def _download_data(urls, upload_dir):
+def _download_data(urls, upload_dir, *, rq_job_meta: RQMeta):
     job = rq.get_current_job()
     local_files = {}
 
@@ -444,8 +446,8 @@ def _download_data(urls, upload_dir):
                 raise Exception("filename collision: {}".format(name))
             _validate_scheme(url)
             slogger.glob.info("Downloading: {}".format(url))
-            job.meta['status'] = '{} is being downloaded..'.format(url)
-            job.save_meta()
+            rq_job_meta.status = '{} is being downloaded..'.format(url)
+            rq_job_meta.save()
 
             response = session.get(url, stream=True, proxies=PROXIES_FOR_UNTRUSTED_URLS)
             if response.status_code == 200:
@@ -583,10 +585,11 @@ def _create_thread(
     slogger.glob.info("create task #{}".format(db_task.id))
 
     job = rq.get_current_job()
+    rq_job_meta = RQMeta.from_job(job)
 
     def _update_status(msg: str) -> None:
-        job.meta['status'] = msg
-        job.save_meta()
+        rq_job_meta.status = msg
+        rq_job_meta.save()
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
 
@@ -599,7 +602,7 @@ def _create_thread(
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not is_dataset_import:
-        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
+        data['remote_files'] = _download_data(data['remote_files'], upload_dir, rq_job_meta=rq_job_meta)
 
     # find and validate manifest file
     manifest_files = _find_manifest_files(data)
@@ -777,7 +780,11 @@ def _create_thread(
             # this means that the data has not been downloaded from the storage to the host
             _copy_data_from_share_point(
                 (data['server_files'] + [manifest_file]) if manifest_file else data['server_files'],
-                upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
+                upload_dir=upload_dir,
+                server_dir=data.get('server_files_path'),
+                server_files_exclude=data.get('server_files_exclude'),
+                rq_job_meta=rq_job_meta,
+            )
             manifest_root = upload_dir
         elif is_data_in_cloud:
             # we should sort media before sorting in the extractor because the manifest structure should match to the sorted media
@@ -799,8 +806,7 @@ def _create_thread(
 
     av_scan_paths(upload_dir)
 
-    job.meta['status'] = 'Media files are being extracted...'
-    job.save_meta()
+    _update_status('Media files are being extracted...')
 
     # If upload from server_files image and directories
     # need to update images list by all found images in directories
@@ -1539,9 +1545,10 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                     status_message, progress_animation[self._call_counter]
                 )
 
-            self._rq_job.meta['status'] = status_message
-            self._rq_job.meta['task_progress'] = progress or 0.
-            self._rq_job.save_meta()
+            rq_job_meta = RQMeta.from_job(self._rq_job)
+            rq_job_meta.status = status_message
+            rq_job_meta.task_progress = progress or 0.
+            rq_job_meta.save()
 
             self._call_counter = (self._call_counter + 1) % len(progress_animation)
 

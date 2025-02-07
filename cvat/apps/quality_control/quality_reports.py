@@ -51,7 +51,7 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.engine.utils import define_dependent_job, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -59,6 +59,7 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
+from cvat.apps.engine.rq_job_handler import RQMeta
 
 
 class _Serializable:
@@ -2271,7 +2272,7 @@ class QualityReportUpdateManager:
                 self._check_task_quality,
                 task_id=task.id,
                 job_id=rq_id,
-                meta=get_rq_job_meta(request=request, db_obj=task),
+                meta=RQMeta.build_base(request=request, db_obj=task),
                 result_ttl=self._JOB_RESULT_TTL,
                 failure_ttl=self._JOB_RESULT_TTL,
                 depends_on=dependency,
