@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -739,7 +739,7 @@ def make_frame_provider(data_source: models.Task) -> TaskFrameProvider: ...
 
 
 def make_frame_provider(
-    data_source: Union[models.Job, models.Segment, models.Task, Any]
+    data_source: Union[models.Job, models.Segment, models.Task, Any],
 ) -> IFrameProvider:
     if isinstance(data_source, models.Task):
         frame_provider = TaskFrameProvider(data_source)

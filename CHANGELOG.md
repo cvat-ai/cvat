@@ -16,6 +16,152 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.28.0'></a>
+## \[2.28.0\] - 2025-02-06
+
+### Added
+
+- Support for managing Redis migrations
+  (<https://github.com/cvat-ai/cvat/pull/8898>)
+
+### Changed
+
+- Updated limitation for minimal object size from 9px area to 1px in dimensions
+  (<https://github.com/cvat-ai/cvat/pull/9055>)
+
+### Fixed
+
+- Invalid chunks and backups after honeypot updates in tasks with cloud storage data
+  (<https://github.com/cvat-ai/cvat/pull/9010>)
+
+- In some cases effect of drag/resize may be reset implicitly for a user
+  (<https://github.com/cvat-ai/cvat/pull/9053>)
+
+<a id='changelog-2.27.0'></a>
+## \[2.27.0\] - 2025-02-04
+
+### Added
+
+- Saving drawn shape on submit in `single shape` mode
+  (<https://github.com/cvat-ai/cvat/pull/8807>)
+
+- An option to create tasks with consensus jobs
+  (<https://github.com/cvat-ai/cvat/pull/8939>)
+
+- \[SDK\] The shapes output by auto-annotation functions are now checked
+  for compatibility with the function's and the task's label specs
+  (<https://github.com/cvat-ai/cvat/pull/9005>)
+
+- A `threshold` parameter to UI detector runner
+  (<https://github.com/cvat-ai/cvat/pull/9011>)
+
+### Changed
+
+- `DetectorFunctionSpec` will now raise `BadFunctionError` if it detects
+  any violations of the documented constraints on the labels
+  (<https://github.com/cvat-ai/cvat/pull/9020>)
+
+### Fixed
+
+- Improved performance and memory utilization for quality reports in tasks with ellipses and masks
+  (<https://github.com/cvat-ai/cvat/pull/8990>)
+
+- \[Compose\] An outdated version of Traefik is no longer used in
+  deployments with HTTPS enabled
+  (<https://github.com/cvat-ai/cvat/pull/9028>)
+
+<a id='changelog-2.26.1'></a>
+## \[2.26.1\] - 2025-01-29
+
+### Added
+
+- A button to copy a filename of the image into the clipboard
+  (<https://github.com/cvat-ai/cvat/pull/8989>)
+
+### Changed
+
+- Changed location of events cache dir
+  (<https://github.com/cvat-ai/cvat/pull/9015>)
+
+### Removed
+
+- \[Helm\] Removed `disableDistinctCachePerService` settings
+  (<https://github.com/cvat-ai/cvat/pull/9008>)
+
+### Fixed
+
+- The backend now rejects invalid label types
+  (<https://github.com/cvat-ai/cvat/pull/8980>)
+
+- \[Helm\] Impossible to download exported annotations
+  (<https://github.com/cvat-ai/cvat/pull/9008>)
+
+<a id='changelog-2.26.0'></a>
+## \[2.26.0\] - 2025-01-27
+
+### Added
+
+- Setting `TMP_FILE_OR_DIR_RETENTION_DAYS`, which defines maximum retention period
+  of a file or dir in temporary directory
+  (<https://github.com/cvat-ai/cvat/pull/8804>)
+- Cron job to remove outdated files and directories from CVAT tmp directory
+  (<https://github.com/cvat-ai/cvat/pull/8804>)
+
+- Ability to set Django's secret key using an environment variable
+  (<https://github.com/cvat-ai/cvat/pull/8566>)
+
+### Changed
+
+- Export cache cleaning moved to a separate cron job
+  (<https://github.com/cvat-ai/cvat/pull/8804>)
+
+- Improved UX of quality management page: better table layout, file name search, ability to download table as `.csv`
+  (<https://github.com/cvat-ai/cvat/pull/8865>)
+
+- Enhanced MIL tracker. Optimized memory usage. Now it is runnable on many frames, and applicable to drawn rectangles.
+  (<https://github.com/cvat-ai/cvat/pull/8942>)
+
+- The UI only displays one version for the whole client component,
+  which is now aligned with the server version
+  (<https://github.com/cvat-ai/cvat/pull/8948>)
+
+### Fixed
+
+- Fixed webhook worker not restarting after losing Redis connection
+  (<https://github.com/cvat-ai/cvat/pull/8921>)
+
+- Fixed incorrect results being returned from lambda functions when all
+  detected shapes have labels that aren't mapped
+  (<https://github.com/cvat-ai/cvat/pull/8931>)
+
+- Optimized importing from cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/8930>)
+
+- A job cannot be opened if to remove an image with the latest keyframe of a track
+  (<https://github.com/cvat-ai/cvat/pull/8952>)
+
+- A track will be interpolated incorrectly if to delete an image containing the object keyframe
+  (<https://github.com/cvat-ai/cvat/pull/8951>)
+
+- Error: Cannot read properties of undefined (reading 'startPoints') when dragging an object
+  (<https://github.com/cvat-ai/cvat/pull/8966>)
+
+- Extra shortcuts enabled from brush tools on views where not necessary
+  (<https://github.com/cvat-ai/cvat/pull/8971>)
+
+- \[Helm\] Fixed Nuclio dashboard crashes when running in a cluster
+  that doesn't use Docker
+  (<https://github.com/cvat-ai/cvat/pull/8825>)
+
+- \[SDK\] `cvat_sdk.auto_annotation.functions.torchvision_detection` and
+  `torchvision_instance_segmentation` no longer declare meaningless "N/A" labels
+  (<https://github.com/cvat-ai/cvat/pull/8997>)
+
+### Security
+
+- Protected tracker functions against deserializing untrusted input
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-wq36-mxf8-hv62>)
+
 <a id='changelog-2.25.0'></a>
 ## \[2.25.0\] - 2025-01-09
 

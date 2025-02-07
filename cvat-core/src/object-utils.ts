@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -67,45 +67,48 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
 }
 
 export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean {
-    const MIN_SHAPE_LENGTH = 3;
-    const MIN_SHAPE_AREA = 9;
-    const MIN_MASK_SHAPE_AREA = 1;
+    const MIN_SHAPE_SIZE = 1;
 
     if (shapeType === ShapeType.POINTS) {
         return true;
     }
 
+    let width = 0;
+    let height = 0;
+
     if (shapeType === ShapeType.MASK) {
         const [left, top, right, bottom] = points.slice(-4);
-        const area = (right - left + 1) * (bottom - top + 1);
-        return area >= MIN_MASK_SHAPE_AREA;
-    }
-
-    if (shapeType === ShapeType.ELLIPSE) {
+        [width, height] = [right - left + 1, bottom - top + 1];
+    } else if (shapeType === ShapeType.RECTANGLE) {
+        const [xtl, ytl, xbr, ybr] = points;
+        [width, height] = [xbr - xtl, ybr - ytl];
+    } else if (shapeType === ShapeType.ELLIPSE) {
         const [cx, cy, rightX, topY] = points;
-        const [rx, ry] = [rightX - cx, cy - topY];
-        return rx * ry * Math.PI > MIN_SHAPE_AREA;
+        [width, height] = [(rightX - cx) * 2, (cy - topY) * 2];
+    } else {
+        // polygon, polyline, cuboid, skeleton
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            xmin = Math.min(xmin, points[i]);
+            xmax = Math.max(xmax, points[i]);
+            ymin = Math.min(ymin, points[i + 1]);
+            ymax = Math.max(ymax, points[i + 1]);
+        }
+
+        if ([ShapeType.POLYLINE, ShapeType.SKELETON, ShapeType.POLYGON].includes(shapeType)) {
+            // for polyshapes consider at least one dimension
+            // skeleton in corner cases may be a regular polyshape
+            return Math.max(xmax - xmin, ymax - ymin) >= MIN_SHAPE_SIZE;
+        }
+
+        [width, height] = [xmax - xmin, ymax - ymin];
     }
 
-    let xmin = Number.MAX_SAFE_INTEGER;
-    let xmax = Number.MIN_SAFE_INTEGER;
-    let ymin = Number.MAX_SAFE_INTEGER;
-    let ymax = Number.MIN_SAFE_INTEGER;
-
-    for (let i = 0; i < points.length - 1; i += 2) {
-        xmin = Math.min(xmin, points[i]);
-        xmax = Math.max(xmax, points[i]);
-        ymin = Math.min(ymin, points[i + 1]);
-        ymax = Math.max(ymax, points[i + 1]);
-    }
-
-    if (shapeType === ShapeType.POLYLINE) {
-        const length = Math.max(xmax - xmin, ymax - ymin);
-        return length >= MIN_SHAPE_LENGTH;
-    }
-
-    const area = (xmax - xmin) * (ymax - ymin);
-    return area >= MIN_SHAPE_AREA;
+    return width >= MIN_SHAPE_SIZE && height >= MIN_SHAPE_SIZE;
 }
 
 export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0): number[] {

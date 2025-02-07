@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,6 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    getDeletedFrames,
     decodePreview,
 } from './frames';
 import Issue from './issue';
@@ -352,11 +351,6 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             }
 
             const annotationsData = await getAnnotations(this, frame, allTracks, filters);
-            const deletedFrames = await getDeletedFrames('job', this.id);
-            if (frame in deletedFrames) {
-                return [];
-            }
-
             return annotationsData;
         },
     });
@@ -748,6 +742,10 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
+            if (fields.consensus_replicas) {
+                taskSpec.consensus_replicas = fields.consensus_replicas;
+            }
+
             const taskDataSpec = {
                 client_files: this.clientFiles,
                 server_files: this.serverFiles,
@@ -1041,11 +1039,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             }
 
             const result = await getAnnotations(this, frame, allTracks, filters);
-            const deletedFrames = await getDeletedFrames('task', this.id);
-            if (frame in deletedFrames) {
-                return [];
-            }
-
             return result;
         },
     });

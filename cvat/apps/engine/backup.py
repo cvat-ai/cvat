@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,15 +11,13 @@ import shutil
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
+from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from logging import Logger
 from tempfile import NamedTemporaryFile
 from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
-from cvat.apps.engine.middleware import PatchedRequest
-from rq.job import Job as RQJob
-from cvat.apps.engine.rq_job_handler import RQMeta
 
 import django_rq
 from django.conf import settings
@@ -31,6 +29,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatImportError
@@ -52,6 +51,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.middleware import PatchedRequest
 from cvat.apps.engine.models import (
     DataChoice,
     Location,
@@ -62,7 +62,7 @@ from cvat.apps.engine.models import (
     StorageMethodChoice,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.rq_job_handler import RQId, RQMeta
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -226,6 +226,7 @@ class _TaskBackupBase(_BackupBase):
             'status',
             'subset',
             'labels',
+            'consensus_replicas',
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -338,12 +339,14 @@ class _TaskBackupBase(_BackupBase):
         return annotations
 
     def _get_db_jobs(self):
-        if self._db_task:
-            db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
-            db_segments.sort(key=lambda i: i.job_set.first().id)
-            db_jobs = (s.job_set.first() for s in db_segments)
-            return db_jobs
-        return ()
+        if not self._db_task:
+            return
+
+        db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
+        db_segments.sort(key=lambda i: i.job_set.first().id)
+
+        for db_segment in db_segments:
+            yield from sorted(db_segment.job_set.all(), key=lambda db_job: db_job.id)
 
 class _ExporterBase(metaclass=ABCMeta):
     ModelClass: ClassVar[models.Project | models.Task]
@@ -463,7 +466,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
 
-            task = self._prepare_task_meta(task_serializer.data)
+            serialized_task = task_serializer.data
+            if serialized_task.pop('consensus_enabled', False):
+                serialized_task['consensus_replicas'] = self._db_task.consensus_replicas
+
+            task = self._prepare_task_meta(serialized_task)
             task['labels'] = [self._prepare_label_meta(l) for l in task_labels.data if not l['has_parent']]
             for label in task['labels']:
                 label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
@@ -471,30 +478,39 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return task
 
         def serialize_segment(db_segment):
-            db_job = db_segment.job_set.first()
-            job_serializer = SimpleJobSerializer(db_job)
-            for field in ('url', 'assignee'):
-                job_serializer.fields.pop(field)
-            job_data = self._prepare_job_meta(job_serializer.data)
-
             segment_serializer = SegmentSerializer(db_segment)
             segment_serializer.fields.pop('jobs')
-            segment = segment_serializer.data
-            segment_type = segment.pop("type")
-            segment.update(job_data)
+            serialized_segment = segment_serializer.data
 
+            segment_type = serialized_segment.pop("type")
             if (
                 self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE
                 or self._db_data.validation_mode == models.ValidationMode.GT_POOL
             ):
-                segment.update(serialize_segment_file_names(db_segment))
+                serialized_segment.update(serialize_segment_file_names(db_segment))
 
-            return segment
+            return serialized_segment
 
         def serialize_jobs():
             db_segments = list(self._db_task.segment_set.all())
             db_segments.sort(key=lambda i: i.job_set.first().id)
-            return (serialize_segment(s) for s in db_segments)
+
+            serialized_jobs = []
+            for db_segment in db_segments:
+                serialized_segment = serialize_segment(db_segment)
+
+                db_jobs = list(db_segment.job_set.all())
+                db_jobs.sort(key=lambda v: v.id)
+                for db_job in db_jobs:
+                    job_serializer = SimpleJobSerializer(db_job)
+                    for field in ('url', 'assignee'):
+                        job_serializer.fields.pop(field)
+
+                    serialized_job = self._prepare_job_meta(job_serializer.data)
+                    serialized_job.update(deepcopy(serialized_segment))
+                    serialized_jobs.append(serialized_job)
+
+            return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
             if self._db_task.mode == 'annotation':
@@ -792,7 +808,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         job_file_mapping = None
         if data.pop('custom_segments', False):
             job_file_mapping = self._parse_segment_frames(jobs=[
-                v for v in jobs if v.get('type') != models.JobType.GROUND_TRUTH
+                v for v in jobs if v.get('type') == models.JobType.ANNOTATION
             ])
 
             for d in [self._manifest, data]:
@@ -907,7 +923,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 })
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type == models.JobType.ANNOTATION:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
                 continue
             else:
                 assert False
@@ -942,7 +958,6 @@ class _ProjectBackupBase(_BackupBase):
     def _prepare_project_meta(self, project):
         allowed_fields = {
             'bug_tracker',
-            'deimension',
             'labels',
             'name',
             'status',

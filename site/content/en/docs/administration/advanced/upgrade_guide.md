@@ -56,6 +56,28 @@ To upgrade CVAT, follow these steps:
   docker logs cvat_server -f
   ```
 
+## Upgrade CVAT after v2.26.0
+
+In version 2.26.0, CVAT changed the location where the export cache is stored.
+To clean up the outdated cache, run the command depending on how CVAT is deployed:
+
+<!--lint disable no-undefined-references-->
+
+{{< tabpane lang="shell" >}}
+  {{< tab header="Docker" >}}
+  docker exec -it cvat_server python manage.py cleanuplegacyexportcache
+  {{< /tab >}}
+  {{< tab header="Kubernetes" >}}
+  cvat_backend_pod=$(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}')
+  kubectl exec -it ${cvat_backend_pod} -- python manage.py cleanuplegacyexportcache
+  {{< /tab >}}
+  {{< tab header="Development" >}}
+  python manage.py cleanuplegacyexportcache
+  {{< /tab >}}
+{{< /tabpane >}}
+
+<!--lint enable no-undefined-references-->
+
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
 Step by step commands how to upgrade CVAT from v2.2.0 to v2.3.0.

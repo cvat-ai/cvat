@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -250,7 +250,14 @@ def kube_restore_clickhouse_db():
 
 
 def _get_redis_inmem_keys_to_keep():
-    return ("rq:worker:", "rq:workers", "rq:scheduler_instance:", "rq:queues:")
+    return (
+        "rq:worker:",
+        "rq:workers",
+        "rq:scheduler_instance:",
+        "rq:queues:",
+        "cvat:applied_migrations",
+        "cvat:applied_migration:",
+    )
 
 
 def docker_restore_redis_inmem():
@@ -270,9 +277,10 @@ def kube_restore_redis_inmem():
         [
             "sh",
             "-c",
-            'redis-cli -e -a "${REDIS_PASSWORD}" --scan --pattern "*" |'
-            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
-            'xargs -r redis-cli -e -a "${REDIS_PASSWORD}" del',
+            'export REDISCLI_AUTH="${REDIS_PASSWORD}" && '
+            'redis-cli -e --scan --pattern "*" | '
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" | '
+            "xargs -r redis-cli -e del",
         ]
     )
 
@@ -283,7 +291,7 @@ def docker_restore_redis_ondisk():
 
 def kube_restore_redis_ondisk():
     kube_exec_redis_ondisk(
-        ["sh", "-c", 'redis-cli -e -p 6666 -a "${CVAT_REDIS_ONDISK_PASSWORD}" flushall']
+        ["sh", "-c", 'REDISCLI_AUTH="${CVAT_REDIS_ONDISK_PASSWORD}" redis-cli -e -p 6666 flushall']
     )
 
 

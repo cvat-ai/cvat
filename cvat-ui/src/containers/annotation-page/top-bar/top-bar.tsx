@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,6 +41,8 @@ import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
+import { finishDraw } from 'utils/drawing';
+import { toClipboard } from 'utils/to-clipboard';
 
 interface StateToProps {
     jobInstance: Job;
@@ -546,15 +548,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
 
     private onFinishDraw = (): void => {
         const { activeControl, canvasInstance } = this.props;
-        if (
-            [ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl) &&
-            canvasInstance instanceof Canvas
-        ) {
-            canvasInstance.interact({ enabled: false });
-            return;
-        }
-
-        canvasInstance.draw({ enabled: false });
+        finishDraw(canvasInstance, activeControl);
     };
 
     private onSwitchToolsBlockerState = (): void => {
@@ -567,16 +561,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const { origin, pathname } = window.location;
         const url = `${origin}${pathname}?frame=${frameNumber}`;
 
-        const fallback = (): void => {
-            // eslint-disable-next-line
-            window.prompt('Browser Clipboard API not allowed, please copy manually', url);
-        };
+        toClipboard(url);
+    };
 
-        if (window.isSecureContext) {
-            window.navigator.clipboard.writeText(url).catch(fallback);
-        } else {
-            fallback();
-        }
+    private onCopyFilenameIconClick = (): void => {
+        const { frameFilename } = this.props;
+
+        toClipboard(frameFilename);
     };
 
     private onDeleteFrame = (): void => {
@@ -670,6 +661,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
                 onURLIconClick={this.onURLIconClick}
+                onCopyFilenameIconClick={this.onCopyFilenameIconClick}
                 onDeleteFrame={this.onDeleteFrame}
                 onRestoreFrame={this.onRestoreFrame}
                 changeWorkspace={this.changeWorkspace}

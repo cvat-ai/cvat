@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,13 +31,18 @@ function updateActivatedStateID(newStates: any[], prevActivatedStateID: number |
         null;
 }
 
-export function labelShapeType(label?: Label): ShapeType | null {
-    if (label && Object.values(ShapeType).includes(label.type as any)) {
-        return label.type as unknown as ShapeType;
+export function labelShapeType(labelData?: Label | Partial<LabelType>): ShapeType | null {
+    const labelType = labelData instanceof Label ? labelData.type : labelData;
+    if (labelType) {
+        if (Object.values(ShapeType).includes(labelType as any)) {
+            return labelType as unknown as ShapeType;
+        }
+
+        if (labelType === LabelType.TAG) {
+            return null;
+        }
     }
-    if (label?.type === LabelType.TAG) {
-        return null;
-    }
+
     return ShapeType.RECTANGLE;
 }
 

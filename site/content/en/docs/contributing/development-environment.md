@@ -12,7 +12,7 @@ description: 'Installing a development environment for different operating syste
   Ubuntu 22.04/20.04
 
   ```bash
-  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev
+  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev cargo
   ```
 
   ```bash
@@ -25,7 +25,7 @@ description: 'Installing a development environment for different operating syste
   MacOS 10.15
 
   ```bash
-  brew install git python pyenv redis curl openssl node sqlite3 geos
+  brew install git python pyenv redis curl openssl node sqlite3 geos rust
   ```
 
   Arch Linux
@@ -38,7 +38,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   # Install the required dependencies:
-  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap
+  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap rust
   ```
 
   ```bash
@@ -61,8 +61,6 @@ description: 'Installing a development environment for different operating syste
   - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
-  - [Prettier Formatter for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-  - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
@@ -167,6 +165,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   python manage.py migrate
+  python manage.py migrateredis
   python manage.py collectstatic
   python manage.py syncperiodicjobs
   python manage.py createsuperuser

@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,7 +12,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq_job_handler import is_rq_job_owner
+from cvat.apps.engine.middleware import PatchedRequest
+from cvat.apps.engine.rq_job_handler import RQId, is_rq_job_owner
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
@@ -22,9 +23,19 @@ from cvat.apps.iam.permissions import (
 )
 from cvat.apps.organizations.models import Organization
 
-from .models import AnnotationGuide, CloudStorage, Issue, Job, Label, Project, Task, RequestAction, RequestTarget, RequestSubresource
-from cvat.apps.engine.rq_job_handler import RQId
-from cvat.apps.engine.middleware import PatchedRequest
+from .models import (
+    AnnotationGuide,
+    CloudStorage,
+    Comment,
+    Issue,
+    Job,
+    Label,
+    Project,
+    RequestAction,
+    RequestTarget,
+    Task,
+    User,
+)
 
 
 def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
@@ -77,6 +88,8 @@ class ServerPermission(OpenPolicyAgentPermission):
         return None
 
 class UserPermission(OpenPolicyAgentPermission):
+    obj: Optional[User]
+
     class Scopes(StrEnum):
         LIST = 'list'
         VIEW = 'view'
@@ -136,6 +149,8 @@ class UserPermission(OpenPolicyAgentPermission):
         return data
 
 class CloudStoragePermission(OpenPolicyAgentPermission):
+    obj: Optional[CloudStorage]
+
     class Scopes(StrEnum):
         LIST = 'list'
         LIST_CONTENT = 'list:content'
@@ -198,15 +213,17 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         elif self.obj:
             data = {
                 'id': self.obj.id,
-                'owner': { 'id': getattr(self.obj.owner, 'id', None) },
+                'owner': { 'id': self.obj.owner_id },
                 'organization': {
-                    'id': self.obj.organization.id
-                } if self.obj.organization else None
+                    'id': self.obj.organization_id
+                } if self.obj.organization_id else None
             }
 
         return data
 
 class ProjectPermission(OpenPolicyAgentPermission):
+    obj: Optional[Project]
+
     class Scopes(StrEnum):
         LIST = 'list'
         CREATE = 'create'
@@ -367,11 +384,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
         if self.obj:
             data = {
                 "id": self.obj.id,
-                "owner": { "id": getattr(self.obj.owner, 'id', None) },
-                "assignee": { "id": getattr(self.obj.assignee, 'id', None) },
-                'organization': {
-                    "id": getattr(self.obj.organization, 'id', None)
-                }
+                "owner": { "id": self.obj.owner_id },
+                "assignee": { "id": self.obj.assignee_id },
+                'organization': { "id": self.obj.organization_id },
             }
         elif self.scope in [__class__.Scopes.CREATE, __class__.Scopes.IMPORT_BACKUP]:
             data = {
@@ -379,7 +394,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 "owner": { "id": self.user_id },
                 "assignee": {
                     "id": self.assignee_id,
-                } if getattr(self, 'assignee_id', None) else None,
+                } if self.assignee_id else None,
                 'organization': {
                     "id": self.org_id,
                 } if self.org_id else None,
@@ -388,6 +403,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return data
 
 class TaskPermission(OpenPolicyAgentPermission):
+    obj: Optional[Task]
+
     class Scopes(StrEnum):
         LIST = 'list'
         CREATE = 'create'
@@ -598,17 +615,13 @@ class TaskPermission(OpenPolicyAgentPermission):
         if self.obj:
             data = {
                 "id": self.obj.id,
-                "owner": { "id": getattr(self.obj.owner, 'id', None) },
-                "assignee": { "id": getattr(self.obj.assignee, 'id', None) },
-                'organization': {
-                    "id": getattr(self.obj.organization, 'id', None)
-                },
+                "owner": { "id": self.obj.owner_id },
+                "assignee": { "id": self.obj.assignee_id },
+                'organization': { "id": self.obj.organization_id },
                 "project": {
-                    "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) },
-                    'organization': {
-                        "id": getattr(self.obj.project.organization, 'id', None)
-                    },
+                    "owner": { "id": self.obj.project.owner_id },
+                    "assignee": { "id": self.obj.project.assignee_id },
+                    'organization': { "id": self.obj.project.organization_id },
                 } if self.obj.project else None
             }
         elif self.scope in [
@@ -633,11 +646,11 @@ class TaskPermission(OpenPolicyAgentPermission):
                     "id": self.org_id
                 },
                 "project": {
-                    "owner": { "id": getattr(project.owner, 'id', None) },
-                    "assignee": { "id": getattr(project.assignee, 'id', None) },
+                    "owner": { "id": project.owner_id },
+                    "assignee": { "id": project.assignee_id },
                     'organization': {
-                        "id": getattr(project.organization, 'id', None),
-                    } if project.organization is not None else None,
+                        "id": project.organization_id,
+                    } if project.organization_id else None,
                 } if project is not None else None,
             }
 
@@ -645,6 +658,7 @@ class TaskPermission(OpenPolicyAgentPermission):
 
 class JobPermission(OpenPolicyAgentPermission):
     task_id: Optional[int]
+    obj: Optional[Job]
 
     class Scopes(StrEnum):
         CREATE = 'create'
@@ -808,23 +822,21 @@ class JobPermission(OpenPolicyAgentPermission):
         data = None
         if self.obj:
             if self.obj.segment.task.project:
-                organization = self.obj.segment.task.project.organization
+                organization_id = self.obj.segment.task.project.organization_id
             else:
-                organization = self.obj.segment.task.organization
+                organization_id = self.obj.segment.task.organization_id
 
             data = {
                 "id": self.obj.id,
-                "assignee": { "id": getattr(self.obj.assignee, 'id', None) },
-                'organization': {
-                    "id": getattr(organization, 'id', None)
-                },
+                "assignee": { "id": self.obj.assignee_id },
+                'organization': { "id": organization_id },
                 "task": {
-                    "owner": { "id": getattr(self.obj.segment.task.owner, 'id', None) },
-                    "assignee": { "id": getattr(self.obj.segment.task.assignee, 'id', None) }
+                    "owner": { "id": self.obj.segment.task.owner_id },
+                    "assignee": { "id": self.obj.segment.task.assignee_id }
                 },
                 "project": {
-                    "owner": { "id": getattr(self.obj.segment.task.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(self.obj.segment.task.project.assignee, 'id', None) }
+                    "owner": { "id": self.obj.segment.task.project.owner_id },
+                    "assignee": { "id": self.obj.segment.task.project.assignee_id }
                 } if self.obj.segment.task.project else None
             }
         elif self.scope == __class__.Scopes.CREATE:
@@ -833,27 +845,27 @@ class JobPermission(OpenPolicyAgentPermission):
             task = Task.objects.get(id=self.task_id)
 
             if task.project:
-                organization = task.project.organization
+                organization_id = task.project.organization_id
             else:
-                organization = task.organization
+                organization_id = task.organization_id
 
             data = {
-                'organization': {
-                    "id": getattr(organization, 'id', None)
-                },
+                'organization': { "id": organization_id },
                 "task": {
-                    "owner": { "id": getattr(task.owner, 'id', None) },
-                    "assignee": { "id": getattr(task.assignee, 'id', None) }
+                    "owner": { "id": task.owner_id },
+                    "assignee": { "id": task.assignee_id }
                 },
                 "project": {
-                    "owner": { "id": getattr(task.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(task.project.assignee, 'id', None) }
+                    "owner": { "id": task.project.owner_id },
+                    "assignee": { "id": task.project.assignee_id }
                 } if task.project else None
             }
 
         return data
 
 class CommentPermission(OpenPolicyAgentPermission):
+    obj: Optional[Comment]
+
     class Scopes(StrEnum):
         LIST = 'list'
         CREATE  = 'create'
@@ -892,29 +904,27 @@ class CommentPermission(OpenPolicyAgentPermission):
         data = None
         def get_common_data(db_issue):
             if db_issue.job.segment.task.project:
-                organization = db_issue.job.segment.task.project.organization
+                organization_id = db_issue.job.segment.task.project.organization_id
             else:
-                organization = db_issue.job.segment.task.organization
+                organization_id = db_issue.job.segment.task.organization_id
 
             data = {
                 "project": {
-                    "owner": { "id": getattr(db_issue.job.segment.task.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(db_issue.job.segment.task.project.assignee, 'id', None) }
+                    "owner": { "id": db_issue.job.segment.task.project.owner_id },
+                    "assignee": { "id": db_issue.job.segment.task.project.assignee_id }
                 } if db_issue.job.segment.task.project else None,
                 "task": {
-                    "owner": { "id": getattr(db_issue.job.segment.task.owner, 'id', None) },
-                    "assignee": { "id": getattr(db_issue.job.segment.task.assignee, 'id', None) }
+                    "owner": { "id": db_issue.job.segment.task.owner_id},
+                    "assignee": { "id": db_issue.job.segment.task.assignee_id }
                 },
                 "job": {
-                    "assignee": { "id": getattr(db_issue.job.assignee, 'id', None) }
+                    "assignee": { "id": db_issue.job.assignee_id }
                 },
                 "issue": {
-                    "owner": { "id": getattr(db_issue.owner, 'id', None) },
-                    "assignee": { "id": getattr(db_issue.assignee, 'id', None) }
+                    "owner": { "id": db_issue.owner_id},
+                    "assignee": { "id": db_issue.assignee_id }
                 },
-                'organization': {
-                    "id": getattr(organization, 'id', None)
-                }
+                'organization': { "id": organization_id }
             }
 
             return data
@@ -939,6 +949,8 @@ class CommentPermission(OpenPolicyAgentPermission):
         return data
 
 class IssuePermission(OpenPolicyAgentPermission):
+    obj: Optional[Issue]
+
     class Scopes(StrEnum):
         LIST = 'list'
         CREATE  = 'create'
@@ -984,24 +996,24 @@ class IssuePermission(OpenPolicyAgentPermission):
         data = None
         def get_common_data(db_job):
             if db_job.segment.task.project:
-                organization = db_job.segment.task.project.organization
+                organization_id = db_job.segment.task.project.organization_id
             else:
-                organization = db_job.segment.task.organization
+                organization_id = db_job.segment.task.organization_id
 
             data = {
                 "project": {
-                    "owner": { "id": getattr(db_job.segment.task.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(db_job.segment.task.project.assignee, 'id', None) }
+                    "owner": { "id": db_job.segment.task.project.owner_id },
+                    "assignee": { "id": db_job.segment.task.project.assignee_id }
                 } if db_job.segment.task.project else None,
                 "task": {
-                    "owner": { "id": getattr(db_job.segment.task.owner, 'id', None) },
-                    "assignee": { "id": getattr(db_job.segment.task.assignee, 'id', None) }
+                    "owner": { "id": db_job.segment.task.owner_id },
+                    "assignee": { "id": db_job.segment.task.assignee_id }
                 },
                 "job": {
-                    "assignee": { "id": getattr(db_job.assignee, 'id', None) }
+                    "assignee": { "id": db_job.assignee_id }
                 },
                 'organization': {
-                    "id": getattr(organization, 'id', None)
+                    "id": organization_id
                 }
             }
 
@@ -1012,8 +1024,8 @@ class IssuePermission(OpenPolicyAgentPermission):
             data = get_common_data(db_job)
             data.update({
                 "id": self.obj.id,
-                "owner": { "id": getattr(self.obj.owner, 'id', None) },
-                "assignee": { "id": getattr(self.obj.assignee, 'id', None) }
+                "owner": { "id": self.obj.owner_id },
+                "assignee": { "id": self.obj.assignee_id }
             })
         elif self.scope.startswith(__class__.Scopes.CREATE):
             job_id = self.job_id
@@ -1109,28 +1121,28 @@ class LabelPermission(OpenPolicyAgentPermission):
 
         if self.obj:
             if self.obj.project:
-                organization = self.obj.project.organization
+                organization_id = self.obj.project.organization_id
             else:
-                organization = self.obj.task.organization
+                organization_id = self.obj.task.organization_id
 
             data = {
                 "id": self.obj.id,
-                'organization': {
-                    "id": getattr(organization, 'id', None)
-                },
+                'organization': { "id": organization_id },
                 "task": {
-                    "owner": { "id": getattr(self.obj.task.owner, 'id', None) },
-                    "assignee": { "id": getattr(self.obj.task.assignee, 'id', None) }
+                    "owner": { "id": self.obj.task.owner_id },
+                    "assignee": { "id": self.obj.task.assignee_id }
                 } if self.obj.task else None,
                 "project": {
-                    "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) }
+                    "owner": { "id": self.obj.project.owner_id },
+                    "assignee": { "id": self.obj.project.assignee_id }
                 } if self.obj.project else None,
             }
 
         return data
 
 class AnnotationGuidePermission(OpenPolicyAgentPermission):
+    obj: Optional[AnnotationGuide]
+
     class Scopes(StrEnum):
         VIEW = 'view'
         UPDATE = 'update'
@@ -1169,16 +1181,15 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = {}
         if self.obj:
-            db_target = getattr(self.obj, 'target', {})
-            db_organization = getattr(db_target, 'organization', {})
+            db_target = self.obj.target
             data.update({
                 'id': self.obj.id,
                 'target': {
-                    'owner': { 'id': getattr(getattr(db_target, 'owner', {}), 'id', None) },
-                    'assignee': { 'id': getattr(getattr(db_target, 'assignee', {}), 'id', None) },
+                    'owner': { 'id': db_target.owner_id },
+                    'assignee': { 'id': db_target.assignee_id },
                     'is_job_staff': db_target.is_job_staff(self.user_id),
                 },
-                'organization': { 'id': getattr(db_organization, 'id', None) }
+                'organization': { 'id': self.obj.organization_id }
             })
         elif self.scope == __class__.Scopes.CREATE:
             db_target = None
@@ -1192,13 +1203,14 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                     db_target = Task.objects.get(id=self.task_id)
                 except Task.DoesNotExist as ex:
                     raise ValidationError(str(ex))
-            db_organization = getattr(db_target, 'organization', {})
+
+            organization_id = getattr(db_target, 'organization_id', None)
             data.update({
                 'target': {
-                    'owner': { 'id': db_target.owner.id },
-                    'assignee': { 'id': getattr(db_target.assignee, 'id', None) }
+                    'owner': { 'id': getattr(db_target, "owner_id", None) },
+                    'assignee': { 'id': getattr(db_target, "assignee_id", None) },
                 },
-                'organization': { 'id': getattr(db_organization, 'id', None) }
+                'organization': { 'id': organization_id }
             })
         return data
 

@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -404,6 +404,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.style.cursor = '';
         this.mode = Mode.IDLE;
         if (state && points) {
+            // we need to store "updated" and set "points" to an empty array
+            // as this information is used to define "updated" objects in diff logic during canvas objects setup
+            // if because of any reason updating was actually rejected somewhere, we must reset view inside this logic
+
+            // there is one more deeper issue:
+            // somewhere canvas updates drawn views and then sends request,
+            // updating internal CVAT state (e.g. drag, resize)
+            // somewhere, however, it just sends request to update internal CVAT state
+            // (e.g. remove point, edit polygon/polyline)
+            // if object view was not changed by canvas and points accepted as is without any changes
+            // the view will not be updated during objects setup if we just set points as is here
+            // that is why we need to set points to an empty array (something that can't normally come from CVAT)
+            // I do not think it can be easily fixed now, hovewer in the future we should refactor code
+            if (Number.isInteger(state.parentID)) {
+                const { elements } = this.drawnStates[state.parentID];
+                const drawnElement = elements.find((el) => el.clientID === state.clientID);
+                drawnElement.updated = 0;
+                drawnElement.points = [];
+
+                this.drawnStates[state.parentID].updated = 0;
+                this.drawnStates[state.parentID].points = [];
+            } else {
+                this.drawnStates[state.clientID].updated = 0;
+                this.drawnStates[state.clientID].points = [];
+            }
+
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
                 cancelable: true,
@@ -1129,9 +1155,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 ...(state.shapeType === 'mask' ? { snapToGrid: 1 } : {}),
             });
 
+            let startCenter = null;
             draggableInstance.on('dragstart', (): void => {
                 onDragStart();
                 this.draggableShape = shape;
+                const { cx, cy } = shape.bbox();
+                startCenter = { x: cx, y: cy };
                 start = Date.now();
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
@@ -1159,7 +1188,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     skeletonSVGTemplate = skeletonSVGTemplate ?? makeSVGFromTemplate(state.label.structure.svg);
                     setupSkeletonEdges(shape as SVG.G, skeletonSVGTemplate);
                 }
-            }).on('dragend', (e: CustomEvent): void => {
+            }).on('dragend', (): void => {
                 if (aborted) {
                     this.resetViewPosition(state.clientID);
                     return;
@@ -1167,10 +1196,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 onDragEnd();
                 this.draggableShape = null;
-                const p1 = e.detail.handler.startPoints.point;
-                const p2 = e.detail.p;
-                const dx2 = (p1.x - p2.x) ** 2;
-                const dy2 = (p1.y - p2.y) ** 2;
+                const { cx, cy } = shape.bbox();
+
+                const dx2 = (startCenter.x - cx) ** 2;
+                const dy2 = (startCenter.y - cy) ** 2;
                 if (Math.sqrt(dx2 + dy2) > 0) {
                     if (state.shapeType === 'mask') {
                         const { points } = state;

@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,7 +22,6 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq_job_handler import RQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user
-from cvat.apps.engine.rq_job_handler import RQMeta
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (

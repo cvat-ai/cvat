@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,6 +21,7 @@ import requests
 import rq
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.signing import BadSignature, TimestampSigner
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -34,7 +35,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.engine.rq_job_handler import RQMeta
 from cvat.apps.engine.frame_provider import TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -163,6 +163,8 @@ class LambdaFunction:
         ("frame1", "end frame"),
     )
 
+    TRACKER_STATE_MAX_AGE = timedelta(hours=8)
+
     def __init__(self, gateway, data):
         # ID of the function (e.g. omz.public.yolo-v3)
         self.id = data["metadata"]["name"]
@@ -200,7 +202,7 @@ class LambdaFunction:
             for label in spec:
                 parsed_label = {
                     "name": label["name"],
-                    "type": label.get("type", "unknown"),
+                    "type": label.get("type", "any"),
                     "attributes": parse_attributes(label.get("attributes", [])),
                 }
                 if parsed_label["type"] == "skeleton":
@@ -310,7 +312,7 @@ class LambdaFunction:
             return (
                 model_type == db_type
                 or (db_type == "any" and model_type != "skeleton")
-                or (model_type == "unknown" and db_type != "skeleton")
+                or (model_type == "any" and db_type != "skeleton")
                 or any(
                     [
                         model_type in compatible and db_type in compatible
@@ -462,13 +464,27 @@ class LambdaFunction:
             if max_distance:
                 payload.update({"max_distance": max_distance})
         elif self.kind == FunctionKind.TRACKER:
-            payload.update(
-                {
-                    "image": self._get_image(db_task, mandatory_arg("frame")),
-                    "shapes": data.get("shapes", []),
-                    "states": data.get("states", []),
-                }
-            )
+            signer = TimestampSigner(salt=f"cvat-tracker-state:{self.id}")
+
+            try:
+                payload.update(
+                    {
+                        "image": self._get_image(db_task, mandatory_arg("frame")),
+                        "shapes": data.get("shapes", []),
+                        "states": [
+                            (
+                                None
+                                if state is None
+                                else json.loads(
+                                    signer.unsign(state, max_age=self.TRACKER_STATE_MAX_AGE)
+                                )
+                            )
+                            for state in data.get("states", [])
+                        ],
+                    }
+                )
+            except BadSignature as ex:
+                raise ValidationError("Invalid or expired tracker state") from ex
         else:
             raise ValidationError(
                 "`{}` lambda function has incorrect type: {}".format(self.id, self.kind),
@@ -537,6 +553,14 @@ class LambdaFunction:
                 response_filtered.append(item)
 
             response = response_filtered
+        elif self.kind == FunctionKind.TRACKER:
+            response["states"] = [
+                # We could've used .sign_object, but that unconditionally applies
+                # an extra layer of Base64 encoding, bloating each state by 33%.
+                # So we just encode the state manually instead.
+                signer.sign(json.dumps(state, separators=(",", ":")))
+                for state in response["states"]
+            ]
 
         return response
 
@@ -616,7 +640,10 @@ class LambdaQueue:
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = RQMeta.build_base(request=request, db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task))
+            meta = RQMeta.build_base(
+                request=request,
+                db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
+            )
             RQMeta.update_lambda_info(meta, function_id=lambda_func.id)
 
             rq_job = queue.create_job(

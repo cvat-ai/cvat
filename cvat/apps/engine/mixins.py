@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,12 +27,12 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from cvat.apps.engine.middleware import PatchedRequest
 
 from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.middleware import PatchedRequest
 from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer

@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023-2025 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,13 +9,13 @@ import os.path as osp
 import re
 import tempfile
 import zipfile
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Iterable, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import timedelta
 from enum import Enum
 from threading import Lock
-from typing import Any
+from typing import Any, TypeVar
 
 import attrs
 import django_rq
@@ -38,18 +38,26 @@ def make_zip_archive(src_path, dst_path):
                 archive.write(path, osp.relpath(path, src_path))
 
 
-def bulk_create(db_model, objects, flt_param):
+_ModelT = TypeVar("_ModelT", bound=models.Model)
+
+def bulk_create(
+    db_model: type[_ModelT],
+    objects: Iterable[_ModelT],
+    *,
+    flt_param: dict[str, Any] | None = None,
+    batch_size: int | None = 10000
+) -> list[_ModelT]:
     if objects:
         if flt_param:
             if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
-                return db_model.objects.bulk_create(objects)
+                return db_model.objects.bulk_create(objects, batch_size=batch_size)
             else:
                 ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
-                db_model.objects.bulk_create(objects)
+                db_model.objects.bulk_create(objects, batch_size=batch_size)
 
                 return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
         else:
-            return db_model.objects.bulk_create(objects)
+            return db_model.objects.bulk_create(objects, batch_size=batch_size)
 
     return []
 

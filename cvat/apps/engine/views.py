@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -21,10 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
-from typing import Any, Callable, Optional, Union, cast, Type
-
-from rest_framework.reverse import reverse
-from cvat.apps.engine.middleware import PatchedRequest
+from typing import Any, Callable, Optional, Type, Union, cast
 
 import django_rq
 from attr.converters import to_bool
@@ -34,7 +31,13 @@ from django.db import IntegrityError
 from django.db import models as django_models
 from django.db import transaction
 from django.db.models.query import Prefetch
-from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseGone
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseGone,
+    HttpResponseNotFound,
+)
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -56,6 +59,7 @@ from rest_framework.exceptions import APIException, NotFound, PermissionDenied, 
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
@@ -70,7 +74,6 @@ from cvat.apps.engine.cloud_provider import (
     db_storage_to_storage_instance,
     import_resource_from_cloud_storage,
 )
-from cvat.apps.engine.rq_job_handler import RQMeta
 from cvat.apps.engine.filters import (
     NonModelJsonLogicFilter,
     NonModelOrderingFilter,
@@ -85,6 +88,7 @@ from cvat.apps.engine.frame_provider import (
 )
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.media_extractors import get_mime
+from cvat.apps.engine.middleware import PatchedRequest
 from cvat.apps.engine.mixins import (
     BackupMixin,
     CsrfWorkaroundMixin,
@@ -124,7 +128,7 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import RQId, is_rq_job_owner
+from cvat.apps.engine.rq_job_handler import RQId, RQMeta, is_rq_job_owner
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -1645,6 +1649,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(
         methods=["PATCH"],
         summary="Allows updating current validation configuration",
+        description=textwrap.dedent("""
+            WARNING: this operation is not protected from race conditions.
+            It's up to the user to ensure no parallel calls to this operation happen.
+            It affects image access, including exports with images, backups, chunk downloading etc.
+        """),
         request=TaskValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(TaskValidationLayoutReadSerializer),
@@ -1775,7 +1784,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
     filter_fields = list(search_fields) + [
-        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'
+        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id',
     ]
     simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
     ordering_fields = list(filter_fields)
@@ -2186,6 +2195,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(
         methods=["PATCH"],
         summary="Allows updating current validation configuration",
+        description=textwrap.dedent("""
+            WARNING: this operation is not protected from race conditions.
+            It's up to the user to ensure no parallel calls to this operation happen.
+            It affects image access, including exports with images, backups, chunk downloading etc.
+        """),
         request=JobValidationLayoutWriteSerializer,
         responses={
             '200': OpenApiResponse(JobValidationLayoutReadSerializer),

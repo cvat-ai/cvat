@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +39,7 @@ function labelsCompatible(modelLabel: LabelInterface, jobLabel: LabelInterface):
     const compatibleTypes = [[LabelType.MASK, LabelType.POLYGON]];
     return modelLabelType === jobLabelType ||
         (jobLabelType === 'any' && modelLabelType !== LabelType.SKELETON) ||
-        (modelLabelType === 'unknown' && jobLabelType !== LabelType.SKELETON) || // legacy support
+        ((modelLabelType === 'any' || modelLabelType === 'unknown') && jobLabelType !== LabelType.SKELETON) || // legacy support
         compatibleTypes.some((compatible) => compatible.includes(jobLabelType) && compatible.includes(modelLabelType));
 }
 

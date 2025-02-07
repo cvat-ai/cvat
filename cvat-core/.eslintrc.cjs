@@ -1,5 +1,5 @@
 // Copyright (C) 2018-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,6 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.cjs',
         'webpack.config.cjs',
-        'jest.config.cjs',
         'node_modules/**',
         'dist/**',
         'tests/**/*.cjs',

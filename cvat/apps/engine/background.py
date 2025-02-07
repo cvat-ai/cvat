@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -398,7 +398,12 @@ class DatasetExportManager(ResourceExportManager):
         with get_rq_lock_by_user(queue, user_id):
             result_filename, result_ext = self.get_result_filename_and_ext()
             meta = RQMeta.build_base(request=self.request, db_obj=self.db_instance)
-            RQMeta.update_result_info(meta, result_url=result_url, result_filename=result_filename, result_file_ext=result_ext)
+            RQMeta.update_result_info(
+                meta,
+                result_url=result_url,
+                result_filename=result_filename,
+                result_file_ext=result_ext,
+            )
             queue.enqueue_call(
                 func=func,
                 args=func_args,
@@ -548,7 +553,12 @@ class BackupExportManager(ResourceExportManager):
         with get_rq_lock_by_user(queue, user_id):
             result_filename, result_ext = self.get_result_filename_and_ext()
             meta = RQMeta.build_base(request=self.request, db_obj=self.db_instance)
-            RQMeta.update_result_info(meta, result_url=result_url, result_filename=result_filename, result_file_ext=result_ext)
+            RQMeta.update_result_info(
+                meta,
+                result_url=result_url,
+                result_filename=result_filename,
+                result_file_ext=result_ext,
+            )
 
             queue.enqueue_call(
                 func=func,

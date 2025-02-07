@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -47,16 +47,18 @@ interface FinalCoordinates {
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD;
+        const [width, height] = [xbr - xtl, ybr - ytl];
+        return width >= consts.SIZE_THRESHOLD && height >= consts.SIZE_THRESHOLD;
     }
 
     if (shapeType === 'polygon') {
-        return (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD && points.length >= 3 * 2;
+        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        return (width >= consts.SIZE_THRESHOLD || height > consts.SIZE_THRESHOLD) && points.length >= 3 * 2;
     }
 
     if (shapeType === 'polyline') {
-        return (box.xbr - box.xtl >= consts.SIZE_THRESHOLD ||
-            box.ybr - box.ytl >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
+        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
+        return (width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
     }
 
     if (shapeType === 'points') {
@@ -64,18 +66,22 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
     }
 
     if (shapeType === 'ellipse') {
-        const [rx, ry] = [points[2] - points[0], points[1] - points[3]];
-        return rx * ry * Math.PI >= consts.AREA_THRESHOLD;
+        const [width, height] = [(points[2] - points[0]) * 2, (points[1] - points[3]) * 2];
+        return width >= consts.SIZE_THRESHOLD && height > consts.SIZE_THRESHOLD;
     }
 
     if (shapeType === 'cuboid') {
         return points.length === 4 * 2 || points.length === 8 * 2 ||
-            (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
+            (points.length === 2 * 2 &&
+                (points[2] - points[0]) >= consts.SIZE_THRESHOLD &&
+                (points[3] - points[1]) >= consts.SIZE_THRESHOLD
+            );
     }
 
     if (shapeType === 'skeleton') {
         const [xtl, ytl, xbr, ybr] = points;
-        return (xbr - xtl >= 1 || ybr - ytl >= 1);
+        const [width, height] = [xbr - xtl, ybr - ytl];
+        return width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD;
     }
 
     return false;

@@ -1,24 +1,23 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from datetime import datetime
 from typing import Any, Optional, Union
 from uuid import UUID
 
 import attrs
-from rq.job import Job as RQJob
-
-from .models import RequestAction, RequestSubresource, RequestTarget
+from attrs import asdict
 from django.db.models import Model
 from django.utils import timezone
+from rq.job import Job as RQJob
 
-from datetime import datetime
-
-from collections.abc import Iterable
 from cvat.apps.engine.middleware import PatchedRequest
-from attrs import asdict
+
+from .models import RequestAction, RequestSubresource, RequestTarget
 
 str_validator = attrs.validators.instance_of(str)
 int_validator = attrs.validators.instance_of(int)

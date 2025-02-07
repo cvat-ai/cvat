@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ set -e
 
 GENERATOR_VERSION="v6.0.1"
 
-VERSION="2.25.1"
+VERSION="2.28.1"
 LIB_NAME="cvat_sdk"
 LAYER1_LIB_NAME="${LIB_NAME}/api_client"
 DST_DIR="$(cd "$(dirname -- "$0")/.." && pwd)"

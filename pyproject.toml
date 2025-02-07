@@ -17,8 +17,51 @@ line-length = 100
 target-version = ['py39']
 extend-exclude = """
 # TODO: get rid of these
-^/cvat/apps/(dataset_manager|engine)/
+^/cvat/apps/(
+    dataset_manager/(
+        annotation.py
+        |apps.py
+        |bindings.py
+        |project.py
+        |serializers.py
+        |task.py
+        |tests/test_formats.py
+        |tests/test_rest_api_formats.py
+        |util.py
+        |views.py
+    )
+    |engine/(
+        admin.py
+        |apps.py
+        |backup.py
+        |cloud_provider.py
+        |filters.py
+        |handlers.py
+        |location.py
+        |log.py
+        |media_extractors.py
+        |middleware.py
+        |migrations/
+        |mime_types.py
+        |mixins.py
+        |models.py
+        |pagination.py
+        |parsers.py
+        |permissions.py
+        |plugins.py
+        |renderers.py
+        |rq_job_handler.py
+        |schema.py
+        |serializers.py
+        |signals.py
+        |task.py
+        |tests/
+        |urls.py
+        |utils.py
+        |view_utils.py
+        |views.py
+    )
+)
 | ^/cvat/settings/
 | ^/serverless/
-| ^/utils/dataset_manifest/
 """

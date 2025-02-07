@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional, Union
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-from cvat.apps.engine.rq_job_handler import RQMeta
 
 import attrs
 import av
@@ -48,7 +47,7 @@ from cvat.apps.engine.media_extractors import (
     sort,
 )
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.rq_job_handler import RQId, RQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     av_scan_paths,
@@ -225,6 +224,14 @@ def _create_segments_and_jobs(
         db_job = models.Job(segment=db_segment)
         db_job.save()
         db_job.make_dirs()
+
+        # consensus jobs use the same `db_segment` as the regular job, thus data not duplicated in backups, exports
+        for _ in range(db_task.consensus_replicas):
+            consensus_db_job = models.Job(
+                segment=db_segment, parent_job_id=db_job.id, type=models.JobType.CONSENSUS_REPLICA
+            )
+            consensus_db_job.save()
+            consensus_db_job.make_dirs()
 
     db_task.data.save()
     db_task.save()

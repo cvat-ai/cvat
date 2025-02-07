@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -53,6 +53,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
 
@@ -158,13 +159,15 @@ class _CollectionSummarySerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
         fields['url'] = HyperlinkedEndpointSerializer(self._model, filter_key=self._url_filter_key)
-        fields['count'].source = self._collection_key + '.count'
+        if not fields['count'].source:
+            fields['count'].source = self._collection_key + '.count'
         return fields
 
     def get_attribute(self, instance):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
+    count = serializers.IntegerField(source='total_jobs_count', default=0)
     completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
     validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
@@ -288,7 +291,7 @@ class SublabelSerializer(serializers.ModelSerializer):
     color = serializers.CharField(allow_blank=True, required=False,
         help_text="The hex value for the RGB color. "
         "Will be generated automatically, unless specified explicitly.")
-    type = serializers.CharField(allow_blank=True, required=False,
+    type = serializers.ChoiceField(choices=models.LabelType.choices(), required=False,
         help_text="Associated annotation type for this label")
     has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
@@ -418,7 +421,7 @@ class LabelSerializer(SublabelSerializer):
             try:
                 db_label = models.Label.create(
                     name=validated_data.get('name'),
-                    type=validated_data.get('type'),
+                    type=validated_data.get('type', models.LabelType.ANY),
                     parent=parent_label,
                     **parent_info
                 )
@@ -635,6 +638,8 @@ class JobReadSerializer(serializers.ModelSerializer):
     issues = IssuesSummarySerializer(source='*')
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    parent_job_id = serializers.ReadOnlyField(allow_null=True)
+    consensus_replicas = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = models.Job
@@ -643,13 +648,21 @@ class JobReadSerializer(serializers.ModelSerializer):
             'start_frame', 'stop_frame',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
-            'target_storage', 'source_storage', 'assignee_updated_date')
+            'target_storage', 'source_storage', 'assignee_updated_date', 'parent_job_id',
+            'consensus_replicas'
+        )
         read_only_fields = fields
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if instance.type == models.JobType.ANNOTATION:
+            data['consensus_replicas'] = instance.segment.task.consensus_replicas
+        else:
+            data['consensus_replicas'] = 0
 
         if request := self.context.get('request'):
             perm = TaskPermission.create_scope_view(request, instance.segment.task)
@@ -1029,6 +1042,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 f"Honeypots cannot exist in {models.JobType.GROUND_TRUTH} jobs"
             )
 
+        assert not hasattr(db_data, 'video')
+
         frame_step = db_data.get_frame_step()
 
         def _to_rel_frame(abs_frame: int) -> int:
@@ -1166,6 +1181,12 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
                 # Remove annotations on changed validation frames
                 self._clear_annotations_on_frames(db_segment, updated_honeypots)
+
+                # Update manifest
+                manifest_path = db_data.get_manifest_path()
+                if os.path.isfile(manifest_path):
+                    manifest = ImageManifestManager(manifest_path)
+                    manifest.reorder([db_frame.path for db_frame in db_frames.values()])
 
             # Update chunks
             job_frame_provider = JobFrameProvider(db_job)
@@ -1423,6 +1444,11 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
+        # FIXME: this operation is not atomic and it is not protected from race conditions
+        # (basically, as many others). Currently, it's up to the user to ensure no parallel
+        # calls happen. It also affects any image access, including exports with images, backups,
+        # automatic annotation, chunk downloading, etc.
+
         db_validation_layout: models.ValidationLayout | None = (
             getattr(instance.data, 'validation_layout', None)
         )
@@ -1462,6 +1488,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
         if not frame_selection_method:
             return instance
+
+        assert not hasattr(instance.data, 'video')
 
         # Populate the prefetch cache for required objects
         prefetch_related_objects([instance],
@@ -1642,6 +1670,12 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
         models.RelatedFile.images.through.objects.bulk_create(new_m2m_objects, batch_size=1000)
+
+        # Update manifest if present
+        manifest_path = db_task.data.get_manifest_path()
+        if os.path.isfile(manifest_path):
+            manifest = ImageManifestManager(manifest_path)
+            manifest.reorder([db_frame.path for db_frame in bulk_context.all_db_frames.values()])
 
     def _clear_annotations_on_frames(self, db_task: models.Task, frames: Sequence[int]):
         models.clear_annotations_on_frames_in_honeypot_task(db_task, frames=frames)
@@ -2211,6 +2245,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
         source='data.validation_mode', required=False, allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation"
     )
+    consensus_enabled = serializers.BooleanField(
+        source='get_consensus_enabled', required=False, read_only=True
+    )
 
     class Meta:
         model = models.Task
@@ -2219,13 +2256,21 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
-            'assignee_updated_date', 'validation_mode'
+            'assignee_updated_date', 'validation_mode', 'consensus_enabled',
         )
         read_only_fields = fields
         extra_kwargs = {
             'organization': { 'allow_null': True },
             'overlap': { 'allow_null': True },
         }
+
+    def get_consensus_enabled(self, instance: models.Task) -> bool:
+        return instance.consensus_replicas > 0
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['consensus_enabled'] = self.get_consensus_enabled(instance)
+        return representation
 
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
@@ -2235,18 +2280,37 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     project_id = serializers.IntegerField(required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    consensus_replicas = serializers.IntegerField(
+        required=False, default=0, min_value=0,
+        help_text=textwrap.dedent("""\
+            The number of consensus replica jobs for each annotation job.
+            Configured at task creation
+        """)
+    )
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
+        fields = (
+            'url', 'id', 'name', 'project_id', 'owner_id', 'assignee_id',
             'bug_tracker', 'overlap', 'segment_size', 'labels', 'subset',
-            'target_storage', 'source_storage'
+            'target_storage', 'source_storage', 'consensus_replicas',
         )
-        write_once_fields = ('overlap', 'segment_size')
+        write_once_fields = ('overlap', 'segment_size', 'consensus_replicas')
 
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate_consensus_replicas(self, value):
+        max_replicas = settings.MAX_CONSENSUS_REPLICAS
+        if value and (value == 1 or value < 0 or value > max_replicas):
+            raise serializers.ValidationError(
+                f"Consensus replicas must be 0 "
+                f"or a positive number more than 1 and less than {max_replicas + 1}, "
+                f"got {value}"
+            )
+
+        return value or 0
 
     # pylint: disable=no-self-use
     @transaction.atomic
@@ -2454,10 +2518,14 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
-        task_subsets = {task.subset for task in instance.tasks.all()}
-        task_subsets.discard('')
+
+        task_subsets = {task.subset for task in instance.tasks.all() if task.subset}
+        task_dimension = next(
+            (task.dimension for task in instance.tasks.all() if task.dimension),
+            None
+        )
         response['task_subsets'] = list(task_subsets)
-        response['dimension'] = getattr(instance.tasks.first(), 'dimension', None)
+        response['dimension'] = task_dimension
         return response
 
 class ProjectWriteSerializer(serializers.ModelSerializer):

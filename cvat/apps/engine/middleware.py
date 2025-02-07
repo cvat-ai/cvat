@@ -1,11 +1,12 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Protocol
 from uuid import uuid4
 
-from typing import Protocol
 from rest_framework.request import Request
+
 
 class WithUUID(Protocol):
     uuid: str

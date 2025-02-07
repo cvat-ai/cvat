@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,6 +37,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { finishDraw, finishDrawAvailable } from 'utils/drawing';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -260,7 +261,7 @@ function SingleShapeSidebar(): JSX.Element {
             appDispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeLabelID: state.label.id,
-                activeShapeType: labelShapeType(state.label),
+                activeShapeType: labelShapeType(state.labelType),
             }));
 
             canvas.draw({
@@ -295,6 +296,12 @@ function SingleShapeSidebar(): JSX.Element {
         if (typeof state.nextFrame === 'number') {
             appDispatch(changeFrameAsync(state.nextFrame));
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
+            const finishDrawing = finishDrawAvailable(activeControl);
+            if (finishDrawing) {
+                const canvas = store.getState().annotation.canvas.instance as Canvas;
+                finishDraw(canvas, activeControl);
+            }
+
             savingRef.current = true;
 
             appDispatch(finishCurrentJobAsync()).then(() => {
@@ -310,7 +317,7 @@ function SingleShapeSidebar(): JSX.Element {
                 savingRef.current = false;
             });
         }
-    }, [state.saveOnFinish, state.nextFrame, jobInstance]);
+    }, [state.saveOnFinish, state.nextFrame, jobInstance, activeControl]);
 
     useEffect(() => {
         const defaultLabelInstance = defaultLabel ? state.labels

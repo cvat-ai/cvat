@@ -43,7 +43,7 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.createAnnotationTask(taskName.firstTaskName, labelName, attrName, textDefaultValue, archiveName);
         cy.goToTaskList();

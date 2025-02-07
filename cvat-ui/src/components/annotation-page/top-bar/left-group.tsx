@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { finishDrawAvailable } from 'utils/drawing';
 import SaveAnnotationsButton from './save-annotations-button';
 
 interface Props {
@@ -78,13 +79,7 @@ function LeftGroup(props: Props): JSX.Element {
         onSwitchToolsBlockerState,
     } = props;
 
-    const includesDoneButton = [
-        ActiveControl.DRAW_POLYGON,
-        ActiveControl.DRAW_POLYLINE,
-        ActiveControl.DRAW_POINTS,
-        ActiveControl.AI_TOOLS,
-        ActiveControl.OPENCV_TOOLS,
-    ].includes(activeControl);
+    const includesDoneButton = finishDrawAvailable(activeControl);
 
     const includesToolsBlockerButton =
         [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;

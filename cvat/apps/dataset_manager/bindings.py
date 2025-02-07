@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -2123,8 +2123,8 @@ def match_dm_item(
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
-    if frame_number is None and item.has_image:
-        frame_number = instance_data.match_frame(item.id + item.image.ext, root_hint)
+    if frame_number is None and isinstance(item.media, dm.Image):
+        frame_number = instance_data.match_frame(item.id + item.media.ext, root_hint)
     if frame_number is None:
         frame_number = instance_data.match_frame(item.id, root_hint, path_has_ext=False)
     if frame_number is None:
@@ -2177,6 +2177,8 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.skeleton: ShapeType.SKELETON,
         dm.AnnotationType.mask: ShapeType.MASK
     }
+
+    sources = {'auto', 'semi-auto', 'manual', 'file', 'consensus'}
 
     track_formats = [
         'cvat',
@@ -2258,7 +2260,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \
-                        if ann.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                        if ann.attributes.get('source', '').lower() in sources else 'manual'
 
                     shape_type = shapes[ann.type]
                     if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
@@ -2272,7 +2274,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else 'manual'
                                 elements.append(instance_data.LabeledShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
@@ -2344,7 +2346,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                     for n, v in element.attributes.items()
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
-                                    if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+                                    if element.attributes.get('source', '').lower() in sources else 'manual'
 
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
@@ -2466,20 +2468,20 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
 
         root_paths = set()
         for dataset_item in subset_dataset:
-            if dataset_item.image and dataset_item.image.has_data:
-                dataset_files['media'].append(dataset_item.image.path)
-                data_root = dataset_item.image.path.rsplit(dataset_item.id, 1)
+            if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
+                dataset_files['media'].append(dataset_item.media.path)
+                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
-            elif dataset_item.point_cloud:
-                dataset_files['media'].append(dataset_item.point_cloud)
-                data_root = dataset_item.point_cloud.rsplit(dataset_item.id, 1)
+            elif isinstance(dataset_item.media, dm.PointCloud):
+                dataset_files['media'].append(dataset_item.media)
+                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
                 if len(data_root) == 2:
                     root_paths.add(data_root[0])
 
-            if isinstance(dataset_item.related_images, list):
-                dataset_files['media'] += \
-                    list(map(lambda ri: ri.path, dataset_item.related_images))
+                if isinstance(dataset_item.media.extra_images, list):
+                    dataset_files['media'] += \
+                        list(map(lambda ri: ri.path, dataset_item.media.extra_images))
 
         if len(root_paths):
             dataset_files['data_root'] = osp.commonpath(root_paths) + osp.sep
