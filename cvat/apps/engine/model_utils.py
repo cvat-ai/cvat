@@ -30,6 +30,7 @@ _ModelT = TypeVar("_ModelT", bound=models.Model)
 def bulk_create(
     db_model: type[_ModelT],
     objs: Iterable[_ModelT],
+    *,
     batch_size: int | None = ...,
     ignore_conflicts: bool = ...,
     update_conflicts: bool | None = ...,
