@@ -6103,36 +6103,6 @@ paths:
           description: Task image preview
         '404':
           description: Task image preview not found
-  /api/tasks/{id}/status:
-    get:
-      operationId: tasks_retrieve_status
-      description: 'This method is deprecated and will be removed in one of the next
-        releases. To check status of task creation, use new common API for managing
-        background operations: GET /api/requests/?action=create&task_id=<task_id>'
-      summary: Get the creation status of a task
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this task.
-        required: true
-      tags:
-      - tasks
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/RqStatus'
-          description: ''
   /api/tasks/{id}/validation_layout:
     get:
       operationId: tasks_retrieve_validation_layout
@@ -10542,33 +10512,6 @@ components:
           description: Request id
       required:
       - rq_id
-    RqStatus:
-      type: object
-      properties:
-        state:
-          $ref: '#/components/schemas/RqStatusStateEnum'
-        message:
-          type: string
-          default: ''
-        progress:
-          type: number
-          format: double
-          maximum: 100
-          default: 0.0
-      required:
-      - state
-    RqStatusStateEnum:
-      enum:
-      - Queued
-      - Started
-      - Finished
-      - Failed
-      type: string
-      description: |-
-        * `Queued` - Queued
-        * `Started` - Started
-        * `Finished` - Finished
-        * `Failed` - Failed
     SeverityEnum:
       enum:
       - warning

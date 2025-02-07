@@ -154,7 +154,6 @@ from cvat.apps.engine.serializers import (
     ProjectWriteSerializer,
     RequestSerializer,
     RqIdSerializer,
-    RqStatusSerializer,
     TaskFileSerializer,
     TaskReadSerializer,
     TaskValidationLayoutReadSerializer,
@@ -168,7 +167,6 @@ from cvat.apps.engine.utils import (
     get_rq_job_meta,
     get_rq_lock_by_user,
     import_resource_with_clean_up_after,
-    parse_exception_message,
     process_failed_job,
     sendfile,
 )
@@ -1649,53 +1647,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
-
-    ### --- DEPRECATED METHOD --- ###
-    @extend_schema(
-        summary='Get the creation status of a task',
-        responses={
-            '200': RqStatusSerializer,
-        },
-        deprecated=True,
-        description="This method is deprecated and will be removed in one of the next releases. "
-                    "To check status of task creation, use new common API "
-                    "for managing background operations: GET /api/requests/?action=create&task_id=<task_id>",
-    )
-    @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
-    def status(self, request, pk):
-        task = self.get_object() # force call of check_object_permissions()
-        response = self._get_rq_response(
-            queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=RQId(RequestAction.CREATE, RequestTarget.TASK, task.id).render()
-        )
-        serializer = RqStatusSerializer(data=response)
-
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data,  headers={'Deprecation': 'true'})
-
-    ### --- DEPRECATED METHOD--- ###
-    @staticmethod
-    def _get_rq_response(queue, job_id):
-        queue = django_rq.get_queue(queue)
-        job = queue.fetch_job(job_id)
-        response = {}
-        if job is None or job.is_finished:
-            response = { "state": "Finished" }
-        elif job.is_queued or job.is_deferred:
-            response = { "state": "Queued" }
-        elif job.is_failed:
-            # FIXME: It seems that in some cases exc_info can be None.
-            # It's not really clear how it is possible, but it can
-            # lead to an error in serializing the response
-            # https://github.com/cvat-ai/cvat/issues/5215
-            response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
-        else:
-            response = { "state": "Started" }
-            if job.meta.get('status'):
-                response['message'] = job.meta['status']
-            response['progress'] = job.meta.get('task_progress', 0.)
-
-        return response
 
     @extend_schema(methods=['GET'], summary='Get metainformation for media files in a task',
         responses={
