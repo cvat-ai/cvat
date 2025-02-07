@@ -1716,7 +1716,7 @@ class ProjectBackupAPITestCase(ApiTestBase):
                                 "username",
                                 "project_id",
                                 "data",
-                                # backup does not have this info for some reason
+                                # backup does not store overlap explicitly
                                 "overlap",
                             ),
                         )
