@@ -153,8 +153,6 @@
                 "--headless",
                 "--browser",
                 "chrome",
-                "--spec",
-                "cypress/e2e/actions_tasks2/case_101*.js"
             ],
             "outputCapture": "std",
             "console": "internalConsole"
