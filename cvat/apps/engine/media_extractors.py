@@ -176,7 +176,7 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
 
         return obj.get_size()
 
-    def _can_put_item_in_cache(self, value_size):
+    def _can_put_item_in_cache(self, value_size: int) -> bool:
         return (
             len(self._cache) + 1 <= self.max_cache_entries and
             self.used_cache_memory + value_size <= self.max_cache_memory
