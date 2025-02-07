@@ -26,7 +26,7 @@ import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
-    ModelReturnType, DimensionType, JobType, Source,
+    DimensionType, JobType, Source,
     JobStage, JobState, RQStatus, StorageLocation,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
@@ -85,7 +85,6 @@ export {
     MLModel,
     ModelKind,
     ModelProviders,
-    ModelReturnType,
     DimensionType,
     Dumper,
     JobType,
