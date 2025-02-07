@@ -453,7 +453,6 @@ class TrackManagerTest(TestCase):
         self.assertEqual(expected_shapes, interpolated_shapes)
 
     def test_keyframes_on_excluded_frames_are_not_ignored(self):
-        included_frames = [1, 3]
         end_frame = 5
 
         track = {
