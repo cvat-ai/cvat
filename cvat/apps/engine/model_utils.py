@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any, Sequence, TypeVar, Union
+from typing import Sequence, TypeVar, Union
 
 from django.conf import settings
 from django.db import models
