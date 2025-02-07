@@ -1443,11 +1443,10 @@ class TestJobDataset:
         username: str,
         jid: int,
         *,
-        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
     ) -> Optional[bytes]:
-        dataset = export_job_dataset(username, api_version, save_images=True, id=jid, **kwargs)
+        dataset = export_job_dataset(username, save_images=True, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
         else:
@@ -1457,9 +1456,9 @@ class TestJobDataset:
 
     @staticmethod
     def _test_export_annotations(
-        username: str, jid: int, *, api_version: int, local_download: bool = True, **kwargs
+        username: str, jid: int, *, local_download: bool = True, **kwargs
     ) -> Optional[bytes]:
-        dataset = export_job_dataset(username, api_version, save_images=False, id=jid, **kwargs)
+        dataset = export_job_dataset(username, save_images=False, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
         else:
@@ -1467,34 +1466,7 @@ class TestJobDataset:
 
         return dataset
 
-    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
-    @pytest.mark.parametrize(
-        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
-    )
-    def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
-        self,
-        admin_user: str,
-        jobs_with_shapes: list,
-        filter_tasks,
-        api_version: tuple[int],
-        local_download: bool,
-    ):
-        filter_ = "target_storage__location"
-        if local_download:
-            filter_ = "exclude_" + filter_
-
-        task_ids = [t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})]
-
-        job = next(j for j in jobs_with_shapes if j["task_id"] in task_ids)
-        self._test_export_dataset(
-            admin_user,
-            job["id"],
-            api_version=api_version,
-            local_download=local_download,
-        )
-
-    @pytest.mark.parametrize("api_version", (1, 2))
-    def test_non_admin_can_export_dataset(self, users, jobs_with_shapes, api_version: int):
+    def test_non_admin_can_export_dataset(self, users, jobs_with_shapes):
         job, username = next(
             (
                 (job, self.tasks[job["task_id"]]["owner"]["username"])
@@ -1504,10 +1476,9 @@ class TestJobDataset:
                 and self.tasks[job["task_id"]]["organization"] is None
             )
         )
-        self._test_export_dataset(username, job["id"], api_version=api_version)
+        self._test_export_dataset(username, job["id"])
 
-    @pytest.mark.parametrize("api_version", (1, 2))
-    def test_non_admin_can_export_annotations(self, users, jobs_with_shapes, api_version: int):
+    def test_non_admin_can_export_annotations(self, users, jobs_with_shapes):
         job, username = next(
             (
                 (job, self.tasks[job["task_id"]]["owner"]["username"])
@@ -1518,9 +1489,8 @@ class TestJobDataset:
             )
         )
 
-        self._test_export_annotations(username, job["id"], api_version=api_version)
+        self._test_export_annotations(username, job["id"])
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
@@ -1538,7 +1508,6 @@ class TestJobDataset:
         check_func,
         jobs,
         annotations,
-        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
@@ -1557,7 +1526,6 @@ class TestJobDataset:
         dataset = self._test_export_dataset(
             username,
             jid,
-            api_version=api_version,
             format=anno_format,
         )
 
@@ -1568,7 +1536,6 @@ class TestJobDataset:
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username", ["admin1"])
     @pytest.mark.parametrize("jid", [25, 26])
     @pytest.mark.parametrize(
@@ -1592,7 +1559,6 @@ class TestJobDataset:
         check_func,
         jobs,
         annotations,
-        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
@@ -1611,7 +1577,6 @@ class TestJobDataset:
         dataset = self._test_export_dataset(
             username,
             jid,
-            api_version=api_version,
             format=anno_format,
         )
 
