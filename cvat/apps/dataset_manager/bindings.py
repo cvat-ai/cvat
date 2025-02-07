@@ -508,8 +508,9 @@ class CommonData(InstanceLabelData):
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
+                deleted_frames=self.deleted_frames.keys(),
                 include_outside=False,
-                use_server_track_ids=self._use_server_track_ids
+                use_server_track_ids=self._use_server_track_ids,
             ),
             key=lambda shape: shape.get("z_order", 0)
         ):
@@ -1307,14 +1308,12 @@ class ProjectData(InstanceLabelData):
                 anno_manager.to_shapes(
                     task.data.size,
                     included_frames=task_included_frames,
+                    deleted_frames=task_data.deleted_frames.keys(),
                     include_outside=False,
-                    use_server_track_ids=self._use_server_track_ids
+                    use_server_track_ids=self._use_server_track_ids,
                 ),
                 key=lambda shape: shape.get("z_order", 0)
             ):
-                if shape['frame'] in task_data.deleted_frames:
-                    continue
-
                 assert (task.id, shape['frame']) in self._frame_info
 
                 if 'track_id' in shape:
