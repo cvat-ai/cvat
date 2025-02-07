@@ -469,11 +469,14 @@ class ShapeManager(ObjectManager):
 
 
 class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame: int, *,
-        included_frames: Optional[Sequence[int]] = None,
-        deleted_frames: Optional[Sequence[int]] = None,
+    def to_shapes(
+        self,
+        end_frame: int,
+        *,
+        included_frames: Sequence[int] | None = None,
+        deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
     ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
