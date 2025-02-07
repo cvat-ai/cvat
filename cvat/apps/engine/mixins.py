@@ -20,7 +20,6 @@ from urllib.parse import urljoin
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
-from django.http import HttpRequest
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
@@ -33,9 +32,18 @@ from cvat.apps.engine.background import BackupExportManager, DatasetExportManage
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget
+from cvat.apps.engine.models import (
+    Job,
+    Location,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
+)
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
+from cvat.apps.engine.types import PatchedRequest
 from cvat.apps.engine.utils import is_dataset_export
 
 slogger = ServerLogManager(__name__)
@@ -159,7 +167,7 @@ class TusFile:
         return tus_file
 
 class TusChunk:
-    def __init__(self, request):
+    def __init__(self, request: PatchedRequest):
         self.META = request.META
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
@@ -215,7 +223,7 @@ class UploadMixin:
                 response.__setitem__(key, value)
         return response
 
-    def _get_metadata(self, request):
+    def _get_metadata(self, request: PatchedRequest):
         metadata = {}
         if request.META.get("HTTP_UPLOAD_METADATA"):
             for kv in request.META.get("HTTP_UPLOAD_METADATA").split(","):
@@ -230,7 +238,7 @@ class UploadMixin:
                     metadata[splited_metadata[0]] = ""
         return metadata
 
-    def upload_data(self, request):
+    def upload_data(self, request: PatchedRequest):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
@@ -247,9 +255,9 @@ class UploadMixin:
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
-    def init_tus_upload(self, request):
+    def init_tus_upload(self, request: PatchedRequest):
         if request.method == 'OPTIONS':
-            return self._tus_response(status=status.HTTP_204)
+            return self._tus_response(status=status.HTTP_204_NO_CONTENT)
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
@@ -405,7 +413,7 @@ class PartialUpdateModelMixin:
     Almost the same as UpdateModelMixin, but has no public PUT / update() method.
     """
 
-    def _update(self, request, *args, **kwargs):
+    def _update(self, request: PatchedRequest, *args, **kwargs):
         # This method must not be named "update" not to be matched with the PUT method
         return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
 
@@ -420,7 +428,7 @@ class PartialUpdateModelMixin:
 class DatasetMixin:
     def export_dataset_v1(
         self,
-        request,
+        request: PatchedRequest,
         save_images: bool,
         *,
         get_data: Optional[Callable[[int], dict[str, Any]]] = None,
@@ -466,7 +474,7 @@ class DatasetMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
-    def export_dataset_v2(self, request: HttpRequest, pk: int):
+    def export_dataset_v2(self, request: PatchedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
         save_images = is_dataset_export(request)
@@ -476,7 +484,14 @@ class DatasetMixin:
         return dataset_export_manager.export()
 
     # FUTURE-TODO: migrate to new API
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_factory):
+    def import_annotations(
+        self,
+        request: PatchedRequest,
+        db_obj: Project | Task | Job,
+        import_func: Callable[..., None],
+        rq_func: Callable[..., None],
+        rq_id_factory: RQId,
+    ):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
@@ -508,7 +523,7 @@ class DatasetMixin:
 
 
 class BackupMixin:
-    def export_backup_v1(self, request: HttpRequest) -> Response:
+    def export_backup_v1(self, request: PatchedRequest) -> Response:
         db_object = self.get_object() # force to call check_object_permissions
 
         export_backup_manager = BackupExportManager(db_object, request, version=1)
@@ -520,7 +535,7 @@ class BackupMixin:
         return response
 
     # FUTURE-TODO: migrate to new API
-    def import_backup_v1(self, request: HttpRequest, import_func: Callable) -> Response:
+    def import_backup_v1(self, request: PatchedRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -554,7 +569,7 @@ class BackupMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
-    def export_backup_v2(self, request: HttpRequest, pk: int):
+    def export_backup_v2(self, request: PatchedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
 
         export_backup_manager = BackupExportManager(db_object, request, version=2)
