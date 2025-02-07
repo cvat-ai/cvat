@@ -348,6 +348,17 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobID) => {
     });
 });
 
+Cypress.Commands.add('headlessRestoreAllFrames', (jobID) => {
+    cy.intercept('PATCH', `/api/jobs/${jobID}/data/meta**`).as('patchMeta');
+    cy.window().then(async ($win) => {
+        await $win.cvat.server.request(`/api/jobs/${jobID}/data/meta`, {
+            method: 'PATCH',
+            data: { deleted_frames: [] },
+        });
+    });
+    cy.wait('@patchMeta');
+});
+
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec, extras) => {
     cy.window().then(async ($win) => {
         const task = new $win.cvat.classes.Task({
