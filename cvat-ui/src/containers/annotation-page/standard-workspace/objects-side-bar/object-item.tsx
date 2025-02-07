@@ -18,7 +18,7 @@ import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
 import {
-    ActiveControl, CombinedState, ColorBy, ShapeType,
+    ActiveControl, CombinedState, ColorBy,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -26,7 +26,7 @@ import { getColor } from 'components/annotation-page/standard-workspace/objects-
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job,
+    Label, ObjectState, Attribute, Job, ShapeType,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
