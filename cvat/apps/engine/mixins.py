@@ -446,7 +446,7 @@ class DatasetMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
-    def initialize_dataset_export(self, request: PatchedRequest, pk: int):
+    def initiate_dataset_export(self, request: PatchedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
         save_images = is_dataset_export(request)
@@ -542,7 +542,7 @@ class BackupMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
-    def initialize_backup_export(self, request: PatchedRequest, pk: int):
+    def initiate_backup_export(self, request: PatchedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
         export_manager = BackupExportManager(db_object, request)
         export_manager.initialize_export_args()
