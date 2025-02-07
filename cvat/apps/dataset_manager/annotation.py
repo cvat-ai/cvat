@@ -618,6 +618,7 @@ class TrackManager(ObjectManager):
         # Deleted frames affect existing shapes in tracks.
         # Included frames filter the resulting annotations after interpolation
         # to produce the requested track frames.
+        deleted_frames = deleted_frames or []
 
         def copy_shape(source, frame, points=None, rotation=None):
             copied = source.copy()
@@ -957,7 +958,7 @@ class TrackManager(ObjectManager):
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
-            if deleted_frames is not None and curr_frame in deleted_frames:
+            if curr_frame in deleted_frames:
                 continue
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
@@ -1009,7 +1010,7 @@ class TrackManager(ObjectManager):
         shapes = [
             shape for shape in shapes
 
-            if deleted_frames is None or shape["frame"] not in deleted_frames
+            if shape["frame"] not in deleted_frames
 
             # After interpolation there can be a finishing frame
             # outside of the task boundaries. Filter it out to avoid errors.
