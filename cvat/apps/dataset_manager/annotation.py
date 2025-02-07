@@ -611,7 +611,7 @@ class TrackManager(ObjectManager):
         deleted_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
     ):
-        # If a task or contains deleted frames that contain track keyframes,
+        # If a task or job contains deleted frames that contain track keyframes,
         # these keyframes should be excluded from the interpolation.
         # In jobs having specific frames included (e.g. GT jobs),
         # deleted frames should not be confused with included frames during track interpolation.
