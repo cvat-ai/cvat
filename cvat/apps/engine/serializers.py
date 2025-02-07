@@ -10,7 +10,6 @@ import re
 import shutil
 import string
 import textwrap
-import warnings
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from contextlib import closing
