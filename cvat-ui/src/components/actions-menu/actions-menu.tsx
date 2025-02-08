@@ -54,7 +54,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
 
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.taskActions.items, props);
 
-    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.mergingConsensus);
+    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
     const isTaskInMergingConsensus = mergingConsensus[`task_${taskID}`];
 
     const onClickMenuWrapper = useCallback(

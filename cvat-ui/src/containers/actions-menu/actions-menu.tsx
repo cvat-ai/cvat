@@ -17,8 +17,8 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
-import { mergeTaskConsensusJobsAsync } from 'actions/consensus-actions';
-import { RQStatus } from 'cvat-core-wrapper';
+import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
+import { RQStatus, Task } from 'cvat-core-wrapper';
 
 interface OwnProps {
     taskInstance: any;
@@ -80,8 +80,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         openMoveTaskToProjectWindow: (taskId: number): void => {
             dispatch(switchMoveTaskModalVisible(true, taskId));
         },
-        mergeConsensusJobs: (taskInstance: any): void => {
-            dispatch(mergeTaskConsensusJobsAsync(taskInstance));
+        mergeConsensusJobs: (taskInstance: Task): void => {
+            dispatch(mergeConsensusJobsAsync(taskInstance));
         },
     };
 }

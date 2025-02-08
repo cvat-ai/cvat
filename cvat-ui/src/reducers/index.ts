@@ -176,9 +176,11 @@ export interface ConsensusState {
     consensusSettings: ConsensusSettings | null;
     taskInstance: Task | null;
     jobInstance: Job | null;
-    mergingConsensus: {
-        [taskId: string]: boolean;
-    };
+    actions: {
+        merging: {
+            [instanceKey: string]: boolean;
+        };
+    }
 }
 
 export interface FormatsState {

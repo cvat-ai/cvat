@@ -32,14 +32,14 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, SerializedAsset,
-    ConsensusSettingsFilter,
+    QualitySettingsFilter, SerializedAsset, ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
 import AnalyticsReport from './analytics-report';
+import ConsensusSettings from './consensus-settings';
 import {
     callAction, listActions, registerAction, runAction,
 } from './annotations-actions/annotations-actions';
@@ -47,7 +47,6 @@ import { convertDescriptions, getServerAPISchema } from './server-schema';
 import { JobType } from './enums';
 import { PaginatedResource } from './core-types';
 import CVATCore from '.';
-import ConsensusSettings from './consensus-settings';
 
 function implementationMixin(func: Function, implementation: Function): void {
     Object.assign(func, { implementation });

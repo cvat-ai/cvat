@@ -12,12 +12,13 @@ import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
 import { Job, JobType } from 'cvat-core-wrapper';
 import Menu, { MenuInfo } from 'components/dropdown-menu';
-import { mergeTaskSpecificConsensusJobsAsync } from 'actions/consensus-actions';
+import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
 import { CombinedState } from 'reducers';
+import { makeKey } from 'reducers/consensus-reducer';
 
 interface Props {
     job: Job;
-    consensusJobsPresent: boolean;
+    consensusJobsPresent?: boolean;
 }
 
 export enum Actions {
@@ -59,7 +60,7 @@ function JobActionsMenu(props: Props): JSX.Element {
                     content: 'Existing annotations in the parent job will be updated. Continue?',
                     className: 'cvat-modal-confirm-consensus-merge-job',
                     onOk: () => {
-                        dispatch(mergeTaskSpecificConsensusJobsAsync(job));
+                        dispatch(mergeConsensusJobsAsync(job));
                     },
                     okButtonProps: {
                         type: 'primary',
@@ -86,8 +87,8 @@ function JobActionsMenu(props: Props): JSX.Element {
         [job],
     );
 
-    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.mergingConsensus);
-    const isTaskInMergingConsensus = mergingConsensus[`job_${job.id}`];
+    const mergingConsensus = useSelector((state: CombinedState) => state.consensus.actions.merging);
+    const isInMergingConsensus = mergingConsensus[makeKey(job)];
 
     return (
         <Menu
@@ -103,8 +104,8 @@ function JobActionsMenu(props: Props): JSX.Element {
             {consensusJobsPresent && job.parentJobId === null && (
                 <Menu.Item
                     key={Actions.MERGE_SPECIFIC_CONSENSUS_JOBS}
-                    disabled={isTaskInMergingConsensus}
-                    icon={isTaskInMergingConsensus && <LoadingOutlined />}
+                    disabled={isInMergingConsensus}
+                    icon={isInMergingConsensus && <LoadingOutlined />}
                 >
                     Merge consensus job
                 </Menu.Item>
@@ -119,5 +120,9 @@ function JobActionsMenu(props: Props): JSX.Element {
         </Menu>
     );
 }
+
+JobActionsMenu.defaultProps = {
+    consensusJobsPresent: false,
+};
 
 export default React.memo(JobActionsMenu);

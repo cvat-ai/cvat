@@ -1,8 +1,10 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { Project, ProjectOrTaskOrJob } from 'cvat-core-wrapper';
 import { ConsensusActions, ConsensusActionTypes } from 'actions/consensus-actions';
+import { getInstanceType } from 'actions/common';
 import { ConsensusState } from '.';
 
 const defaultState: ConsensusState = {
@@ -10,91 +12,63 @@ const defaultState: ConsensusState = {
     jobInstance: null,
     fetching: true,
     consensusSettings: null,
-    mergingConsensus: {},
+    actions: {
+        merging: {},
+    },
 };
 
-function makeKey(id: number, instance: string): string {
-    return `${instance}_${id}`;
+export function makeKey(instance: Exclude<ProjectOrTaskOrJob, Project>): string {
+    return `${getInstanceType(instance)}_${instance.id}`;
 }
 
 export default (state: ConsensusState = defaultState, action: ConsensusActions): ConsensusState => {
     switch (action.type) {
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS: {
-            const { taskID } = action.payload;
-            const { mergingConsensus } = state;
+            const { instance } = action.payload;
+            const { merging } = state.actions;
 
-            mergingConsensus[makeKey(taskID, 'task')] = true;
+            merging[makeKey(instance)] = true;
 
             return {
                 ...state,
-                mergingConsensus: {
-                    ...mergingConsensus,
+                actions: {
+                    ...state.actions,
+                    merging: {
+                        ...merging,
+                    },
                 },
             };
         }
 
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
-            const { taskID } = action.payload;
-            const { mergingConsensus } = state;
+            const { instance } = action.payload;
+            const { merging } = state.actions;
 
-            mergingConsensus[makeKey(taskID, 'task')] = false;
+            merging[makeKey(instance)] = false;
 
             return {
                 ...state,
-                mergingConsensus: {
-                    ...mergingConsensus,
+                actions: {
+                    ...state.actions,
+                    merging: {
+                        ...merging,
+                    },
                 },
             };
         }
         case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
-            const { taskID } = action.payload;
-            const { mergingConsensus } = state;
+            const { instance } = action.payload;
+            const { merging } = state.actions;
 
-            delete mergingConsensus[makeKey(taskID, 'task')];
-
-            return {
-                ...state,
-                mergingConsensus: {
-                    ...mergingConsensus,
-                },
-            };
-        }
-        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS: {
-            const { jobID } = action.payload;
-            const { mergingConsensus } = state;
-
-            mergingConsensus[makeKey(jobID, 'job')] = true;
+            delete merging[makeKey(instance)];
 
             return {
                 ...state,
-                mergingConsensus: {
-                    ...mergingConsensus,
-                },
-            };
-        }
-        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS: {
-            const { jobID } = action.payload;
-            const { mergingConsensus } = state;
-
-            mergingConsensus[makeKey(jobID, 'job')] = false;
-
-            return {
-                ...state,
-                mergingConsensus: {
-                    ...mergingConsensus,
-                },
-            };
-        }
-        case ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED: {
-            const { jobID } = action.payload;
-            const { mergingConsensus } = state;
-
-            delete mergingConsensus[makeKey(jobID, 'job')];
-
-            return {
-                ...state,
-                mergingConsensus: {
-                    ...mergingConsensus,
+                actions: {
+                    ...state.actions,
+                    merging: {
+                        ...merging,
+                    },
                 },
             };
         }

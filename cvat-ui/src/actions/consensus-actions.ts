@@ -1,66 +1,40 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { Job, Task } from 'cvat-core-wrapper';
+import { Project, ProjectOrTaskOrJob } from 'cvat-core-wrapper';
 
 export enum ConsensusActionTypes {
     MERGE_CONSENSUS_JOBS = 'MERGE_CONSENSUS_JOBS',
     MERGE_CONSENSUS_JOBS_SUCCESS = 'MERGE_CONSENSUS_JOBS_SUCCESS',
     MERGE_CONSENSUS_JOBS_FAILED = 'MERGE_CONSENSUS_JOBS_FAILED',
-    MERGE_SPECIFIC_CONSENSUS_JOBS = 'MERGE_SPECIFIC_CONSENSUS_JOBS',
-    MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS = 'MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS',
-    MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED = 'MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED',
 }
 
 export const consensusActions = {
-    mergeTaskConsensusJobs: (taskID: number) => (
-        createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS, { taskID })
+    mergeConsensusJobs: (instance: Exclude<ProjectOrTaskOrJob, Project>) => (
+        createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS, { instance })
     ),
-    mergeTaskConsensusJobsSuccess: (taskID: number) => (
-        createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS, { taskID })
+    mergeConsensusJobsSuccess: (instance: Exclude<ProjectOrTaskOrJob, Project>) => (
+        createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS, { instance })
     ),
-    mergeTaskConsensusJobsFailed: (taskID: number, error: any) => (
-        createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED, { taskID, error })
-    ),
-    mergeSpecificTaskConsensusJobs: (jobID: number) => (
-        createAction(ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS, { jobID })
-    ),
-    mergeSpecificTaskConsensusJobsSuccess: (jobID: number, taskID: number) => (
-        createAction(ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_SUCCESS, { jobID, taskID })
-    ),
-    mergeSpecificTaskConsensusJobsFailed: (jobID: number, taskID: number, error: any) => (
-        createAction(ConsensusActionTypes.MERGE_SPECIFIC_CONSENSUS_JOBS_FAILED, { jobID, taskID, error })
+    mergeConsensusJobsFailed: (instance: Exclude<ProjectOrTaskOrJob, Project>, error: any) => (
+        createAction(ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED, { instance, error })
     ),
 };
 
-export const mergeTaskConsensusJobsAsync = (
-    taskInstance: Task,
+export const mergeConsensusJobsAsync = (
+    instance: Exclude<ProjectOrTaskOrJob, Project>,
 ): ThunkAction => async (dispatch) => {
     try {
-        dispatch(consensusActions.mergeTaskConsensusJobs(taskInstance.id));
-        await taskInstance.mergeConsensusJobs();
+        dispatch(consensusActions.mergeConsensusJobs(instance));
+        await instance.mergeConsensusJobs();
     } catch (error) {
-        dispatch(consensusActions.mergeTaskConsensusJobsFailed(taskInstance.id, error));
+        dispatch(consensusActions.mergeConsensusJobsFailed(instance, error));
         return;
     }
 
-    dispatch(consensusActions.mergeTaskConsensusJobsSuccess(taskInstance.id));
-};
-
-export const mergeTaskSpecificConsensusJobsAsync = (
-    jobInstance: Job,
-): ThunkAction => async (dispatch) => {
-    try {
-        dispatch(consensusActions.mergeSpecificTaskConsensusJobs(jobInstance.id));
-        await jobInstance.mergeConsensusJobs();
-    } catch (error) {
-        dispatch(consensusActions.mergeSpecificTaskConsensusJobsFailed(jobInstance.id, jobInstance.taskId, error));
-        return;
-    }
-
-    dispatch(consensusActions.mergeSpecificTaskConsensusJobsSuccess(jobInstance.id, jobInstance.taskId));
+    dispatch(consensusActions.mergeConsensusJobsSuccess(instance));
 };
 
 export type ConsensusActions = ActionUnion<typeof consensusActions>;

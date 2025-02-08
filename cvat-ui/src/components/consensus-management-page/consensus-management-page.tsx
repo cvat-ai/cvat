@@ -20,6 +20,7 @@ import Result from 'antd/lib/result';
 
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import { ActionUnion, createAction } from 'utils/redux';
+import { fetchTask } from 'utils/fetch';
 import ConsensusSettingsTab from './consensus-settings-tab';
 
 const core = getCore();
@@ -125,12 +126,7 @@ function ConsensusManagementPage(): JSX.Element {
 
     const initializeData = async (id: number): Promise<void> => {
         try {
-            let taskInstance = null;
-            try {
-                [taskInstance] = await core.tasks.get({ id });
-            } catch (error: unknown) {
-                throw new Error('The task was not found on the server');
-            }
+            const taskInstance = await fetchTask(id);
 
             setInstance(taskInstance);
             try {
