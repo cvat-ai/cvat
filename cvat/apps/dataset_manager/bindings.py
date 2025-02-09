@@ -2448,7 +2448,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
         job = rq.get_current_job()
         job_meta = ImportRQMeta.from_job(job)
         job_meta.status = 'Task from dataset is being created...'
-        job_meta.progress = (subset_id + job_meta.task_progress or 0.) / len(dataset.subsets().keys())
+        job_meta.progress = (subset_id + (job_meta.task_progress or 0.)) / len(dataset.subsets().keys())
         job_meta.save()
 
         task_fields = {
