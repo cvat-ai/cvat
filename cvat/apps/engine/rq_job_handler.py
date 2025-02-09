@@ -41,6 +41,7 @@ class UserInfo:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
+
 @attrs.frozen
 class RequestInfo:
     uuid: str = attrs.field(validator=[str_validator])
@@ -50,6 +51,7 @@ class RequestInfo:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
+
 @attrs.frozen
 class ExportResultInfo:
     url: str | None = attrs.field(validator=[optional_str_validator])
@@ -57,7 +59,6 @@ class ExportResultInfo:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-
 
 
 @attrs.define
@@ -81,16 +82,13 @@ class AbstractRQMeta(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def get_resettable_fields() -> list[RQJobMetaField]:
+    def _get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
 
-
     def reset_meta_on_retry(self) -> dict[RQJobMetaField, Any]:
-        resettable_fields = self.get_resettable_fields()
+        resettable_fields = self._get_resettable_fields()
 
-        return {
-            k: v for k, v in self._job.meta.items() if k not in resettable_fields
-        }
+        return {k: v for k, v in self._job.meta.items() if k not in resettable_fields}
 
 
 @attrs.define(kw_only=True)
@@ -101,7 +99,7 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
     exc_args: Iterable | None = attrs.field(default=None)
 
     @staticmethod
-    def get_resettable_fields() -> list[RQJobMetaField]:
+    def _get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
         return [
             RQJobMetaField.FORMATTED_EXCEPTION,
@@ -109,13 +107,12 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
             RQJobMetaField.EXCEPTION_ARGS,
         ]
 
+
 @attrs.define(kw_only=True)
 class BaseRQMeta(RQMetaWithFailureInfo):
     # immutable and required fields
     user: UserInfo = attrs.field(
-        validator=[
-            attrs.validators.instance_of(UserInfo)
-        ],
+        validator=[attrs.validators.instance_of(UserInfo)],
         converter=lambda d: UserInfo(**d),
         on_setattr=attrs.setters.frozen,
     )
@@ -126,19 +123,29 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     )
 
     # immutable and optional fields
-    org_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
-    org_slug: str | None = attrs.field(validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen)
-    project_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
-    task_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
-    job_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
+    org_id: int | None = attrs.field(
+        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    )
+    org_slug: str | None = attrs.field(
+        validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen
+    )
+    project_id: int | None = attrs.field(
+        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    )
+    task_id: int | None = attrs.field(
+        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    )
+    job_id: int | None = attrs.field(
+        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    )
 
     # import && lambda
     progress: float | None = attrs.field(validator=[optional_float_validator], default=None)
 
     @staticmethod
-    def get_resettable_fields() -> list[RQJobMetaField]:
+    def _get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
-        return RQMetaWithFailureInfo.get_resettable_fields() + [RQJobMetaField.PROGRESS]
+        return RQMetaWithFailureInfo._get_resettable_fields() + [RQJobMetaField.PROGRESS]
 
     @classmethod
     def build(
@@ -176,14 +183,15 @@ class BaseRQMeta(RQMetaWithFailureInfo):
             job_id=jid,
         ).to_dict()
 
+
 @attrs.define(kw_only=True)
 class ExportRQMeta(BaseRQMeta):
-    result: ExportResultInfo= attrs.field(converter=lambda d: ExportResultInfo(**d))
+    result: ExportResultInfo = attrs.field(converter=lambda d: ExportResultInfo(**d))
 
     @staticmethod
-    def get_resettable_fields() -> list[RQJobMetaField]:
+    def _get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
-        base_fields = BaseRQMeta.get_resettable_fields()
+        base_fields = BaseRQMeta._get_resettable_fields()
         return base_fields + [RQJobMetaField.RESULT]
 
     @classmethod
@@ -205,25 +213,30 @@ class ExportRQMeta(BaseRQMeta):
             ).to_dict(),
         ).to_dict()
 
+
 @attrs.define(kw_only=True)
 class ImportRQMeta(BaseRQMeta):
     # immutable && optional fields
-    tmp_file: str | None = attrs.field(validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen)
+    tmp_file: str | None = attrs.field(
+        validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen
+    )
 
     # mutable fields
     # TODO: move into base?
-    status: str = attrs.field(validator=[optional_str_validator], default="", on_setattr=_update_value)
-    task_progress: float | None = attrs.field(validator=[optional_float_validator],default=None)
+    status: str = attrs.field(
+        validator=[optional_str_validator], default="", on_setattr=_update_value
+    )
+    task_progress: float | None = attrs.field(validator=[optional_float_validator], default=None)
 
     @staticmethod
-    def get_resettable_fields() -> list[RQJobMetaField]:
+    def _get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
-        base_fields = BaseRQMeta.get_resettable_fields()
+        base_fields = BaseRQMeta._get_resettable_fields()
 
         return base_fields + [
             RQJobMetaField.PROGRESS,
             RQJobMetaField.TASK_PROGRESS,
-            RQJobMetaField.STATUS
+            RQJobMetaField.STATUS,
         ]
 
     @classmethod
@@ -239,14 +252,21 @@ class ImportRQMeta(BaseRQMeta):
         return cls(
             **base_meta,
             tmp_file=tmp_file,
-
         ).to_dict()
+
 
 @attrs.define(kw_only=True)
 class LambdaRQMeta(BaseRQMeta):
     # immutable fields
-    function_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
-    lambda_: bool | None = attrs.field(validator=[optional_bool_validator], init=False, default=True, on_setattr=attrs.setters.frozen)
+    function_id: int | None = attrs.field(
+        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    )
+    lambda_: bool | None = attrs.field(
+        validator=[optional_bool_validator],
+        init=False,
+        default=True,
+        on_setattr=attrs.setters.frozen,
+    )
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -270,55 +290,51 @@ class LambdaRQMeta(BaseRQMeta):
         ).to_dict()
 
 
-# TODO: check that RQJobMetaField is used only in this module
 class RQJobMetaField:
     # common fields
     FORMATTED_EXCEPTION = "formatted_exception"
-    REQUEST = 'request'
-    USER = 'user'
-    PROJECT_ID = 'project_id'
-    TASK_ID = 'task_id'
-    JOB_ID = 'job_id'
-    LAMBDA = 'lambda'
-    ORG_ID = 'org_id'
-    ORG_SLUG = 'org_slug'
-    STATUS = 'status'
-    PROGRESS = 'progress'
-    TASK_PROGRESS = 'task_progress'
+    REQUEST = "request"
+    USER = "user"
+    PROJECT_ID = "project_id"
+    TASK_ID = "task_id"
+    JOB_ID = "job_id"
+    LAMBDA = "lambda"
+    ORG_ID = "org_id"
+    ORG_SLUG = "org_slug"
+    STATUS = "status"
+    PROGRESS = "progress"
+    TASK_PROGRESS = "task_progress"
     # export specific fields
-    RESULT_URL = 'result_url'
-    RESULT = 'result'
-    FUNCTION_ID = 'function_id'
-    EXCEPTION_TYPE = 'exc_type'
-    EXCEPTION_ARGS = 'exc_args'
+    RESULT_URL = "result_url"
+    RESULT = "result"
+    FUNCTION_ID = "function_id"
+    EXCEPTION_TYPE = "exc_type"
+    EXCEPTION_ARGS = "exc_args"
+
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
-    return rq_job.meta.get(RQJobMetaField.USER, {}).get('id') == user_id
+    return rq_job.meta.get(RQJobMetaField.USER, {}).get("id") == user_id
+
 
 @attrs.frozen()
 class RQId:
-    action: RequestAction = attrs.field(
-        validator=attrs.validators.instance_of(RequestAction)
-    )
-    target: RequestTarget = attrs.field(
-        validator=attrs.validators.instance_of(RequestTarget)
-    )
-    identifier: Union[int, UUID] = attrs.field(
-        validator=attrs.validators.instance_of((int, UUID))
-    )
+    action: RequestAction = attrs.field(validator=attrs.validators.instance_of(RequestAction))
+    target: RequestTarget = attrs.field(validator=attrs.validators.instance_of(RequestTarget))
+    identifier: Union[int, UUID] = attrs.field(validator=attrs.validators.instance_of((int, UUID)))
     subresource: Optional[RequestSubresource] = attrs.field(
-        validator=attrs.validators.optional(
-            attrs.validators.instance_of(RequestSubresource)
-        ),
-        kw_only=True, default=None,
+        validator=attrs.validators.optional(attrs.validators.instance_of(RequestSubresource)),
+        kw_only=True,
+        default=None,
     )
     user_id: Optional[int] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(int)),
-        kw_only=True, default=None,
+        kw_only=True,
+        default=None,
     )
     format: Optional[str] = attrs.field(
         validator=attrs.validators.optional(attrs.validators.instance_of(str)),
-        kw_only=True, default=None,
+        kw_only=True,
+        default=None,
     )
 
     _OPTIONAL_FIELD_REQUIREMENTS = {
@@ -353,9 +369,7 @@ class RQId:
             return f"{common_prefix}-{self.subresource}"
         elif RequestAction.EXPORT == self.action:
             if self.format is None:
-                return (
-                    f"{common_prefix}-{self.subresource}-by-{self.user_id}"
-                )
+                return f"{common_prefix}-{self.subresource}-by-{self.user_id}"
 
             format_to_be_used_in_urls = self.format.replace(" ", "_").replace(".", "@")
             return f"{common_prefix}-{self.subresource}-in-{format_to_be_used_in_urls}-format-by-{self.user_id}"
@@ -382,7 +396,7 @@ class RQId:
             elif RequestAction.IMPORT == action:
                 identifier, subresource_str = unparsed.rsplit("-", maxsplit=1)
                 subresource = RequestSubresource(subresource_str)
-            else: # action == export
+            else:  # action == export
                 identifier, subresource_str, unparsed = unparsed.split("-", maxsplit=2)
                 subresource = RequestSubresource(subresource_str)
 
