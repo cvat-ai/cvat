@@ -128,7 +128,12 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import RQId, RQMeta, is_rq_job_owner
+from cvat.apps.engine.rq_job_handler import (
+    ImportRQMeta,
+    RQId,
+    RQMetaWithFailureInfo,
+    is_rq_job_owner,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -172,7 +177,6 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     import_resource_with_clean_up_after,
     process_failed_job,
@@ -3113,7 +3117,7 @@ class AnnotationGuidesViewSet(
         target.touch()
 
 def rq_exception_handler(rq_job: RQJob, exc_type: Type[Exception], exc_value, tb):
-    rq_job_meta = RQMeta.from_job(rq_job)
+    rq_job_meta = RQMetaWithFailureInfo.from_job(rq_job)
     rq_job_meta.formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
@@ -3203,16 +3207,13 @@ def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ImportRQMeta.build(request=request, db_obj=db_obj, tmp_file=filename)
             rq_job = queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                # TODO:
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
+                meta=meta,
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
@@ -3308,15 +3309,12 @@ def _import_project_dataset(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ImportRQMeta.build(request=request, db_obj=db_obj, tmp_file=filename)
             rq_job = queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                # TODO:
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()

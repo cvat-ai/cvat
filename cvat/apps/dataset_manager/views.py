@@ -20,7 +20,7 @@ import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
-from cvat.apps.engine.rq_job_handler import RQMeta
+from cvat.apps.engine.rq_job_handler import ExportRQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
@@ -88,7 +88,7 @@ def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
             settings.CVAT_QUEUES.EXPORT_DATA.value
         )
 
-        rq_job_meta = RQMeta.from_job(current_rq_job)
+        rq_job_meta = ExportRQMeta.from_job(current_rq_job)
         user_id = rq_job_meta.user.id or -1
 
         with get_rq_lock_by_user(settings.CVAT_QUEUES.EXPORT_DATA.value, user_id):

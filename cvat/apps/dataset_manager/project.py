@@ -17,6 +17,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.rq_job_handler import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 
@@ -196,8 +197,7 @@ class ProjectAnnotationAndData:
 @transaction.atomic
 def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_poly):
     rq_job = rq.get_current_job()
-    from cvat.apps.engine.rq_job_handler import RQMeta
-    rq_job_meta = RQMeta.from_job(rq_job)
+    rq_job_meta = ImportRQMeta.from_job(rq_job)
     rq_job_meta.status = 'Dataset import has been started...'
     rq_job_meta.progress = 0.
     rq_job_meta.save()

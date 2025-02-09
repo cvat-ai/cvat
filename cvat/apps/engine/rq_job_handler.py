@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, Optional, Union
@@ -27,9 +28,8 @@ optional_bool_validator = attrs.validators.optional(attrs.validators.instance_of
 optional_float_validator = attrs.validators.optional(attrs.validators.instance_of(float))
 
 
-def _update_value(self: RQMeta, attribute: attrs.Attribute, value: Any):
-    setattr(self, attribute.name, value)
-    self.__job.meta[attribute.name] = value
+def _update_value(self: AbstractRQMeta, attribute: attrs.Attribute, value: Any):
+    self._job.meta[attribute.name] = value
 
 
 @attrs.frozen
@@ -47,16 +47,70 @@ class RequestInfo:
     # TODO: it is not timestamp
     timestamp: datetime = attrs.field(validator=[attrs.validators.instance_of(datetime)])
 
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
 @attrs.frozen
 class ExportResultInfo:
-    url: str = attrs.field(validator=[str_validator])
+    url: str | None = attrs.field(validator=[optional_str_validator])
     filename: str = attrs.field(validator=[str_validator])
-    ext: str | None = attrs.field(validator=[optional_str_validator])
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 
 @attrs.define
-class RQMeta:
-    __job: RQJob = attrs.field(init=False)
+class AbstractRQMeta(metaclass=ABCMeta):
+    _job: RQJob | None = attrs.field(init=False, default=None)
 
+    def to_dict(self) -> dict:
+        return asdict(self, filter=lambda k, _: k.name != "_job")
+
+    @classmethod
+    def from_job(cls, rq_job: RQJob):
+        keys_to_keep = [k.name for k in attrs.fields(cls)]
+        meta = cls(**{k: v for k, v in rq_job.meta.items() if k in keys_to_keep})
+        meta._job = rq_job
+
+        return meta
+
+    def save(self) -> None:
+        assert isinstance(self._job, RQJob), "To save meta, rq job must be set"
+        self._job.save_meta()
+
+    @staticmethod
+    @abstractmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+
+
+    def reset_meta_on_retry(self) -> dict[RQJobMetaField, Any]:
+        resettable_fields = self.get_resettable_fields()
+
+        return {
+            k: v for k, v in self._job.meta.items() if k not in resettable_fields
+        }
+
+
+@attrs.define(kw_only=True)
+class RQMetaWithFailureInfo(AbstractRQMeta):
+    # immutable and optional fields
+    formatted_exception: str | None = attrs.field(validator=[optional_str_validator], default=None)
+    exc_type: str | None = attrs.field(validator=[optional_str_validator], default=None)
+    exc_args: Iterable | None = attrs.field(default=None)
+
+    @staticmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+        return [
+            RQJobMetaField.FORMATTED_EXCEPTION,
+            RQJobMetaField.EXCEPTION_TYPE,
+            RQJobMetaField.EXCEPTION_ARGS,
+        ]
+
+@attrs.define(kw_only=True)
+class BaseRQMeta(RQMetaWithFailureInfo):
     # immutable and required fields
     user: UserInfo = attrs.field(
         validator=[
@@ -77,69 +131,21 @@ class RQMeta:
     project_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
     task_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
     job_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
-    function_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
-    lambda_: bool | None = attrs.field(validator=[optional_bool_validator], default=None, on_setattr=attrs.setters.frozen)
 
-    result: ExportResultInfo | None = attrs.field(default=None, converter=lambda d: ExportResultInfo(**d) if d else None)
-
-    # mutable fields
-    status: str = attrs.field(validator=[optional_str_validator], default="", on_setattr=_update_value)
+    # import && lambda
     progress: float | None = attrs.field(validator=[optional_float_validator], default=None)
-    task_progress: float | None = attrs.field(validator=[optional_float_validator],default=None)
-
-    formatted_exception: str | None = attrs.field(validator=[optional_str_validator], default=None)
-    exc_type: str | None = attrs.field(validator=[optional_str_validator], default=None)
-    exc_args: Iterable | None = attrs.field(default=None)
-
-    def get_export_result_url(self) -> str | None:
-        # keep backward compatibility
-        return self.result.url or self.__job.meta.get(RQJobMetaField.RESULT_URL)
-
-    # todo:
-    def get_export_filename(self):
-        pass # and ext
-
-    @classmethod
-    def from_job(cls, rq_job: RQJob) -> "RQMeta":
-        meta = cls(**rq_job.meta)
-        meta.__job = rq_job
-
-        return meta
-
-    def save(self) -> None:
-        assert hasattr(self, "__job") and isinstance(self.__job, RQJob)
-        self.__job.save_meta()
 
     @staticmethod
     def get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
-        return [
-            RQJobMetaField.FORMATTED_EXCEPTION,
-            RQJobMetaField.PROGRESS,
-            RQJobMetaField.TASK_PROGRESS,
-            RQJobMetaField.STATUS
-        ]
-
-    def reset_meta_on_retry(self) -> dict[RQJobMetaField, Any]:
-        resettable_fields = self.get_resettable_fields()
-
-        return {
-            k: v for k, v in self.__job.meta.items() if k not in resettable_fields
-        }
-
-    def to_dict(self) -> dict:
-        d = asdict(self)
-        if v := d.pop(RQJobMetaField.LAMBDA + "_", None) is not None:
-            d[RQJobMetaField.LAMBDA] = v
-
-        return d
+        return RQMetaWithFailureInfo.get_resettable_fields() + [RQJobMetaField.PROGRESS]
 
     @classmethod
-    def build_base(
+    def build(
         cls,
         *,
         request: PatchedRequest,
-        db_obj: Model,
+        db_obj: Model | None,
     ):
         # to prevent circular import
         from cvat.apps.events.handlers import job_id, organization_slug, task_id
@@ -153,41 +159,116 @@ class RQMeta:
 
         user = request.user
 
-        meta = cls(
-            user=asdict(UserInfo(
+        return cls(
+            user=UserInfo(
                 id=getattr(user, "id", None),
                 username=getattr(user, "username", None),
                 email=getattr(user, "email", None),
-            )),
-            request=asdict(RequestInfo(
+            ).to_dict(),
+            request=RequestInfo(
                 uuid=request.uuid,
                 timestamp=timezone.localtime(),
-            )),
+            ).to_dict(),
             org_id=oid,
             org_slug=oslug,
             project_id=pid,
             task_id=tid,
             job_id=jid,
-        )
+        ).to_dict()
 
-        # TODO: do not include unset fields
-        return meta.to_dict()
+@attrs.define(kw_only=True)
+class ExportRQMeta(BaseRQMeta):
+    result: ExportResultInfo= attrs.field(converter=lambda d: ExportResultInfo(**d))
+
+    @staticmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+        base_fields = BaseRQMeta.get_resettable_fields()
+        return base_fields + [RQJobMetaField.RESULT]
 
     @classmethod
-    def update_result_info(
+    def build(
         cls,
-        original_meta: dict[RQJobMetaField, Any],
         *,
-        result_url: str, result_filename: str, result_file_ext: str | None = None
-    ) -> None:
-        original_meta[RQJobMetaField.RESULT] = asdict(
-            ExportResultInfo(url=result_url, filename=result_filename, ext=result_file_ext)
-        )
+        request: PatchedRequest,
+        db_obj: Model | None,
+        result_url: str | None,
+        result_filename: str,
+    ):
+        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+
+        return cls(
+            **base_meta,
+            result=ExportResultInfo(
+                filename=result_filename,
+                url=result_url,
+            ).to_dict(),
+        ).to_dict()
+
+@attrs.define(kw_only=True)
+class ImportRQMeta(BaseRQMeta):
+    # immutable && optional fields
+    tmp_file: str | None = attrs.field(validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen)
+
+    # mutable fields
+    # TODO: move into base?
+    status: str = attrs.field(validator=[optional_str_validator], default="", on_setattr=_update_value)
+    task_progress: float | None = attrs.field(validator=[optional_float_validator],default=None)
+
+    @staticmethod
+    def get_resettable_fields() -> list[RQJobMetaField]:
+        """Return a list of fields that must be reset on retry"""
+        base_fields = BaseRQMeta.get_resettable_fields()
+
+        return base_fields + [
+            RQJobMetaField.PROGRESS,
+            RQJobMetaField.TASK_PROGRESS,
+            RQJobMetaField.STATUS
+        ]
 
     @classmethod
-    def update_lambda_info(cls, original_meta: dict[RQJobMetaField, Any], *, function_id: int) -> None:
-        original_meta[RQJobMetaField.FUNCTION_ID] = function_id
-        original_meta[RQJobMetaField.LAMBDA] = True
+    def build(
+        cls,
+        *,
+        request: PatchedRequest,
+        db_obj: Model | None,
+        tmp_file: str | None = None,
+    ):
+        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+
+        return cls(
+            **base_meta,
+            tmp_file=tmp_file,
+
+        ).to_dict()
+
+@attrs.define(kw_only=True)
+class LambdaRQMeta(BaseRQMeta):
+    # immutable fields
+    function_id: int | None = attrs.field(validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen)
+    lambda_: bool | None = attrs.field(validator=[optional_bool_validator], init=False, default=True, on_setattr=attrs.setters.frozen)
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        if v := d.pop(RQJobMetaField.LAMBDA + "_", None) is not None:
+            d[RQJobMetaField.LAMBDA] = v
+
+        return d
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        request: PatchedRequest,
+        db_obj: Model,
+        function_id: int,
+    ):
+        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+        return cls(
+            **base_meta,
+            function_id=function_id,
+        ).to_dict()
+
 
 # TODO: check that RQJobMetaField is used only in this module
 class RQJobMetaField:

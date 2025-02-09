@@ -29,7 +29,6 @@ from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.http.request import HttpRequest
-from django.utils import timezone
 from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
@@ -219,46 +218,6 @@ def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, block
         timeout=timeout,
         blocking_timeout=blocking_timeout,
     )
-
-# TODO: delete
-def get_rq_job_meta(
-    request: HttpRequest,
-    db_obj: Any,
-    *,
-    result_url: Optional[str] = None,
-):
-    # to prevent circular import
-    from cvat.apps.events.handlers import job_id, organization_slug, task_id
-    from cvat.apps.webhooks.signals import organization_id, project_id
-
-    oid = organization_id(db_obj)
-    oslug = organization_slug(db_obj)
-    pid = project_id(db_obj)
-    tid = task_id(db_obj)
-    jid = job_id(db_obj)
-
-    meta = {
-        'user': {
-            'id': getattr(request.user, "id", None),
-            'username': getattr(request.user, "username", None),
-            'email': getattr(request.user, "email", None),
-        },
-        'request': {
-            "uuid": request.uuid,
-            "timestamp": timezone.localtime(),
-        },
-        'org_id': oid,
-        'org_slug': oslug,
-        'project_id': pid,
-        'task_id': tid,
-        'job_id': jid,
-    }
-
-
-    if result_url:
-        meta['result_url'] = result_url
-
-    return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[dict[str, str]] = None,

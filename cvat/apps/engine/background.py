@@ -39,7 +39,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, RQMeta
+from cvat.apps.engine.rq_job_handler import ExportRQMeta, RQId
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
@@ -165,9 +165,8 @@ class ResourceExportManager(ABC):
     def get_timestamp(self, time_: datetime) -> str:
         return datetime.strftime(time_, "%Y_%m_%d_%H_%M_%S")
 
-    # TODO: drop ext support
     @abstractmethod
-    def get_result_filename_and_ext(self) -> tuple[str, str | None]: ...
+    def get_result_filename(self) -> str: ...
 
     def validate_rq_id(self, *, rq_id: str | None) -> HttpResponseBadRequest | None:
         if not rq_id:
@@ -207,7 +206,7 @@ class ResourceExportManager(ABC):
             if rq_job_status != RQJobStatus.FINISHED:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            rq_job_meta = RQMeta.from_job(rq_job)
+            rq_job_meta = ExportRQMeta.from_job(rq_job)
             file_path = rq_job.return_value()
 
             if not file_path:
@@ -216,7 +215,7 @@ class ResourceExportManager(ABC):
                         "A result for exporting job was not found for finished RQ job",
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
-                    if rq_job_meta.get_export_result_url()
+                    if rq_job_meta.result.url
                     else Response(status=status.HTTP_204_NO_CONTENT)
                 )
 
@@ -396,13 +395,12 @@ class DatasetExportManager(ResourceExportManager):
             result_url = self.make_result_url(rq_id=rq_id)
 
         with get_rq_lock_by_user(queue, user_id):
-            result_filename, result_ext = self.get_result_filename_and_ext()
-            meta = RQMeta.build_base(request=self.request, db_obj=self.db_instance)
-            RQMeta.update_result_info(
-                meta,
-                result_url=result_url,
+            result_filename = self.get_result_filename()
+            meta = ExportRQMeta.build(
+                request=self.request,
+                db_obj=self.db_instance,
                 result_filename=result_filename,
-                result_file_ext=result_ext,
+                result_url=result_url,
             )
             queue.enqueue_call(
                 func=func,
@@ -417,11 +415,11 @@ class DatasetExportManager(ResourceExportManager):
                 failure_ttl=cache_ttl.total_seconds(),
             )
 
-    def get_result_filename_and_ext(self) -> tuple[str, str | None]:
+    def get_result_filename(self) -> str:
         filename = self.export_args.filename
 
         if filename:
-            return osp.splitext(filename)
+            return osp.splitext(filename)[0]
 
         instance_update_time = self.get_instance_update_time()
         instance_timestamp = self.get_timestamp(instance_update_time)
@@ -433,7 +431,7 @@ class DatasetExportManager(ResourceExportManager):
             is_annotation_file=not self.export_args.save_images,
         )
 
-        return filename, None
+        return filename
 
     def get_download_api_endpoint_view_name(self) -> str:
         return f"{self.resource}-download-dataset"
@@ -466,11 +464,11 @@ class BackupExportManager(ResourceExportManager):
     def validate_export_args(self):
         return
 
-    def get_result_filename_and_ext(self) -> tuple[str, str | None]:
+    def get_result_filename(self) -> str:
         filename = self.export_args.filename
 
         if filename:
-            return osp.splitext(filename)
+            return osp.splitext(filename)[0]
 
         instance_update_time = self.get_instance_update_time()
         instance_timestamp = self.get_timestamp(instance_update_time)
@@ -481,7 +479,7 @@ class BackupExportManager(ResourceExportManager):
             timestamp=instance_timestamp,
         )
 
-        return filename, None
+        return filename
 
     def build_rq_id(self):
         return RQId(
@@ -551,13 +549,12 @@ class BackupExportManager(ResourceExportManager):
         user_id = self.request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            result_filename, result_ext = self.get_result_filename_and_ext()
-            meta = RQMeta.build_base(request=self.request, db_obj=self.db_instance)
-            RQMeta.update_result_info(
-                meta,
-                result_url=result_url,
+            result_filename = self.get_result_filename()
+            meta = ExportRQMeta.build(
+                request=self.request,
+                db_obj=self.db_instance,
                 result_filename=result_filename,
-                result_file_ext=result_ext,
+                result_url=result_url,
             )
 
             queue.enqueue_call(

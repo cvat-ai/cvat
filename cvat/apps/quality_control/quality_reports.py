@@ -54,7 +54,7 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.rq_job_handler import RQMeta
+from cvat.apps.engine.rq_job_handler import BaseRQMeta
 from cvat.apps.engine.utils import define_dependent_job, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
@@ -2283,7 +2283,7 @@ class QualityReportUpdateManager:
                 self._check_task_quality,
                 task_id=task.id,
                 job_id=rq_id,
-                meta=RQMeta.build_base(request=request, db_obj=task),
+                meta=BaseRQMeta.build(request=request, db_obj=task),
                 result_ttl=self._JOB_RESULT_TTL,
                 failure_ttl=self._JOB_RESULT_TTL,
                 depends_on=dependency,
