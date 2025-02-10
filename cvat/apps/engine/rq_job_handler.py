@@ -83,17 +83,22 @@ class AbstractRQMeta(metaclass=ABCMeta):
 
 @attrs.define(kw_only=True)
 class RQMetaWithFailureInfo(AbstractRQMeta):
+
     # mutable && optional fields
     formatted_exception: str | None = attrs.field(
         validator=[optional_str_validator],
         default=None,
         on_setattr=_update_value,
     )
-    exc_type: str | None = attrs.field(
-        validator=[optional_str_validator],
+    exc_type: type[Exception] | None = attrs.field(
         default=None,
         on_setattr=_update_value,
     )
+    @exc_type.validator
+    def _check_exc_type(self, attribute: attrs.Attribute, value: Any):
+        if value is not None and not issubclass(value, Exception):
+            raise ValueError("Wrong exception type")
+
     exc_args: Iterable | None = attrs.field(default=None, on_setattr=_update_value)
 
     @staticmethod

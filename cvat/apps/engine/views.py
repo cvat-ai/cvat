@@ -3355,7 +3355,7 @@ class AnnotationGuidesViewSet(
         super().perform_destroy(instance)
         target.touch()
 
-def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value, tb):
+def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
     rq_job_meta = RQMetaWithFailureInfo.from_job(rq_job)
     rq_job_meta.formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))

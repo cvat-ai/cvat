@@ -15,8 +15,8 @@ from cvat.apps.engine.rq_job_handler import BaseRQMeta, RQJobMetaField
 @attrs.define(kw_only=True)
 class LambdaRQMeta(BaseRQMeta):
     # immutable fields
-    function_id: int = attrs.field(
-        validator=[attrs.validators.instance_of(int)], default=None, on_setattr=attrs.setters.frozen
+    function_id: str = attrs.field(
+        validator=[attrs.validators.instance_of(str)], default=None, on_setattr=attrs.setters.frozen
     )
     lambda_: bool = attrs.field(
         validator=[attrs.validators.instance_of(bool)],
@@ -38,7 +38,7 @@ class LambdaRQMeta(BaseRQMeta):
         *,
         request: PatchedRequest,
         db_obj: Model,
-        function_id: int,
+        function_id: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
         return cls(
