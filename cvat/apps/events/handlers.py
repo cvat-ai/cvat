@@ -101,7 +101,7 @@ def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         # RQ jobs created in the chunks queue have no user info
         try:
-            return BaseRQMeta.from_job(instance).user.to_dict()
+            return BaseRQMeta.from_job(rq_job).user.to_dict()
         except AttributeError:
             return None
 
@@ -128,7 +128,7 @@ def get_request(instance=None):
     def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         # RQ jobs created in the chunks queue have no request info
         try:
-            return BaseRQMeta.from_job(instance).request.to_dict()
+            return BaseRQMeta.from_job(rq_job).request.to_dict()
         except AttributeError:
             return None
 
