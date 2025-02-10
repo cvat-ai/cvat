@@ -16,8 +16,6 @@ Cypress.automation('remote:debugger:protocol', {
 
 context('Copy frame filename in job', () => {
     before(() => {
-        cy.visit('/auth/login');
-        cy.login();
         cy.openTaskJob(taskName);
     });
     beforeEach(() => {
