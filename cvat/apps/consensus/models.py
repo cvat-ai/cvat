@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from __future__ import annotations  # this allows forward references
+from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any
