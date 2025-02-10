@@ -11,10 +11,10 @@ import re
 import shutil
 import uuid
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Iterable, Iterator, Optional
+from typing import Any, ClassVar, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -453,7 +453,7 @@ class FileSystemRelatedModel(metaclass=ABCModelMeta):
 
 
 @transaction.atomic(savepoint=False)
-def clear_annotations_in_jobs(job_ids: Iterable[int] | Iterator[int]):
+def clear_annotations_in_jobs(job_ids: Iterable[int]):
     for job_ids_chunk in take_by(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
