@@ -14,13 +14,7 @@ from cvat.apps.engine.models import Task
 
 
 class ConsensusSettings(models.Model):
-    task = models.ForeignKey(
-        Task,
-        on_delete=models.CASCADE,
-        related_name="consensus_settings",
-        null=True,
-        blank=True,
-    )
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="consensus_settings")
     quorum = models.FloatField(default=0.5)
     iou_threshold = models.FloatField()
 
@@ -47,4 +41,4 @@ class ConsensusSettings(models.Model):
 
     @property
     def organization_id(self):
-        return getattr(self.task.organization, "id", None)
+        return self.task.organization_id
