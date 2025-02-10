@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
+import { ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
 import FabricFilter from './fabric-wrapper';
 
 export interface GammaFilterOptions {
@@ -34,9 +35,12 @@ export default class GammaCorrection extends FabricFilter {
         this.#gamma = newGamma;
     }
 
-    public serialize(): GammaFilterOptions {
+    public toJSON(): SerializedImageFilter {
         return {
-            gamma: this.#gamma,
+            alias: ImageFilterAlias.GAMMA_CORRECTION,
+            params: {
+                gamma: this.#gamma,
+            },
         };
     }
 

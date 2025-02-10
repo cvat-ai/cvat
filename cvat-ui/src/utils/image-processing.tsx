@@ -5,13 +5,17 @@
 import { fabric } from 'fabric';
 
 export type ConfigurableFilterType = fabric.IBaseFilter;
+export interface SerializedImageFilter {
+    alias: ImageFilterAlias;
+    params: object;
+}
 export interface ImageProcessing {
     filter: ConfigurableFilterType | null;
     currentProcessedImage: number | null;
 
     processImage: (src: ImageData, frameNumber: number) => ImageData;
     configure: (options: object) => void;
-    serialize: () => any;
+    toJSON: () => SerializedImageFilter;
 }
 
 /* eslint @typescript-eslint/no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
@@ -25,8 +29,8 @@ export class BaseImageFilter implements ImageProcessing {
 
     configure(_options: object): void {}
 
-    serialize(): any {
-        return {};
+    toJSON(): SerializedImageFilter {
+        throw new Error('Method is not implemented');
     }
 }
 
