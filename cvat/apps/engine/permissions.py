@@ -12,8 +12,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.middleware import PatchedRequest
-from cvat.apps.engine.rq_job_handler import RQId, is_rq_job_owner
+from cvat.apps.engine.rq_job_handler import is_rq_job_owner
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
@@ -23,19 +22,7 @@ from cvat.apps.iam.permissions import (
 )
 from cvat.apps.organizations.models import Organization
 
-from .models import (
-    AnnotationGuide,
-    CloudStorage,
-    Comment,
-    Issue,
-    Job,
-    Label,
-    Project,
-    RequestAction,
-    RequestTarget,
-    Task,
-    User,
-)
+from .models import AnnotationGuide, CloudStorage, Comment, Issue, Job, Label, Project, Task, User
 
 
 def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
@@ -240,10 +227,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
         EXPORT_DATASET = 'export:dataset'
         EXPORT_BACKUP = 'export:backup'
         IMPORT_BACKUP = 'import:backup'
-        DOWNLOAD_EXPORTED_FILE = 'retrieve:exported_file'
 
     @classmethod
-    def create(cls, request: PatchedRequest, view, obj, iam_context):
+    def create(cls, request, view, obj, iam_context):
         permissions = []
         if view.basename == 'project':
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
@@ -251,21 +237,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 self = cls.create_base_perm(request, view, scope, iam_context, obj,
                     assignee_id=assignee_id)
                 permissions.append(self)
-
-
-                if scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    # check that a user still has rights to export project dataset|backup
-                    rq_id = request.query_params.get('rq_id')
-                    assert rq_id
-                    parsed_rq_id = RQId.parse(rq_id)
-                    if (
-                        # TODO: move these checks to view class
-                        parsed_rq_id.action != RequestAction.EXPORT
-                        or parsed_rq_id.target != RequestTarget.PROJECT
-                        or parsed_rq_id.identifier != obj.id
-                        or parsed_rq_id.user_id != iam_context.get('user_id', request.user.id)
-                    ):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
 
             if view.action == 'tasks':
                 perm = TaskPermission.create_scope_list(request, iam_context)
@@ -312,19 +283,15 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('dataset', 'POST'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'HEAD'): Scopes.IMPORT_DATASET,
             ('append_dataset_chunk', 'PATCH'): Scopes.IMPORT_DATASET,
-            ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
-            ('initiate_backup_export', 'POST'): Scopes.EXPORT_BACKUP,
+            ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
+            ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
+            ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
-            ('download_dataset', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            ('download_backup', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            # FUTURE-TODO: delete this after dropping support for deprecated API
-            ('annotations', 'GET'): Scopes.EXPORT_ANNOTATIONS,
-            ('dataset', 'GET'): Scopes.IMPORT_DATASET if request.query_params.get('action') == 'import_status' else Scopes.EXPORT_DATASET,
-            ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
-
         }[(view.action, request.method)]
 
         scopes = []
@@ -432,7 +399,6 @@ class TaskPermission(OpenPolicyAgentPermission):
         EXPORT_BACKUP = 'export:backup'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
-        DOWNLOAD_EXPORTED_FILE = 'retrieve:exported_file'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -454,20 +420,6 @@ class TaskPermission(OpenPolicyAgentPermission):
                     permissions.append(TaskPermission.create_scope_create(request, org_id))
                 elif scope == __class__.Scopes.UPDATE_OWNER:
                     params['owner_id'] = owner
-
-                elif scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    # check that a user still has rights to export task dataset|backup
-                    rq_id = request.query_params.get('rq_id')
-                    assert rq_id
-                    parsed_rq_id = RQId.parse(rq_id)
-                    if (
-                        # TODO: move these checks to view class
-                        parsed_rq_id.action != RequestAction.EXPORT
-                        or parsed_rq_id.target != RequestTarget.TASK
-                        or parsed_rq_id.identifier != obj.id
-                        or parsed_rq_id.user_id != iam_context.get('user_id', request.user.id)
-                    ):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
@@ -541,7 +493,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('annotations', 'POST'): Scopes.IMPORT_ANNOTATIONS,
             ('append_annotations_chunk', 'PATCH'): Scopes.UPDATE_ANNOTATIONS,
             ('append_annotations_chunk', 'HEAD'): Scopes.UPDATE_ANNOTATIONS,
-            ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
+            ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('metadata', 'GET'): Scopes.VIEW_METADATA,
             ('metadata', 'PATCH'): Scopes.UPDATE_METADATA,
             ('data', 'GET'): Scopes.VIEW_DATA,
@@ -552,15 +505,11 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('import_backup', 'POST'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'PATCH'): Scopes.IMPORT_BACKUP,
             ('append_backup_chunk', 'HEAD'): Scopes.IMPORT_BACKUP,
-            ('initiate_backup_export', 'POST'): Scopes.EXPORT_BACKUP,
+            ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
+            ('export_backup_v2', 'POST'): Scopes.EXPORT_BACKUP,
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
             ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
-            ('download_dataset', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            ('download_backup', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            # FUTURE-TODO: deprecated API
-            ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
-            ('export_backup', 'GET'): Scopes.EXPORT_BACKUP,
         }[(view.action, request.method)]
 
         scopes = []
@@ -680,7 +629,6 @@ class JobPermission(OpenPolicyAgentPermission):
         UPDATE_METADATA = 'update:metadata'
         VIEW_VALIDATION_LAYOUT = 'view:validation_layout'
         UPDATE_VALIDATION_LAYOUT = 'update:validation_layout'
-        DOWNLOAD_EXPORTED_FILE = 'retrieve:exported_file'
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -703,20 +651,6 @@ class JobPermission(OpenPolicyAgentPermission):
                         permissions.append(TaskPermission.create_scope_view(
                             request, task, iam_context=iam_context
                         ))
-
-                elif scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    # check that a user still has rights to export task dataset|backup
-                    rq_id = request.query_params.get('rq_id')
-                    assert rq_id
-                    parsed_rq_id = RQId.parse(rq_id)
-                    if (
-                        # TODO: move these checks to view class
-                        parsed_rq_id.action != RequestAction.EXPORT
-                        or parsed_rq_id.target != RequestTarget.JOB
-                        or parsed_rq_id.identifier != obj.id
-                        or parsed_rq_id.user_id != iam_context.get('user_id', request.user.id)
-                    ):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
@@ -787,13 +721,11 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
-            ('initiate_dataset_export', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
+            ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
+            ('export_dataset_v2', 'POST'): Scopes.EXPORT_DATASET if is_dataset_export(request) else Scopes.EXPORT_ANNOTATIONS,
             ('preview', 'GET'): Scopes.VIEW,
             ('validation_layout', 'GET'): Scopes.VIEW_VALIDATION_LAYOUT,
             ('validation_layout', 'PATCH'): Scopes.UPDATE_VALIDATION_LAYOUT,
-            ('download_dataset', 'GET'): Scopes.DOWNLOAD_EXPORTED_FILE,
-            # deprecated API
-            ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
         }[(view.action, request.method)]
 
         scopes = []

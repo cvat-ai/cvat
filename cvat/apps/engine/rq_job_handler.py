@@ -51,14 +51,14 @@ class RequestInfo:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
+# FUTURE-TODO: uncomment
+# @attrs.frozen(kw_only=True)
+# class ExportResultInfo:
+#     url: str | None = attrs.field(validator=[optional_str_validator])
+#     filename: str = attrs.field(validator=[str_validator])
 
-@attrs.frozen(kw_only=True)
-class ExportResultInfo:
-    url: str | None = attrs.field(validator=[optional_str_validator])
-    filename: str = attrs.field(validator=[str_validator])
-
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+#     def to_dict(self) -> dict[str, Any]:
+#         return asdict(self)
 
 
 @attrs.define
@@ -183,11 +183,11 @@ class BaseRQMeta(RQMetaWithFailureInfo):
                 id=getattr(user, "id", None),
                 username=getattr(user, "username", None),
                 email=getattr(user, "email", None),
-            ).to_dict(),
+            ),
             request=RequestInfo(
                 uuid=request.uuid,
                 timestamp=timezone.localtime(),
-            ).to_dict(),
+            ),
             org_id=oid,
             org_slug=oslug,
             project_id=pid,
@@ -198,10 +198,12 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
 @attrs.define(kw_only=True)
 class ExportRQMeta(BaseRQMeta):
-    result: ExportResultInfo = attrs.field(
-        converter=lambda d: ExportResultInfo(**d),
-        on_setattr=attrs.setters.frozen,
-    )
+    result_url: str | None = attrs.field(validator=[optional_str_validator])
+    # FUTURE-TODO: uncomment
+    # result: ExportResultInfo = attrs.field(
+    #     converter=lambda d: ExportResultInfo(**d),
+    #     on_setattr=attrs.setters.frozen,
+    # )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -216,16 +218,17 @@ class ExportRQMeta(BaseRQMeta):
         request: PatchedRequest,
         db_obj: Model | None,
         result_url: str | None,
-        result_filename: str,
+        # result_filename: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
         return cls(
             **base_meta,
-            result=ExportResultInfo(
-                filename=result_filename,
-                url=result_url,
-            ).to_dict(),
+            result_url=result_url,
+            # result=ExportResultInfo(
+            #     filename=result_filename,
+            #     url=result_url,
+            # ),
         ).to_dict()
 
 

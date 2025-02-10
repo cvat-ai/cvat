@@ -342,10 +342,11 @@ def build_backup_file_name(
     class_name: str,
     identifier: str | int,
     timestamp: str,
+    extension: str = "{}",
 ) -> str:
-    # "<project|task>_<name>_backup_<timestamp>"
-    return "{}_{}_backup_{}".format(
-        class_name, identifier, timestamp,
+    # "<project|task>_<name>_backup_<timestamp>.zip"
+    return "{}_{}_backup_{}{}".format(
+        class_name, identifier, timestamp, extension,
     ).lower()
 
 def build_annotations_file_name(
@@ -355,11 +356,12 @@ def build_annotations_file_name(
     timestamp: str,
     format_name: str,
     is_annotation_file: bool = True,
+    extension: str = "{}",
 ) -> str:
-    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>"
-    return "{}_{}_{}_{}_{}".format(
+    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
+    return "{}_{}_{}_{}_{}{}".format(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
-        timestamp, format_name
+        timestamp, format_name, extension,
     ).lower()
 
 

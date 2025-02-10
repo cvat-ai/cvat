@@ -153,7 +153,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 ),
             }[(resource, subresource)]
 
-            data = func(self.user, id=rid, download_result=True)
+            data = func(self.user, api_version=2, id=rid, download_result=True)
             assert data, f"Failed to download {resource} {subresource} locally"
             return data
 
@@ -163,12 +163,15 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
     def fxt_make_export_project_requests(self):
         def make_requests(project_ids: list[int]):
             for project_id in project_ids:
-                export_project_backup(self.user, id=project_id, download_result=False)
+                export_project_backup(
+                    self.user, api_version=2, id=project_id, download_result=False
+                )
                 export_project_dataset(
-                    self.user, save_images=True, id=project_id, download_result=False
+                    self.user, api_version=2, save_images=True, id=project_id, download_result=False
                 )
                 export_project_dataset(
                     self.user,
+                    api_version=2,
                     save_images=False,
                     id=project_id,
                     download_result=False,
@@ -180,9 +183,13 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
     def fxt_make_export_task_requests(self):
         def make_requests(task_ids: list[int]):
             for task_id in task_ids:
-                export_task_backup(self.user, id=task_id, download_result=False)
-                export_task_dataset(self.user, save_images=True, id=task_id, download_result=False)
-                export_task_dataset(self.user, save_images=False, id=task_id, download_result=False)
+                export_task_backup(self.user, api_version=2, id=task_id, download_result=False)
+                export_task_dataset(
+                    self.user, api_version=2, save_images=True, id=task_id, download_result=False
+                )
+                export_task_dataset(
+                    self.user, api_version=2, save_images=False, id=task_id, download_result=False
+                )
 
         return make_requests
 
@@ -192,6 +199,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
             for job_id in job_ids:
                 export_job_dataset(
                     self.user,
+                    api_version=2,
                     save_images=True,
                     id=job_id,
                     format="COCO 1.0",
@@ -199,6 +207,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
                 )
                 export_job_dataset(
                     self.user,
+                    api_version=2,
                     save_images=False,
                     id=job_id,
                     format="YOLO 1.1",
@@ -275,6 +284,7 @@ class TestGetRequests:
         subresource = "dataset" if save_images else "annotations"
         export_project_dataset(
             owner["username"],
+            api_version=2,
             save_images=save_images,
             id=project["id"],
             download_result=False,
@@ -316,6 +326,7 @@ class TestGetRequests:
 
         export_project_dataset(
             owner["username"],
+            api_version=2,
             save_images=True,
             id=project["id"],
             download_result=False,
