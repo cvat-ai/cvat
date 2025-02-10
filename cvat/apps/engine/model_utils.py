@@ -25,37 +25,38 @@ May be undefined in the object, should be accessed via getattr().
 
 
 _ModelT = TypeVar("_ModelT", bound=models.Model)
+_unspecified = object()
 
 
 def bulk_create(
     db_model: type[_ModelT],
     objs: Iterable[_ModelT],
     *,
-    batch_size: int | None = ...,
-    ignore_conflicts: bool = ...,
-    update_conflicts: bool | None = ...,
-    update_fields: Sequence[str] | None = ...,
-    unique_fields: Sequence[str] | None = ...,
+    batch_size: int | None = _unspecified,
+    ignore_conflicts: bool = False,
+    update_conflicts: bool | None = False,
+    update_fields: Sequence[str] | None = None,
+    unique_fields: Sequence[str] | None = None,
 ) -> list[_ModelT]:
-    "Like Django's Model.objects.bulk_create(), but applies the default batch size"
+    """
+    Like Django's Model.objects.bulk_create(), but applies the default batch size configured by
+    the DEFAULT_DB_BULK_CREATE_BATCH_SIZE setting.
+    """
 
-    if batch_size is Ellipsis:
+    if batch_size is _unspecified:
         batch_size = settings.DEFAULT_DB_BULK_CREATE_BATCH_SIZE
-
-    kwargs = {}
-    for k, v in {
-        "ignore_conflicts": ignore_conflicts,
-        "update_conflicts": update_conflicts,
-        "update_fields": update_fields,
-        "unique_fields": unique_fields,
-    }.items():
-        if v is not Ellipsis:
-            kwargs[k] = v
 
     if not objs:
         return []
 
-    return db_model.objects.bulk_create(objs, batch_size=batch_size, **kwargs)
+    return db_model.objects.bulk_create(
+        objs,
+        batch_size=batch_size,
+        ignore_conflicts=ignore_conflicts,
+        update_conflicts=update_conflicts,
+        update_fields=update_fields,
+        unique_fields=unique_fields,
+    )
 
 
 def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
