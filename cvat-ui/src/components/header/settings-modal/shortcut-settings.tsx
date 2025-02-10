@@ -53,15 +53,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                 if (currentSettings) {
                     try {
                         const parsedSettings = JSON.parse(currentSettings);
-                        parsedSettings.shortcuts = {};
-                        for (const [key] of Object.entries(shortcuts.defaultState)) {
-                            if (key in shortcuts.defaultState) {
-                                parsedSettings.shortcuts.keyMap[key] = {
-                                    sequences: shortcuts.defaultState[key].sequences,
-                                };
-                            }
-                        }
-
+                        delete parsedSettings.shortcuts;
                         localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
                     } catch (error) {
                         localStorage.removeItem('clientSettings');
