@@ -46,13 +46,14 @@ from cvat.apps.engine.models import (
     SourceType,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import LambdaRQMeta, RQId
+from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.utils import define_dependent_job, get_rq_lock_by_user
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind
 from cvat.apps.lambda_manager.permissions import LambdaPermission
+from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer,
     FunctionCallSerializer,
@@ -640,7 +641,7 @@ class LambdaQueue:
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = LambdaRQMeta.build(
+            meta = LambdaRQMeta.build_for(
                 request=request,
                 db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
                 function_id=lambda_func.id,

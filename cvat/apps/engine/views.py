@@ -3446,7 +3446,7 @@ def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build(request=request, db_obj=db_obj, tmp_file=filename)
+            meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
             rq_job = queue.enqueue_call(
                 func=func,
                 args=func_args,
@@ -3548,7 +3548,7 @@ def _import_project_dataset(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build(request=request, db_obj=db_obj, tmp_file=filename)
+            meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
             rq_job = queue.enqueue_call(
                 func=func,
                 args=func_args,

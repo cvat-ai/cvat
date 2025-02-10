@@ -83,7 +83,7 @@ def create(
             func=_create_thread,
             args=(db_task.pk, data),
             job_id=rq_id,
-            meta=ImportRQMeta.build(request=request, db_obj=db_task),
+            meta=ImportRQMeta.build_for(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )

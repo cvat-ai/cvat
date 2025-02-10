@@ -1197,7 +1197,7 @@ def _import(importer, request: PatchedRequest, queue, rq_id, Serializer, file_fi
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build(
+            meta = ImportRQMeta.build_for(
                 request=request,
                 db_obj=None,
                 tmp_file=filename,

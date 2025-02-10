@@ -44,7 +44,6 @@ from cvat.apps.engine.rq_job_handler import (
     BaseRQMeta,
     ExportRQMeta,
     ImportRQMeta,
-    LambdaRQMeta,
     RequestAction,
     RQId,
 )
@@ -60,6 +59,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -3553,17 +3553,19 @@ class RequestSerializer(serializers.Serializer):
     result_url = serializers.URLField(required=False, allow_null=True)
     result_id = serializers.IntegerField(required=False, allow_null=True)
 
+    def __init__(self, *args, **kwargs):
+        self._base_rq_job_meta: BaseRQMeta | None = None
+        super().__init__(*args, **kwargs)
+
     @extend_schema_field(UserIdentifiersSerializer())
     def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
-        # TODO: define parsed meta once
-        rq_job_meta = BaseRQMeta.from_job(rq_job)
-        return UserIdentifiersSerializer(rq_job_meta.user.to_dict()).data
+        assert self._base_rq_job_meta
+        return UserIdentifiersSerializer(self._base_rq_job_meta.user.to_dict()).data
 
     @extend_schema_field(
         serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
     )
     def get_progress(self, rq_job: RQJob) -> Decimal:
-        # TODO: define parsed meta once
         rq_job_meta = ImportRQMeta.from_job(rq_job)
         # progress of task creation is stored in "task_progress" field
         # progress of project import is stored in "progress" field
@@ -3585,19 +3587,19 @@ class RequestSerializer(serializers.Serializer):
 
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: RQJob) -> str:
-        # TODO: define parsed meta once
-        rq_job_meta = ImportRQMeta.from_job(rq_job)
+        assert self._base_rq_job_meta
         rq_job_status = rq_job.get_status()
         message = ''
 
         if RQJobStatus.STARTED == rq_job_status:
-            message = rq_job_meta.status
+            message = self._base_rq_job_meta.status
         elif RQJobStatus.FAILED == rq_job_status:
-            message = rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
+            message = self._base_rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
 
         return message
 
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
+        self._base_rq_job_meta = BaseRQMeta.from_job(rq_job)
         representation = super().to_representation(rq_job)
 
         # FUTURE-TODO: support such statuses on UI

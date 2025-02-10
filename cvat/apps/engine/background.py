@@ -477,7 +477,7 @@ class DatasetExportManager(_ResourceExportManager):
             result_url = self.make_result_url()
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ExportRQMeta.build(
+            meta = ExportRQMeta.build_for(
                 request=self.request,
                 db_obj=self.db_instance,
                 result_url=result_url,
@@ -758,7 +758,7 @@ class BackupExportManager(_ResourceExportManager):
         user_id = self.request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ExportRQMeta.build(
+            meta = ExportRQMeta.build_for(
                 request=self.request,
                 db_obj=self.db_instance,
                 result_url=result_url,
