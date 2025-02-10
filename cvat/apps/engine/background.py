@@ -39,7 +39,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
-from cvat.apps.engine.types import PatchedRequest
+from cvat.apps.engine.types import Request
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
@@ -180,7 +180,7 @@ class DatasetExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task, models.Job],
-        request: PatchedRequest,
+        request: Request,
         export_callback: Callable,
         save_images: Optional[bool] = None,
         *,
@@ -525,7 +525,7 @@ class BackupExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task],
-        request: PatchedRequest,
+        request: Request,
         *,
         version: int = 2,
     ) -> None:

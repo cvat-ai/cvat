@@ -6,13 +6,13 @@ import sys
 
 from rest_framework.pagination import PageNumberPagination
 
-from cvat.apps.engine.types import PatchedRequest
+from cvat.apps.engine.types import Request
 
 
 class CustomPagination(PageNumberPagination):
     page_size_query_param = "page_size"
 
-    def get_page_size(self, request: PatchedRequest):
+    def get_page_size(self, request: Request):
         page_size = 0
         try:
             value = request.query_params[self.page_size_query_param]

@@ -31,7 +31,6 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 from rest_framework import serializers, status, viewsets
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 import cvat.apps.dataset_manager as dm
@@ -48,6 +47,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.types import Request
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
