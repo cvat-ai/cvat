@@ -120,7 +120,12 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import RQId, is_rq_job_owner, ImportRQMeta, RQMetaWithFailureInfo
+from cvat.apps.engine.rq_job_handler import (
+    ImportRQMeta,
+    RQId,
+    RQMetaWithFailureInfo,
+    is_rq_job_owner,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,

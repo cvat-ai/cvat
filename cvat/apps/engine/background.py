@@ -38,7 +38,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, ExportRQMeta
+from cvat.apps.engine.rq_job_handler import ExportRQMeta, RQId
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
