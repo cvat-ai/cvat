@@ -480,7 +480,6 @@ class DatasetExportManager(_ResourceExportManager):
             meta = ExportRQMeta.build(
                 request=self.request,
                 db_obj=self.db_instance,
-                # result_filename=result_filename,
                 result_url=result_url,
             )
             queue.enqueue_call(
@@ -762,7 +761,6 @@ class BackupExportManager(_ResourceExportManager):
             meta = ExportRQMeta.build(
                 request=self.request,
                 db_obj=self.db_instance,
-                # result_filename=result_filename,
                 result_url=result_url,
             )
             queue.enqueue_call(

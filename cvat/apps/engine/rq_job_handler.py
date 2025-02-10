@@ -45,20 +45,10 @@ class UserInfo:
 @attrs.frozen(kw_only=True)
 class RequestInfo:
     uuid: str = attrs.field(validator=[str_validator])
-    # TODO: it is not timestamp
     timestamp: datetime = attrs.field(validator=[attrs.validators.instance_of(datetime)])
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-
-# FUTURE-TODO: uncomment
-# @attrs.frozen(kw_only=True)
-# class ExportResultInfo:
-#     url: str | None = attrs.field(validator=[optional_str_validator])
-#     filename: str = attrs.field(validator=[str_validator])
-
-#     def to_dict(self) -> dict[str, Any]:
-#         return asdict(self)
 
 
 @attrs.define
@@ -198,12 +188,8 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
 @attrs.define(kw_only=True)
 class ExportRQMeta(BaseRQMeta):
+    # will be changed to ExportResultInfo in the next PR
     result_url: str | None = attrs.field(validator=[optional_str_validator])
-    # FUTURE-TODO: uncomment
-    # result: ExportResultInfo = attrs.field(
-    #     converter=lambda d: ExportResultInfo(**d),
-    #     on_setattr=attrs.setters.frozen,
-    # )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -218,17 +204,12 @@ class ExportRQMeta(BaseRQMeta):
         request: PatchedRequest,
         db_obj: Model | None,
         result_url: str | None,
-        # result_filename: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
         return cls(
             **base_meta,
             result_url=result_url,
-            # result=ExportResultInfo(
-            #     filename=result_filename,
-            #     url=result_url,
-            # ),
         ).to_dict()
 
 
