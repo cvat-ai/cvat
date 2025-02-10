@@ -7633,7 +7633,6 @@ components:
           readOnly: true
         task_id:
           type: integer
-          nullable: true
           readOnly: true
         iou_threshold:
           type: number
