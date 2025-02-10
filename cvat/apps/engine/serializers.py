@@ -53,6 +53,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
 
@@ -1041,6 +1042,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 f"Honeypots cannot exist in {models.JobType.GROUND_TRUTH} jobs"
             )
 
+        assert not hasattr(db_data, 'video')
+
         frame_step = db_data.get_frame_step()
 
         def _to_rel_frame(abs_frame: int) -> int:
@@ -1178,6 +1181,12 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
                 # Remove annotations on changed validation frames
                 self._clear_annotations_on_frames(db_segment, updated_honeypots)
+
+                # Update manifest
+                manifest_path = db_data.get_manifest_path()
+                if os.path.isfile(manifest_path):
+                    manifest = ImageManifestManager(manifest_path)
+                    manifest.reorder([db_frame.path for db_frame in db_frames.values()])
 
             # Update chunks
             job_frame_provider = JobFrameProvider(db_job)
@@ -1435,6 +1444,11 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
     @transaction.atomic
     def update(self, instance: models.Task, validated_data: dict[str, Any]) -> models.Task:
+        # FIXME: this operation is not atomic and it is not protected from race conditions
+        # (basically, as many others). Currently, it's up to the user to ensure no parallel
+        # calls happen. It also affects any image access, including exports with images, backups,
+        # automatic annotation, chunk downloading, etc.
+
         db_validation_layout: models.ValidationLayout | None = (
             getattr(instance.data, 'validation_layout', None)
         )
@@ -1474,6 +1488,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
 
         if not frame_selection_method:
             return instance
+
+        assert not hasattr(instance.data, 'video')
 
         # Populate the prefetch cache for required objects
         prefetch_related_objects([instance],
@@ -1654,6 +1670,12 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
 
         models.RelatedFile.images.through.objects.bulk_create(new_m2m_objects, batch_size=1000)
+
+        # Update manifest if present
+        manifest_path = db_task.data.get_manifest_path()
+        if os.path.isfile(manifest_path):
+            manifest = ImageManifestManager(manifest_path)
+            manifest.reorder([db_frame.path for db_frame in bulk_context.all_db_frames.values()])
 
     def _clear_annotations_on_frames(self, db_task: models.Task, frames: Sequence[int]):
         models.clear_annotations_on_frames_in_honeypot_task(db_task, frames=frames)
