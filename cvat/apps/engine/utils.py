@@ -15,7 +15,7 @@ import sys
 import traceback
 import urllib.parse
 from collections import namedtuple
-from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
@@ -466,9 +466,7 @@ _K = TypeVar("_K")
 _V = TypeVar("_V")
 
 
-def grouped(
-    items: Iterator[_V] | Iterable[_V], *, key: Callable[[_V], _K]
-) -> Mapping[_K, Sequence[_V]]:
+def grouped(items: Iterable[_V], *, key: Callable[[_V], _K]) -> Mapping[_K, Sequence[_V]]:
     """
     Returns a mapping with input iterable elements grouped by key, for example:
 
