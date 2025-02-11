@@ -206,7 +206,7 @@ def skeleton_label_spec(
     name: str, id: int, sublabels: Sequence[models.SublabelRequest], **kwargs
 ) -> models.PatchedLabelRequest:
     """Helper factory function for PatchedLabelRequest with type="skeleton"."""
-    return models.PatchedLabelRequest(name=name, id=id, type="skeleton", sublabels=sublabels)
+    return label_spec(name, id, type="skeleton", sublabels=sublabels, **kwargs)
 
 
 # pylint: disable-next=redefined-builtin
