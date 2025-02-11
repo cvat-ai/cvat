@@ -519,9 +519,11 @@ def annotate_task(
     Otherwise, they are kept, and the new annotations are added to them.
 
     The allow_unmatched_labels parameter controls the behavior in the case when a detection
-    function declares a label in its spec that has no corresponding label in the task.
-    If it's set to true, then such labels are allowed, and any annotations returned by the
-    function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
+    function declares a label/sublabel/attribute in its spec
+    that has no corresponding label/sublabel/attribute in the task.
+    If it's set to True, any annotations/keypoints/attribute values
+    returned by the function that refer to such labels/sublabels/attributes are dropped.
+    If it's set to False, BadFunctionError is raised.
 
     The conf_threshold parameter must be None or a number between 0 and 1. It will be passed
     to the AA function as the conf_threshold attribute of the context object.
