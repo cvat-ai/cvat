@@ -178,7 +178,7 @@ export interface SerializedAbout {
     name: string;
     version: string;
     logo: string;
-    title: string;
+    subtitle: string;
 }
 
 export interface SerializedRemoteFile {

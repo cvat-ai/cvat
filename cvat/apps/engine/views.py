@@ -189,11 +189,8 @@ _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
 _RETRY_AFTER_TIMEOUT = 10
 
-ICON_FILE = "assets/logo.svg"
-
-def get_logo() -> str:
-    with open(osp.join(osp.dirname(__file__), ICON_FILE)) as f:
-        return f.read()
+def get_logo_uri(request) -> str:
+    return request.build_absolute_uri(f'{settings.STATIC_URL}{settings.LOGO_FILENAME}')
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -217,10 +214,10 @@ class ServerViewSet(viewsets.ViewSet):
         from cvat import __version__ as cvat_version
         about = {
             "name": settings.ABOUT_INFO["name"],
-            "title": settings.ABOUT_INFO["title"],
+            "subtitle": settings.ABOUT_INFO["subtitle"],
             "description": settings.ABOUT_INFO["description"],
             "version": cvat_version,
-            "logo": get_logo(),
+            "logo": get_logo_uri(request),
         }
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):

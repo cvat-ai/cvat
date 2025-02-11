@@ -1,15 +1,17 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
 
 function CVATLogo(): JSX.Element {
-    const SVGLogo = useSelector((state: any) => state.about.server.logo);
+    const logo = useSelector((state: CombinedState) => state.about.server.logo);
 
     return (
         <div className='cvat-logo-icon'>
-            <img
-                src={`data:image/svg+xml;utf8,${encodeURIComponent(SVGLogo)}`}
-                alt='CVAT Logo'
-            />
+            <img src={logo} alt='CVAT Logo' />
         </div>
     );
 }
