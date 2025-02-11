@@ -6907,14 +6907,14 @@ components:
           maxLength: 64
         logo:
           type: string
-        title:
+        subtitle:
           type: string
           maxLength: 1024
       required:
       - description
       - logo
       - name
-      - title
+      - subtitle
       - version
     AcceptInvitationRead:
       type: object
