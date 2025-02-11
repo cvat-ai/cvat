@@ -32,9 +32,8 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
 
 Cypress.Commands.add('customScreenshot', (element, screenshotName) => {
     cy.get(`${element} canvas`).then(([$el]) => ($el.getBoundingClientRect())).then((rect) => {
-        // const iframe = window.parent.document
-        //     .querySelector('iframe.aut-iframe');
-        const iframe = Cypress.$('iframe.aut-iframe');
+        const iframe = window.parent.document
+            .querySelector('iframe.aut-iframe');
         const parentRect = iframe.getBoundingClientRect();
 
         const scale = parentRect.width / iframe.clientWidth;

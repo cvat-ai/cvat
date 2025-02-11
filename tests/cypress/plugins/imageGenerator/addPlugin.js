@@ -2,9 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line no-use-before-define
+/* eslint no-use-before-define: 0 */
 exports.imageGenerator = imageGenerator;
-// eslint-disable-next-line no-use-before-define
 exports.bufferToImage = bufferToImage;
 
 const path = require('path');

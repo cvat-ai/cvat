@@ -58,9 +58,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     const imagesCount = 5;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const scaleFrom400 = 12.5;
-    const width = 400 * scaleFrom400; // =5000
+    const width = 400 * scaleFrom400;
     const height = 400 * scaleFrom400;
-    const delta = 3; // ??? probably requires bigger delta or something else
+    const delta = 3;
     const maxTextWidth = undefined;
     const textHeightPx = 77 * scaleFrom400;
     const posX = 10 * scaleFrom400;
@@ -78,9 +78,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         cy.visit('/auth/login');
         cy.login();
         for (let i = 0; i < imagesCount; i++) {
-            // cy.task('log', `x:${posX + i * 5}, y:${posY + i * 5}`);
-            // cy.imageGenerator(imagesFolder, imageFileName + i, width, height, color, posX + i * 5,
-            //     posY + i * 5, labelName, 1, extension);
             cy.makeCustomImage(imagesFolder, `${imageFileName}_${i}`,
                 width, height,
                 fontSize, color, textColor,
@@ -236,12 +233,6 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                         // In the beginning of this test we created images with text
                         // On each frame text is moved by 5px on x and y axis,
                         // so we expect shape to be close to real text positions
-                        // cy.get('#cvat_canvas_shape_4').invoke('attr', 'x').then((xVal) => {
-                        //     expect(parseFloat(xVal)).to.be.closeTo(x + i * 5 * scaleFrom400, delta);
-                        // });
-                        // cy.get('#cvat_canvas_shape_4').invoke('attr', 'y').then((yVal) => {
-                        //     expect(parseFloat(yVal)).to.be.closeTo(y + i * 5 * scaleFrom400, delta);
-                        // });
                         cy.get('#cvat_canvas_shape_4').then(($shape) => {
                             cy.task('log', `x:${+$shape.attr('x')}, y:${+$shape.attr('x')}`);
                             expect(+$shape.attr('x')).to.be.closeTo(x + i * 5 * scaleFrom400, delta);

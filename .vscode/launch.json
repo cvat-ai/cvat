@@ -152,7 +152,7 @@
                 "run",
                 "--headless",
                 "--browser",
-                "chrome",
+                "chrome"
             ],
             "outputCapture": "std",
             "console": "internalConsole"
