@@ -44,14 +44,11 @@ async function imageGenerator(args) {
         directory, fileName, width, height, color, posX, posY, message, count, extension,
     } = args;
     const file = path.join(directory, fileName);
-    try {
-        for (let i = 1; i <= count; i++) {
-            let image = await createImage(width, height, color);
-            image = await appendText(image, posX, posY, message, i);
-            image.write(`${file}_${i}.${extension}`);
-        }
-    // eslint-disable-next-line no-empty
-    } catch (e) {}
+    for (let i = 1; i <= count; i++) {
+        let image = await createImage(width, height, color);
+        image = await appendText(image, posX, posY, message, i);
+        image.write(`${file}_${i}.${extension}`);
+    }
     return null;
 }
 
@@ -60,12 +57,9 @@ async function bufferToImage(args) {
         directory, fileName, extension, buffer,
     } = args;
     let file = null;
-    try {
-        fs.mkdirp(directory);
-        file = path.join(directory, `${fileName}.${extension}`);
-        const image = await createImageFromBuffer(Buffer.from(buffer.data));
-        image.write(file);
-        // eslint-disable-next-line no-empty
-    } catch (e) {}
+    fs.mkdirp(directory);
+    file = path.join(directory, `${fileName}.${extension}`);
+    const image = await createImageFromBuffer(Buffer.from(buffer.data));
+    image.write(file);
     return fs.pathExists(file);
 }
