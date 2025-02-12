@@ -10,7 +10,7 @@ import {
     GridColor, ColorBy, SettingsState, ToolsBlockerState,
     CombinedState,
 } from 'reducers';
-import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
+import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
 import { conflict, conflictDetector } from 'utils/conflict-detector';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correciton';
 import { shortcutsActions } from './shortcuts-actions';
@@ -422,48 +422,48 @@ export function restoreSettingsAsync(): ThunkAction {
         const { settings, shortcuts } = state;
 
         dispatch(shortcutsActions.setDefaultShortcuts(structuredClone(shortcuts.keyMap)));
-        const newSettings = { ..._.pick(settings, 'player', 'workspace'), imageFilters: [] as ImageFilter[] };
+
         const settingsString = localStorage.getItem('clientSettings') as string;
         if (!settingsString) return;
-        const loadedSettings = JSON.parse(settingsString);
-        for (const [sectionKey, section] of Object.entries(newSettings)) {
-            for (const [key, value] of Object.entries(section)) {
-                let settedValue = value;
-                if (sectionKey in loadedSettings && key in loadedSettings[sectionKey]) {
-                    settedValue = loadedSettings[sectionKey][key];
-                    Object.defineProperty(newSettings[(sectionKey as 'player' | 'workspace')], key, { value: settedValue });
-                }
-            }
-        }
 
-        newSettings.imageFilters = [];
-        if ('imageFilters' in loadedSettings) {
-            for (const filter of loadedSettings.imageFilters) {
-                switch (filter.alias) {
-                    case ImageFilterAlias.GAMMA_CORRECTION: {
-                        const modifier = new GammaCorrection(filter.params as GammaFilterOptions);
-                        newSettings.imageFilters.push({
-                            modifier,
-                            alias: ImageFilterAlias.GAMMA_CORRECTION,
-                        });
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
+        const loadedSettings = JSON.parse(settingsString);
+        const newSettings = {
+            player: settings.player,
+            workspace: settings.workspace,
+            imageFilters: [],
+        } as Pick<SettingsState, 'player' | 'workspace' | 'imageFilters'>;
+
+        Object.entries(_.pick(newSettings, ['player', 'workspace'])).forEach(([sectionKey, section]) => {
+            for (const key of Object.keys(section)) {
+                const settedValue = loadedSettings[sectionKey]?.[key];
+                if (settedValue !== undefined) {
+                    Object.defineProperty(newSettings[sectionKey as 'player' | 'workspace'], key, { value: settedValue });
                 }
             }
+        });
+
+        if ('imageFilters' in loadedSettings) {
+            loadedSettings.imageFilters.forEach((filter: SerializedImageFilter) => {
+                if (filter.alias === ImageFilterAlias.GAMMA_CORRECTION) {
+                    const modifier = new GammaCorrection(filter.params as GammaFilterOptions);
+                    newSettings.imageFilters.push({
+                        modifier,
+                        alias: ImageFilterAlias.GAMMA_CORRECTION,
+                    });
+                }
+            });
         }
 
         dispatch(setSettings(newSettings));
+
         if ('shortcuts' in loadedSettings) {
             const updateKeyMap = structuredClone(shortcuts.keyMap);
-            for (const key of Object.keys(loadedSettings.shortcuts.keyMap)) {
-                const value = loadedSettings.shortcuts.keyMap[key];
+            for (const [key, value] of Object.entries(loadedSettings.shortcuts.keyMap)) {
                 if (key in updateKeyMap) {
-                    updateKeyMap[key].sequences = value.sequences;
+                    updateKeyMap[key].sequences = (value as { sequences: string[] }).sequences;
                 }
             }
+
             for (const key of Object.keys(updateKeyMap)) {
                 const currValue = {
                     [key]: { ...updateKeyMap[key] },
@@ -490,35 +490,23 @@ export function restoreSettingsAsync(): ThunkAction {
     };
 }
 
-export function updateCachedSettings(settings: CombinedState['settings'], shortcuts: CombinedState['shortcuts']) {
-    const settingsForSaving: any = {
-        shortcuts: {
-            keyMap: {},
-        },
-        imageFilters: [],
-    };
+export function updateCachedSettings(settings: CombinedState['settings'], shortcuts: CombinedState['shortcuts']): void {
     const supportedImageFilters = [ImageFilterAlias.GAMMA_CORRECTION];
-    for (const [key, value] of Object.entries(settings)) {
-        if (['player', 'workspace'].includes(key)) {
-            settingsForSaving[key] = value;
-        }
-        if (key === 'imageFilters') {
-            const filters = [];
-            for (const filter of value) {
-                if (supportedImageFilters.includes(filter.alias)) {
-                    filters.push(filter.modifier.toJSON());
-                }
-            }
-            settingsForSaving.imageFilters = filters;
-        }
-    }
-    for (const [key] of Object.entries(shortcuts.keyMap)) {
-        if (key in shortcuts.defaultState) {
-            settingsForSaving.shortcuts.keyMap[key] = {
-                sequences: shortcuts.keyMap[key].sequences,
-            };
-        }
-    }
+    const settingsForSaving = {
+        player: settings.player,
+        workspace: settings.workspace,
+        shortcuts: {
+            keyMap: Object.entries(shortcuts.keyMap).reduce<Record<string, { sequences: string[] }>>(
+                (acc, [key, value]) => {
+                    if (key in shortcuts.defaultState) {
+                        acc[key] = { sequences: value.sequences };
+                    }
+                    return acc;
+                }, {}),
+        },
+        imageFilters: settings.imageFilters.filter((imageFilter) => supportedImageFilters.includes(imageFilter.alias))
+            .map((imageFilter) => imageFilter.modifier.toJSON()),
+    };
 
     localStorage.setItem('clientSettings', JSON.stringify(settingsForSaving));
 }

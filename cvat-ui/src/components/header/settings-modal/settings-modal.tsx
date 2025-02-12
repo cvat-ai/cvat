@@ -36,7 +36,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
         if (!settingsInitialized) return;
 
         updateCachedSettings(settings, shortcuts);
-    }, [setSettingsInitialized, settings, shortcuts]);
+    }, [settingsInitialized, settings, shortcuts]);
 
     useEffect(() => {
         try {
