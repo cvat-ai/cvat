@@ -79,7 +79,7 @@ from cvat.apps.engine.serializers import (
     ValidationParamsSerializer,
 )
 from cvat.apps.engine.task import JobFileMapping, _create_thread
-from cvat.apps.engine.types import Request
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
@@ -1150,7 +1150,7 @@ def create_backup(
 
 def _import(
     importer: TaskImporter | ProjectImporter,
-    request: Request,
+    request: ExtendedRequest,
     queue: django_rq.queues.DjangoRQ,
     rq_id: str,
     Serializer: type[TaskFileSerializer] | type[ProjectFileSerializer],
@@ -1245,7 +1245,7 @@ def _import(
 def get_backup_dirname():
     return TmpDirManager.TMP_ROOT
 
-def import_project(request: Request, queue_name: str, filename: str | None = None):
+def import_project(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -1274,7 +1274,7 @@ def import_project(request: Request, queue_name: str, filename: str | None = Non
         filename=filename
     )
 
-def import_task(request: Request, queue_name: str, filename: str | None = None):
+def import_task(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     rq_id = request.data.get('rq_id', RQId(
         RequestAction.IMPORT, RequestTarget.TASK, uuid.uuid4(),
         subresource=RequestSubresource.BACKUP,

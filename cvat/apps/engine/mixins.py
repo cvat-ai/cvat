@@ -43,7 +43,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
-from cvat.apps.engine.types import Request
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 
 slogger = ServerLogManager(__name__)
@@ -167,7 +167,7 @@ class TusFile:
         return tus_file
 
 class TusChunk:
-    def __init__(self, request: Request):
+    def __init__(self, request: ExtendedRequest):
         self.META = request.META
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
@@ -223,7 +223,7 @@ class UploadMixin:
                 response.__setitem__(key, value)
         return response
 
-    def _get_metadata(self, request: Request):
+    def _get_metadata(self, request: ExtendedRequest):
         metadata = {}
         if request.META.get("HTTP_UPLOAD_METADATA"):
             for kv in request.META.get("HTTP_UPLOAD_METADATA").split(","):
@@ -238,7 +238,7 @@ class UploadMixin:
                     metadata[splited_metadata[0]] = ""
         return metadata
 
-    def upload_data(self, request: Request):
+    def upload_data(self, request: ExtendedRequest):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
@@ -255,7 +255,7 @@ class UploadMixin:
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
-    def init_tus_upload(self, request: Request):
+    def init_tus_upload(self, request: ExtendedRequest):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204_NO_CONTENT)
         else:
@@ -329,7 +329,7 @@ class UploadMixin:
                 extra_headers={'Location': urljoin(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
-    def append_tus_chunk(self, request: Request, file_id: str):
+    def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
         tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
             if tus_file.exists():
@@ -369,12 +369,12 @@ class UploadMixin:
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
 
-    def _get_request_client_files(self, request):
+    def _get_request_client_files(self, request: ExtendedRequest):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data.get('client_files')
 
-    def append_files(self, request):
+    def append_files(self, request: ExtendedRequest):
         """
         Processes a single or multiple files sent in a single request inside
         a file uploading session.
@@ -393,13 +393,13 @@ class UploadMixin:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    def upload_started(self, request):
+    def upload_started(self, request: ExtendedRequest):
         """
         Allows to do actions before upcoming file uploading.
         """
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         """
         Allows to process uploaded files.
         """
@@ -413,14 +413,14 @@ class PartialUpdateModelMixin:
     Almost the same as UpdateModelMixin, but has no public PUT / update() method.
     """
 
-    def _update(self, request: Request, *args, **kwargs):
+    def _update(self, request: ExtendedRequest, *args, **kwargs):
         # This method must not be named "update" not to be matched with the PUT method
         return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
 
     def perform_update(self, serializer):
         mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request: ExtendedRequest, *args, **kwargs):
         with mock.patch.object(self, 'update', new=self._update, create=True):
             return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
 
@@ -428,7 +428,7 @@ class PartialUpdateModelMixin:
 class DatasetMixin:
     def export_dataset_v1(
         self,
-        request: Request,
+        request: ExtendedRequest,
         save_images: bool,
         *,
         get_data: Optional[Callable[[int], dict[str, Any]]] = None,
@@ -474,7 +474,7 @@ class DatasetMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
-    def export_dataset_v2(self, request: Request, pk: int):
+    def export_dataset_v2(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
         save_images = is_dataset_export(request)
@@ -486,7 +486,7 @@ class DatasetMixin:
     # FUTURE-TODO: migrate to new API
     def import_annotations(
         self,
-        request: Request,
+        request: ExtendedRequest,
         db_obj: Project | Task | Job,
         import_func: Callable[..., None],
         rq_func: Callable[..., None],
@@ -523,7 +523,7 @@ class DatasetMixin:
 
 
 class BackupMixin:
-    def export_backup_v1(self, request: Request) -> Response:
+    def export_backup_v1(self, request: ExtendedRequest) -> Response:
         db_object = self.get_object() # force to call check_object_permissions
 
         export_backup_manager = BackupExportManager(db_object, request, version=1)
@@ -535,7 +535,7 @@ class BackupMixin:
         return response
 
     # FUTURE-TODO: migrate to new API
-    def import_backup_v1(self, request: Request, import_func: Callable) -> Response:
+    def import_backup_v1(self, request: ExtendedRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -569,7 +569,7 @@ class BackupMixin:
         },
     )
     @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
-    def export_backup_v2(self, request: Request, pk: int):
+    def export_backup_v2(self, request: ExtendedRequest, pk: int):
         db_object = self.get_object() # force to call check_object_permissions
 
         export_backup_manager = BackupExportManager(db_object, request, version=2)

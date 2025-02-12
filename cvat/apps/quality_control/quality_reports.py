@@ -53,7 +53,7 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.types import Request
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
@@ -2250,7 +2250,7 @@ class QualityReportUpdateManager:
             return "Quality computation job for this task already enqueued"
 
     def schedule_custom_quality_check_job(
-        self, request: Request, task: Task, *, user_id: int
+        self, request: ExtendedRequest, task: Task, *, user_id: int
     ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.

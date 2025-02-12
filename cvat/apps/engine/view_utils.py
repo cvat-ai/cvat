@@ -16,7 +16,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.parsers import TusUploadParser
-from cvat.apps.engine.types import Request
+from cvat.apps.engine.types import ExtendedRequest
 
 
 def make_paginated_response(
@@ -25,7 +25,7 @@ def make_paginated_response(
     viewset: GenericViewSet,
     response_type: Optional[type[HttpResponse]] = None,
     serializer_type: Optional[type[Serializer]] = None,
-    request: Optional[type[Request]] = None,
+    request: Optional[type[ExtendedRequest]] = None,
     **serializer_params
 ):
     # Adapted from the mixins.ListModelMixin.list()
