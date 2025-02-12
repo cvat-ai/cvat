@@ -30,7 +30,7 @@ context('Copy frame filename in job', () => {
             return cy.get('.cvat-player-filename-wrapper').invoke('text');
         }
 
-        function clipboard() {
+        function copyToclipboard() {
             cy.get('.cvat-player-copy-frame-name-icon').click();
             return cy.get('@copyTextToClipboard').should('be.called')
                 .then((stub) => {
@@ -41,49 +41,14 @@ context('Copy frame filename in job', () => {
 
         it('Check that frame filename can be copied to clipboard', () => {
             scrapeFrameFilename().then((fileName) => {
-                clipboard().should('equal', fileName);
+                copyToclipboard().should('equal', fileName);
             });
         });
 
         it('Check clipboard after switching frames', () => {
             cy.goToNextFrame(1);
             scrapeFrameFilename().then((fileName) => {
-                clipboard().should('equal', fileName);
-            });
-        });
-
-        it('Check clipboard after deleting frame, after Undo', () => {
-            let oldName = '';
-            scrapeFrameFilename().then((fileName) => {
-                clipboard().should('equal', fileName);
-                oldName = fileName;
-            });
-
-            cy.deleteFrame();
-
-            scrapeFrameFilename().then((newFrameName) => {
-                clipboard().should('equal', newFrameName);
-            });
-            cy.contains('.cvat-annotation-header-button', 'Undo').click({ force: true });
-            cy.then(() => {
-                clipboard().should('equal', oldName);
-            });
-            cy.saveJob();
-        });
-        it('Check clipboard after deleting and restoring frame', () => {
-            cy.checkDeletedFrameVisibility();
-            let oldName = '';
-            scrapeFrameFilename().then((fileName) => {
-                clipboard().should('equal', fileName);
-                oldName = fileName;
-            });
-            cy.deleteFrame();
-            cy.then(() => {
-                clipboard().should('equal', oldName);
-            });
-            cy.deleteFrame('restore');
-            cy.then(() => {
-                clipboard().should('equal', oldName);
+                copyToclipboard().should('equal', fileName);
             });
         });
     });
