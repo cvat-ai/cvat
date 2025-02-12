@@ -4,6 +4,19 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def init_consensus_settings_in_existing_consensus_tasks(apps, schema_editor):
+    Task = apps.get_model("engine", "Task")
+    ConsensusSettings = apps.get_model("consensus", "ConsensusSettings")
+
+    tasks_with_consensus = Task.objects.filter(
+        segment__job__type="consensus_replica", consensus_settings__isnull=True
+    ).distinct()
+    ConsensusSettings.objects.bulk_create(
+        [ConsensusSettings(task=t, quorum=0.5, iou_threshold=0.4) for t in tasks_with_consensus],
+        batch_size=10000,
+    )
+
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -33,5 +46,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+        ),
+        migrations.RunPython(
+            init_consensus_settings_in_existing_consensus_tasks,
+            reverse_code=migrations.RunPython.noop,
         ),
     ]
