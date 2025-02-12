@@ -16,9 +16,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
-# We use both full names for internal datumaro symbols and dm.-aliased for external ones
-import datumaro
-import datumaro as dm  # pylint: disable=reimported
+import datumaro as dm
 import datumaro.util
 import defusedxml.ElementTree as ET
 import rq
