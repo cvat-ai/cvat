@@ -591,7 +591,7 @@ class LambdaQueue:
         )
         jobs = queue.job_class.fetch_many(job_ids, queue.connection)
 
-        return [LambdaJob(job) for job in jobs if job and job.meta.get("lambda")]
+        return [LambdaJob(job) for job in jobs if job and LambdaRQMeta.from_job(job).lambda_]
 
     def enqueue(
         self,
@@ -702,7 +702,7 @@ class LambdaJob:
                 ),
             },
             "status": self.job.get_status(),
-            "progress": self.job.meta.get("progress", 0),
+            "progress": LambdaRQMeta.from_job(self.job).progress,
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,

@@ -28,9 +28,6 @@ optional_bool_validator = attrs.validators.optional(attrs.validators.instance_of
 optional_float_validator = attrs.validators.optional(attrs.validators.instance_of(float))
 
 
-def _update_value(self: AbstractRQMeta, attribute: attrs.Attribute, value: Any):
-    self._job.meta[attribute.name] = value
-
 
 @attrs.frozen(kw_only=True)
 class UserInfo:
@@ -55,12 +52,15 @@ class RequestInfo:
 class AbstractRQMeta(metaclass=ABCMeta):
     _job: RQJob | None = attrs.field(init=False, default=None)
 
+    def update_value(self, attribute: attrs.Attribute, value: Any):
+        self._job.meta[attribute.name] = value
+
     def to_dict(self) -> dict:
-        return asdict(self, filter=lambda k, _: k.name != "_job")
+        return asdict(self, filter=lambda k, _: not k.name.startswith("_"))
 
     @classmethod
     def from_job(cls, rq_job: RQJob):
-        keys_to_keep = [k.name for k in attrs.fields(cls)]
+        keys_to_keep = [k.name for k in attrs.fields(cls) if not k.name.startswith("_")]
         meta = cls(**{k: v for k, v in rq_job.meta.items() if k in keys_to_keep})
         meta._job = rq_job
 
@@ -80,26 +80,29 @@ class AbstractRQMeta(metaclass=ABCMeta):
 
         return {k: v for k, v in self._job.meta.items() if k not in resettable_fields}
 
+on_setattr = attrs.setters.pipe(attrs.setters.validate, AbstractRQMeta.update_value)
 
 @attrs.define(kw_only=True)
 class RQMetaWithFailureInfo(AbstractRQMeta):
-
     # mutable && optional fields
     formatted_exception: str | None = attrs.field(
         validator=[optional_str_validator],
         default=None,
-        on_setattr=_update_value,
+        on_setattr=on_setattr,
     )
     exc_type: type[Exception] | None = attrs.field(
         default=None,
-        on_setattr=_update_value,
+        on_setattr=on_setattr,
     )
     @exc_type.validator
     def _check_exc_type(self, attribute: attrs.Attribute, value: Any):
         if value is not None and not issubclass(value, Exception):
             raise ValueError("Wrong exception type")
 
-    exc_args: Iterable | None = attrs.field(default=None, on_setattr=_update_value)
+    exc_args: Iterable | None = attrs.field(
+        default=None,
+        on_setattr=on_setattr
+    )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -145,10 +148,10 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     progress: float | None = attrs.field(
         validator=[optional_float_validator],
         default=None,
-        on_setattr=_update_value,
+        on_setattr=on_setattr,
     )
     status: str = attrs.field(
-        validator=[str_validator], default="", on_setattr=_update_value
+        validator=[str_validator], default="", on_setattr=on_setattr
     )
 
     @staticmethod
@@ -227,7 +230,7 @@ class ImportRQMeta(BaseRQMeta):
 
     # mutable fields
     task_progress: float | None = attrs.field(
-        validator=[optional_float_validator], default=None, on_setattr=_update_value
+        validator=[optional_float_validator], default=None, on_setattr=on_setattr
     ) # used when importing project dataset
 
     @staticmethod
