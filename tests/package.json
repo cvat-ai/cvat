@@ -16,5 +16,6 @@
     "fs-extra": "^10.1.0",
     "jimp": "^0.22.10"
   },
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "devDependencies": {}
 }

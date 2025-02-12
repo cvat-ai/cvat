@@ -20,7 +20,7 @@ export default class TrackerMILImplementation implements TrackerMIL {
         this.cv = cv;
         this.trackerMIL = new cv.TrackerMIL();
         this.imageData = null;
-        this.maxSize = 2560;
+        this.maxSize = 1080;
         this.imageScale = 1;
         this.name = 'TrackerMIL';
     }
