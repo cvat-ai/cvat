@@ -363,6 +363,274 @@ class TrackManagerTest(TestCase):
         interpolated_shapes = TrackManager.get_interpolated_shapes(track, 0, 2, "2d")
         self.assertEqual(expected_shapes, interpolated_shapes)
 
+    def test_deleted_frames_with_keyframes_are_ignored(self):
+        deleted_frames = [2]
+        end_frame = 5
+
+        track = {
+            "frame": 0,
+            "label_id": 0,
+            "group": None,
+            "attributes": [],
+            "source": "manual",
+            "shapes": [
+                {
+                    "frame": 0,
+                    "points": [1.0, 2.0, 3.0, 4.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+                {
+                    "frame": 2,  # deleted in the task
+                    "points": [3.0, 4.0, 5.0, 6.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+                {
+                    "frame": 4,
+                    "points": [1.0, 2.0, 3.0, 4.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+            ],
+        }
+
+        expected_shapes = [
+            {
+                "frame": 0,
+                "points": [1.0, 2.0, 3.0, 4.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": True,
+            },
+            {
+                "frame": 1,
+                "points": [1.0, 2.0, 3.0, 4.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": False,
+            },
+            {
+                "frame": 3,
+                "points": [1.0, 2.0, 3.0, 4.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": False,
+            },
+            {
+                "frame": 4,
+                "points": [1.0, 2.0, 3.0, 4.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": True,
+            },
+        ]
+
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track, 0, end_frame, DimensionType.DIM_2D, deleted_frames=deleted_frames
+        )
+        self.assertEqual(expected_shapes, interpolated_shapes)
+
+    def test_keyframes_on_excluded_frames_are_not_ignored(self):
+        end_frame = 5
+
+        track = {
+            "frame": 0,
+            "label_id": 0,
+            "group": None,
+            "attributes": [],
+            "source": "manual",
+            "shapes": [
+                {
+                    "frame": 0,
+                    "points": [1.0, 2.0, 3.0, 4.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+                {
+                    "frame": 2,
+                    "points": [3.0, 4.0, 5.0, 6.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+                {
+                    "frame": 4,
+                    "points": [7.0, 8.0, 9.0, 10.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+            ],
+        }
+
+        all_expected_shapes = [
+            {
+                "frame": 0,
+                "points": [1.0, 2.0, 3.0, 4.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": True,
+            },
+            {
+                "frame": 1,
+                "points": [2.0, 3.0, 4.0, 5.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": False,
+            },
+            {
+                "frame": 2,
+                "points": [3.0, 4.0, 5.0, 6.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": True,
+            },
+            {
+                "frame": 3,
+                "points": [5.0, 6.0, 7.0, 8.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": False,
+            },
+            {
+                "frame": 4,
+                "points": [7.0, 8.0, 9.0, 10.0],
+                "rotation": 0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": True,
+            },
+        ]
+
+        for included_frames in [None, [1, 3]]:
+            interpolated_shapes = TrackManager.get_interpolated_shapes(
+                track, 0, end_frame, DimensionType.DIM_2D, included_frames=included_frames
+            )
+            expected_shapes = [
+                shape
+                for shape in all_expected_shapes
+                if included_frames is None or shape["frame"] in included_frames
+            ]
+            self.assertEqual(expected_shapes, interpolated_shapes)
+
+    def test_keyframes_on_deleted_frames_with_specific_requested_frames_are_ignored(self):
+        deleted_frames = [2]  # the task has deleted frames
+        included_frames = [1, 3]  # and current track view requires only specific frames
+        end_frame = 5
+
+        track = {
+            "frame": 0,
+            "label_id": 0,
+            "group": None,
+            "attributes": [],
+            "source": "manual",
+            "shapes": [
+                {
+                    "frame": 0,
+                    "points": [1.0, 2.0, 3.0, 4.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+                {
+                    "frame": 2,  # deleted
+                    "points": [0, 0, 1, 1],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": True,
+                    "outside": False,
+                    "attributes": [],
+                },
+                {
+                    "frame": 4,
+                    "points": [9.0, 10.0, 11.0, 12.0],
+                    "rotation": 0,
+                    "type": "rectangle",
+                    "occluded": False,
+                    "outside": False,
+                    "attributes": [],
+                },
+            ],
+        }
+
+        expected_shapes = [
+            {
+                "frame": 1,
+                "points": [3.0, 4.0, 5.0, 6.0],
+                "rotation": 0.0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": False,
+            },
+            {
+                "frame": 3,
+                "points": [7.0, 8.0, 9.0, 10.0],
+                "rotation": 0.0,
+                "type": "rectangle",
+                "occluded": False,
+                "outside": False,
+                "attributes": [],
+                "keyframe": False,
+            },
+        ]
+
+        interpolated_shapes = TrackManager.get_interpolated_shapes(
+            track,
+            0,
+            end_frame,
+            DimensionType.DIM_2D,
+            included_frames=included_frames,
+            deleted_frames=deleted_frames,
+        )
+        self.assertEqual(expected_shapes, interpolated_shapes)
+
 
 class AnnotationIRTest(TestCase):
     def test_slice_track_does_not_duplicate_outside_frame_on_the_end(self):

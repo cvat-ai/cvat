@@ -8,6 +8,7 @@ import mimetypes
 import os
 import re
 import shutil
+import tempfile
 import uuid
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection, Iterable
@@ -47,7 +48,10 @@ from cvat.apps.dataset_manager.views import (
     retry_current_rq_job,
 )
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import import_resource_from_cloud_storage
+from cvat.apps.engine.cloud_provider import (
+    db_storage_to_storage_instance,
+    import_resource_from_cloud_storage,
+)
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
@@ -396,14 +400,14 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
 
-        self._db_task = (
+        self._db_task: models.Task = (
             models.Task.objects
             .prefetch_related('data__images', 'annotation_guide__assets')
             .select_related('data__video', 'data__validation_layout', 'annotation_guide')
             .get(pk=pk)
         )
 
-        self._db_data = self._db_task.data
+        self._db_data: models.Data = self._db_task.data
         self._version = version
 
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
@@ -444,8 +448,31 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 files=[self._db_data.get_manifest_path()],
                 target_dir=target_data_dir,
             )
+        elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            assert self._db_task.dimension != models.DimensionType.DIM_3D, "Cloud storage cannot contain 3d images"
+            assert not hasattr(self._db_data, 'video'), "Only images can be stored in cloud storage"
+            assert self._db_data.related_files.count() == 0, "No related images can be stored in cloud storage"
+            media_files = [im.path for im in self._db_data.images.all()]
+            cloud_storage_instance = db_storage_to_storage_instance(self._db_data.cloud_storage)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                cloud_storage_instance.bulk_download_to_dir(files=media_files, upload_dir=tmp_dir)
+                self._write_files(
+                    source_dir=tmp_dir,
+                    zip_object=zip_object,
+                    files=[
+                        os.path.join(tmp_dir, file)
+                        for file in media_files
+                    ],
+                    target_dir=target_data_dir,
+                )
+            self._write_files(
+                source_dir=self._db_data.get_upload_dirname(),
+                zip_object=zip_object,
+                files=[self._db_data.get_manifest_path()],
+                target_dir=target_data_dir,
+            )
         else:
-            raise NotImplementedError("We don't currently support backing up tasks with data from cloud storage")
+            raise NotImplementedError
 
     def _write_task(self, zip_object, target_dir=None):
         task_dir = self._db_task.get_dirname()
@@ -556,6 +583,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     media_filenames[frame] for frame in validation_layout.frames
                 ]
                 data['validation_layout'] = validation_params
+
+            if self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+                data["storage"] = StorageChoice.LOCAL
 
             return self._prepare_data_meta(data)
 
