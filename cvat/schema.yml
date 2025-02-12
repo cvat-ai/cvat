@@ -7637,10 +7637,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Pairwise annotation matching IoU threshold
         quorum:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimum required percent of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
@@ -9784,10 +9788,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Pairwise annotation matching IoU threshold
         quorum:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimum required percent of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
@@ -9993,6 +10001,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -10006,10 +10016,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -10037,6 +10051,8 @@ components:
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -10044,6 +10060,8 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
@@ -10052,6 +10070,8 @@ components:
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
@@ -10062,6 +10082,8 @@ components:
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
@@ -10072,6 +10094,8 @@ components:
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
@@ -10500,6 +10524,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -10513,10 +10539,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -10544,6 +10574,8 @@ components:
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -10551,6 +10583,8 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
@@ -10559,6 +10593,8 @@ components:
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
@@ -10569,6 +10605,8 @@ components:
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
@@ -10579,6 +10617,8 @@ components:
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
