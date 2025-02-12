@@ -27,10 +27,10 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         VIEW_STATUS = "view:status"
 
     @classmethod
-    def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
+    def create_scope_check_status(cls, request, rq_job_owner_id: int, iam_context=None):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
-        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, job_owner_id=job_owner_id)
+        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, rq_job_owner_id=rq_job_owner_id)
 
     @classmethod
     def create_scope_view(cls, request, report: Union[int, QualityReport], iam_context=None):
@@ -102,8 +102,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         return permissions
 
     def __init__(self, **kwargs):
-        if "job_owner_id" in kwargs:
-            self.rq_job_owner_id = int(kwargs.pop("job_owner_id"))
+        if "rq_job_owner_id" in kwargs:
+            self.rq_job_owner_id = int(kwargs.pop("rq_job_owner_id"))
 
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/quality_reports/allow"
