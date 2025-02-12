@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import encodings
 import io
 import json
 import mimetypes
@@ -28,7 +29,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers, status
-from rest_framework.compat import SHORT_SEPARATORS
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -612,11 +612,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
-        with TmpDirManager.get_tmp_directory() as temp_dir:
-            tmp_json_file = os.path.join(temp_dir, "tmp.json")
-            with open(tmp_json_file, 'w') as f:
-                json.dump(annotations, f, separators=SHORT_SEPARATORS)
-            zip_object.write(tmp_json_file, arcname=target_annotations_file)
+        with zip_object.open(target_annotations_file, 'w') as f:
+            json.dump(annotations, encodings.utf_8.StreamWriter(f), separators=(',', ':'))
 
     def _export_task(self, zip_obj, target_dir=None):
         self._write_data(zip_obj, target_dir)
