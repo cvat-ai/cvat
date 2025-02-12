@@ -10,11 +10,8 @@ from collections.abc import Collection
 from typing import ClassVar, Iterable, Sequence
 
 import attrs
-
-# We use both full names for internal datumaro symbols and dm.-aliased for external ones
-import datumaro
-import datumaro as dm  # pylint: disable=reimported
-import datumaro.components.merge.intersect_merge  # pylint: disable=reimported
+import datumaro as dm
+import datumaro.components.merge.intersect_merge
 from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
