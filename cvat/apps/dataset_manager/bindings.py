@@ -16,9 +16,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
-# We use both full names for internal datumaro symbols and dm.-aliased for external ones
-import datumaro
-import datumaro as dm  # pylint: disable=reimported
+import datumaro as dm
 import datumaro.util
 import defusedxml.ElementTree as ET
 import rq
@@ -30,10 +28,10 @@ from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine import models
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.model_utils import add_prefetch_fields
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
@@ -511,8 +509,9 @@ class CommonData(InstanceLabelData):
                 self.stop + 1,
                 # Skip outside, deleted and excluded frames
                 included_frames=included_frames,
+                deleted_frames=self.deleted_frames.keys(),
                 include_outside=False,
-                use_server_track_ids=self._use_server_track_ids
+                use_server_track_ids=self._use_server_track_ids,
             ),
             key=lambda shape: shape.get("z_order", 0)
         ):
@@ -1310,14 +1309,12 @@ class ProjectData(InstanceLabelData):
                 anno_manager.to_shapes(
                     task.data.size,
                     included_frames=task_included_frames,
+                    deleted_frames=task_data.deleted_frames.keys(),
                     include_outside=False,
-                    use_server_track_ids=self._use_server_track_ids
+                    use_server_track_ids=self._use_server_track_ids,
                 ),
                 key=lambda shape: shape.get("z_order", 0)
             ):
-                if shape['frame'] in task_data.deleted_frames:
-                    continue
-
                 assert (task.id, shape['frame']) in self._frame_info
 
                 if 'track_id' in shape:

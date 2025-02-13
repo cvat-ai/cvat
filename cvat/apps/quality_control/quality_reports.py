@@ -40,9 +40,9 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
-from cvat.apps.dataset_manager.util import bulk_create
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     DimensionType,
     Image,
@@ -2476,11 +2476,6 @@ class QualityReportUpdateManager:
 
         return task_report.id
 
-    def _get_current_job(self):
-        from rq import get_current_job
-
-        return get_current_job()
-
     def _compute_task_report(
         self, task: Task, job_reports: dict[int, ComparisonReport]
     ) -> ComparisonReport:
@@ -2592,7 +2587,7 @@ class QualityReportUpdateManager:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(db_model=models.QualityReport, objects=db_job_reports)
+        db_job_reports = bulk_create(db_model=models.QualityReport, objs=db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2607,7 +2602,7 @@ class QualityReportUpdateManager:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objects=db_conflicts)
+        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objs=db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2623,7 +2618,7 @@ class QualityReportUpdateManager:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids)
+        db_ann_ids = bulk_create(db_model=models.AnnotationId, objs=db_ann_ids)
 
         return db_task_report
 
