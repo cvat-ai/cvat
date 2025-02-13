@@ -57,3 +57,4 @@ rq==1.16.0
 rules>=3.3
 Shapely==1.7.1
 xmlsec>=1.3.14,<2
+json-stream>=2.0
