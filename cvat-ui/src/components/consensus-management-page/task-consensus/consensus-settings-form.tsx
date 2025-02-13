@@ -44,7 +44,10 @@ export default function ConsensusSettingsForm(props: Readonly<Props>): JSX.Eleme
 
     const generalTooltip = makeTooltip(
         <>
-            {makeTooltipFragment('Quorum', settings.descriptions.quorum)}
+            {makeTooltipFragment('Quorum', settings.descriptions.quorum.replace(
+                'required share of',
+                'required percent of',
+            ))}
         </>,
     );
 

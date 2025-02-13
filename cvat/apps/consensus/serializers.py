@@ -38,7 +38,7 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
         for field_name, help_text in {
             "iou_threshold": "Pairwise annotation matching IoU threshold",
             "quorum": """
-                Minimum required percent of sources having an annotation for it to be accepted
+                Minimum required share of sources having an annotation for it to be accepted
             """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
