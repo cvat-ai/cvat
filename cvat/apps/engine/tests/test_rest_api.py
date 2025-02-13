@@ -3443,7 +3443,7 @@ class TaskDataAPITestCase(ApiTestBase):
 
         return response
 
-    def _get_task_creation_status(self, rq_id: str, user: str, *, headers: dict | None = None):
+    def _get_request(self, rq_id: str, user: str, *, headers: dict | None = None):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/requests/{}'.format(rq_id),
                 **{'HTTP_' + k: v for k, v in (headers or {}).items()})
@@ -3525,17 +3525,13 @@ class TaskDataAPITestCase(ApiTestBase):
                                         expected_storage_method=None,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
                                         dimension=DimensionType.DIM_2D,
-                                        expected_task_creation_status_state='finished',
-                                        expected_task_creation_status_reason=None,
+                                        expected_task_creation_request_state='finished',
+                                        expected_task_creation_request_message=None,
                                         *,
                                         send_data_callback=None,
-                                        get_status_callback=None,
                                         ):
         if send_data_callback is None:
             send_data_callback = self._run_api_v2_tasks_id_data_post
-
-        if get_status_callback is None:
-            get_status_callback = self._get_task_creation_status
 
         if expected_storage_method is None:
             if settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
@@ -3554,19 +3550,19 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
         rq_id = response.data['rq_id']
 
-        if get_status_callback:
-            max_number_of_attempt = 100
-            task_creation_status = None
-            while task_creation_status not in ('failed', 'finished'):
-                assert max_number_of_attempt, "Too much time to create a task"
-                response = get_status_callback(rq_id, user)
-                task_creation_status = response.data['status']
-                sleep(0.1)
-                max_number_of_attempt -= 1
-            self.assertEqual(task_creation_status, expected_task_creation_status_state)
-            if expected_task_creation_status_state == 'failed':
-                self.assertIn(expected_task_creation_status_reason, response.data['message'])
-                return
+        for _ in range(100):
+            response = self._get_request(rq_id, user)
+            task_creation_request_state = response.data['status']
+            if task_creation_request_state in ("failed", "finished"):
+                break
+            sleep(0.1)
+        else:
+            assert False, "Too much time to create a task"
+
+        self.assertEqual(task_creation_request_state, expected_task_creation_request_state)
+        if expected_task_creation_request_state == 'failed':
+            self.assertIn(expected_task_creation_request_message, response.data['message'])
+            return
 
         response = self._get_task(user, task_id)
 
@@ -4236,8 +4232,8 @@ class TaskDataAPITestCase(ApiTestBase):
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                     image_sizes,
                     expected_uploaded_data_location=StorageChoice.SHARE,
-                    expected_task_creation_status_state='failed',
-                    expected_task_creation_status_reason='Incorrect file mapping to manifest content')
+                    expected_task_creation_request_state='failed',
+                    expected_task_creation_request_message='Incorrect file mapping to manifest content')
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         task_spec = {
@@ -4405,8 +4401,8 @@ class TaskDataAPITestCase(ApiTestBase):
                     task_data["server_files[1]"] = manifest_name
                 else:
                     kwargs.update({
-                        'expected_task_creation_status_state': 'failed',
-                        'expected_task_creation_status_reason': "Can't find upload manifest file",
+                        'expected_task_creation_request_state': 'failed',
+                        'expected_task_creation_request_message': "Can't find upload manifest file",
                     })
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
@@ -4474,8 +4470,8 @@ class TaskDataAPITestCase(ApiTestBase):
                         task_data[f"client_files[1]"] = es.enter_context(open(manifest_path))
                     else:
                         kwargs.update({
-                            'expected_task_creation_status_state': 'failed',
-                            'expected_task_creation_status_reason': "Can't find upload manifest file",
+                            'expected_task_creation_request_state': 'failed',
+                            'expected_task_creation_request_message': "Can't find upload manifest file",
                         })
                     self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                         self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
