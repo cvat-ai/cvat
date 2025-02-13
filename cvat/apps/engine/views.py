@@ -171,6 +171,7 @@ from cvat.apps.engine.utils import (
     parse_exception_message,
     process_failed_job,
     sendfile,
+    get_rq_lock_for_job,
 )
 from cvat.apps.engine.view_utils import tus_chunk_action
 from cvat.apps.events.handlers import handle_dataset_import
@@ -3376,102 +3377,105 @@ def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
         rq_id = rq_id_factory(db_obj.pk).render()
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    rq_job = queue.fetch_job(rq_id)
 
-    if rq_job and rq_id_should_be_checked and not is_rq_job_owner(rq_job, request.user.id):
-        return Response(status=status.HTTP_403_FORBIDDEN)
+    # ensure that there is no race condition when processing parallel requests
+    with get_rq_lock_for_job(queue, rq_id):
+        rq_job = queue.fetch_job(rq_id)
 
-    if rq_job and request.method == 'POST':
-        # If there is a previous job that has not been deleted
-        if rq_job.is_finished or rq_job.is_failed:
-            rq_job.delete()
-            rq_job = queue.fetch_job(rq_id)
-        else:
-            return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+        if rq_job and rq_id_should_be_checked and not is_rq_job_owner(rq_job, request.user.id):
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
-    if not rq_job:
-        # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
-        # Then we dont need to create temporary file
-        # Or filename specify key in cloud storage so we need to download file
-        location = location_conf.get('location') if location_conf else Location.LOCAL
-        db_storage = None
+        if rq_job and request.method == 'POST':
+            # If there is a previous job that has not been deleted
+            if rq_job.is_finished or rq_job.is_failed:
+                rq_job.delete()
+                rq_job = queue.fetch_job(rq_id)
+            else:
+                return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
-        if not filename or location == Location.CLOUD_STORAGE:
-            if location != Location.CLOUD_STORAGE:
-                serializer = AnnotationFileSerializer(data=request.data)
-                if serializer.is_valid(raise_exception=True):
-                    anno_file = serializer.validated_data['annotation_file']
+        if not rq_job:
+            # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
+            # Then we dont need to create temporary file
+            # Or filename specify key in cloud storage so we need to download file
+            location = location_conf.get('location') if location_conf else Location.LOCAL
+            db_storage = None
+
+            if not filename or location == Location.CLOUD_STORAGE:
+                if location != Location.CLOUD_STORAGE:
+                    serializer = AnnotationFileSerializer(data=request.data)
+                    if serializer.is_valid(raise_exception=True):
+                        anno_file = serializer.validated_data['annotation_file']
+                        with NamedTemporaryFile(
+                            prefix='cvat_{}'.format(db_obj.pk),
+                            dir=settings.TMP_FILES_ROOT,
+                            delete=False) as tf:
+                            filename = tf.name
+                            for chunk in anno_file.chunks():
+                                tf.write(chunk)
+                else:
+                    assert filename, 'The filename was not specified'
+
+                    try:
+                        storage_id = location_conf['storage_id']
+                    except KeyError:
+                        raise serializers.ValidationError(
+                            'Cloud storage location was selected as the source,'
+                            ' but cloud storage id was not specified')
+                    db_storage = get_cloud_storage_for_import_or_export(
+                        storage_id=storage_id, request=request,
+                        is_default=location_conf['is_default'])
+
+                    key = filename
                     with NamedTemporaryFile(
                         prefix='cvat_{}'.format(db_obj.pk),
                         dir=settings.TMP_FILES_ROOT,
                         delete=False) as tf:
                         filename = tf.name
-                        for chunk in anno_file.chunks():
-                            tf.write(chunk)
-            else:
-                assert filename, 'The filename was not specified'
 
-                try:
-                    storage_id = location_conf['storage_id']
-                except KeyError:
-                    raise serializers.ValidationError(
-                        'Cloud storage location was selected as the source,'
-                        ' but cloud storage id was not specified')
-                db_storage = get_cloud_storage_for_import_or_export(
-                    storage_id=storage_id, request=request,
-                    is_default=location_conf['is_default'])
+            func = import_resource_with_clean_up_after
+            func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
 
-                key = filename
-                with NamedTemporaryFile(
-                    prefix='cvat_{}'.format(db_obj.pk),
-                    dir=settings.TMP_FILES_ROOT,
-                    delete=False) as tf:
-                    filename = tf.name
+            if location == Location.CLOUD_STORAGE:
+                func_args = (db_storage, key, func) + func_args
+                func = import_resource_from_cloud_storage
 
-        func = import_resource_with_clean_up_after
-        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+            av_scan_paths(filename)
+            user_id = request.user.id
 
-        if location == Location.CLOUD_STORAGE:
-            func_args = (db_storage, key, func) + func_args
-            func = import_resource_from_cloud_storage
+            with get_rq_lock_by_user(queue, user_id):
+                rq_job = queue.enqueue_call(
+                    func=func,
+                    args=func_args,
+                    job_id=rq_id,
+                    depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
+                    meta={
+                        'tmp_file': filename,
+                        **get_rq_job_meta(request=request, db_obj=db_obj),
+                    },
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+                )
 
-        av_scan_paths(filename)
-        user_id = request.user.id
+            handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
 
-        with get_rq_lock_by_user(queue, user_id):
-            rq_job = queue.enqueue_call(
-                func=func,
-                args=func_args,
-                job_id=rq_id,
-                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
+            serializer = RqIdSerializer(data={'rq_id': rq_id})
+            serializer.is_valid(raise_exception=True)
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            if rq_job.is_finished:
+                rq_job.delete()
+                return Response(status=status.HTTP_201_CREATED)
+            elif rq_job.is_failed:
+                exc_info = process_failed_job(rq_job)
 
-        serializer = RqIdSerializer(data={'rq_id': rq_id})
-        serializer.is_valid(raise_exception=True)
-
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-    else:
-        if rq_job.is_finished:
-            rq_job.delete()
-            return Response(status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            exc_info = process_failed_job(rq_job)
-
-            import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
-            if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
-                exc_message = exc_info.split(import_error_prefix)[-1].strip()
-                return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response(data=exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
+                if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
+                    exc_message = exc_info.split(import_error_prefix)[-1].strip()
+                    return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response(data=exc_info,
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -3489,76 +3493,79 @@ def _import_project_dataset(
 
     rq_id = rq_id_factory(db_obj.pk).render()
 
-    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    rq_job = queue.fetch_job(rq_id)
+    queue: DjangoRQ = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 
-    if not rq_job or rq_job.is_finished or rq_job.is_failed:
-        if rq_job and (rq_job.is_finished or rq_job.is_failed):
-            # for some reason the previous job has not been deleted
-            # (e.g the user closed the browser tab when job has been created
-            # but no one requests for checking status were not made)
-            rq_job.delete()
+    # ensure that there is no race condition when processing parallel requests
+    with get_rq_lock_for_job(queue, rq_id):
+        rq_job = queue.fetch_job(rq_id)
 
-        location = location_conf.get('location') if location_conf else None
-        db_storage = None
+        if not rq_job or rq_job.is_finished or rq_job.is_failed:
+            if rq_job and (rq_job.is_finished or rq_job.is_failed):
+                # for some reason the previous job has not been deleted
+                # (e.g the user closed the browser tab when job has been created
+                # but no one requests for checking status were not made)
+                rq_job.delete()
 
-        if not filename and location != Location.CLOUD_STORAGE:
-            serializer = DatasetFileSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                dataset_file = serializer.validated_data['dataset_file']
+            location = location_conf.get('location') if location_conf else None
+            db_storage = None
+
+            if not filename and location != Location.CLOUD_STORAGE:
+                serializer = DatasetFileSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    dataset_file = serializer.validated_data['dataset_file']
+                    with NamedTemporaryFile(
+                        prefix='cvat_{}'.format(db_obj.pk),
+                        dir=settings.TMP_FILES_ROOT,
+                        delete=False) as tf:
+                        filename = tf.name
+                        for chunk in dataset_file.chunks():
+                            tf.write(chunk)
+
+            elif location == Location.CLOUD_STORAGE:
+                assert filename, 'The filename was not specified'
+                try:
+                    storage_id = location_conf['storage_id']
+                except KeyError:
+                    raise serializers.ValidationError(
+                        'Cloud storage location was selected as the source,'
+                        ' but cloud storage id was not specified')
+                db_storage = get_cloud_storage_for_import_or_export(
+                    storage_id=storage_id, request=request,
+                    is_default=location_conf['is_default'])
+
+                key = filename
                 with NamedTemporaryFile(
                     prefix='cvat_{}'.format(db_obj.pk),
                     dir=settings.TMP_FILES_ROOT,
                     delete=False) as tf:
                     filename = tf.name
-                    for chunk in dataset_file.chunks():
-                        tf.write(chunk)
 
-        elif location == Location.CLOUD_STORAGE:
-            assert filename, 'The filename was not specified'
-            try:
-                storage_id = location_conf['storage_id']
-            except KeyError:
-                raise serializers.ValidationError(
-                    'Cloud storage location was selected as the source,'
-                    ' but cloud storage id was not specified')
-            db_storage = get_cloud_storage_for_import_or_export(
-                storage_id=storage_id, request=request,
-                is_default=location_conf['is_default'])
+            func = import_resource_with_clean_up_after
+            func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
 
-            key = filename
-            with NamedTemporaryFile(
-                prefix='cvat_{}'.format(db_obj.pk),
-                dir=settings.TMP_FILES_ROOT,
-                delete=False) as tf:
-                filename = tf.name
+            if location == Location.CLOUD_STORAGE:
+                func_args = (db_storage, key, func) + func_args
+                func = import_resource_from_cloud_storage
 
-        func = import_resource_with_clean_up_after
-        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+            user_id = request.user.id
 
-        if location == Location.CLOUD_STORAGE:
-            func_args = (db_storage, key, func) + func_args
-            func = import_resource_from_cloud_storage
+            with get_rq_lock_by_user(queue, user_id):
+                rq_job = queue.enqueue_call(
+                    func=func,
+                    args=func_args,
+                    job_id=rq_id,
+                    meta={
+                        'tmp_file': filename,
+                        **get_rq_job_meta(request=request, db_obj=db_obj),
+                    },
+                    depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+                )
 
-        user_id = request.user.id
-
-        with get_rq_lock_by_user(queue, user_id):
-            rq_job = queue.enqueue_call(
-                func=func,
-                args=func_args,
-                job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
-                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
-
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
-    else:
-        return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+            handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
+        else:
+            return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
     serializer = RqIdSerializer(data={'rq_id': rq_id})
     serializer.is_valid(raise_exception=True)
