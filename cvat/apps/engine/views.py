@@ -36,6 +36,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django_rq.queues import DjangoRQ
+from django.core.files.storage import storages
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
@@ -189,9 +190,6 @@ _DATA_CHECKSUM_HEADER_NAME = 'X-Checksum'
 _DATA_UPDATED_DATE_HEADER_NAME = 'X-Updated-Date'
 _RETRY_AFTER_TIMEOUT = 10
 
-def get_logo_uri(request) -> str:
-    return request.build_absolute_uri(f'{settings.STATIC_URL}{settings.LOGO_FILENAME}')
-
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -213,11 +211,17 @@ class ServerViewSet(viewsets.ViewSet):
     def about(request):
         from cvat import __version__ as cvat_version
         about = {
-            "name": settings.ABOUT_INFO["name"],
+            "name": "Computer Vision Annotation Tool",
             "subtitle": settings.ABOUT_INFO["subtitle"],
-            "description": settings.ABOUT_INFO["description"],
+            "description": "CVAT is completely re-designed and re-implemented " +
+                "version of Video Annotation Tool from Irvine, California " +
+                "tool. It is free, online, interactive video and image annotation " +
+                "tool for computer vision. It is being used by our team to " +
+                "annotate million of objects with different properties. Many UI " +
+                "and UX decisions are based on feedbacks from professional data " +
+                "annotation team.",
             "version": cvat_version,
-            "logo": get_logo_uri(request),
+            "logo_url": request.build_absolute_uri(storages["staticfiles"].url(settings.LOGO_FILENAME)),
         }
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):

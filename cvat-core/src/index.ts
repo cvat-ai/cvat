@@ -34,6 +34,7 @@ import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
+import AboutData from './about';
 import {
     runAction,
     callAction,
@@ -61,7 +62,7 @@ export default interface CVATCore {
         requests: typeof lambdaManager.requests;
     };
     server: {
-        about: typeof serverProxy.server.about;
+        about: () => Promise<AboutData>;
         share: (dir: string) => Promise<{
             mimeType: string;
             name: string;

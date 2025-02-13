@@ -177,7 +177,7 @@ export interface SerializedAbout {
     description: string;
     name: string;
     version: string;
-    logo: string;
+    logo_url: string;
     subtitle: string;
 }
 

@@ -2627,7 +2627,7 @@ class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
     description = serializers.CharField(max_length=2048)
     version = serializers.CharField(max_length=64)
-    logo = serializers.CharField()
+    logo_url = serializers.CharField()
     subtitle = serializers.CharField(max_length=1024)
 
 class FrameMetaSerializer(serializers.Serializer):

@@ -6905,14 +6905,14 @@ components:
         version:
           type: string
           maxLength: 64
-        logo:
+        logo_url:
           type: string
         subtitle:
           type: string
           maxLength: 1024
       required:
       - description
-      - logo
+      - logo_url
       - name
       - subtitle
       - version
