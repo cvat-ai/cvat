@@ -27,6 +27,7 @@ import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.files.storage import storages
 from django.db import IntegrityError
 from django.db import models as django_models
 from django.db import transaction
@@ -36,7 +37,6 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django_rq.queues import DjangoRQ
-from django.core.files.storage import storages
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
