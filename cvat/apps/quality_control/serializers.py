@@ -177,10 +177,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
             )
 
-    def validate(self, attrs):
-        for k, v in attrs.items():
-            if k.endswith("_threshold") or k in ["oks_sigma", "line_thickness"]:
-                if not 0 <= v <= 1:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
-
-        return super().validate(attrs)
+        for field_name in fields:
+            if field_name.endswith("_threshold") or field_name in ["oks_sigma", "line_thickness"]:
+                extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
+                extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)

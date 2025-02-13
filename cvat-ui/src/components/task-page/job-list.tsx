@@ -107,11 +107,20 @@ function JobListComponent(props: Props): JSX.Element {
     }, [taskInstance]);
 
     const [uncollapsedJobs, setUncollapsedJobs] = useState<Record<number, boolean>>({});
+    useEffect(() => {
+        const savedState = localStorage.getItem('uncollapsedJobs');
+        if (savedState) {
+            setUncollapsedJobs(JSON.parse(savedState));
+        }
+    }, []);
     const onCollapseChange = useCallback((jobId: number) => {
-        setUncollapsedJobs((prevState) => ({
-            ...prevState,
-            [jobId]: !prevState[jobId],
-        }));
+        setUncollapsedJobs((prevState) => {
+            const newState = { ...prevState };
+            newState[jobId] = !prevState[jobId];
+
+            localStorage.setItem('uncollapsedJobs', JSON.stringify(newState));
+            return newState;
+        });
     }, []);
 
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);

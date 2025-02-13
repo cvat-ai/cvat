@@ -22,6 +22,7 @@ import {
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { ActionUnion, createAction } from 'utils/redux';
+import { fetchTask } from 'utils/fetch';
 import QualityOverviewTab from './task-quality/quality-overview-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab from './quality-settings-tab';
@@ -180,12 +181,7 @@ function QualityControlPage(): JSX.Element {
 
     const initializeData = async (id: number): Promise<void> => {
         try {
-            let taskInstance = null;
-            try {
-                [taskInstance] = await core.tasks.get({ id });
-            } catch (error: unknown) {
-                throw new Error('The task was not found on the server');
-            }
+            const taskInstance = await fetchTask(id);
 
             setInstance(taskInstance);
             try {
@@ -398,7 +394,9 @@ function QualityControlPage(): JSX.Element {
                     ),
                 });
             }
+        }
 
+        if (qualitySettings) {
             tabsItems.push({
                 key: 'settings',
                 label: 'Settings',

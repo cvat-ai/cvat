@@ -269,4 +269,4 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        return getattr(self.task.organization, "id", None)
+        return self.task.organization_id

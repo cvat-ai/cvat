@@ -23,9 +23,11 @@ import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
-import { RequestsActionsTypes, getInstanceType } from 'actions/requests-actions';
+import { RequestsActionsTypes } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ConsensusActionTypes } from 'actions/consensus-actions';
+import { getInstanceType } from 'actions/common';
 
 import config from 'config';
 import { NotificationsState } from '.';
@@ -72,6 +74,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             importing: null,
             moving: null,
+            mergingConsensus: null,
         },
         jobs: {
             updating: null,
@@ -195,6 +198,7 @@ const defaultState: NotificationsState = {
             loadingDone: null,
             importingDone: null,
             movingDone: null,
+            mergingConsensusDone: null,
         },
         models: {
             inferenceDone: null,
@@ -729,6 +733,55 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
+            const { instance } = action.payload;
+            let message = '';
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'job') {
+                message =
+                    `Consensus [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id}) has been merged`;
+            } else if (instanceType === 'task') {
+                message = `Consensus jobs in the [task #${instance.id}](/tasks/${instance.id}) have been merged`;
+            }
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: {
+                            message,
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
+            const { instance } = action.payload;
+            let message = '';
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'job') {
+                message =
+                    `Could not merge the [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id})`;
+            } else if (instanceType === 'task') {
+                message = `Could not merge the [task ${instance.id}](/tasks/${instance.id})`;
+            }
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-consensus-merge-task-failed',
                         },
                     },
                 },
