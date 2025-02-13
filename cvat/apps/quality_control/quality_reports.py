@@ -10,7 +10,7 @@ from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
 from functools import cached_property, partial
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Callable, Optional, TypeVar, Union, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
@@ -27,7 +27,6 @@ from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
 from rest_framework.request import Request
 from rq.job import Job as RqJob
-from rq_scheduler import Scheduler as RqScheduler
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -64,9 +63,9 @@ from cvat.apps.quality_control.models import (
 )
 
 
-class _Serializable:
+class Serializable:
     def _value_serializer(self, v):
-        if isinstance(v, _Serializable):
+        if isinstance(v, Serializable):
             return v.to_dict()
         elif isinstance(v, (list, tuple, set, frozenset)):
             return [self._value_serializer(vv) for vv in v]
@@ -92,7 +91,7 @@ class _Serializable:
 
 
 @define(kw_only=True)
-class AnnotationId(_Serializable):
+class AnnotationId(Serializable):
     obj_id: int
     job_id: int
     type: AnnotationType
@@ -115,7 +114,7 @@ class AnnotationId(_Serializable):
 
 
 @define(kw_only=True)
-class AnnotationConflict(_Serializable):
+class AnnotationConflict(Serializable):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
@@ -160,7 +159,7 @@ class AnnotationConflict(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonParameters(_Serializable):
+class ComparisonParameters(Serializable):
     included_annotation_types: list[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
@@ -239,7 +238,7 @@ class ComparisonParameters(_Serializable):
 
 
 @define(kw_only=True)
-class ConfusionMatrix(_Serializable):
+class ConfusionMatrix(Serializable):
     labels: list[str]
     rows: np.ndarray
     precision: np.ndarray
@@ -275,7 +274,7 @@ class ConfusionMatrix(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationsSummary(_Serializable):
+class ComparisonReportAnnotationsSummary(Serializable):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -326,7 +325,7 @@ class ComparisonReportAnnotationsSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationShapeSummary(_Serializable):
+class ComparisonReportAnnotationShapeSummary(Serializable):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -367,7 +366,7 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationLabelSummary(_Serializable):
+class ComparisonReportAnnotationLabelSummary(Serializable):
     valid_count: int
     invalid_count: int
     total_count: int
@@ -393,7 +392,7 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportAnnotationComponentsSummary(_Serializable):
+class ComparisonReportAnnotationComponentsSummary(Serializable):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
 
@@ -410,7 +409,7 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReportComparisonSummary(_Serializable):
+class ComparisonReportComparisonSummary(Serializable):
     frame_share: float
     frames: list[str]
 
@@ -467,7 +466,7 @@ class ComparisonReportComparisonSummary(_Serializable):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportFrameSummary(_Serializable):
+class ComparisonReportFrameSummary(Serializable):
     conflicts: list[AnnotationConflict]
 
     @cached_property
@@ -533,7 +532,7 @@ class ComparisonReportFrameSummary(_Serializable):
 
 
 @define(kw_only=True)
-class ComparisonReport(_Serializable):
+class ComparisonReport(Serializable):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
     frame_results: dict[int, ComparisonReportFrameSummary]
@@ -661,13 +660,31 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         return converted
 
 
-def _match_segments(
-    a_segms,
-    b_segms,
-    distance=dm.util.annotation_util.segment_iou,
-    dist_thresh=1.0,
-    label_matcher=lambda a, b: a.label == b.label,
-):
+_ShapeT1 = TypeVar("_ShapeT1")
+_ShapeT2 = TypeVar("_ShapeT2")
+ShapeSimilarityFunction = Callable[
+    [_ShapeT1, _ShapeT2], float
+]  # (shape1, shape2) -> [0; 1], returns 0 for mismatches, 1 for matches
+LabelEqualityFunction = Callable[[_ShapeT1, _ShapeT2], bool]
+SegmentMatchingResult = tuple[
+    list[tuple[_ShapeT1, _ShapeT2]],  # matches
+    list[tuple[_ShapeT1, _ShapeT2]],  # mismatches
+    list[_ShapeT1],  # a unmatched
+    list[_ShapeT2],  # b unmatched
+]
+
+
+def match_segments(
+    a_segms: Sequence[_ShapeT1],
+    b_segms: Sequence[_ShapeT2],
+    *,
+    distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
+    dist_thresh: float = 1.0,
+    label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
+) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
+    # Comparing to the dm version, this one changes the algorithm to match shapes first
+    # label comparison is only used to distinguish between matches and mismatches
+
     assert callable(distance), distance
     assert callable(label_matcher), label_matcher
 
@@ -690,11 +707,11 @@ def _match_segments(
         a_matches = []
         b_matches = []
 
-    # matches: boxes we succeeded to match completely
-    # mispred: boxes we succeeded to match, having label mismatch
+    # matches: segments we succeeded to match completely
+    # mispred: segments we succeeded to match, having label mismatch
     matches = []
     mispred = []
-    # *_umatched: boxes of (*) we failed to match
+    # *_umatched: segments of (*) we failed to match
     a_unmatched = []
     b_unmatched = []
 
@@ -720,7 +737,7 @@ def _match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
+def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -743,7 +760,7 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
     if not scale:
         if bbox is None:
-            bbox = dm.util.annotation_util.mean_bbox([a, b])
+            bbox = datumaro.util.annotation_util.mean_bbox([a, b])
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
@@ -753,15 +770,15 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b
 
 
 @define(kw_only=True)
-class _KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
+class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if dm.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+        if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
 
-        bbox = dm.util.annotation_util.mean_bbox([a_bbox, b_bbox])
-        return _OKS(
+        bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+        return oks(
             a,
             b,
             sigma=self.sigma,
@@ -777,7 +794,7 @@ def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
     return a_arr / divisor
 
 
-def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
+def to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
     from pycocotools import mask as mask_utils
 
     if ann.type == dm.AnnotationType.polygon:
@@ -790,7 +807,7 @@ def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
         assert False
 
 
-def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
+def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
     """
     Generic IoU computation with masks and polygons.
     Returns -1 if no intersection, [0; 1] otherwise
@@ -801,15 +818,15 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
     from pycocotools import mask as mask_utils
 
-    a = _to_rle(a, img_h=img_h, img_w=img_w)
-    b = _to_rle(b, img_h=img_h, img_w=img_w)
+    a = to_rle(a, img_h=img_h, img_w=img_w)
+    b = to_rle(b, img_h=img_h, img_w=img_w)
 
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
 
 
 @define(kw_only=True)
-class _LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
+class LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
     EPSILON = 1e-7
 
     torso_r: float = 0.25
@@ -956,7 +973,7 @@ class _LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
         return a_new_points, b_new_points
 
 
-class _DistanceComparator(dm.components.comparator.DistanceComparator):
+class DistanceComparator(datumaro.components.comparator.DistanceComparator):
     def __init__(
         self,
         categories: dm.CategoriesInfo,
@@ -994,22 +1011,39 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
         self.panoptic_comparison = panoptic_comparison
         "Compare only the visible parts of polygons and masks"
 
-    def _instance_bbox(
+    def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
     ) -> tuple[float, float, float, float]:
-        return dm.util.annotation_util.max_bbox(
+        return datumaro.util.annotation_util.max_bbox(
             a.get_bbox() if isinstance(a, dm.Skeleton) else a
             for a in instance_anns
             if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
         )
 
     @staticmethod
-    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
+    def to_polygon(bbox_ann: dm.Bbox):
+        points = bbox_ann.as_polygon()
+        angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
+
+        if angle:
+            points = np.reshape(points, (-1, 2))
+            center = (points[0] + points[2]) / 2
+            rel_points = points - center
+            cos = np.cos(angle)
+            sin = np.sin(angle)
+            rotation_matrix = ((cos, sin), (-sin, cos))
+            points = np.matmul(rel_points, rotation_matrix) + center
+            points = points.flatten()
+
+        return dm.Polygon(points)
+
+    @staticmethod
+    def _get_ann_type(t: dm.AnnotationType, item: dm.DatasetItem) -> Sequence[dm.Annotation]:
         return [
             a for a in item.annotations if a.type == t and not a.attributes.get("outside", False)
         ]
 
-    def _match_ann_type(self, t, *args):
+    def _match_ann_type(self, t: dm.AnnotationType, *args):
         if t not in self.included_ann_types:
             return None
 
@@ -1030,13 +1064,13 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
         else:
             return None
 
-    def match_labels(self, item_a, item_b):
-        def label_distance(a, b):
+    def match_labels(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+        def label_distance(a: dm.Label, b: dm.Label) -> float:
             if a is None or b is None:
                 return 0
             return 0.5 + (a.label == b.label) / 2
 
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.label,
             item_a,
             item_b,
@@ -1045,17 +1079,17 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             dist_thresh=0.5,
         )
 
-    def _match_segments(
+    def match_segments(
         self,
-        t,
-        item_a,
-        item_b,
+        t: dm.AnnotationType,
+        item_a: dm.DatasetItem,
+        item_b: dm.DatasetItem,
         *,
-        distance: Callable = dm.util.annotation_util.segment_iou,
-        label_matcher: Callable = None,
-        a_objs: Optional[Sequence[dm.Annotation]] = None,
-        b_objs: Optional[Sequence[dm.Annotation]] = None,
-        dist_thresh: Optional[float] = None,
+        distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
+        label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] | None = None,
+        a_objs: Sequence[_ShapeT1] | None = None,
+        b_objs: Sequence[_ShapeT2] | None = None,
+        dist_thresh: float | None = None,
     ):
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
@@ -1073,7 +1107,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
-            returned_values = _match_segments(
+            returned_values = match_segments(
                 a_objs,
                 b_objs,
                 distance=distance,
@@ -1087,30 +1121,14 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
         return returned_values
 
     def match_boxes(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
-        def _to_polygon(bbox_ann: dm.Bbox):
-            points = bbox_ann.as_polygon()
-            angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
-
-            if angle:
-                points = np.reshape(points, (-1, 2))
-                center = (points[0] + points[2]) / 2
-                rel_points = points - center
-                cos = np.cos(angle)
-                sin = np.sin(angle)
-                rotation_matrix = ((cos, sin), (-sin, cos))
-                points = np.matmul(rel_points, rotation_matrix) + center
-                points = points.flatten()
-
-            return dm.Polygon(points)
-
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
-                return dm.util.annotation_util.bbox_iou(a, b)
+                return datumaro.util.annotation_util.bbox_iou(a, b)
             else:
-                return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+                return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         img_h, img_w = item_a.media_as(dm.Image).size
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.bbox,
             item_a,
             item_b,
@@ -1131,7 +1149,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in dm.util.annotation_util.find_instances(annotations):
+            for ann_group in datumaro.util.annotation_util.find_instances(annotations):
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -1151,7 +1169,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             from pycocotools import mask as mask_utils
 
             # Merge instance groups
-            object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
+            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
 
             # Mask materialization can consume a lot of memory,
@@ -1210,7 +1228,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
                     # Create merged RLE for the instance shapes
                     object_anns = instances[obj_id]
                     object_rle_groups = [
-                        _to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
+                        to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
                     ]
                     rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
 
@@ -1233,7 +1251,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             b = b_instances[b_inst_id][0]
             return a.label == b.label
 
-        results = self._match_segments(
+        results = self.match_segments(
             dm.AnnotationType.polygon,
             item_a,
             item_b,
@@ -1278,12 +1296,12 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
         return returned_values
 
     def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
-        matcher = _LineMatcher(
+        matcher = LineMatcher(
             oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
             scale=np.prod(item_a.media_as(dm.Image).size),
         )
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=matcher.distance
         )
 
@@ -1293,12 +1311,12 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
 
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
-            source_instances = dm.util.annotation_util.find_instances(source_anns)
+            source_instances = datumaro.util.annotation_util.find_instances(source_anns)
             for instance_group in source_instances:
-                instance_bbox = self._instance_bbox(instance_group)
+                instance_bbox = self.instance_bbox(instance_group)
 
                 for ann in instance_group:
-                    if ann.type == dm.AnnotationType.points:
+                    if ann.type == datumaro.AnnotationType.points:
                         instance_map[id(ann)] = [instance_group, instance_bbox]
 
         img_h, img_w = item_a.media_as(dm.Image).size
@@ -1312,7 +1330,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
             if a_area == 0 and b_area == 0:
                 # Simple case: singular points without bbox
                 # match them in the image space
-                return _OKS(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
+                return oks(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
 
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
@@ -1323,11 +1341,11 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
                 elif self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
                     # match points in their bbox space
 
-                    if dm.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+                    if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
                         # this early exit may not work for points forming an axis-aligned line
                         return 0
 
-                    bbox = dm.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+                    bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
                     scale = bbox[2] * bbox[3]
                 else:
                     assert False, f"Unknown point size base {self.point_size_base}"
@@ -1335,10 +1353,10 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
                 a_points = np.reshape(a.points, (-1, 2))
                 b_points = np.reshape(b.points, (-1, 2))
 
-                matches, mismatches, a_extra, b_extra = _match_segments(
+                matches, mismatches, a_extra, b_extra = match_segments(
                     range(len(a_points)),
                     range(len(b_points)),
-                    distance=lambda ai, bi: _OKS(
+                    distance=lambda ai, bi: oks(
                         dm.Points(a_points[ai]),
                         dm.Points(b_points[bi]),
                         sigma=self.oks_sigma,
@@ -1365,7 +1383,7 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
                     len(matched_points) + len(a_extra) + len(b_extra)
                 )
 
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.points,
             item_a,
             item_b,
@@ -1438,8 +1456,8 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
 
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
-            for instance_group in dm.util.annotation_util.find_instances(source):
-                instance_bbox = self._instance_bbox(instance_group)
+            for instance_group in datumaro.util.annotation_util.find_instances(source):
+                instance_bbox = self.instance_bbox(instance_group)
 
                 instance_group = [
                     skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
@@ -1449,9 +1467,9 @@ class _DistanceComparator(dm.components.comparator.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = _KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
-        results = self._match_segments(
+        results = self.match_segments(
             dm.AnnotationType.points,
             item_a,
             item_b,
@@ -1548,7 +1566,7 @@ class _Comparator:
         }
         self.included_ann_types = settings.included_annotation_types
         self.non_groupable_ann_type = settings.non_groupable_ann_type
-        self._annotation_comparator = _DistanceComparator(
+        self._annotation_comparator = DistanceComparator(
             categories,
             included_ann_types=set(self.included_ann_types)
             - {dm.AnnotationType.mask},  # masks are compared together with polygons
@@ -1594,7 +1612,7 @@ class _Comparator:
     def find_groups(
         self, item: dm.DatasetItem
     ) -> tuple[dict[int, list[dm.Annotation]], dict[int, int]]:
-        ann_groups = dm.util.annotation_util.find_instances(
+        ann_groups = datumaro.util.annotation_util.find_instances(
             [
                 ann
                 for ann in item.annotations
@@ -1624,7 +1642,7 @@ class _Comparator:
             union = len(gt_groups[gt_group_id]) + len(ds_groups[ds_group_id]) - intersection
             return intersection / (union or 1)
 
-        matches, mismatches, gt_unmatched, ds_unmatched = _match_segments(
+        matches, mismatches, gt_unmatched, ds_unmatched = match_segments(
             list(gt_groups),
             list(ds_groups),
             distance=_group_distance,
@@ -1871,7 +1889,7 @@ class DatasetComparator:
             and dm.AnnotationType.polyline in self.comparator.included_ann_types
         ):
             # Check line directions
-            line_matcher = _LineMatcher(
+            line_matcher = LineMatcher(
                 torso_r=self.settings.line_thickness,
                 oriented=True,
                 scale=np.prod(gt_item.media_as(dm.Image).size),
@@ -2215,9 +2233,6 @@ class QualityReportUpdateManager:
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
 
-    def _get_scheduler(self) -> RqScheduler:
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
-
     def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
@@ -2423,11 +2438,6 @@ class QualityReportUpdateManager:
             )
 
         return task_report.id
-
-    def _get_current_job(self):
-        from rq import get_current_job
-
-        return get_current_job()
 
     def _compute_task_report(
         self, task: Task, job_reports: dict[int, ComparisonReport]
