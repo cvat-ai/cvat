@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import encodings
+import codecs
 import io
 import json
 import mimetypes
@@ -613,7 +613,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
         with zip_object.open(target_annotations_file, 'w') as f:
-            json.dump(annotations, encodings.utf_8.StreamWriter(f), separators=(',', ':'))
+            json.dump(annotations, codecs.getwriter('utf-8')(f), separators=(',', ':'))
 
     def _export_task(self, zip_obj, target_dir=None):
         self._write_data(zip_obj, target_dir)
