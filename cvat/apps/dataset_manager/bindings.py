@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from typing import Any, Callable, Literal, NamedTuple, Optional, Union
 
 import datumaro as dm
+import datumaro.util
 import defusedxml.ElementTree as ET
 import rq
 from attr import attrib, attrs
@@ -27,10 +28,10 @@ from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine import models
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.model_utils import add_prefetch_fields
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
@@ -2127,9 +2128,9 @@ def match_dm_item(
     if frame_number is None:
         frame_number = instance_data.match_frame(item.id, root_hint, path_has_ext=False)
     if frame_number is None:
-        frame_number = dm.util.cast(item.attributes.get('frame', item.id), int)
+        frame_number = datumaro.util.cast(item.attributes.get('frame', item.id), int)
     if frame_number is None and is_video:
-        frame_number = dm.util.cast(osp.basename(item.id)[len('frame_'):], int)
+        frame_number = datumaro.util.cast(osp.basename(item.id)[len('frame_'):], int)
 
     if not frame_number in instance_data.frame_info:
         raise CvatImportError("Could not match item id: "
@@ -2253,9 +2254,15 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                     # because in some formats return type can be different
                     # from bool / None
                     # https://github.com/openvinotoolkit/datumaro/issues/719
-                    occluded = dm.util.cast(ann.attributes.pop('occluded', None), to_bool) is True
-                    keyframe = dm.util.cast(ann.attributes.get('keyframe', None), to_bool) is True
-                    outside = dm.util.cast(ann.attributes.pop('outside', None), to_bool) is True
+                    occluded = datumaro.util.cast(
+                        ann.attributes.pop('occluded', None), to_bool
+                    ) is True
+                    keyframe = datumaro.util.cast(
+                        ann.attributes.get('keyframe', None), to_bool
+                    ) is True
+                    outside = datumaro.util.cast(
+                        ann.attributes.pop('outside', None), to_bool
+                    ) is True
 
                     track_id = ann.attributes.pop('track_id', None)
                     source = ann.attributes.pop('source').lower() \

@@ -898,7 +898,9 @@ export async function getFrame(
     await refreshJobCacheIfOutdated(jobID);
 
     const framesMetaData = await frameDataCache[jobID].getMeta();
-    const frameMeta = framesMetaData.frames[frame - jobStartFrame];
+    const dataFrameNumber = framesMetaData.getDataFrameNumber(frame - jobStartFrame);
+    const frameIndex = framesMetaData.getFrameIndex(dataFrameNumber);
+    const frameMeta = framesMetaData.frames[frameIndex];
     frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;
