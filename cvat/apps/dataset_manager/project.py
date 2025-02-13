@@ -17,6 +17,7 @@ from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
@@ -128,7 +129,7 @@ class ProjectAnnotationAndData:
             label, = filter(lambda l: l.name == label_name, labels)
             attribute.label = label
         if attributes:
-            models.AttributeSpec.objects.bulk_create([a[1] for a in attributes])
+            bulk_create(models.AttributeSpec, [a[1] for a in attributes])
 
     def init_from_db(self):
         self.reset()

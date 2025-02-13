@@ -28,10 +28,10 @@ from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
-from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine import models
 from cvat.apps.engine.frame_provider import FrameOutputType, FrameQuality, TaskFrameProvider
 from cvat.apps.engine.lazy_list import LazyList
+from cvat.apps.engine.model_utils import add_prefetch_fields
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
