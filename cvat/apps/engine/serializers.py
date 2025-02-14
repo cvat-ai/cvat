@@ -10,7 +10,6 @@ import re
 import shutil
 import string
 import textwrap
-import warnings
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from contextlib import closing
@@ -1805,16 +1804,6 @@ class RemoteFileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return instance.file if instance else instance
 
-class RqStatusSerializer(serializers.Serializer):
-    state = serializers.ChoiceField(choices=[
-        "Queued", "Started", "Finished", "Failed"])
-    message = serializers.CharField(allow_blank=True, default="")
-    progress = serializers.FloatField(max_value=100, default=0)
-
-    def __init__(self, instance=None, data=..., **kwargs):
-        warnings.warn("RqStatusSerializer is deprecated, "
-                      "use cvat.apps.engine.serializers.RequestSerializer instead", DeprecationWarning)
-        super().__init__(instance, data, **kwargs)
 
 class RqIdSerializer(serializers.Serializer):
     rq_id = serializers.CharField(help_text="Request id")
