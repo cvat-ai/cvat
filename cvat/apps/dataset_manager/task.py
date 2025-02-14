@@ -25,15 +25,10 @@ from cvat.apps.dataset_manager.bindings import (
     TaskData,
 )
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import (
-    TmpDirManager,
-    add_prefetch_fields,
-    bulk_create,
-    faster_deepcopy,
-    get_cached,
-)
+from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
+from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
@@ -284,38 +279,22 @@ class JobAnnotation:
                 if elements or parent_track is None:
                     track["elements"] = elements
 
-            db_tracks = bulk_create(
-                db_model=models.LabeledTrack,
-                objects=db_tracks,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_tracks = bulk_create(models.LabeledTrack, db_tracks)
 
             for db_attr_val in db_track_attr_vals:
                 db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
 
-            bulk_create(
-                db_model=models.LabeledTrackAttributeVal,
-                objects=db_track_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_tracks[db_shape.track_id].id
 
-            db_shapes = bulk_create(
-                db_model=models.TrackedShape,
-                objects=db_shapes,
-                flt_param={"track__job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.TrackedShape, db_shapes)
 
             for db_attr_val in db_shape_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.TrackedShapeAttributeVal,
-                objects=db_shape_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals,)
 
             shape_idx = 0
             for track, db_track in zip(tracks, db_tracks):
@@ -355,20 +334,12 @@ class JobAnnotation:
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
 
-            db_shapes = bulk_create(
-                db_model=models.LabeledShape,
-                objects=db_shapes,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.LabeledShape, db_shapes)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.LabeledShapeAttributeVal,
-                objects=db_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
@@ -399,20 +370,12 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(
-            db_model=models.LabeledImage,
-            objects=db_tags,
-            flt_param={"job_id": self.db_job.id}
-        )
+        db_tags = bulk_create(models.LabeledImage, db_tags)
 
         for db_attr_val in db_attr_vals:
             db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
-        bulk_create(
-            db_model=models.LabeledImageAttributeVal,
-            objects=db_attr_vals,
-            flt_param={}
-        )
+        bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id

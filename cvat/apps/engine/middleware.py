@@ -14,6 +14,10 @@ class WithUUID(Protocol):
 class PatchedRequest(Request, WithUUID):
     pass
 
+class WithUUID(Protocol):
+    uuid: str
+
+
 class RequestTrackingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

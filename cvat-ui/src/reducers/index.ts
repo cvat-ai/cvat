@@ -9,6 +9,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
+    AboutData,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -336,7 +337,7 @@ export interface PluginsState {
 }
 
 export interface AboutState {
-    server: any;
+    server: AboutData;
     packageVersion: {
         ui: string;
     };

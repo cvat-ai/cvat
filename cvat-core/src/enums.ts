@@ -163,13 +163,6 @@ export enum ModelProviders {
     CVAT = 'cvat',
 }
 
-export enum ModelReturnType {
-    RECTANGLE = 'rectangle',
-    TAG = 'tag',
-    POLYGON = 'polygon',
-    MASK = 'mask',
-}
-
 export const colors = [
     '#33ddff',
     '#fa3253',

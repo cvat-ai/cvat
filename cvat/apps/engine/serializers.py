@@ -39,6 +39,7 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import Credentials, Status, get_cloud_storage_instance
 from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.rq_job_handler import (
     BaseRQMeta,
@@ -1619,7 +1620,8 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
         # The django generated bulk_update() query is too slow, so we use bulk_create() instead
         # NOTE: Silk doesn't show these queries in the list of queries
         # for some reason, but they can be seen in the profile
-        models.Image.objects.bulk_create(
+        bulk_create(
+            models.Image,
             list(bulk_context.updated_honeypots.values()),
             update_conflicts=True,
             update_fields=['path', 'width', 'height', 'real_frame'],
@@ -1628,7 +1630,6 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 # https://docs.djangoproject.com/en/4.2/ref/models/querysets/#bulk-create
                 'id'
             ],
-            batch_size=1000,
         )
 
         # Update related images in 2 steps: remove all m2m for honeypots, then add (copy) new ones
@@ -1676,7 +1677,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                     for m2m_obj in validation_frame_m2m_objects
                 )
 
-        models.RelatedFile.images.through.objects.bulk_create(new_m2m_objects, batch_size=1000)
+        bulk_create(models.RelatedFile.images.through, new_m2m_objects)
 
         # Update manifest if present
         manifest_path = db_task.data.get_manifest_path()
@@ -1978,9 +1979,9 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         instance = super().create(validated_data)
 
         if frames:
-            models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_params=instance, path=frame)
-                for frame in frames
+            bulk_create(
+                models.ValidationFrame,
+                [models.ValidationFrame(validation_params=instance, path=frame) for frame in frames]
             )
 
         return instance
@@ -1996,9 +1997,9 @@ class ValidationParamsSerializer(serializers.ModelSerializer):
         if frames:
             models.ValidationFrame.objects.filter(validation_params=instance).delete()
 
-            models.ValidationFrame.objects.bulk_create(
-                models.ValidationFrame(validation_params=instance, path=frame)
-                for frame in frames
+            bulk_create(
+                models.ValidationFrame,
+                [models.ValidationFrame(validation_params=instance, path=frame) for frame in frames]
             )
 
         return instance
@@ -2228,8 +2229,9 @@ class DataSerializer(serializers.ModelSerializer):
             (models.ClientFile, models.ServerFile, models.RemoteFile),
         ):
             if files_type in files:
-                files_model.objects.bulk_create(
-                    files_model(data=instance, **f) for f in files[files_type]
+                bulk_create(
+                    files_model,
+                    [files_model(data=instance, **f) for f in files[files_type]]
                 )
 
 class TaskReadSerializer(serializers.ModelSerializer):
@@ -2623,6 +2625,8 @@ class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
     description = serializers.CharField(max_length=2048)
     version = serializers.CharField(max_length=64)
+    logo_url = serializers.CharField()
+    subtitle = serializers.CharField(max_length=1024)
 
 class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
@@ -3233,7 +3237,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             db_storage.save()
 
             manifest_file_instances = [models.Manifest(filename=manifest, cloud_storage=db_storage) for manifest in manifests]
-            models.Manifest.objects.bulk_create(manifest_file_instances)
+            bulk_create(models.Manifest, manifest_file_instances)
 
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
@@ -3312,7 +3316,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 # check manifest files existing
                 self._manifests_validation(storage, delta_to_create)
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
-                models.Manifest.objects.bulk_create(manifest_instances)
+                bulk_create(models.Manifest, manifest_instances)
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file
                 real_path_to_key_file = instance.get_key_file_path()

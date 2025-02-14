@@ -18,7 +18,7 @@ import { ArrowRightOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import {
-    MLModel, ModelKind, ModelReturnType, DimensionType, Label,
+    MLModel, ModelKind, DimensionType, Label, LabelType,
 } from 'cvat-core-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
@@ -80,7 +80,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
     const convertMasks2PolygonVisible = isDetector &&
-        (!model.returnType || model.returnType === ModelReturnType.MASK);
+        [LabelType.ANY, LabelType.MASK].includes(model.returnType);
 
     const buttonEnabled = model && (isReId || (isDetector && mapping.length));
 

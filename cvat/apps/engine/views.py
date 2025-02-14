@@ -27,17 +27,12 @@ import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.files.storage import storages
 from django.db import IntegrityError
 from django.db import models as django_models
 from django.db import transaction
 from django.db.models.query import Prefetch
-from django.http import (
-    HttpRequest,
-    HttpResponse,
-    HttpResponseBadRequest,
-    HttpResponseGone,
-    HttpResponseNotFound,
-)
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseGone, HttpResponseNotFound
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
@@ -88,7 +83,6 @@ from cvat.apps.engine.frame_provider import (
 )
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.middleware import PatchedRequest
 from cvat.apps.engine.mixins import (
     BackupMixin,
     CsrfWorkaroundMixin,
@@ -96,6 +90,7 @@ from cvat.apps.engine.mixins import (
     PartialUpdateModelMixin,
     UploadMixin,
 )
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.models import (
@@ -174,6 +169,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
@@ -217,18 +213,20 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], serializer_class=AboutSerializer,
         permission_classes=[] # This endpoint is available for everyone
     )
-    def about(request):
+    def about(request: ExtendedRequest):
         from cvat import __version__ as cvat_version
         about = {
             "name": "Computer Vision Annotation Tool",
-            "version": cvat_version,
+            "subtitle": settings.ABOUT_INFO["subtitle"],
             "description": "CVAT is completely re-designed and re-implemented " +
                 "version of Video Annotation Tool from Irvine, California " +
                 "tool. It is free, online, interactive video and image annotation " +
                 "tool for computer vision. It is being used by our team to " +
                 "annotate million of objects with different properties. Many UI " +
                 "and UX decisions are based on feedbacks from professional data " +
-                "annotation team."
+                "annotation team.",
+            "version": cvat_version,
+            "logo_url": request.build_absolute_uri(storages["staticfiles"].url(settings.LOGO_FILENAME)),
         }
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
@@ -247,7 +245,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200' : FileInfoSerializer(many=True)
         })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
-    def share(request):
+    def share(request: ExtendedRequest):
         directory_param = request.query_params.get('directory', '/')
         search_param = request.query_params.get('search', '')
 
@@ -292,7 +290,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200': DatasetFormatsSerializer,
         })
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
-    def annotation_formats(request):
+    def annotation_formats(request: ExtendedRequest):
         data = dm.views.get_all_formats()
         return Response(DatasetFormatsSerializer(data).data)
 
@@ -303,7 +301,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200': PluginsSerializer,
         })
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
-    def plugins(request):
+    def plugins(request: ExtendedRequest):
         data = {
             'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': settings.ANALYTICS_ENABLED,
@@ -482,7 +480,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
         url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES,
     )
-    def dataset(self, request: PatchedRequest, pk: int):
+    def dataset(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
         if request.method == "GET":
@@ -504,7 +502,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
 
     @tus_chunk_action(detail=True, suffix_base="dataset")
-    def append_dataset_chunk(self, request, pk, file_id):
+    def append_dataset_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
@@ -515,7 +513,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return backup.get_backup_dirname()
         assert False
 
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
@@ -566,10 +564,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
         deprecated=True,
     )
-    @action(detail=True, methods=['GET'],
-        serializer_class=LabeledDataSerializer,
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def annotations(self, request, pk):
+    @action(detail=True, methods=['GET'], serializer_class=LabeledDataSerializer)
+    def annotations(self, request: ExtendedRequest, pk: int):
         return HttpResponseGone("API endpoint is no longer handles exporting process")
 
     # --- Deprecated API endpoint, should be deleted in the next release ---
@@ -588,9 +584,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
         deprecated=True,
     )
-    @action(methods=['GET'], detail=True, url_path='backup',
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_backup)
-    def export_backup(self, request: PatchedRequest, pk: int):
+    @action(methods=['GET'], detail=True, url_path='backup')
+    def export_backup(self, request: ExtendedRequest, pk: int):
         return HttpResponseGone("API endpoint is no longer handles the project backup process")
 
     @extend_schema(methods=['POST'], summary='Recreate a project from a backup',
@@ -634,11 +629,11 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
-    def import_backup(self, request, pk=None):
+    def import_backup(self, request: ExtendedRequest):
         return self.import_backup_v1(request, backup.import_project)
 
     @tus_chunk_action(detail=False, suffix_base="backup")
-    def append_backup_chunk(self, request, file_id):
+    def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
         return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Get a preview image for a project',
@@ -648,7 +643,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
         first_task: Optional[models.Task] = self._object.tasks.order_by('-id').first()
@@ -972,11 +967,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
         serializer_class=None,
         parser_classes=_UPLOAD_PARSER_CLASSES)
-    def import_backup(self, request, pk=None):
+    def import_backup(self, request: ExtendedRequest):
         return self.import_backup_v1(request, backup.import_task)
 
     @tus_chunk_action(detail=False, suffix_base="backup")
-    def append_backup_chunk(self, request, file_id):
+    def append_backup_chunk(self, request: ExtendedRequest, file_id: str):
         return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Back up a task',
@@ -995,7 +990,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         deprecated=True,
     )
     @action(methods=['GET'], detail=True, url_path='backup')
-    def export_backup(self, request, pk=None):
+    def export_backup(self, request: ExtendedRequest, pk: int):
         return HttpResponseGone("API endpoint is no longer handles the task backup process")
 
     @transaction.atomic
@@ -1053,10 +1048,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        task_data.client_files.bulk_create([
-            ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
-            for cf in client_files
-        ])
+        bulk_create(
+            ClientFile,
+            [
+                ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
+                for cf in client_files
+            ]
+        )
 
     def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
@@ -1108,9 +1106,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return super().append_files(request)
 
     # UploadMixin method
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         @transaction.atomic
-        def _handle_upload_annotations(request):
+        def _handle_upload_annotations(request: ExtendedRequest):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
@@ -1129,7 +1127,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(data='No such file were uploaded',
                     status=status.HTTP_400_BAD_REQUEST)
 
-        def _handle_upload_data(request):
+        def _handle_upload_data(request: ExtendedRequest):
             with transaction.atomic():
                 task_data = self._object.data
                 serializer = DataSerializer(task_data, data=request.data)
@@ -1197,7 +1195,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(rq_id_serializer.data, status=status.HTTP_202_ACCEPTED)
 
         @transaction.atomic
-        def _handle_upload_backup(request):
+        def _handle_upload_backup(request: ExtendedRequest):
             filename = request.query_params.get("filename", "")
             if filename:
                 tmp_dir = backup.get_backup_dirname()
@@ -1335,7 +1333,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
         parser_classes=_UPLOAD_PARSER_CLASSES)
-    def data(self, request, pk):
+    def data(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
             with transaction.atomic():
@@ -1368,7 +1366,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return data_getter()
 
     @tus_chunk_action(detail=True, suffix_base="data")
-    def append_data_chunk(self, request, pk, file_id):
+    def append_data_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
@@ -1491,7 +1489,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES,
         csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def annotations(self, request, pk):
+    def annotations(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             if not self._object.data:
@@ -1555,7 +1553,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
     @tus_chunk_action(detail=True, suffix_base="annotations")
-    def append_annotations_chunk(self, request, pk, file_id):
+    def append_annotations_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
@@ -1572,7 +1570,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
-    def metadata(self, request, pk):
+    def metadata(self, request: ExtendedRequest, pk: int):
         self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
             'segment_set',
@@ -1622,7 +1620,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
     )
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
-    def dataset_export(self, request, pk):
+    def dataset_export(self, request: ExtendedRequest, pk: int):
         return HttpResponseGone("Deprecated API endpoint")
 
     @extend_schema(summary='Get a preview image for a task',
@@ -1631,7 +1629,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '404': OpenApiResponse(description='Task image preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
         if not self._object.data:
@@ -1679,7 +1677,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ])
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
-    def validation_layout(self, request, pk):
+    def validation_layout(self, request: ExtendedRequest, pk: int):
         db_task = cast(models.Task, self.get_object()) # call check_object_permissions as well
 
         validation_layout = getattr(db_task.data, 'validation_layout', None)
@@ -1852,7 +1850,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         return self._object.get_tmp_dirname()
 
     # UploadMixin method
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
@@ -1971,7 +1969,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES,
         csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
-    def annotations(self, request, pk):
+    def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
 
@@ -2036,10 +2034,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
 
     @tus_chunk_action(detail=True, suffix_base="annotations")
-    def append_annotations_chunk(self, request, pk, file_id):
+    def append_annotations_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
-
 
     def get_export_callback(self, save_images: bool) -> Callable:
         return dm.views.export_job_as_dataset if save_images else dm.views.export_job_annotations
@@ -2067,7 +2064,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET'],
         simple_filters=[] # type query parameter conflicts with the filter
     )
-    def data(self, request, pk):
+    def data(self, request: ExtendedRequest, pk: int):
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)
         data_num = request.query_params.get('number', None)
@@ -2093,7 +2090,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         }, versions=['2.0'])
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
-    def metadata(self, request, pk):
+    def metadata(self, request: ExtendedRequest, pk: int):
         self.get_object() # force call of check_object_permissions()
 
         db_job = models.Job.objects.select_related(
@@ -2180,7 +2177,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '200': OpenApiResponse(description='Job image preview'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # call check_object_permissions as well
 
         data_getter = _JobDataGetter(
@@ -2219,7 +2216,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         ])
     @action(detail=True, methods=["GET", "PATCH"], url_path='validation_layout')
     @transaction.atomic
-    def validation_layout(self, request, pk):
+    def validation_layout(self, request: ExtendedRequest, pk: int):
         self.get_object() # call check_object_permissions as well
 
         db_job = models.Job.objects.prefetch_related(
@@ -2623,7 +2620,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 ], resource_type_field_name=None),
         })
     @action(detail=False, methods=['GET'])
-    def self(self, request):
+    def self(self, request: ExtendedRequest):
         """
         Method returns an instance of a user who is currently authenticated
         """
@@ -2706,7 +2703,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             owner=self.request.user,
             organization=self.request.iam_context['organization'])
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         try:
             response = super().create(request, *args, **kwargs)
         except ValidationError as exceptions:
@@ -2737,7 +2734,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         },
     )
     @action(detail=True, methods=['GET'], url_path='content-v2')
-    def content_v2(self, request, pk):
+    def content_v2(self, request: ExtendedRequest, pk: int):
         storage = None
         try:
             db_storage = self.get_object()
@@ -2804,7 +2801,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '404': OpenApiResponse(description='Cloud Storage preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
-    def preview(self, request, pk):
+    def preview(self, request: ExtendedRequest, pk: int):
         try:
             db_storage = self.get_object()
             cache = MediaCache()
@@ -2843,7 +2840,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
         })
     @action(detail=True, methods=['GET'], url_path='status')
-    def status(self, request, pk):
+    def status(self, request: ExtendedRequest, pk: int):
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
@@ -2862,7 +2859,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage actions (GET | PUT | DELETE)'),
         })
     @action(detail=True, methods=['GET'], url_path='actions')
-    def actions(self, request, pk):
+    def actions(self, request: ExtendedRequest, pk: int):
         '''
         Method return allowed actions for cloud storage. It's required for reading/writing
         '''
@@ -2919,7 +2916,7 @@ class AssetsViewSet(
     search_fields = ()
     ordering = "uuid"
 
-    def check_object_permissions(self, request, obj):
+    def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
 
     def get_permissions(self):
@@ -2933,7 +2930,7 @@ class AssetsViewSet(
         else:
             return AssetWriteSerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         file = request.data.get('file', None)
         if not file:
             raise ValidationError('Asset file was not provided')
@@ -2975,7 +2972,7 @@ class AssetsViewSet(
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(self, request: ExtendedRequest, *args, **kwargs):
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
 
@@ -3024,7 +3021,7 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
-    def _update_related_assets(self, request, guide: AnnotationGuide):
+    def _update_related_assets(self, request: ExtendedRequest, guide: AnnotationGuide):
         existing_assets = list(guide.assets.all())
         new_assets = []
 
@@ -3127,8 +3124,16 @@ def rq_exception_handler(rq_job: RQJob, exc_type: Type[Exception], exc_value, tb
 
     return True
 
-def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
-                        filename=None, location_conf=None, conv_mask_to_poly=True):
+def _import_annotations(
+    request: ExtendedRequest,
+    rq_id_factory: Callable[..., RQId],
+    rq_func: Callable[..., None],
+    db_obj: Task | Job,
+    format_name: str,
+    filename: str = None,
+    location_conf: dict[str, Any] | None = None,
+    conv_mask_to_poly: bool = True,
+):
 
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
@@ -3242,8 +3247,14 @@ def _import_annotations(request, rq_id_factory, rq_func, db_obj, format_name,
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(
-    request, rq_id_factory, rq_func, db_obj, format_name,
-    filename=None, conv_mask_to_poly=True, location_conf=None
+    request: ExtendedRequest,
+    rq_id_factory: Callable[..., RQId],
+    rq_func: Callable[..., None],
+    db_obj: Project,
+    format_name: str,
+    filename: str | None = None,
+    conv_mask_to_poly: bool = True,
+    location_conf: dict[str, Any] | None = None
 ):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
@@ -3488,7 +3499,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
-    def retrieve(self, request: HttpRequest, pk: str):
+    def retrieve(self, request: ExtendedRequest, pk: str):
         job = self._get_rq_job_by_id(pk)
 
         if not job:
@@ -3501,7 +3512,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @method_decorator(never_cache)
     @_handle_redis_exceptions
-    def list(self, request: HttpRequest):
+    def list(self, request: ExtendedRequest):
         user_id = request.user.id
         user_jobs = self._get_rq_jobs(user_id)
 
@@ -3525,7 +3536,7 @@ class RequestViewSet(viewsets.GenericViewSet):
     @method_decorator(never_cache)
     @action(detail=True, methods=['POST'], url_path='cancel')
     @_handle_redis_exceptions
-    def cancel(self, request: HttpRequest, pk: str):
+    def cancel(self, request: ExtendedRequest, pk: str):
         rq_job = self._get_rq_job_by_id(pk)
 
         if not rq_job:
