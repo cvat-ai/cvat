@@ -16,7 +16,7 @@ from django.db.models import Model
 from django.utils import timezone
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.middleware import PatchedRequest
+from cvat.apps.engine.types import ExtendedRequest
 
 from .models import RequestAction, RequestSubresource, RequestTarget
 
@@ -162,7 +162,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     def build(
         cls,
         *,
-        request: PatchedRequest,
+        request: ExtendedRequest,
         db_obj: Model | None,
     ):
         # to prevent circular import
@@ -209,7 +209,7 @@ class ExportRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        request: PatchedRequest,
+        request: ExtendedRequest,
         db_obj: Model | None,
         result_url: str | None,
     ):
@@ -243,7 +243,7 @@ class ImportRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        request: PatchedRequest,
+        request: ExtendedRequest,
         db_obj: Model | None,
         tmp_file: str | None = None,
     ):

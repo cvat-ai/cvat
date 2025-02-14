@@ -16,7 +16,6 @@ from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import serializers, status
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
@@ -40,6 +39,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq_job_handler import ExportRQMeta, RQId
 from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
@@ -179,7 +179,7 @@ class DatasetExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task, models.Job],
-        request: Request,
+        request: ExtendedRequest,
         export_callback: Callable,
         save_images: Optional[bool] = None,
         *,
@@ -527,7 +527,7 @@ class BackupExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task],
-        request: Request,
+        request: ExtendedRequest,
         *,
         version: int = 2,
     ) -> None:

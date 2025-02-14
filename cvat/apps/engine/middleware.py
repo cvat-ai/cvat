@@ -5,14 +5,10 @@
 from typing import Protocol
 from uuid import uuid4
 
-from rest_framework.request import Request
-
 
 class WithUUID(Protocol):
     uuid: str
 
-class PatchedRequest(Request, WithUUID):
-    pass
 
 class RequestTrackingMiddleware:
     def __init__(self, get_response):

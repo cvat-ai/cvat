@@ -8,8 +8,8 @@ import attrs
 from django.db.models import Model
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.middleware import PatchedRequest
 from cvat.apps.engine.rq_job_handler import BaseRQMeta, RQJobMetaField, on_setattr
+from cvat.apps.engine.types import ExtendedRequest
 
 
 @attrs.define(kw_only=True)
@@ -55,7 +55,7 @@ class LambdaRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        request: PatchedRequest,
+        request: ExtendedRequest,
         db_obj: Model,
         function_id: str,
     ):
