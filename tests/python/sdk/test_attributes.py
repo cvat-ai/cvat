@@ -59,10 +59,9 @@ def test_attribute_value_validator_number():
     [
         (["0", "1"], "wrong number of values"),
         (["0", "10", "1", "1"], "wrong number of values"),
-        # the exception is raised by external code, so we don't want to rely on the message
-        (["a", "10", "1"], ""),
-        (["0", "a", "1"], ""),
-        (["0", "10", "a"], ""),
+        (["a", "10", "1"], "values could not be converted to integers"),
+        (["0", "a", "1"], "values could not be converted to integers"),
+        (["0", "10", "a"], "values could not be converted to integers"),
         (["0", "10", "0"], "step must be positive"),
         (["1", "0", "1"], "min_value must be less than or equal to max_value"),
         (["0", "10", "3"], "step must be a divisor of max_value - min_value"),

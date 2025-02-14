@@ -22,7 +22,10 @@ class _NumberAttributeValueValidator:
         if len(values) != 3:
             raise ValueError(f"wrong number of values: expected 3, got {len(values)}")
 
-        (self._min_value, self._max_value, self._step) = map(int, values)
+        try:
+            (self._min_value, self._max_value, self._step) = map(int, values)
+        except ValueError as ex:
+            raise ValueError(f"values could not be converted to integers") from ex
 
         try:
             number_attribute_values(self._min_value, self._max_value, self._step)
