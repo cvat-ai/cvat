@@ -27,12 +27,12 @@ import lodash, { omit } from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Label, MLModel, ObjectState, Job,
+    getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
     LabelType,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState,
+    CombinedState, ActiveControl, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,

@@ -20,11 +20,13 @@ import {
 } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
-import { CombinedState, StorageLocation } from 'reducers';
+import { CombinedState } from 'reducers';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
-import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import {
+    getCore, Storage, StorageData, StorageLocation,
+} from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { createAction, ActionUnion } from 'utils/redux';
 

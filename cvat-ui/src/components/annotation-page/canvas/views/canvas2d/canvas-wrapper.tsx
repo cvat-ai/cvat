@@ -16,13 +16,13 @@ import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
-    ColorBy, GridColor, ObjectType, Workspace, ShapeType, ActiveControl, CombinedState,
+    ColorBy, GridColor, Workspace, ActiveControl, CombinedState,
 } from 'reducers';
 import { EventScope } from 'cvat-logger';
 import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, ObjectState, QualityConflict, getCore,
+    AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';

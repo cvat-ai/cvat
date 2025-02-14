@@ -14,14 +14,16 @@ import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
-import { getCore, Label, LabelType } from 'cvat-core-wrapper';
+import {
+    getCore, Label, LabelType, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
     PlusIcon, CheckIcon, MoveIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, ObjectType, ShapeType } from 'reducers';
+import { CombinedState } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
 import { changeHideActiveObjectAsync, rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
 import { ShortcutScope } from 'utils/enums';

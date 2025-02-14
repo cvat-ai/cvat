@@ -19,12 +19,12 @@ import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
 
 import {
-    ActiveControl, CombinedState, NavigationType, ObjectType,
+    ActiveControl, CombinedState, NavigationType,
 } from 'reducers';
 import { labelShapeType } from 'reducers/annotation-reducer';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
-    Job, Label, LabelType, ShapeType,
+    Job, Label, LabelType, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import {

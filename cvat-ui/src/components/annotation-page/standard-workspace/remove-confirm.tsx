@@ -5,12 +5,13 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { shallowEqual, useDispatch, useSelector } from 'react-redux';
-import { CombinedState, ObjectType } from 'reducers';
+import { CombinedState } from 'reducers';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
 import config from 'config';
 import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/annotation-actions';
+import { ObjectType } from 'cvat-core-wrapper';
 
 export default function RemoveConfirmComponent(): JSX.Element | null {
     const dispatch = useDispatch();

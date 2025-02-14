@@ -26,13 +26,15 @@ import {
 } from 'actions/annotation-actions';
 import {
     ActiveControl,
-    ColorBy, CombinedState, ContextMenuType, ObjectType, Workspace,
+    ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
 import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { EventScope } from 'cvat-logger';
-import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
+import {
+    getCore, ObjectState, ObjectType, Job,
+} from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';

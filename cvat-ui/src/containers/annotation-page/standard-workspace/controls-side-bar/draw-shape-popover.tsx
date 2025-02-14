@@ -7,12 +7,12 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { RadioChangeEvent } from 'antd/lib/radio';
 
-import { CombinedState, ShapeType, ObjectType } from 'reducers';
+import { CombinedState } from 'reducers';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
-import { Label } from 'cvat-core-wrapper';
+import { Label, ObjectType, ShapeType } from 'cvat-core-wrapper';
 
 interface OwnProps {
     shapeType: ShapeType;

@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
-import { TasksQuery, StorageLocation } from 'reducers';
+import { TasksQuery } from 'reducers';
 import {
-    getCore, RQStatus, Storage, Task, UpdateStatusData, Request,
+    getCore, RQStatus, Storage, StorageLocation, Task, UpdateStatusData, Request,
 } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { ThunkDispatch, ThunkAction } from 'utils/redux';

@@ -8,7 +8,8 @@ import { connect } from 'react-redux';
 import { updateAnnotationsAsync } from 'actions/annotation-actions';
 
 import LabelItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/label-item';
-import { CombinedState, ObjectType } from 'reducers';
+import { CombinedState } from 'reducers';
+import { ObjectType } from 'cvat-core-wrapper';
 
 interface OwnProps {
     labelID: number;
