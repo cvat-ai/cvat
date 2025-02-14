@@ -33,14 +33,14 @@ class _SublabelNameMapping:
         kw_only=True, default=None
     )
 
-    def map_attribute(self, name: str) -> _AttributeNameMapping:
+    def map_attribute(self, name: str) -> Optional[_AttributeNameMapping]:
         if self.attributes is None:
             return _AttributeNameMapping(name)
 
         return self.attributes.get(name)
 
     @classmethod
-    def from_api(cls, raw: models.LabelMappingEntryRequest, /) -> _SublabelNameMapping:
+    def from_api(cls, raw: models.SublabelMappingEntryRequest, /) -> _SublabelNameMapping:
         return _SublabelNameMapping(
             name=raw.name,
             attributes=(
@@ -57,7 +57,7 @@ class _LabelNameMapping(_SublabelNameMapping):
         kw_only=True, default=None
     )
 
-    def map_sublabel(self, name: str):
+    def map_sublabel(self, name: str) -> Optional[_SublabelNameMapping]:
         if self.sublabels is None:
             return _SublabelNameMapping(name)
 
@@ -79,7 +79,7 @@ class _LabelNameMapping(_SublabelNameMapping):
 class _SpecNameMapping:
     labels: Optional[Mapping[str, _LabelNameMapping]] = attrs.field(kw_only=True, default=None)
 
-    def map_label(self, name: str):
+    def map_label(self, name: str) -> Optional[_LabelNameMapping]:
         if self.labels is None:
             return _LabelNameMapping(name)
 
