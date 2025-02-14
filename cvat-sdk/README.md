@@ -8,7 +8,9 @@ The SDK API includes several layers:
 - Server API wrappers (`ApiClient`). Located in at `cvat_sdk.api_client`.
 - High-level tools (`Core`). Located at `cvat_sdk.core`.
 - PyTorch adapter. Located at `cvat_sdk.pytorch`.
-* Auto-annotation support. Located at `cvat_sdk.auto_annotation`.
+- Auto-annotation support. Located at `cvat_sdk.auto_annotation`.
+- Miscellaneous utilities, grouped by topic.
+  Located at `cvat_sdk.attributes` and `cvat_sdk.masks`.
 
 Package documentation is available [here](https://docs.cvat.ai/docs/api_sdk/sdk).
 

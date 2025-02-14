@@ -18,8 +18,10 @@ SDK API includes several layers:
   {{< ilink "/docs/api_sdk/sdk/highlevel-api" "Read more" >}}
 - PyTorch adapter. Located at `cvat_sdk.pytorch`.
   {{< ilink "/docs/api_sdk/sdk/pytorch-adapter" "Read more" >}}
-- Auto-annotation API. Located at `cvat_sdk.auto_annotation.`
+- Auto-annotation API. Located at `cvat_sdk.auto_annotation`.
   {{< ilink "/docs/api_sdk/sdk/auto-annotation" "Read more" >}}
+- Miscellaneous utilities, grouped by topic.
+  Located at `cvat_sdk.attributes` and `cvat_sdk.masks`.
 
 In general, the low-level API provides single-request operations, while the high-level one
 implements composite, multi-request operations, and provides local proxies for server objects.
