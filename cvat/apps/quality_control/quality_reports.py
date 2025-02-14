@@ -25,7 +25,6 @@ from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
-from rest_framework.request import Request
 from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
 
@@ -53,6 +52,7 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
@@ -2265,7 +2265,7 @@ class QualityReportUpdateManager:
             return "Quality computation job for this task already enqueued"
 
     def schedule_custom_quality_check_job(
-        self, request: Request, task: Task, *, user_id: int
+        self, request: ExtendedRequest, task: Task, *, user_id: int
     ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
