@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import codecs
 import io
+import json
 import mimetypes
 import os
 import re
@@ -21,6 +23,7 @@ from typing import Any, ClassVar, Optional, Type, Union
 from zipfile import ZipFile
 
 import django_rq
+import json_stream
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -596,22 +599,21 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         target_manifest_file = os.path.join(target_dir, self.MANIFEST_FILENAME) if target_dir else self.MANIFEST_FILENAME
         zip_object.writestr(target_manifest_file, data=JSONRenderer().render(task))
 
-    def _write_annotations(self, zip_object, target_dir=None):
+    def _write_annotations(self, zip_object: ZipFile, target_dir: Optional[str] = None) -> None:
+        @json_stream.streamable_list
         def serialize_annotations():
-            job_annotations = []
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
                 annotations = dm.task.get_job_data(db_job_id)
                 annotations_serializer = LabeledDataSerializer(data=annotations)
                 annotations_serializer.is_valid(raise_exception=True)
-                job_annotations.append(self._prepare_annotations(annotations_serializer.data, self._label_mapping))
-
-            return job_annotations
+                yield self._prepare_annotations(annotations_serializer.data, self._label_mapping)
 
         annotations = serialize_annotations()
         target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
-        zip_object.writestr(target_annotations_file, data=JSONRenderer().render(annotations))
+        with zip_object.open(target_annotations_file, 'w') as f:
+            json.dump(annotations, codecs.getwriter('utf-8')(f), separators=(',', ':'))
 
     def _export_task(self, zip_obj, target_dir=None):
         self._write_data(zip_obj, target_dir)

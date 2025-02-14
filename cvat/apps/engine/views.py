@@ -27,6 +27,7 @@ import django_rq
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.files.storage import storages
 from django.db import IntegrityError
 from django.db import models as django_models
 from django.db import transaction
@@ -88,6 +89,7 @@ from cvat.apps.engine.mixins import (
     PartialUpdateModelMixin,
     UploadMixin,
 )
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.models import (
@@ -211,14 +213,16 @@ class ServerViewSet(viewsets.ViewSet):
         from cvat import __version__ as cvat_version
         about = {
             "name": "Computer Vision Annotation Tool",
-            "version": cvat_version,
+            "subtitle": settings.ABOUT_INFO["subtitle"],
             "description": "CVAT is completely re-designed and re-implemented " +
                 "version of Video Annotation Tool from Irvine, California " +
                 "tool. It is free, online, interactive video and image annotation " +
                 "tool for computer vision. It is being used by our team to " +
                 "annotate million of objects with different properties. Many UI " +
                 "and UX decisions are based on feedbacks from professional data " +
-                "annotation team."
+                "annotation team.",
+            "version": cvat_version,
+            "logo_url": request.build_absolute_uri(storages["staticfiles"].url(settings.LOGO_FILENAME)),
         }
         serializer = AboutSerializer(data=about)
         if serializer.is_valid(raise_exception=True):
@@ -1150,10 +1154,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        task_data.client_files.bulk_create([
-            ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
-            for cf in client_files
-        ])
+        bulk_create(
+            ClientFile,
+            [
+                ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
+                for cf in client_files
+            ]
+        )
 
     def _sort_uploaded_files(self, uploaded_files: list[str], ordering: list[str]) -> list[str]:
         """
