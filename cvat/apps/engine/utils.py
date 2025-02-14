@@ -221,45 +221,6 @@ def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, block
         blocking_timeout=blocking_timeout,
     )
 
-def get_rq_job_meta(
-    request: ExtendedRequest,
-    db_obj: Any,
-    *,
-    result_url: Optional[str] = None,
-):
-    # to prevent circular import
-    from cvat.apps.events.handlers import job_id, organization_slug, task_id
-    from cvat.apps.webhooks.signals import organization_id, project_id
-
-    oid = organization_id(db_obj)
-    oslug = organization_slug(db_obj)
-    pid = project_id(db_obj)
-    tid = task_id(db_obj)
-    jid = job_id(db_obj)
-
-    meta = {
-        'user': {
-            'id': getattr(request.user, "id", None),
-            'username': getattr(request.user, "username", None),
-            'email': getattr(request.user, "email", None),
-        },
-        'request': {
-            "uuid": request.uuid,
-            "timestamp": timezone.localtime(),
-        },
-        'org_id': oid,
-        'org_slug': oslug,
-        'project_id': pid,
-        'task_id': tid,
-        'job_id': jid,
-    }
-
-
-    if result_url:
-        meta['result_url'] = result_url
-
-    return meta
-
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[dict[str, str]] = None,
     request: ExtendedRequest | None = None,
@@ -383,11 +344,10 @@ def build_backup_file_name(
     class_name: str,
     identifier: str | int,
     timestamp: str,
-    extension: str = "{}",
 ) -> str:
-    # "<project|task>_<name>_backup_<timestamp>.zip"
-    return "{}_{}_backup_{}{}".format(
-        class_name, identifier, timestamp, extension,
+    # "<project|task>_<name>_backup_<timestamp>"
+    return "{}_{}_backup_{}".format(
+        class_name, identifier, timestamp,
     ).lower()
 
 def build_annotations_file_name(
@@ -397,12 +357,11 @@ def build_annotations_file_name(
     timestamp: str,
     format_name: str,
     is_annotation_file: bool = True,
-    extension: str = "{}",
 ) -> str:
-    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
-    return "{}_{}_{}_{}_{}{}".format(
+    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>"
+    return "{}_{}_{}_{}_{}".format(
         class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
-        timestamp, format_name, extension,
+        timestamp, format_name
     ).lower()
 
 
