@@ -28,7 +28,6 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.http.request import HttpRequest
 from django.utils import timezone
 from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
@@ -37,6 +36,8 @@ from PIL import Image
 from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
 from rq.job import Dependency, Job
+
+from cvat.apps.engine.types import ExtendedRequest
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -221,7 +222,7 @@ def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, block
     )
 
 def get_rq_job_meta(
-    request: HttpRequest,
+    request: ExtendedRequest,
     db_obj: Any,
     *,
     result_url: Optional[str] = None,
@@ -261,7 +262,7 @@ def get_rq_job_meta(
 
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[dict[str, str]] = None,
-    request: Optional[HttpRequest] = None,
+    request: ExtendedRequest | None = None,
 ) -> str:
     """
     The same as rest_framework's reverse(), but adds custom query params support.
@@ -276,7 +277,7 @@ def reverse(viewname, *, args=None, kwargs=None,
 
     return url
 
-def get_server_url(request: HttpRequest) -> str:
+def get_server_url(request: ExtendedRequest) -> str:
     return request.build_absolute_uri('/')
 
 def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
@@ -347,7 +348,7 @@ def make_attachment_file_name(filename: str) -> str:
     return filename
 
 def sendfile(
-    request, filename,
+    request: ExtendedRequest, filename,
     attachment=False, attachment_filename=None, mimetype=None, encoding=None
 ):
     """
@@ -420,7 +421,7 @@ def directory_tree(path, max_depth=None) -> str:
             tree += f"{indent}-{file}\n"
     return tree
 
-def is_dataset_export(request: HttpRequest) -> bool:
+def is_dataset_export(request: ExtendedRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
 _T = TypeVar('_T')
