@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { Row, Col } from 'antd/es/grid';
+import { Row } from 'antd/es/grid';
 import Text from 'antd/lib/typography/Text';
 
 import {
@@ -88,20 +88,16 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
                     <Text type='secondary' strong>{validationModeText}</Text>
                 </Row>
             ) : null}
-            <Row>
-                <Col span={24}>
-                    <AllocationTable
-                        task={task}
-                        gtJobId={gtJobId}
-                        gtJobMeta={gtJobMeta}
-                        validationLayout={validationLayout}
-                        qualitySettings={qualitySettings}
-                        onDeleteFrames={onDeleteFrames}
-                        onRestoreFrames={onRestoreFrames}
-                        pageSizeData={pageSizeData}
-                    />
-                </Col>
-            </Row>
+            <AllocationTable
+                task={task}
+                gtJobId={gtJobId}
+                gtJobMeta={gtJobMeta}
+                validationLayout={validationLayout}
+                qualitySettings={qualitySettings}
+                onDeleteFrames={onDeleteFrames}
+                onRestoreFrames={onRestoreFrames}
+                pageSizeData={pageSizeData}
+            />
         </div>
     );
 }
