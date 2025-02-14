@@ -138,10 +138,14 @@ class _AnnotationMapper:
                 f" but {ds_attr.input_type!r} in the dataset"
             )
 
-        if (
-            ds_attr.input_type.value not in {"text", "checkbox"}
-            and ds_attr.values != fun_attr.values
-        ):
+        if ds_attr.input_type.value in {"text", "checkbox"}:
+            values_match = True
+        elif ds_attr.input_type.value in {"select", "radio"}:
+            values_match = sorted(ds_attr.values) == sorted(fun_attr.values)
+        else:
+            values_match = ds_attr.values == fun_attr.values
+
+        if not values_match:
             raise BadFunctionError(
                 f"{attr_desc} has values {fun_attr.values!r} in the function,"
                 f" but {ds_attr.values!r} in the dataset"

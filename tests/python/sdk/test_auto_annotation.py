@@ -366,7 +366,7 @@ class TestTaskAutoAnnotation:
                         cvataa.keypoint_spec("tail", 30),
                     ],
                     attributes=[
-                        cvataa.select_attribute_spec("color", 1, ["gray", "calico"]),
+                        cvataa.select_attribute_spec("color", 1, ["calico", "gray"]),
                         cvataa.text_attribute_spec("name (should be ignored)", 2),
                     ],
                 ),
