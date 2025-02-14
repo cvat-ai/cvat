@@ -36,7 +36,8 @@ from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
-from rq.job import Dependency as RQDependency, Job as RQJob
+from rq.job import Dependency as RQDependency
+from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
 Import = namedtuple("Import", ["module", "name", "alias"])
