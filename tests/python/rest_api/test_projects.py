@@ -1145,6 +1145,7 @@ class TestImportExportDatasetProject:
             admin_user, api_version=2, save_images=True, id=project.id, format="COCO 1.0"
         )
 
+        image_names = [image_name.split("jpeg")[0] + "jpg" for image_name in image_names]
         with zipfile.ZipFile(io.BytesIO(dataset)) as zip_file:
             subset_path = "images/default"
             assert (

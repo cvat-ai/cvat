@@ -50,7 +50,7 @@ def _export(dst_file, temp_dir, task_data, save_images=False):
         dataset.transform("polygons_to_masks")
         dataset.transform("merge_instance_segments")
 
-        dataset.export(temp_dir, "open_images", save_images=save_images)
+        dataset.export(temp_dir, "open_images", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 

@@ -33,7 +33,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
         dataset.export(
             temp_dir,
             "cityscapes",
-            save_images=save_images,
+            save_media=save_images,
             apply_colormap=True,
             label_map={label: info[0] for label, info in make_colormap(instance_data).items()},
         )

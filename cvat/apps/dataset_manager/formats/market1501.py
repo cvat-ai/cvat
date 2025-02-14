@@ -72,7 +72,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
         dataset = Dataset.from_extractors(extractor, env=dm_env)
 
         dataset.transform(LabelAttrToAttr, label="market-1501")
-        dataset.export(temp_dir, "market1501", save_images=save_images)
+        dataset.export(temp_dir, "market1501", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 

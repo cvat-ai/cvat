@@ -34,7 +34,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
             format="kitti",
             label_map={k: v[0] for k, v in make_colormap(instance_data).items()},
             apply_colormap=True,
-            save_images=save_images,
+            save_media=save_images,
         )
 
     make_zip_archive(temp_dir, dst_file)

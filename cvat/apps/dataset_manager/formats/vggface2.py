@@ -22,7 +22,7 @@ from .registry import dm_env, exporter, importer
 def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, "vgg_face2", save_images=save_images)
+        dataset.export(temp_dir, "vgg_face2", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
