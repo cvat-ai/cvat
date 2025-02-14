@@ -2229,23 +2229,24 @@ paths:
       operationId: jobs_update_annotations
       description: |2
 
-        To check the status of an import request:
-
-        After initiating the annotation import, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/jobs/id/annotations requests to track the status of the import.
-      summary: Replace job annotations / Get annotation import status
+        Utilizing this endpoint to check status of the import process is deprecated
+        in favor of the new requests API:
+        GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+        on initializing request.
+      summary: Replace job annotations
       parameters:
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
         description: Storage id
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
         description: Annotation file name
+        deprecated: true
       - in: query
         name: format
         schema:
@@ -2254,6 +2255,7 @@ paths:
           Input format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -2268,17 +2270,12 @@ paths:
           - cloud_storage
           - local
         description: where to import the annotation from
+        deprecated: true
       - in: query
         name: rq_id
         schema:
           type: string
         description: rq id
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to import annotation
         deprecated: true
       tags:
       - jobs
@@ -5404,9 +5401,10 @@ paths:
       operationId: tasks_create_annotations
       description: |2
 
-        The request POST /api/tasks/id/annotations will initiate the import and will create
-        the rq job on the server in which the import will be carried out.
-        Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+        The request POST /api/tasks/id/annotations initiates the import and creates
+        the rq job on the server in which the import is carried out.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a task
       parameters:
       - in: query
@@ -5479,12 +5477,12 @@ paths:
       operationId: tasks_update_annotations
       description: |2
 
-        To check the status of an import request:
+        Utilizing this endpoint to check status of the import process is deprecated
+        in favor of the new requests API:
 
-        After initiating the annotation import, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        PUT /api/tasks/id/annotations requests to track the status of the import.
-      summary: Replace task annotations / Get annotation import status
+        GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+        on initializing request.
+      summary: Replace task annotations
       parameters:
       - in: query
         name: format
@@ -5494,6 +5492,7 @@ paths:
           Input format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -5505,6 +5504,7 @@ paths:
         schema:
           type: string
         description: rq id
+        deprecated: true
       tags:
       - tasks
       requestBody:
