@@ -6905,9 +6905,16 @@ components:
         version:
           type: string
           maxLength: 64
+        logo_url:
+          type: string
+        subtitle:
+          type: string
+          maxLength: 1024
       required:
       - description
+      - logo_url
       - name
+      - subtitle
       - version
     AcceptInvitationRead:
       type: object

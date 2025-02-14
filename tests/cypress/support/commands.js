@@ -728,12 +728,6 @@ Cypress.Commands.add('closeSettings', () => {
     cy.get('.cvat-settings-modal').should('not.be.visible');
 });
 
-Cypress.Commands.add('saveSettings', () => {
-    cy.get('.cvat-settings-modal').within(() => {
-        cy.contains('button', 'Save').click();
-    });
-});
-
 Cypress.Commands.add('changeWorkspace', (mode) => {
     cy.get('.cvat-workspace-selector').click();
     cy.get('.cvat-workspace-selector-dropdown').within(() => {
@@ -1788,4 +1782,26 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
 Cypress.Commands.add('clickSaveAnnotationView', () => {
     cy.get('button').contains('Save').click();
     cy.get('button').contains('Save').trigger('mouseout');
+});
+
+Cypress.Commands.add('makeCustomImage', (directory, fileName,
+    width, height, fontSize, backColor, textColor, posX, posY,
+    message, extension = 'png', maxWidth = undefined) => {
+    cy.window().then(async ($win) => {
+        const ofc = new $win.OffscreenCanvas(width, height);
+        const ctx = ofc.getContext('2d');
+
+        ctx.fillStyle = backColor;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = `${fontSize}px Impact`;
+
+        ctx.fillStyle = textColor;
+        ctx.textBaseline = 'top'; // so that text aligns with tracking coords
+        ctx.fillText(message, posX, posY, maxWidth);
+
+        cy.bufferToImage(directory, fileName, extension,
+            await (await ofc.convertToBlob()).arrayBuffer(),
+        );
+    });
 });
