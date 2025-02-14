@@ -7,14 +7,14 @@ from cvat_sdk import models
 from cvat_sdk.attributes import attribute_value_validator, number_attribute_values
 
 
-def test_number_attribute_values_good():
+def test_number_attribute_values_can_convert_good_values():
     assert number_attribute_values(0, 0, 1) == ["0", "0", "1"]
     assert number_attribute_values(0, 10, 1) == ["0", "10", "1"]
     assert number_attribute_values(0, 10, 10) == ["0", "10", "10"]
     assert number_attribute_values(0, 10, 5) == ["0", "10", "5"]
 
 
-def test_number_attribute_values_bad():
+def test_number_attribute_values_can_reject_bad_values():
     with pytest.raises(ValueError, match="min_value must be less than or equal to max_value"):
         number_attribute_values(1, 0, 1)
 
