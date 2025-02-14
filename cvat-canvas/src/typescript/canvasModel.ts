@@ -457,18 +457,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         const { angle } = this.data;
 
-        const mutiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
+        const multiplier = Math.sin((angle * Math.PI) / 180) + Math.cos((angle * Math.PI) / 180);
         if ((angle / 90) % 2) {
             // 90, 270, ..
             const topMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
             const leftMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
-            this.data.top += mutiplier * topMultiplier * this.data.scale;
-            this.data.left -= mutiplier * leftMultiplier * this.data.scale;
+            this.data.top += multiplier * topMultiplier * this.data.scale;
+            this.data.left -= multiplier * leftMultiplier * this.data.scale;
         } else {
             const leftMultiplier = (x - this.data.imageSize.width / 2) * (oldScale / this.data.scale - 1);
             const topMultiplier = (y - this.data.imageSize.height / 2) * (oldScale / this.data.scale - 1);
-            this.data.left += mutiplier * leftMultiplier * this.data.scale;
-            this.data.top += mutiplier * topMultiplier * this.data.scale;
+            this.data.left += multiplier * leftMultiplier * this.data.scale;
+            this.data.top += multiplier * topMultiplier * this.data.scale;
         }
 
         this.notify(UpdateReasons.IMAGE_ZOOMED);
