@@ -290,7 +290,7 @@ function HeaderComponent(props: Props): JSX.Element {
         // Mapping form values to URL query params
         const params = new URLSearchParams({
             dtype_out_raster: 'png', // Assuming default output type
-            dtype_out_vector: 'csv',
+            dtype_out_vector: 'html',
             bucket_directory: values.bucket_directory || '',
             crs: values.crs.replace('EPSG:', ''), // Remove 'EPSG:' from CRS
             batch_size: values.batch_size.toString(),
@@ -302,6 +302,7 @@ function HeaderComponent(props: Props): JSX.Element {
             bucket_name: values.bucket_name || '',
             project_name: encodeURIComponent(values.project_name || ''),
             organization: encodeURIComponent(values.organization || ''),
+            user_id: user.id,
         });
 
         return `${baseURL}?${params.toString()}`;
