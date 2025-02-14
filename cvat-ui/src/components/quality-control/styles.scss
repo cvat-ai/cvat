@@ -178,6 +178,7 @@ $excluded-background: #d9d9d973;
     padding: 0 $grid-unit-size * 5 $grid-unit-size * 2 $grid-unit-size * 5;
     margin-left: -$grid-unit-size;
     margin-right: -$grid-unit-size;
+    margin-top: $grid-unit-size * 7;
 
     .ant-table-pagination.ant-pagination {
         margin-bottom: 0;
@@ -208,6 +209,7 @@ $excluded-background: #d9d9d973;
 }
 
 .cvat-quality-page-header {
+    position: absolute;
     height: $grid-unit-size * 3;
     padding: 0 $grid-unit-size * 4;
     margin: $grid-unit-size * 2 0;
