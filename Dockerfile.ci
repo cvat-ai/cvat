@@ -1,39 +1,46 @@
-FROM cvat/server:local
+ARG BASE_IMAGE=ubuntu:22.04
 
-ENV DJANGO_SETTINGS_MODULE=cvat.settings.testing
-USER root
+FROM ${BASE_IMAGE} AS server-build
+
+ARG PIP_VERSION=24.0
+ARG CLAM_AV=no
+
+COPY . /src
+WORKDIR /src
 
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
+    DEBIAN_FRONTEND=noninteractive apt-get install -yq \
+        build-essential \
+        curl \
+        git \
+        python3-pip
+
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists \
+    make docker-build
+
+FROM server-build AS cvat-ci
+
+USER root
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -yq \
         gpg-agent \
         gnupg2 \
         apt-utils \
-        build-essential \
-        python3-dev \
         ruby \
-        && \
-    curl https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list && \
-    curl https://deb.nodesource.com/setup_20.x | bash - && \
-    DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
-        google-chrome-stable \
         nodejs \
-        && \
-        npm install --global yarn && \
-    rm -rf /var/lib/apt/lists/*;
+        google-chrome-stable
+
+RUN npm install -g yarn
 
 COPY cvat/requirements/ /tmp/cvat/requirements/
-COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/requirements.txt
+COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/
 
-RUN python3 -m ensurepip
-RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/cvat/requirements/testing.txt
+RUN python3 -m pip install -r /tmp/cvat/requirements/testing.txt
 
-COPY cvat-core ${HOME}/cvat-core
-COPY cvat-data ${HOME}/cvat-data
-COPY package.json ${HOME}/
-COPY yarn.lock ${HOME}/
-COPY tests ${HOME}/tests
+COPY cvat-core /home/django/cvat-core
+COPY cvat-data /home/django/cvat-data
+COPY tests /home/django/tests
 
-COPY .coveragerc .
-
-ENTRYPOINT []
+USER django
+WORKDIR /home/django
