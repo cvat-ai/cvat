@@ -6,17 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0065_auto_20230221_0931'),
+        ("engine", "0065_auto_20230221_0931"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='cloudstorage',
-            name='credentials',
+            model_name="cloudstorage",
+            name="credentials",
             field=models.CharField(blank=True, max_length=500, null=True),
         ),
         migrations.AlterUniqueTogether(
-            name='cloudstorage',
+            name="cloudstorage",
             unique_together=set(),
         ),
     ]

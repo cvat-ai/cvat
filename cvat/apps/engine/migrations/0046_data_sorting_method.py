@@ -6,16 +6,25 @@ import cvat.apps.engine.models
 
 
 class Migration(migrations.Migration):
-    replaces = [('engine', '0045_data_sorting_method')]
+    replaces = [("engine", "0045_data_sorting_method")]
 
     dependencies = [
-        ('engine', '0045_auto_20211123_0824'),
+        ("engine", "0045_auto_20211123_0824"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='data',
-            name='sorting_method',
-            field=models.CharField(choices=[('lexicographical', 'LEXICOGRAPHICAL'), ('natural', 'NATURAL'), ('predefined', 'PREDEFINED'), ('random', 'RANDOM')], default=cvat.apps.engine.models.SortingMethod['LEXICOGRAPHICAL'], max_length=15),
+            model_name="data",
+            name="sorting_method",
+            field=models.CharField(
+                choices=[
+                    ("lexicographical", "LEXICOGRAPHICAL"),
+                    ("natural", "NATURAL"),
+                    ("predefined", "PREDEFINED"),
+                    ("random", "RANDOM"),
+                ],
+                default=cvat.apps.engine.models.SortingMethod["LEXICOGRAPHICAL"],
+                max_length=15,
+            ),
         ),
     ]

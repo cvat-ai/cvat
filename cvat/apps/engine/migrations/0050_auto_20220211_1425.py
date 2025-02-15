@@ -6,29 +6,29 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0049_auto_20220202_0710'),
+        ("engine", "0049_auto_20220202_0710"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='trainingprojectimage',
-            name='task',
+            model_name="trainingprojectimage",
+            name="task",
         ),
         migrations.RemoveField(
-            model_name='trainingprojectlabel',
-            name='cvat_label',
+            model_name="trainingprojectlabel",
+            name="cvat_label",
         ),
         migrations.RemoveField(
-            model_name='project',
-            name='training_project',
+            model_name="project",
+            name="training_project",
         ),
         migrations.DeleteModel(
-            name='TrainingProject',
+            name="TrainingProject",
         ),
         migrations.DeleteModel(
-            name='TrainingProjectImage',
+            name="TrainingProjectImage",
         ),
         migrations.DeleteModel(
-            name='TrainingProjectLabel',
+            name="TrainingProjectLabel",
         ),
     ]

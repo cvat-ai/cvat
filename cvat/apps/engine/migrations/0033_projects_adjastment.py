@@ -7,18 +7,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0032_remove_task_z_order'),
+        ("engine", "0032_remove_task_z_order"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='label',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='engine.project'),
+            model_name="label",
+            name="project",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to="engine.project",
+            ),
         ),
         migrations.AlterField(
-            model_name='label',
-            name='task',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='engine.task'),
+            model_name="label",
+            name="task",
+            field=models.ForeignKey(
+                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to="engine.task"
+            ),
         ),
     ]

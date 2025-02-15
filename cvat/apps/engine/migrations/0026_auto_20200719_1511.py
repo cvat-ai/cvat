@@ -6,18 +6,36 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0025_auto_20200324_1222'),
+        ("engine", "0025_auto_20200324_1222"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='labeledshape',
-            name='type',
-            field=models.CharField(choices=[('rectangle', 'RECTANGLE'), ('polygon', 'POLYGON'), ('polyline', 'POLYLINE'), ('points', 'POINTS'), ('cuboid', 'CUBOID')], max_length=16),
+            model_name="labeledshape",
+            name="type",
+            field=models.CharField(
+                choices=[
+                    ("rectangle", "RECTANGLE"),
+                    ("polygon", "POLYGON"),
+                    ("polyline", "POLYLINE"),
+                    ("points", "POINTS"),
+                    ("cuboid", "CUBOID"),
+                ],
+                max_length=16,
+            ),
         ),
         migrations.AlterField(
-            model_name='trackedshape',
-            name='type',
-            field=models.CharField(choices=[('rectangle', 'RECTANGLE'), ('polygon', 'POLYGON'), ('polyline', 'POLYLINE'), ('points', 'POINTS'), ('cuboid', 'CUBOID')], max_length=16),
+            model_name="trackedshape",
+            name="type",
+            field=models.CharField(
+                choices=[
+                    ("rectangle", "RECTANGLE"),
+                    ("polygon", "POLYGON"),
+                    ("polyline", "POLYLINE"),
+                    ("points", "POINTS"),
+                    ("cuboid", "CUBOID"),
+                ],
+                max_length=16,
+            ),
         ),
     ]
