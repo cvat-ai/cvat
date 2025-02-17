@@ -172,7 +172,7 @@ class TestProjectUsecases(TestDatasetExport):
         project = self.client.projects.create_from_dataset(
             spec=models.ProjectWriteRequest(name="project with data"),
             dataset_path=fxt_camvid_dataset,
-            dataset_format="Camvid 1.0",
+            dataset_format="CamVid 1.0",
             conv_mask_to_poly=convert,
             pbar=pbar,
         )
