@@ -25,7 +25,6 @@ import rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
-from django.http import HttpRequest
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
@@ -50,6 +49,7 @@ from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
@@ -72,7 +72,7 @@ slogger = ServerLogManager(__name__)
 def create(
     db_task: models.Task,
     data: models.Data,
-    request: HttpRequest,
+    request: ExtendedRequest,
 ) -> str:
     """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
