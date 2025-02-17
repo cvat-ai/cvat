@@ -344,8 +344,3 @@ def keypoint(label_id: int, points: Sequence[float], **kwargs) -> models.SubLabe
     return models.SubLabeledShapeRequest(
         label_id=label_id, frame=0, type="points", points=points, **kwargs
     )
-
-
-def attribute_val(spec_id: int, value: str) -> models.AttributeValRequest:
-    """Helper factory function for AttributeValRequest."""
-    return models.AttributeValRequest(spec_id=spec_id, value=value)

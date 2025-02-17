@@ -4,7 +4,11 @@
 
 import pytest
 from cvat_sdk import models
-from cvat_sdk.attributes import attribute_value_validator, number_attribute_values
+from cvat_sdk.attributes import (
+    attribute_vals_from_dict,
+    attribute_value_validator,
+    number_attribute_values,
+)
 
 
 def test_number_attribute_values_can_convert_good_values():
@@ -99,3 +103,18 @@ def test_attribute_value_validator_text():
     )
 
     assert validator("anything")
+
+
+def test_attribute_vals_from_dict():
+    assert attribute_vals_from_dict({}) == []
+
+    attrs = attribute_vals_from_dict({0: "x", 1: 5, 2: True, 3: False})
+    assert len(attrs) == 4
+
+    for i, attr in enumerate(attrs):
+        assert attr.spec_id == i
+
+    assert attrs[0].value == "x"
+    assert attrs[1].value == "5"
+    assert attrs[2].value == "true"
+    assert attrs[3].value == "false"

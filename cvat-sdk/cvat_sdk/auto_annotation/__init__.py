@@ -9,7 +9,6 @@ from .interface import (
     DetectionFunctionContext,
     DetectionFunctionSpec,
     attribute_spec,
-    attribute_val,
     checkbox_attribute_spec,
     keypoint,
     keypoint_spec,
@@ -29,7 +28,6 @@ from .interface import (
 __all__ = [
     "annotate_task",
     "attribute_spec",
-    "attribute_val",
     "BadFunctionError",
     "checkbox_attribute_spec",
     "DetectionFunction",

@@ -12,7 +12,7 @@ import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.attributes import number_attribute_values
+from cvat_sdk.attributes import attribute_vals_from_dict, number_attribute_values
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from shared.utils.helpers import generate_image_file
@@ -382,18 +382,12 @@ class TestTaskAutoAnnotation:
                         cvataa.keypoint(
                             10,
                             [10, 10],
-                            attributes=[
-                                cvataa.attribute_val(1, "5"),  # size
-                                cvataa.attribute_val(2, "forward"),  # orientation
-                            ],
+                            attributes=attribute_vals_from_dict({1: 5, 2: "forward"}),
                         ),
                         # tail
                         cvataa.keypoint(30, [30, 30]),
                     ],
-                    attributes=[
-                        cvataa.attribute_val(1, "calico"),  # color
-                        cvataa.attribute_val(2, "McFluffy"),  # name
-                    ],
+                    attributes=attribute_vals_from_dict({1: "calico", 2: "McFluffy"}),
                 ),
             ]
 
@@ -944,7 +938,7 @@ class TestTaskAutoAnnotation:
                 cvataa.skeleton(
                     456,
                     [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
-                    attributes=[cvataa.attribute_val(2, "gray")],
+                    attributes=attribute_vals_from_dict({2: "gray"}),
                 ),
             ],
             "attribute with unknown ID",
@@ -955,7 +949,7 @@ class TestTaskAutoAnnotation:
                 cvataa.skeleton(
                     456,
                     [
-                        cvataa.keypoint(12, [1, 2], attributes=[cvataa.attribute_val(2, "5")]),
+                        cvataa.keypoint(12, [1, 2], attributes=attribute_vals_from_dict({2: 5})),
                         cvataa.keypoint(34, [3, 4]),
                     ],
                 ),
@@ -969,7 +963,10 @@ class TestTaskAutoAnnotation:
                 cvataa.skeleton(
                     456,
                     [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
-                    attributes=[cvataa.attribute_val(1, "gray"), cvataa.attribute_val(1, "gray")],
+                    attributes=[
+                        models.AttributeValRequest(spec_id=1, value="gray"),
+                        models.AttributeValRequest(spec_id=1, value="gray"),
+                    ],
                 ),
             ],
             "multiple attributes with same ID",
@@ -983,7 +980,10 @@ class TestTaskAutoAnnotation:
                         cvataa.keypoint(
                             12,
                             [1, 2],
-                            attributes=[cvataa.attribute_val(1, "5"), cvataa.attribute_val(1, "5")],
+                            attributes=[
+                                models.AttributeValRequest(spec_id=1, value="5"),
+                                models.AttributeValRequest(spec_id=1, value="5"),
+                            ],
                         ),
                         cvataa.keypoint(34, [3, 4]),
                     ],
@@ -998,7 +998,7 @@ class TestTaskAutoAnnotation:
                 cvataa.skeleton(
                     456,
                     [cvataa.keypoint(12, [1, 2]), cvataa.keypoint(34, [3, 4])],
-                    attributes=[cvataa.attribute_val(1, "purple")],
+                    attributes=attribute_vals_from_dict({1: "purple"}),
                 ),
             ],
             "unsuitable for its attribute",
@@ -1012,7 +1012,7 @@ class TestTaskAutoAnnotation:
                         cvataa.keypoint(
                             12,
                             [1, 2],
-                            attributes=[cvataa.attribute_val(1, "-1")],
+                            attributes=attribute_vals_from_dict({1: -1}),
                         ),
                         cvataa.keypoint(34, [3, 4]),
                     ],

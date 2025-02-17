@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Mapping
+from typing import Callable, Union
 
 from . import models
 
@@ -104,3 +105,32 @@ def number_attribute_values(min_value: int, max_value: int, /, step: int = 1) ->
         raise ValueError("step must be a divisor of max_value - min_value")
 
     return [str(min_value), str(max_value), str(step)]
+
+
+def attribute_vals_from_dict(
+    id_to_value: Mapping[int, Union[str, int, bool]], /
+) -> list[models.AttributeValRequest]:
+    """
+    Returns a list of AttributeValRequest objects with given IDs and values.
+
+    The input value must be a mapping from attribute spec IDs to corresponding values.
+    A value may be specified as a string, an integer, or a boolean.
+    Integers and booleans will be converted to strings according to the format CVAT expects
+    for attributes with input type "number" and "checkbox", respectively.
+    """
+
+    def val_as_string(v: Union[str, int, bool]) -> str:
+        if v is True:
+            return "true"
+        if v is False:
+            return "false"
+        if isinstance(v, int):
+            return str(v)
+        if isinstance(v, str):
+            return v
+        assert False, f"unexpected value {v!r} of type {type(v)}"
+
+    return [
+        models.AttributeValRequest(spec_id=k, value=val_as_string(v))
+        for k, v in id_to_value.items()
+    ]

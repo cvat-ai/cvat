@@ -196,15 +196,14 @@ cvataa.number_attribute_spec("size", 1, number_attribute_values(0, 10))
 
 The following helpers are available for use in `detect`:
 
-| Name            | Model type               | Fixed attributes              |
-|-----------------|--------------------------|-------------------------------|
-| `shape`         | `LabeledShapeRequest`    | `frame=0`                     |
-| `mask`          | `LabeledShapeRequest`    | `frame=0`, `type="mask"`      |
-| `polygon`       | `LabeledShapeRequest`    | `frame=0`, `type="polygon"`   |
-| `rectangle`     | `LabeledShapeRequest`    | `frame=0`, `type="rectangle"` |
-| `skeleton`      | `LabeledShapeRequest`    | `frame=0`, `type="skeleton"`  |
-| `keypoint`      | `SubLabeledShapeRequest` | `frame=0`, `type="points"`    |
-| `attribute_val` | `AttributeValRequest`    | -                             |
+| Name        | Model type               | Fixed attributes              |
+|-------------|--------------------------|-------------------------------|
+| `shape`     | `LabeledShapeRequest`    | `frame=0`                     |
+| `mask`      | `LabeledShapeRequest`    | `frame=0`, `type="mask"`      |
+| `polygon`   | `LabeledShapeRequest`    | `frame=0`, `type="polygon"`   |
+| `rectangle` | `LabeledShapeRequest`    | `frame=0`, `type="rectangle"` |
+| `skeleton`  | `LabeledShapeRequest`    | `frame=0`, `type="skeleton"`  |
+| `keypoint`  | `SubLabeledShapeRequest` | `frame=0`, `type="points"`    |
 
 For `mask`, it is recommended to create the points list using
 the `cvat_sdk.masks.encode_mask` function, which will convert a bitmap into a
@@ -215,6 +214,17 @@ cvataa.mask(my_label, encode_mask(
     my_mask,  # boolean 2D array, same size as the input image
     [x1, y1, x2, y2],  # top left and bottom right coordinates of the mask
 ))
+```
+
+To create shapes with attributes,
+it's recommended to use the `cvat_sdk.attributes.attribute_vals_from_dict` function,
+which returns a list of objects that can be passed to an `attributes` argument:
+
+```python
+cvataa.rectangle(
+    my_label, [x1, y2, x2, y2],
+    attributes=attribute_vals_from_dict({my_attr1: val1, my_attr2: val2})
+)
 ```
 
 ## Auto-annotation driver
