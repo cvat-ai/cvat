@@ -164,8 +164,8 @@ class TestProjectUsecases(TestDatasetExport):
 
     @pytest.mark.parametrize("convert", [True, False])
     def test_can_create_project_from_dataset_with_polygons_to_masks_param(
-            self, fxt_camvid_dataset: Path, convert: bool
-        ):
+        self, fxt_camvid_dataset: Path, convert: bool
+    ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
@@ -183,10 +183,9 @@ class TestProjectUsecases(TestDatasetExport):
 
         task = project.get_tasks()[0]
         imported_annotations = task.get_annotations()
-        assert all([
-            s.type.value == "polygon" if convert else "mask"
-            for s in imported_annotations.shapes
-        ])
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
 
     def test_can_retrieve_project(self, fxt_new_project: Project):
         project_id = fxt_new_project.id

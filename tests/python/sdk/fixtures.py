@@ -67,7 +67,7 @@ def fxt_camvid_dataset(tmp_path: Path):
         f.write(generate_image_file(filename=str(img_path), size=(5, 10)).getvalue())
 
     annot_path = tmp_path / "annot.png"
-    r,g,b = (127,0,0)
+    r, g, b = (127, 0, 0)
     annot = generate_image_file(
         filename=str(annot_path),
         size=(5, 10),
