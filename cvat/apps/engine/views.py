@@ -126,8 +126,8 @@ from cvat.apps.engine.rq import (
     ImportRQMeta,
     RQId,
     RQMetaWithFailureInfo,
-    is_rq_job_owner,
     define_dependent_job,
+    is_rq_job_owner,
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer,

@@ -50,12 +50,7 @@ from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import (
-    av_scan_paths,
-    format_list,
-    get_rq_lock_by_user,
-    take_by,
-)
+from cvat.apps.engine.utils import av_scan_paths, format_list, get_rq_lock_by_user, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
