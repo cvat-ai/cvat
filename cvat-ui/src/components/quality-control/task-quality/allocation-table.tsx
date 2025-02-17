@@ -163,7 +163,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
     ];
 
     return (
-        <div className='cvat-frame-allocation-list'>
+        <>
             <QualityTableHeader
                 title='Frames'
                 onSearch={handleSearch}
@@ -219,7 +219,7 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
                 size='small'
                 pagination={{ showSizeChanger: true, defaultPageSize }}
             />
-        </div>
+        </>
     );
 }
 

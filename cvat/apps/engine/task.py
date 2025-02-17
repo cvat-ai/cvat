@@ -25,7 +25,6 @@ import rq
 from django.conf import settings
 from django.db import transaction
 from django.forms.models import model_to_dict
-from django.http import HttpRequest
 from rest_framework.serializers import ValidationError
 
 from cvat.apps.engine import models
@@ -46,9 +45,11 @@ from cvat.apps.engine.media_extractors import (
     load_image,
     sort,
 )
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import RequestAction, RequestTarget
 from cvat.apps.engine.rq_job_handler import RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
@@ -71,7 +72,7 @@ slogger = ServerLogManager(__name__)
 def create(
     db_task: models.Task,
     data: models.Data,
-    request: HttpRequest,
+    request: ExtendedRequest,
 ) -> str:
     """Schedule a background job to create a task and return that job's identifier"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
@@ -1358,7 +1359,7 @@ def _create_thread(
         ))
 
     if db_task.mode == 'annotation':
-        images = models.Image.objects.bulk_create(images)
+        images = bulk_create(models.Image, images)
 
         db_related_files = [
             models.RelatedFile(
@@ -1367,20 +1368,23 @@ def _create_thread(
             )
             for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
         ]
-        db_related_files = models.RelatedFile.objects.bulk_create(db_related_files)
+        db_related_files = bulk_create(models.RelatedFile, db_related_files)
         db_related_files_by_path = {
             os.path.relpath(rf.path.path, upload_dir): rf for rf in db_related_files
         }
 
         ThroughModel = models.RelatedFile.images.through
-        models.RelatedFile.images.through.objects.bulk_create((
-            ThroughModel(
-                relatedfile_id=db_related_files_by_path[related_file_path].id,
-                image_id=image.id
+        bulk_create(
+            ThroughModel,
+            (
+                ThroughModel(
+                    relatedfile_id=db_related_files_by_path[related_file_path].id,
+                    image_id=image.id
+                )
+                for image in images
+                for related_file_path in related_images.get(image.path, [])
             )
-            for image in images
-            for related_file_path in related_images.get(image.path, [])
-        ))
+        )
     else:
         models.Video.objects.create(
             data=db_data,
