@@ -109,9 +109,12 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            for resource in resources:
-                if not isinstance(resource, str):
-                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+            for i in range(len(resources)):
+                if not isinstance(resources[i], str):
+                    try:
+                        resources[i] = str(resources[i])
+                    except:
+                        raise TypeError(f"resources: expected instances of str or a type convertible to string, got {type(resources[i])}")
 
             if resource_type is ResourceType.REMOTE:
                 data["remote_files"] = resources
