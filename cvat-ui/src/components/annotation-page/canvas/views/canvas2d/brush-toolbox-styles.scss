@@ -1,14 +1,14 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-brush-tools-toolbox {
     position: absolute;
     margin: $grid-unit-size;
     padding: 0 $grid-unit-size;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
     background: $background-color-2;
     display: flex;
     align-items: center;
@@ -31,6 +31,10 @@
         > span.anticon {
             font-size: inherit;
         }
+    }
+
+    > button:disabled {
+        opacity: .5;
     }
 
     .cvat-brush-tools-brush,

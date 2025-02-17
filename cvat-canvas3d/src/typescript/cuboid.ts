@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,7 +59,7 @@ export class CuboidModel {
         this.front = new THREE.Mesh(geometry, material);
 
         const planeTop = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+            new THREE.PlaneGeometry(1, 1, 1, 1),
             new THREE.MeshBasicMaterial({
                 color: 0xff0000,
                 visible: false,
@@ -67,7 +67,7 @@ export class CuboidModel {
         );
 
         const planeSide = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+            new THREE.PlaneGeometry(1, 1, 1, 1),
             new THREE.MeshBasicMaterial({
                 color: 0xff0000,
                 visible: false,
@@ -75,7 +75,7 @@ export class CuboidModel {
         );
 
         const planeFront = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+            new THREE.PlaneGeometry(1, 1, 1, 1),
             new THREE.MeshBasicMaterial({
                 color: 0xff0000,
                 visible: false,

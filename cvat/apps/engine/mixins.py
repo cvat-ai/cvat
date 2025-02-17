@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,24 +8,45 @@ import json
 import os
 import os.path
 import uuid
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from distutils.util import strtobool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from textwrap import dedent
+from typing import Any, Callable, Optional
 from unittest import mock
+from urllib.parse import urljoin
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Location
-from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
-from cvat.apps.engine.utils import get_import_rq_id
+from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.models import (
+    Job,
+    Location,
+    Project,
+    RequestAction,
+    RequestSubresource,
+    RequestTarget,
+    Task,
+)
+from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import is_dataset_export
 
+slogger = ServerLogManager(__name__)
 
 class TusFile:
     @dataclass
@@ -146,7 +167,7 @@ class TusFile:
         return tus_file
 
 class TusChunk:
-    def __init__(self, request):
+    def __init__(self, request: ExtendedRequest):
         self.META = request.META
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
         self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
@@ -202,7 +223,7 @@ class UploadMixin:
                 response.__setitem__(key, value)
         return response
 
-    def _get_metadata(self, request):
+    def _get_metadata(self, request: ExtendedRequest):
         metadata = {}
         if request.META.get("HTTP_UPLOAD_METADATA"):
             for kv in request.META.get("HTTP_UPLOAD_METADATA").split(","):
@@ -217,7 +238,7 @@ class UploadMixin:
                     metadata[splited_metadata[0]] = ""
         return metadata
 
-    def upload_data(self, request):
+    def upload_data(self, request: ExtendedRequest):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
@@ -234,9 +255,9 @@ class UploadMixin:
         else: # backward compatibility case - no upload headers were found
             return self.upload_finished(request)
 
-    def init_tus_upload(self, request):
+    def init_tus_upload(self, request: ExtendedRequest):
         if request.method == 'OPTIONS':
-            return self._tus_response(status=status.HTTP_204)
+            return self._tus_response(status=status.HTTP_204_NO_CONTENT)
         else:
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
@@ -262,7 +283,10 @@ class UploadMixin:
             if file_exists:
                 # check whether the rq_job is in progress or has been finished/failed
                 object_class_name = self._object.__class__.__name__.lower()
-                template = get_import_rq_id(object_class_name, self._object.pk, import_type, request.user)
+                template = RQId(
+                    RequestAction.IMPORT, RequestTarget(object_class_name), self._object.pk,
+                    subresource=RequestSubresource(import_type)
+                ).render()
                 queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
                 finished_job_ids = queue.finished_job_registry.get_job_ids()
                 failed_job_ids = queue.failed_job_registry.get_job_ids()
@@ -302,10 +326,10 @@ class UploadMixin:
 
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
-                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
+                extra_headers={'Location': urljoin(location, tus_file.file_id),
                                'Upload-Filename': tus_file.filename})
 
-    def append_tus_chunk(self, request, file_id):
+    def append_tus_chunk(self, request: ExtendedRequest, file_id: str):
         tus_file = TusFile(str(file_id), self.get_upload_dir())
         if request.method == 'HEAD':
             if tus_file.exists():
@@ -345,12 +369,12 @@ class UploadMixin:
     def get_upload_dir(self) -> str:
         return self._object.data.get_upload_dirname()
 
-    def _get_request_client_files(self, request):
+    def _get_request_client_files(self, request: ExtendedRequest):
         serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
         return serializer.validated_data.get('client_files')
 
-    def append_files(self, request):
+    def append_files(self, request: ExtendedRequest):
         """
         Processes a single or multiple files sent in a single request inside
         a file uploading session.
@@ -369,67 +393,114 @@ class UploadMixin:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    def upload_started(self, request):
+    def upload_started(self, request: ExtendedRequest):
         """
         Allows to do actions before upcoming file uploading.
         """
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def upload_finished(self, request):
+    def upload_finished(self, request: ExtendedRequest):
         """
         Allows to process uploaded files.
         """
 
         raise NotImplementedError('Must be implemented in the derived class')
 
-class AnnotationMixin:
-    def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
-        format_name = request.query_params.get("format", "")
-        action = request.query_params.get("action", "").lower()
-        filename = request.query_params.get("filename", "")
+class PartialUpdateModelMixin:
+    """
+    Update fields of a model instance.
 
-        use_default_location = request.query_params.get("use_default_location", True)
-        use_settings = strtobool(str(use_default_location))
-        obj = db_obj if use_settings else request.query_params
-        location_conf = get_location_configuration(
-            obj=obj,
-            use_settings=use_settings,
-            field_name=StorageType.TARGET,
-        )
+    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    """
 
-        object_name = self._object.__class__.__name__.lower()
-        rq_id = f"export:annotations-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
+    def _update(self, request: ExtendedRequest, *args, **kwargs):
+        # This method must not be named "update" not to be matched with the PUT method
+        return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
 
-        if format_name:
-            return export_func(db_instance=self._object,
-                rq_id=rq_id,
-                request=request,
-                action=action,
-                callback=callback,
-                format_name=format_name,
-                filename=filename,
-                location_conf=location_conf,
-            )
+    def perform_update(self, serializer):
+        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+
+    def partial_update(self, request: ExtendedRequest, *args, **kwargs):
+        with mock.patch.object(self, 'update', new=self._update, create=True):
+            return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+
+
+class DatasetMixin:
+    def export_dataset_v1(
+        self,
+        request: ExtendedRequest,
+        save_images: bool,
+        *,
+        get_data: Optional[Callable[[int], dict[str, Any]]] = None,
+    ) -> Response:
+        if request.query_params.get("format"):
+            callback = self.get_export_callback(save_images)
+
+            dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=1)
+            return dataset_export_manager.export()
 
         if not get_data:
-            return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
+            return Response("Format is not specified", status=status.HTTP_400_BAD_REQUEST)
 
         data = get_data(self._object.pk)
         return Response(data)
 
-    def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
+    @extend_schema(
+        summary='Initialize process to export resource as a dataset in a specific format',
+        description=dedent("""\
+             The request `POST /api/<projects|tasks|jobs>/id/dataset/export` will initialize
+             a background process to export a dataset. To check status of the process
+             please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+         """),
+        parameters=[
+            OpenApiParameter('format', location=OpenApiParameter.QUERY,
+                description='Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
+                type=OpenApiTypes.STR, required=True),
+            OpenApiParameter('filename', description='Desired output file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('location', description='Where need to save downloaded dataset',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+            OpenApiParameter('save_images', description='Include images or not',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False, default=False),
+        ],
+        request=OpenApiTypes.NONE,
+        responses={
+            '202': OpenApiResponse(response=RqIdSerializer, description='Exporting has been started'),
+            '405': OpenApiResponse(description='Format is not available'),
+            '409': OpenApiResponse(description='Exporting is already in progress'),
+        },
+    )
+    @action(detail=True, methods=['POST'], serializer_class=None, url_path='dataset/export')
+    def export_dataset_v2(self, request: ExtendedRequest, pk: int):
+        self._object = self.get_object() # force call of check_object_permissions()
+
+        save_images = is_dataset_export(request)
+        callback = self.get_export_callback(save_images)
+
+        dataset_export_manager = DatasetExportManager(self._object, request, callback, save_images=save_images, version=2)
+        return dataset_export_manager.export()
+
+    # FUTURE-TODO: migrate to new API
+    def import_annotations(
+        self,
+        request: ExtendedRequest,
+        db_obj: Project | Task | Job,
+        import_func: Callable[..., None],
+        rq_func: Callable[..., None],
+        rq_id_factory: Callable[..., RQId],
+    ):
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
             return self.init_tus_upload(request)
 
-        use_default_location = request.query_params.get('use_default_location', True)
-        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-        use_settings = strtobool(str(use_default_location))
-        obj = db_obj if use_settings else request.query_params
+        conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
         location_conf = get_location_configuration(
-            obj=obj,
-            use_settings=use_settings,
+            db_instance=db_obj,
+            query_params=request.query_params,
             field_name=StorageType.SOURCE,
         )
 
@@ -439,7 +510,7 @@ class AnnotationMixin:
 
             return import_func(
                 request=request,
-                rq_id_template=rq_id_template,
+                rq_id_factory=rq_id_factory,
                 rq_func=rq_func,
                 db_obj=self._object,
                 format_name=format_name,
@@ -450,16 +521,21 @@ class AnnotationMixin:
 
         return self.upload_data(request)
 
-class SerializeMixin:
-    def serialize(self, request, export_func):
-        db_object = self.get_object() # force to call check_object_permissions
-        return export_func(
-            db_object,
-            request,
-            queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
-        )
 
-    def deserialize(self, request, import_func):
+class BackupMixin:
+    def export_backup_v1(self, request: ExtendedRequest) -> Response:
+        db_object = self.get_object() # force to call check_object_permissions
+
+        export_backup_manager = BackupExportManager(db_object, request, version=1)
+        response = export_backup_manager.export()
+
+        if request.query_params.get('action') != 'download':
+            response.headers['Deprecated'] = True
+
+        return response
+
+    # FUTURE-TODO: migrate to new API
+    def import_backup_v1(self, request: ExtendedRequest, import_func: Callable) -> Response:
         location = request.query_params.get("location", Location.LOCAL)
         if location == Location.CLOUD_STORAGE:
             file_name = request.query_params.get("filename", "")
@@ -470,21 +546,65 @@ class SerializeMixin:
             )
         return self.upload_data(request)
 
+    @extend_schema(summary='Initiate process to backup resource',
+        description=dedent("""\
+             The request `POST /api/<projects|tasks>/id/backup/export` will initialize
+             a background process to backup a resource. To check status of the process
+             please, use `GET /api/requests/<rq_id>` where **rq_id** is request ID returned in the response for this endpoint.
+         """),
+        parameters=[
+            OpenApiParameter('filename', description='Backup file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('location', description='Where need to save downloaded backup',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
+        ],
+        request=OpenApiTypes.NONE,
+        responses={
+            '202': OpenApiResponse(response=RqIdSerializer, description='Creating a backup file has been started'),
+            '400': OpenApiResponse(description='Wrong query parameters were passed'),
+            '409': OpenApiResponse(description='The backup process has already been initiated and is not yet finished'),
+        },
+    )
+    @action(detail=True, methods=['POST'], serializer_class=None, url_path='backup/export')
+    def export_backup_v2(self, request: ExtendedRequest, pk: int):
+        db_object = self.get_object() # force to call check_object_permissions
 
-class PartialUpdateModelMixin:
+        export_backup_manager = BackupExportManager(db_object, request, version=2)
+        return export_backup_manager.export()
+
+
+class CsrfWorkaroundMixin(APIView):
     """
-    Update fields of a model instance.
+    Disables session authentication for GET/HEAD requests
+    for which csrf_workaround_is_needed returns True.
 
-    Almost the same as UpdateModelMixin, but has no public PUT / update() method.
+    csrf_workaround_is_needed is supposed to be overridden by each view.
+
+    This only exists to mitigate CSRF attacks on several known endpoints that
+    perform side effects in response to GET requests. Do not use this in
+    new code: instead, make sure that all endpoints with side effects use
+    a method other than GET/HEAD. Then Django's built-in CSRF protection
+    will cover them.
     """
 
-    def _update(self, request, *args, **kwargs):
-        # This method must not be named "update" not to be matched with the PUT method
-        return mixins.UpdateModelMixin.update(self, request, *args, **kwargs)
+    @staticmethod
+    def csrf_workaround_is_needed(query_params: Mapping[str, str]) -> bool:
+        return False
 
-    def perform_update(self, serializer):
-        mixins.UpdateModelMixin.perform_update(self, serializer=serializer)
+    def get_authenticators(self):
+        authenticators = super().get_authenticators()
 
-    def partial_update(self, request, *args, **kwargs):
-        with mock.patch.object(self, 'update', new=self._update, create=True):
-            return mixins.UpdateModelMixin.partial_update(self, request=request, *args, **kwargs)
+        if (
+            self.request and
+            # Don't apply the workaround for requests from unit tests, since
+            # they can only use session authentication.
+            not getattr(self.request, "_dont_enforce_csrf_checks", False) and
+            self.request.method in ("GET", "HEAD") and
+            self.csrf_workaround_is_needed(self.request.GET)
+        ):
+            authenticators = [a for a in authenticators if not isinstance(a, SessionAuthentication)]
+
+        return authenticators

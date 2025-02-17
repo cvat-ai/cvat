@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,10 +12,10 @@ import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { TasksQuery, Indexable } from 'reducers';
-import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync } from 'actions/tasks-actions';
+import { anySearch } from 'utils/any-search';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -58,6 +58,8 @@ function TasksPageComponent(props: Props): JSX.Element {
         }
     }, [query]);
 
+    const isAnySearch = anySearch<TasksQuery>(query);
+
     const content = count ? (
         <>
             <TaskListContainer />
@@ -81,7 +83,7 @@ function TasksPageComponent(props: Props): JSX.Element {
             </Row>
         </>
     ) : (
-        <EmptyListComponent query={query} />
+        <EmptyListComponent notFound={isAnySearch} />
     );
 
     return (
@@ -122,7 +124,6 @@ function TasksPageComponent(props: Props): JSX.Element {
                     <Spin size='large' className='cvat-spinner' />
                 </div>
             ) : content }
-            <FeedbackComponent />
         </div>
     );
 }

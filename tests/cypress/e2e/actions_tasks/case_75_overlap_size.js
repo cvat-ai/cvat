@@ -29,7 +29,7 @@ context('Overlap size.', () => {
     const calculatedOverlapSize = advancedConfigurationParams.segmentSize - advancedConfigurationParams.overlapSize;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -52,7 +52,7 @@ context('Overlap size.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('The range of frame values corresponds to the parameters.', () => {
-            cy.getJobNum(0).then(($job) => {
+            cy.getJobIDFromIdx(0).then(($job) => {
                 cy.contains('a', `Job #${$job}`)
                     .parents('.cvat-job-item')
                     .find('.cvat-job-item-frame-range')
@@ -62,7 +62,7 @@ context('Overlap size.', () => {
                         ); // expected 4 to equal 4
                     });
             });
-            cy.getJobNum(1).then(($job) => {
+            cy.getJobIDFromIdx(1).then(($job) => {
                 cy.contains('a', `Job #${$job}`)
                     .parents('.cvat-job-item')
                     .find('.cvat-job-item-frame-range')

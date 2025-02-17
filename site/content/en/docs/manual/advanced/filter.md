@@ -37,20 +37,24 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 | `Label`      | all the label names that are in the task               | label name                                  |
 | `Type`       | shape, track or tag                                    | type of object                              |
 | `Shape`      | all shape types                                        | type of shape                               |
-| `Occluded`   | true or false                                          | occluded ([read more](/docs/manual/advanced/shape-mode-advanced/)) |
+| `Occluded`   | true or false                                          | occluded ({{< ilink "/docs/manual/advanced/shape-mode-advanced" "read more" >}}) |
 | `Width`      | number of px or field                                  | shape width                                 |
 | `Height`     | number of px or field                                  | shape height                                |
 | `ServerID`   | number or field                                        | ID of the object on the server <br>(You can find out by forming a link to the object through the Action menu) |
 | `ObjectID`   | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar) |
 | `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label |
 
-- [Supported properties for projects list](/docs/manual/advanced/projects/#supported-properties-for-projects-list)
+- {{< ilink "/docs/manual/advanced/projects#supported-properties-for-projects-list"
+    "Supported properties for projects list" >}}
 
-- [Supported properties for tasks list](/docs/manual/basics/tasks-page/#supported-properties-for-tasks-list)
+- {{< ilink "/docs/manual/basics/tasks-page#supported-properties-for-tasks-list"
+    "Supported properties for tasks list" >}}
 
-- [Supported properties for jobs list](/docs/manual/basics/jobs-page/#supported-properties-for-jobs-list)
+- {{< ilink "/docs/manual/basics/jobs-page#supported-properties-for-jobs-list"
+    "Supported properties for jobs list" >}}
 
-- [Supported properties for cloud storages list](/docs/manual/basics/cloud-storages/#supported-properties-for-cloud-storages-list)
+- {{< ilink "/docs/manual/basics/cloud-storages#supported-properties-for-cloud-storages-list"
+    "Supported properties for cloud storages list" >}}
 
 ### Supported operators for properties
 
@@ -106,9 +110,9 @@ Once applied filter automatically appears in `Recent used` list. Maximum length 
 
 ## Sort and filter lists
 
-On the [projects](/docs/manual/advanced/projects/#projects-page), task list on the project page,
-[tasks](/docs/manual/basics/tasks-page/), [jobs](/docs/manual/basics/jobs-page/),
-and [cloud storage](/docs/manual/basics/cloud-storages/) pages, you can use sorting and filters.
+On the {{< ilink "/docs/manual/advanced/projects#projects-page" "projects" >}}, task list on the project page,
+{{< ilink "/docs/manual/basics/tasks-page" "tasks" >}}, {{< ilink "/docs/manual/basics/jobs-page" "jobs" >}},
+and {{< ilink "/docs/manual/basics/cloud-storages" "cloud storage" >}} pages, you can use sorting and filters.
 
 > The applied filter and sorting will be displayed in the URL of your browser,
 > Thus, you can share the page with sorting and filter applied.

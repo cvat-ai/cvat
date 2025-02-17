@@ -142,18 +142,17 @@ task_data.add_shape(shape)
 
 ## Format specifications
 
-- [CVAT](/docs/manual/advanced/formats/format-cvat/)
-- [Datumaro](/docs/manual/advanced/formats/format-datumaro/)
-- [LabelMe](/docs/manual/advanced/formats/format-labelme/)
-- [MOT](/docs/manual/advanced/formats/format-mot/)
-- [MOTS](/docs/manual/advanced/formats/format-mots/)
-- [COCO](/docs/manual/advanced/formats/format-coco/)
-- [PASCAL VOC and mask](/docs/manual/advanced/formats/format-voc/)
-- [YOLO](/docs/manual/advanced/formats/format-yolo/)
-- [TF detection API](/docs/manual/advanced/formats/format-tfrecord/)
-- [ImageNet](/docs/manual/advanced/formats/format-imagenet/)
-- [CamVid](/docs/manual/advanced/formats/format-camvid/)
-- [WIDER Face](/docs/manual/advanced/formats/format-widerface/)
-- [VGGFace2](/docs/manual/advanced/formats/format-vggface2/)
-- [Market-1501](/docs/manual/advanced/formats/format-market1501/)
-- [ICDAR13/15](/docs/manual/advanced/formats/format-icdar/)
+- {{< ilink "/docs/manual/advanced/formats/format-cvat" "CVAT" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-datumaro" "Datumaro" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-labelme" "LabelMe" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-mot" "MOT" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-mots" "MOTS" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-coco" "COCO" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-voc" "PASCAL VOC and mask" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-yolo" "YOLO" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-imagenet" "ImageNet" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-camvid" "CamVid" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-widerface" "WIDER Face" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-vggface2" "VGGFace2" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-market1501" "Market-1501" >}}
+- {{< ilink "/docs/manual/advanced/formats/format-icdar" "ICDAR13/15" >}}

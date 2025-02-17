@@ -1,22 +1,26 @@
 # Copyright (C) 2021-2023 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import functools
 import json
+import math
 import os
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from concurrent.futures import FIRST_EXCEPTION, ThreadPoolExecutor, wait
 from enum import Enum
 from io import BytesIO
-from multiprocessing.pool import ThreadPool
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Any, BinaryIO, Callable, Optional, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.storage.blob import BlobServiceClient, ContainerClient, PublicAccess
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
+from botocore.client import Config
 from botocore.exceptions import ClientError
 from botocore.handlers import disable_signing
 from django.conf import settings
@@ -24,14 +28,50 @@ from google.cloud import storage
 from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
-from rest_framework.exceptions import (NotFound, PermissionDenied,
-                                       ValidationError)
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
-from cvat.apps.engine.utils import get_cpu_number
+from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
+
+
+class NamedBytesIO(BytesIO):
+    @property
+    def filename(self) -> Optional[str]:
+        return getattr(self, '_filename', None)
+
+    @filename.setter
+    def filename(self, value: str) -> None:
+        self._filename = value
+
+slogger = ServerLogManager(__name__)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+CPU_NUMBER = get_cpu_number()
+
+def normalize_threads_number(
+    threads_number: Optional[int], number_of_files: int
+) -> int:
+    threads_number = (
+        min(
+            CPU_NUMBER,
+            settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER,
+            max(
+                math.ceil(number_of_files / settings.CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD), 1
+            ),
+        )
+        if threads_number is None
+        else min(
+            threads_number,
+            CPU_NUMBER,
+            settings.CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER,
+        )
+    )
+    threads_number = max(threads_number, 1)
+
+    return threads_number
 
 class Status(str, Enum):
     AVAILABLE = 'AVAILABLE'
@@ -94,10 +134,11 @@ def validate_file_status(func):
 
 class _CloudStorage(ABC):
 
-    def __init__(self):
-        self._files = []
+    def __init__(self, prefix: Optional[str] = None):
+        self.prefix = prefix
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self):
         pass
 
@@ -125,19 +166,25 @@ class _CloudStorage(ABC):
     def get_file_last_modified(self, key):
         pass
 
-
     @abstractmethod
-    def download_fileobj(self, key):
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         pass
 
-    def download_file(self, key, path):
-        file_obj = self.download_fileobj(key)
-        if isinstance(file_obj, BytesIO):
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+    def download_fileobj(self, key: str) -> NamedBytesIO:
+        buf = NamedBytesIO()
+        self._download_fileobj_to_stream(key=key, stream=buf)
+        buf.seek(0)
+        buf.filename = key
+        return buf
+
+    def download_file(self, key: str, path: str) -> None:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        try:
             with open(path, 'wb') as f:
-                f.write(file_obj.getvalue())
-        else:
-            raise NotImplementedError("Unsupported type {} was found".format(type(file_obj)))
+                self._download_fileobj_to_stream(key, stream=f)
+        except Exception:
+            Path(path).unlink()
+            raise
 
     def download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int = 0) -> bytes:
         """Method downloads the required bytes range of the file.
@@ -162,7 +209,7 @@ class _CloudStorage(ABC):
     def _download_range_of_bytes(self, key: str, stop_byte: int, start_byte: int):
         pass
 
-    def optimally_image_download(self, key: str, chunk_size: int = 65536) -> BytesIO:
+    def optimally_image_download(self, key: str, chunk_size: int = 65536) -> NamedBytesIO:
         """
         Method downloads image by the following approach:
         Firstly we try to download the first N bytes of image which will be enough for determining image properties.
@@ -175,13 +222,14 @@ class _CloudStorage(ABC):
         Returns:
             BytesIO: Buffer with image
         """
-        image_parser=ImageFile.Parser()
+        image_parser = ImageFile.Parser()
 
         chunk = self.download_range_of_bytes(key, chunk_size - 1)
         image_parser.feed(chunk)
 
         if image_parser.image:
-            buff = BytesIO(chunk)
+            buff = NamedBytesIO(chunk)
+            buff.filename = key
         else:
             buff = self.download_fileobj(key)
             image_size_in_bytes = len(buff.getvalue())
@@ -189,37 +237,38 @@ class _CloudStorage(ABC):
                 f'The {chunk_size} bytes were not enough to parse "{key}" image. '
                 f'Image size was {image_size_in_bytes} bytes. Image resolution was {Image.open(buff).size}. '
                 f'Downloaded percent was {round(min(chunk_size, image_size_in_bytes) / image_size_in_bytes * 100)}')
-        buff.filename = key
+
         return buff
 
     def bulk_download_to_memory(
         self,
-        files: List[str],
-        threads_number: int = min(get_cpu_number(), 4),
+        files: list[str],
+        *,
+        threads_number: Optional[int] = None,
         _use_optimal_downloading: bool = True,
-    ) -> List[BytesIO]:
+    ) -> Iterator[BytesIO]:
         func = self.optimally_image_download if _use_optimal_downloading else self.download_fileobj
-        if threads_number > 1:
-            with ThreadPool(threads_number) as pool:
-                return pool.map(func, files)
-        else:
-            slogger.glob.warning('Download files to memory in series in one thread.')
-            return [func(f) for f in files]
+        threads_number = normalize_threads_number(threads_number, len(files))
+
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            for batch_links in take_by(files, chunk_size=threads_number):
+                yield from executor.map(func, batch_links)
 
     def bulk_download_to_dir(
         self,
-        files: List[str],
+        files: list[str],
         upload_dir: str,
-        threads_number: int = min(get_cpu_number(), 4),
-    ):
-        args = zip(files, [os.path.join(upload_dir, f) for f in files])
-        if threads_number > 1:
-            with ThreadPool(threads_number) as pool:
-                return pool.map(lambda x: self.download_file(*x), args)
-        else:
-            slogger.glob.warning(f'Download files to {upload_dir} directory in series in one thread.')
-            for f, path in args:
-                self.download_file(f, path)
+        *,
+        threads_number: Optional[int] = None,
+    ) -> None:
+        threads_number = normalize_threads_number(threads_number, len(files))
+
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            futures = [executor.submit(self.download_file, f, os.path.join(upload_dir, f)) for f in files]
+            done, _ = wait(futures, return_when=FIRST_EXCEPTION)
+            for future in done:
+                if ex := future.exception():
+                    raise ex
 
     @abstractmethod
     def upload_fileobj(self, file_obj, file_name):
@@ -232,30 +281,59 @@ class _CloudStorage(ABC):
     @abstractmethod
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         pass
 
     def list_files_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
-    ) -> Dict:
-        result = self._list_raw_content_on_one_page(prefix, next_token, page_size)
+    ) -> dict:
+
+        if self.prefix and prefix and not (self.prefix.startswith(prefix) or prefix.startswith(self.prefix)):
+            return {
+                'content': [],
+                'next': None,
+            }
+
+        search_prefix = prefix
+        if self.prefix and (len(prefix) < len(self.prefix)):
+            if prefix and '/' in self.prefix[len(prefix):]:
+                next_layer_and_tail = self.prefix[prefix.find('/') + 1:].split(
+                    "/", maxsplit=1
+                )
+                if 2 == len(next_layer_and_tail):
+                    directory = (
+                        next_layer_and_tail[0]
+                        if not _use_flat_listing
+                        else self.prefix[: prefix.find('/') + 1] + next_layer_and_tail[0] + "/"
+                    )
+                    return {
+                        "content": [{"name": directory, "type": "DIR"}],
+                        "next": None,
+                    }
+                else:
+                    search_prefix = self.prefix
+            else:
+                search_prefix = self.prefix
+
+        result = self._list_raw_content_on_one_page(search_prefix, next_token, page_size)
 
         if not _use_flat_listing:
             result['directories'] = [d.strip('/') for d in result['directories']]
         content = [{'name': f, 'type': 'REG'} for f in result['files']]
         content.extend([{'name': d, 'type': 'DIR'} for d in result['directories']])
 
-        if not _use_flat_listing and prefix and prefix.endswith('/'):
+        if not _use_flat_listing and search_prefix and '/' in search_prefix:
+            last_slash = search_prefix.rindex('/')
             for f in content:
-                f['name'] = f['name'][len(prefix):]
+                f['name'] = f['name'][last_slash + 1:]
 
         if _use_sort:
             content = sorted(content, key=lambda x: x['type'])
@@ -267,9 +345,9 @@ class _CloudStorage(ABC):
 
     def list_files(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         _use_flat_listing: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         all_files = []
         next_token = None
         while True:
@@ -281,18 +359,8 @@ class _CloudStorage(ABC):
 
         return all_files
 
-
-    def __contains__(self, file_name):
-        return file_name in (item['name'] for item in self._files)
-
-    def __len__(self):
-        return len(self._files)
-
     @property
-    def content(self):
-        return list(map(lambda x: x['name'] , self._files))
-
-    @abstractproperty
+    @abstractmethod
     def supported_actions(self):
         pass
 
@@ -304,7 +372,12 @@ class _CloudStorage(ABC):
     def write_access(self):
         return Permissions.WRITE in self.access
 
-def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None, endpoint=None):
+def get_cloud_storage_instance(
+    cloud_provider: CloudProviderChoice,
+    resource: str,
+    credentials: str,
+    specific_attributes: Optional[dict[str, Any]] = None,
+):
     instance = None
     if cloud_provider == CloudProviderChoice.AWS_S3:
         instance = AWS_S3(
@@ -314,13 +387,15 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             session_token=credentials.session_token,
             region=specific_attributes.get('region'),
             endpoint_url=specific_attributes.get('endpoint_url'),
+            prefix=specific_attributes.get('prefix'),
         )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
             container=resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
-            connection_string=credentials.connection_string
+            connection_string=credentials.connection_string,
+            prefix=specific_attributes.get('prefix'),
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
         instance = GoogleCloudStorage(
@@ -332,7 +407,7 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             project=specific_attributes.get('project')
         )
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(f"The {cloud_provider} provider is not supported")
     return instance
 
 class AWS_S3(_CloudStorage):
@@ -346,36 +421,49 @@ class AWS_S3(_CloudStorage):
 
 
     def __init__(self,
-                bucket,
-                region,
-                access_key_id=None,
-                secret_key=None,
-                session_token=None,
-                endpoint_url=None):
-        super().__init__()
-        if all([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource(
-                's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_key,
-                aws_session_token=session_token,
-                region_name=region,
-                endpoint_url=endpoint_url
+                bucket: str,
+                region: Optional[str] = None,
+                access_key_id: Optional[str] = None,
+                secret_key: Optional[str] = None,
+                session_token: Optional[str] = None,
+                endpoint_url: Optional[str] = None,
+                prefix: Optional[str] = None,
+    ):
+        super().__init__(prefix=prefix)
+        if (
+            sum(
+                1
+                for credential in (access_key_id, secret_key, session_token)
+                if credential
             )
-        elif access_key_id and secret_key:
-            self._s3 = boto3.resource(
-                's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_key,
-                region_name=region,
-                endpoint_url=endpoint_url
-            )
-        elif any([access_key_id, secret_key, session_token]):
-            raise Exception('Insufficient data for authorization')
+            == 1
+        ):
+            raise Exception("Insufficient data for authentication")
+
+        kwargs = dict()
+        for key, arg_v in zip(
+            (
+                "aws_access_key_id",
+                "aws_secret_access_key",
+                "aws_session_token",
+                "region_name",
+            ),
+            (access_key_id, secret_key, session_token, region),
+        ):
+            if arg_v:
+                kwargs[key] = arg_v
+
+        session = boto3.Session(**kwargs)
+        self._s3 = session.resource("s3", endpoint_url=endpoint_url,
+            config=Config(proxies=PROXIES_FOR_UNTRUSTED_URLS or {}),
+        )
+
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource('s3', region_name=region, endpoint_url=endpoint_url)
-            self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
+            self._s3.meta.client.meta.events.register(
+                "choose-signer.s3.*", disable_signing
+            )
+
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
         self.region = region
@@ -449,10 +537,10 @@ class AWS_S3(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         # The structure of response looks like this:
         # {
         #    'CommonPrefixes': [{'Prefix': 'sub/'}],
@@ -465,7 +553,7 @@ class AWS_S3(_CloudStorage):
             **({'Prefix': prefix} if prefix else {}),
             **({'ContinuationToken': next_token} if next_token else {}),
         )
-        files = [f['Key'] for f in response.get('Contents', [])]
+        files = [f['Key'] for f in response.get('Contents', []) if not f['Key'].endswith('/')]
         directories = [p['Prefix'] for p in response.get('CommonPrefixes', [])]
 
         return {
@@ -476,15 +564,12 @@ class AWS_S3(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key):
-        buf = BytesIO()
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         self.bucket.download_fileobj(
             Key=key,
-            Fileobj=buf,
+            Fileobj=stream,
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
-        buf.seek(0)
-        return buf
 
     @validate_file_status
     @validate_bucket_status
@@ -563,16 +648,20 @@ class AzureBlobContainer(_CloudStorage):
         container: str,
         account_name: Optional[str] = None,
         sas_token: Optional[str] = None,
-        connection_string: Optional[str] = None
+        connection_string: Optional[str] = None,
+        prefix: Optional[str] = None,
     ):
-        super().__init__()
+        super().__init__(prefix=prefix)
         self._account_name = account_name
         if connection_string:
-            self._blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            self._blob_service_client = BlobServiceClient.from_connection_string(
+                connection_string, proxies=PROXIES_FOR_UNTRUSTED_URLS)
         elif sas_token:
-            self._blob_service_client = BlobServiceClient(account_url=self.account_url, credential=sas_token)
+            self._blob_service_client = BlobServiceClient(
+                account_url=self.account_url, credential=sas_token, proxies=PROXIES_FOR_UNTRUSTED_URLS)
         else:
-            self._blob_service_client = BlobServiceClient(account_url=self.account_url)
+            self._blob_service_client = BlobServiceClient(
+                account_url=self.account_url, proxies=PROXIES_FOR_UNTRUSTED_URLS)
         self._client = self._blob_service_client.get_container_client(container)
 
     @property
@@ -642,7 +731,7 @@ class AzureBlobContainer(_CloudStorage):
         if not file_name:
             file_name = os.path.basename(file_path)
         with open(file_path, 'rb') as f:
-            self.upload_fileobj(f.read(), file_name)
+            self.upload_fileobj(f, file_name)
 
     # TODO:
     # def multipart_upload(self, file_obj):
@@ -651,10 +740,10 @@ class AzureBlobContainer(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         page = self._client.walk_blobs(
             maxresults=page_size, results_per_page=page_size, delimiter='/',
             **({'name_starts_with': prefix} if prefix else {})
@@ -676,16 +765,14 @@ class AzureBlobContainer(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key):
-        buf = BytesIO()
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         storage_stream_downloader = self._client.download_blob(
             blob=key,
             offset=None,
             length=None,
+            max_concurrency=self.MAX_CONCURRENCY,
         )
-        storage_stream_downloader.download_to_stream(buf, max_concurrency=self.MAX_CONCURRENCY)
-        buf.seek(0)
-        return buf
+        storage_stream_downloader.readinto(stream)
 
     @validate_file_status
     @validate_bucket_status
@@ -718,8 +805,16 @@ class GoogleCloudStorage(_CloudStorage):
     class Effect:
         pass
 
-    def __init__(self, bucket_name, prefix=None, service_account_json=None, anonymous_access=False, project=None, location=None):
-        super().__init__()
+    def __init__(
+        self,
+        bucket_name: str,
+        prefix: Optional[str] = None,
+        service_account_json: Optional[Any] = None,
+        anonymous_access: bool = False,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+    ):
+        super().__init__(prefix=prefix)
         if service_account_json:
             self._client = storage.Client.from_service_account_json(service_account_json)
         elif anonymous_access:
@@ -731,7 +826,6 @@ class GoogleCloudStorage(_CloudStorage):
 
         self._bucket = self._client.bucket(bucket_name, user_project=project)
         self._bucket_location = location
-        self._prefix = prefix
 
     @property
     def bucket(self):
@@ -759,10 +853,10 @@ class GoogleCloudStorage(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
-    ) -> Dict:
+    ) -> dict:
         iterator = self._client.list_blobs(
             bucket_or_name=self.name, max_results=page_size, page_size=page_size,
             fields='items(name),nextPageToken,prefixes', # https://cloud.google.com/storage/docs/json_api/v1/parameters#fields
@@ -771,7 +865,7 @@ class GoogleCloudStorage(_CloudStorage):
             **({'page_token': next_token} if next_token else {}),
         )
         # NOTE: we should firstly iterate and only then we can define common prefixes
-        files = [f.name for f in iterator]
+        files = [f.name for f in iterator if not f.name.endswith('/')] # skip manually created "directories"
         directories = iterator.prefixes
 
         return {
@@ -782,12 +876,9 @@ class GoogleCloudStorage(_CloudStorage):
 
     @validate_file_status
     @validate_bucket_status
-    def download_fileobj(self, key):
-        buf = BytesIO()
+    def _download_fileobj_to_stream(self, key: str, stream: BinaryIO) -> None:
         blob = self.bucket.blob(key)
-        self._client.download_blob_to_file(blob, buf)
-        buf.seek(0)
-        return buf
+        self._client.download_blob_to_file(blob, stream)
 
     @validate_file_status
     @validate_bucket_status
@@ -917,3 +1008,33 @@ def db_storage_to_storage_instance(db_storage):
         'specific_attributes': db_storage.get_specific_attributes()
     }
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+
+T = TypeVar('T', Callable[[str, int, int], int], Callable[[str, int, str, bool], None])
+
+def import_resource_from_cloud_storage(
+    db_storage: Any,
+    key: str,
+    cleanup_func: Callable[[T, str,], Any],
+    import_func: T,
+    filename: str,
+    *args,
+    **kwargs,
+) -> Any:
+    storage = db_storage_to_storage_instance(db_storage)
+    storage.download_file(key, filename)
+
+    return cleanup_func(import_func, filename, *args, **kwargs)
+
+def export_resource_to_cloud_storage(
+    db_storage: Any,
+    key: str,
+    key_pattern: str,
+    func: Callable[[int, Optional[str], Optional[str]], str],
+    *args,
+    **kwargs,
+) -> str:
+    file_path = func(*args, **kwargs)
+    storage = db_storage_to_storage_instance(db_storage)
+    storage.upload_file(file_path, key if key else key_pattern.format(os.path.splitext(file_path)[1].lower()))
+
+    return file_path

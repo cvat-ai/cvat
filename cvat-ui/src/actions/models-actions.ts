@@ -1,16 +1,14 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ActiveInference, ModelsQuery } from 'reducers';
 import {
-    getCore, MLModel, ModelProvider, RQStatus,
-} from 'cvat-core-wrapper';
+    ActiveInference, ModelsQuery,
+} from 'reducers';
+import { getCore, MLModel, RQStatus } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
-
-const cvat = getCore();
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -22,6 +20,7 @@ export enum ModelsActionTypes {
     DELETE_MODEL = 'DELETE_MODEL',
     DELETE_MODEL_SUCCESS = 'DELETE_MODEL_SUCCESS',
     DELETE_MODEL_FAILED = 'DELETE_MODEL_FAILED',
+    GET_INFERENCES_SUCCESS = 'GET_INFERENCES_SUCCESS',
     START_INFERENCE_FAILED = 'START_INFERENCE_FAILED',
     GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
     GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
@@ -46,17 +45,10 @@ export const modelsActions = {
     getModelsFailed: (error: any) => createAction(ModelsActionTypes.GET_MODELS_FAILED, {
         error,
     }),
-    createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
-    createModelSuccess: (model: MLModel) => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS, {
-        model,
-    }),
-    createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
-    deleteModel: (model: MLModel) => createAction(ModelsActionTypes.DELETE_MODEL, { model }),
-    deleteModelSuccess: (modelID: string | number) => createAction(ModelsActionTypes.DELETE_MODEL_SUCCESS, { modelID }),
-    deleteModelFailed: (modelName: string, error: any) => (
-        createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { modelName, error })
-    ),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
+    getInferencesSuccess: (requestedInferenceIDs: Record<string, boolean>) => (
+        createAction(ModelsActionTypes.GET_INFERENCES_SUCCESS, { requestedInferenceIDs })
+    ),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
             taskID,
@@ -76,9 +68,10 @@ export const modelsActions = {
             error,
         })
     ),
-    cancelInferenceSuccess: (taskID: number) => (
+    cancelInferenceSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.CANCEL_INFERENCE_SUCCESS, {
             taskID,
+            activeInference,
         })
     ),
     cancelInferenceFailed: (taskID: number, error: any) => (
@@ -93,12 +86,6 @@ export const modelsActions = {
             taskInstance,
         })
     ),
-    getModelProviders: () => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS),
-    getModelProvidersSuccess: (providers: ModelProvider[]) => (
-        createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_SUCCESS, {
-            providers,
-        })),
-    getModelProvidersFailed: (error: any) => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED, { error }),
     getModelPreview: (modelID: string | number) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW, { modelID })
     ),
@@ -129,33 +116,6 @@ export function getModelsAsync(query?: ModelsQuery): ThunkAction {
     };
 }
 
-export function createModelAsync(modelData: Record<string, string>): ThunkAction {
-    return async function (dispatch) {
-        const model = new cvat.classes.MLModel(modelData);
-
-        dispatch(modelsActions.createModel());
-        try {
-            const createdModel = await model.save();
-            dispatch(modelsActions.createModelSuccess(createdModel));
-        } catch (error) {
-            dispatch(modelsActions.createModelFailed(error));
-            throw error;
-        }
-    };
-}
-
-export function deleteModelAsync(model: MLModel): ThunkAction {
-    return async function (dispatch) {
-        dispatch(modelsActions.deleteModel(model));
-        try {
-            await model.delete();
-            dispatch(modelsActions.deleteModelSuccess(model.id));
-        } catch (error) {
-            dispatch(modelsActions.deleteModelFailed(model.name, error));
-        }
-    };
-}
-
 interface InferenceMeta {
     taskID: number;
     requestID: string;
@@ -164,8 +124,9 @@ interface InferenceMeta {
 
 function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {
     const { taskID, requestID, functionID } = inferenceMeta;
+
     core.lambda
-        .listen(requestID, functionID, (status: RQStatus, progress: number, message: string) => {
+        .listen(requestID, functionID, (status: RQStatus, progress: number, message?: string) => {
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
@@ -174,7 +135,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                             status,
                             progress,
                             functionID,
-                            error: message,
+                            error: message as string,
                             id: requestID,
                         },
                         new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
@@ -189,7 +150,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                     status,
                     progress,
                     functionID,
-                    error: message,
+                    error: message as string,
                     id: requestID,
                 }),
             );
@@ -208,13 +169,16 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
 }
 
 export function getInferenceStatusAsync(): ThunkAction {
-    return async (dispatch): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
         const dispatchCallback = (action: ModelsActions): void => {
             dispatch(action);
         };
 
+        const { requestedInferenceIDs } = getState().models;
+
         try {
             const requests = await core.lambda.requests();
+            const newListenedIDs: Record<string, boolean> = {};
             requests
                 .map((request: any): object => ({
                     taskID: +request.function.task,
@@ -222,8 +186,12 @@ export function getInferenceStatusAsync(): ThunkAction {
                     functionID: request.function.id,
                 }))
                 .forEach((inferenceMeta: InferenceMeta): void => {
-                    listen(inferenceMeta, dispatchCallback);
+                    if (!(inferenceMeta.requestID in requestedInferenceIDs)) {
+                        listen(inferenceMeta, dispatchCallback);
+                        newListenedIDs[inferenceMeta.requestID] = true;
+                    }
                 });
+            dispatch(modelsActions.getInferencesSuccess(newListenedIDs));
         } catch (error) {
             dispatch(modelsActions.fetchMetaFailed(error));
         }
@@ -246,6 +214,7 @@ export function startInferenceAsync(taskId: number, model: MLModel, body: object
                 },
                 dispatchCallback,
             );
+            dispatch(modelsActions.getInferencesSuccess({ [requestID]: true }));
         } catch (error) {
             dispatch(modelsActions.startInferenceFailed(taskId, error));
         }
@@ -257,21 +226,9 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
         try {
             const inference = getState().models.inferences[taskID];
             await core.lambda.cancel(inference.id, inference.functionID);
-            dispatch(modelsActions.cancelInferenceSuccess(taskID));
+            dispatch(modelsActions.cancelInferenceSuccess(taskID, inference));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));
-        }
-    };
-}
-
-export function getModelProvidersAsync(): ThunkAction {
-    return async function (dispatch) {
-        dispatch(modelsActions.getModelProviders());
-        try {
-            const providers = await cvat.lambda.providers();
-            dispatch(modelsActions.getModelProvidersSuccess(providers));
-        } catch (error) {
-            dispatch(modelsActions.getModelProvidersFailed(error));
         }
     };
 }

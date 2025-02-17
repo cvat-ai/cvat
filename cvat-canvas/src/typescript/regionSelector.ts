@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -102,7 +103,7 @@ export class RegionSelectorImpl implements RegionSelector {
         this.stopSelection();
     }
 
-    public constructor(onRegionSelected: (points?: number[]) => void, canvas: SVG.Container, geometry: Geometry) {
+    public constructor(onRegionSelected: RegionSelectorImpl['onRegionSelected'], canvas: SVG.Container, geometry: Geometry) {
         this.onRegionSelected = onRegionSelected;
         this.geometry = geometry;
         this.canvas = canvas;

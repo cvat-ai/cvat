@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -83,14 +83,14 @@ Cypress.Commands.add('openProjectActions', (projectName) => {
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {
-                cy.get('[type="button"]').trigger('mouseover');
+                cy.get('[type="button"]').click();
             });
         });
 });
 
 Cypress.Commands.add('clickInProjectMenu', (item, fromProjectPage, projectName = '') => {
     if (fromProjectPage) {
-        cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
+        cy.get('.cvat-project-top-bar-actions').click();
     } else {
         cy.openProjectActions(projectName);
     }
@@ -154,10 +154,10 @@ Cypress.Commands.add('importProject', ({
     cy.get('input[type="file"]').last().attachFile(archive, { subjectType: 'drag-n-drop' });
     cy.get(`[title="${archive}"]`).should('be.visible');
     cy.contains('button', 'OK').click();
-    cy.get('.cvat-modal-import-dataset-status').should('be.visible');
+    cy.get('.cvat-modal-upload-file-status').should('be.visible');
     cy.get('.cvat-notification-notice-import-dataset-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-import-dataset-start');
-    cy.get('.cvat-modal-import-dataset-status').should('not.exist');
+    cy.get('.cvat-modal-upload-file-status').should('not.exist');
 });
 
 Cypress.Commands.add(
@@ -197,6 +197,7 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null) => {
     cy.intercept({ method: /PATCH|POST/, url: /\/api\/projects\/backup.*/ }).as('restoreProject');
+    cy.intercept({ method: /GET/, url: /\/api\/requests.*/ }).as('requestStatus');
     cy.get('.cvat-create-project-dropdown').click();
     cy.get('.cvat-import-project-button').click();
 
@@ -227,16 +228,10 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
-        cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
+        cy.wait('@requestStatus').its('response.statusCode').should('equal', 200);
     } else {
         cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
     }
-    cy.wait('@restoreProject').then((interception) => {
-        cy.wrap(interception).its('response.statusCode').should('be.oneOf', [201, 202]);
-        if (interception.response.statusCode === 202) {
-            cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
-        }
-    });
 
     cy.contains('The project has been restored successfully. Click here to open')
         .should('exist')
@@ -244,27 +239,8 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup, sourceStorage = null)
     cy.closeNotification('.ant-notification-notice-info');
 });
 
-Cypress.Commands.add('getDownloadFileName', () => {
-    cy.intercept('GET', '**=download').as('download');
-    cy.wait('@download').then((download) => {
-        const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
-        // need to remove quotes
-        return filename.substring(1, filename.length - 1);
-    });
-});
-
 Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
-    cy.intercept('GET', '**=download').as('download');
-    cy.wait('@download', { requestTimeout: 7000 }).then((interseption) => {
-        expect(interseption.response.statusCode).to.be.equal(200);
-    });
-    cy.verifyNotification();
-});
-
-Cypress.Commands.add('waitForDownload', () => {
-    cy.getDownloadFileName().then((filename) => {
-        cy.verifyDownload(filename);
-    });
+    cy.get('.ant-notification-notice-info').contains('uploaded to cloud storage').should('be.visible');
     cy.verifyNotification();
 });
 
@@ -277,11 +253,13 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 });
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
+    cy.intercept('GET', `/api/users?**search=${user}**`).as('searchUsers');
     cy.get('.cvat-project-details').within(() => {
         cy.get('.cvat-user-search-field').click();
         cy.get('.cvat-user-search-field').type(user);
     });
-    cy.get('.ant-select-dropdown')
+    cy.wait('@searchUsers');
+    cy.get('.cvat-user-search-dropdown')
         .not('.ant-select-dropdown-hidden')
         .within(() => {
             cy.get(`.ant-select-item-option[title="${user}"]`).click();

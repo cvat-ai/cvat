@@ -51,9 +51,11 @@ In tab `Workspace` you can:
 - `Font size of a text` - specifies the text size of the object details.
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
-  For more information To find out more, go to the section [annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).
+  For more information To find out more, go to the section
+  {{< ilink "/docs/manual/advanced/annotation-with-polygons" "annotation with polygons" >}}.
 
-- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section [edit polygon](/docs/manual/advanced/annotation-with-polygons/edit-polygon/)
+- `Intelligent polygon cropping` - activates intelligent cropping when editing the polygon (read more in the section
+  {{< ilink "/docs/manual/advanced/annotation-with-polygons/edit-polygon" "edit polygon" >}}
 
 - `Show tags on frame` - shows/hides frame tags on current frame
 

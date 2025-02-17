@@ -1,14 +1,13 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { OrganizationActions, OrganizationActionsTypes } from 'actions/organization-actions';
 import { OrganizationState } from '.';
 
 const defaultState: OrganizationState = {
-    list: [],
     initialized: false,
     fetching: false,
     updating: false,
@@ -23,28 +22,17 @@ export default function (
     action: OrganizationActions | AuthActions,
 ): OrganizationState {
     switch (action.type) {
-        case OrganizationActionsTypes.GET_ORGANIZATIONS: {
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
             return {
                 ...state,
                 fetching: true,
             };
         }
-        case OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS:
-            return {
-                ...state,
-                fetching: false,
-                initialized: true,
-                list: action.payload.list,
-            };
-        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED:
-            return {
-                ...state,
-                fetching: false,
-                initialized: true,
-            };
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS: {
             return {
                 ...state,
+                initialized: true,
+                fetching: false,
                 current: action.payload.organization,
             };
         }
@@ -52,12 +40,7 @@ export default function (
             return {
                 ...state,
                 fetching: false,
-            };
-        }
-        case OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS: {
-            return {
-                ...state,
-                list: [...state.list, action.payload.organization],
+                initialized: true,
             };
         }
         case OrganizationActionsTypes.UPDATE_ORGANIZATION: {
@@ -70,7 +53,6 @@ export default function (
             const { organization } = action.payload;
             return {
                 ...state,
-                list: [...state.list.filter((org) => org.slug !== organization.slug), organization],
                 current: state.current && state.current.slug === organization.slug ? organization : state.current,
                 updating: false,
             };
@@ -88,12 +70,11 @@ export default function (
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS: {
-            const updatedState = {
+            return {
                 ...state,
-                list: state.list.filter((org: any) => org.slug !== action.payload.slug),
                 fetching: false,
+                current: null,
             };
-            return _.omit(updatedState, 'current');
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
             return {

@@ -20,30 +20,36 @@ the server calling REST API directly (as it done by users).
 ## How to run?
 **Initial steps**
 
+1. On Debian/Ubuntu, make sure that your `$USER` is in `docker` group:
+   ```shell
+   sudo usermod -aG docker $USER
+   ```
 1. Follow [this guide](../../site/content/en/docs/api_sdk/sdk/developer-guide.md) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
-   ```
+   ```shell
    pip install -r ./tests/python/requirements.txt
-   pip install -e ./cvat-sdk
-   pip install -e ./cvat-cli
    ```
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system.
 
 **Running tests**
 
-Run all REST API tests:
+- Run all REST API tests:
 
-```
-pytest ./tests/python
-```
+  ```shell
+  pytest ./tests/python
+  ```
 
-This command will automatically start all necessary docker containers.
+  This command will automatically start all necessary docker containers.
+  See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
+  to get more information about tests running.
 
-   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
-   to get more information about tests running.
+- Run tests to check the functionality of limiting active jobs in a queue per user:
 
+  ```shell
+  ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
+  ```
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already
@@ -81,8 +87,11 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes > shared/assets/cvat_db/data.json
-docker exec test_cvat_server_1 tar -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
+docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
+    --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
+    --exclude=django_rq --exclude=sessions \
+    > shared/assets/cvat_db/data.json
+docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
 
 > Note: if you won't be use --indent options or will be use with other value
@@ -94,6 +103,8 @@ If you have updated the test database and want to update the assets/*.json
 files as well, run the appropriate script:
 
 ```
+cd tests/python
+pytest ./ --start-services
 python shared/utils/dump_objects.py
 ```
 

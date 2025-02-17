@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +11,7 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 
-import { Project } from 'reducers';
+import { Project } from 'cvat-core-wrapper';
 import ActionsMenu from 'components/projects-page/actions-menu';
 
 interface DetailsComponentProps {
@@ -36,7 +37,11 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                 </Button>
             </Col>
             <Col className='cvat-project-top-bar-actions'>
-                <Dropdown overlay={<ActionsMenu projectInstance={projectInstance} />}>
+                <Dropdown
+                    destroyPopupOnHide
+                    trigger={['click']}
+                    overlay={<ActionsMenu projectInstance={projectInstance} />}
+                >
                     <Button size='middle' className='cvat-project-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <MoreOutlined className='cvat-menu-icon' />

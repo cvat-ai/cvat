@@ -19,7 +19,7 @@ There are two ways of deploying the CVAT.
    link.
 
 2. **On Any other AWS Machine:** We can follow the same instruction guide mentioned in the
-   [installation instructions](/docs/administration/basics/installation/).
+   {{< ilink "/docs/administration/basics/installation" "installation instructions" >}}.
    The additional step is to add a [security group and rule to allow incoming connections](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html).
 
 For any of above, don't forget to set the `CVAT_HOST` environment variable to the exposed

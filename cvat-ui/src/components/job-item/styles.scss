@@ -1,16 +1,22 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-job-item {
     border: 1px solid $border-color-1;
-    border-radius: 3px;
+    border-radius: $border-radius-base;
+    margin-bottom: $grid-unit-size;
     background: $background-color-1;
 
+    .cvat-job-item-issues-summary-icon {
+        margin-left: $grid-unit-size;
+    }
+
     &:hover {
-        border: 1px solid $border-color-hover;
+        transition: box-shadow $box-shadow-transition;
+        box-shadow: $box-shadow-base;
     }
 
     .cvat-job-item-icon {
@@ -20,20 +26,24 @@
     }
 
     .ant-card-body {
-        padding: $grid-unit-size*2;
+        padding: $grid-unit-size * 2;
         min-height: $grid-unit-size * 9;
     }
 
     .cvat-job-item-selects {
-        padding-top: $grid-unit-size;
-
         .cvat-job-item-select {
-            >div:first-child {
+            width: $grid-unit-size * 16;
+
+            > :first-child {
                 margin-bottom: $grid-unit-size;
+            }
+
+            .ant-select {
+                width: 100%;
             }
         }
 
-        .cvat-job-assignee-selector {
+        .cvat-job-item-select:not(:last-child) {
             margin-right: $grid-unit-size;
         }
     }
@@ -62,11 +72,21 @@
         margin-top: $grid-unit-size;
     }
 
-    .cvat-job-assignee-selector {
-        max-width: $grid-unit-size * 16;
+    .cvat-consensus-job-collapse {
+        margin-top: $grid-unit-size * 1.5;
 
-        @media screen and (max-width: 1620px) {
-            max-width: $grid-unit-size * 12;
+        .ant-collapse-item > .ant-collapse-header {
+            align-items: center;
         }
     }
+
+    .job-actions-menu {
+        position: absolute;
+        top: $grid-unit-size * 6.5;
+    }
+
+}
+
+.ant-menu.cvat-job-item-menu {
+    box-shadow: $box-shadow-base;
 }

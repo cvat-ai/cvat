@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,28 +12,29 @@ import config from 'config';
 
 export default function EmptyListComponent(): JSX.Element {
     return (
-        <Empty
-            className='cvat-empty-models-list'
-            description={(
-                <div>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Text strong>No models deployed yet...</Text>
-                        </Col>
-                    </Row>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Text type='secondary'>To annotate your tasks automatically</Text>
-                        </Col>
-                    </Row>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Text type='secondary'>deploy a model with </Text>
-                            <a href={`${config.NUCLIO_GUIDE}`}>nuclio</a>
-                        </Col>
-                    </Row>
-                </div>
-            )}
-        />
+        <div className='cvat-empty-models-list'>
+            <Empty
+                description={(
+                    <div>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text strong>No models deployed yet...</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text type='secondary'>To annotate your tasks automatically</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Text type='secondary'>deploy a model with </Text>
+                                <a href={`${config.NUCLIO_GUIDE}`}>nuclio</a>
+                            </Col>
+                        </Row>
+                    </div>
+                )}
+            />
+        </div>
     );
 }

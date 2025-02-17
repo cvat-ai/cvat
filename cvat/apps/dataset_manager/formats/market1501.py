@@ -1,20 +1,23 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import zipfile
 
-from datumaro.components.annotation import (AnnotationType, Label,
-    LabelCategories)
+from datumaro.components.annotation import AnnotationType, Label, LabelCategories
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import ItemTransform
+from datumaro.components.transformer import ItemTransform
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (
+    GetCVATDataExtractor,
+    detect_dataset,
+    import_dm_annotations,
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
+
 
 class AttrToLabelAttr(ItemTransform):
     def __init__(self, extractor, label):
@@ -39,6 +42,7 @@ class AttrToLabelAttr(ItemTransform):
             attributes = {}
         return item.wrap(annotations=annotations, attributes=attributes)
 
+
 class LabelAttrToAttr(ItemTransform):
     def __init__(self, extractor, label):
         super().__init__(extractor)
@@ -51,30 +55,35 @@ class LabelAttrToAttr(ItemTransform):
         annotations = list(item.annotations)
         attributes = dict(item.attributes)
         if self._label is not None:
-            labels = [ann for ann in annotations
-                if ann.type == AnnotationType.label \
-                    and ann.label == self._label]
+            labels = [
+                ann
+                for ann in annotations
+                if ann.type == AnnotationType.label and ann.label == self._label
+            ]
             if len(labels) == 1:
                 attributes.update(labels[0].attributes)
                 annotations.remove(labels[0])
         return item.wrap(annotations=annotations, attributes=attributes)
 
 
-@exporter(name='Market-1501', ext='ZIP', version='1.0')
+@exporter(name="Market-1501", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
 
-    dataset.transform(LabelAttrToAttr, label='market-1501')
-    dataset.export(temp_dir, 'market1501', save_images=save_images)
+        dataset.transform(LabelAttrToAttr, label="market-1501")
+        dataset.export(temp_dir, "market1501", save_images=save_images)
+
     make_zip_archive(temp_dir, dst_file)
 
-@importer(name='Market-1501', ext='ZIP', version='1.0')
+
+@importer(name="Market-1501", ext="ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
     zipfile.ZipFile(src_file).extractall(temp_dir)
 
-    dataset = Dataset.import_from(temp_dir, 'market1501', env=dm_env)
-    dataset.transform(AttrToLabelAttr, label='market-1501')
+    detect_dataset(temp_dir, format_name="market1501", importer=dm_env.importers.get("market1501"))
+    dataset = Dataset.import_from(temp_dir, "market1501", env=dm_env)
+    dataset.transform(AttrToLabelAttr, label="market-1501")
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)

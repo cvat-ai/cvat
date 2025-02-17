@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +35,7 @@ export default function ConflictLabel(props: Props): ReactPortal {
     return ReactDOM.createPortal(
         <CVATTooltip
             title={text}
-            visible={tooltipVisible}
+            open={tooltipVisible}
         >
             <Tag
                 style={{

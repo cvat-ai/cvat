@@ -1,11 +1,12 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { selectIssuePosition as selectIssuePositionAction, rotateCurrentFrame } from 'actions/annotation-actions';
+import { updateActiveControl as updateActiveControlAction, rotateCurrentFrame } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/review-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -21,7 +22,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     rotateFrame(angle: Rotation): void;
-    selectIssuePosition(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -48,8 +49,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        selectIssuePosition(enabled: boolean): void {
-            dispatch(selectIssuePositionAction(enabled));
+        updateActiveControl(activeControl: ActiveControl): void {
+            dispatch(updateActiveControlAction(activeControl));
         },
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));

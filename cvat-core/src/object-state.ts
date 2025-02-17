@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
+import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
 
 interface UpdateFlags {
     label: boolean;
@@ -35,7 +36,6 @@ export interface SerializedData {
     shapeType?: ShapeType;
     clientID?: number;
     serverID?: number;
-    jobID?: number;
     parentID?: number;
     lock?: boolean;
     hidden?: boolean;
@@ -52,7 +52,6 @@ export interface SerializedData {
     keyframe?: boolean;
     rotation?: number;
     descriptions?: string[];
-    isGroundTruth?: boolean;
     keyframes?: {
         prev: number | null;
         next: number | null;
@@ -60,7 +59,7 @@ export interface SerializedData {
         last: number | null;
     };
     elements?: SerializedData[];
-    __internal: {
+    __internal?: {
         save: (objectState: ObjectState) => ObjectState;
         delete: (frame: number, force: boolean) => boolean;
     };
@@ -79,7 +78,6 @@ export default class ObjectState {
     public readonly source: Source;
     public readonly clientID: number | null;
     public readonly serverID: number | null;
-    public readonly jobID: number | null;
     public readonly parentID: number | null;
     public readonly updated: number;
     public readonly group: { color: string; id: number; } | null;
@@ -169,15 +167,13 @@ export default class ObjectState {
             color: '#000000',
             hidden: false,
             pinned: false,
-            source: Source.MANUAL,
-            isGroundTruth: serialized.isGroundTruth || false,
+            source: serialized.source || Source.MANUAL,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
             updated: serialized.updated || Date.now(),
 
             clientID: serialized.clientID || null,
             serverID: serialized.serverID || null,
-            jobID: serialized.jobID || null,
             parentID: serialized.parentID || null,
 
             frame: serialized.frame,
@@ -203,19 +199,16 @@ export default class ObjectState {
                     get: () => data.shapeType,
                 },
                 source: {
-                    get: () => (data.isGroundTruth ? 'Ground truth' : data.source),
+                    get: () => data.source,
                 },
                 isGroundTruth: {
-                    get: () => data.isGroundTruth,
+                    get: () => data.source === Source.GT,
                 },
                 clientID: {
                     get: () => data.clientID,
                 },
                 serverID: {
                     get: () => data.serverID,
-                },
-                jobID: {
-                    get: () => data.jobID,
                 },
                 parentID: {
                     get: () => data.parentID,
@@ -524,10 +517,15 @@ export default class ObjectState {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.delete, frame, force);
         return result;
     }
+
+    async export(): Promise<SerializedShape | SerializedTrack | SerializedTag> {
+        const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.export);
+        return result;
+    }
 }
 
 Object.defineProperty(ObjectState.prototype.save, 'implementation', {
-    value: function save(): ObjectState {
+    value: function saveImplementation(): ObjectState {
         if (this.__internal && this.__internal.save) {
             return this.__internal.save(this);
         }
@@ -537,8 +535,19 @@ Object.defineProperty(ObjectState.prototype.save, 'implementation', {
     writable: false,
 });
 
+Object.defineProperty(ObjectState.prototype.export, 'implementation', {
+    value: function exportImplementation(): ObjectState {
+        if (this.__internal && this.__internal.export) {
+            return this.__internal.export(this);
+        }
+
+        return this;
+    },
+    writable: false,
+});
+
 Object.defineProperty(ObjectState.prototype.delete, 'implementation', {
-    value: function remove(frame: number, force: boolean): boolean {
+    value: function deleteImplementation(frame: number, force: boolean): boolean {
         if (this.__internal && this.__internal.delete) {
             if (!Number.isInteger(+frame) || +frame < 0) {
                 throw new ArgumentError('Frame argument must be a non negative integer');

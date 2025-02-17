@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,18 +7,19 @@ import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import {
-    AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
-} from 'cvat-core-wrapper';
+import { QualityConflict } from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
     issues: [],
     latestComments: [],
-    frameIssues: [], // saved on the server and not saved on the server
+    frameIssues: [],
     conflicts: [],
     frameConflicts: [],
-    newIssuePosition: null,
+    newIssue: {
+        position: null,
+        source: null,
+    },
     issuesHidden: false,
     issuesResolvedHidden: false,
     fetching: {
@@ -45,16 +47,15 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 frameConflicts,
             };
         }
-        case AnnotationActionTypes.CHANGE_FRAME: {
-            return {
-                ...state,
-                newIssuePosition: null,
-            };
-        }
+        case AnnotationActionTypes.CHANGE_FRAME:
+        case ReviewActionTypes.CANCEL_ISSUE:
         case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
             return {
                 ...state,
-                newIssuePosition: null,
+                newIssue: {
+                    position: null,
+                    source: null,
+                },
             };
         }
         case ReviewActionTypes.SUBMIT_REVIEW: {
@@ -67,15 +68,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 },
             };
         }
-        case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS: {
-            return {
-                ...state,
-                fetching: {
-                    ...state.fetching,
-                    jobId: null,
-                },
-            };
-        }
+        case ReviewActionTypes.SUBMIT_REVIEW_SUCCESS:
         case ReviewActionTypes.SUBMIT_REVIEW_FAILED: {
             return {
                 ...state,
@@ -86,84 +79,26 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { number: frame, states } = action.payload;
-
-            const mergedFrameConflicts = [];
+            const { number: frame } = action.payload;
+            let frameConflicts: QualityConflict[] = [];
             if (state.conflicts.length) {
-                const serverIDMap: Record<string, number> = {};
-                states.forEach((_state: ObjectState) => {
-                    if (_state.serverID && _state.clientID) {
-                        serverIDMap[`${_state.serverID}${_state.objectType || ''}`] = _state.clientID;
-                    }
-                });
-
-                const conflictMap: Record<number, QualityConflict[]> = {};
-                const frameConflicts = state.conflicts
-                    .filter((conflict: QualityConflict): boolean => conflict.frame === frame);
-                frameConflicts.forEach((qualityConflict: QualityConflict) => {
-                    qualityConflict.annotationConflicts.forEach((annotationConflict: AnnotationConflict) => {
-                        const key = `${annotationConflict.serverID}${annotationConflict.type || ''}`;
-                        if (serverIDMap[key]) {
-                            annotationConflict.clientID = serverIDMap[key];
-                        }
-                    });
-                    const firstObjID = qualityConflict.annotationConflicts[0].clientID;
-                    if (conflictMap[firstObjID]) {
-                        conflictMap[firstObjID] = [...conflictMap[firstObjID], qualityConflict];
-                    } else {
-                        conflictMap[firstObjID] = [qualityConflict];
-                    }
-                });
-
-                for (const conflicts of Object.values(conflictMap)) {
-                    if (conflicts.length === 1) {
-                        mergedFrameConflicts.push(conflicts[0]);
-                    } else {
-                        const mainConflict = conflicts
-                            .find((conflict) => conflict.severity === ConflictSeverity.ERROR) || conflicts[0];
-                        const activeIDs = mainConflict.annotationConflicts.map((conflict) => conflict.clientID);
-                        const descriptionList: string[] = [];
-                        conflicts.forEach((conflict) => {
-                            descriptionList.push(conflict.description);
-                            conflict.annotationConflicts.forEach((annotationConflict) => {
-                                if (!activeIDs.includes(annotationConflict.clientID)) {
-                                    mainConflict.annotationConflicts.push(annotationConflict);
-                                }
-                            });
-                        });
-
-                        // decorate the original conflict to avoid changing it
-                        const description = descriptionList.join(', ');
-                        const visibleConflict = new Proxy(mainConflict, {
-                            get(target, prop) {
-                                if (prop === 'description') {
-                                    return description;
-                                }
-
-                                // By default, it looks like Reflect.get(target, prop, receiver)
-                                // which has a different value of `this`. It doesn't allow to
-                                // work with methods / properties that use private members.
-                                const val = Reflect.get(target, prop);
-                                return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
-                            },
-                        });
-
-                        mergedFrameConflicts.push(visibleConflict);
-                    }
-                }
+                frameConflicts = state.conflicts.filter((conflict) => conflict.frame === frame);
             }
 
             return {
                 ...state,
                 frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
-                frameConflicts: mergedFrameConflicts,
+                frameConflicts,
             };
         }
         case ReviewActionTypes.START_ISSUE: {
-            const { position } = action.payload;
+            const { position, source } = action.payload;
             return {
                 ...state,
-                newIssuePosition: position,
+                newIssue: {
+                    position,
+                    source,
+                },
             };
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
@@ -187,13 +122,10 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     ).slice(-config.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
                 issues,
-                newIssuePosition: null,
-            };
-        }
-        case ReviewActionTypes.CANCEL_ISSUE: {
-            return {
-                ...state,
-                newIssuePosition: null,
+                newIssue: {
+                    position: null,
+                    source: null,
+                },
             };
         }
         case ReviewActionTypes.COMMENT_ISSUE:
@@ -260,11 +192,9 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
-            return { ...defaultState };
+            return defaultState;
         }
         default:
             return state;
     }
-
-    return state;
 }

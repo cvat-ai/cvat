@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,8 @@ import {
     copyShape as copyShapeAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
+    fetchAnnotationsAsync,
+    changeHideActiveObjectAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -25,9 +27,14 @@ import {
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
+    ActiveControl,
 } from 'reducers';
-import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { ShortcutScope } from 'utils/enums';
+import { subKeyMap } from 'utils/component-subkeymap';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 
 interface OwnProps {
     readonly: boolean;
@@ -51,9 +58,10 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
-    statesSources: number[];
-    groundTruthJobFramesMeta: FramesMetaData | null;
     workspace: Workspace;
+    editedState: ObjectState | null,
+    activeControl: ActiveControl,
+    activeObjectHidden: boolean,
 }
 
 interface DispatchToProps {
@@ -65,7 +73,115 @@ interface DispatchToProps {
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
     changeShowGroundTruth(value: boolean): void;
+    changeHideEditedState(value: boolean): void;
 }
+
+const componentShortcuts = {
+    SWITCH_ALL_LOCK: {
+        name: 'Lock/unlock all objects',
+        description: 'Change locked state for all objects in the side bar',
+        sequences: ['t l'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_LOCK: {
+        name: 'Lock/unlock an object',
+        description: 'Change locked state for an active object',
+        sequences: ['l'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_ALL_HIDDEN: {
+        name: 'Hide/show all objects',
+        description: 'Change hidden state for objects in the side bar',
+        sequences: ['t h'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_HIDDEN: {
+        name: 'Hide/show an object',
+        description: 'Change hidden state for an active object',
+        sequences: ['h'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_OCCLUDED: {
+        name: 'Switch occluded',
+        description: 'Change occluded property for an active object',
+        sequences: ['q', '/'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_PINNED: {
+        name: 'Switch pinned property',
+        description: 'Change pinned property for an active object',
+        sequences: ['p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_KEYFRAME: {
+        name: 'Switch keyframe',
+        description: 'Change keyframe property for an active track',
+        sequences: ['k'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_OUTSIDE: {
+        name: 'Switch outside',
+        description: 'Change outside property for an active track',
+        sequences: ['o'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    DELETE_OBJECT_STANDARD_WORKSPACE: {
+        name: 'Delete object',
+        description: 'Delete an active object. Use shift to force delete of locked objects',
+        sequences: ['del', 'shift+del'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    TO_BACKGROUND: {
+        name: 'To background',
+        description: 'Put an active object "farther" from the user (decrease z axis value)',
+        sequences: ['-', '_'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    TO_FOREGROUND: {
+        name: 'To foreground',
+        description: 'Put an active object "closer" to the user (increase z axis value)',
+        sequences: ['+', '='],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    COPY_SHAPE: {
+        name: 'Copy shape',
+        description: 'Copy shape to CVAT internal clipboard',
+        sequences: ['ctrl+c'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    RUN_ANNOTATIONS_ACTION: {
+        name: 'Run annotations action',
+        description: 'Opens a dialog with annotations actions',
+        sequences: ['ctrl+e'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    PROPAGATE_OBJECT: {
+        name: 'Propagate object',
+        description: 'Make a copy of the object on the following frames',
+        sequences: ['ctrl+b'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    NEXT_KEY_FRAME: {
+        name: 'Next keyframe',
+        description: 'Go to the next keyframe of an active track',
+        sequences: ['r'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    PREV_KEY_FRAME: {
+        name: 'Previous keyframe',
+        description: 'Go to the previous keyframe of an active track',
+        sequences: ['e'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    CHANGE_OBJECT_COLOR: {
+        name: 'Change color',
+        description: 'Set the next color for an activated shape',
+        sequences: ['enter'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -78,12 +194,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
-                statesSources,
             },
-            job: { instance: jobInstance, groundTruthJobFramesMeta },
+            job: { instance: jobInstance },
             player: {
                 frame: { number: frameNumber },
             },
+            canvas: {
+                activeControl, activeObjectHidden,
+            },
+            editing: { objectState: editedState },
             colors,
             workspace,
         },
@@ -130,9 +249,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
-        statesSources,
-        groundTruthJobFramesMeta,
         workspace,
+        editedState,
+        activeControl,
+        activeObjectHidden,
     };
 }
 
@@ -161,6 +281,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeShowGroundTruth(value: boolean): void {
             dispatch(changeShowGroundTruthAction(value));
+            dispatch(fetchAnnotationsAsync());
+        },
+        changeHideEditedState(value: boolean): void {
+            dispatch(changeHideActiveObjectAsync(value));
         },
     };
 }
@@ -212,27 +336,21 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.updateObjects();
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const {
-            statesSources, objectStates,
-        } = this.props;
-        const { objectStates: stateObjects } = this.state;
-        if (objectStates !== stateObjects ||
-            statesSources !== prevProps.statesSources
-        ) {
+    public componentDidUpdate(): void {
+        const { objectStates } = this.props;
+        const { objectStates: prevObjectStates } = this.state;
+        if (objectStates !== prevObjectStates) {
             this.updateObjects();
         }
     }
 
     private updateObjects = (): void => {
         const {
-            statesSources, objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+            objectStates, frameNumber, workspace,
         } = this.props;
         const { statesOrdering } = this.state;
         const filteredStates = filterAnnotations(objectStates, {
-            statesSources,
             frame: frameNumber,
-            groundTruthJobFramesMeta,
             workspace,
         });
         this.setState({
@@ -240,7 +358,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             filteredStates,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
-    }
+    };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { filteredStates } = this.state;
@@ -276,7 +394,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private changeShowGroundTruth = (): void => {
         const { showGroundTruth, changeShowGroundTruth } = this.props;
-
         changeShowGroundTruth(!showGroundTruth);
     };
 
@@ -294,16 +411,18 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { updateAnnotations, readonly } = this.props;
+        const { updateAnnotations, editedState, changeHideEditedState } = this.props;
         const { filteredStates } = this.state;
 
-        if (!readonly) {
-            for (const objectState of filteredStates) {
-                objectState.hidden = hidden;
-            }
-
-            updateAnnotations(filteredStates);
+        if (editedState?.shapeType === ShapeType.MASK) {
+            changeHideEditedState(hidden);
         }
+
+        for (const objectState of filteredStates) {
+            objectState.hidden = hidden;
+        }
+
+        updateAnnotations(filteredStates);
     }
 
     private collapseAllStates(collapsed: boolean): void {
@@ -340,34 +459,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
         } = this.state;
 
-        const subKeyMap = {
-            SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
-            SWITCH_LOCK: keyMap.SWITCH_LOCK,
-            SWITCH_ALL_HIDDEN: keyMap.SWITCH_ALL_HIDDEN,
-            SWITCH_HIDDEN: keyMap.SWITCH_HIDDEN,
-            SWITCH_OCCLUDED: keyMap.SWITCH_OCCLUDED,
-            SWITCH_KEYFRAME: keyMap.SWITCH_KEYFRAME,
-            SWITCH_OUTSIDE: keyMap.SWITCH_OUTSIDE,
-            DELETE_OBJECT: keyMap.DELETE_OBJECT,
-            TO_BACKGROUND: keyMap.TO_BACKGROUND,
-            TO_FOREGROUND: keyMap.TO_FOREGROUND,
-            COPY_SHAPE: keyMap.COPY_SHAPE,
-            PROPAGATE_OBJECT: keyMap.PROPAGATE_OBJECT,
-            NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
-            PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
-            CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
-            TILT_UP: keyMap.TILT_UP,
-            TILT_DOWN: keyMap.TILT_DOWN,
-            ROTATE_LEFT: keyMap.ROTATE_LEFT,
-            ROTATE_RIGHT: keyMap.ROTATE_RIGHT,
-            MOVE_UP: keyMap.MOVE_UP,
-            MOVE_DOWN: keyMap.MOVE_DOWN,
-            MOVE_LEFT: keyMap.MOVE_LEFT,
-            MOVE_RIGHT: keyMap.MOVE_RIGHT,
-            ZOOM_IN: keyMap.ZOOM_IN,
-            ZOOM_OUT: keyMap.ZOOM_OUT,
-        };
-
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
                 event.preventDefault();
@@ -391,17 +482,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
-        const handlers = {
-            TILT_UP: () => {}, // Handled by CVAT 3D Independently
-            TILT_DOWN: () => {},
-            ROTATE_LEFT: () => {},
-            ROTATE_RIGHT: () => {},
-            MOVE_UP: () => {},
-            MOVE_DOWN: () => {},
-            MOVE_LEFT: () => {},
-            MOVE_RIGHT: () => {},
-            ZOOM_IN: () => {},
-            ZOOM_OUT: () => {},
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
@@ -416,14 +497,19 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (!readonly) {
-                    this.hideAllStates(!statesHidden);
-                }
+                this.hideAllStates(!statesHidden);
             },
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                const {
+                    editedState, changeHideEditedState, activeControl, activeObjectHidden,
+                } = this.props;
+                if (editedState?.shapeType === ShapeType.MASK || activeControl === ActiveControl.DRAW_MASK) {
+                    const hide = editedState ? !editedState.hidden : !activeObjectHidden;
+                    changeHideEditedState(hide);
+                }
+                if (state) {
                     state.hidden = !state.hidden;
                     updateAnnotations([state]);
                 }
@@ -436,12 +522,23 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
+            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && !readonly) {
+                    state.pinned = !state.pinned;
+                    updateAnnotations([state]);
+                }
+            },
             SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && !readonly && state.objectType === ObjectType.TRACK) {
-                    state.keyframe = !state.keyframe;
-                    updateAnnotations([state]);
+                    const { first, last } = state.keyframes as NonNullable<typeof state.keyframes>;
+                    if (first !== last || !state.keyframe) {
+                        state.keyframe = !state.keyframe;
+                        updateAnnotations([state]);
+                    }
                 }
             },
             SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
@@ -452,7 +549,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            DELETE_OBJECT: (event: KeyboardEvent | undefined) => {
+            DELETE_OBJECT_STANDARD_WORKSPACE: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly) {
@@ -478,7 +575,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
@@ -486,17 +583,26 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                const state = activatedState();
+                const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
                     state.zOrder = maxZLayer + 1;
                     updateAnnotations([state]);
                 }
             },
-            COPY_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const state = activatedState();
+            COPY_SHAPE: () => {
+                const state = activatedState(true);
                 if (state && !readonly) {
                     copyShape(state);
+                }
+            },
+            RUN_ANNOTATIONS_ACTION: () => {
+                const state = activatedState(true);
+                if (!readonly) {
+                    if (state) {
+                        openAnnotationsActionModal({ defaultObjectState: state });
+                    } else {
+                        openAnnotationsActionModal();
+                    }
                 }
             },
             PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
@@ -511,7 +617,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState();
                 if (state && state.keyframes) {
                     const frame = typeof state.keyframes.next === 'number' ? state.keyframes.next : null;
-                    if (frame !== null && isAbleToChangeFrame()) {
+                    if (frame !== null && isAbleToChangeFrame(frame)) {
                         changeFrame(frame);
                     }
                 }
@@ -521,7 +627,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedState();
                 if (state && state.keyframes) {
                     const frame = typeof state.keyframes.prev === 'number' ? state.keyframes.prev : null;
-                    if (frame !== null && isAbleToChangeFrame()) {
+                    if (frame !== null && isAbleToChangeFrame(frame)) {
                         changeFrame(frame);
                     }
                 }
@@ -530,7 +636,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
                 <ObjectsListComponent
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}

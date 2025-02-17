@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, run
 from time import sleep
-from typing import List, Union
+from typing import Union
 
 import pytest
 import requests
@@ -32,9 +32,6 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
 ]
-
-TEST_EXTRAS_HOST_DIR = CVAT_ROOT_DIR / "tests" / "extras"
-TEST_EXTRAS_MOUNT_DIR = "/home/django"  # django can't import CVAT from other dirs
 
 
 class Container(str, Enum):
@@ -99,12 +96,20 @@ def pytest_addoption(parser):
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
     try:
+        logger.debug(f"Executing a command: {_command}")
+
         stdout, stderr = "", ""
         if capture_output:
             proc = run(_command, check=True, stdout=PIPE, stderr=PIPE)  # nosec
             stdout, stderr = proc.stdout.decode(), proc.stderr.decode()
         else:
             proc = run(_command)  # nosec
+
+        if stdout:
+            logger.debug(f"Output (stdout): {stdout}")
+        if stderr:
+            logger.debug(f"Output (stderr): {stderr}")
+
         return stdout, stderr
     except CalledProcessError as exc:
         message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
@@ -116,23 +121,29 @@ def _run(command, capture_output=True):
         pytest.exit(message)
 
 
-def _kube_get_server_pod_name():
-    output, _ = _run("kubectl get pods -l component=server -o jsonpath={.items[0].metadata.name}")
+def _kube_get_pod_name(label_filter):
+    output, _ = _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
     return output
+
+
+def _kube_get_server_pod_name():
+    return _kube_get_pod_name("component=server")
 
 
 def _kube_get_db_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=postgresql -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=postgresql")
 
 
 def _kube_get_clichouse_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=clickhouse -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=clickhouse")
+
+
+def _kube_get_redis_inmem_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=redis")
+
+
+def _kube_get_redis_ondisk_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
 
 
 def docker_cp(source, target):
@@ -147,17 +158,27 @@ def docker_exec(container, command, capture_output=True):
     return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
 
 
-def docker_exec_cvat(command: Union[List[str], str]):
+def docker_exec_cvat(command: Union[list[str], str]):
     base = f"docker exec {PREFIX}_cvat_server_1"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
 
 
-def kube_exec_cvat(command: Union[List[str], str]):
+def kube_exec_cvat(command: Union[list[str], str]):
     pod_name = _kube_get_server_pod_name()
     base = f"kubectl exec {pod_name} --"
     _command = f"{base} {command}" if isinstance(command, str) else base.split() + command
     return _run(_command)
+
+
+def container_exec_cvat(request: pytest.FixtureRequest, command: Union[list[str], str]):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        return docker_exec_cvat(command)
+    elif platform == "kube":
+        return kube_exec_cvat(command)
+    else:
+        assert False, "unknown platform"
 
 
 def kube_exec_cvat_db(command):
@@ -171,6 +192,24 @@ def docker_exec_clickhouse_db(command):
 
 def kube_exec_clickhouse_db(command):
     pod_name = _kube_get_clichouse_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
+def docker_exec_redis_inmem(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_inmem_1"] + command)
+
+
+def kube_exec_redis_inmem(command):
+    pod_name = _kube_get_redis_inmem_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
+def docker_exec_redis_ondisk(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_ondisk_1"] + command)
+
+
+def kube_exec_redis_ondisk(command):
+    pod_name = _kube_get_redis_ondisk_pod_name()
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
@@ -210,25 +249,49 @@ def kube_restore_clickhouse_db():
     )
 
 
-def docker_clear_rq():
-    docker_exec_cvat(
+def _get_redis_inmem_keys_to_keep():
+    return (
+        "rq:worker:",
+        "rq:workers",
+        "rq:scheduler_instance:",
+        "rq:queues:",
+        "cvat:applied_migrations",
+        "cvat:applied_migration:",
+    )
+
+
+def docker_restore_redis_inmem():
+    docker_exec_redis_inmem(
         [
-            "/bin/sh",
+            "sh",
             "-c",
-            'python %s/clear_rq.py --host "${CVAT_REDIS_HOST}" --password "${CVAT_REDIS_PASSWORD}"'
-            % (TEST_EXTRAS_MOUNT_DIR,),
+            'redis-cli -e --scan --pattern "*" |'
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" |'
+            "xargs -r redis-cli -e del",
         ]
     )
 
 
-def kube_clear_rq():
-    kube_exec_cvat(
+def kube_restore_redis_inmem():
+    kube_exec_redis_inmem(
         [
-            "/bin/sh",
+            "sh",
             "-c",
-            'python %s/clear_rq.py --host "${CVAT_REDIS_HOST}" --password "${CVAT_REDIS_PASSWORD}"'
-            % (TEST_EXTRAS_MOUNT_DIR,),
+            'export REDISCLI_AUTH="${REDIS_PASSWORD}" && '
+            'redis-cli -e --scan --pattern "*" | '
+            'grep -v "' + r"\|".join(_get_redis_inmem_keys_to_keep()) + '" | '
+            "xargs -r redis-cli -e del",
         ]
+    )
+
+
+def docker_restore_redis_ondisk():
+    docker_exec_redis_ondisk(["redis-cli", "-e", "-p", "6666", "flushall"])
+
+
+def kube_restore_redis_ondisk():
+    kube_exec_redis_ondisk(
+        ["sh", "-c", 'REDISCLI_AUTH="${CVAT_REDIS_ONDISK_PASSWORD}" redis-cli -e -p 6666 flushall']
     )
 
 
@@ -255,9 +318,10 @@ def dump_db():
 
 def create_compose_files(container_name_files):
     for filename in container_name_files:
-        with open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf, open(
-            filename, "w"
-        ) as ndcf:
+        with (
+            open(filename.with_name(filename.name.replace(".tests", "")), "r") as dcf,
+            open(filename, "w") as ndcf,
+        ):
             dc_config = yaml.safe_load(dcf)
 
             for service_name, service_config in dc_config["services"].items():
@@ -281,23 +345,26 @@ def delete_compose_files(container_name_files):
         filename.unlink(missing_ok=True)
 
 
-def wait_for_services():
-    for i in range(300):
+def wait_for_services(num_secs: int = 300) -> None:
+    for i in range(num_secs):
         logger.debug(f"waiting for the server to load ... ({i})")
         response = requests.get(get_server_url("api/server/health/", format="json"))
-        if response.status_code == HTTPStatus.OK:
-            logger.debug("the server has finished loading!")
-            return
-        else:
-            try:
-                statuses = response.json()
-                logger.debug(f"server status: \n{statuses}")
-            except Exception as e:
-                logger.debug(f"an error occurred during the server status checking: {e}")
+
+        try:
+            statuses = response.json()
+            logger.debug(f"server status: \n{statuses}")
+
+            if response.status_code == HTTPStatus.OK:
+                logger.debug("the server has finished loading!")
+                return
+
+        except Exception as e:
+            logger.debug(f"an error occurred during the server status checking: {e}")
+
         sleep(1)
 
     raise Exception(
-        "Failed to reach the server during the specified period. Please check the configuration."
+        f"Failed to reach the server during {num_secs} seconds. Please check the configuration."
     )
 
 
@@ -353,7 +420,11 @@ def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
 
 
 def session_start(
-    session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None
+    session,
+    cvat_root_dir=CVAT_ROOT_DIR,
+    cvat_db_dir=CVAT_DB_DIR,
+    extra_dc_files=None,
+    waiting_time=300,
 ):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
@@ -387,13 +458,16 @@ def session_start(
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
+            waiting_time,
         )
 
     elif platform == "kube":
         kube_start(cvat_db_dir)
 
 
-def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files):
+def local_start(
+    start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time
+):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
 
@@ -419,20 +493,13 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
         stop_services(dc_files, cvat_root_dir)
         pytest.exit("All testing containers are stopped", returncode=0)
 
-    if (
-        not any(set(running_containers()) & {f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"})
-        or rebuild
-    ):
-        start_services(dc_files, rebuild, cvat_root_dir)
+    start_services(dc_files, rebuild, cvat_root_dir)
 
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-    docker_cp(
-        TEST_EXTRAS_HOST_DIR / "clear_rq.py",
-        f"{PREFIX}_cvat_server_1:{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
-    )
-    wait_for_services()
+
+    wait_for_services(waiting_time)
 
     docker_exec_cvat("python manage.py loaddata /tmp/data.json")
     docker_exec(
@@ -449,7 +516,6 @@ def kube_start(cvat_db_dir):
     db_pod_name = _kube_get_db_pod_name()
     kube_cp(cvat_db_dir / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
     kube_cp(cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json")
-    kube_cp(TEST_EXTRAS_HOST_DIR, f"{server_pod_name}:{TEST_EXTRAS_MOUNT_DIR}")
 
     wait_for_services()
 
@@ -532,7 +598,7 @@ def restore_db_per_class(request):
 
 
 @pytest.fixture(scope="function")
-def restore_cvat_data(request):
+def restore_cvat_data_per_function(request):
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_data_volumes()
@@ -540,34 +606,13 @@ def restore_cvat_data(request):
         kube_restore_data_volumes()
 
 
-def clear_rq(request: pytest.FixtureRequest):
+@pytest.fixture(scope="class")
+def restore_cvat_data_per_class(request):
     platform = request.config.getoption("--platform")
     if platform == "local":
-        docker_clear_rq()
+        docker_restore_data_volumes()
     else:
-        kube_clear_rq()
-
-
-@pytest.fixture(scope="class")
-def clear_rq_per_class(request):
-    clear_rq(request)
-
-
-@pytest.fixture(scope="function")
-def clear_rq_per_function(request):
-    clear_rq(request)
-
-
-@pytest.fixture(scope="class")
-def clear_rq_after_class(request):
-    yield
-    clear_rq(request)
-
-
-@pytest.fixture(scope="function")
-def clear_rq_after_function(request):
-    yield
-    clear_rq(request)
+        kube_restore_data_volumes()
 
 
 @pytest.fixture(scope="function")
@@ -589,3 +634,53 @@ def restore_clickhouse_db_per_class(request):
         docker_restore_clickhouse_db()
     else:
         kube_restore_clickhouse_db()
+
+
+@pytest.fixture(scope="function")
+def restore_redis_inmem_per_function(request):
+    # Note that autouse fixtures are executed first within their scope, so be aware of the order
+    # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
+    # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_inmem()
+    else:
+        kube_restore_redis_inmem()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_inmem_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_inmem()
+    else:
+        kube_restore_redis_inmem()
+
+
+@pytest.fixture(scope="function")
+def restore_redis_ondisk_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()
+
+
+@pytest.fixture(scope="class")
+def restore_redis_ondisk_after_class(request):
+    yield
+
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_ondisk()
+    else:
+        kube_restore_redis_ondisk()

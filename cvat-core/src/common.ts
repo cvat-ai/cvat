@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023s CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,19 +74,28 @@ export function checkObjectType(name, value, type, instance?): boolean {
                 return true;
             }
 
-            throw new ArgumentError(`"${name}" is expected to be "${type}", but "${typeof value}" has been got.`);
+            throw new ArgumentError(`"${name}" is expected to be "${type}", but "${typeof value}" received.`);
         }
     } else if (instance) {
         if (!(value instanceof instance)) {
             if (value !== undefined) {
                 throw new ArgumentError(
                     `"${name}" is expected to be ${instance.name}, but ` +
-                        `"${value.constructor.name}" has been got`,
+                        `"${value.constructor.name}" received`,
                 );
             }
 
-            throw new ArgumentError(`"${name}" is expected to be ${instance.name}, but "undefined" has been got.`);
+            throw new ArgumentError(`"${name}" is expected to be ${instance.name}, but "undefined" received`);
         }
+    }
+
+    return true;
+}
+
+export function checkInEnum<T>(name: string, value: T, values: T[]): boolean {
+    const possibleValues = Object.values(values);
+    if (!possibleValues.includes(value)) {
+        throw new ArgumentError(`Value ${name} must be on of [${possibleValues.join(', ')}]`);
     }
 
     return true;
@@ -94,6 +103,14 @@ export function checkObjectType(name, value, type, instance?): boolean {
 
 export class FieldUpdateTrigger {
     #updatedFlags: Record<string, boolean> = {};
+
+    get(key: string): boolean {
+        return this.#updatedFlags[key] || false;
+    }
+
+    resetField(key: string): void {
+        delete this.#updatedFlags[key];
+    }
 
     reset(): void {
         this.#updatedFlags = {};
@@ -151,10 +168,8 @@ export function isPageSize(value: number | 'all'): boolean {
     return isInteger(value) || value === 'all';
 }
 
-export function fieldsToSnakeCase(
-    params: Record<string, any>, out?: Record<string, any>,
-): Record<string, any> {
-    const result = (out !== undefined) ? out : {};
+export function fieldsToSnakeCase(params: Record<string, any>): Record<string, any> {
+    const result = {};
     for (const [k, v] of Object.entries(params)) {
         result[snakeCase(k)] = v;
     }

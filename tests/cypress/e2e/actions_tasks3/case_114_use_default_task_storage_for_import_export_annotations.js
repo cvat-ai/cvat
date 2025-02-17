@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,13 +37,11 @@ context('Tests for source and target storage.', () => {
         secondY: 450,
     };
 
-    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
-
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'manifest.jsonl',
-        endpointUrl: `http://${serverHost}:9000`,
+        endpointUrl: Cypress.config('minioUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -94,7 +92,7 @@ context('Tests for source and target storage.', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
@@ -155,11 +153,11 @@ context('Tests for source and target storage.', () => {
                 targetStorage: project.advancedConfiguration.targetStorage,
             };
             cy.exportJob(exportParams);
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 annotationsArchiveName = file;
                 cy.verifyDownload(annotationsArchiveName);
             });
-            cy.verifyNotification();
+            cy.goBack();
 
             // remove annotations
             cy.removeAnnotations();
@@ -176,12 +174,12 @@ context('Tests for source and target storage.', () => {
             // upload annotations from default local storage
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
-            cy.uploadAnnotations(
-                format.split(' ')[0],
-                annotationsArchiveName,
-                '.cvat-modal-content-load-job-annotation',
-                task.advancedConfiguration.sourceStorage,
-            );
+            cy.uploadAnnotations({
+                format: format.split(' ')[0],
+                filePath: 'job_annotations.zip',
+                confirmModalClassName: '.cvat-modal-content-load-job-annotation',
+                sourceStorage: task.advancedConfiguration.sourceStorage,
+            });
 
             cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');
             cy.get('#cvat_canvas_shape_1').should('exist');

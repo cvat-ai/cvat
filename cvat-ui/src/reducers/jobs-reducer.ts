@@ -7,6 +7,7 @@ import { JobsActions, JobsActionTypes } from 'actions/jobs-actions';
 import { JobsState } from '.';
 
 const defaultState: JobsState = {
+    fetchingTimestamp: Date.now(),
     fetching: false,
     count: 0,
     query: {
@@ -27,6 +28,7 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
         case JobsActionTypes.GET_JOBS: {
             return {
                 ...state,
+                fetchingTimestamp: action.payload.fetchingTimestamp,
                 fetching: true,
                 query: {
                     ...defaultState.query,
@@ -133,6 +135,32 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
                     ...state.activities,
                     deletes: _.omit(deletes, jobID),
                 },
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB: {
+            return {
+                ...state,
+                fetching: true,
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_SUCCESS: {
+            return {
+                ...state,
+                current: state.current.includes(action.payload.job) ? (
+                    state.current.map((job) => {
+                        if (job === action.payload.job) {
+                            return action.payload.job;
+                        }
+                        return job;
+                    })
+                ) : state.current,
+                fetching: false,
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_FAILED: {
+            return {
+                ...state,
+                fetching: false,
             };
         }
         default: {

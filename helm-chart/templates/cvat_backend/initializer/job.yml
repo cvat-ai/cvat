@@ -1,0 +1,75 @@
+{{- $localValues := .Values.cvat.backend.initializer -}}
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Jobs are mostly immutable, so Helm can't update them when the user upgrades
+  # a release. Work around this by including the revision in the job name, so that
+  # every upgrade creates a new job.
+  # See also <https://github.com/helm/helm/issues/7082>.
+  name: {{ .Release.Name }}-backend-initializer-r{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: initializer
+    {{- include "cvat.labels" . | nindent 4 }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: backend
+        component: initializer
+        {{- include "cvat.labels" . | nindent 8 }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
+      containers:
+        - name: cvat-backend
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args: ["init"]
+          env:
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+          volumeMounts:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      restartPolicy: OnFailure
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
+      volumes:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

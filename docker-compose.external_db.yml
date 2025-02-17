@@ -1,0 +1,34 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+# This optional Docker Compose file may be used to deploy CVAT with an external database.
+
+x-backend-settings: &backend-settings
+  environment:
+    CVAT_POSTGRES_HOST:
+    CVAT_POSTGRES_PORT:
+    CVAT_POSTGRES_DBNAME:
+    CVAT_POSTGRES_USER:
+    CVAT_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+  secrets:
+    - postgres_password
+
+services:
+  cvat_db:
+    deploy:
+      replicas: 0
+
+  cvat_server: *backend-settings
+  cvat_utils: *backend-settings
+  cvat_worker_analytics_reports: *backend-settings
+  cvat_worker_annotation: *backend-settings
+  cvat_worker_export: *backend-settings
+  cvat_worker_import: *backend-settings
+  cvat_worker_quality_reports: *backend-settings
+  cvat_worker_webhooks: *backend-settings
+  cvat_worker_chunks: *backend-settings
+
+secrets:
+  postgres_password:
+    environment: CVAT_POSTGRES_PASSWORD

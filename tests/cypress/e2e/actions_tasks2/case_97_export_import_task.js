@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,7 +38,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -53,17 +53,14 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.createRectangle(createRectangleShape2Points).then(() => {
             Cypress.config('scrollBehavior', false);
         });
-        cy.get('#cvat_canvas_shape_1')
-            .trigger('mousemove')
-            .trigger('mouseover')
-            .should('have.class', 'cvat_canvas_shape_activated');
-        cy.get('.svg_select_points_rot')
-            .should('be.visible')
-            .and('have.length', 1)
-            .trigger('mousemove')
-            .trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+        cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+        cy.get('.svg_select_points_rot').should('be.visible').and('have.length', 1);
+        cy.get('.svg_select_points_rot').trigger('mousemove');
+        cy.get('.svg_select_points_rot').trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
-        cy.get('.cvat-canvas-container').trigger('mousemove', 345, 150);
+        cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');
         cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
         cy.document().then((doc) => {
@@ -83,7 +80,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')
                 .find('.cvat-item-open-task-actions > .cvat-menu-icon')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
@@ -93,16 +90,17 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
             cy.get('.cvat-notification-notice-export-backup-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-export-backup-start');
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 taskBackupArchiveFullName = file;
                 cy.verifyDownload(taskBackupArchiveFullName);
             });
-            cy.verifyNotification();
+            cy.goBack();
             cy.deleteTask(taskName);
         });
 
         it('Import the task. Check id, labels, shape.', () => {
             cy.intercept({ method: /PATCH|POST/, url: /\/api\/tasks\/backup.*/ }).as('importTask');
+            cy.intercept({ method: /GET/, url: /\/api\/requests.*/ }).as('requestStatus');
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-import-task-button').click();
             cy.get('input[type=file]').attachFile(taskBackupArchiveFullName, { subjectType: 'drag-n-drop' });
@@ -114,13 +112,8 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.wait('@importTask').its('response.statusCode').should('equal', 202);
             cy.wait('@importTask').its('response.statusCode').should('equal', 201);
             cy.wait('@importTask').its('response.statusCode').should('equal', 204);
-            cy.wait('@importTask').its('response.statusCode').should('equal', 202);
-            cy.wait('@importTask').then((interception) => {
-                cy.wrap(interception).its('response.statusCode').should('be.oneOf', [201, 202]);
-                if (interception.response.statusCode === 202) {
-                    cy.wait('@importTask').its('response.statusCode').should('equal', 201);
-                }
-            });
+            cy.wait('@requestStatus').its('response.statusCode').should('equal', 200);
+
             cy.contains('The task has been restored successfully. Click here to open').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);

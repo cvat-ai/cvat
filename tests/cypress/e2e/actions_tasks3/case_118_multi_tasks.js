@@ -1,4 +1,5 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,7 +31,7 @@ context('Create mutli tasks.', () => {
         cy.get('.cvat-create-multi-tasks-progress', { timeout: 50000 }).should('exist')
             .contains(`Total: ${videoFiles.videos.length}`);
         cy.contains('button', 'Cancel');
-        cy.get('.cvat-create-multi-tasks-state').should('exist')
+        cy.get('.cvat-create-multi-tasks-state', { timeout: 50000 }).should('exist')
             .contains('Finished');
         cy.get('.cvat-notification-create-task-success').within(() => {
             cy.get('.ant-notification-notice-close').click();
@@ -43,7 +44,7 @@ context('Create mutli tasks.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 
@@ -84,7 +85,8 @@ context('Create mutli tasks.', () => {
                 'https://raw.githubusercontent.com/cvat-ai/cvat/v1.2.0/cvat/apps/documentation/static/documentation/images/cvatt.jpg';
 
             cy.contains('[role="tab"]', 'Remote sources').click();
-            cy.get('.cvat-file-selector-remote').clear().type(imageUrls);
+            cy.get('.cvat-file-selector-remote').clear();
+            cy.get('.cvat-file-selector-remote').type(imageUrls);
 
             cy.get('.cvat-create-task-content-alert').should('be.visible');
             cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
@@ -116,7 +118,8 @@ context('Create mutli tasks.', () => {
 
             videoFiles.videos.forEach((video) => {
                 const URL = `${baseUrl}/${revision}/${folder}/videos/${video}`;
-                cy.get('.cvat-file-selector-remote').type(URL).type('{enter}');
+                cy.get('.cvat-file-selector-remote').type(URL);
+                cy.get('.cvat-file-selector-remote').type('{enter}');
             });
 
             submitTask();

@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -96,7 +97,7 @@ export class ZoomHandlerImpl implements ZoomHandler {
     }
 
     public constructor(
-        onZoomRegion: (x: number, y: number, width: number, height: number) => void,
+        onZoomRegion: ZoomHandlerImpl['onZoomRegion'],
         canvas: SVG.Container,
         geometry: Geometry,
     ) {

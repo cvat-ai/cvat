@@ -1,9 +1,9 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List
+from typing import Optional
 
 import attrs
 import attrs.validators
@@ -24,8 +24,8 @@ class FrameAnnotations:
     Contains annotations that pertain to a single frame.
     """
 
-    tags: List[models.LabeledImage] = attrs.Factory(list)
-    shapes: List[models.LabeledShape] = attrs.Factory(list)
+    tags: list[models.LabeledImage] = attrs.Factory(list)
+    shapes: list[models.LabeledShape] = attrs.Factory(list)
 
 
 class MediaElement(metaclass=abc.ABCMeta):
@@ -53,8 +53,12 @@ class Sample:
     frame_name: str
     """File name of the frame in its task."""
 
-    annotations: FrameAnnotations
-    """Annotations belonging to the frame."""
+    annotations: Optional[FrameAnnotations]
+    """
+    Annotations belonging to the frame.
+
+    Will be None if the dataset was created without loading annotations.
+    """
 
     media: MediaElement
     """Media data of the frame."""

@@ -1,12 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useEffect, useState } from 'react';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
-import copy from 'copy-to-clipboard';
 import { Indexable, JobsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -14,10 +13,9 @@ import Text from 'antd/lib/typography/Text';
 import Pagination from 'antd/lib/pagination';
 import Empty from 'antd/lib/empty';
 import Button from 'antd/lib/button';
-import { CopyOutlined, PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined } from '@ant-design/icons';
 import { Task, Job } from 'cvat-core-wrapper';
 import JobItem from 'components/job-item/job-item';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
@@ -31,12 +29,16 @@ const FilteringComponent = ResourceFilterHOC(
 
 interface Props {
     task: Task;
-    onUpdateJob(jobInstance: Job): void;
+    onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
 const PAGE_SIZE = 10;
 function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
+
+    // consensus jobs will be under the collapse view
+    result = result.filter((job) => job.parentJobId === null);
+
     if (query.sort) {
         let sort = query.sort.split(',');
         const orders = sort.map((elem: string) => (elem.startsWith('-') ? 'desc' : 'asc'));
@@ -48,7 +50,15 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
         result = _.orderBy(result, sort, orders);
     }
     if (query.filter) {
-        const converted = result.map((job) => ({ ...job, assignee: job?.assignee?.username }));
+        const converted = result.map((job) => ({
+            assignee: job.assignee ? job.assignee.username : null,
+            stage: job.stage,
+            state: job.state,
+            dimension: job.dimension,
+            updatedDate: job.updatedDate,
+            type: job.type,
+            id: job.id,
+        }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
     }
@@ -57,10 +67,7 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
 }
 
 function JobListComponent(props: Props): JSX.Element {
-    const {
-        task: taskInstance,
-        onUpdateJob,
-    } = props;
+    const { task: taskInstance, onJobUpdate } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const history = useHistory();
@@ -80,11 +87,48 @@ function JobListComponent(props: Props): JSX.Element {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
+
+    const [jobChildMapping, setJobChildMapping] = useState<Record<number, Job[]>>({});
+    useEffect(() => {
+        if (taskInstance.consensusEnabled) {
+            const mapping = jobs.reduce((acc, job) => {
+                if (job.parentJobId === null && !acc[job.id]) {
+                    acc[job.id] = [];
+                } else if (job.parentJobId !== null) {
+                    if (!acc[job.parentJobId]) {
+                        acc[job.parentJobId] = [];
+                    }
+                    acc[job.parentJobId].push(job);
+                }
+                return acc;
+            }, {} as Record<number, Job[]>);
+            setJobChildMapping(mapping);
+        }
+    }, [taskInstance]);
+
+    const [uncollapsedJobs, setUncollapsedJobs] = useState<Record<number, boolean>>({});
+    const onCollapseChange = useCallback((jobId: number) => {
+        setUncollapsedJobs((prevState) => ({
+            ...prevState,
+            [jobId]: !prevState[jobId],
+        }));
+    }, []);
+
     const [query, setQuery] = useState<JobsQuery>(updatedQuery);
     const filteredJobs = setUpJobsList(jobs, query);
     const jobViews = filteredJobs
         .slice((query.page - 1) * PAGE_SIZE, query.page * PAGE_SIZE)
-        .map((job: Job) => <JobItem key={job.id} job={job} task={taskInstance} onJobUpdate={onUpdateJob} />);
+        .map((job: Job) => (
+            <JobItem
+                key={job.id}
+                job={job}
+                task={taskInstance}
+                onJobUpdate={onJobUpdate}
+                childJobs={jobChildMapping[job.id] || []}
+                defaultCollapsed={!uncollapsedJobs[job.id]}
+                onCollapseChange={onCollapseChange}
+            />
+        ));
     useEffect(() => {
         history.replace({
             search: updateHistoryFromQuery(query),
@@ -102,38 +146,6 @@ function JobListComponent(props: Props): JSX.Element {
                     <Col>
                         <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                     </Col>
-                    <CVATTooltip trigger='click' title='Copied to clipboard!'>
-                        <Button
-                            className='cvat-copy-job-details-button'
-                            type='link'
-                            onClick={(): void => {
-                                let serialized = '';
-                                const [latestJob] = [...taskInstance.jobs].reverse();
-                                for (const job of taskInstance.jobs) {
-                                    const baseURL = window.location.origin;
-                                    serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
-                                    serialized += `: ${baseURL}/tasks/${taskInstance.id}/jobs/${job.id}`.padEnd(
-                                        `${latestJob.id}`.length + baseURL.length + 8,
-                                        ' ',
-                                    );
-                                    serialized += `: [${job.startFrame}-${job.stopFrame}]`.padEnd(
-                                        `${latestJob.startFrame}${latestJob.stopFrame}`.length + 5,
-                                        ' ',
-                                    );
-
-                                    if (job.assignee) {
-                                        serialized += `\t assigned to "${job.assignee.username}"`;
-                                    }
-
-                                    serialized += '\n';
-                                }
-                                copy(serialized);
-                            }}
-                        >
-                            <CopyOutlined />
-                            Copy
-                        </Button>
-                    </CVATTooltip>
                 </Row>
                 <Row>
                     <SortingComponent

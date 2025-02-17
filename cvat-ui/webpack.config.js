@@ -1,11 +1,7 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-
-/* global
-    __dirname:true
-*/
 
 const path = require('path');
 const webpack = require('webpack');
@@ -16,6 +12,8 @@ const CopyPlugin = require('copy-webpack-plugin');
 module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const defaultPlugins = ['plugins/sam'];
+
+    const sourceMapsDisabled = (process.env.DISABLE_SOURCE_MAPS || 'false').toLocaleLowerCase() === 'true';
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
         .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
@@ -32,12 +30,13 @@ module.exports = (env) => {
             },
         }), {});
 
+    console.log('Source maps: ', sourceMapsDisabled ? 'disabled' : 'enabled');
     console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
     return {
         target: 'web',
         mode: 'production',
-        devtool: 'source-map',
+        devtool: sourceMapsDisabled ? false : 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
             ...transformedPlugins,
@@ -49,11 +48,12 @@ module.exports = (env) => {
         },
         devServer: {
             compress: false,
-            host: process.env.CVAT_UI_HOST || 'localhost',
+            host: process.env.CVAT_UI_HOST ?? 'localhost',
             client: {
                 overlay: false,
+                webSocketURL: 'ws://0.0.0.0:0/ws',
             },
-            port: 3000,
+            port: process.env.CVAT_UI_PORT ?? 3000,
             historyApiFallback: true,
             static: {
                 directory: path.join(__dirname, 'dist'),
@@ -64,17 +64,15 @@ module.exports = (env) => {
                 'Cross-Origin-Opener-Policy': 'same-origin',
                 'Cross-Origin-Embedder-Policy': 'credentialless',
             },
-            proxy: [
-                {
-                    context: (param) =>
-                        param.match(
-                            /\/api\/.*|git\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
-                        ),
-                    target: env && env.API_URL,
-                    secure: false,
-                    changeOrigin: true,
-                },
-            ],
+            proxy: [{
+                context: (param) =>
+                    param.match(
+                        /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                    ),
+                target: env && env.API_URL,
+                secure: false,
+                changeOrigin: true,
+            }],
         },
         resolve: {
             extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
@@ -161,29 +159,6 @@ module.exports = (env) => {
                     test: /\.(png|jpg|jpeg|gif)$/i,
                     type: 'asset/resource',
                 },
-                {
-                    test: /3rdparty\/.*\.worker\.js$/,
-                    use: {
-                        loader: 'worker-loader',
-                        options: {
-                            publicPath: '/',
-                            filename: 'assets/3rdparty/[name].[contenthash].js',
-                            esModule: false,
-                        },
-                    },
-                },
-                {
-                    test: /\.worker\.js$/,
-                    exclude: /3rdparty/,
-                    use: {
-                        loader: 'worker-loader',
-                        options: {
-                            publicPath: '/',
-                            filename: 'assets/[name].[contenthash].js',
-                            esModule: false,
-                        },
-                    },
-                },
             ],
             parser: {
                 javascript: {
@@ -210,8 +185,12 @@ module.exports = (env) => {
                         to  : 'assets/[name][ext]',
                     },
                     {
-                        from: 'src/assets/opencv*.js',
-                        to  : 'assets/opencv.js',
+                        from: 'src/assets/opencv_4.8.0.js',
+                        to  : 'assets/opencv_4.8.0.js',
+                    },
+                    {
+                        from: 'src/assets/*.png',
+                        to  : 'assets/[name][ext]',
                     },
                     {
                         from: 'plugins/**/assets/*.(onnx|js)',
@@ -219,7 +198,7 @@ module.exports = (env) => {
                     }
                 ],
             }),
-            ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
+            ...(!sourceMapsDisabled && sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
                 append: '\n',
                 filename: `${sourceMapsToken}/[file].map`,
             })] : []),

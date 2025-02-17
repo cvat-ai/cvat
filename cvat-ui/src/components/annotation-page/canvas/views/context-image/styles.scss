@@ -1,8 +1,8 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-context-image-wrapper {
     width: 100%;
@@ -24,7 +24,7 @@
     .cvat-context-image-header {
         position: absolute;
         height: $grid-unit-size * 4;
-        border-radius: 4px 4px 0 0;
+        border-radius: $border-radius-base $border-radius-base 0 0;
         width: 100%;
         text-align: center;
         z-index: 1;
@@ -88,7 +88,7 @@
     top: 0;
     left: 0;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 25%);
     position: absolute;
     justify-content: space-around;
     align-items: center;

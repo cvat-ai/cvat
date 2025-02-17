@@ -1,11 +1,22 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
-.cvat-task-move-modal > .ant-modal-content {
-    > .ant-modal-body {
+.cvat-task-move-modal  {
+    .ant-modal-header {
+        .anticon {
+            margin-left: $grid-unit-size;
+
+            svg {
+                color: $text-color-secondary;
+            }
+        }
+    }
+
+    .ant-modal-body {
         > div:nth-child(1) {
             margin-bottom: $grid-unit-size * 2;
 
@@ -15,13 +26,7 @@
         }
     }
 
-    > .ant-modal-header .anticon {
-        margin-left: $grid-unit-size;
 
-        > svg {
-            color: $text-color-secondary;
-        }
-    }
 
     .ant-select {
         margin: 0 $grid-unit-size;

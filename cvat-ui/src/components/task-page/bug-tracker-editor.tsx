@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -58,7 +58,6 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                     </Text>
                     <br />
                     <Button
-                        type='ghost'
                         onClick={(): void => {
                             window.open(bugTracker, '_blank');
                         }}

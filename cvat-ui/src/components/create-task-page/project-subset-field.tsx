@@ -12,14 +12,14 @@ const core = getCore();
 
 interface Props {
     projectId: number;
-    projectSubsets?: Array<string>;
+    projectSubsets: string[] | null;
     value: string;
     onChange: (value: string) => void;
 }
 
 interface ProjectPartialWithSubsets {
     id: number;
-    subsets: Array<string>;
+    subsets: string[];
 }
 
 export default function ProjectSubsetField(props: Props): JSX.Element {
@@ -31,7 +31,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
     const [internalSubsets, setInternalSubsets] = useState<Set<string>>(new Set());
 
     useEffect(() => {
-        if (!projectSubsets?.length && projectId) {
+        if (!projectSubsets && projectId) {
             core.projects.get({ id: projectId }).then((response: ProjectPartialWithSubsets[]) => {
                 if (response.length) {
                     const [project] = response;
@@ -64,7 +64,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
             value={internalValue}
             placeholder='Input subset'
             className='cvat-project-search-field cvat-project-subset-field'
-            onSearch={(_value) => setInternalValue(_value)}
+            onSearch={setInternalValue}
             onSelect={(_value) => {
                 if (_value !== internalValue) {
                     onChange(_value);

@@ -79,8 +79,7 @@ with ApiClient(configuration) as api_client:
     )
 
     # If we pass binary file objects, we need to specify content type.
-    # For this endpoint, we don't have response data
-    (_, response) = api_client.tasks_api.create_data(task.id,
+    (result, response) = api_client.tasks_api.create_data(task.id,
         data_request=task_data,
         _content_type="multipart/form-data",
 
@@ -92,11 +91,13 @@ with ApiClient(configuration) as api_client:
 
     # Wait till task data is processed
     for _ in range(100):
-        (status, _) = api_client.tasks_api.retrieve_status(task.id)
-        if status.state.value in ['Finished', 'Failed']:
+        request_details, response = api_client.requests_api.retrieve(result.rq_id)
+        status, message = request_details.status, request_details.message
+
+        if status.value in {'finished', 'failed'}:
             break
         sleep(0.1)
-    assert status.state.value == 'Finished', status.message
+    assert status.value == 'finished', status.message
 
     # Update the task object and check the task size
     (task, _) = api_client.tasks_api.retrieve(task.id)
@@ -279,7 +280,7 @@ Most models provide corresponding interface classes called like `I<model name>`.
 used to implement your own classes or describe APIs. They just provide type annotations
 and descriptions for model fields.
 
-You can export model values to plain Python dicts using the `as_dict()` method and
+You can export model values to plain Python dicts using the `to_dict()` method and
 the `cvat_sdk.api_client.model_utils.to_json()` function.
 
 You can find the list of the available models and their documentation [here](../reference/models/).
@@ -343,7 +344,7 @@ response data can't be parsed automatically due to the incorrect schema. In this
 simplest workaround is to disable response parsing using the `_parse_response=False`
 method argument.
 
-You can find many examples of API client usage in REST API tests [here](https://github.com/opencv/cvat/tree/develop/tests/python).
+You can find many examples of API client usage in REST API tests [here](https://github.com/cvat-ai/cvat/tree/develop/tests/python).
 
 ### Organizations
 
@@ -393,7 +394,7 @@ please specify `_content_type="multipart/form-data"` in the request parameters:
 Example:
 
 ```python
-(_, response) = api_client.tasks_api.create_data(
+(result, response) = api_client.tasks_api.create_data(
     id=42,
     data_request=models.DataRequest(
         client_files=[

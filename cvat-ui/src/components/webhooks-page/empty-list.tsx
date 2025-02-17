@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,13 +19,11 @@ function EmptyWebhooksListComponent(props: Props): JSX.Element {
     return (
         <div className='cvat-empty-webhooks-list'>
             <Empty description={!query.filter && !query.search ? (
-                <>
-                    <Row justify='center' align='middle'>
-                        <Col>
-                            <Text strong>No webhooks created yet ...</Text>
-                        </Col>
-                    </Row>
-                </>
+                <Row justify='center' align='middle'>
+                    <Col>
+                        <Text strong>No webhooks created yet ...</Text>
+                    </Col>
+                </Row>
             ) : (<Text>No results matched your search</Text>)}
             />
         </div>

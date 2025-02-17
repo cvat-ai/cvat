@@ -35,7 +35,7 @@ class ModelLoader:
     def infer(self, image):
         width, height = image.size
         if width > 1920 or height > 1080:
-            image = image.resize((width // 2, height // 2), Image.ANTIALIAS)
+            image = image.resize((width // 2, height // 2), Image.LANCZOS)
         image_np = np.array(image.getdata())[:, :3].reshape(
             (image.height, image.width, -1)).astype(np.uint8)
         image_np = np.expand_dims(image_np, axis=0)

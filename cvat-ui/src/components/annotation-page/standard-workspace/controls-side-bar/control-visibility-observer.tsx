@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,21 +9,23 @@ import { SmallDashOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ConnectedComponent } from 'react-redux';
+import withVisibilityHandling from './handle-popover-visibility';
 
 const extraControlsContentClassName = 'cvat-extra-controls-control-content';
 
 let onUpdateChildren: Function | null = null;
+const CustomPopover = withVisibilityHandling(Popover, 'extra-controls');
 export function ExtraControlsControl(): JSX.Element {
     const [hasChildren, setHasChildren] = useState(false);
     const [initialized, setInitialized] = useState(false);
+    const [visible, setVisible] = useState(true);
 
     useEffect(() => {
         if (!initialized) {
             setInitialized(true);
         }
 
-        window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        setVisible(false);
     }, []);
 
     onUpdateChildren = () => {
@@ -34,8 +36,9 @@ export function ExtraControlsControl(): JSX.Element {
     };
 
     return (
-        <Popover
-            defaultVisible // we must render it at least one between using
+        <CustomPopover
+            open={visible}
+            onOpenChange={setVisible}
             trigger={initialized ? 'hover' : 'click'} // trigger='hover' allows to close the popover by body click
             placement='right'
             overlayStyle={{ display: initialized ? '' : 'none' }}
@@ -45,16 +48,16 @@ export function ExtraControlsControl(): JSX.Element {
                 style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
                 className='cvat-extra-controls-control cvat-antd-icon-control'
             />
-        </Popover>
+        </CustomPopover>
     );
 }
 
 export default function ControlVisibilityObserver<P = {}>(
-    ControlComponent: React.FunctionComponent<P> | ConnectedComponent<any, any>,
+    ControlComponent: React.FunctionComponent<P>,
 ): React.FunctionComponent<P> {
     let visibilityHeightThreshold = 0; // minimum value of height when element can be pushed to main panel
 
-    return (props: P): JSX.Element | null => {
+    return function (props: P): JSX.Element | null {
         const ref = useRef<HTMLDivElement>(null);
         const [visible, setVisible] = useState(true);
 

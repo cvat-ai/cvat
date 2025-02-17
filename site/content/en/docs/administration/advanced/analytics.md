@@ -18,6 +18,10 @@ and enhance user satisfaction.
 
 CVAT analytics are available from the top menu.
 
+Superusers and users with administrator role have access to analytics.
+Permission to access analytics can also be granted when editing a user
+on admin page by `Has access to analytics` checkbox.
+
 ![CVAT Analytics](/images/analytics_menu.jpg)
 
 > Note: CVAT analytics and monitoring are available only for on-prem solution.
@@ -29,6 +33,7 @@ See:
   - [Ports settings](#ports-settings)
   - [Events log structure](#events-log-structure)
   - [Types of supported events](#types-of-supported-events)
+  - [Working time calculation](#working-time-calculation)
   - [Request `id` for tracking](#request-id-for-tracking)
   - [Fetching event data as CSV from the `/api/events` endpoint](#fetching-event-data-as-csv-from-the-apievents-endpoint)
 - [Dashboards](#dashboards)
@@ -49,7 +54,8 @@ The CVAT analytics is based on Vector, ClickHouse, and Grafana.
 CVAT and its analytics module can be set up locally, for
 self-hosted solution analytics are enabled by default.
 
-> For detailed instructions for CVAT installation, see [Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/)
+> For detailed CVAT installation instructions, see
+> {{< ilink "/docs/administration/basics/installation" "Installation Guide" >}}
 > or refer to the [CVAT Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN)
 > for installation videos.
 
@@ -63,12 +69,12 @@ docker compose up -d
 ### Ports settings
 
 If you cannot access analytics on
-development environnement,
-see [Analytics Ports](/docs/contributing/development-environment/#cvat-analytics-ports)
+development environment,
+see {{< ilink "/docs/contributing/development-environment#cvat-analytics-ports" "Analytics Ports" >}}
 
 ### Events log structure
 
-[Relational database](https://github.com/opencv/cvat/blob/develop/components/analytics/clickhouse/init.sh)
+[Relational database](https://github.com/cvat-ai/cvat/blob/develop/components/analytics/clickhouse/init.sh)
 schema with the following fields:
 
 <!--lint disable maximum-line-length-->
@@ -125,30 +131,69 @@ Server events:
 
 - `create:label`, `update:label`, `delete:label`
 
+- `export:dataset`, `import:dataset`
+
+- `call:function`
+
+- `create:membership`, `update:membership`, `delete:membership`
+
+- `create:webhook`, `update:webhook`, `delete:webhook`
+
+- `create:invitation`, `delete:invitation`
+
 Client events:
 
 - `load:cvat`
 
-- `load:job`, `save:job`, `restore:job`
-- `upload:annotations`
-- `send:exception`
-- `send:task_info`
+- `load:job`, `save:job`
 
-- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `lock:object`, `merge:objects`
-- `change:attribute`
-- `change:label`
+- `send:exception`
+
+- `draw:object`, `paste:object`, `copy:object`, `propagate:object`, `drag:object`, `resize:object`, `delete:object`, `merge:objects`, `split:objects`, `group:objects`, `slice:object`,
+`join:objects`
 
 - `change:frame`
-- `move:image`, `zoom:image`, `fit:image`, `rotate:image`
+
+- `zoom:image`, `fit:image`, `rotate:image`
 
 - `action:undo`, `action:redo`
 
-- `press:shortcut`
-- `send:debug_info`
+- `run:annotations_action`
 
 - `click:element`
 
+- `debug:info`
+
 <!--lint enable maximum-line-length-->
+
+### Working time calculation
+
+Here is a short overview of how CVAT deals with the user's working time:
+
+- The user interface collects events when a user interacts with the interface
+  (resizing canvas, drawing objects, clicking buttons, etc)
+  The structure of one single event is described [here](#events-log-structure).
+
+- The user interface sends these events in bulk to the server.
+  Currently, it uses the following triggers to send events:
+  - Periodical timer (~90 seconds)
+  - A user clicks the "Save" button on the annotation view
+  - A user opens the annotation view
+  - A user closes the annotation view (but not the tab/browser)
+  - A user clicks **Logout** button
+
+- When events reach the server, it calculates working time based on timestamps of the events.
+
+- The working time for an event is computed as the sum of the following:
+  - The difference between the start time of the event and the end time of
+    the previous event, if it is not more than 100 seconds.
+  - The duration of the event, for events of type `change:frame`.
+
+- After calculation, the server generates `send:working_time` events with time value in payload.
+  These events may or may not be bound to a certain job/task/project,
+  depending on the client-side events that were used to generate them.
+
+- CVAT saves the event in the database and later these events are used to compute metrics for analytics.
 
 ### Request `id` for tracking
 

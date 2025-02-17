@@ -416,6 +416,263 @@
     ],
     "tracks": []
   },
+  "many jobs skeleton tracks with missing shapes": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
+  "many jobs skeleton tracks with missing shapes - some points present": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": false,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 10,
+                "attributes": []
+              },
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": true,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 12,
+                "attributes": []
+              }
+            ],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
+  "many jobs skeleton tracks with missing shapes - skeleton is outside": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": true,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
+  "skeleton track": {
+    "version": 0,
+    "tags": [],
+    "shapes": [],
+    "tracks": [
+      {
+        "frame": 10,
+        "group": 0,
+        "source": "file",
+        "shapes": [
+          {
+            "type": "skeleton",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [],
+            "frame": 10,
+            "attributes": []
+          }
+        ],
+        "attributes": [],
+        "elements": [
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": false,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 10,
+                "attributes": []
+              },
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": true,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 12,
+                "attributes": []
+              }
+            ],
+            "attributes": [],
+            "label_id": null
+          },
+          {
+            "frame": 10,
+            "group": 0,
+            "source": "file",
+            "shapes": [
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": false,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 10,
+                "attributes": []
+              },
+              {
+                "type": "points",
+                "occluded": false,
+                "outside": true,
+                "z_order": 0,
+                "rotation": 0,
+                "points": [
+                  613.99,
+                  326.54
+                ],
+                "frame": 12,
+                "attributes": []
+              }
+            ],
+            "attributes": [],
+            "label_id": null
+          }
+        ],
+        "label_id": null
+      }
+    ]
+  },
   "ICDAR Localization 1.0": {
     "version": 0,
     "tags": [],
@@ -701,24 +958,6 @@
     ],
     "tracks": []
   },
-  "TFRecord 1.0": {
-    "version": 0,
-    "tags": [],
-    "shapes": [
-      {
-        "type": "rectangle",
-        "occluded": false,
-        "z_order": 0,
-        "points": [16.5, 17.2, 38.89, 25.63],
-        "frame": 0,
-        "label_id": null,
-        "group": 0,
-        "source": "manual",
-        "attributes": []
-      }
-    ],
-    "tracks": []
-  },
   "YOLO 1.1": {
     "version": 0,
     "tags": [],
@@ -733,6 +972,193 @@
         "group": 0,
         "source": "manual",
         "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "Ultralytics YOLO Classification 1.0": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [],
+    "tracks": []
+  },
+  "Ultralytics YOLO Detection 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [8.3, 9.1, 19.2, 14.8],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "Ultralytics YOLO Detection Track 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [0.3, 0.1, 0.2, 0.8],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "shapes": [
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [0.2, 0.1, 0.2, 0.8],
+            "frame": 0,
+            "outside": false,
+            "attributes": [],
+            "keyframe": true
+          },
+          {
+            "type": "rectangle",
+            "occluded": false,
+            "z_order": 0,
+            "points": [0.4, 0.1, 0.2, 0.8],
+            "frame": 1,
+            "outside": true,
+            "attributes": [],
+            "keyframe": true
+          }
+        ],
+        "attributes": []
+      }
+    ]
+  },
+  "Ultralytics YOLO Oriented Bounding Boxes 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [8.3, 9.1, 19.2, 14.8],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "rotation": 30.0,
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "Ultralytics YOLO Segmentation 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [25.04, 13.7, 35.85, 20.2, 16.65, 19.8],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "Ultralytics YOLO Pose 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "skeleton",
+        "occluded": false,
+        "outside": false,
+        "z_order": 0,
+        "rotation": 0,
+        "points": [],
+        "frame": 0,
+        "label_id": 0,
+        "group": 0,
+        "source": "manual",
+        "attributes": [],
+        "elements": [
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": true,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              223.02,
+              72.83
+            ],
+            "frame": 0,
+            "label_id": 1,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          },
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              232.98,
+              124.6
+            ],
+            "frame": 0,
+            "label_id": 2,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          },
+          {
+            "type": "points",
+            "occluded": false,
+            "outside": false,
+            "z_order": 0,
+            "rotation": 0,
+            "points": [
+              281.22,
+              36.63
+            ],
+            "frame": 0,
+            "label_id": 3,
+            "group": 0,
+            "source": "manual",
+            "attributes": []
+          }
+        ]
       }
     ],
     "tracks": []

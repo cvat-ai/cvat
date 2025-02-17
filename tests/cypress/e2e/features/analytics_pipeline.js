@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,9 +16,11 @@ context('Analytics pipeline', () => {
 
     const taskName = 'Annotation task for testing performance analytics';
 
-    let projectID = null;
-    let jobID = null;
-    let taskID = null;
+    const data = {
+        projectID: null,
+        taskID: null,
+        jobID: null,
+    };
 
     const rectangles = [
         {
@@ -50,8 +52,8 @@ context('Analytics pipeline', () => {
         },
     ];
 
-    const cardEntryNames = ['annotation_time', 'total_object_count', 'total_annotation_speed'];
-    function checkCards(notNull) {
+    const cardEntryNames = ['annotation_time', 'total_object_count', 'average_annotation_speed'];
+    function checkCards() {
         cy.get('.cvat-analytics-card')
             .should('have.length', 3)
             .each((card) => {
@@ -59,7 +61,7 @@ context('Analytics pipeline', () => {
                     .invoke('data', 'entry-name')
                     .then((val) => {
                         expect(cardEntryNames.includes(val)).to.eq(true);
-                        if (notNull && ['total_object_count', 'total_annotation_speed'].includes(val)) {
+                        if (['total_object_count', 'average_annotation_speed'].includes(val)) {
                             cy.wrap(card).within(() => {
                                 cy.get('.cvat-analytics-card-value').should('not.have.text', '0.0');
                             });
@@ -78,24 +80,6 @@ context('Analytics pipeline', () => {
             });
     }
 
-    function waitForReport(authKey, rqID) {
-        cy.request({
-            method: 'POST',
-            url: `api/analytics/reports?rq_id=${rqID}`,
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-            body: {
-                project_id: projectID,
-            },
-        }).then((response) => {
-            if (response.status === 201) {
-                return;
-            }
-            waitForReport(authKey, rqID);
-        });
-    }
-
     function openAnalytics(type) {
         if (['task', 'project'].includes(type)) {
             const actionsMenu = type === 'project' ? '.cvat-project-actions-menu' : '.cvat-actions-menu';
@@ -111,19 +95,22 @@ context('Analytics pipeline', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
+        cy.get('.cvat-tasks-page').should('exist').and('be.visible');
+    });
 
+    beforeEach(() => {
         cy.headlessCreateProject({
             labels: projectLabels,
             name: projectName,
         }).then((response) => {
-            projectID = response.projectID;
+            data.projectID = response.projectID;
 
             cy.headlessCreateTask({
                 labels: [],
                 name: taskName,
-                project_id: projectID,
+                project_id: data.projectID,
                 source_storage: { location: 'local' },
                 target_storage: { location: 'local' },
             }, {
@@ -133,42 +120,47 @@ context('Analytics pipeline', () => {
                 use_cache: true,
                 sorting_method: 'lexicographical',
             }).then((taskResponse) => {
-                taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobID;
+                data.taskID = taskResponse.taskID;
+                [data.jobID] = taskResponse.jobIDs;
 
-                cy.visit(`/tasks/${taskID}`);
+                cy.visit(`/tasks/${data.taskID}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
             });
         });
     });
 
+    afterEach(() => {
+        if (data.projectID) {
+            cy.headlessDeleteProject(data.projectID);
+        }
+    });
+
     describe('Analytics pipeline', () => {
-        it('Check empty performance pages', () => {
+        it('Check all performance page to be empty', () => {
+            const { jobID, projectID, taskID } = data;
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
                     cy.contains('[role="menuitem"]', 'View analytics').click();
                 });
-            checkCards();
-            checkHistograms();
+
+            cy.get('.cvat-empty-performance-analytics-item').should('exist').and('be.visible');
 
             cy.visit(`/projects/${projectID}`);
             openAnalytics('project');
-            checkCards();
-            checkHistograms();
+            cy.get('.cvat-empty-performance-analytics-item').should('exist').and('be.visible');
 
             cy.visit(`/tasks/${taskID}`);
             openAnalytics('task');
-            checkCards();
-            checkHistograms();
+            cy.get('.cvat-empty-performance-analytics-item').should('exist').and('be.visible');
         });
 
         it('Make some actions with objects, create analytics report, check performance pages', () => {
-            cy.visit(`/tasks/${taskID}`);
+            const { jobID, projectID, taskID } = data;
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
             cy.get('.cvat-spinner').should('not.exist');
 
@@ -194,50 +186,34 @@ context('Analytics pipeline', () => {
             cy.get('#cvat_canvas_shape_2').should('not.exist');
             cy.saveJob();
 
-            cy.logout();
-            cy.getAuthKey().then((res) => {
-                const authKey = res.body.key;
-                cy.request({
-                    method: 'POST',
-                    url: 'api/analytics/reports',
-                    headers: {
-                        Authorization: `Token ${authKey}`,
-                    },
-                    body: {
-                        project_id: projectID,
-                    },
-                }).then((response) => {
-                    const rqID = response.body.rq_id;
-                    waitForReport(authKey, rqID);
-                });
-            });
-            cy.login();
-            cy.intercept('GET', '/api/analytics/reports**').as('getReport');
-
             cy.visit(`/projects/${projectID}`);
             openAnalytics('project');
-            cy.wait('@getReport');
-            checkCards(true);
+            cy.get('.cvat-empty-performance-analytics-item').should('exist').and('be.visible').within(() => {
+                cy.get('button').contains('Request').click();
+            });
+
+            checkCards();
             checkHistograms();
 
             cy.visit(`/tasks/${taskID}`);
             openAnalytics('task');
-            cy.wait('@getReport');
-            checkCards(true);
+            checkCards();
             checkHistograms();
 
             cy.visit(`/tasks/${taskID}`);
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
-                .trigger('mouseover');
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cy.contains('[role="menuitem"]', 'View analytics').click();
-                });
-            cy.wait('@getReport');
-            checkCards(true);
+                .click();
+
+            cy.wait(500); // wait for animationend
+            cy.get('.cvat-job-item-menu')
+                .should('exist')
+                .and('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("View analytics")')
+                .click();
+            checkCards();
             checkHistograms();
         });
     });

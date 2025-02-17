@@ -1,8 +1,9 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { Config } from 'react-awesome-query-builder';
+import { Config } from '@react-awesome-query-builder/antd';
+import asyncFetchUsers from 'components/resource-sorting-filtering/request-users';
 
 export const config: Partial<Config> = {
     fields: {
@@ -47,8 +48,14 @@ export const config: Partial<Config> = {
         },
         assignee: {
             label: 'Assignee',
-            type: 'text',
+            type: 'select',
             valueSources: ['value'],
+            operators: ['select_equals'],
+            fieldSettings: {
+                useAsyncSearch: true,
+                forceAsyncSearch: true,
+                asyncFetch: asyncFetchUsers,
+            },
         },
         updatedDate: {
             label: 'Last updated',

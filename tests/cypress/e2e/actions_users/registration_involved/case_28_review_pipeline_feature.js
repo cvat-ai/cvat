@@ -1,550 +1,374 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 context('Review pipeline feature', () => {
-    const caseId = '28';
-    const labelName = `Case ${caseId}`;
-    const taskName = 'Review pipeline feature';
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
-    const imagesCount = 30;
-    const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 800;
-    const height = 800;
-    const posX = 10;
-    const posY = 10;
-    const color = 'gray';
-    const archiveName = `${imageFileName}.zip`;
-    const archivePath = `cypress/fixtures/${archiveName}`;
-    const imagesFolder = `cypress/fixtures/${imageFileName}`;
-    const directoryToArchive = imagesFolder;
-    const advancedConfigurationParams = {
-        multiJobs: true,
-        segmentSize: 10,
+    const serverFiles = ['archive.zip'];
+    const additionalUsers = {
+        annotator: {
+            username: 'annotator',
+            firstName: 'Firstname',
+            lastName: 'Lastname',
+            email: 'annotator@local.local',
+            password: 'UfdU21!dds',
+        },
+        reviewer: {
+            username: 'reviewer',
+            firstName: 'Firstname',
+            lastName: 'Lastname',
+            email: 'reviewer@local.local',
+            password: 'Fv5Df3#f55g',
+        },
     };
 
-    // eslint-disable-next-line no-unused-vars
-    const createRectangleShape2Points = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 250,
-        firstY: 350,
-        secondX: 350,
-        secondY: 450,
+    const taskSpec = {
+        labels: [
+            {
+                name: 'label 1',
+                attributes: [{
+                    name: 'attribute 1',
+                    mutable: false,
+                    input_type: 'text',
+                    default_value: 'default value',
+                    values: [],
+                }],
+                type: 'any',
+            },
+        ],
+        name: 'Review pipeline task',
+        project_id: null,
+        source_storage: { location: 'local' },
+        target_storage: { location: 'local' },
     };
 
-    // eslint-disable-next-line no-unused-vars
-    const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
-        type: 'Shape',
-        labelName,
-        firstX: 400,
-        firstY: 350,
-        secondX: 500,
-        secondY: 450,
+    const dataSpec = {
+        server_files: serverFiles,
+        image_quality: 70,
+        use_zip_chunks: true,
+        use_cache: true,
+        sorting_method: 'lexicographical',
     };
 
-    // eslint-disable-next-line no-unused-vars
-    const createPointsShape = {
-        type: 'Shape',
-        labelName,
-        pointsMap: [{ x: 650, y: 350 }],
-        complete: true,
-        numberOfPoints: null,
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const createPointsShapeSecond = {
-        type: 'Shape',
-        labelName,
-        pointsMap: [{ x: 700, y: 350 }],
-        complete: true,
-        numberOfPoints: null,
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const createPointsShapeThird = {
-        type: 'Shape',
-        labelName,
-        pointsMap: [{ x: 750, y: 350 }],
-        complete: true,
-        numberOfPoints: null,
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const createPointsShapeFourth = {
-        type: 'Shape',
-        labelName,
-        pointsMap: [{ x: 700, y: 400 }],
-        complete: true,
-        numberOfPoints: null,
-    };
-
-    const secondUserName = 'Pipsecuser';
-    const thirdUserName = 'Pipthirduser';
-
-    const secondUser = {
-        firstName: `${secondUserName} fitstname`,
-        lastName: `${secondUserName} lastname`,
-        emailAddr: `${secondUserName.toLowerCase()}@local.local`,
-        password: 'UfdU21!dds',
-    };
-    const thirdUser = {
-        firstName: `${thirdUserName} fitstname`,
-        lastName: `${thirdUserName} lastname`,
-        emailAddr: `${thirdUserName.toLowerCase()}@local.local`,
-        password: 'Fv5Df3#f55g',
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const customeIssueDescription = 'Custom issue';
-
-    // eslint-disable-next-line no-unused-vars
-    const createIssueRectangle = {
-        type: 'rectangle',
-        description: 'rectangle issue',
-        firstX: 550,
-        firstY: 100,
-        secondX: 650,
-        secondY: 200,
-    };
-
-    // eslint-disable-next-line no-unused-vars
-    const createIssuePoint = {
-        type: 'point',
-        description: 'point issue',
-        firstX: 700,
-        firstY: 100,
-    };
+    let taskID = null;
+    let jobIDs = null;
 
     before(() => {
-        cy.clearLocalStorageSnapshot();
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        cy.createZipArchive(directoryToArchive, archivePath);
-        cy.visit('auth/register');
-    });
+        cy.headlessLogout();
+        cy.visit('/auth/login');
 
-    beforeEach(() => {
-        cy.restoreLocalStorage();
-    });
+        // register additional users
+        for (const user of Object.values(additionalUsers)) {
+            cy.headlessCreateUser(user);
+        }
 
-    afterEach(() => {
-        cy.saveLocalStorage();
+        // create main task
+        cy.login();
+        cy.get('.cvat-tasks-page').should('exist').and('be.visible');
+        cy.headlessCreateTask(taskSpec, dataSpec).then((response) => {
+            taskID = response.taskID;
+            jobIDs = response.jobIDs;
+        });
+        cy.logout();
     });
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [secondUserName, thirdUserName]);
-            cy.deleteTasks(authKey, [taskName]);
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.deleteUsers(response, [
+                additionalUsers.annotator.username,
+                additionalUsers.reviewer.username,
+            ]);
+
+            if (taskID) {
+                cy.request({
+                    method: 'DELETE',
+                    url: `/api/tasks/${taskID}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                });
+            }
         });
     });
 
-    describe(`Testing "${labelName}"`, () => {
-        it('Registration of required users.', () => {
-            cy.userRegistration(
-                secondUser.firstName,
-                secondUser.lastName,
-                secondUserName,
-                secondUser.emailAddr,
-                secondUser.password,
-            );
-            cy.logout();
-            cy.goToRegisterPage();
-            cy.userRegistration(
-                thirdUser.firstName,
-                thirdUser.lastName,
-                thirdUserName,
-                thirdUser.emailAddr,
-                thirdUser.password,
-            );
-            cy.logout();
-        });
-
-        it('First user login. Create a task. Open the task. Assign to himself.', () => {
-            cy.login();
-            cy.createAnnotationTask(
-                taskName,
-                labelName,
-                attrName,
-                textDefaultValue,
-                archiveName,
-                null,
-                advancedConfigurationParams,
-            );
-            cy.openTask(taskName);
-            cy.logout();
-        });
-
-        it('Login the second, the third user. The task is missing.', () => {
-            cy.login(secondUserName, secondUser.password);
-            cy.contains('.cvat-item-task-name', taskName).should('not.exist');
-            cy.logout();
-            cy.login(thirdUserName, thirdUser.password);
-            cy.contains('.cvat-item-task-name', taskName).should('not.exist');
-            cy.logout();
-        });
-
-        it('First user login. Assign the first job to the second user.', () => {
-            cy.login();
-            cy.openTask(taskName);
-            cy.assignJobToUser(0, secondUserName);
-        });
-
-        /* FIXME: Second user has access to a job inside the task. Need to redesign openTaskJob.
-        it.skip('Second user login. Open the task, open the job and annotates it.', () => {
-            cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName, 0, false);
-            cy.createRectangle(createRectangleShape2PointsSecond);
-            for (let i = 1; i < 4; i++) {
-                cy.createRectangle(createRectangleShape2Points);
-                cy.goToNextFrame(i);
+    const customIssueDescription = 'Issue with a custom text';
+    describe('Testing review pipeline: interaction between requester/annotator/reviewer', {
+        scrollBehavior: false,
+    }, () => {
+        it('Review pipeline, part 1', () => {
+            // Annotator, reviewer login, the task is not visible
+            for (const user of Object.values(additionalUsers)) {
+                cy.login(user.username, user.password);
+                cy.get('.cvat-tasks-page').should('exist').and('be.visible');
+                cy.contains('.cvat-item-task-name', taskSpec.name).should('not.exist');
+                cy.logout();
             }
-        });
 
-        it('Second user sends the job to review.', () => {
-            cy.intercept('POST', '/api/server/logs').as('sendLogs');
-            cy.interactMenu('Request a review');
-            cy.contains('.cvat-modal-content-save-job', 'The job has unsaved annotations')
-                .should('exist')
-                .within(() => {
-                    cy.contains('[type="button"]', 'OK').click();
-                });
-            cy.wait('@sendLogs').its('response.statusCode').should('equal', 201);
-            cy.get('.cvat-request-review-dialog')
-                .should('exist')
-                .within(() => {
-                    cy.get('.cvat-user-search-field').click();
-                });
-            cy.get('.ant-select-dropdown').within(() => {
-                cy.contains(new RegExp(`^${thirdUserName}`, 'g')).click();
-            });
-            cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
-                cy.contains('[type="button"]', 'Submit').click();
-            });
-            cy.url().should('include', '/tasks');
-            cy.contains('.cvat-task-details', taskName).should('exist');
-             // Check status, assignee, reviewer of the job
-            cy.checkJobStatus(0, 'validation', secondUserName, thirdUserName);
-        });
-
-        it('Second user opens the job again, switches to standard mode and tried ' +
-           'to change anything and save changes. The request will be rejected with 403 code.', () => {
-            cy.openJob(0, false);
-            cy.get('.cvat-workspace-selector').should('have.text', 'Review');
-            cy.changeWorkspace('Standard', labelName);
-            cy.createPoint(createPointsShape);
-            cy.saveJob('PATCH', 403);
-            cy.get('.cvat-notification-notice-save-annotations-failed')
-                .should('exist')
-                .within(() => {
-                    cy.get('[data-icon="close"]').click(); // Close the notice.
-                });
-            cy.goToTaskList();
+            // Requester logins and assignes annotator, then logouts
+            cy.login();
+            cy.openTask(taskSpec.name);
+            cy.assignJobToUser(jobIDs[0], additionalUsers.annotator.username);
             cy.logout();
-        });
 
-        it('The third user opens the job. Review mode is opened automatically.', () => {
-            cy.login(thirdUserName, thirdUser.password);
-            cy.openTaskJob(taskName, 0, false);
+            // Annotator logins, opens the job, annotates it and saves
+            cy.login(additionalUsers.annotator.username, additionalUsers.annotator.password);
+            cy.openJobFromJobsPage(jobIDs[0]);
+            for (let i = 0; i < 4; i++) {
+                cy.createRectangle({
+                    points: 'By 2 Points',
+                    type: 'Shape',
+                    labelName: taskSpec.labels[0].name,
+                    firstX: 400,
+                    firstY: 350,
+                    secondX: 500,
+                    secondY: 450,
+                });
+
+                cy.goToNextFrame(i + 1);
+            }
+            cy.saveJob();
+
+            // Annotator updates job state, both times update is successfull, logout
+            // check: https://github.com/cvat-ai/cvat/pull/7158
+            cy.intercept('PATCH', `/api/jobs/${jobIDs[0]}`).as('updateJobState');
+            cy.updateJobStateOnAnnotationView('completed');
+            cy.wait('@updateJobState').its('response.statusCode').should('equal', 200);
+            cy.updateJobStateOnAnnotationView('completed');
+            cy.wait('@updateJobState').its('response.statusCode').should('equal', 200);
+            cy.logout();
+
+            // Requester logins and assignes a reviewer
+            cy.login();
+            cy.openTask(taskSpec.name);
+            cy.get('.cvat-job-item').first().within(() => {
+                cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'completed');
+                cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', 'annotation');
+            });
+            cy.setJobStage(jobIDs[0], 'validation');
+            cy.assignJobToUser(jobIDs[0], additionalUsers.reviewer.username);
+            cy.logout();
+
+            // The reviewer logins, opens the job, review mode is opened automatically
+            cy.login(additionalUsers.reviewer.username, additionalUsers.reviewer.password);
+            cy.openJobFromJobsPage(jobIDs[0]);
             cy.get('.cvat-workspace-selector').should('have.text', 'Review');
-        });
 
-        it('Use quick issues "Incorrect position". Issue will be created immediately.', () => {
-            cy.createIssueFromObject('#cvat_canvas_shape_1', 'Quick issue: incorrect position');
+            // The reviewer creates quick issue "Incorrect position"
+            cy.createIssueFromObject(1, 'Quick issue: incorrect position');
             cy.checkIssueLabel('Wrong position');
-            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
-        });
 
-        it('Item submenu: "Quick issue ..." does not appear.', () => {
-            cy.get('#cvat_canvas_shape_2').trigger('mousemove').rightclick();
+            // Item submenu: "Quick issue ..." does not appear, because we did not create custom issues yet
+            cy.get('#cvat_canvas_shape_1').rightclick();
             cy.get('.cvat-canvas-context-menu')
                 .contains('.cvat-context-menu-item', 'Quick issue ...')
                 .should('not.exist');
-            cy.get('.cvat-canvas-container').click(); // Close the context menu
-        });
+            cy.get('#cvat_canvas_content').click({ force: true }); // Close the context menu
 
-        it('Create different issues with a custom text.', () => {
-            cy.createIssueFromObject('#cvat_canvas_shape_2', 'Open an issue ...', customeIssueDescription);
-            cy.checkIssueLabel(customeIssueDescription);
-            cy.get('.cvat_canvas_issue_region').should('have.length', 2);
-        });
+            // The reviewer creates different issues with a custom text
+            cy.goToNextFrame(1);
+            cy.createIssueFromObject(2, 'Open an issue ...', customIssueDescription);
+            cy.checkIssueLabel(customIssueDescription);
 
-        it('Now item submenu: "Quick issue ..." appears and it contains several latest options.', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true }).rightclick({ force: true });
-            cy.get('.cvat-canvas-context-menu')
-                .contains('.cvat-context-menu-item', 'Quick issue ...')
-                .should('exist')
-                .trigger('mousemove')
-                .trigger('mouseover');
-            cy.get('.cvat-quick-issue-from-latest-item').within(() => {
-                cy.contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
-                    .should('exist')
-                    .and('have.text', customeIssueDescription);
-            });
-        });
-
-        it('Use one of items to create quick issue on another object on another frame. Issue has been created.', () => {
-            cy.goCheckFrameNumber(2);
-            cy.createIssueFromObject('#cvat_canvas_shape_4', 'Quick issue: incorrect attribute');
-            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
-            cy.checkIssueLabel('Wrong attribute');
-            cy.goCheckFrameNumber(0); // Back to first frame
-        });
-
-        it('Reload page. All the issue still exists.', () => {
+            // Now item submenu: "Quick issue ..." appears and it contains several latest options
+            // Use one of items to create quick issue on another object on another frame. Issue has been created
+            cy.goToNextFrame(2);
+            cy.createIssueFromObject(3, 'Quick issue ...', customIssueDescription);
+            // The reviewer reloads the page, all the issues still exist
             cy.reload();
             cy.get('.cvat-canvas-container').should('exist');
-            cy.get('.cvat_canvas_issue_region').should('have.length', 2);
-            cy.checkIssueLabel(customeIssueDescription);
-            cy.checkIssueLabel('Wrong position');
         });
 
-        it('Use button on the left panel to create a couple of issues (in the first case ' +
-           'draw a rectangle, in the second draw a point).', () => {
-            cy.createIssueFromControlButton(createIssueRectangle);
-            cy.createIssueFromControlButton(createIssuePoint);
-        });
+        it('Review pipeline, part 2', () => {
+            // this is the same test, but Cypress can't handle too many commands
+            // in one test, sometimes raising out of memory exception
+            // this test is devided artifically into two parts
+            // https://github.com/cypress-io/cypress/issues/27415
 
-        it('Go to "Standard mode". Create a couple of objects. Save the job. Saving was successful.', () => {
-            cy.changeWorkspace('Standard', labelName);
-            cy.createPoint(createPointsShape);
+            const countIssuesByFrame = [[0, 1, 'Wrong position'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
+            for (const [frame, issues, text] of countIssuesByFrame) {
+                cy.goCheckFrameNumber(frame);
+                cy.get('.cvat_canvas_issue_region').should('have.length', issues);
+                cy.checkIssueLabel(text);
+            }
+
+            // The reviewer creates issues using button on left panel
+            // issue from a rectangle, and issue from a point
+            const rectangleIssue = {
+                type: 'rectangle',
+                description: 'rectangle issue',
+                firstX: 250,
+                firstY: 100,
+                secondX: 350,
+                secondY: 200,
+            };
+
+            const pointIssue = {
+                type: 'point',
+                description: 'point issue',
+                firstX: 380,
+                firstY: 100,
+            };
+            cy.createIssueFromControlButton(rectangleIssue);
+            cy.createIssueFromControlButton(pointIssue);
+            countIssuesByFrame[2][1] = 3;
+
+            // The reviewer goes to "Standard mode", creates an object, saves the job successfully
+            cy.changeWorkspace('Standard');
+            cy.createPoint({
+                type: 'Shape',
+                labelName: taskSpec.labels[0].name,
+                pointsMap: [{ x: 650, y: 350 }],
+                complete: true,
+                numberOfPoints: null,
+            });
             cy.saveJob();
             cy.get('.cvat-notification-notice-save-annotations-failed').should('not.exist');
-        });
 
-        it('Reject review. The third user was redirected to a task page. The job has status "annotation"', () => {
-            cy.interactMenu('Submit the review');
-            cy.submitReview('Reject');
-            cy.url().should('include', '/tasks');
-            cy.contains('.cvat-task-details', taskName).should('exist');
-            cy.checkJobStatus(0, 'annotation', secondUserName, thirdUserName);
-        });
-
-        it('Reopen the job. Change something there. Save work. That saving wasn't successful. ' +
-           'The third user logout.", () => {
-            cy.openJob(0, false);
-            cy.createPoint(createPointsShapeSecond);
-            cy.saveJob('PATCH', 403);
-            cy.get('.cvat-notification-notice-save-annotations-failed')
-                .should('exist')
-                .within(() => {
-                    cy.get('[data-icon="close"]').click({ multiple: true }); // Close the notice.
-                });
-            cy.goToTaskList();
+            // Finally, the reviewer rejects the job, logouts
+            cy.updateJobStateOnAnnotationView('rejected');
             cy.logout();
-        });
 
-        it('The second user login. Opens the job again. All issues are visible.', () => {
-            cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName, 0, false);
+            // Requester logins and assignes the job to the annotator, sets job stage to annotation
+            cy.login();
+            cy.get('.cvat-tasks-page').should('exist').and('be.visible');
+            cy.openTask(taskSpec.name);
+            cy.get('.cvat-job-item').first().within(() => {
+                cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'rejected');
+                cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', 'validation');
+            });
+            cy.setJobStage(jobIDs[0], 'annotation');
+            cy.assignJobToUser(jobIDs[0], additionalUsers.annotator.username);
+            cy.logout();
+
+            // Annotator logins, opens the job on standard workspace, sees the issues
+            cy.login(additionalUsers.annotator.username, additionalUsers.annotator.password);
+            cy.openJobFromJobsPage(jobIDs[0]);
             cy.get('.cvat-workspace-selector').should('have.text', 'Standard');
-            for (const j of [
-                customeIssueDescription,
-                'Wrong position',
-                createIssueRectangle.description,
-                createIssuePoint.description,
-            ]) {
-                cy.checkIssueLabel(j);
-            }
-            cy.goCheckFrameNumber(2);
-            cy.checkIssueLabel('Wrong attribute');
-            cy.goCheckFrameNumber(0);
-        });
 
-        it('Go to "Issues" tab at right sidebar and select an issue.', () => {
+            // Go to "Issues" tab at right sidebar and select an issue
             cy.get('.cvat-objects-sidebar').within(() => {
-                cy.contains('[role="tab"]', 'Issues').click().should('have.attr', 'aria-selected', 'true');
+                cy.contains('[role="tab"]', 'Issues').click();
+                cy.contains('[role="tab"]', 'Issues').should('have.attr', 'aria-selected', 'true');
             });
-            cy.get('.cvat-objects-sidebar-issues-list-header').should('be.visible');
-            cy.get('.cvat-objects-sidebar-issue-item').should('have.length', 4);
-            cy.get('.cvat-hidden-issue-label').should('have.length', 4);
-            cy.get('.cvat_canvas_issue_region').should('have.length', 4);
-        });
 
-        it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
-            cy.collectIssueRegionId().then(($issueRegionList) => {
-                for (const issueRegionID of $issueRegionList) {
-                    const objectsSidebarIssueItem = `#cvat-objects-sidebar-issue-item-${issueRegionID}`;
-                    const canvasIssueRegion = `#cvat_canvas_issue_region_${issueRegionID}`;
-                    cy.get(objectsSidebarIssueItem).trigger('mousemove').trigger('mouseover');
-                    cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_2)');
-                    cy.get(objectsSidebarIssueItem).trigger('mouseout');
-                    cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_1)');
-                }
-            });
-        });
+            for (const [frame, issues] of countIssuesByFrame) {
+                cy.goCheckFrameNumber(frame);
+                cy.get('.cvat-objects-sidebar-issue-item').should('have.length', issues);
+                cy.get('.cvat-hidden-issue-label').should('have.length', issues);
+                cy.get('.cvat_canvas_issue_region').should('have.length', issues);
 
-        it('Issue navigation. Navigation works and go only to frames with issues.', () => {
-            cy.get('.cvat-issues-sidebar-previous-frame').should('have.attr', 'style')
-              .and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
-            cy.checkFrameNum(2); // Frame changed to 2
-            cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style')
-              .and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
-            cy.checkFrameNum(0); // Frame changed to 0
-        });
-
-        it('Hide all issues. All issues are hidden on all frames.', () => {
-            cy.get('.cvat-issues-sidebar-shown-issues').click();
-            cy.get('.cvat-hidden-issue-label').should('not.exist');
-            cy.get('.cvat-issues-sidebar-next-frame').click();
-            cy.get('.cvat-hidden-issue-label').should('not.exist');
-            cy.get('.cvat-issues-sidebar-previous-frame').click();
-        });
-
-        it('Display all the issues again. Comment a couple of issues and resolve all them.', () => {
-            function resolveReopenIssue(reopen) {
-                cy.collectIssueLabel().then((issueLabelList) => {
-                    for (let label = 0; label < issueLabelList.length; label++) {
-                        if (reopen) {
-                            cy.resolveReopenIssue(issueLabelList[label], 'Please fix', true);
-                        } else {
-                            cy.resolveReopenIssue(issueLabelList[label], 'Done');
-                        }
+                // Annotator selects an issue on sidebar
+                // Issue indication has changed the color for highlighted issue
+                cy.collectIssueRegionIDs().then((issueIDs) => {
+                    for (const issueID of issueIDs) {
+                        const objectsSidebarIssueItem = `#cvat-objects-sidebar-issue-item-${issueID}`;
+                        const canvasIssueRegion = `#cvat_canvas_issue_region_${issueID}`;
+                        cy.get(objectsSidebarIssueItem).trigger('mouseover');
+                        cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_2)');
+                        cy.get(objectsSidebarIssueItem).trigger('mouseout');
+                        cy.get(canvasIssueRegion).should('have.attr', 'fill', 'url(#cvat_issue_region_pattern_1)');
                     }
                 });
             }
 
-            cy.get('.cvat-issues-sidebar-hidden-issues').click();
-            cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 4);
-            cy.get('.cvat-issues-sidebar-next-frame').click();
-            cy.get('.cvat-hidden-issue-label').should('exist').and('have.length', 1);
-            cy.get('.cvat-issues-sidebar-previous-frame').click();
-
-            resolveReopenIssue();
-            cy.checkIssueLabel('Done', 'resolved');
-            cy.goCheckFrameNumber(2);
-            resolveReopenIssue();
-            cy.checkIssueLabel('Done', 'resolved');
+            // Issue navigation. Navigation works and go only to frames with issues
             cy.goCheckFrameNumber(0);
+            cy.get('.cvat-issues-sidebar-previous-frame')
+                .should('have.attr', 'style')
+                .and('contain', 'opacity: 0.5;'); // the element is not active
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            cy.checkFrameNum(1);
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            cy.checkFrameNum(2);
+            cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style')
+                .and('contain', 'opacity: 0.5;'); // the element is not active
+            cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
+            cy.checkFrameNum(1);
 
-            // Reopen issues
-            resolveReopenIssue(true);
-            // Resolve again
-            resolveReopenIssue();
-        });
-
-        it('Request a review again. Assign the third user again. The second user logout.', () => {
-            cy.interactMenu('Request a review');
-            cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
-                cy.get('.cvat-user-search-field').within(() => {
-                    cy.get('input[type="search"]').should('have.value', thirdUserName);
-                });
-                cy.contains('[type="button"]', 'Submit').click();
-            });
-            cy.logout();
-        });
-
-        it('The third user login, opens the job, goes to menu, "Submit review"
-            => "Review next" => Assign the first user => Submit.', () => {
-            cy.login(thirdUserName, thirdUser.password);
-            cy.openTaskJob(taskName, 0, false);
-            cy.interactMenu('Submit the review');
-            cy.submitReview('Review next', Cypress.env('user'));
-            cy.get('.cvat-not-found').should('exist');
-        });
-        it('The third user logout. The first user login and opens the job, goes to menu,
-            "Submit review" => Accept => Submit', () => {
-            cy.logout();
-            cy.login();
-            cy.openTaskJob(taskName, 0, false);
-            cy.interactMenu('Submit the review');
-            cy.submitReview('Accept');
-            cy.url().should('include', '/tasks');
-            cy.contains('.cvat-task-details', taskName).should('exist');
-            cy.checkJobStatus(0, 'completed', secondUserName, Cypress.env('user'));
-        });
-
-        it('The first user can change annotations. The second users can't change annotations. ' +
-            'For the third user the task is not visible.", () => {
-            cy.openJob(0, false);
-            cy.createPoint(createPointsShapeThird);
-            cy.saveJob();
-            cy.get('.cvat-notification-notice-save-annotations-failed').should('not.exist');
-            cy.logout();
-            cy.login(secondUserName, secondUser.password);
-            cy.openTaskJob(taskName, 0, false);
-            cy.createPoint(createPointsShapeFourth);
-            cy.saveJob();
-            cy.get('.cvat-notification-notice-save-annotations-failed').should('exist');
-            cy.goToTaskList();
-            cy.logout();
-            cy.login(thirdUserName, thirdUser.password);
-            cy.contains('strong', taskName).should('not.exist');
-            cy.goToTaskList();
-            cy.logout();
-        });
-
-        it('The first user login. Remove the issue on third frame.', () => {
-            cy.login();
-            cy.openTaskJob(taskName, 0, false);
-            cy.goCheckFrameNumber(2);
-
-            // Start deleting the issue and press "Cancel"
+            cy.goCheckFrameNumber(1);
             cy.collectIssueLabel().then((issueLabelList) => {
-                cy.removeIssue(issueLabelList);
-                cy.get('.cvat-issue-dialog-header')
-                    .should('exist')
-                    .find('[data-icon="close"]')
-                    .click()
-                    .should('not.exist');
-                cy.get('.cvat_canvas_issue_region').should('have.length', 1);
-                cy.get('.cvat-hidden-issue-label').should('have.length', 1).and('be.visible');
+                for (let label = 0; label < issueLabelList.length; label++) {
+                    cy.resolveIssue(issueLabelList[label], 'Resolved issue');
+                }
             });
+            cy.goCheckFrameNumber(0);
+            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            cy.checkFrameNum(2);
+            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
 
-            // Remove the issue
-            cy.collectIssueLabel().then((issueLabelList) => {
-                cy.removeIssue(issueLabelList, true);
-                cy.get('.cvat-issue-dialog-header').should('not.exist');
+            // Hide all issues. All issues are hidden on all frames
+            cy.get('.cvat-issues-sidebar-shown-issues').click();
+            for (const [frame, issues] of countIssuesByFrame) {
+                cy.goCheckFrameNumber(frame);
+                cy.get('.cvat-objects-sidebar-issue-item').should('have.length', issues);
                 cy.get('.cvat-hidden-issue-label').should('have.length', 0);
                 cy.get('.cvat_canvas_issue_region').should('have.length', 0);
-            });
-        });
+            }
 
-        it('The first user opens the job and presses "Renew the job".', () => {
-            cy.goCheckFrameNumber(0);
-            cy.interactMenu('Renew the job');
-            cy.get('.cvat-modal-content-renew-job').within(() => {
-                cy.contains('button', 'Continue').click();
-            });
-            cy.url().should('include', '/tasks');
-            cy.contains('.cvat-task-details', taskName).should('exist');
-            cy.checkJobStatus(0, 'annotation', secondUserName, Cypress.env('user'));
-        });
+            // Show them back
+            cy.get('.cvat-issues-sidebar-hidden-issues').click();
+            for (const [frame, issues] of countIssuesByFrame) {
+                cy.goCheckFrameNumber(frame);
+                cy.get('.cvat-objects-sidebar-issue-item').should('have.length', issues);
+                cy.get('.cvat-hidden-issue-label').should('have.length', issues);
+                cy.get('.cvat_canvas_issue_region').should('have.length', issues);
+            }
 
-        it('The first user opens the job and presses "Finish the job".', () => {
-            cy.openJob(0, false);
+            // Comment issues and resolve them
+            for (const [frame] of countIssuesByFrame) {
+                if (frame !== 1) {
+                    cy.goCheckFrameNumber(frame);
+                    cy.collectIssueLabel().then((issueLabelList) => {
+                        for (let label = 0; label < issueLabelList.length; label++) {
+                            cy.resolveIssue(issueLabelList[label], 'Resolved issue');
+                        }
+                    });
+                }
+            }
+
+            cy.updateJobStateOnAnnotationView('completed');
+            cy.logout();
+
+            // Requester logins, removes all the issues, finishes the job
+            // Now job has correct status accepted/completed
+
+            cy.login();
+            cy.openJobFromJobsPage(jobIDs[0]);
+            // Comment issues and resolve them
+            for (const [frame] of countIssuesByFrame) {
+                cy.goCheckFrameNumber(frame);
+
+                cy.collectIssueLabel().then((issueLabelList) => {
+                    for (let label = 0; label < issueLabelList.length; label++) {
+                        cy.reopenIssue(issueLabelList[label]);
+                    }
+                });
+
+                cy.collectIssueLabel().then((issueLabelList) => {
+                    for (let label = 0; label < issueLabelList.length; label++) {
+                        cy.removeIssue(issueLabelList[label]);
+                    }
+                });
+            }
+
             cy.interactMenu('Finish the job');
+
             cy.get('.cvat-modal-content-finish-job').within(() => {
                 cy.contains('button', 'Continue').click();
             });
-            cy.url().should('include', '/tasks');
-            cy.contains('.cvat-task-details', taskName).should('exist');
-            cy.checkJobStatus(0, 'completed', secondUserName, Cypress.env('user'));
-        });
 
-        it('In column "status" the job has question circle. The first user hover it, ' +
-           'short statistics about reviews shown.', () => {
-            cy.get('.cvat-job-completed-color').within(() => {
-                cy.get('[aria-label="question-circle"]').trigger('mouseover');
+            cy.interactMenu('Open the task');
+            cy.get('.cvat-job-item').first().within(() => {
+                cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'completed');
             });
-            const summary = [];
-            cy.get('.cvat-review-summary-description').within(() => {
-                cy.get('td').then(($td) => {
-                    for (let i = 0; i < $td.length; i++) {
-                        summary.push($td[i].outerText);
-                    }
-                    expect(Number(summary[1])).to.be.equal(3); // Reviews 3
-                    expect(Number(summary[5])).to.be.equal(0); // Unsolved issues 0
-                    expect(Number(summary[7])).to.be.equal(4); // Resolved issues 4
-                });
-            });
-        }); */
+
+            cy.setJobStage(jobIDs[0], 'acceptance');
+            cy.setJobState(jobIDs[0], 'completed');
+        });
     });
 });

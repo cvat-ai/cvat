@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,7 @@ import patterns from 'utils/validation-patterns';
 import { UserAgreement } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
+import { useAuthQuery } from 'utils/hooks';
 
 export interface UserConfirmation {
     name: string;
@@ -34,6 +35,8 @@ export interface RegisterData {
 interface Props {
     fetching: boolean;
     userAgreements: UserAgreement[];
+    predefinedEmail?: string;
+    hideLoginLink?: boolean;
     onSubmit(registerData: RegisterData): void;
 }
 
@@ -99,16 +102,35 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 });
 
 function RegisterFormComponent(props: Props): JSX.Element {
-    const { fetching, onSubmit, userAgreements } = props;
+    const {
+        fetching, onSubmit, userAgreements, hideLoginLink,
+    } = props;
+
+    const authQuery = useAuthQuery();
+    const predefinedEmail = authQuery?.email;
+
     const [form] = Form.useForm();
+    if (predefinedEmail) {
+        form.setFieldsValue({ email: predefinedEmail });
+    }
     const [usernameEdited, setUsernameEdited] = useState(false);
     return (
         <div className={`cvat-register-form-wrapper ${userAgreements.length ? 'cvat-register-form-wrapper-extended' : ''}`}>
-            <Row justify='space-between' className='cvat-credentials-navigation'>
-                <Col>
-                    <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
-                </Col>
-            </Row>
+            {
+                !hideLoginLink && (
+                    <Row justify='space-between' className='cvat-credentials-navigation'>
+                        <Col>
+                            <Link to={{
+                                pathname: '/auth/login',
+                                search: authQuery ? new URLSearchParams(authQuery).toString() : '',
+                            }}
+                            >
+                                <Icon component={BackArrowIcon} />
+                            </Link>
+                        </Col>
+                    </Row>
+                )
+            }
             <Form
                 form={form}
                 onFinish={(values: Record<string, string | boolean>) => {
@@ -121,6 +143,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
 
                     onSubmit({
                         ...(Object.fromEntries(rest) as any as RegisterData),
+                        ...(predefinedEmail ? { email: predefinedEmail } : {}),
                         confirmations,
                     });
                 }}
@@ -186,6 +209,8 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         id='email'
                         autoComplete='email'
                         placeholder='Email'
+                        disabled={!!predefinedEmail}
+                        value={predefinedEmail}
                         onReset={() => form.setFieldsValue({ email: '', username: '' })}
                         onChange={(event) => {
                             const { value } = event.target;

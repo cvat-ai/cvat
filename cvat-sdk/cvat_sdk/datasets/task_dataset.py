@@ -1,19 +1,19 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
 import zipfile
+from collections.abc import Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import Sequence
 
 import PIL.Image
 
 import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
-from cvat_sdk.datasets.caching import UpdatePolicy, make_cache_manager
+from cvat_sdk.datasets.caching import CacheManager, UpdatePolicy, make_cache_manager
 from cvat_sdk.datasets.common import FrameAnnotations, MediaElement, Sample, UnsupportedDatasetError
 
 _NUM_DOWNLOAD_THREADS = 4
@@ -49,12 +49,17 @@ class TaskDataset:
         task_id: int,
         *,
         update_policy: UpdatePolicy = UpdatePolicy.IF_MISSING_OR_STALE,
+        load_annotations: bool = True,
     ) -> None:
         """
         Creates a dataset corresponding to the task with ID `task_id` on the
         server that `client` is connected to.
 
         `update_policy` determines when and if the local cache will be updated.
+
+        `load_annotations` determines whether annotations will be loaded from
+        the server. If set to False, the `annotations` field in the samples will
+        be set to None.
         """
 
         self._logger = client.logger
@@ -102,26 +107,12 @@ class TaskDataset:
 
         self._logger.info("All chunks downloaded")
 
-        annotations = cache_manager.ensure_task_model(
-            self._task.id,
-            "annotations.json",
-            models.LabeledData,
-            self._task.get_annotations,
-            "annotations",
-        )
-
-        self._frame_annotations = {
-            frame_index: FrameAnnotations() for frame_index in sorted(active_frame_indexes)
-        }
-
-        for tag in annotations.tags:
-            # Some annotations may belong to deleted frames; skip those.
-            if tag.frame in self._frame_annotations:
-                self._frame_annotations[tag.frame].tags.append(tag)
-
-        for shape in annotations.shapes:
-            if shape.frame in self._frame_annotations:
-                self._frame_annotations[shape.frame].shapes.append(shape)
+        if load_annotations:
+            self._load_annotations(cache_manager, sorted(active_frame_indexes))
+        else:
+            self._frame_annotations = {
+                frame_index: None for frame_index in sorted(active_frame_indexes)
+            }
 
         # TODO: tracks?
 
@@ -134,6 +125,26 @@ class TaskDataset:
             )
             for k, v in self._frame_annotations.items()
         ]
+
+    def _load_annotations(self, cache_manager: CacheManager, frame_indexes: Iterable[int]) -> None:
+        annotations = cache_manager.ensure_task_model(
+            self._task.id,
+            "annotations.json",
+            models.LabeledData,
+            self._task.get_annotations,
+            "annotations",
+        )
+
+        self._frame_annotations = {frame_index: FrameAnnotations() for frame_index in frame_indexes}
+
+        for tag in annotations.tags:
+            # Some annotations may belong to deleted frames; skip those.
+            if tag.frame in self._frame_annotations:
+                self._frame_annotations[tag.frame].tags.append(tag)
+
+        for shape in annotations.shapes:
+            if shape.frame in self._frame_annotations:
+                self._frame_annotations[shape.frame].shapes.append(shape)
 
     @property
     def labels(self) -> Sequence[models.ILabel]:

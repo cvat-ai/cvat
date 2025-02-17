@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,9 +7,7 @@ import { connect } from 'react-redux';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import {
-    mergeObjects,
-    groupObjects,
-    splitTrack,
+    updateActiveControl as updateActiveControlAction,
     redrawShapeAsync,
     rotateCurrentFrame,
     repeatDrawShapeAsync,
@@ -25,14 +24,12 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
+    labels: CombinedState['annotation']['job']['labels'];
     frameData: any;
 }
 
 interface DispatchToProps {
-    mergeObjects(enabled: boolean): void;
-    groupObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(angle: Rotation): void;
     resetGroup(): void;
     repeatDrawShape(): void;
@@ -68,14 +65,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function dispatchToProps(dispatch: any): DispatchToProps {
     return {
-        mergeObjects(enabled: boolean): void {
-            dispatch(mergeObjects(enabled));
-        },
-        groupObjects(enabled: boolean): void {
-            dispatch(groupObjects(enabled));
-        },
-        splitTrack(enabled: boolean): void {
-            dispatch(splitTrack(enabled));
+        updateActiveControl(activeControl: ActiveControl): void {
+            dispatch(updateActiveControlAction(activeControl));
         },
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));

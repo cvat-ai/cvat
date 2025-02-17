@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,8 +147,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             });
 
             onDrawStart(
-                shapeType, selectedLabel.id, objectType,
-                numberOfPoints, rectDrawingMethod, cuboidDrawingMethod,
+                shapeType,
+                selectedLabel.id,
+                objectType,
+                numberOfPoints,
+                rectDrawingMethod,
+                cuboidDrawingMethod,
             );
         }
     }
@@ -199,7 +204,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 numberOfPoints={numberOfPoints}
                 rectDrawingMethod={rectDrawingMethod}
                 cuboidDrawingMethod={cuboidDrawingMethod}
-                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}
+                repeatShapeShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
                 onChangeLabel={this.onChangeLabel}
                 onChangePoints={this.onChangePoints}
                 onChangeRectDrawingMethod={this.onChangeRectDrawingMethod}

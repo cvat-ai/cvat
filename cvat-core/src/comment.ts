@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,7 @@ export interface RawCommentData {
     owner?: any;
 }
 
-interface SerializedCommentData extends RawCommentData{
+interface SerializedCommentData extends RawCommentData {
     owner_id?: number;
     issue?: number;
 }

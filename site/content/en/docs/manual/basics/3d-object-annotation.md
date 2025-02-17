@@ -22,7 +22,7 @@ The 3D annotation canvas looks like the following
 
 > Note: if you added contextual images to the dataset, the canvas will include them. For more information, see [Contextual images](docs/manual/advanced/context-images/)
 
-For information on the available tools, see [Controls sidebar](http://localhost:1313/docs/manual/basics/controls-sidebar/).
+For information on the available tools, see [Controls sidebar](http://localhost:1313/docs/manual/CVAT-annotation-Interface/basics/controls-sidebar/).
 
 You can navigate, using the mouse, or navigation keys:
 
@@ -106,4 +106,4 @@ To track with cuboids, do the following:
 
 7. Repeat to the last frame with the presence of the object you are tracking.
 
-For more information about tracking, see [Track mode](/docs/manual/basics/track-mode-basics/)
+For more information about tracking, see {{< ilink "/docs/manual/basics/track-mode-basics" "Track mode" >}}

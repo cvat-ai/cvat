@@ -1,7 +1,7 @@
 ---
-title: 'CVAT Performance & Monitoring'
-linkTitle: 'Performance & Monitoring'
-weight: 2
+title: 'CVAT Team Performance & Monitoring'
+linkTitle: 'Team performance & monitoring'
+weight: 3
 description: 'How to monitor team activity and performance in CVAT'
 ---
 

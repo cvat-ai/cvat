@@ -38,7 +38,7 @@ Name | Type | Description  | Notes
 {{/optionalParams}}
 
 There are also optional kwargs that control the function invocation behavior.
-[Read more here](https://opencv.github.io/cvat/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
+[Read more here](https://docs.cvat.ai/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
 
 ### Returned values
 
@@ -49,11 +49,11 @@ Returns a tuple with 2 values: `({{#returnType}}parsed_response{{/returnType}}{{
 {{#returnType}}The first value is a model parsed from the response data.{{/returnType}}{{^returnType}}This endpoint does not have any return value, so `None` is always returned as the first value.{{/returnType}}
 The second value is the raw response, which can be useful to get response parameters, such as
 status code, headers, or raw response data. Read more about invocation parameters
-and returned values [here](https://opencv.github.io/cvat/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
+and returned values [here](https://docs.cvat.ai/docs/api_sdk/sdk/lowlevel-api/#sending-requests).
 
-### Authorization
+### Authentication
 
-{{^authMethods}}No authorization required{{/authMethods}}{{#authMethods}}{{{name}}}{{^-last}}, {{/-last}}{{/authMethods}}
+{{^authMethods}}No authentication required{{/authMethods}}{{#authMethods}}{{{name}}}{{^-last}}, {{/-last}}{{/authMethods}}
 
 ### HTTP request headers
 

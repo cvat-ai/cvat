@@ -1,292 +1,176 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
-import Collection from './annotations-collection';
+import AnnotationsCollection from './annotations-collection';
 import AnnotationsSaver from './annotations-saver';
 import AnnotationsHistory from './annotations-history';
 import { checkObjectType } from './common';
 import Project from './project';
 import { Task, Job } from './session';
-import { ScriptingError, DataError, ArgumentError } from './exceptions';
-import { getDeletedFrames } from './frames';
+import { ArgumentError } from './exceptions';
+import { getFramesMeta, getJobFramesMetaSync } from './frames';
+import { JobType } from './enums';
 
-const jobCache = new WeakMap();
-const taskCache = new WeakMap();
+const jobCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
+const taskCollectionCache = new WeakMap<Task | Job, { collection: AnnotationsCollection; saver: AnnotationsSaver; }>();
 
-function getCache(sessionType) {
+// save history separately as not all history actions are related to annotations (e.g. delete, restore frame are not)
+const jobHistoryCache = new WeakMap<Task | Job, AnnotationsHistory>();
+const taskHistoryCache = new WeakMap<Task | Job, AnnotationsHistory>();
+
+function getCache(sessionType: 'task' | 'job'): {
+    collection: typeof jobCollectionCache;
+    history: typeof jobHistoryCache;
+} {
     if (sessionType === 'task') {
-        return taskCache;
+        return {
+            collection: taskCollectionCache,
+            history: taskHistoryCache,
+        };
     }
 
-    if (sessionType === 'job') {
-        return jobCache;
+    return {
+        collection: jobCollectionCache,
+        history: jobHistoryCache,
+    };
+}
+
+class InstanceNotInitializedError extends Error {}
+
+export function getCollection(session): AnnotationsCollection {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const { collection } = getCache(sessionType);
+
+    if (collection.has(session)) {
+        return collection.get(session).collection;
     }
 
-    throw new ScriptingError(`Unknown session type was received ${sessionType}`);
-}
-
-function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
-    const annotations = [].concat(
-        groundTruthAnnotations.shapes,
-        groundTruthAnnotations.tracks,
-        groundTruthAnnotations.tags,
+    throw new InstanceNotInitializedError(
+        'Session has not been initialized yet. Call annotations.get() or annotations.clear({ reload: true }) before',
     );
-    annotations.forEach((annotation) => { annotation.is_gt = true; });
-    const result = {
-        shapes: rawAnnotations.shapes.slice(0).concat(groundTruthAnnotations.shapes.slice(0)),
-        tracks: rawAnnotations.tracks.slice(0).concat(groundTruthAnnotations.tracks.slice(0)),
-        tags: rawAnnotations.tags.slice(0).concat(groundTruthAnnotations.tags.slice(0)),
-    };
-    return result;
 }
 
-function addJobId(rawAnnotations, jobID) {
-    const annotations = [].concat(
-        rawAnnotations.shapes,
-        rawAnnotations.tracks,
-        rawAnnotations.tags,
+export function getSaver(session): AnnotationsSaver {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const { collection } = getCache(sessionType);
+
+    if (collection.has(session)) {
+        return collection.get(session).saver;
+    }
+
+    throw new InstanceNotInitializedError(
+        'Session has not been initialized yet. Call annotations.get() or annotations.clear({ reload: true }) before',
     );
-    annotations.forEach((annotation) => { annotation.job_id = jobID; });
-    const result = {
-        shapes: rawAnnotations.shapes.slice(0),
-        tracks: rawAnnotations.tracks.slice(0),
-        tags: rawAnnotations.tags.slice(0),
-    };
-    return result;
 }
 
-async function getAnnotationsFromServer(session, groundTruthJobId) {
+export function getHistory(session): AnnotationsHistory {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const { history } = getCache(sessionType);
+
+    if (history.has(session)) {
+        return history.get(session);
+    }
+
+    const initiatedHistory = new AnnotationsHistory();
+    history.set(session, initiatedHistory);
+    return initiatedHistory;
+}
+
+async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (!cache.has(session)) {
-        let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
-        rawAnnotations = addJobId(rawAnnotations, session.id);
-        if (groundTruthJobId) {
-            let gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, groundTruthJobId);
-            gtAnnotations = addJobId(gtAnnotations, groundTruthJobId);
-            rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
-        }
+    if (!cache.collection.has(session)) {
+        const serializedAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
 
         // Get meta information about frames
-        const startFrame = sessionType === 'job' ? session.startFrame : 0;
-        const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
-        const frameMeta = {};
-        for (let i = startFrame; i <= stopFrame; i++) {
-            frameMeta[i] = await session.frames.get(i);
-        }
-        frameMeta.deleted_frames = await getDeletedFrames(sessionType, session.id);
+        const frameMeta = await getFramesMeta(sessionType, session.id);
+        const frameNumbers = frameMeta.getSegmentFrameNumbers(session instanceof Job ? session.startFrame : 0);
 
-        const history = new AnnotationsHistory();
-        const collection = new Collection({
-            labels: session.labels || session.task.labels,
-            history,
-            stopFrame,
-            frameMeta,
+        const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
+        const collection = new AnnotationsCollection({
+            jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
+            stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
+            labels: session.labels,
             dimension: session.dimension,
+            framesInfo: {
+                isFrameDeleted: session instanceof Job ?
+                    (frame: number) => !!getJobFramesMetaSync(session.id).deletedFrames[frame] :
+                    (frame: number) => !!frameMeta.deletedFrames[frame],
+                ...frameMeta.frames.reduce((acc, frameInfo, idx) => {
+                    // keep only static information
+                    acc[frameNumbers[idx]] = {
+                        width: frameInfo.width,
+                        height: frameInfo.height,
+                    };
+                    return acc;
+                }, {}),
+            },
+            history,
         });
 
         // eslint-disable-next-line no-unsanitized/method
-        collection.import(rawAnnotations);
-        const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
-        cache.set(session, { collection, saver, history });
+        collection.import(serializedAnnotations);
+        const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
+        cache.collection.set(session, { collection, saver });
+        cache.history.set(session, history);
     }
 }
 
-export async function clearCache(session) {
+export function clearCache(session): void {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (cache.has(session)) {
-        cache.delete(session);
+    if (cache.collection.has(session)) {
+        cache.collection.delete(session);
+    }
+
+    if (cache.history.has(session)) {
+        cache.history.delete(session);
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters, groundTruthJobId) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.get(frame, allTracks, filters);
-    }
-
-    await getAnnotationsFromServer(session, groundTruthJobId);
-    return cache.get(session).collection.get(frame, allTracks, filters);
-}
-
-export async function saveAnnotations(session, onUpdate) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        await cache.get(session).saver.save(onUpdate);
-    }
-
-    // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
-}
-
-export function searchAnnotations(session, filters, frameFrom, frameTo) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.search(filters, frameFrom, frameTo);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function searchEmptyFrame(session, frameFrom, frameTo) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.searchEmpty(frameFrom, frameTo);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function mergeAnnotations(session, objectStates) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.merge(objectStates);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function splitAnnotations(session, objectState, frame) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.split(objectState, frame);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function groupAnnotations(session, objectStates, reset) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.group(objectStates, reset);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function hasUnsavedChanges(session) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).saver.hasUnsavedChanges();
-    }
-
-    return false;
-}
-
-export async function clearAnnotations(session, reload, startframe, endframe, delTrackKeyframesOnly) {
-    checkObjectType('reload', reload, 'boolean', null);
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        cache.get(session).collection.clear(startframe, endframe, delTrackKeyframesOnly);
-    }
-
-    if (reload) {
-        cache.delete(session);
-        await getAnnotationsFromServer(session);
-    }
-}
-
-export function annotationsStatistics(session) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        if (sessionType === 'job') {
-            return cache.get(session).collection.statistics({ jobID: session.id });
+export async function getAnnotations(
+    session: Job | Task,
+    frame: number,
+    allTracks: boolean,
+    filters: object[],
+): Promise<ReturnType<AnnotationsCollection['get']>> {
+    try {
+        return getCollection(session).get(frame, allTracks, filters);
+    } catch (error) {
+        if (error instanceof InstanceNotInitializedError) {
+            await getAnnotationsFromServer(session);
+            return getCollection(session).get(frame, allTracks, filters);
         }
-        return cache.get(session).collection.statistics();
+        throw error;
     }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
 }
 
-export function putAnnotations(session, objectStates) {
+export async function clearAnnotations(
+    session: Task | Job,
+    options: Parameters<typeof Job.prototype.annotations.clear>[0],
+): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
-    if (cache.has(session)) {
-        return cache.get(session).collection.put(objectStates);
+    if (Object.hasOwn(options ?? {}, 'reload')) {
+        const { reload } = options;
+        checkObjectType('reload', reload, 'boolean', null);
+
+        if (reload) {
+            cache.collection.delete(session);
+            // delete history as it may relate to objects from collection we deleted above
+            cache.history.delete(session);
+            return getAnnotationsFromServer(session);
+        }
     }
 
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function selectObject(session, objectStates, x, y) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.select(objectStates, x, y);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function importCollection(session, data) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        // eslint-disable-next-line no-unsanitized/method
-        return cache.get(session).collection.import(data);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function exportCollection(session) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).collection.export();
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
+    return getCollection(session).clear(options);
 }
 
 export async function exportDataset(
@@ -296,7 +180,7 @@ export async function exportDataset(
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
-) {
+): Promise<string | void> {
     if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
         throw new ArgumentError('A dataset can only be created from a job, task or project');
     }
@@ -324,9 +208,9 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        updateStatusCallback?: (s: string, n: number) => void,
+        updateStatusCallback?: (message: string, progress: number) => void,
     } = {},
-): Promise<void> {
+): Promise<string> {
     const updateStatusCallback = options.updateStatusCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {
@@ -386,82 +270,4 @@ export function importDataset(
             file,
             adjustedOptions,
         );
-}
-
-export function getHistory(session) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).history;
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export async function undoActions(session, count) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).history.undo(count);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export async function redoActions(session, count) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).history.redo(count);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function freezeHistory(session, frozen) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).history.freeze(frozen);
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function clearActions(session) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).history.clear();
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
-}
-
-export function getActions(session) {
-    const sessionType = session instanceof Task ? 'task' : 'job';
-    const cache = getCache(sessionType);
-
-    if (cache.has(session)) {
-        return cache.get(session).history.get();
-    }
-
-    throw new DataError(
-        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-    );
 }

@@ -1,8 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-update-cloud-storage-form-wrapper,
 .cvat-attach-cloud-storage-form-wrapper {
@@ -22,12 +23,20 @@
         width: 100%;
         height: auto;
         border: 1px solid $border-color-1;
-        border-radius: $grid-unit-size * 0.5;
+        border-radius: $border-radius-base;
         padding: $grid-unit-size * 2;
         background: $background-color-1;
         text-align: initial;
 
         .cvat-cloud-storage-form-item {
+            &.cvat-cloud-storage-form-item-offset-1 {
+                margin-left: $grid-unit-size * 4;
+            }
+
+            &.cvat-cloud-storage-form-item-offset-2 {
+                margin-left: $grid-unit-size * 8;
+            }
+
             justify-content: space-between;
 
             > div:first-child {
@@ -74,10 +83,27 @@
 .cvat-cloud-storage-help-button {
     padding-left: $grid-unit-size * 0.5;
     padding-right: 0;
+    color: #1890ff;
 }
 
 .cvat-manifests-manager-form-item {
+    margin-bottom: 0;
+
+    > div:first-child {
+        padding: 0;
+    }
+
     > .ant-form-item-control {
         display: none;
     }
+}
+
+.cvat-cs-manifest-wrapper {
+    > .ant-col > .ant-row {
+        margin-bottom: 0;
+    }
+}
+
+.cvat-add-manifest-button {
+    margin-bottom: $grid-unit-size;
 }

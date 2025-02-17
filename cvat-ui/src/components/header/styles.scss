@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-header.ant-layout-header {
     display: flex;
@@ -11,12 +12,31 @@
     line-height: 0;
     height: $header-height;
     background: $header-color;
+    justify-content: space-between;
 }
 
-.ant-btn.cvat-header-button {
+.ant-btn.ant-btn-link.cvat-header-button {
     color: $text-color;
-    padding: 0 $grid-unit-size;
     margin-right: $grid-unit-size;
+
+    &:hover {
+        color: $text-color;
+    }
+}
+
+.cvat-logo-icon {
+    width: $grid-unit-size * 8;
+    height: $grid-unit-size * 4;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+    }
 }
 
 .cvat-left-header {
@@ -29,11 +49,10 @@
         }
     }
 
-    .anticon.cvat-logo-icon {
+    .cvat-logo-icon {
         margin: 0 $grid-unit-size * 2;
     }
 
-    width: 50%;
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -56,7 +75,7 @@
 .cvat-header-menu-user-dropdown {
     display: flex;
     align-items: center;
-    border-left: 1px solid $border-color-1;
+    cursor: pointer;
 
     .anticon.cvat-header-dropdown-icon {
         &.anticon-caret-down {
@@ -67,11 +86,11 @@
         padding: $grid-unit-size;
     }
 
-    > div:nth-child(2) {
-        > div:nth-child(2) { /* org slug */
-            font-size: 10px;
-        }
+    .cvat-header-menu-user-dropdown-organization {
+        font-size: 10px;
+    }
 
+    > div:nth-child(2) {
         max-width: $grid-unit-size * 15;
         height: $grid-unit-size * 5;
         overflow: hidden;
@@ -79,6 +98,10 @@
         text-overflow: ellipsis;
         align-items: center;
     }
+}
+
+.cvat-header-menu {
+    width: $grid-unit-size * 24;
 }
 
 .cvat-header-menu-active-organization-item {
@@ -93,4 +116,11 @@
 
 .cvat-modal-organization-selector {
     width: 100%;
+}
+
+.cvat-shortcuts-modal-window-table {
+    .ant-table {
+        max-height: $grid-unit-size * 70;
+        overflow-y: auto;
+    }
 }

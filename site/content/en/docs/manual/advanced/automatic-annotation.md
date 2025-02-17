@@ -12,7 +12,7 @@ CVAT can use models from the following sources:
 
 - [Pre-installed models](#models).
 - Models integrated from [Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow).
-- [Self-hosted models deployed with Nuclio](/docs/manual/advanced/serverless-tutorial/).
+- {{< ilink "/docs/manual/advanced/serverless-tutorial" "Self-hosted models deployed with Nuclio" >}}.
 
 The following table describes the available options:
 
@@ -42,8 +42,10 @@ To start automatic annotation, do the following:
 1. [Match the labels](#labels-matching) of the model and the task.
 1. (Optional) In case you need the model to return masks as polygons, switch toggle **Return masks as polygons**.
 1. (Optional) In case you need to remove all previous annotations, switch toggle **Clean old annotations**.
+1. (Optional) You can specify a **Threshold** for the model.
+    If not provided, the default value from the model settings will be used.
 
-   ![](/images/image120.jpg)
+   ![](/images/running_automatic_annotation.png)
 
 1. Click **Annotate**.
 
@@ -80,8 +82,9 @@ papers and official documentation.
 Automatic annotation uses pre-installed and added models.
 
 > For self-hosted solutions,
-> you need to [install Automatic Annotation first](/docs/administration/advanced/installation_automatic_annotation/)
-> and [add models](/docs/manual/advanced/models/).
+> you need to
+> {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "install Automatic Annotation first" >}}
+> and {{< ilink "/docs/manual/advanced/models" "add models" >}}.
 
 List of pre-installed models:
 

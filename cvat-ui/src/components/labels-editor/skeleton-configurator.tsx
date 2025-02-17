@@ -1,3 +1,7 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { CSSProperties } from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col } from 'antd/lib/grid';
@@ -15,8 +19,11 @@ import { PointIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
-import { ShapeType } from 'cvat-core-wrapper';
+import { LabelType, ShapeType } from 'cvat-core-wrapper';
 import config from 'config';
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
 } from './common';
@@ -42,6 +49,17 @@ interface State {
     image: RcFile | null;
     error: null | string;
 }
+
+const componentShortcuts = {
+    CANCEL_SKELETON_EDGE: {
+        name: 'Cancel skeleton drawing',
+        description: 'Interrupts drawing a new skeleton edge',
+        sequences: ['esc'],
+        scope: ShortcutScope.LABELS_EDITOR,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
 
 export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
     static contextType = ShortcutsContext;
@@ -120,6 +138,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     const elementID = element.getAttribute('data-element-id');
                     const labelName = element.getAttribute('data-label-name');
                     const labelID = element.getAttribute('data-label-id');
+
                     if (elementID && (labelName !== null || labelID !== null)) {
                         const sublabel = sublabels.find((_sublabel: LabelOptColor): boolean => {
                             if (labelName !== null) {
@@ -238,6 +257,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             return false;
         }
 
+        setAttributes(edge, {
+            stroke: 'black',
+            'stroke-width': '0.5',
+        });
+
         const onClick = (): void => {
             if (edge) {
                 edge.remove();
@@ -277,13 +301,24 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         this.elementCounter = Math.max(this.elementCounter, elementID);
         this.nodeCounter = Math.max(this.nodeCounter, nodeID);
 
+        setAttributes(circle, {
+            stroke: 'black',
+            fill: config.NEW_LABEL_COLOR,
+            'stroke-width': 0.1,
+        });
+
+        circle.style.transition = 'r 0.25s';
+
         circle.addEventListener('mouseover', () => {
             circle.setAttribute('stroke-width', '0.3');
+            circle.setAttribute('r', '1');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
                 text.setAttribute('fill', 'red');
             }
+        });
 
+        circle.addEventListener('contextmenu', () => {
             this.setState({
                 contextMenuElement: elementID,
             });
@@ -291,6 +326,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         circle.addEventListener('mouseout', () => {
             circle.setAttribute('stroke-width', '0.1');
+            circle.setAttribute('r', '0.75');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
                 text.setAttribute('fill', 'darkorange');
@@ -400,7 +436,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             }),
             color: labels[elementID]?.color || undefined,
             id: (labels[elementID]?.id || 0) > 0 ? labels[elementID].id : idGenerator(),
-            type: ShapeType.POINTS,
+            type: ShapeType.POINTS as any as LabelType,
             has_parent: true,
         };
 
@@ -428,16 +464,14 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             const elementID = this.elementCounter + 1;
             const nodeID = this.nodeCounter + 1;
             setAttributes(circle, {
-                r: 1.5,
-                stroke: 'black',
-                fill: config.NEW_LABEL_COLOR,
+                r: 0.75,
                 cx: x,
                 cy: y,
-                'stroke-width': 0.1,
                 'data-type': 'element node',
                 'data-element-id': elementID,
                 'data-node-id': nodeID,
             });
+
             svg.appendChild(circle);
 
             if (this.setupCircle(svg, circle)) {
@@ -453,7 +487,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const svg = svgRef.current;
 
         if (svg) {
-            const TEXT_MARGIN = 2;
+            const TEXT_MARGIN = 1;
             const array = Array.from(svg.children);
             array.forEach((el: Element) => {
                 if (el.tagName === 'text') {
@@ -608,21 +642,26 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         if (elements !== sublabels.length) {
             throw new Error(
-                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length}` +
+                `Skeleton configurator state is not consistent. Number of sublabels ${sublabels.length} ` +
                 `differs from number of elements ${elements}`,
             );
         }
 
-        try {
-            this.setupTextLabels(false);
-            return {
-                type: 'skeleton',
-                svg: svg.innerHTML,
-                sublabels,
-            };
-        } finally {
-            this.setupTextLabels();
-        }
+        const svgText = Array.from(svg.children)
+            .filter((element) => element.tagName === 'circle' || element.tagName === 'line').map((element) => {
+                const clone = element.cloneNode() as SVGCircleElement;
+                clone.removeAttribute('style');
+                clone.removeAttribute('stroke');
+                clone.removeAttribute('fill');
+                clone.removeAttribute('stroke-width');
+                return clone.outerHTML;
+            }).join('\n');
+
+        return {
+            type: 'skeleton',
+            svg: svgText,
+            sublabels,
+        };
     }
 
     public render(): JSX.Element {
@@ -634,23 +673,23 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const keyMap = this.context;
         const disabledStyle: CSSProperties = disabled ? { opacity: 0.5, pointerEvents: 'none' } : {};
 
+        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+            CANCEL_SKELETON_EDGE: () => {
+                const { activeTool: currentActiveTool } = this.state;
+                if (currentActiveTool === 'join') {
+                    const shape = this.findNotFinishedEdge();
+                    if (shape) {
+                        shape.remove();
+                    }
+                }
+            },
+        };
+
         return (
             <Row className='cvat-skeleton-configurator'>
                 <GlobalHotKeys
-                    keyMap={{
-                        CANCEL_SKELETON_EDGE: keyMap.CANCEL_SKELETON_EDGE,
-                    }}
-                    handlers={{
-                        CANCEL_SKELETON_EDGE: () => {
-                            const { activeTool: currentActiveTool } = this.state;
-                            if (currentActiveTool === 'join') {
-                                const shape = this.findNotFinishedEdge();
-                                if (shape) {
-                                    shape.remove();
-                                }
-                            }
-                        },
-                    }}
+                    keyMap={subKeyMap(componentShortcuts, keyMap)}
+                    handlers={handlers}
                 />
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
                     <SkeletonElementContextMenu
@@ -664,29 +703,33 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         onConfigureLabel={(elementID: number, data: LabelOptColor | null) => {
                             this.setState({ contextMenuVisible: false });
                             if (data) {
-                                this.labels[elementID] = data;
+                                this.labels[elementID] = {
+                                    ...data,
+                                    has_parent: true,
+                                };
+
                                 if (data.color && svgRef.current) {
                                     const element = svgRef.current.querySelector(`[data-element-id="${elementID}"]`);
                                     if (element) {
                                         element.setAttribute('fill', data.color);
                                     }
                                 }
+
                                 this.setupTextLabels();
                             }
-                        }}
-                        onCancel={() => {
-                            this.setState({ contextMenuVisible: false });
                         }}
                     />
                 ) : null}
                 <div>
                     <div className='cvat-skeleton-configurator-image-dragger'>
                         <Upload
+                            accept='.jpg,.jpeg,.png'
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
-                                if (!file.type.startsWith('image/')) {
+                                if (!['image/jpeg', 'image/png'].includes(file.type)) {
                                     notification.error({
-                                        message: `File must be an image. Got mime type: ${file.type}`,
+                                        message:
+                                            `File must be a JPEG or PNG image. Detected mime type is "${file.type}"`,
                                     });
                                 }
                                 this.setState({ image: file }, () => {
@@ -752,6 +795,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                         const copy = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                                         // eslint-disable-next-line no-unsanitized/property
                                         copy.innerHTML = svgRef.current.innerHTML;
+                                        copy.setAttribute('viewBox', '0 0 100 100');
                                         this.setupTextLabels();
 
                                         const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
@@ -764,6 +808,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                         (desc as SVGDescElement).textContent = stringifiedLabels;
                                         copy.appendChild(desc);
                                         Array.from(copy.children).forEach((child: Element) => {
+                                            child.removeAttribute('style');
                                             if (child.hasAttribute('data-label-id')) {
                                                 const elementID = +(child.getAttribute('data-element-id') as string);
                                                 child.removeAttribute('data-label-id');
@@ -771,7 +816,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                             }
                                         });
 
-                                        const text = copy.innerHTML;
+                                        const text = copy.outerHTML;
                                         const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
                                         const url = URL.createObjectURL(blob);
                                         const anchor = window.document.getElementById('downloadAnchor');
@@ -789,39 +834,49 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         <Upload
                             disabled={disabled}
                             showUploadList={false}
+                            accept='.svg'
                             beforeUpload={(file: RcFile) => {
                                 file.text().then((result) => {
-                                    const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                                    // eslint-disable-next-line no-unsanitized/property
-                                    tmpSvg.innerHTML = result;
-                                    let isSVG = true;
-                                    for (let c = tmpSvg.childNodes, i = c.length; i--;) {
-                                        isSVG = isSVG && c[i].nodeType === 1;
-                                    }
+                                    try {
+                                        const parent = window.document.createElement('div');
+                                        // eslint-disable-next-line no-unsanitized/property
+                                        parent.innerHTML = result;
 
-                                    if (isSVG) {
-                                        let labels = {};
-                                        const desc = Array.from(tmpSvg.children)
+                                        if (parent.children[0]?.tagName !== 'svg' || parent.children.length > 1) {
+                                            throw Error();
+                                        }
+
+                                        const svg = parent.children[0];
+                                        const desc = Array.from(svg.children)
                                             .find((child: Element): boolean => (
                                                 child.tagName === 'desc' &&
                                                 child.getAttribute('data-description-type') === 'labels-specification'
                                             ));
-                                        if (desc) {
-                                            try {
-                                                labels = JSON.parse(desc.textContent || '{}');
-                                                desc.remove();
-                                            } catch (_) {
-                                                // ignore
+                                        if (!desc) {
+                                            throw Error();
+                                        }
+
+                                        const labels = JSON.parse(desc.textContent || '{}');
+
+                                        for (const child of svg.children) {
+                                            if (child.nodeType !== 1 || !['line', 'circle'].includes(child.tagName)) {
+                                                child.remove();
                                             }
                                         }
 
-                                        this.setupSkeleton(tmpSvg.innerHTML, labels as Record<string, LabelOptColor>);
-                                    } else {
+                                        if (!Array.from(svg.children).some((child) => child.tagName === 'circle')) {
+                                            throw Error();
+                                        }
+
+                                        this.labels = {};
+                                        this.setupSkeleton(svg.innerHTML, labels as Record<string, LabelOptColor>);
+                                    } catch (_: unknown) {
                                         notification.error({
                                             message: 'Wrong skeleton structure',
                                         });
                                     }
                                 });
+
                                 return false;
                             }}
                         >

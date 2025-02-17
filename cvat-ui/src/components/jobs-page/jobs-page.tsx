@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,16 +10,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
-import Empty from 'antd/lib/empty';
-import Text from 'antd/lib/typography/Text';
 
-import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
-import { CombinedState, Indexable } from 'reducers';
+import { CombinedState, Indexable, JobsQuery } from 'reducers';
 import { getJobsAsync } from 'actions/jobs-actions';
+import { anySearch } from 'utils/any-search';
 
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
+import EmptyListComponent from './empty-list';
 
 function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -50,6 +50,8 @@ function JobsPageComponent(): JSX.Element {
         }
     }, [query]);
 
+    const isAnySearch = anySearch<JobsQuery>(query);
+
     const content = count ? (
         <>
             <JobsContentComponent />
@@ -72,7 +74,9 @@ function JobsPageComponent(): JSX.Element {
                 </Col>
             </Row>
         </>
-    ) : <Empty description={<Text>No results matched your search...</Text>} />;
+    ) : (
+        <EmptyListComponent notFound={isAnySearch} />
+    );
 
     return (
         <div className='cvat-jobs-page'>
@@ -106,10 +110,7 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            { fetching ? (
-                <Spin size='large' className='cvat-spinner' />
-            ) : content }
-            <FeedbackComponent />
+            {fetching ? <Spin size='large' className='cvat-spinner' /> : content}
         </div>
     );
 }

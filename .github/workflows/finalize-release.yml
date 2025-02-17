@@ -1,0 +1,109 @@
+name: Finalize release
+on:
+  workflow_dispatch:
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discover pending release
+        id: discover
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          gh --repo="${{ github.repository }}" \
+            pr list --base master --state open --json number,headRefName \
+            --jq 'map(select(.headRefName | startswith("release-")))' \
+            > /tmp/release-prs.json
+
+          if jq -e 'length < 1' /tmp/release-prs.json > /dev/null; then
+            echo "No open release pull requests found."
+            exit 1
+          elif jq -e 'length > 1' /tmp/release-prs.json > /dev/null; then
+            echo "Multiple open release pull requests found:"
+            jq -r '.[] | "https://github.com/${{ github.repository }}/pull/\(.number)"' /tmp/release-prs.json
+            exit 1
+          fi
+
+          jq -r '.[] | "prNumber=\(.number)", "version=\(.headRefName | ltrimstr("release-"))"' \
+            /tmp/release-prs.json >> "$GITHUB_OUTPUT"
+
+      # When you use the default github.token to make changes in the repository,
+      # it does not trigger further GitHub pipelines. We want to trigger CI for
+      # the pull request and artifact building for the release, so we have to use
+      # an app token.
+      - name: Generate authentication token
+        id: gen-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: "${{ secrets.CVAT_BOT_APP_ID }}"
+          private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"
+
+      - name: Install dependencies
+        run:
+          sudo apt-get install -y pandoc
+
+      - uses: actions/checkout@v4
+        with:
+          ref: "release-${{ steps.discover.outputs.version }}"
+
+      - name: Verify that the release is new
+        env:
+          NEW_VERSION: "${{ steps.discover.outputs.version }}"
+        run: |
+          if git ls-remote --exit-code origin "refs/tags/v$NEW_VERSION" > /dev/null; then
+            echo "Release v$NEW_VERSION already exists"
+            exit 1
+          fi
+
+      # Do post-release tasks before publishing the release. If anything goes wrong,
+      # the dev-release-* branch can be deleted, and the whole process restarted again;
+      # whereas we can't unmerge the release PR.
+
+      - name: Create post-release branch
+        run:
+          git checkout -b "dev-release-${{ steps.discover.outputs.version }}"
+
+      - name: Bump version
+        run:
+          ./dev/update_version.py --patch
+
+      - name: Commit post-release changes
+        run: |
+          git -c user.name='cvat-bot[bot]' -c user.email='147643061+cvat-bot[bot]@users.noreply.github.com' \
+            commit -a -m "Update ${{ github.ref_name }} after v${{ steps.discover.outputs.version }}"
+
+      - name: Push post-release branch
+        run:
+          git push -u origin "dev-release-${{ steps.discover.outputs.version }}"
+
+      - name: Create post-release pull request
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+        run: |
+          gh pr create \
+            --base="${{ github.ref_name }}" \
+            --title="Update ${{ github.ref_name }} after v${{ steps.discover.outputs.version }}" \
+            --body=""
+
+      # Now publish the release.
+
+      - name: Merge release pull request
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+        run:
+          gh pr merge --merge "${{ steps.discover.outputs.prNumber }}" --delete-branch
+
+      - name: Create release
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+          NEW_VERSION: "${{ steps.discover.outputs.version }}"
+        run: |
+          # We could grab the release notes from the PR description, but it could
+          # be outdated if any changes were made on the release branch. So instead,
+          # just re-extract them from the changelog again.
+
+          ./dev/gh_release_notes.sh \
+            | gh release create "v$NEW_VERSION" \
+              --target=master \
+              --title="v$NEW_VERSION" \
+              --notes-file=-

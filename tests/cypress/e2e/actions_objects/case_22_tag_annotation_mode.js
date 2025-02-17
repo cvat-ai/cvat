@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Tag annotation mode.', () => {
     const caseId = '22';
@@ -43,7 +43,7 @@ context('Tag annotation mode.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Go to tag annotation', () => {
-            cy.changeWorkspace('Tag annotation', labelName);
+            cy.changeWorkspace('Tag annotation');
             checkFrameTagsDontExist();
         });
 

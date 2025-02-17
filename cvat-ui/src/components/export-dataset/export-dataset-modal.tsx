@@ -1,14 +1,15 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { connect, useDispatch } from 'react-redux';
+import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Notification from 'antd/lib/notification';
-import { DownloadOutlined, LoadingOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
@@ -16,14 +17,12 @@ import Form from 'antd/lib/form';
 import Switch from 'antd/lib/switch';
 import Space from 'antd/lib/space';
 import TargetStorageField from 'components/storage/target-storage-field';
+import CVATMarkdown from 'components/common/cvat-markdown';
 import { CombinedState, StorageLocation } from 'reducers';
 import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
-    Dumper,
-    getCore, Job, Project, Storage, StorageData, Task,
+    Dumper, ProjectOrTaskOrJob, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
-
-const core = getCore();
 
 type FormValues = {
     selectedFormat: string | undefined;
@@ -48,7 +47,6 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     const {
         dumpers,
         instance,
-        current,
     } = props;
 
     const [instanceType, setInstanceType] = useState('');
@@ -62,6 +60,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
     const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number>();
     const [helpMessage, setHelpMessage] = useState('');
     const dispatch = useDispatch();
+    const history = useHistory();
 
     useEffect(() => {
         if (instance instanceof Project) {
@@ -82,27 +81,8 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         if (instance) {
-            if (instance instanceof Project || instance instanceof Task) {
-                setDefaultStorageLocation(instance.targetStorage?.location || StorageLocation.LOCAL);
-                setDefaultStorageCloudId(instance.targetStorage?.cloudStorageId);
-            } else {
-                core.tasks.get({ id: instance.taskId })
-                    .then((response: any) => {
-                        if (response.length) {
-                            const [taskInstance] = response;
-                            setDefaultStorageLocation(taskInstance.targetStorage?.location || StorageLocation.LOCAL);
-                            setDefaultStorageCloudId(taskInstance.targetStorage?.cloudStorageId);
-                        }
-                    })
-                    .catch((error: Error) => {
-                        if ((error as any).code !== 403) {
-                            Notification.error({
-                                message: `Could not fetch the task ${instance.taskId}`,
-                                description: error.toString(),
-                            });
-                        }
-                    });
-            }
+            setDefaultStorageLocation(instance.targetStorage.location);
+            setDefaultStorageCloudId(instance.targetStorage.cloudStorageId);
         }
     }, [instance]);
 
@@ -115,7 +95,9 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
         setUseDefaultTargetStorage(true);
         setTargetStorage({ location: StorageLocation.LOCAL });
         form.resetFields();
-        dispatch(exportActions.closeExportDatasetModal(instance));
+        if (instance) {
+            dispatch(exportActions.closeExportDatasetModal(instance));
+        }
     };
 
     const handleExport = useCallback(
@@ -123,7 +105,7 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
             // have to validate format before so it would not be undefined
             dispatch(
                 exportDatasetAsync(
-                    instance,
+                    instance as ProjectOrTaskOrJob,
                     values.selectedFormat as string,
                     values.saveImages,
                     useDefaultTargetStorage,
@@ -136,21 +118,24 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
             );
             closeModal();
             const resource = values.saveImages ? 'Dataset' : 'Annotations';
+            const description = `${resource} export was started for ${instanceType}. ` +
+            'You can check progress and download the file [here](/requests).';
             Notification.info({
                 message: `${resource} export started`,
-                description:
-                    `${resource} export was started for ${instanceType}. ` +
-                    `Download will start automatically as soon as the ${resource} is ready.`,
+                description: (
+                    <CVATMarkdown history={history}>{description}</CVATMarkdown>
+                ),
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance, instanceType, useDefaultTargetStorage, defaultStorageLocation, defaultStorageCloudId, targetStorage],
+        [instance, instanceType, useDefaultTargetStorage,
+            defaultStorageLocation, defaultStorageCloudId, targetStorage],
     );
 
     return (
         <Modal
             title={<Text strong>{`Export ${instanceType} as a dataset`}</Text>}
-            visible={!!instance}
+            open={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType.split(' ')[0]}`}
@@ -176,23 +161,16 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
                                     (instance instanceof Project && instance.dimension === null),
                             )
                             .map(
-                                (dumper: Dumper): JSX.Element => {
-                                    const pending = (instance && current ? current : [])
-                                        .includes(dumper.name);
-                                    const disabled = !dumper.enabled || pending;
-                                    return (
-                                        <Select.Option
-                                            value={dumper.name}
-                                            key={dumper.name}
-                                            disabled={disabled}
-                                            className='cvat-modal-export-option-item'
-                                        >
-                                            <DownloadOutlined />
-                                            <Text disabled={disabled}>{dumper.name}</Text>
-                                            {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
-                                        </Select.Option>
-                                    );
-                                },
+                                (dumper: Dumper): JSX.Element => (
+                                    <Select.Option
+                                        value={dumper.name}
+                                        key={dumper.name}
+                                        className='cvat-modal-export-option-item'
+                                    >
+                                        <DownloadOutlined />
+                                        <Text>{dumper.name}</Text>
+                                    </Select.Option>
+                                ),
                             )}
                     </Select>
                 </Form.Item>
@@ -235,7 +213,6 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
 interface StateToProps {
     dumpers: Dumper[];
     instance: Project | Task | Job | null;
-    current: string[];
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -246,9 +223,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         instance,
-        current: !instanceType ? [] : (
-            state.export[`${instanceType}s` as 'projects' | 'tasks' | 'jobs']
-        ).dataset.current[instance.id],
         dumpers: state.formats.annotationFormats.dumpers,
     };
 }

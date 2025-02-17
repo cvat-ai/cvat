@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,23 +17,25 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
+from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Project, Task
+from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
-from cvat.apps.iam.permissions import (
-    AnnotationConflictPermission,
-    QualityReportPermission,
-    QualitySettingPermission,
-    get_iam_context,
-)
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
     QualitySettings,
+)
+from cvat.apps.quality_control.permissions import (
+    AnnotationConflictPermission,
+    QualityReportPermission,
+    QualitySettingPermission,
+    get_iam_context,
 )
 from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
@@ -46,7 +48,7 @@ from cvat.apps.quality_control.serializers import (
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
-        summary="Method returns a paginated list of annotation conflicts",
+        summary="List annotation conflicts in a quality report",
         description="Please note that no conflicts will be returned for project reports",
         parameters=[
             # These filters are implemented differently from others
@@ -131,7 +133,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 @extend_schema_view(
     retrieve=extend_schema(
         operation_id="quality_retrieve_report",  # the default produces the plural
-        summary="Method returns details of a quality report",
+        summary="Get quality report details",
         responses={
             "200": QualityReportSerializer,
         },
@@ -298,7 +300,7 @@ class QualityReportViewSet(
 
     @extend_schema(
         operation_id="quality_create_report",
-        summary="Creates a quality report asynchronously and allows to check request status",
+        summary="Create a quality report",
         parameters=[
             OpenApiParameter(
                 CREATE_REPORT_RQ_ID_PARAMETER,
@@ -347,7 +349,7 @@ class QualityReportViewSet(
                 except Task.DoesNotExist as ex:
                     raise NotFound(f"Task {task_id} does not exist") from ex
 
-                manager = qc.TaskQualityReportUpdateManager()
+                manager = qc.TaskQualityReportManager()
                 job_params = {"task": task}
             elif project_id := input_serializer.validated_data.get("project_id"):
                 try:
@@ -355,18 +357,20 @@ class QualityReportViewSet(
                 except Project.DoesNotExist as ex:
                     raise NotFound(f"Project {project_id} does not exist") from ex
 
-                manager = qc.ProjectQualityReportUpdateManager()
+                manager = qc.ProjectQualityReportManager()
                 job_params = {"project": project}
             else:
                 assert False
 
             try:
-                rq_id = manager.schedule_quality_check_job(**job_params, user_id=request.user.id)
+                rq_id = manager.schedule_quality_check_job(
+                    **job_params, request=request, user_id=request.user.id
+                )
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
             except (
-                qc.TaskQualityReportUpdateManager.QualityReportsNotAvailable,
-                qc.ProjectQualityReportUpdateManager.QualityReportsNotAvailable,
+                qc.TaskQualityReportManager.QualityReportsNotAvailable,
+                qc.ProjectQualityReportManager.QualityReportsNotAvailable,
             ) as ex:
                 raise ValidationError(str(ex))
 
@@ -375,12 +379,14 @@ class QualityReportViewSet(
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
 
-            report_manager = qc.TaskQualityReportUpdateManager()
+            report_manager = qc.TaskQualityReportManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
+            # FUTURE-TODO: move into permissions
+            # and allow not only rq job owner to check the status
             if (
                 not rq_job
                 or not QualityReportPermission.create_scope_check_status(
-                    request, rq_job_owner_id=rq_job.meta["user_id"]
+                    request, rq_job_owner_id=rq_job.meta[RQJobMetaField.USER]["id"]
                 )
                 .check_access()
                 .allow
@@ -388,48 +394,59 @@ class QualityReportViewSet(
                 # We should not provide job existence information to unauthorized users
                 raise NotFound("Unknown request id")
 
-            if rq_job.is_failed:
+            rq_job_status = rq_job.get_status(refresh=False)
+
+            if rq_job_status == RqJobStatus.FAILED:
                 message = str(rq_job.exc_info)
                 rq_job.delete()
                 raise ValidationError(message)
-            elif rq_job.is_queued or rq_job.is_started:
-                return Response(status=status.HTTP_202_ACCEPTED)
-            elif rq_job.is_finished:
-                return_value = rq_job.return_value
+            elif rq_job_status in (
+                RqJobStatus.QUEUED,
+                RqJobStatus.STARTED,
+                RqJobStatus.SCHEDULED,
+                RqJobStatus.DEFERRED,
+            ):
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            elif rq_job_status == RqJobStatus.FINISHED:
+                return_value = rq_job.return_value()
                 rq_job.delete()
                 if not return_value:
                     raise ValidationError("No report has been computed")
 
                 report = self.get_queryset().get(pk=return_value)
-                report_serializer = QualityReportSerializer(instance=report)
+                report_serializer = QualityReportSerializer(
+                    instance=report, context={"request": request}
+                )
                 return Response(
                     data=report_serializer.data,
                     status=status.HTTP_201_CREATED,
                     headers=self.get_success_headers(report_serializer.data),
                 )
 
+            raise AssertionError(f"Unexpected rq job '{rq_id}' status '{rq_job_status}'")
+
     @extend_schema(
         operation_id="quality_retrieve_report_data",
-        summary="Retrieve full contents of the report in JSON format",
+        summary="Get quality report contents",
         responses={"200": OpenApiTypes.OBJECT},
     )
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request, pk):
         report = self.get_object()  # check permissions
         json_report = qc.prepare_report_for_downloading(report, host=get_server_url(request))
-        return HttpResponse(json_report.encode())
+        return HttpResponse(json_report.encode(), content_type="application/json")
 
 
 @extend_schema(tags=["quality"])
 @extend_schema_view(
     list=extend_schema(
-        summary="Method returns a paginated list of quality settings instances",
+        summary="List quality settings instances",
         responses={
             "200": QualitySettingsSerializer(many=True),
         },
     ),
     retrieve=extend_schema(
-        summary="Method returns details of the quality settings instance",
+        summary="Get quality settings instance details",
         parameters=[
             OpenApiParameter(
                 "id",
@@ -451,7 +468,7 @@ class QualityReportViewSet(
         },
     ),
     partial_update=extend_schema(
-        summary="Methods does a partial update of chosen fields in the quality settings instance",
+        summary="Update a quality settings instance",
         parameters=[
             OpenApiParameter(
                 "id",

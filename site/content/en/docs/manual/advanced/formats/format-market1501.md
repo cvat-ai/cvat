@@ -1,15 +1,28 @@
 ---
+title: 'Market-1501'
 linkTitle: 'Market-1501'
 weight: 13
+description: 'How to export and import data in Market-1501 format'
 ---
 
-# [Market-1501](https://www.aitribune.com/dataset/2018051063)
+The Market-1501 dataset is widely used for person re-identification tasks.
+It is a challenging dataset that has gained significant attention
+in the computer vision community.
 
+For more information, see:
+
+- [Market-1501](https://www.aitribune.com/dataset/2018051063)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/market1501_dataset)
 
 ## Market-1501 export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes
+- Attributes: `query` (checkbox), `person_id` (number), `camera_id`(number).
+- Tracks: Not supported.
+
+Th downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -32,8 +45,6 @@ s1 - sequence
 000015 - frame number in sequence
 00 - means that this bounding box is the first one among the several
 ```
-
-- supported annotations: Label `market-1501` with attributes (`query`, `person_id`, `camera_id`)
 
 ## Market-1501 import
 

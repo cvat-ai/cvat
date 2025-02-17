@@ -1,15 +1,15 @@
-from distutils.util import strtobool
-import os
+# Copyright (C) 2021 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.apps import AppConfig
 
-from .utils import create_opa_bundle
 
 class IAMConfig(AppConfig):
-    name = 'cvat.apps.iam'
+    name = "cvat.apps.iam"
 
     def ready(self):
         from .signals import register_signals
-        register_signals(self)
 
-        if strtobool(os.environ.get("IAM_OPA_BUNDLE", '0')):
-            create_opa_bundle()
+        register_signals(self)

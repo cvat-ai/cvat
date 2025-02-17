@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,25 +9,6 @@ import cv2
 import torch
 from networks.mainnetwork import Network
 from dataloaders import helpers
-
-def convert_mask_to_polygon(mask):
-    contours = None
-    if int(cv2.__version__.split('.')[0]) > 3:
-        contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[0]
-    else:
-        contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[1]
-
-    contours = max(contours, key=lambda arr: arr.size)
-    if contours.shape.count(1):
-        contours = np.squeeze(contours)
-    if contours.size < 3 * 2:
-        raise Exception('Less then three point have been detected. Can not build a polygon.')
-
-    polygon = []
-    for point in contours:
-        polygon.append([int(point[0]), int(point[1])])
-
-    return polygon
 
 class ModelHandler:
     def __init__(self):
@@ -117,6 +98,4 @@ class ModelHandler:
             y = int(crop_bbox[1])
             mask[y : y + crop_shape[1], x : x + crop_shape[0]] = pred
 
-            polygon = convert_mask_to_polygon(mask)
-
-            return mask, polygon
+            return mask

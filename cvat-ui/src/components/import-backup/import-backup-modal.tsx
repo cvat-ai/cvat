@@ -1,4 +1,5 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -138,42 +139,40 @@ function ImportBackupModal(): JSX.Element {
     );
 
     return (
-        <>
-            <Modal
-                title={(
-                    <Text strong>
-                        {`Create ${instanceType} from backup`}
-                    </Text>
-                )}
-                visible={modalVisible}
-                onCancel={closeModal}
-                onOk={() => form.submit()}
-                className='cvat-modal-import-backup'
+        <Modal
+            title={(
+                <Text strong>
+                    {`Create ${instanceType} from backup`}
+                </Text>
+            )}
+            open={modalVisible}
+            onCancel={closeModal}
+            onOk={() => form.submit()}
+            className='cvat-modal-import-backup'
+        >
+            <Form
+                name={`Create ${instanceType} from backup file`}
+                form={form}
+                onFinish={handleImport}
+                layout='vertical'
+                initialValues={initialValues}
             >
-                <Form
-                    name={`Create ${instanceType} from backup file`}
-                    form={form}
-                    onFinish={handleImport}
-                    layout='vertical'
-                    initialValues={initialValues}
-                >
-                    <SourceStorageField
-                        instanceId={null}
-                        storageDescription='Specify source storage with backup'
-                        locationValue={selectedSourceStorage.location}
-                        onChangeStorage={(value: StorageData) => setSelectedSourceStorage(new Storage(value))}
-                        onChangeLocationValue={(value: StorageLocation) => {
-                            setSelectedSourceStorage({
-                                location: value,
-                            });
-                        }}
+                <SourceStorageField
+                    instanceId={null}
+                    storageDescription='Specify source storage with backup'
+                    locationValue={selectedSourceStorage.location}
+                    onChangeStorage={(value: StorageData) => setSelectedSourceStorage(new Storage(value))}
+                    onChangeLocationValue={(value: StorageLocation) => {
+                        setSelectedSourceStorage({
+                            location: value,
+                        });
+                    }}
 
-                    />
-                    {selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
-                    {selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}
-                </Form>
-            </Modal>
-        </>
+                />
+                {selectedSourceStorage?.location === StorageLocation.CLOUD_STORAGE && renderCustomName()}
+                {selectedSourceStorage?.location === StorageLocation.LOCAL && uploadLocalFile()}
+            </Form>
+        </Modal>
     );
 }
 

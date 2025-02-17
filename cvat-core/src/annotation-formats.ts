@@ -1,14 +1,14 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { DimensionType } from 'enums';
+import { DimensionType } from './enums';
 import {
     SerializedAnnotationExporter,
     SerializedAnnotationFormats,
     SerializedAnnotationImporter,
-} from 'server-response-types';
+} from './server-response-types';
 
 export class Loader {
     public name: string;

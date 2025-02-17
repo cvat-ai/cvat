@@ -23,7 +23,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 For access from China, read [sources for users from China](#sources-for-users-from-china) section.
 
-## Ubuntu 18.04 (x86_64/amd64)
+## Ubuntu 22.04/20.04 (x86_64/amd64)
 
 - Open a terminal window. If you don't know how to open a terminal window on
   Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
@@ -49,8 +49,10 @@ For access from China, read [sources for users from China](#sources-for-users-fr
     docker-ce docker-ce-cli containerd.io docker-compose-plugin
   ```
 
-- Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
-  to run docker without root permissions.
+- (Optional) To avoid prefacing Docker commands with `sudo`,
+  you can perform the [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/).
+  This involves creating a Unix group named `docker` and
+  adding your current user to this group.
 
   ```shell
   sudo groupadd docker
@@ -62,11 +64,12 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   that and check if `docker` group is in its output.
 
 - Clone _CVAT_ source code from the
-  [GitHub repository](https://github.com/opencv/cvat) with Git.
+  [GitHub repository](https://github.com/cvat-ai/cvat) with Git.
 
   Following command will clone the latest develop branch:
+
   ```shell
-  git clone https://github.com/opencv/cvat
+  git clone https://github.com/cvat-ai/cvat
   cd cvat
   ```
 
@@ -76,11 +79,11 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
 
   ```shell
-  export CVAT_HOST=your-ip-address
+  export CVAT_HOST=FQDN_or_YOUR-IP-ADDRESS
   ```
 
 - Run docker containers. It will take some time to download the latest CVAT
-  release and other required images like postgres, redis, etc. from DockerHub and create containers.
+  and other required images like postgres, redis, and start containers.
 
   ```shell
   docker compose up -d
@@ -90,6 +93,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   install specific version (e.g `v2.1.0`, `dev`).
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
+
   ```shell
   CVAT_VERSION=dev docker compose up -d
   ```
@@ -98,7 +102,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
 - You can register a user but by default, it will not have rights even to view
-  the list of tasks. Thus you should create a superuser. A superuser can use an
+  the list of tasks. Thus you should create a superuser. The superuser can use an
   admin panel to assign the correct groups to the user. Please use the command
   below:
 
@@ -122,7 +126,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT manual](/docs/manual/) for more details.
+  {{< ilink "/docs/manual" "CVAT manual" >}} for more details.
 
 ## Windows 10
 
@@ -137,7 +141,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   for Docker.
 
 - In Docker Desktop, go to `Settings >> Resources >> WSL Integration`, and
-enable integration with the Linux Distribution that you chose.
+  enable integration with the Linux Distribution that you chose.
 
 - Download and install
   [Git for Windows](https://github.com/git-for-windows/git/releases/download/v2.21.0.windows.1/Git-2.21.0-64-bit.exe).
@@ -150,11 +154,12 @@ enable integration with the Linux Distribution that you chose.
 - Go to windows menu, find the Linux distribution you installed and run it. You should see a terminal window.
 
 - Clone _CVAT_ source code from the
-  [GitHub repository](https://github.com/opencv/cvat).
+  [GitHub repository](https://github.com/cvat-ai/cvat).
 
   The following command will clone the latest develop branch:
+
   ```shell
-  git clone https://github.com/opencv/cvat
+  git clone https://github.com/cvat-ai/cvat
   cd cvat
   ```
 
@@ -172,6 +177,7 @@ enable integration with the Linux Distribution that you chose.
   install specific version (e.g `v2.1.0`, `dev`).
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
+
   ```shell
   CVAT_VERSION=dev docker compose up -d
   ```
@@ -203,7 +209,7 @@ enable integration with the Linux Distribution that you chose.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT manual](/docs/manual/) for more details.
+  {{< ilink "/docs/manual" "CVAT manual" >}} for more details.
 
 ## Mac OS Mojave
 
@@ -233,13 +239,15 @@ enable integration with the Linux Distribution that you chose.
   launch Spotlight and type "Terminal," then double-click the search result.
 
 - Clone _CVAT_ source code from the
-  [GitHub repository](https://github.com/opencv/cvat) with Git.
+  [GitHub repository](https://github.com/cvat-ai/cvat) with Git.
 
   The following command will clone the latest develop branch:
+
   ```shell
-  git clone https://github.com/opencv/cvat
+  git clone https://github.com/cvat-ai/cvat
   cd cvat
   ```
+
   See [alternatives](#how-to-get-cvat-source-code) if you want to download one of the release
   versions or use the `wget` or `curl` tools.
 
@@ -254,6 +262,7 @@ enable integration with the Linux Distribution that you chose.
   install specific version (e.g `v2.1.0`, `dev`).
   Default behavior: `dev` images will be pulled for develop branch,
   and corresponding release images for release versions.
+
   ```shell
   CVAT_VERSION=dev docker compose up -d
   ```
@@ -276,7 +285,7 @@ enable integration with the Linux Distribution that you chose.
 - Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
   Type your login/password for the superuser on the login page and press the _Login_
   button. Now you should be able to create a new annotation task. Please read the
-  [CVAT manual](/docs/manual/) for more details.
+  {{< ilink "/docs/manual" "CVAT manual" >}} for more details.
 
 ## Advanced Topics
 
@@ -285,41 +294,47 @@ enable integration with the Linux Distribution that you chose.
 #### Git (Linux, Mac, Windows)
 
 1. Install Git on your system if it's not already installed
+
    - Ubuntu:
+
    ```shell
    sudo apt-get --no-install-recommends install -y git
    ```
 
    - Windows:
-   Follow instructions from [https://git-scm.com/download/win](https://git-scm.com/download/win)
+     Follow instructions from [https://git-scm.com/download/win](https://git-scm.com/download/win)
 
 2. Clone _CVAT_ source code from the
-   [GitHub repository](https://github.com/opencv/cvat).
+   [GitHub repository](https://github.com/cvat-ai/cvat).
 
    The command below will clone the default branch (develop):
+
    ```shell
-   git clone https://github.com/opencv/cvat
+   git clone https://github.com/cvat-ai/cvat
    cd cvat
    ```
 
    To clone specific tag, e.g. v2.1.0:
+
    ```shell
-   git clone -b v2.1.0 https://github.com/opencv/cvat
+   git clone -b v2.1.0 https://github.com/cvat-ai/cvat
    cd cvat
    ```
 
 #### Wget (Linux, Mac)
 
 To download latest develop branch:
+
 ```shell
-wget https://github.com/opencv/cvat/archive/refs/heads/develop.zip
+wget https://github.com/cvat-ai/cvat/archive/refs/heads/develop.zip
 unzip develop.zip && mv cvat-develop cvat
 cd cvat
 ```
 
 To download specific tag:
+
 ```shell
-wget https://github.com/opencv/cvat/archive/refs/tags/v1.7.0.zip
+wget https://github.com/cvat-ai/cvat/archive/refs/tags/v1.7.0.zip
 unzip v1.7.0.zip && mv cvat-1.7.0 cvat
 cd cvat
 ```
@@ -327,25 +342,31 @@ cd cvat
 #### Curl (Linux, Mac)
 
 To download the latest develop branch:
+
 ```shell
-curl -LO https://github.com/opencv/cvat/archive/refs/heads/develop.zip
+curl -LO https://github.com/cvat-ai/cvat/archive/refs/heads/develop.zip
 unzip develop.zip && mv cvat-develop cvat
 cd cvat
 ```
 
 To download specific tag:
+
 ```shell
-curl -LO https://github.com/opencv/cvat/archive/refs/tags/v1.7.0.zip
+curl -LO https://github.com/cvat-ai/cvat/archive/refs/tags/v1.7.0.zip
 unzip v1.7.0.zip && mv cvat-1.7.0 cvat
 cd cvat
 ```
 
 ### CVAT healthcheck command
+
 The following command allows testing the CVAT container to make sure it works.
+
 ```shell
 docker exec -t cvat_server python manage.py health_check
 ```
+
 The expected output of a healthy CVAT container:
+
 ```shell
 Cache backend: default   ... working
 DatabaseBackend          ... working
@@ -399,6 +420,7 @@ services:
 ```
 
 and if you are using `docker-compose.https.yml`, also uncomment these lines
+
 ```yml
 services:
   traefik:
@@ -416,7 +438,7 @@ if you want to keep the dashboard in production you should read Traefik's
 
 #### Semi-automatic and automatic annotation
 
-Please follow this [guide](/docs/administration/advanced/installation_automatic_annotation/).
+Please follow this {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "guide" >}}.
 
 ### Stop all containers
 
@@ -438,7 +460,7 @@ export CVAT_HOST=<YOUR_DOMAIN>
 ### Share path
 
 You can use shared storage for uploading data when you create a task.
-To do that, you must mount the shared storage to the CVAT docker container. Example of
+To do that, you need to mount the shared storage to the CVAT docker container. Example of
 docker-compose.override.yml for this purpose:
 
 ```yml
@@ -455,6 +477,9 @@ services:
   cvat_worker_annotation:
     volumes:
       - cvat_share:/home/django/share:ro
+  cvat_worker_chunks:
+    volumes:
+      - cvat_share:/home/django/share:ro
 
 volumes:
   cvat_share:
@@ -466,7 +491,7 @@ volumes:
 
 You can change the share device path to your actual share.
 
-You can [mount](/docs/administration/advanced/mounting_cloud_storages/)
+You can {{< ilink "/docs/administration/advanced/mounting_cloud_storages" "mount" >}}
 your cloud storage as a FUSE and use it later as a share.
 
 ### Email verification
@@ -521,10 +546,35 @@ docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
+### Deploy CVAT with an external database
+
+By default, `docker compose up` will start a PostgreSQL database server,
+which will be used to store CVAT's data.
+If you'd like to use your own PostgreSQL instance instead, you can do so as follows.
+Note that CVAT only supports the same major version of PostgreSQL
+as is used in `docker-compose.yml`.
+
+First, define environment variables with database connection settings:
+
+```shell
+export CVAT_POSTGRES_HOST=<PostgreSQL hostname> # mandatory
+export CVAT_POSTGRES_PORT=<PostgreSQL port> # defaults to 5432
+export CVAT_POSTGRES_DBNAME=<PostgreSQL database name> # defaults to "cvat"
+export CVAT_POSTGRES_USER=<PostgreSQL role name> # defaults to "root"
+export CVAT_POSTGRES_PASSWORD=<PostgreSQL role password> # mandatory
+```
+
+Then, add the `docker-compose.external_db.yml` file to your `docker compose up` command:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.external_db.yml up -d
+```
+
 ### How to pull/build/update CVAT images
 
 - **For a CVAT version lower or equal to 2.1.0**, you need to pull images using docker because
   the compose configuration always points to the latest image tag, e.g.
+
   ```shell
   docker pull cvat/server:v1.7.0
   docker tag cvat/server:v1.7.0 openvino/cvat_server:latest
@@ -532,9 +582,11 @@ Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) an
   docker pull cvat/ui:v1.7.0
   docker tag cvat/ui:v1.7.0 openvino/cvat_ui:latest
   ```
+
   **For CVAT version more than v2.1.0** it's possible to pull specific version of
   prebuilt images from DockerHub using `CVAT_VERSION` environment variable to specify
   the version (e.g. `dev`):
+
   ```shell
   CVAT_VERSION=dev docker compose pull
   ```
@@ -564,13 +616,16 @@ If you stay in China, for installation you need to override the following source
   [Ubuntu mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
 
   Pre-compiled packages:
+
   ```shell
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
   ```
+
   Or source packages:
+
   ```shell
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
@@ -581,21 +636,22 @@ If you stay in China, for installation you need to override the following source
 - [Docker mirror station](https://www.daocloud.io/mirror)
 
   Add registry mirrors into `daemon.json` file:
+
   ```json
   {
-      "registry-mirrors": [
-          "http://f1361db2.m.daocloud.io",
-          "https://docker.mirrors.ustc.edu.cn",
-          "https://hub-mirror.c.163.com",
-          "https://https://mirror.ccs.tencentyun.com",
-          "https://mirror.ccs.tencentyun.com",
-      ]
+    "registry-mirrors": [
+      "http://f1361db2.m.daocloud.io",
+      "https://docker.mirrors.ustc.edu.cn",
+      "https://hub-mirror.c.163.com",
+      "https://mirror.ccs.tencentyun.com"
+    ]
   }
   ```
 
 - For using `pip`:
 
   [PyPI mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/pypi/)
+
   ```shell
   pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
   ```
@@ -603,6 +659,7 @@ If you stay in China, for installation you need to override the following source
 - For using `npm`:
 
   [npm mirroring help](https://npmmirror.com/)
+
   ```shell
   npm config set registry https://registry.npm.taobao.org/
   ```
@@ -612,6 +669,7 @@ If you stay in China, for installation you need to override the following source
   [CVAT repository on gitee.com](https://gitee.com/monkeycc/cvat)
 
 - For replace acceleration source `docker.com` run:
+
   ```shell
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository \
@@ -636,6 +694,7 @@ docker logs traefik
 The logs will help you find out the problem.
 
 If the error is related to a firewall, then:
+
 - Open ports 80 and 443 for inbound connections from any.
 - Delete `acme.json`.
   The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`.

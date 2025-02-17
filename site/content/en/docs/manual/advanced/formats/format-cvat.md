@@ -1,27 +1,32 @@
 ---
-linkTitle: "CVAT"
+title: 'CVAT for image'
+linkTitle: 'CVAT for image'
 weight: 1
+description: 'How to export and import data in CVAT for image format'
 ---
 
-# CVAT
+This is CVAT's native annotation format,
+which fully supports all of CVAT's annotation features.
+It is ideal for creating data backups.
 
-- [Format specification](/docs/manual/advanced/xml_format/)
+For more information, see:
+
+- {{< ilink "/docs/manual/advanced/xml_format" "Format specification" >}}
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cvat_dataset)
 
-This is the native CVAT annotation format. It supports all CVAT annotations
-features, so it can be used to make data backups.
+## CVAT for image export
 
-- supported annotations CVAT for Images: Rectangles, Polygons, Polylines,
-  Points, Cuboids, Skeletons, Tags, Tracks
+ Applicable for all computer vision tasks in
+ 2D except for Video Tracking.
 
-- supported annotations CVAT for Videos: Rectangles, Polygons, Polylines,
-  Points, Cuboids, Skeletons, Tracks
+For export of images:
 
-- attributes are supported
+- Supported annotations: Bounding Boxes, Polygons, Polylines,
+  Points, Cuboids, Ellipses, Skeletons, Tags, Masks.
+- Attributes: Supported.
+- Tracks: Can be exported, but track id will be lost.
 
-## CVAT for images export
-
-Downloaded file: a ZIP file of the following structure:
+The downloaded file is a zip archive with following structure:
 
 ```bash
 taskname.zip/
@@ -31,11 +36,20 @@ taskname.zip/
 └── annotations.xml
 ```
 
-- tracks are split by frames
+## CVAT for video export
 
-## CVAT for videos export
+Applicable for all computer vision tasks
+in 2D except for Classification
 
-Downloaded file: a ZIP file of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes, Polygons, Polylines,
+  Points, Cuboids, Ellipses, Skeletons,Masks.
+- Attributes: Supported.
+- Tracks: Supported (tracks are split by frames).
+- Shapes are exported as single-frame tracks
+
+Downloaded file is a zip archive with following structure:
 
 ```bash
 taskname.zip/
@@ -45,8 +59,7 @@ taskname.zip/
 └── annotations.xml
 ```
 
-- shapes are exported as single-frame tracks
-
 ## CVAT loader
 
-Uploaded file: an XML file or a ZIP file of the structures above
+Uploaded file: either an XML file or a
+.zip file containing the aforementioned structures.

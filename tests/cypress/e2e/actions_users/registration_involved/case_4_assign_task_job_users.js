@@ -115,7 +115,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
-            cy.assignJobToUser(0, secondUserName);
+            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, secondUserName));
             cy.openJob();
             // Getting the task and job id
             cy.url().then((url) => {
@@ -129,11 +129,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
-            cy.assignJobToUser(0, null);
+            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, null));
             cy.logout();
         });
 
-        it('Third user login. The task not exist. Logout', () => {
+        it('Third user login. The task does not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('not.exist');
             cy.logout();
@@ -142,11 +142,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.assignJobToUser(0, thirdUserName);
+            cy.getJobIDFromIdx(0).then((_jobID) => cy.assignJobToUser(_jobID, thirdUserName));
             cy.logout();
         });
 
-        it('The third user can open a job by a direct link.', () => {
+        it('The third user can not open the task, but can open the job by a direct link.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.get('.cvat-item-task-name').should('not.exist');
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);

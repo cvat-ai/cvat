@@ -1,41 +1,12 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import {
+    SerializedAnalyticsEntry, SerializedAnalyticsReport,
+    SerializedDataEntry, SerializedTransformationEntry,
+} from './server-response-types';
 import { ArgumentError } from './exceptions';
-
-export interface SerializedDataEntry {
-    date?: string;
-    value?: number | Record<string, number>
-}
-
-export interface SerializedTransformBinaryOp {
-    left: string;
-    operator: string;
-    right: string;
-}
-
-export interface SerializedTransformationEntry {
-    name: string;
-    binary?: SerializedTransformBinaryOp;
-}
-
-export interface SerializedAnalyticsEntry {
-    name?: string;
-    title?: string;
-    description?: string;
-    granularity?: string;
-    default_view?: string;
-    data_series?: Record<string, SerializedDataEntry[]>;
-    transformations?: SerializedTransformationEntry[];
-}
-
-export interface SerializedAnalyticsReport {
-    id?: number;
-    target?: string;
-    created_date?: string;
-    statistics?: SerializedAnalyticsEntry[];
-}
 
 export enum AnalyticsReportTarget {
     JOB = 'job',
@@ -156,7 +127,7 @@ export default class AnalyticsReport {
     #statistics: AnalyticsEntry[];
 
     constructor(initialData: SerializedAnalyticsReport) {
-        this.#id = initialData.id;
+        this.#id = initialData.job_id || initialData.task_id || initialData.project_id;
         this.#target = initialData.target as AnalyticsReportTarget;
         this.#createdDate = initialData.created_date;
         this.#statistics = [];

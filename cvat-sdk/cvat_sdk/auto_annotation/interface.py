@@ -1,23 +1,29 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Optional, Protocol
 
 import attrs
 import PIL.Image
 
 import cvat_sdk.models as models
 
+from .exceptions import BadFunctionError
+
 
 @attrs.frozen(kw_only=True)
 class DetectionFunctionSpec:
     """
     Static information about an auto-annotation detection function.
+
+    Objects of this class should be treated as immutable;
+    do not modify them or any nested objects after they are created.
     """
 
-    labels: Sequence[models.PatchedLabelRequest]
+    labels: Sequence[models.PatchedLabelRequest] = attrs.field()
     """
     Information about labels that the function supports.
 
@@ -31,10 +37,55 @@ class DetectionFunctionSpec:
 
     * There must not be any attributes (attribute support may be added in a future version).
 
+    `BadFunctionError` will be raised if any constraint violations are detected.
+
     It's recommented to use the helper factory functions (label_spec, skeleton_label_spec,
     keypoint_spec) to create the label objects, as they are more concise than the model
     constructors and help to follow some of the constraints.
     """
+
+    @staticmethod
+    def _validate_label_spec(label: models.PatchedLabelRequest) -> None:
+        if getattr(label, "attributes", None):
+            raise BadFunctionError(f"label attributes are currently not supported")
+
+        if getattr(label, "sublabels", []):
+            label_type = getattr(label, "type", "any")
+            if label_type != "skeleton":
+                raise BadFunctionError(
+                    f"label {label.name!r} with sublabels has type {label_type!r} (should be 'skeleton')"
+                )
+
+            seen_sl_ids = set()
+
+            for sl in label.sublabels:
+                if not hasattr(sl, "id"):
+                    raise BadFunctionError(
+                        f"sublabel {sl.name!r} of label {label.name!r} has no ID"
+                    )
+
+                if sl.id in seen_sl_ids:
+                    raise BadFunctionError(
+                        f"sublabel {sl.name!r} of label {label.name!r} has same ID as another sublabel ({sl.id})"
+                    )
+
+                seen_sl_ids.add(sl.id)
+
+    @labels.validator
+    def _validate_labels(self, attribute, value: Sequence[models.PatchedLabelRequest]) -> None:
+        seen_label_ids = set()
+
+        for label in value:
+            if not hasattr(label, "id"):
+                raise BadFunctionError(f"label {label.name!r} has no ID")
+
+            if label.id in seen_label_ids:
+                raise BadFunctionError(
+                    f"label {label.name} has same ID as another label ({label.id})"
+                )
+            seen_label_ids.add(label.id)
+
+            self._validate_label_spec(label)
 
 
 class DetectionFunctionContext(metaclass=abc.ABCMeta):
@@ -49,7 +100,33 @@ class DetectionFunctionContext(metaclass=abc.ABCMeta):
         The file name of the frame that the current image corresponds to in
         the dataset.
         """
-        ...
+
+    @property
+    @abc.abstractmethod
+    def conf_threshold(self) -> Optional[float]:
+        """
+        The confidence threshold that the function should use for filtering
+        detections.
+
+        If the function is able to estimate confidence levels, then:
+
+        * If this value is None, the function may apply a default threshold at its discretion.
+
+        * Otherwise, it will be a number between 0 and 1. The function must only return
+          objects with confidence levels greater than or equal to this value.
+
+        If the function is not able to estimate confidence levels, it can ignore this value.
+        """
+
+    @property
+    @abc.abstractmethod
+    def conv_mask_to_poly(self) -> bool:
+        """
+        If this is true, the function must convert any mask shapes to polygon shapes
+        before returning them.
+
+        If the function does not return any mask shapes, then it can ignore this value.
+        """
 
 
 class DetectionFunction(Protocol):
@@ -79,7 +156,7 @@ class DetectionFunction(Protocol):
 
     def detect(
         self, context: DetectionFunctionContext, image: PIL.Image.Image
-    ) -> List[models.LabeledShapeRequest]:
+    ) -> list[models.LabeledShapeRequest]:
         """
         Detects objects on the supplied image and returns the results.
 
@@ -129,7 +206,7 @@ def skeleton_label_spec(
     name: str, id: int, sublabels: Sequence[models.SublabelRequest], **kwargs
 ) -> models.PatchedLabelRequest:
     """Helper factory function for PatchedLabelRequest with type="skeleton"."""
-    return models.PatchedLabelRequest(name=name, id=id, type="skeleton", sublabels=sublabels)
+    return label_spec(name, id, type="skeleton", sublabels=sublabels, **kwargs)
 
 
 # pylint: disable-next=redefined-builtin
@@ -149,6 +226,21 @@ def shape(label_id: int, **kwargs) -> models.LabeledShapeRequest:
 def rectangle(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShapeRequest:
     """Helper factory function for LabeledShapeRequest with frame=0 and type="rectangle"."""
     return shape(label_id, type="rectangle", points=points, **kwargs)
+
+
+def polygon(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShapeRequest:
+    """Helper factory function for LabeledShapeRequest with frame=0 and type="polygon"."""
+    return shape(label_id, type="polygon", points=points, **kwargs)
+
+
+def mask(label_id: int, points: Sequence[float], **kwargs) -> models.LabeledShapeRequest:
+    """
+    Helper factory function for LabeledShapeRequest with frame=0 and type="mask".
+
+    It's recommended to use the cvat_sdk.masks.encode_mask function to build the
+    points argument.
+    """
+    return shape(label_id, type="mask", points=points, **kwargs)
 
 
 def skeleton(

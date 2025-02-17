@@ -1,32 +1,29 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { omit } from 'lodash';
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-import { getCore } from 'cvat-core-wrapper';
+import { getInstanceType, RequestInstanceType } from 'actions/requests-actions';
+import { ProjectOrTaskOrJob } from 'cvat-core-wrapper';
 import { ImportState } from '.';
-
-const core = getCore();
 
 const defaultProgress = 0.0;
 
-export function defineActititiesField(instance: any): 'projects' | 'tasks' | 'jobs' {
-    if (instance instanceof core.classes.Project) {
-        return 'projects';
-    }
-    if (instance instanceof core.classes.Task) {
-        return 'tasks';
-    }
-    return 'jobs';
+export function defineActititiesField(instance: ProjectOrTaskOrJob | RequestInstanceType): 'projects' | 'tasks' | 'jobs' {
+    return `${getInstanceType(instance)}s`;
 }
 
 const defaultState: ImportState = {
     projects: {
         dataset: {
             modalInstance: null,
-            current: {},
+            uploadState: {
+                id: null,
+                format: '',
+                progress: 0,
+                status: '',
+            },
         },
         backup: {
             modalVisible: false,
@@ -36,7 +33,6 @@ const defaultState: ImportState = {
     tasks: {
         dataset: {
             modalInstance: null,
-            current: {},
         },
         backup: {
             modalVisible: false,
@@ -46,7 +42,6 @@ const defaultState: ImportState = {
     jobs: {
         dataset: {
             modalInstance: null,
-            current: {},
         },
     },
     instanceType: null,
@@ -93,69 +88,54 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
             const activitiesField = defineActititiesField(instance);
 
             let updatedActivity: {
+                id: number;
                 format: string;
                 status?: string;
                 progress?: number;
-            } = { format };
+            } = { format, id: instance.id };
             if (activitiesField === 'projects') {
                 updatedActivity = {
                     ...updatedActivity,
                     status: 'The file is being uploaded to the server',
                     progress: defaultProgress,
                 };
-            }
-            return {
-                ...state,
-                [activitiesField]: {
-                    ...state[activitiesField],
-                    dataset: {
-                        ...state[activitiesField].dataset,
-                        current: {
-                            ...state[activitiesField].dataset.current,
-                            [instance.id]: updatedActivity,
+                return {
+                    ...state,
+                    [activitiesField]: {
+                        ...state[activitiesField],
+                        dataset: {
+                            ...state[activitiesField].dataset,
+                            uploadState: {
+                                ...state[activitiesField].dataset.uploadState,
+                                ...updatedActivity,
+                            },
                         },
                     },
-                },
-            };
+                };
+            }
+            return state;
         }
         case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
             const { progress, status, instance } = action.payload;
 
             const activitiesField = defineActititiesField(instance);
-            return {
-                ...state,
-                [activitiesField]: {
-                    ...state[activitiesField],
-                    dataset: {
-                        ...state[activitiesField].dataset,
-                        current: {
-                            ...state[activitiesField].dataset.current,
-                            [instance.id]: {
-                                ...state[activitiesField].dataset.current[instance.id] as Record<string, unknown>,
+            if (activitiesField === 'projects') {
+                return {
+                    ...state,
+                    [activitiesField]: {
+                        ...state[activitiesField],
+                        dataset: {
+                            ...state[activitiesField].dataset,
+                            uploadState: {
+                                ...state[activitiesField].dataset.uploadState,
                                 progress,
                                 status,
                             },
                         },
                     },
-                },
-            };
-        }
-        case ImportActionTypes.IMPORT_DATASET_FAILED:
-        case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
-            const { instance } = action.payload;
-            const activitiesField = defineActititiesField(instance);
-            const { current } = state[activitiesField].dataset;
-
-            return {
-                ...state,
-                [activitiesField]: {
-                    ...state[activitiesField],
-                    dataset: {
-                        ...state[activitiesField].dataset,
-                        current: omit(current, instance.id),
-                    },
-                },
-            };
+                };
+            }
+            return state;
         }
         case ImportActionTypes.OPEN_IMPORT_BACKUP_MODAL: {
             const { instanceType } = action.payload;

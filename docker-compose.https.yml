@@ -14,22 +14,14 @@ services:
       - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
 
   traefik:
-    image: traefik:v2.9
-    container_name: traefik
-    command:
-      - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=cvat"
-      - '--providers.file.directory=/etc/traefik/rules'
-      - "--entryPoints.web.address=:80"
-      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entryPoints.websecure.address=:443"
-      - "--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
-      - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
-      - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
-      # Uncomment to get Traefik dashboard
-      # - "--entryPoints.dashboard.address=:8090"
-      # - "--api.dashboard=true"
+    environment:
+      TRAEFIK_ENTRYPOINTS_web_ADDRESS: :80
+      TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
+      TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: https
+      TRAEFIK_ENTRYPOINTS_websecure_ADDRESS: :443
+      TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_EMAIL: "${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
+      TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_TLSCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_STORAGE: /letsencrypt/acme.json
     ports:
       - 80:80
       - 443:443

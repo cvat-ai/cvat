@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,12 +13,13 @@ import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
+import ColorPicker from './color-picker';
 
 interface Props {
     jobInstance: any;
     readonly: boolean;
     clientID: number;
-    serverID: number | undefined;
+    serverID: number | null;
     labelID: number;
     labels: any[];
     shapeType: ShapeType;
@@ -35,6 +36,8 @@ interface Props {
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
     removeShortcut: string;
+    sliceShortcut: string;
+    runAnnotationsActionShortcut: string;
     changeColor(color: string): void;
     changeLabel(label: any): void;
     copy(): void;
@@ -45,7 +48,9 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
+    runAnnotationAction(): void;
     edit(): void;
+    slice(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -68,6 +73,8 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackgroundShortcut,
         toForegroundShortcut,
         removeShortcut,
+        sliceShortcut,
+        runAnnotationsActionShortcut,
         isGroundTruth,
         changeColor,
         changeLabel,
@@ -79,24 +86,13 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
+        runAnnotationAction,
         edit,
+        slice,
         jobInstance,
     } = props;
 
-    const [menuVisible, setMenuVisible] = useState(false);
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
-
-    const changeMenuVisible = (visible: boolean): void => {
-        if (!visible && colorPickerVisible) return;
-        setMenuVisible(visible);
-    };
-
-    const changeColorPickerVisible = (visible: boolean): void => {
-        if (!visible) {
-            setMenuVisible(false);
-        }
-        setColorPickerVisible(visible);
-    };
 
     return (
         <Row align='middle'>
@@ -125,12 +121,26 @@ function ItemTopComponent(props: Props): JSX.Element {
                 </CVATTooltip>
             </Col>
             { !isGroundTruth && (
-                <Col span={2}>
+                colorPickerVisible ? (
+                    <ColorPicker
+                        visible
+                        value={color}
+                        onVisibleChange={setColorPickerVisible}
+                        onChange={(_color: string) => {
+                            changeColor(_color);
+                        }}
+                    >
+                        <Col span={2}>
+                            <MoreOutlined />
+                        </Col>
+                    </ColorPicker>
+                ) : (
                     <Dropdown
-                        visible={menuVisible}
-                        onVisibleChange={changeMenuVisible}
+                        destroyPopupOnHide
                         placement='bottomLeft'
-                        overlay={ItemMenu({
+                        trigger={['click']}
+                        className='cvat-object-item-menu-button'
+                        menu={ItemMenu({
                             jobInstance,
                             readonly,
                             serverID,
@@ -147,6 +157,8 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toBackgroundShortcut,
                             toForegroundShortcut,
                             removeShortcut,
+                            sliceShortcut,
+                            runAnnotationsActionShortcut,
                             changeColor,
                             copy,
                             remove,
@@ -156,13 +168,17 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toBackground,
                             toForeground,
                             resetCuboidPerspective,
-                            changeColorPickerVisible,
+                            setColorPickerVisible,
                             edit,
+                            slice,
+                            runAnnotationAction,
                         })}
                     >
-                        <MoreOutlined />
+                        <Col span={2}>
+                            <MoreOutlined />
+                        </Col>
                     </Dropdown>
-                </Col>
+                )
             )}
         </Row>
     );

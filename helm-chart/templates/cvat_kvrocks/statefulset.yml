@@ -1,0 +1,126 @@
+{{- if .Values.cvat.kvrocks.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-kvrocks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: kvrocks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      app: cvat-app
+      tier: kvrocks
+  serviceName: {{ .Release.Name }}-kvrocks
+  template:
+    metadata:
+      labels:
+        {{- include "cvat.labels" . | nindent 8 }}
+        app: cvat-app
+        tier: kvrocks
+        {{- with .Values.cvat.kvrocks.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.cvat.kvrocks.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: cvat-kvrocks-app-container
+          image: {{ .Values.cvat.kvrocks.image }}:{{ .Values.cvat.kvrocks.tag }}
+          imagePullPolicy: {{ .Values.cvat.kvrocks.imagePullPolicy }}
+          args:
+            - --dir
+            - /var/lib/kvrocks/data
+            - --requirepass
+            - "$(CVAT_REDIS_ONDISK_PASSWORD)"
+          {{- with .Values.cvat.kvrocks.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: kvrocks
+            containerPort: 6666
+          env:
+          - name: CVAT_REDIS_ONDISK_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                {{- if .Values.cvat.kvrocks.secret.create }}
+                name: "{{ tpl (.Values.cvat.kvrocks.secret.name) . }}"
+                {{- else }}
+                name: "{{ tpl (.Values.cvat.kvrocks.existingSecret) . }}"
+                {{- end }}
+                key: password
+          {{- with .Values.cvat.kvrocks.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          #https://github.com/apache/kvrocks/blob/unstable/Dockerfile
+          {{- if .Values.cvat.kvrocks.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)'
+            {{- toYaml (omit .Values.cvat.kvrocks.readinessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          {{- if .Values.cvat.kvrocks.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)'
+            {{- toYaml (omit .Values.cvat.kvrocks.livenessProbe "enabled") | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          - name: {{ .Release.Name }}-kvrocks-data
+            mountPath: /var/lib/kvrocks/data
+          {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- with .Values.cvat.kvrocks.additionalVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.kvrocks.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.kvrocks.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Release.Name }}-kvrocks-data
+      namespace: {{ .Release.Namespace }}
+      labels:
+        {{- include "cvat.labels" . | nindent 8 }}
+        app: cvat-app
+        tier: kvroocks
+    spec:
+      accessModes:
+      {{- if .Values.cvat.kvrocks.defaultStorage.accessModes }}
+      {{ .Values.cvat.kvrocks.defaultStorage.accessModes | toYaml | nindent 6 }}
+      {{- else }}
+      - ReadWriteOnce
+      {{- end }}
+      {{-  if .Values.cvat.kvrocks.defaultStorage.storageClassName }}
+      storageClassName: {{ .Values.cvat.kvrocks.defaultStorage.storageClassName }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.cvat.kvrocks.defaultStorage.size }}
+  {{- end}}
+{{- end }}

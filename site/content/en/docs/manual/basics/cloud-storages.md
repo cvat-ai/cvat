@@ -49,7 +49,7 @@ For clear all filters press `Clear filters`.
 | `Owner`        | username                                     | The user who owns the project, task, or job |
 | `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
 
-Click the `+` button to [attach a new cloud storage](/docs/manual/basics/attach-cloud-storage/).
+Click the `+` button to {{< ilink "/docs/manual/basics/attach-cloud-storage" "attach a new cloud storage" >}}.
 
 [create-filter]: /docs/manual/advanced/filter/#create-a-filter
 [operators]: /docs/manual/advanced/filter/#supported-operators-for-properties

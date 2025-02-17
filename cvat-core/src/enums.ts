@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier = MIT
 
@@ -37,6 +37,7 @@ export enum JobState {
 export enum JobType {
     ANNOTATION = 'annotation',
     GROUND_TRUTH = 'ground_truth',
+    CONSENSUS_REPLICA = 'consensus_replica',
 }
 
 export enum DimensionType {
@@ -87,17 +88,16 @@ export enum Source {
     SEMI_AUTO = 'semi-auto',
     AUTO = 'auto',
     FILE = 'file',
+    GT = 'Ground truth',
 }
 
-export enum LogType {
+export enum EventScope {
     loadTool = 'load:cvat',
 
     loadJob = 'load:job',
+    loadWorkspace = 'load:workspace',
     saveJob = 'save:job',
-    restoreJob = 'restore:job',
-    uploadAnnotations = 'upload:annotations',
     exception = 'send:exception',
-    sendTaskInfo = 'send:task_info',
 
     drawObject = 'draw:object',
     pasteObject = 'paste:object',
@@ -106,13 +106,13 @@ export enum LogType {
     dragObject = 'drag:object',
     resizeObject = 'resize:object',
     deleteObject = 'delete:object',
-    lockObject = 'lock:object',
     mergeObjects = 'merge:objects',
-    changeAttribute = 'change:attribute',
-    changeLabel = 'change:label',
+    splitObjects = 'split:objects',
+    groupObjects = 'group:objects',
+    sliceObject = 'slice:object',
+    joinObjects = 'join:objects',
 
     changeFrame = 'change:frame',
-    moveImage = 'move:image',
     zoomImage = 'zoom:image',
     fitImage = 'fit:image',
     rotateImage = 'rotate:image',
@@ -120,9 +120,9 @@ export enum LogType {
     undoAction = 'action:undo',
     redoAction = 'action:redo',
 
-    pressShortcut = 'press:shortcut',
-    debugInfo = 'send:debug_info',
+    debugInfo = 'debug:info',
 
+    annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
 }
 
@@ -141,31 +141,26 @@ export enum HistoryActions {
     CHANGED_HIDDEN = 'Changed hidden',
     CHANGED_SOURCE = 'Changed source',
     MERGED_OBJECTS = 'Merged objects',
+    JOINED_OBJECTS = 'Joined objects',
+    SLICED_OBJECT = 'Sliced object',
     SPLITTED_TRACK = 'Splitted track',
     GROUPED_OBJECTS = 'Grouped objects',
     CREATED_OBJECTS = 'Created objects',
     REMOVED_OBJECT = 'Removed object',
     REMOVED_FRAME = 'Removed frame',
     RESTORED_FRAME = 'Restored frame',
+    COMMIT_ANNOTATIONS = 'Commit annotations',
 }
 
 export enum ModelKind {
     DETECTOR = 'detector',
     INTERACTOR = 'interactor',
     TRACKER = 'tracker',
-    CLASSIFIER = 'classifier',
     REID = 'reid',
 }
 
 export enum ModelProviders {
     CVAT = 'cvat',
-}
-
-export enum ModelReturnType {
-    RECTANGLE = 'rectangle',
-    TAG = 'tag',
-    POLYGON = 'polygon',
-    MASK = 'mask',
 }
 
 export const colors = [

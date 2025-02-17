@@ -1,0 +1,67 @@
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true # align tool behavior with Black
+extend_skip=[
+    # Correctly ordering the imports in serverless functions would
+    # require a pyproject.toml in every function; don't bother with it for now.
+    "serverless",
+    # Sorting the imports in this file causes test failures;
+    # TODO: fix them and remove this ignore.
+    "cvat/apps/dataset_manager/formats/registry.py",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+extend-exclude = """
+# TODO: get rid of these
+^/cvat/apps/(
+    dataset_manager/(
+        annotation.py
+        |apps.py
+        |bindings.py
+        |project.py
+        |serializers.py
+        |task.py
+        |tests/test_formats.py
+        |tests/test_rest_api_formats.py
+        |util.py
+        |views.py
+    )
+    |engine/(
+        admin.py
+        |apps.py
+        |backup.py
+        |cloud_provider.py
+        |filters.py
+        |handlers.py
+        |location.py
+        |log.py
+        |media_extractors.py
+        |middleware.py
+        |migrations/
+        |mime_types.py
+        |mixins.py
+        |models.py
+        |pagination.py
+        |parsers.py
+        |permissions.py
+        |plugins.py
+        |renderers.py
+        |rq_job_handler.py
+        |schema.py
+        |serializers.py
+        |signals.py
+        |task.py
+        |tests/
+        |urls.py
+        |utils.py
+        |view_utils.py
+        |views.py
+    )
+)
+| ^/cvat/settings/
+| ^/serverless/
+"""

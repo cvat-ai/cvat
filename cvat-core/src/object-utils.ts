@@ -1,10 +1,12 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { DataError, ArgumentError } from './exceptions';
 import { Attribute } from './labels';
-import { ShapeType, AttributeType } from './enums';
+import { ShapeType, AttributeType, ObjectType } from './enums';
+import { SerializedShape } from './server-response-types';
+import ObjectState, { SerializedData } from './object-state';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -32,14 +34,14 @@ export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): voi
             throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
         }
     } else if (shapeType === ShapeType.MASK) {
+        if (points.length < 6) {
+            throw new DataError('Mask must not be empty');
+        }
+
         const [left, top, right, bottom] = points.slice(-4);
         const [width, height] = [right - left, bottom - top];
         if (width < 0 || !Number.isInteger(width) || height < 0 || !Number.isInteger(height)) {
             throw new DataError(`Mask width, height must be positive integers, but got ${width}x${height}`);
-        }
-
-        if (points.length !== width * height + 4) {
-            throw new DataError(`Points array must have length ${width}x${height} + 4, got ${points.length}`);
         }
     } else {
         throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
@@ -58,52 +60,55 @@ export function findAngleDiff(rightAngle: number, leftAngle: number): number {
     angleDiff = ((angleDiff + 180) % 360) - 180;
     if (Math.abs(angleDiff) >= 180) {
         // if the main arc is bigger than 180, go another arc
-        // to find it, just substract absolute value from 360 and inverse sign
+        // to find it, just subtract absolute value from 360 and inverse sign
         angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
     }
     return angleDiff;
 }
 
 export function checkShapeArea(shapeType: ShapeType, points: number[]): boolean {
-    const MIN_SHAPE_LENGTH = 3;
-    const MIN_SHAPE_AREA = 9;
-    const MIN_MASK_SHAPE_AREA = 1;
+    const MIN_SHAPE_SIZE = 1;
 
     if (shapeType === ShapeType.POINTS) {
         return true;
     }
 
+    let width = 0;
+    let height = 0;
+
     if (shapeType === ShapeType.MASK) {
         const [left, top, right, bottom] = points.slice(-4);
-        const area = (right - left + 1) * (bottom - top + 1);
-        return area >= MIN_MASK_SHAPE_AREA;
-    }
-
-    if (shapeType === ShapeType.ELLIPSE) {
+        [width, height] = [right - left + 1, bottom - top + 1];
+    } else if (shapeType === ShapeType.RECTANGLE) {
+        const [xtl, ytl, xbr, ybr] = points;
+        [width, height] = [xbr - xtl, ybr - ytl];
+    } else if (shapeType === ShapeType.ELLIPSE) {
         const [cx, cy, rightX, topY] = points;
-        const [rx, ry] = [rightX - cx, cy - topY];
-        return rx * ry * Math.PI > MIN_SHAPE_AREA;
+        [width, height] = [(rightX - cx) * 2, (cy - topY) * 2];
+    } else {
+        // polygon, polyline, cuboid, skeleton
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            xmin = Math.min(xmin, points[i]);
+            xmax = Math.max(xmax, points[i]);
+            ymin = Math.min(ymin, points[i + 1]);
+            ymax = Math.max(ymax, points[i + 1]);
+        }
+
+        if ([ShapeType.POLYLINE, ShapeType.SKELETON, ShapeType.POLYGON].includes(shapeType)) {
+            // for polyshapes consider at least one dimension
+            // skeleton in corner cases may be a regular polyshape
+            return Math.max(xmax - xmin, ymax - ymin) >= MIN_SHAPE_SIZE;
+        }
+
+        [width, height] = [xmax - xmin, ymax - ymin];
     }
 
-    let xmin = Number.MAX_SAFE_INTEGER;
-    let xmax = Number.MIN_SAFE_INTEGER;
-    let ymin = Number.MAX_SAFE_INTEGER;
-    let ymax = Number.MIN_SAFE_INTEGER;
-
-    for (let i = 0; i < points.length - 1; i += 2) {
-        xmin = Math.min(xmin, points[i]);
-        xmax = Math.max(xmax, points[i]);
-        ymin = Math.min(ymin, points[i + 1]);
-        ymax = Math.max(ymax, points[i + 1]);
-    }
-
-    if (shapeType === ShapeType.POLYLINE) {
-        const length = Math.max(xmax - xmin, ymax - ymin);
-        return length >= MIN_SHAPE_LENGTH;
-    }
-
-    const area = (xmax - xmin) * (ymax - ymin);
-    return area >= MIN_SHAPE_AREA;
+    return width >= MIN_SHAPE_SIZE && height >= MIN_SHAPE_SIZE;
 }
 
 export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0): number[] {
@@ -176,61 +181,140 @@ export function validateAttributeValue(value: string, attr: Attribute): boolean 
     return values.includes(value);
 }
 
-export function truncateMask(points: number[], _: number, width: number, height: number): number[] {
-    const [currentLeft, currentTop, currentRight, currentBottom] = points.slice(-4);
+// Method computes correct mask wrapping bbox
+// Taking into account image size and removing leading/terminating zeros, minimizing the mask size
+function findMaskBorders(rle: number[], width: number, height: number): {
+    top: number,
+    left: number,
+    right: number,
+    bottom: number,
+} {
+    const [currentLeft, currentTop, currentRight, currentBottom] = rle.slice(-4);
     const [currentWidth, currentHeight] = [currentRight - currentLeft + 1, currentBottom - currentTop + 1];
+    const empty = {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    };
 
+    if (currentWidth < 0 || currentHeight < 0) {
+        return empty;
+    }
+
+    let x = 0; // mask-relative
+    let y = 0; // mask-relative
+    let value = 0;
+
+    // first let's find actual wrapping bounding box
+    // cutting leading/terminating zeros from the mask
     let left = width;
     let right = 0;
     let top = height;
     let bottom = 0;
     let atLeastOnePixel = false;
-    const truncatedPoints = [];
 
-    for (let y = 0; y < currentHeight; y++) {
-        const absY = y + currentTop;
-
-        for (let x = 0; x < currentWidth; x++) {
+    for (let idx = 0; idx < rle.length - 4; idx++) {
+        let count = rle[idx];
+        while (count) {
+            // get image-relative coordinates
+            const absY = y + currentTop;
             const absX = x + currentLeft;
-            const offset = y * currentWidth + x;
 
-            if (absX >= width || absY >= height || absX < 0 || absY < 0) {
-                points[offset] = 0;
+            if (!(absX >= width || absY >= height || absX < 0 || absY < 0) && value) {
+                if (value) {
+                    // update coordinates to fit them around non-zero values
+                    atLeastOnePixel = true;
+                    left = Math.min(left, absX);
+                    top = Math.min(top, absY);
+                    right = Math.max(right, absX);
+                    bottom = Math.max(bottom, absY);
+                }
             }
 
-            if (points[offset]) {
-                atLeastOnePixel = true;
-                left = Math.min(left, absX);
-                top = Math.min(top, absY);
-                right = Math.max(right, absX);
-                bottom = Math.max(bottom, absY);
+            // shift coordinates and count
+            x++;
+            if (x === currentWidth) {
+                y++;
+                x = 0;
             }
+            count--;
         }
+
+        // shift current rle value
+        value = Math.abs(value - 1);
     }
 
     if (!atLeastOnePixel) {
-        // if mask is empty, set its size as 0
-        left = 0;
-        top = 0;
+        return empty;
     }
 
-    // TODO: check corner case when right = left = 0
-    const [newWidth, newHeight] = [right - left + 1, bottom - top + 1];
-    for (let y = 0; y < newHeight; y++) {
-        for (let x = 0; x < newWidth; x++) {
-            const leftDiff = left - currentLeft;
-            const topDiff = top - currentTop;
-            const offset = (y + topDiff) * currentWidth + (x + leftDiff);
-            truncatedPoints.push(points[offset]);
+    return {
+        top, left, right, bottom,
+    };
+}
+
+// Method performs cropping of a mask in RLE format
+// It cuts mask parts that are out of the image width/height
+// Also it cuts leading/terminating zeros and minimizes mask wrapping bounding box
+export function cropMask(rle: number[], width: number, height: number): number[] {
+    const [currentLeft, currentTop, currentRight] = rle.slice(-4, -1);
+    const {
+        top, left, right, bottom,
+    } = findMaskBorders(rle, width, height);
+
+    if (top === bottom || left === right) {
+        return [0, 0, 0, 0];
+    }
+
+    const maskWidth = currentRight - currentLeft + 1;
+    const croppedRLE = [];
+
+    let x = 0; // mask-relative
+    let y = 0; // mask-relative
+    let value = 0;
+    let croppedCount = 0;
+    for (let idx = 0; idx < rle.length - 4; idx++) {
+        let count = rle[idx];
+        while (count) {
+            // get image-relative coordinates
+            const absY = y + currentTop;
+            const absX = x + currentLeft;
+
+            if (!(absX > right || absY > bottom || absX < left || absY < top)) {
+                // absolute coordinates stay within the image
+                croppedCount++;
+            }
+
+            // shift coordinates and count
+            x++;
+            if (x === maskWidth) {
+                y++;
+                x = 0;
+            }
+            count--;
+        }
+
+        // switch current rle value
+        value = Math.abs(value - 1);
+
+        // length - 5 === latest iteration
+        // after this iteration we do not need to pop value
+        // just push found 0 elements instead
+        if (croppedCount === 0 && croppedRLE.length && idx !== rle.length - 5) {
+            croppedCount = croppedRLE.pop();
+        } else {
+            croppedRLE.push(croppedCount);
+            croppedCount = 0;
         }
     }
 
-    truncatedPoints.push(left, top, right, bottom);
-    if (!checkShapeArea(ShapeType.MASK, truncatedPoints)) {
-        return [];
+    croppedRLE.push(left, top, right, bottom);
+    if (!checkShapeArea(ShapeType.MASK, croppedRLE)) {
+        return [0, 0, 0, 0];
     }
 
-    return truncatedPoints;
+    return croppedRLE;
 }
 
 export function mask2Rle(mask: number[]): number[] {
@@ -276,4 +360,73 @@ export function rle2Mask(rle: number[], width: number, height: number): number[]
     }
 
     return decoded;
+}
+
+export function propagateShapes<T extends SerializedShape | ObjectState>(
+    shapes: T[], from: number, to: number, frameNumbers: number[],
+): T[] {
+    const getCopy = (shape: T): SerializedShape | SerializedData => {
+        if (shape instanceof ObjectState) {
+            return {
+                attributes: shape.attributes,
+                points: shape.shapeType === 'skeleton' ? null : shape.points,
+                occluded: shape.occluded,
+                outside: shape.outside,
+                objectType: shape.objectType !== ObjectType.TRACK ? shape.objectType : ObjectType.SHAPE,
+                shapeType: shape.shapeType,
+                label: shape.label,
+                zOrder: shape.zOrder,
+                rotation: shape.rotation,
+                frame: from,
+                elements: shape.shapeType === 'skeleton' ? shape.elements
+                    .map((element: ObjectState): any => getCopy(element as T)) : [],
+                source: shape.source,
+            };
+        }
+        return {
+            attributes: [...shape.attributes.map((attribute) => ({ ...attribute }))],
+            points: shape.type === 'skeleton' ? null : [...shape.points],
+            occluded: shape.occluded,
+            type: shape.type,
+            label_id: shape.label_id,
+            z_order: shape.z_order,
+            rotation: shape.rotation,
+            frame: from,
+            elements: shape.type === 'skeleton' ? shape.elements
+                .map((element: SerializedShape): SerializedShape => getCopy(element as T) as SerializedShape) : [],
+            source: shape.source,
+            group: 0,
+            outside: shape.outside,
+        };
+    };
+
+    const targetFrameNumbers = frameNumbers.filter(
+        (frameNumber: number) => frameNumber >= Math.min(from, to) &&
+            frameNumber <= Math.max(from, to) &&
+            frameNumber !== from,
+    );
+
+    const states: T[] = [];
+    for (const frame of targetFrameNumbers) {
+        if (frame === from) {
+            continue;
+        }
+
+        for (const shape of shapes) {
+            const copy = getCopy(shape);
+
+            copy.frame = frame;
+            copy.elements?.forEach((element: Omit<SerializedShape, 'elements'> | SerializedData): void => {
+                element.frame = frame;
+            });
+
+            if (shape instanceof ObjectState) {
+                states.push(new ObjectState(copy as SerializedData) as T);
+            } else {
+                states.push(copy as T);
+            }
+        }
+    }
+
+    return states;
 }

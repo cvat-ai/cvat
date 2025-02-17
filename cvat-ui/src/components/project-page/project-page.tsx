@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +9,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
-import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
 import { MultiPlusIcon } from 'icons';
@@ -23,15 +22,15 @@ import notification from 'antd/lib/notification';
 import { getCore, Project, Task } from 'cvat-core-wrapper';
 import { CombinedState, Indexable } from 'reducers';
 import { getProjectTasksAsync } from 'actions/projects-actions';
-import { cancelInferenceAsync } from 'actions/models-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import TaskItem from 'components/tasks-page/task-item';
+import TaskItem from 'containers/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
+import { ProjectNotFoundComponent } from 'components/common/not-found';
 
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
@@ -60,10 +59,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const [updatingProject, setUpdatingProject] = useState(false);
     const mounted = useRef(false);
 
-    const ribbonPlugins = useSelector((state: CombinedState) => state.plugins.components.taskItem.ribbon);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
-    const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
-    const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
     const tasks = useSelector((state: CombinedState) => state.tasks.current);
     const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
@@ -120,24 +116,17 @@ export default function ProjectPageComponent(): JSX.Element {
     }, [tasksQuery]);
 
     useEffect(() => {
-        if (projectInstance && id in deletes && deletes[id]) {
+        if (deletes[id]) {
             history.push('/projects');
         }
     }, [deletes]);
 
-    if (fechingProject) {
+    if (fechingProject || id in deletes) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
     if (!projectInstance) {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title='There was something wrong during getting the project'
-                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
-            />
-        );
+        return <ProjectNotFoundComponent />;
     }
 
     const subsets = Array.from(
@@ -153,14 +142,8 @@ export default function ProjectPageComponent(): JSX.Element {
                         .map((task: Task) => (
                             <TaskItem
                                 key={task.id}
-                                ribbonPlugins={ribbonPlugins}
-                                deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
-                                hidden={false}
-                                activeInference={tasksActiveInferences[task.id] || null}
-                                cancelAutoAnnotation={() => {
-                                    dispatch(cancelInferenceAsync(task.id));
-                                }}
-                                taskInstance={task}
+                                taskID={task.id}
+                                idx={tasks.indexOf(task)}
                             />
                         ))}
                 </React.Fragment>
@@ -288,36 +271,38 @@ export default function ProjectPageComponent(): JSX.Element {
                                     }}
                                 />
                             </div>
-                            <Dropdown
-                                trigger={['click']}
-                                overlay={(
-                                    <CvatDropdownMenuPaper>
-                                        <Button
-                                            type='primary'
-                                            icon={<PlusOutlined />}
-                                            className='cvat-create-task-button'
-                                            onClick={() => history.push(`/tasks/create?projectId=${id}`)}
-                                        >
-                                            Create a new task
-                                        </Button>
-                                        <Button
-                                            type='primary'
-                                            icon={<span className='anticon'><MultiPlusIcon /></span>}
-                                            className='cvat-create-multi-tasks-button'
-                                            onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
-                                        >
-                                            Create multi tasks
-                                        </Button>
-                                    </CvatDropdownMenuPaper>
-                                )}
-                            >
-                                <Button
-                                    type='primary'
-                                    className='cvat-create-task-dropdown'
-                                    icon={<PlusOutlined />}
-                                />
-                            </Dropdown>
                         </div>
+                        <Popover
+                            trigger={['click']}
+                            destroyTooltipOnHide
+                            overlayInnerStyle={{ padding: 0 }}
+                            content={(
+                                <CvatDropdownMenuPaper>
+                                    <Button
+                                        type='primary'
+                                        icon={<PlusOutlined />}
+                                        className='cvat-create-task-button'
+                                        onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                                    >
+                                        Create a new task
+                                    </Button>
+                                    <Button
+                                        type='primary'
+                                        icon={<span className='anticon'><MultiPlusIcon /></span>}
+                                        className='cvat-create-multi-tasks-button'
+                                        onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                                    >
+                                        Create multi tasks
+                                    </Button>
+                                </CvatDropdownMenuPaper>
+                            )}
+                        >
+                            <Button
+                                type='primary'
+                                className='cvat-create-task-dropdown'
+                                icon={<PlusOutlined />}
+                            />
+                        </Popover>
                     </Col>
                 </Row>
                 { tasksFetching ? (

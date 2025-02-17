@@ -1,15 +1,16 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../../base.scss';
+@import 'base';
 
 .cvat-dropdown-menu-paper {
     display: flex;
     flex-direction: column;
     background: $background-color-1;
     padding: $grid-unit-size;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
     box-shadow: $box-shadow-base;
 
     > * {

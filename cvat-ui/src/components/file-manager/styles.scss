@@ -1,13 +1,13 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-remote-browser-nav-breadcrumb {
     transition: all 0.5s;
-    border-radius: 2px;
+    border-radius: $border-radius-base * 0.5;
     padding-left: $grid-unit-size * 0.5;
     padding-right: $grid-unit-size * 0.5;
     opacity: 0.8;
@@ -26,6 +26,15 @@
     margin-top: $grid-unit-size * 4;
 }
 
+.cvat-remote-browser-search-wrapper {
+    margin-bottom: $grid-unit-size;
+    margin-top: $grid-unit-size;
+}
+
+.cvat-remote-browser-incorrect-cs-prefix-wrapper {
+    margin-top: $grid-unit-size;
+}
+
 .cvat-remote-browser-table-wrapper {
     .ant-table-wrapper {
         height: $grid-unit-size * 64;
@@ -36,6 +45,10 @@
 
         .ant-pagination {
             display: none;
+        }
+
+        .ant-empty {
+            margin: $grid-unit-size * 24 0 $grid-unit-size * 24 0;
         }
     }
 
@@ -53,7 +66,7 @@
             align-items: center;
 
             .cvat-remote-browser-receive-more-btn {
-                color: rgba(0, 0, 0, 0.85) !important;
+                color: rgba(0, 0, 0, 85%) !important;
                 cursor: pointer !important;
 
                 > span {

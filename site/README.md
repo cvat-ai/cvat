@@ -1,6 +1,6 @@
-## Basic manual for website editing
+## Basic manual
 
-### Edit or add documentation pages
+### How to edit or add documentation pages online
 
 To edit and/or add documentation, you need to have a [GitHub](https://github.com/login) account.
 To change documentation files or add a documentation page,
@@ -13,67 +13,131 @@ click on the `Fork this repository` button.
 Read how to edit files for github ([GitHub docs](https://docs.github.com/en/github/managing-files-in-a-repository/editing-files-in-another-users-repository)).
 
 Please note that files have a markup for correct display on the site: the title, the title of the link,
-the weight (affects the order of files display on the sidebar) and description (optional):
+the weight (affects the order of files displayed on the sidebar) and description (optional):
 
-    ---
-    title: "Title"
-    linkTitle: "Link Title"
-    weight: 1
-    description: >
-        Description
-    ---
+```
+---
+title: "Title"
+linkTitle: "Link Title"
+weight: 1
+description: >
+    Description
+---
+```
 
-### Start site localy
 
-To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases)
-(recommend version 0.83.1).
-Open the most recent release and scroll down until you find a list of Extended versions. [Read more](https://gohugo.io/getting-started/installing/#quick-install)
+### How to start the site locally
 
-Add a path to "hugo" in the "Path" environment variable.
+#### Installation
 
-Clone a repository branch containing the site. For example, using a git command:
+1. Install Hugo
 
-    git clone --branch <branchname> <remote-repo-url>
+Get the [v110.0-extended release of hugo](https://github.com/gohugoio/hugo/releases/tag/v0.110.0).
+Expand the Assets section of the release on GitHub and scroll down
+until you find a list of **Extended** versions.
+[Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
-If you want to build and/or serve your site locally, you also need to get local copies of the theme’s own submodules:
+Add a path to `hugo` in the `PATH` environment variable.
 
-    git submodule update --init --recursive
+2. Get the Docsy theme code
 
-To build and preview your site locally, use:
+```bash
+git submodule update --init --recursive
+```
 
-    cd <your local directory>/cvat/site/
-    hugo server
+3. Install the Docsy theme dependencies
+
+To build or update your site’s CSS resources, you will need several packages installed.
+To install them, you must have a recent version of [NodeJS](https://nodejs.org/en/)
+installed on your machine (tested with v18.0). For this, you can use
+[npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) directly
+or via an environment manager like [nvm](https://github.com/nvm-sh/nvm).
+By default `npm` installs tools under the directory where you run `npm install`.
+
+```bash
+(cd site/ && npm ci)
+```
+
+The full documentation is available
+[here](https://www.docsy.dev/docs/get-started/other-options/#for-an-existing-site).
+
+4. To preview your site locally, use:
+
+```bash
+(cd site/ && hugo server)
+```
 
 By default, your site will be available at <http://localhost:1313/docs/>.
 
-Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
+#### How to build for production deployment
 
-To build or update your site’s CSS resources you will need [PostCSS](https://postcss.org/) to create final assets.
-To install it you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine,
-so you can use npm, the Node package manager.
-By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
+1. Install dependencies
 
-    cd <your local directory>/cvat/site/
-    npm ci
+```bash
+cd site/
+pip -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+```
 
-Then you can build a website in the "public" folder:
+The documentation site includes both old and new releases. Because of this,
+you will need tooling for all these releases. Currently, it means you need
+in your environment:
+- `hugo-0.110` - for new docs
+- `hugo-0.83` - for older docs
 
-    hugo
+Please download these hugo releases (both extended), and make such binaries
+available in your `PATH` environment variable.
 
-[Read more](https://www.docsy.dev/docs/getting-started/)
+On Linux, you can install it this way:
 
-### Update the submodule of the docsy theme
+```bash
+wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
+(mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
+cd hugo_extended_0.110.0_Linux-64bit
+sudo cp hugo /usr/local/bin/hugo-0.110
 
-To update the submodule of the docsy theme you need to have a repository clone. While in the repository folder,
-use the git command:
+wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
+(mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
+cd hugo_extended_0.83.0_Linux-64bit
+sudo cp hugo /usr/local/bin/hugo-0.83
+```
 
-    git submodule update --remote
+2. Use the commands that generate a static site in the `public/` folder:
+
+Make sure to generate the SDK code first.
+
+```bash
+python process_sdk_docs.py --input-dir ../cvat-sdk/docs/ --site-root .
+
+python build_docs.py
+```
+
+The resulting folder contains the whole site, which can be published by a server like Apache.
+Read more [here](https://www.docsy.dev/docs/getting-started/)
+and [here](https://gohugo.io/hosting-and-deployment/).
+
+### How to update the submodule of the Docsy theme
+
+To update the submodule of the docsy theme, you need to have a repository clone.
+While in the repository folder, use the git command:
+
+```bash
+git submodule update --remote
+```
 
 Add and then commit the change to project:
 
-    git add themes/
-    git commit -m "Updating theme submodule"
+```bash
+git add themes/
+git commit -m "Updating theme submodule"
+```
 
 Push the commit to project repo. For example, run:
 
-    git push
+```bash
+git push
+```
+
+Make sure to update the corresponding configuration files and
+theme overrides (`layouts/`, `i18n/`, etc.).

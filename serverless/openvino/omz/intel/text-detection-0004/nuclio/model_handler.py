@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -93,7 +93,7 @@ class PixelLinkDecoder():
         root = point
         update_parent = False
         tmp = self.group_mask[root]
-        while tmp is not -1:
+        while tmp != -1:
             root = tmp
             tmp = self.group_mask[root]
             update_parent = True

@@ -6,15 +6,14 @@ metadata:
     version: 2
     type: interactor
     spec:
-    framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
-    animated_gif: https://raw.githubusercontent.com/opencv/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/fbrs_example.gif
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/fbrs_example.gif
     help_message: The interactor allows to get a mask for an object using positive points, and negative points
 
 spec:
   description: f-BRS interactive segmentation
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -23,7 +22,6 @@ spec:
 
   build:
     image: cvat.pth.saic-vul.fbrs
-    baseImage: python:3.6.11
 
     directives:
       preCopy:
@@ -33,12 +31,14 @@ spec:
           value: git clone https://github.com/saic-vul/fbrs_interactive_segmentation.git fbrs
         - kind: WORKDIR
           value: /opt/nuclio/fbrs
+        - kind: RUN
+          value: pip3 install gdown
         - kind: ENV
           value: fileid=1Z9dQtpWVTobEdmUBntpUU0pJl-pEXUwR
         - kind: ENV
           value: filename=resnet101_dh256_sbd.pth
         - kind: RUN
-          value: curl -L "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -o ${filename}
+          value: gdown https://drive.google.com/uc?id=${fileid} -O ${filename}
         - kind: RUN
           value: apt update && apt install -y libgl1-mesa-glx
         - kind: RUN
@@ -48,7 +48,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

@@ -4,30 +4,29 @@ metadata:
   annotations:
     name: Semantic segmentation for ADAS
     type: detector
-    framework: openvino
     spec: |
       [
-        { "id": 0, "name": "road" },
-        { "id": 1, "name": "sidewalk" },
-        { "id": 2, "name": "building" },
-        { "id": 3, "name": "wall" },
-        { "id": 4, "name": "fence" },
-        { "id": 5, "name": "pole" },
-        { "id": 6, "name": "traffic light" },
-        { "id": 7, "name": "traffic sign" },
-        { "id": 8, "name": "vegetation" },
-        { "id": 9, "name": "terrain" },
-        { "id": 10, "name": "sky" },
-        { "id": 11, "name": "person" },
-        { "id": 12, "name": "rider" },
-        { "id": 13, "name": "car" },
-        { "id": 14, "name": "truck" },
-        { "id": 15, "name": "bus" },
-        { "id": 16, "name": "train" },
-        { "id": 17, "name": "motorcycle" },
-        { "id": 18, "name": "bicycle" },
-        { "id": 19, "name": "ego-vehicle" },
-        { "id": 20, "name": "background" }
+        { "id": 0, "name": "road", "type": "mask" },
+        { "id": 1, "name": "sidewalk", "type": "mask" },
+        { "id": 2, "name": "building", "type": "mask" },
+        { "id": 3, "name": "wall", "type": "mask" },
+        { "id": 4, "name": "fence", "type": "mask" },
+        { "id": 5, "name": "pole", "type": "mask" },
+        { "id": 6, "name": "traffic light", "type": "mask" },
+        { "id": 7, "name": "traffic sign", "type": "mask" },
+        { "id": 8, "name": "vegetation", "type": "mask" },
+        { "id": 9, "name": "terrain", "type": "mask" },
+        { "id": 10, "name": "sky", "type": "mask" },
+        { "id": 11, "name": "person", "type": "mask" },
+        { "id": 12, "name": "rider", "type": "mask" },
+        { "id": 13, "name": "car", "type": "mask" },
+        { "id": 14, "name": "truck", "type": "mask" },
+        { "id": 15, "name": "bus", "type": "mask" },
+        { "id": 16, "name": "train", "type": "mask" },
+        { "id": 17, "name": "motorcycle", "type": "mask" },
+        { "id": 18, "name": "bicycle", "type": "mask" },
+        { "id": 19, "name": "ego-vehicle", "type": "mask" },
+        { "id": 20, "name": "background", "type": "mask" }
       ]
 
 spec:
@@ -42,7 +41,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

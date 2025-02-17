@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,8 +11,8 @@ import Form from 'antd/lib/form';
 import { FormListFieldData, FormListOperation } from 'antd/lib/form/FormList';
 import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
-import Tooltip from 'antd/lib/tooltip';
 import Alert from 'antd/lib/alert';
+import Tooltip from 'antd/lib/tooltip';
 import config from 'config';
 
 interface Props {
@@ -60,7 +60,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                 label={(
                     <>
                         Manifests
-                        <Tooltip title='More information'>
+                        <Tooltip title='Click to open guide'>
                             <Button
                                 type='link'
                                 target='_blank'
@@ -81,7 +81,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                         <>
                             {fields.map((field, idx): JSX.Element => (
                                 <Form.Item key={idx} shouldUpdate>
-                                    <Row justify='space-between' align='top'>
+                                    <Row justify='space-between' align='top' className='cvat-cs-manifest-wrapper'>
                                         <Col>
                                             <Form.Item
                                                 name={[idx, 'name']}
@@ -90,11 +90,17 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                                         required: true,
                                                         message: 'Please specify a manifest name',
                                                     },
+                                                    {
+                                                        type: 'string',
+                                                        pattern: /^.*\.(jsonl)$/,
+                                                        message: 'Manifest file must have .jsonl extension',
+                                                    },
                                                 ]}
                                                 initialValue={field.name}
                                             >
                                                 <Input
                                                     placeholder='manifest.jsonl'
+                                                    className='cvat-cloud-storage-manifest-field'
                                                     onChange={(event) => onChangeManifestPath(event.target.value, idx)}
                                                 />
                                             </Form.Item>
@@ -120,7 +126,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
             </Form.List>
             <Row justify='start'>
                 <Col>
-                    <Button type='ghost' onClick={onAddManifestItem} className='cvat-add-manifest-button'>
+                    <Button onClick={onAddManifestItem} className='cvat-add-manifest-button'>
                         Add manifest
                         <PlusCircleOutlined />
                     </Button>
@@ -128,8 +134,12 @@ export default function ManifestsManager(props: Props): JSX.Element {
             </Row>
             {!manifestNames.length && (
                 <Row>
-                    <Col>
-                        <Alert type='info' message='We highly recommend attaching a manifest file to reduce the number of requests to the bucket.' />
+                    <Col span={24}>
+                        <Alert
+                            showIcon
+                            type='info'
+                            message='We highly recommend attaching a manifest file to reduce the number of requests to the bucket'
+                        />
                     </Col>
                 </Row>
             )}

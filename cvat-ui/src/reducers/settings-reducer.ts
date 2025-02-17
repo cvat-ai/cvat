@@ -1,18 +1,16 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
 
-import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { ObjectState, ShapeType, DimensionType } from 'cvat-core-wrapper';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -60,6 +58,7 @@ const defaultState: SettingsState = {
         contrastLevel: 100,
         saturationLevel: 100,
     },
+    imageFilters: [],
     showDialog: false,
 };
 
@@ -367,7 +366,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case SettingsActionTypes.SWITCH_SETTINGS_DIALOG: {
             return {
                 ...state,
-                showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
+                showDialog: action.payload.visible,
             };
         }
         case SettingsActionTypes.SET_SETTINGS: {
@@ -394,44 +393,61 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { states } = action.payload;
-            if (states.some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK)) {
-                const MIN_OPACITY = 30;
-                const { shapes: { opacity } } = state;
-                if (opacity < MIN_OPACITY) {
-                    return {
-                        ...state,
-                        shapes: {
-                            ...state.shapes,
-                            opacity: MIN_OPACITY,
-                            selectedOpacity: MIN_OPACITY * 2,
-                        },
-                    };
-                }
+        case SettingsActionTypes.ENABLE_IMAGE_FILTER: {
+            const { filter, options } = action.payload;
+            const { alias } = filter;
+            const filters = [...state.imageFilters];
+            const index = filters.findIndex((imageFilter) => imageFilter.alias === alias);
+            if (options && index !== -1) {
+                const enabledFilter = filters[index];
+                enabledFilter.modifier.currentProcessedImage = null;
+                enabledFilter.modifier.configure(options);
+                return {
+                    ...state,
+                    imageFilters: filters,
+                };
             }
-
-            return state;
+            return {
+                ...state,
+                imageFilters: [
+                    ...state.imageFilters,
+                    action.payload.filter,
+                ],
+            };
         }
-        case BoundariesActionTypes.RESET_AFTER_ERROR:
+        case SettingsActionTypes.DISABLE_IMAGE_FILTER: {
+            const { filterAlias } = action.payload;
+            const filters = [...state.imageFilters];
+            const index = filters.findIndex((imageFilter) => imageFilter.alias === filterAlias);
+            if (index !== -1) {
+                filters.splice(index, 1);
+            }
+            filters.forEach((imageFilter) => {
+                imageFilter.modifier.currentProcessedImage = null;
+            });
+            return {
+                ...state,
+                imageFilters: filters,
+            };
+        }
+        case SettingsActionTypes.RESET_IMAGE_FILTERS: {
+            return {
+                ...state,
+                imageFilters: [],
+            };
+        }
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { job } = action.payload;
+            const filters = [...state.imageFilters];
+            filters.forEach((imageFilter) => {
+                imageFilter.modifier.currentProcessedImage = null;
+            });
 
             return {
                 ...state,
-                player: {
-                    ...state.player,
-                },
+                imageFilters: filters,
                 shapes: {
-                    ...defaultState.shapes,
-                    ...(job.dimension === DimensionType.DIMENSION_3D ?
-                        {
-                            opacity: 40,
-                            selectedOpacity: 60,
-                        } :
-                        {}),
+                    ...state.shapes,
+                    showGroundTruth: false,
                 },
             };
         }

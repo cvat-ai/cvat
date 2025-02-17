@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -77,16 +77,14 @@ export default function StorageWithSwitchField(props: Props): JSX.Element {
                 (!instanceId || !useDefaultStorage) && (
                     <Form.Item
                         label={(
-                            <>
-                                <Space>
-                                    {storageLabel}
-                                    <CVATTooltip title={storageDescription}>
-                                        <QuestionCircleOutlined
-                                            style={{ opacity: 0.5 }}
-                                        />
-                                    </CVATTooltip>
-                                </Space>
-                            </>
+                            <Space>
+                                {storageLabel}
+                                <CVATTooltip title={storageDescription}>
+                                    <QuestionCircleOutlined
+                                        style={{ opacity: 0.5 }}
+                                    />
+                                </CVATTooltip>
+                            </Space>
                         )}
                     >
                         <StorageField

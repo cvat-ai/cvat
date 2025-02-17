@@ -43,7 +43,7 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
         cy.createAnnotationTask(taskName.firstTaskName, labelName, attrName, textDefaultValue, archiveName);
         cy.goToTaskList();
@@ -57,7 +57,7 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
         });
     });
 
-    describe(`Testing "${labelName}"`, () => {
+    describe(`Testing "${labelName}"`, { scrollBehavior: false }, () => {
         it('Create an issue. Check issue 2633.', () => {
             cy.openTaskJob(taskName.firstTaskName);
             cy.changeWorkspace('Review');
@@ -74,9 +74,9 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
                     });
                 }
 
-                cy.viewport(viewportHeight + 50, viewportWidth + 50);
+                cy.viewport(viewportWidth + 50, viewportHeight + 50);
                 cy.wrap(waitForResize()).then(() => {
-                    cy.get('.cvat_canvas_issue_region').should('be.visible');
+                    cy.get('.cvat_canvas_issue_region').should('exist');
                     cy.viewport(viewportHeight, viewportWidth);
                 });
             });

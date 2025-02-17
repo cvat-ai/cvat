@@ -1,10 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
 import {
@@ -12,6 +11,7 @@ import {
     changeFrameAsync,
     changeGroupColorAsync,
     pasteShapeAsync,
+    updateActiveControl as updateActiveControlAction,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
@@ -20,31 +20,35 @@ import {
 import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
 } from 'reducers';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
-import { Label, ObjectState } from 'cvat-core-wrapper';
+import {
+    Label, ObjectState, Attribute, Job,
+} from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
+import { toClipboard } from 'utils/to-clipboard';
 
 interface OwnProps {
     readonly: boolean;
     clientID: number;
-    objectStates: any[];
+    objectStates: ObjectState[];
 }
 
 interface StateToProps {
-    objectState: any;
-    labels: any[];
-    attributes: any[];
-    jobInstance: any;
+    objectState: ObjectState;
+    labels: Label[];
+    attributes: Attribute[];
+    jobInstance: Job;
     frameNumber: number;
     activated: boolean;
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
-    activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
@@ -53,12 +57,13 @@ interface StateToProps {
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
-    updateState(objectState: any): void;
+    updateState(objectState: ObjectState): void;
     activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
-    removeObject: (objectState: any) => void;
-    copyShape: (objectState: any) => void;
+    removeObject: (objectState: ObjectState) => void;
+    copyShape: (objectState: ObjectState) => void;
     switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -86,7 +91,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     return {
         objectState: states[index],
-        attributes: jobAttributes[states[index].label.id],
+        attributes: jobAttributes[states[index].label.id as number],
         labels,
         ready,
         activeControl,
@@ -97,7 +102,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas | Canvas3d,
     };
 }
 
@@ -125,6 +130,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
         },
+        updateActiveControl(activeControl: ActiveControl): void {
+            dispatch(updateActiveControlAction(activeControl));
+        },
     };
 }
 
@@ -139,7 +147,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             labels: props.labels,
-            elements: props.objectState.elements.map((el: ObjectState) => el.clientID),
+            elements: props.objectState.elements.map((el: ObjectState) => el.clientID as number),
         };
     }
 
@@ -172,16 +180,42 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private edit = (): void => {
-        const { objectState, readonly, canvasInstance } = this.props;
+        const {
+            objectState, readonly, canvasInstance, updateActiveControl,
+        } = this.props;
 
-        if (!readonly && canvasInstance instanceof Canvas) {
+        if (!readonly && canvasInstance instanceof Canvas &&
+            [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
+        ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
                 canvasInstance.cancel();
             }
 
+            updateActiveControl(ActiveControl.EDIT);
             canvasInstance.edit({ enabled: true, state: objectState });
         }
-    }
+    };
+
+    private slice = async (): Promise<void> => {
+        const {
+            objectState, readonly, canvasInstance, updateActiveControl,
+        } = this.props;
+
+        if (!readonly && canvasInstance instanceof Canvas &&
+            [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
+        ) {
+            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
+            updateActiveControl(ActiveControl.SLICE);
+            canvasInstance.slice({
+                enabled: true,
+                getContour: openCVWrapper.getContourFromState,
+                clientID: objectState.clientID as number,
+            });
+        }
+    };
 
     private remove = (): void => {
         const {
@@ -199,7 +233,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
         const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
         const url = `${origin}${pathname}?${search}`;
-        copy(url);
+
+        toClipboard(url);
     };
 
     private switchOrientation = (): void => {
@@ -213,23 +248,25 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             return;
         }
 
-        const reducedPoints = objectState.points.reduce(
-            (acc: number[][], _: number, index: number, array: number[]): number[][] => {
-                if (index % 2) {
-                    acc.push([array[index - 1], array[index]]);
-                }
+        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
+            const reducedPoints = (objectState.points as number[]).reduce(
+                (acc: number[][], _: number, index: number, array: number[]): number[][] => {
+                    if (index % 2) {
+                        acc.push([array[index - 1], array[index]]);
+                    }
 
-                return acc;
-            },
-            [],
-        );
+                    return acc;
+                },
+                [],
+            );
 
-        if (objectState.shapeType === ShapeType.POLYGON) {
-            objectState.points = reducedPoints.slice(0, 1).concat(reducedPoints.reverse().slice(0, -1)).flat();
-            updateState(objectState);
-        } else if (objectState.shapeType === ShapeType.POLYLINE) {
-            objectState.points = reducedPoints.reverse().flat();
-            updateState(objectState);
+            if (objectState.shapeType === ShapeType.POLYGON) {
+                objectState.points = reducedPoints.slice(0, 1).concat(reducedPoints.reverse().slice(0, -1)).flat();
+                updateState(objectState);
+            } else if (objectState.shapeType === ShapeType.POLYLINE) {
+                objectState.points = reducedPoints.reverse().flat();
+                updateState(objectState);
+            }
         }
     };
 
@@ -270,7 +307,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         if (colorBy === ColorBy.INSTANCE) {
             objectState.color = color;
             this.commit();
-        } else if (colorBy === ColorBy.GROUP) {
+        } else if (colorBy === ColorBy.GROUP && objectState.group) {
             changeGroupColor(objectState.group.id, color);
         }
     };
@@ -290,10 +327,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
         const { objectState, readonly } = this.props;
 
-        if (!readonly) {
+        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+            const points = objectState.points as number[];
             this.resetCuboidPerspective(false);
-            objectState.points = shift(objectState.points, cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
-
+            objectState.points = shift(points, cuboidOrientationIsLeft(points) ? 4 : -4);
             this.commit();
         }
     };
@@ -304,8 +341,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
         const { objectState, readonly } = this.props;
 
-        if (!readonly) {
-            const { points } = objectState;
+        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+            const points = objectState.points as number[];
             const minD = {
                 x: (points[6] - points[2]) * 0.001,
                 y: (points[3] - points[1]) * 0.001,
@@ -330,6 +367,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             objectState.points = points;
             if (commit) this.commit();
         }
+    };
+
+    private runAnnotationAction = (): void => {
+        const { objectState } = this.props;
+        openAnnotationsActionModal({ defaultObjectState: objectState });
     };
 
     private commit(): void {
@@ -358,10 +400,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 activated={activated}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
-                clientID={objectState.clientID}
+                clientID={objectState.clientID as number}
                 serverID={objectState.serverID}
                 locked={objectState.lock}
-                labelID={objectState.label.id}
+                labelID={objectState.label.id as number}
                 isGroundTruth={objectState.isGroundTruth}
                 color={getColor(objectState, colorBy)}
                 attributes={attributes}
@@ -372,15 +414,17 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 activate={this.activate}
                 remove={this.remove}
                 copy={this.copy}
-                propagate={this.propagate}
                 createURL={this.createURL}
+                propagate={this.propagate}
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}
+                slice={this.slice}
                 resetCuboidPerspective={this.resetCuboidPerspective}
+                runAnnotationAction={this.runAnnotationAction}
             />
         );
     }

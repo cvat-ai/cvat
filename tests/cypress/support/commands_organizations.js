@@ -1,17 +1,24 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-Cypress.Commands.add('createOrganization', (organizationParams) => {
+function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
-        .should('exist').and('be.visible').trigger('mouseover');
+        .should('exist').and('be.visible').click();
+    cy.wait(500); // animation
     cy.get('.cvat-header-menu')
-        .should('be.visible')
+        .should('exist')
+        .and('be.visible')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover');
+        .click();
+}
+
+Cypress.Commands.add('createOrganization', (organizationParams) => {
+    openOrganizationsMenu();
     cy.get('.cvat-header-menu-create-organization')
         .should('be.visible')
         .click();
@@ -63,13 +70,7 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
 });
 
 Cypress.Commands.add('activateOrganization', (organizationShortName) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
-    cy.get('.ant-dropdown')
-        .should('be.visible')
-        .not('ant-dropdown-hidden')
-        .find('[role="menuitem"]')
-        .filter(':contains("Organization")')
-        .trigger('mouseover');
+    openOrganizationsMenu();
     cy.contains('.cvat-header-menu-organization-item', organizationShortName)
         .should('be.visible')
         .click();
@@ -80,26 +81,14 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
 });
 
 Cypress.Commands.add('deactivateOrganization', () => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
-    cy.get('.ant-dropdown')
-        .should('be.visible')
-        .not('ant-dropdown-hidden')
-        .find('[role="menuitem"]')
-        .filter(':contains("Organization")')
-        .trigger('mouseover');
+    openOrganizationsMenu();
     cy.contains('.cvat-header-menu-organization-item', 'Personal workspace').click();
     cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
     cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
 });
 
 Cypress.Commands.add('openOrganization', (organizationShortName) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
-    cy.get('.ant-dropdown')
-        .should('be.visible')
-        .not('ant-dropdown-hidden')
-        .find('[role="menuitem"]')
-        .filter(':contains("Organization")')
-        .trigger('mouseover');
+    openOrganizationsMenu();
     cy.get('.cvat-header-menu-active-organization-item')
         .should('have.text', organizationShortName);
     cy.get('.cvat-header-menu-open-organization')
@@ -109,22 +98,13 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
 });
 
 Cypress.Commands.add('checkOrganizationExists', (organizationShortName, shouldExist = true) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
-    cy.get('.ant-dropdown')
-        .should('be.visible')
-        .not('ant-dropdown-hidden')
-        .find('[role="menuitem"]')
-        .filter(':contains("Organization")')
-        .trigger('mouseover');
+    openOrganizationsMenu();
     if (shouldExist) {
-        cy.contains('.cvat-header-menu-organization-item', organizationShortName)
-            .should('exist')
-            .trigger('mouseout')
-            .should('be.hidden');
+        cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('exist');
     } else {
         cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('not.exist');
-        cy.get('.cvat-header-menu-active-organization-item').trigger('mouseout').should('be.hidden');
     }
+    cy.get('body').click();
 });
 
 Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
@@ -147,7 +127,8 @@ Cypress.Commands.add('checkOrganizationMembers', (expectedMembersCount, expected
     cy.get('.cvat-organization-member-item').should('have.length', expectedMembersCount);
     cy.get('.cvat-organization-member-item-username').each((el) => {
         orgMembersUserameText.push(el.text());
-    }).then(() => {
+    });
+    cy.get('.cvat-organization-member-item-username').then(() => {
         expect(orgMembersUserameText).to.include.members(expectedOrganizationMembers);
     });
 });
@@ -158,11 +139,8 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
     cy.get('.cvat-organization-invitation-modal').should('be.visible');
     let addedMembers = 0;
     for (const el of members) {
-        cy.get('.cvat-organization-invitation-field-email')
-            .last()
-            .find('input')
-            .type(el.email)
-            .should('have.value', el.email);
+        cy.get('.cvat-organization-invitation-field-email').last().find('input').type(el.email);
+        cy.get('.cvat-organization-invitation-field-email').last().find('input').should('have.value', el.email);
         cy.get('.cvat-organization-invitation-field-email')
             .find('[aria-label="check-circle"]')
             .should('exist');

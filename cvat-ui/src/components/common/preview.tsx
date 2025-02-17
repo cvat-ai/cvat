@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,9 +11,8 @@ import { getJobPreviewAsync } from 'actions/jobs-actions';
 import { getTaskPreviewAsync } from 'actions/tasks-actions';
 import { getProjectsPreviewAsync } from 'actions/projects-actions';
 import { getCloudStoragePreviewAsync } from 'actions/cloud-storage-actions';
-import {
-    CombinedState, Job, Task, Project, CloudStorage,
-} from 'reducers';
+import { CombinedState, CloudStorage } from 'reducers';
+import { Job, Task, Project } from 'cvat-core-wrapper';
 import MLModel from 'cvat-core/src/ml-model';
 import { getModelPreviewAsync } from 'actions/models-actions';
 

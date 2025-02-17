@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { taskName } from '../../support/const';
 
 context('Reset zoom in tag annotation', () => {
     const issueId = '2174';
@@ -47,7 +47,7 @@ context('Reset zoom in tag annotation', () => {
         });
 
         it('Go to tag annotation', () => {
-            cy.changeWorkspace('Tag annotation', labelName);
+            cy.changeWorkspace('Tag annotation');
         });
 
         it('Scale frame', () => {

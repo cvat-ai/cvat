@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,11 +34,12 @@ context('Rename a label via raw editor.', () => {
                 label.color = newlabelColor;
             }
         });
-        cy.get('.cvat-raw-labels-viewer').clear().type(JSON.stringify(labels), { parseSpecialCharSequences: false });
+        cy.get('.cvat-raw-labels-viewer').clear();
+        cy.get('.cvat-raw-labels-viewer').type(JSON.stringify(labels), { parseSpecialCharSequences: false });
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);

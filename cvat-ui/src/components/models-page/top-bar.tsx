@@ -1,14 +1,14 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { PlusOutlined } from '@ant-design/icons';
-import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
-import { ModelsQuery } from 'reducers';
+import { CombinedState, ModelsQuery } from 'reducers';
+import { usePlugins } from 'utils/hooks';
+import dimensions from 'utils/dimensions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './models-filter-configuration';
@@ -22,19 +22,27 @@ interface VisibleTopBarProps {
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
     query: ModelsQuery;
-    onCreateModel(): void;
     disabled?: boolean;
 }
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, onCreateModel, disabled,
+        query, onApplyFilter, onApplySorting, onApplySearch, disabled,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const plugins = usePlugins((state: CombinedState) => state.plugins.components.modelsPage.topBar.items, props);
+    const controls = [];
+    if (plugins.length) {
+        controls.push(
+            ...plugins.map(({ component: Component }, index) => (
+                <Component key={index} targetProps={props} />
+            )),
+        );
+    }
 
     return (
         <Row className='cvat-models-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={16}>
+            <Col {...dimensions}>
                 <div className='cvat-models-page-filters-wrapper'>
                     <Input.Search
                         disabled={disabled}
@@ -80,9 +88,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         />
                     </div>
                 </div>
-                <div className='cvat-models-add-wrapper'>
-                    <Button onClick={onCreateModel} type='primary' className='cvat-create-model' icon={<PlusOutlined />} />
-                </div>
+                {controls}
             </Col>
         </Row>
     );

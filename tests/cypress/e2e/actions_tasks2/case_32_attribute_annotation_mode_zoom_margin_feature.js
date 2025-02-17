@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,8 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
         cy.get('.cvat-settings-modal').within(() => {
             cy.contains('Workspace').click();
             cy.get('.cvat-workspace-settings-aam-zoom-margin').within(() => {
-                cy.get('[role="spinbutton"]').clear().type(valueZoomMargin);
+                cy.get('[role="spinbutton"]').clear();
+                cy.get('[role="spinbutton"]').type(valueZoomMargin);
             });
         });
         cy.closeSettings();

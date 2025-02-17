@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,11 +11,9 @@ import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
-import Comment from 'antd/lib/comment';
+import { Comment } from '@ant-design/compatible';
 import Text from 'antd/lib/typography/Text';
-import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';
-import Spin from 'antd/lib/spin';
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -93,8 +91,8 @@ export default function IssueDialog(props: Props): JSX.Element {
             },
             okButtonProps: {
                 type: 'primary',
-                danger: true,
             },
+            autoFocusButton: 'cancel',
             okText: 'Delete',
         });
     }, []);
@@ -138,7 +136,7 @@ export default function IssueDialog(props: Props): JSX.Element {
         >
             <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
-                    <Title level={4}>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Title>
+                    <Text strong>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Text>
                 </Col>
                 <Col>
                     <CVATTooltip title='Collapse the chat'>
@@ -148,7 +146,9 @@ export default function IssueDialog(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-issue-dialog-chat' justify='start'>
                 {
-                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : <Spin />
+                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : (
+                        <Col>No comments found</Col>
+                    )
                 }
             </Row>
             <Row className='cvat-issue-dialog-input' justify='start'>

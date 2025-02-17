@@ -1,12 +1,12 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from dateutil import parser as datetime_parser
 import datetime
 import json
 
 from rest_framework import serializers
+
 
 class EventSerializer(serializers.Serializer):
     scope = serializers.CharField(required=True)
@@ -27,43 +27,90 @@ class EventSerializer(serializers.Serializer):
     org_slug = serializers.CharField(required=False, allow_null=True)
     payload = serializers.CharField(required=False, allow_null=True)
 
+
 class ClientEventsSerializer(serializers.Serializer):
+    ALLOWED_SCOPES = {
+        "client": frozenset(
+            (
+                "load:cvat",
+                "load:job",
+                "save:job",
+                "load:workspace",
+                "upload:annotations",  # TODO: remove in next releases
+                "lock:object",  # TODO: remove in next releases
+                "change:attribute",  # TODO: remove in next releases
+                "change:label",  # TODO: remove in next releases
+                "send:exception",
+                "join:objects",
+                "change:frame",
+                "draw:object",
+                "paste:object",
+                "copy:object",
+                "propagate:object",
+                "drag:object",
+                "resize:object",
+                "delete:object",
+                "merge:objects",
+                "split:objects",
+                "group:objects",
+                "slice:object",
+                "zoom:image",
+                "fit:image",
+                "rotate:image",
+                "action:undo",
+                "action:redo",
+                "debug:info",
+                "run:annotations_action",
+                "click:element",
+            )
+        ),
+    }
+
     events = EventSerializer(many=True, default=[])
+    previous_event = EventSerializer(default=None, allow_null=True, write_only=True)
     timestamp = serializers.DateTimeField()
-    _TIME_THRESHOLD = datetime.timedelta(seconds=100)
-    _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
 
     def to_internal_value(self, data):
+        data = super().to_internal_value(data)
         request = self.context.get("request")
         org = request.iam_context["organization"]
-        org_id = getattr(org, "id", None)
-        org_slug = getattr(org, "slug", None)
+        user_and_org_data = {
+            "org_id": getattr(org, "id", None),
+            "org_slug": getattr(org, "slug", None),
+            "user_id": request.user.id,
+            "user_name": request.user.username,
+            "user_email": request.user.email,
+        }
 
-        send_time = datetime_parser.isoparse(data["timestamp"])
+        send_time = data["timestamp"]
         receive_time = datetime.datetime.now(datetime.timezone.utc)
         time_correction = receive_time - send_time
-        last_timestamp = None
+
+        if data["previous_event"]:
+            data["previous_event"]["timestamp"] += time_correction
 
         for event in data["events"]:
-            timestamp = datetime_parser.isoparse(event['timestamp'])
-            if last_timestamp:
-                t_diff = timestamp - last_timestamp
-                if t_diff < self._TIME_THRESHOLD:
-                    payload = event.get('payload', {})
-                    if payload:
-                        payload = json.loads(payload)
+            scope = event["scope"]
+            source = event.get("source", "client")
+            if scope not in ClientEventsSerializer.ALLOWED_SCOPES.get(source, []):
+                raise serializers.ValidationError(
+                    {"scope": f"Event scope **{scope}** is not allowed from {source}"}
+                )
 
-                    payload['working_time'] = t_diff // self._WORKING_TIME_RESOLUTION
-                    payload['username'] = request.user.username
-                    event['payload'] = json.dumps(payload)
+            try:
+                payload = json.loads(event.get("payload", "{}"))
+            except json.JSONDecodeError:
+                raise serializers.ValidationError(
+                    {"payload": "JSON payload is not valid in passed event"}
+                )
 
-            last_timestamp = timestamp
-            event['timestamp'] = str((timestamp + time_correction).timestamp())
-            event['source'] = 'client'
-            event['org_id'] = org_id
-            event['org_slug'] = org_slug
-            event['user_id'] = request.user.id
-            event['user_name'] = request.user.username
-            event['user_email'] = request.user.email
+            event.update(
+                {
+                    "timestamp": event["timestamp"] + time_correction,
+                    "source": source,
+                    "payload": json.dumps(payload),
+                    **(user_and_org_data if source == "client" else {}),
+                }
+            )
 
         return data

@@ -1,37 +1,42 @@
-{{ $links := .Site.Params.links }}
-<footer class="bg-dark py-5 row d-print-none">
-  <div class="container-fluid mx-sm-5">
+{{ $links := .Site.Params.links -}}
+<footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
     <div class="row">
-      <div class="col-6 col-sm-2 text-xs-center order-sm-2">
+      <div class="col text-center">
         {{ with $links }}
-        {{ with index . "user"}}
+        {{ with index . "user" }}
         {{ template "footer-links-block"  . }}
         {{ end }}
         {{ end }}
       </div>
-      <div class="col-6 col-sm-2 text-right text-xs-center order-sm-3">
+      <div class="col-4 text-center">
+        <div class="row">
+          {{ with .Site.Params.cvat_ai_privacy_notice }}<a href="{{ . }}">{{ T "footer_cvat_ai_privacy_notice" }}</a>{{ end }}
+        </div>
+        <div class="row">
+          {{ with .Site.Params.cvat_ai_terms_of_use }}<a href="{{ . }}">{{ T "footer_cvat_ai_terms_of_use" }}</a>{{ end }}
+        </div>
+        <div class="row">
+          {{ if not .Site.Params.ui.footer_about_disable }}
+            {{ with .Site.GetPage "about" }}<p><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>{{ end }}
+          {{ end }}
+        </div>
+      </div>
+      <div class="col text-right text-center">
         {{ with $links }}
-        {{ with index . "developer"}}
+        {{ with index . "developer" }}
         {{ template "footer-links-block"  . }}
         {{ end }}
         {{ end }}
-      </div>
-      <div class="col-12 col-sm-8 text-center order-sm-2">
-        {{ with .Site.Params.cvat_ai_privacy_notice }}<small class="mr-1"><a href="{{ . }}">{{ T "footer_cvat_ai_privacy_notice" }}</a></small>{{ end }}
-        |
-        {{ with .Site.Params.cvat_ai_terms_of_use }}<small class="mx-1"><a href="{{ . }}">{{ T "footer_cvat_ai_terms_of_use" }}</a></small>{{ end }}
-      </div>
-  {{ if not .Site.Params.ui.footer_about_disable }}
-    {{ with .Site.GetPage "about" }}<p class="mt-2"><a href="{{ .RelPermalink }}">{{ .Title }}</a></p>{{ end }}
-  {{ end }}
       </div>
     </div>
   </div>
 </footer>
+
 {{ define "footer-links-block" }}
 <ul class="list-inline mb-0">
   {{ range . }}
-  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="{{ .name }}" aria-label="{{ .name }}">
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="{{ .name }}" aria-label="{{ .name }}">
     <a class="text-white" rel="noopener noreferrer" href="{{ .url }}">
       <i class="{{ .icon }}"></i>
     </a>

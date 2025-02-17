@@ -9,16 +9,18 @@ menu:
 ---
 
 CVAT is a free, online, interactive video and image annotation tool for computer vision.
-It is being developed and used by Intel to annotate millions of objects with different properties.
+It is being developed and used by CVAT.ai to annotate millions of objects with different properties.
 Many UI and UX decisions are based on feedbacks from professional data annotation team.
 Try it online [app.cvat.ai](https://app.cvat.ai).
 
-Our documentation provides information for AI researchers, system administrators, developers, simple and advanced users.
-The documentation is divided into three sections, and each section is divided into subsections `basic` and `advanced`.
+Our documentation provides information for annotators, AI researchers, system administrators,
+and developers.
+The documentation is divided into three sections, and each section is divided into
+subsections `basic` and `advanced`.
 
 <section id="docs">
 
-{{< blocks/section color="docs" >}}
+{{< blocks/section color="docs" type="row" >}}
 
 {{% blocks/feature icon="fa-sign-in-alt" title="[Getting started](/docs/getting_started/)" %}}
 

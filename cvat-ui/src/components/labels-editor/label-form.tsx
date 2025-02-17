@@ -1,11 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, PlusCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -174,7 +174,7 @@ export default class LabelForm extends React.Component<Props> {
                     },
                 ]}
             >
-                <Input disabled={attr.id >= 0} className='cvat-attribute-name-input' placeholder='Name' />
+                <Input className='cvat-attribute-name-input' placeholder='Name' />
             </Form.Item>
         );
     }
@@ -422,8 +422,12 @@ export default class LabelForm extends React.Component<Props> {
                         onClick={(): void => {
                             if (attr.id >= 0) {
                                 Modal.confirm({
+                                    className: 'cvat-modal-delete-label-attribute',
+                                    icon: <ExclamationCircleOutlined />,
                                     title: `Do you want to remove the "${attr.name}" attribute?`,
-                                    content: 'This action is irreversible. It will remove corresponding annotations.',
+                                    content: 'This action cannot be undone. All annotations associated to the attribute will be removed',
+                                    type: 'warning',
+                                    okButtonProps: { type: 'primary', danger: true },
                                     onOk: () => {
                                         this.removeAttribute(key);
                                         setTimeout(() => {
@@ -493,7 +497,7 @@ export default class LabelForm extends React.Component<Props> {
                 name='name'
                 rules={[
                     {
-                        required: !!label,
+                        required: true,
                         message: 'Please specify a name',
                     },
                     {
@@ -503,7 +507,7 @@ export default class LabelForm extends React.Component<Props> {
                     {
                         validator: (_rule: any, labelName: string) => {
                             if (labelNames.includes(labelName) && label?.name !== labelName) {
-                                return Promise.reject(new Error('Label name must be unique for the task'));
+                                return Promise.reject(new Error('Label name must be unique'));
                             }
                             return Promise.resolve();
                         },
@@ -556,7 +560,7 @@ export default class LabelForm extends React.Component<Props> {
     private renderNewAttributeButton(): JSX.Element {
         return (
             <Form.Item>
-                <Button type='ghost' onClick={this.addAttribute} className='cvat-new-attribute-button'>
+                <Button onClick={this.addAttribute} className='cvat-new-attribute-button'>
                     Add an attribute
                     <PlusCircleOutlined />
                 </Button>

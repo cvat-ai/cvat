@@ -1,0 +1,62 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-action-runner-frames,
+.cvat-action-runner-buttons,
+.cvat-action-runner-action-parameters {
+    margin-top: $grid-unit-size * 6;
+}
+
+.cvat-action-runner-list,
+.cvat-action-runner-frames-predefined {
+    margin-top: $grid-unit-size * 2;
+}
+
+.cvat-action-runner-info {
+    .ant-alert {
+        text-align: justify;
+    }
+
+    .ant-btn {
+        padding-left: 0;
+    }
+}
+
+.cvat-action-runner-list {
+    .ant-select {
+        width: 100%;
+    }
+}
+
+.cvat-action-runner-frames-predefined {
+    .ant-btn:not(:first-child) {
+        margin-left: $grid-unit-size;
+    }
+}
+
+.cvat-action-runner-action-parameters {
+    .cvat-action-runner-action-parameter {
+        margin-top: $grid-unit-size;
+
+        > span:first-child {
+            margin-right: $grid-unit-size;
+        }
+    }
+}
+
+.cvat-action-runner-progress-message {
+    display: block;
+    text-align: center;
+}
+
+.cvat-action-runner-buttons {
+    display: flex;
+    justify-content: flex-end;
+
+    > .cvat-action-runner-cancel-btn {
+        margin-right: $grid-unit-size;
+    }
+}

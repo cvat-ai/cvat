@@ -1,21 +1,40 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
-import { registerGitPlugin } from 'utils/git-utils';
 import { PluginComponent, PluginsState } from '.';
 
 const defaultState: PluginsState = {
     fetching: false,
     initialized: false,
     list: {
-        GIT_INTEGRATION: false,
         ANALYTICS: false,
         MODELS: false,
     },
     current: {},
+    callbacks: {
+        annotationPage: {
+            header: {
+                menu: {
+                    beforeJobFinish: [],
+                },
+            },
+        },
+    },
+    overridableComponents: {
+        annotationPage: {
+            header: {
+                // not used
+                saveAnnotationButton: [],
+            },
+        },
+        qualityControlPage: {
+            overviewTab: [],
+            allocationTable: [],
+        },
+    },
     components: {
         header: {
             userMenu: {
@@ -25,34 +44,56 @@ const defaultState: PluginsState = {
         loginPage: {
             loginForm: [],
         },
+        modelsPage: {
+            topBar: {
+                items: [],
+            },
+            modelItem: {
+                menu: {
+                    items: [],
+                },
+                topBar: {
+                    menu: {
+                        items: [],
+                    },
+                },
+            },
+        },
         projectActions: {
+            // not used
             items: [],
         },
         taskActions: {
+            // not used
             items: [],
         },
         taskItem: {
+            // not used
             ribbon: [],
         },
         projectItem: {
+            // not used
             ribbon: [],
         },
-        annotationPage: {
-            header: {
-                player: [],
-            },
-        },
         router: [],
-        loggedInModals: [],
         settings: {
             player: [],
+        },
+        about: {
+            links: {
+                items: [],
+            },
         },
     },
 };
 
-function findContainerFromPath(path: string, state: PluginsState): PluginComponent[] {
+function findContainerFromPath(
+    path: string,
+    state: PluginsState,
+    prefix: 'components' | 'callbacks' | 'overridableComponents',
+): unknown[] {
     const pathSegments = path.split('.');
-    let updatedStateSegment: any = state.components;
+    let updatedStateSegment: any = state[prefix];
     for (const pathSegment of pathSegments) {
         if (Array.isArray(updatedStateSegment[pathSegment])) {
             updatedStateSegment[pathSegment] = [...updatedStateSegment[pathSegment]];
@@ -61,7 +102,7 @@ function findContainerFromPath(path: string, state: PluginsState): PluginCompone
         }
         updatedStateSegment = updatedStateSegment[pathSegment];
         if (typeof updatedStateSegment === 'undefined') {
-            throw new Error('Could not add plugin component. Path is not supported by the core application');
+            throw new Error('The specified plugins path is not supported by the core application');
         }
     }
 
@@ -84,10 +125,6 @@ export default function (state: PluginsState = defaultState, action: PluginActio
         case PluginsActionTypes.GET_PLUGINS_SUCCESS: {
             const { list } = action.payload;
 
-            if (!state.list.GIT_INTEGRATION && list.GIT_INTEGRATION) {
-                registerGitPlugin();
-            }
-
             return {
                 ...state,
                 initialized: true,
@@ -109,7 +146,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                 components: { ...state.components },
             };
 
-            const container = findContainerFromPath(path, updatedState);
+            const container = findContainerFromPath(path, updatedState, 'components') as PluginComponent[];
             container.push({
                 component,
                 data: {
@@ -125,6 +162,33 @@ export default function (state: PluginsState = defaultState, action: PluginActio
 
             return updatedState;
         }
+        case PluginsActionTypes.UPDATE_UI_COMPONENT: {
+            const { path, component } = action.payload;
+            const updatedState = {
+                ...state,
+                overridableComponents: { ...state.overridableComponents },
+            };
+
+            const container = findContainerFromPath(path, updatedState, 'overridableComponents') as CallableFunction[];
+            container.push(component);
+
+            return updatedState;
+        }
+        case PluginsActionTypes.REVOKE_UI_COMPONENT: {
+            const { path, component } = action.payload;
+            const updatedState = {
+                ...state,
+                overridableComponents: { ...state.overridableComponents },
+            };
+
+            const container = findContainerFromPath(path, updatedState, 'overridableComponents') as CallableFunction[];
+            const index = container.findIndex((el) => el === component);
+            if (index !== -1) {
+                container.splice(index, 1);
+            }
+
+            return updatedState;
+        }
         case PluginsActionTypes.REMOVE_UI_COMPONENT: {
             const { path, component } = action.payload;
             const updatedState = {
@@ -132,8 +196,35 @@ export default function (state: PluginsState = defaultState, action: PluginActio
                 components: { ...state.components },
             };
 
-            const container = findContainerFromPath(path, updatedState);
+            const container = findContainerFromPath(path, updatedState, 'components') as PluginComponent[];
             const index = container.findIndex((el) => el.component === component);
+            if (index !== -1) {
+                container.splice(index, 1);
+            }
+
+            return updatedState;
+        }
+        case PluginsActionTypes.ADD_UI_CALLBACK: {
+            const { path, callback } = action.payload;
+            const updatedState = {
+                ...state,
+                components: { ...state.components },
+            };
+
+            const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
+            container.push(callback);
+
+            return updatedState;
+        }
+        case PluginsActionTypes.REMOVE_UI_CALLBACK: {
+            const { path, callback } = action.payload;
+            const updatedState = {
+                ...state,
+                components: { ...state.components },
+            };
+
+            const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
+            const index = container.findIndex((_callback) => _callback === callback);
             if (index !== -1) {
                 container.splice(index, 1);
             }

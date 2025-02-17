@@ -5,7 +5,8 @@ weight: 4
 description: 'Advanced operations available during annotation in track mode.'
 ---
 
-Basic operations in the mode were described in section [track mode (basics)](/docs/manual/basics/track-mode-basics/).
+Basic operations in the mode were described in section
+{{< ilink "/docs/manual/basics/track-mode-basics" "track mode (basics)" >}}.
 
 Shapes that were created in the track mode, have extra navigation buttons.
 

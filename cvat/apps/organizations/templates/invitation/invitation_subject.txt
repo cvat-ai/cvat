@@ -1,0 +1,4 @@
+{% load i18n %}
+{% autoescape off %}
+{% blocktrans %}You're invited to join the {{ organization_name }} organization in CVAT!{% endblocktrans %}
+{% endautoescape %}

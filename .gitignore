@@ -4,7 +4,6 @@
 /share/
 /static/
 /db.sqlite3
-/.*env*
 /keys
 /logs
 /profiles
@@ -20,6 +19,12 @@ __pycache__
 ._*
 .coverage
 .husky/
+.python-version
+/tmp*cvat/
+/temp*/
+
+# Ignore generated test files
+docker-compose.tests.yml
 
 # Ignore npm logs file
 npm-debug.log*
@@ -48,6 +53,8 @@ yarn-error.log*
 
 # Ignore all the installed packages
 node_modules
+/*env*/
+/.*env*
 
 # Ignore all js dists
 cvat-data/dist
@@ -58,8 +65,8 @@ cvat-ui/dist
 
 # produced by npm run docs in cvat-core
 cvat-core/docs
-# produced by npm run test in cvat-core
-cvat-core/reports
 # produced by prepare in the root package.json script
 .husky
 
+# produced by cvat/apps/iam/rules/tests/generate_tests.py
+/cvat/apps/*/rules/*_test.gen.rego

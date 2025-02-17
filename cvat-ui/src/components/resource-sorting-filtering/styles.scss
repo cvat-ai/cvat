@@ -1,14 +1,15 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-resource-page-filters {
     display: flex;
     align-items: center;
 
-    span[aria-label=down] {
+    span[aria-label="down"] {
         margin-right: $grid-unit-size;
     }
 
@@ -39,47 +40,11 @@
 .cvat-resource-page-filters-builder {
     background: white;
     padding: $grid-unit-size;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
     box-shadow: $box-shadow-base;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-
-    // redefine default awesome react query builder styles below
-    .query-builder {
-        margin: $grid-unit-size;
-
-        .group.group-or-rule {
-            background: none !important;
-            border: none !important;
-
-            .group.group-or-rule {
-                &::before {
-                    left: -13px;
-                }
-
-                &::after {
-                    left: -13px;
-                }
-            }
-        }
-
-        .group--actions.group--actions--tr {
-            opacity: 1 !important;
-        }
-
-        .group--conjunctions {
-            div.ant-btn-group {
-                button.ant-btn {
-                    width: auto !important;
-                    opacity: 1 !important;
-                    margin-right: $grid-unit-size !important;
-                    padding: 0 $grid-unit-size !important;
-                    border-left-color: #d9d9d9 !important;
-                }
-            }
-        }
-    }
 }
 
 .cvat-resource-page-sorting-list,
@@ -87,7 +52,7 @@
 .cvat-resource-page-recent-filters-list {
     background: white;
     padding: $grid-unit-size;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
     display: flex;
     flex-direction: column;
     box-shadow: $box-shadow-base;

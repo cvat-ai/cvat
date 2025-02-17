@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +24,7 @@ context('Connected file share.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
     });
 
@@ -41,7 +41,8 @@ context('Connected file share.', () => {
                 for (let frame = 0; frame < imageFiles.images.length; frame++) {
                     cy.get(playerFilenameWrapper).should('have.text', `images/${imageFiles.images[frame]}`);
                     cy.checkFrameNum(frame);
-                    cy.get('.cvat-player-next-button').click().trigger('mouseout');
+                    cy.get('.cvat-player-next-button').click();
+                    cy.get('.cvat-player-next-button').trigger('mouseout');
                 }
             });
         });

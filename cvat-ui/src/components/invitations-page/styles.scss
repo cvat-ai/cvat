@@ -1,0 +1,64 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-invitations-page {
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+}
+
+.cvat-empty-invitations-list {
+    .ant-empty {
+        top: 50%;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+    }
+}
+
+.cvat-invitations-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-invitations-list-content {
+    padding-bottom: $grid-unit-size;
+    height: 95%;
+}
+
+.cvat-invitation-item {
+    margin-bottom: $grid-unit-size;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+
+    .cvat-invitation-description {
+        display: flex;
+        align-items: center;
+    }
+
+    .cvat-invitation-actions {
+        button {
+            margin-left: $grid-unit-size;
+        }
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2;
+    }
+}
+
+.cvat-invitation-item-declined {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cvat-invitation-item-ribbon {
+    top: $grid-unit-size * 0.5;
+}

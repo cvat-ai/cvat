@@ -1,55 +1,75 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
-    MaskShape, BasicInjection, RawShapeData, RawTrackData, RawTagData, SkeletonShape, SkeletonTrack,
+    MaskShape, BasicInjection, SkeletonShape,
+    SkeletonTrack, PolygonShape, CuboidShape,
+    RectangleShape, PolylineShape, PointsShape, EllipseShape,
+    InterpolationNotPossibleError,
 } from './annotations-objects';
+import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
-import { Label } from './labels';
+import { Attribute, Label } from './labels';
 import { ArgumentError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
-import { mask2Rle, truncateMask } from './object-utils';
+import { cropMask } from './object-utils';
 import config from './config';
 import {
-    HistoryActions, ShapeType, ObjectType, colors, Source,
+    HistoryActions, ShapeType, ObjectType, colors, Source, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
 
-interface RawCollection {
-    tags: RawTagData[],
-    shapes: RawShapeData[],
-    tracks: RawTrackData[],
-}
+const validateAttributesList = (
+    attributes: { spec_id: number, value: string }[],
+): { spec_id: number, value: string }[] => {
+    for (const { spec_id: specID, value } of attributes) {
+        checkObjectType('attribute id', specID, 'integer', null);
+        checkObjectType('attribute value', value, 'string', null);
+    }
+    return attributes;
+};
 
-interface ImportedCollection {
-    tags: Tag[],
-    shapes: Shape[],
-    tracks: Track[],
-}
+const objectAttributesAsList = (state: ObjectState): { spec_id: number, value: string }[] => (
+    Object.entries(state.attributes).map(([key, value]) => ({
+        spec_id: +key,
+        value,
+    }))
+);
+
+const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
+    label.attributes.reduce((accumulator, attribute) => {
+        accumulator[attribute.id] = attribute;
+        return accumulator;
+    }, {})
+);
 
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: any;
-    private labels: Record<number, Label>
+    private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
     private objects: Record<number, Shape | Tag | Track>;
-    private count: number;
     private groups: { max: number };
     private injection: BasicInjection;
 
-    constructor(data) {
+    constructor(data: {
+        labels: Label[];
+        history: AnnotationHistory;
+        stopFrame: number;
+        dimension: DimensionType;
+        framesInfo: BasicInjection['framesInfo'];
+        jobType: JobType;
+    }) {
         this.stopFrame = data.stopFrame;
-        this.frameMeta = data.frameMeta;
 
         this.labels = data.labels.reduce((labelAccumulator, label) => {
             labelAccumulator[label.id] = label;
@@ -66,25 +86,30 @@ export default class Collection {
         this.tags = {}; // key is a frame
         this.tracks = [];
         this.objects = {}; // key is a client id
-        this.count = 0;
         this.flush = false;
         this.groups = {
             max: 0,
         }; // it is an object to we can pass it as an argument by a reference
+
         this.injection = {
             labels: this.labels,
             groups: this.groups,
-            frameMeta: this.frameMeta,
+            framesInfo: data.framesInfo,
             history: this.history,
             dimension: data.dimension,
-            nextClientID: () => ++this.count,
+            jobType: data.jobType,
             groupColors: {},
+            nextClientID: () => ++config.globalObjectsCounter,
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
         };
     }
 
-    import(data: RawCollection): ImportedCollection {
+    public import(data: Omit<SerializedCollection, 'version'>): {
+        tags: Tag[];
+        shapes: Shape[];
+        tracks: Track[];
+    } {
         const result = {
             tags: [],
             shapes: [],
@@ -92,7 +117,7 @@ export default class Collection {
         };
 
         for (const tag of data.tags) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
             this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
@@ -103,7 +128,7 @@ export default class Collection {
         }
 
         for (const shape of data.shapes) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
             this.shapes[shapeModel.frame].push(shapeModel);
@@ -113,7 +138,7 @@ export default class Collection {
         }
 
         for (const track of data.tracks) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
             // In this case a corresponded message will be sent to the console
@@ -127,16 +152,75 @@ export default class Collection {
         return result;
     }
 
-    export(): RawCollection {
+    public commit(
+        appended: Omit<SerializedCollection, 'version'>,
+        removed: Omit<SerializedCollection, 'version'>,
+        frame: number,
+    ): { tags: Tag[]; shapes: Shape[]; tracks: Track[]; } {
+        const isCollectionConsistent = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .every((object) => typeof object.clientID === 'number' &&
+                Object.prototype.hasOwnProperty.call(this.objects, object.clientID));
+
+        if (!isCollectionConsistent) {
+            throw new ArgumentError('Objects required to be deleted were not found in the collection');
+        }
+
+        const removedCollection: (Shape | Tag | Track)[] = [].concat(removed.shapes, removed.tags, removed.tracks)
+            .map((object) => this.objects[object.clientID as number]);
+
+        const imported = this.import(appended);
+        const appendedCollection = ([] as (Shape | Tag | Track)[])
+            .concat(imported.shapes, imported.tags, imported.tracks);
+        if (!(appendedCollection.length > 0 || removedCollection.length > 0)) {
+            // nothing to commit
+            return;
+        }
+
+        let prevRemoved = [];
+        removedCollection.forEach((collectionObject) => {
+            prevRemoved.push(collectionObject.removed);
+            collectionObject.removed = true;
+        });
+
+        this.history.do(
+            HistoryActions.COMMIT_ANNOTATIONS,
+            () => {
+                removedCollection.forEach((collectionObject, idx) => {
+                    collectionObject.removed = prevRemoved[idx];
+                });
+                prevRemoved = [];
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = true;
+                });
+            },
+            () => {
+                removedCollection.forEach((collectionObject) => {
+                    prevRemoved.push(collectionObject.removed);
+                    collectionObject.removed = true;
+                });
+                appendedCollection.forEach((collectionObject) => {
+                    collectionObject.removed = false;
+                });
+            },
+            [].concat(
+                removedCollection.map((object) => object.clientID),
+                appendedCollection.map((object) => object.clientID),
+            ),
+            frame,
+        );
+    }
+
+    public export(): Pick<SerializedCollection, 'shapes' | 'tracks' | 'tags'> {
         const data = {
-            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
+            tracks: this.tracks.filter((track) => !track.removed)
+                .map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
                 .reduce((accumulator, frameShapes) => {
                     accumulator.push(...frameShapes);
                     return accumulator;
                 }, [])
                 .filter((shape) => !shape.removed)
-                .map((shape) => shape.toJSON()),
+                .map((shape) => shape.toJSON() as SerializedShape),
             tags: Object.values(this.tags)
                 .reduce((accumulator, frameTags) => {
                     accumulator.push(...frameTags);
@@ -149,10 +233,14 @@ export default class Collection {
         return data;
     }
 
-    get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+    public get(frame: number, allTracks: boolean, filters: object[]): ObjectState[] {
+        if (this.injection.framesInfo.isFrameDeleted(frame)) {
+            return [];
+        }
+
         const { tracks } = this;
-        const shapes = this.shapes[frame] || [];
-        const tags = this.tags[frame] || [];
+        const shapes = this.shapes[frame] ?? [];
+        const tags = this.tags[frame] ?? [];
 
         const objects = [].concat(tracks, shapes, tags);
         const visible = [];
@@ -162,16 +250,21 @@ export default class Collection {
                 continue;
             }
 
-            const stateData = object.get(frame);
-            if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
-                continue;
+            try {
+                const stateData = object.get(frame);
+                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
+                    continue;
+                }
+                visible.push(stateData);
+            } catch (error: unknown) {
+                if (!(error instanceof InterpolationNotPossibleError)) {
+                    throw error;
+                }
             }
-
-            visible.push(stateData);
         }
 
         const objectStates = [];
-        const filtered = this.annotationsFilter.filter(visible, filters);
+        const filtered = this.annotationsFilter.filterSerializedObjectStates(visible, filters);
 
         visible.forEach((stateData) => {
             if (!filters.length || filtered.includes(stateData.clientID)) {
@@ -183,19 +276,15 @@ export default class Collection {
         return objectStates;
     }
 
-    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): RawTrackData {
-        const keyframes: Record<number, RawTrackData['shapes'][0]> = {}; // frame: position
+    private _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
+        const keyframes: Record<number, SerializedTrack['shapes'][0]> = {}; // frame: position
         const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
         if (!Object.values(ShapeType).includes(shapeType)) {
             throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
         }
 
-        const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
-            accumulator[attribute.id] = attribute;
-            return accumulator;
-        }, {});
-
+        const labelAttributes = labelAttributesAsDict(label);
         for (let i = 0; i < objectsForMerge.length; i++) {
             // For each state get corresponding object
             const object = objectsForMerge[i];
@@ -303,7 +392,7 @@ export default class Collection {
             }
 
             if (object.shapeType === ShapeType.SKELETON) {
-                for (const element of (object as SkeletonShape | SkeletonTrack).elements) {
+                for (const element of (object as unknown as SkeletonShape | SkeletonTrack).elements) {
                     // for each track/shape element get its first objectState and keep it
                     elements[element.label.id] = [
                         ...(elements[element.label.id] || []), element,
@@ -370,8 +459,8 @@ export default class Collection {
         return track;
     }
 
-    merge(objectStates: ObjectState[]): void {
-        checkObjectType('shapes for merge', objectStates, null, Array);
+    public merge(objectStates: ObjectState[]): void {
+        checkObjectType('shapes to merge', objectStates, null, Array);
         if (!objectStates.length) return;
         const objectsForMerge = objectStates.map((state) => {
             checkObjectType('object state', state, null, ObjectState);
@@ -427,12 +516,8 @@ export default class Collection {
         );
     }
 
-    _splitInternal(objectState: ObjectState, object: Track, frame: number): RawTrackData[] {
-        const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
-            accumulator[attribute.id] = attribute;
-            return accumulator;
-        }, {});
-
+    private _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
+        const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
         copy.clearServerID();
@@ -499,7 +584,7 @@ export default class Collection {
         return [prev, next];
     }
 
-    split(objectState: ObjectState, frame: number): void {
+    public split(objectState: ObjectState, frame: number): void {
         checkObjectType('object state', objectState, null, ObjectState);
         checkObjectType('frame', frame, 'integer', null);
 
@@ -540,8 +625,8 @@ export default class Collection {
         );
     }
 
-    group(objectStates: ObjectState[], reset: boolean): number {
-        checkObjectType('shapes for group', objectStates, null, Array);
+    public group(objectStates: ObjectState[], reset: boolean): number {
+        checkObjectType('shapes to group', objectStates, null, Array);
 
         const objectsForGroup = objectStates.map((state) => {
             checkObjectType('object state', state, null, ObjectState);
@@ -581,52 +666,229 @@ export default class Collection {
         return groupIdx;
     }
 
-    clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
-        if (startframe !== undefined && endframe !== undefined) {
-            // If only a range of annotations need to be cleared
-            for (let frame = startframe; frame <= endframe; frame++) {
-                this.shapes[frame] = [];
-                this.tags[frame] = [];
+    public join(objectStates: ObjectState[], points: number[]): void {
+        checkObjectType('shapes to join', objectStates, null, Array);
+        checkObjectType('joined rle mask', points, null, Array);
+
+        if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
+            throw new ArgumentError('All joined objects must be placed on the same frame');
+        }
+        if (objectStates.some((state, idx) => idx && state.label.id !== objectStates[idx - 1].label.id)) {
+            throw new ArgumentError('All the objects must have the same label');
+        }
+
+        const objectsToJoin = objectStates.map((state) => {
+            checkObjectType('object state', state, null, ObjectState);
+
+            const object = this.objects[state.clientID];
+            if (typeof object === 'undefined') {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
             }
-            const { tracks } = this;
-            tracks.forEach((track) => {
-                if (track.frame <= endframe) {
-                    if (delTrackKeyframesOnly) {
-                        for (const keyframe of Object.keys(track.shapes)) {
-                            if (+keyframe >= startframe && +keyframe <= endframe) {
-                                delete track.shapes[keyframe];
-                                ((track as unknown as SkeletonTrack).elements || []).forEach((element) => {
-                                    if (keyframe in element.shapes) {
-                                        delete element.shapes[keyframe];
-                                        element.updated = Date.now();
-                                    }
-                                });
-                                track.updated = Date.now();
-                            }
-                        }
-                    } else if (track.frame >= startframe) {
-                        const index = tracks.indexOf(track);
-                        if (index > -1) { tracks.splice(index, 1); }
-                    }
+
+            if (!(object instanceof MaskShape)) {
+                throw new ArgumentError(
+                    `Only shape masks can be joined. Found instance of: "${object.constructor.name}"`,
+                );
+            }
+
+            return object;
+        });
+
+        if (objectsToJoin.length > 1) {
+            const rle = points;
+            const labelAttributes = labelAttributesAsDict(objectsToJoin[0].label);
+            const attrValues = validateAttributesList(objectAttributesAsList(objectStates[0]));
+            for (const attr of attrValues) {
+                if (objectStates.some((state) => state.attributes[attr.spec_id] !== attr.value)) {
+                    attr.value = labelAttributes[attr.spec_id].defaultValue;
                 }
+            }
+
+            // Append newly created object to the collection
+            const imported = this.import({
+                shapes: [{
+                    attributes: attrValues,
+                    frame: objectsToJoin[0].frame,
+                    group: 0,
+                    label_id: objectsToJoin[0].label.id,
+                    outside: false,
+                    occluded: objectsToJoin.some((object: MaskShape) => object.occluded),
+                    points: rle,
+                    rotation: 0,
+                    type: ShapeType.MASK,
+                    z_order: Math.max(...objectsToJoin.map((object: MaskShape) => object.zOrder)),
+                    source: Source.MANUAL,
+                    elements: [],
+                }],
+                tracks: [],
+                tags: [],
             });
-        } else if (startframe === undefined && endframe === undefined) {
-            // If all annotations need to be cleared
+
+            // and remove joined shapes
+            for (const object of objectsToJoin) {
+                object.removed = true;
+            }
+
+            // handle history actions
+            const [importedShape] = imported.shapes;
+            this.history.do(
+                HistoryActions.JOINED_OBJECTS,
+                () => {
+                    importedShape.removed = true;
+                    for (const object of objectsToJoin) {
+                        object.removed = false;
+                    }
+                },
+                () => {
+                    importedShape.removed = false;
+                    for (const object of objectsToJoin) {
+                        object.removed = true;
+                    }
+                },
+                [...objectsToJoin.map((object) => object.clientID), importedShape.clientID],
+                objectsToJoin[0].frame,
+            );
+        }
+    }
+
+    public slice(state: ObjectState, results: number[][]): void {
+        if (results.length !== 2) {
+            throw new Error('Not supported slicing count');
+        }
+
+        const [points1, points2] = results;
+        checkObjectType('sliced object id', state, null, ObjectState);
+        checkObjectType('first slicing contour', points1, null, Array);
+        checkObjectType('second slicing contour', points2, null, Array);
+
+        points1.forEach(
+            (el: number) => checkObjectType('first slicing contour element', el, 'number'),
+        );
+        points2.forEach(
+            (el: number) => checkObjectType('second slicing contour element', el, 'number'),
+        );
+
+        const slicedObject = this.objects[state.clientID];
+        if (!(slicedObject instanceof PolygonShape || slicedObject instanceof MaskShape)) {
+            throw new ArgumentError(
+                `Only polygon shape or mask shape can be sliced. Got "${slicedObject.constructor.name}"`,
+            );
+        }
+
+        const { width, height } = this.injection.framesInfo[slicedObject.frame];
+        if (slicedObject instanceof MaskShape) {
+            points1.push(slicedObject.left, slicedObject.top, slicedObject.right, slicedObject.bottom);
+            points2.push(slicedObject.left, slicedObject.top, slicedObject.right, slicedObject.bottom);
+        }
+
+        const imported = this.import({
+            shapes: [{
+                attributes: validateAttributesList(objectAttributesAsList(state)),
+                frame: slicedObject.frame,
+                group: slicedObject.group,
+                label_id: slicedObject.label.id,
+                outside: false,
+                occluded: slicedObject.occluded,
+                points: slicedObject.shapeType === ShapeType.POLYGON ?
+                    points1 : cropMask(points1, width, height),
+                rotation: 0,
+                type: slicedObject.shapeType,
+                z_order: slicedObject.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }, {
+                attributes: validateAttributesList(objectAttributesAsList(state)),
+                frame: slicedObject.frame,
+                group: slicedObject.group,
+                label_id: slicedObject.label.id,
+                outside: false,
+                occluded: slicedObject.occluded,
+                points: slicedObject.shapeType === ShapeType.POLYGON ?
+                    points2 : cropMask(points2, width, height),
+                rotation: 0,
+                type: slicedObject.shapeType,
+                z_order: slicedObject.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }],
+            tracks: [],
+            tags: [],
+        });
+        slicedObject.removed = true;
+
+        this.history.do(
+            HistoryActions.SLICED_OBJECT,
+            () => {
+                slicedObject.removed = false;
+                imported.shapes.forEach((shape) => {
+                    shape.removed = true;
+                });
+            },
+            () => {
+                slicedObject.removed = true;
+                imported.shapes.forEach((shape) => {
+                    shape.removed = false;
+                });
+            },
+            [...imported.shapes.map((object) => object.clientID), slicedObject.clientID],
+            slicedObject.frame,
+        );
+    }
+
+    public clear(options?: {
+        startFrame?: number;
+        stopFrame?: number;
+        delTrackKeyframesOnly?: boolean;
+    }): void {
+        const { startFrame, stopFrame, delTrackKeyframesOnly } = options ?? {};
+
+        if (typeof startFrame === 'undefined' && typeof stopFrame === 'undefined') {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
             this.objects = {};
-            this.count = 0;
 
             this.flush = true;
         } else {
-            // If inputs provided were wrong
-            throw Error('Could not remove the annotations, please provide both inputs or' +
-                ' leave the inputs below empty to remove all the annotations from this job');
+            const from = startFrame ?? 0;
+            const to = stopFrame ?? this.stopFrame;
+
+            // If only a range of annotations need to be cleared
+            for (let frame = from; frame <= to; frame++) {
+                this.shapes[frame] = [];
+                this.tags[frame] = [];
+            }
+
+            this.tracks.slice(0).forEach((track) => {
+                if (track.frame <= to) {
+                    if (delTrackKeyframesOnly) {
+                        for (const keyframe of Object.keys(track.shapes)) {
+                            if (+keyframe >= from && +keyframe <= to) {
+                                delete track.shapes[keyframe];
+                                if (track instanceof SkeletonTrack) {
+                                    track.elements.forEach((element) => {
+                                        if (keyframe in element.shapes) {
+                                            delete element.shapes[keyframe];
+                                            element.updated = Date.now();
+                                        }
+                                    });
+                                }
+                                track.updated = Date.now();
+                            }
+                        }
+
+                        if (Object.keys(track.shapes).length === 0) {
+                            this.tracks.splice(this.tracks.indexOf(track), 1);
+                        }
+                    } else if (track.frame >= from) {
+                        this.tracks.splice(this.tracks.indexOf(track), 1);
+                    }
+                }
+            });
         }
     }
 
-    statistics(filter): Statistics {
+    public statistics(): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -665,7 +927,7 @@ export default class Collection {
                     count -= 1;
                 }
                 for (let i = start + 1; lastIsKeyframe ? i < stop : i <= stop; i++) {
-                    if (this.frameMeta.deleted_frames[i]) {
+                    if (this.injection.framesInfo.isFrameDeleted(i)) {
                         count--;
                     }
                 }
@@ -678,7 +940,7 @@ export default class Collection {
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
-                .filter((frame) => !this.frameMeta.deleted_frames[frame]);
+                .filter((frame) => !this.injection.framesInfo.isFrameDeleted(frame));
 
             let prevKeyframe = keyframes[0];
             let visible = false;
@@ -717,10 +979,6 @@ export default class Collection {
                 continue;
             }
 
-            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
-                continue;
-            }
-
             let objectType = null;
             if (object instanceof Shape) {
                 objectType = 'shape';
@@ -733,19 +991,19 @@ export default class Collection {
             }
 
             const { name: label } = object.label;
-            if (objectType === 'tag' && !this.frameMeta.deleted_frames[object.frame]) {
+            if (objectType === 'tag' && !this.injection.framesInfo.isFrameDeleted(object.frame)) {
                 labels[label].tag++;
                 labels[label].manually++;
                 labels[label].total++;
             } else if (objectType === 'track') {
                 scanTrack(object);
-            } else if (!this.frameMeta.deleted_frames[object.frame]) {
+            } else if (!this.injection.framesInfo.isFrameDeleted(object.frame)) {
                 const { shapeType } = object as Shape;
                 labels[label][shapeType].shape++;
                 labels[label].manually++;
                 labels[label].total++;
                 if (shapeType === ShapeType.SKELETON) {
-                    (object as SkeletonShape).elements.forEach((element) => {
+                    (object as unknown as SkeletonShape).elements.forEach((element) => {
                         const combinedName = [label, element.label.name].join(sep);
                         labels[combinedName][element.shapeType].shape++;
                         labels[combinedName].manually++;
@@ -770,28 +1028,13 @@ export default class Collection {
         return new Statistics(labels, total);
     }
 
-    put(objectStates: ObjectState[]): number[] {
+    public put(objectStates: ObjectState[]): number[] {
         checkObjectType('shapes for put', objectStates, null, Array);
         const constructed = {
             shapes: [],
             tracks: [],
             tags: [],
         };
-
-        function convertAttributes(accumulator, attrID) {
-            const specID = +attrID;
-            const value = this.attributes[attrID];
-
-            checkObjectType('attribute id', specID, 'integer', null);
-            checkObjectType('attribute value', value, 'string', null);
-
-            accumulator.push({
-                spec_id: specID,
-                value,
-            });
-
-            return accumulator;
-        }
 
         for (const state of objectStates) {
             checkObjectType('object state', state, null, ObjectState);
@@ -801,7 +1044,7 @@ export default class Collection {
             checkObjectType('state attributes', state.attributes, null, Object);
             checkObjectType('state label', state.label, null, Label);
 
-            const attributes = Object.keys(state.attributes).reduce(convertAttributes.bind(state), []);
+            const attributes = validateAttributesList(objectAttributesAsList(state));
             const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
@@ -833,6 +1076,10 @@ export default class Collection {
                     );
                 }
 
+                if (state.shapeType === 'mask' && state.points.length < 6) {
+                    throw new ArgumentError('Could not create empty mask');
+                }
+
                 if (state.objectType === 'shape') {
                     constructed.shapes.push({
                         attributes,
@@ -843,19 +1090,15 @@ export default class Collection {
                         outside: state.outside || false,
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
-                            const { width, height } = this.frameMeta[state.frame];
-                            const points = truncateMask(state.points, 0, width, height);
-                            const [left, top, right, bottom] = points.splice(-4);
-                            const rlePoints = mask2Rle(points);
-                            rlePoints.push(left, top, right, bottom);
-                            return rlePoints;
+                            const { width, height } = this.injection.framesInfo[state.frame];
+                            return cropMask(state.points, width, height);
                         })() : state.points,
                         rotation: state.rotation || 0,
                         type: state.shapeType,
                         z_order: state.zOrder,
                         source: state.source,
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
-                            attributes: [],
+                            attributes: validateAttributesList(objectAttributesAsList(element)),
                             frame: element.frame,
                             group: 0,
                             label_id: element.label.id,
@@ -888,8 +1131,7 @@ export default class Collection {
                             },
                         ],
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
-                            const elementAttrValues = Object.keys(state.attributes)
-                                .reduce(convertAttributes.bind(state), []);
+                            const elementAttrValues = validateAttributesList(objectAttributesAsList(state));
                             const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
                                 accumulator[attribute.id] = attribute;
                                 return accumulator;
@@ -927,12 +1169,27 @@ export default class Collection {
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
         const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const additionalUndo = [];
+        const additionalRedo = [];
+        const additionalClientIDs = [];
+        let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
-                (object as MaskShape).removeUnderlyingPixels(object.frame);
+            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+                const {
+                    clientIDs,
+                    emptyMaskOccurred,
+                    undo: undoWithUnderlyingPixels,
+                    redo: redoWithUnderlyingPixels,
+                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                additionalUndo.push(undoWithUnderlyingPixels);
+                additionalRedo.push(redoWithUnderlyingPixels);
+                additionalClientIDs.push(clientIDs);
+                globalEmptyMaskOccurred = emptyMaskOccurred || globalEmptyMaskOccurred;
             }
         }
-
+        if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccurred) {
+            config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+        }
         if (objectStates.length) {
             this.history.do(
                 HistoryActions.CREATED_OBJECTS,
@@ -940,14 +1197,21 @@ export default class Collection {
                     importedArray.forEach((object) => {
                         object.removed = true;
                     });
+                    additionalUndo.forEach((undo) => {
+                        undo();
+                    });
                 },
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = false;
                         object.serverID = undefined;
                     });
+
+                    additionalRedo.forEach((redo) => {
+                        redo();
+                    });
                 },
-                importedArray.map((object) => object.clientID),
+                [...importedArray.map((object) => object.clientID), ...additionalClientIDs.flat()],
                 objectStates[0].frame,
             );
         }
@@ -955,7 +1219,7 @@ export default class Collection {
         return importedArray.map((value) => value.clientID);
     }
 
-    select(objectStates: ObjectState[], x: number, y: number): {
+    public select(objectStates: ObjectState[], x: number, y: number): {
         state: ObjectState,
         distance: number | null,
     } {
@@ -971,11 +1235,43 @@ export default class Collection {
                 continue;
             }
 
-            const object = this.objects[state.clientID];
-            if (typeof object === 'undefined') {
-                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            let distanceMetric: typeof RectangleShape['distance'] | null = null;
+            switch (state.shapeType) {
+                case ShapeType.CUBOID:
+                    distanceMetric = CuboidShape.distance;
+                    break;
+                case ShapeType.ELLIPSE:
+                    distanceMetric = EllipseShape.distance;
+                    break;
+                case ShapeType.MASK:
+                    distanceMetric = MaskShape.distance;
+                    break;
+                case ShapeType.POINTS:
+                    distanceMetric = PointsShape.distance;
+                    break;
+                case ShapeType.POLYGON:
+                    distanceMetric = PolygonShape.distance;
+                    break;
+                case ShapeType.POLYLINE:
+                    distanceMetric = PolylineShape.distance;
+                    break;
+                case ShapeType.RECTANGLE:
+                    distanceMetric = RectangleShape.distance;
+                    break;
+                case ShapeType.SKELETON:
+                    distanceMetric = SkeletonShape.distance;
+                    break;
+                default:
+                    throw new ArgumentError(`Unknown shape type "${state.shapeType}"`);
             }
-            const distance = object.constructor.distance(state.points, x, y, state.rotation);
+
+            let points = [];
+            if (state.shapeType === ShapeType.SKELETON) {
+                points = state.elements.filter((el) => !el.outside && !el.hidden).map((el) => el.points).flat();
+            } else {
+                points = state.points;
+            }
+            const distance = distanceMetric(points, x, y, state.rotation);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
@@ -988,17 +1284,30 @@ export default class Collection {
         };
     }
 
-    searchEmpty(frameFrom: number, frameTo: number): number | null {
+    private _searchEmpty(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
         const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
+                continue;
+            }
+
             if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
                 continue;
             }
+
             if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
                 continue;
             }
+
             const filteredTracks = this.tracks.filter((track) => !track.removed);
             let found = false;
             for (const track of filteredTracks) {
@@ -1021,14 +1330,58 @@ export default class Collection {
         return null;
     }
 
-    search(filters: string[], frameFrom: number, frameTo: number): number | null {
-        const sign = Math.sign(frameTo - frameFrom);
-        const filtersStr = JSON.stringify(filters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+    public search(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean;
+            annotationsFilters?: object[];
+            generalFilters?: {
+                isEmptyFrame?: boolean;
+            };
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
+        let { annotationsFilters } = searchParameters;
 
+        if ('generalFilters' in searchParameters) {
+            // if we are looking for en empty frame, run a dedicated algorithm
+            if (searchParameters.generalFilters.isEmptyFrame) {
+                return this._searchEmpty(frameFrom, frameTo, { allowDeletedFrames });
+            }
+
+            // not empty frames corresponds to default behaviour of the function with empty annotation filters
+            annotationsFilters = [];
+        }
+
+        const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+
+        // if not looking for an empty frame nor frame with annotations, return the next frame
+        // check if deleted frames are allowed additionally
+        if (!annotationsFilters) {
+            let frame = frameFrom;
+            while (predicate(frame)) {
+                if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
+                    frame = update(frame);
+                    continue;
+                }
+
+                return frame;
+            }
+
+            return null;
+        }
+
+        const filtersStr = JSON.stringify(annotationsFilters);
+        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.injection.framesInfo.isFrameDeleted(frame)) {
+                continue;
+            }
+
             // First prepare all data for the frame
             // Consider all shapes, tags, and not outside tracks that have keyframe here
             // In particular consider first and last frame as keyframes for all tracks
@@ -1047,13 +1400,8 @@ export default class Collection {
                 .filter((track) => !track.removed);
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
-            // Nothing to filtering, go to the next iteration
-            if (!statesData.length) {
-                continue;
-            }
-
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, filters);
+            const filtered = this.annotationsFilter.filterSerializedObjectStates(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }

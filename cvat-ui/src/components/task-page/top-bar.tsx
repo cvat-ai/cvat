@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,6 +25,9 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const onViewAnalytics = useCallback(() => {
         history.push(`/tasks/${taskInstance.id}/analytics`);
     }, [history]);
+    const onViewQualityControl = (): void => {
+        history.push(`/tasks/${taskInstance.id}/quality-control`);
+    };
 
     return (
         <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
@@ -51,12 +55,16 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 )}
             </Col>
             <Col>
-                <Dropdown overlay={(
-                    <ActionsMenuContainer
-                        taskInstance={taskInstance}
-                        onViewAnalytics={onViewAnalytics}
-                    />
-                )}
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    overlay={(
+                        <ActionsMenuContainer
+                            taskInstance={taskInstance}
+                            onViewAnalytics={onViewAnalytics}
+                            onViewQualityControl={onViewQualityControl}
+                        />
+                    )}
                 >
                     <Button size='middle' className='cvat-task-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>

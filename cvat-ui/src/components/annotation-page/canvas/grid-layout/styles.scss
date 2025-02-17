@@ -1,8 +1,8 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-canvas-grid-root {
     position: relative;
@@ -42,7 +42,7 @@
     padding-bottom: $grid-unit-size;
     padding-right: $grid-unit-size;
     padding-left: $grid-unit-size;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 $border-radius-base $border-radius-base;
     border-bottom: 1px solid $border-color-1;
     border-right: 1px solid $border-color-1;
     border-left: 1px solid $border-color-1;
@@ -57,12 +57,14 @@
 }
 
 .cvat-canvas-grid-item {
-    background-color: rgba(241, 241, 241, 0.7);
-    border-radius: 4px;
+    background-color: rgba(241, 241, 241, 70%);
+    border-radius: $border-radius-base;
 
+    /* stylelint-disable selector-class-pattern */
     &.react-grid-item.cssTransforms {
         transition-property: all;
     }
+    /* stylelint-enable selector-class-pattern */
 
     &.cvat-canvas-grid-fullscreen-item {
         width: 100% !important;
@@ -85,7 +87,7 @@
         z-index: 1000;
         font-size: 16px;
         background: $header-color;
-        border-radius: 2px;
+        border-radius: $border-radius-base;
         opacity: 0.6;
         transition: all 200ms;
 
@@ -117,8 +119,8 @@
             right: 0;
             width: 9px;
             height: 10px;
-            border-right: 2px solid rgba(0, 0, 0, 1);
-            border-bottom: 2px solid rgba(0, 0, 0, 1);
+            border-right: 2px solid rgba(0, 0, 0, 100%);
+            border-bottom: 2px solid rgba(0, 0, 0, 100%);
         }
     }
 }

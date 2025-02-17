@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,7 @@ context('Create a task with files from remote sources.', () => {
     const correctUrl = wrongUrl.replace('cvatt.jpg', 'cvat.jpg');
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').click();
@@ -37,7 +37,8 @@ context('Create a task with files from remote sources.', () => {
         });
 
         it('Set correct URL to remote file. The task is created.', () => {
-            cy.get('.cvat-file-selector-remote').clear().type(correctUrl);
+            cy.get('.cvat-file-selector-remote').clear();
+            cy.get('.cvat-file-selector-remote').type(correctUrl);
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-create-task-success').should('exist');
             cy.goToTaskList();

@@ -1,7 +1,7 @@
-ARG PIP_VERSION=22.0.2
+ARG PIP_VERSION=24.0
 ARG BASE_IMAGE=ubuntu:22.04
 
-FROM ${BASE_IMAGE} as build-image-base
+FROM ${BASE_IMAGE} AS build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
@@ -17,6 +17,11 @@ RUN apt-get update && \
         pkg-config \
         python3-dev \
         python3-pip \
+        libxml2-dev \
+        libxmlsec1-dev \
+        libxmlsec1-openssl \
+        libhdf5-dev \
+        cargo \
     && rm -rf /var/lib/apt/lists/*
 
 ARG PIP_VERSION
@@ -59,7 +64,7 @@ RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
 # Work around https://github.com/PyAV-Org/PyAV/issues/1140
 RUN pip install setuptools wheel 'cython<3'
 
-RUN --mount=type=cache,target=/root/.cache/pip/http \
+RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     python3 -m pip wheel --no-binary=av --no-build-isolation \
     -r /tmp/utils/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
@@ -73,17 +78,17 @@ COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/require
 # Exclude av from the requirements file
 RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 
-ARG DJANGO_CONFIGURATION="production"
+ARG CVAT_CONFIGURATION="production"
 
-RUN --mount=type=cache,target=/root/.cache/pip/http \
-    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
-    -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
+RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps --no-binary lxml,xmlsec \
+    -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.20.5 AS build-smokescreen
+FROM golang:1.23.0 AS build-smokescreen
 
-RUN git clone --depth=1 -b v0.0.4 https://github.com/stripe/smokescreen.git
-RUN cd smokescreen && go build -o /tmp/smokescreen
+RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
+RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
 
 FROM ${BASE_IMAGE}
 
@@ -103,8 +108,8 @@ ENV TERM=xterm \
     TZ=${TZ}
 
 ARG USER="django"
-ARG DJANGO_CONFIGURATION="production"
-ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
+ARG CVAT_CONFIGURATION="production"
+ENV DJANGO_SETTINGS_MODULE="cvat.settings.${CVAT_CONFIGURATION}"
 
 # Install necessary apt packages
 RUN apt-get update && \
@@ -113,22 +118,24 @@ RUN apt-get update && \
         ca-certificates \
         curl \
         git \
-        git-lfs \
         libgeos-c1v5 \
         libgl1 \
         libgomp1 \
         libldap-2.5-0 \
         libpython3.10 \
         libsasl2-2 \
+        libxml2 \
+        libxmlsec1 \
+        libxmlsec1-openssl \
         nginx \
         p7zip-full \
         poppler-utils \
         python3 \
-        python3-distutils \
         python3-venv \
-        ssh \
         supervisor \
         tzdata \
+        unrar \
+        wait-for-it \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
@@ -140,12 +147,7 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
-    if [ -z ${socks_proxy} ]; then \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
-    else \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
-    fi
+RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
@@ -162,6 +164,9 @@ RUN if [ "$CLAM_AV" = "yes" ]; then \
 # Install wheels from the build image
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
+# setuptools should be uninstalled after updating google-cloud-storage
+# https://github.com/googleapis/python-storage/issues/740
+RUN python -m pip install --upgrade setuptools
 ARG PIP_VERSION
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 
@@ -180,12 +185,16 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
         python3 -m pip install --no-cache-dir debugpy; \
     fi
 
+# Removing pip due to security reasons. See: https://scout.docker.com/vulnerabilities/id/CVE-2018-20225
+# The vulnerability is dubious and we don't use pip at runtime, but some vulnerability scanners mark it as a high vulnerability,
+# and it was decided to remove pip from the final image
+RUN python -m pip uninstall -y pip
+
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
+COPY --chown=${USER} manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} rqscheduler.py ${HOME}

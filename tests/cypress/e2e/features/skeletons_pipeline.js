@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
     let taskID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(
             imagesFolder,
@@ -54,7 +54,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
     });
 
     after(() => {
-        cy.clearAllCookies();
+        cy.headlessLogout();
         if (taskID !== null) {
             cy.getAuthKey().then((response) => {
                 const authKey = response.body.key;
@@ -83,7 +83,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                 taskID = interception.response.body.id;
                 expect(interception.response.statusCode).to.be.equal(201);
                 cy.intercept(`/api/tasks/${taskID}`).as('getTask');
-                cy.wait('@getTask', { timeout: 10000 });
+                cy.wait('@getTask');
                 cy.get('.cvat-job-item').should('exist').and('be.visible');
                 cy.openJob();
             });
@@ -220,6 +220,19 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
             cy.goCheckFrameNumber(imageParams.count - 1);
             cy.get('#cvat_canvas_shape_24').should('exist').and('be.visible');
+
+            cy.removeAnnotations();
+        });
+
+        it('Copy/paste a skeleton shape', () => {
+            createSkeletonObject('shape');
+            cy.get('#cvat_canvas_shape_2').click();
+            cy.get('#cvat_canvas_shape_2').trigger('mouseover');
+            cy.get('body').type('{ctrl}c');
+            cy.get('body').type('{ctrl}v');
+            cy.get('.cvat-canvas-container').click();
+
+            cy.get('#cvat_canvas_shape_7').should('exist').and('be.visible');
 
             cy.removeAnnotations();
         });

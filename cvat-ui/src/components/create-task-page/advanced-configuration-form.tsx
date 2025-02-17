@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,6 @@ import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { PercentageOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
-import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import Tooltip from 'antd/lib/tooltip';
@@ -18,6 +17,7 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+import { isInteger } from 'utils/validate-integer';
 import { StorageLocation } from 'reducers';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
@@ -25,8 +25,6 @@ import TargetStorageField from 'components/storage/target-storage-field';
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 
 const core = getCore();
-
-const { Option } = Select;
 
 export enum SortingMethod {
     LEXICOGRAPHICAL = 'lexicographical',
@@ -43,9 +41,6 @@ export interface AdvancedConfiguration {
     startFrame?: number;
     stopFrame?: number;
     frameFilter?: string;
-    lfs: boolean;
-    format?: string,
-    repository?: string;
     useZipChunks: boolean;
     dataChunkSize?: number;
     useCache: boolean;
@@ -53,19 +48,20 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
+    consensusReplicas: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
 
 const initialValues: AdvancedConfiguration = {
     imageQuality: 70,
-    lfs: false,
     useZipChunks: true,
     useCache: true,
     copyData: false,
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
+    consensusReplicas: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -78,17 +74,16 @@ const initialValues: AdvancedConfiguration = {
 };
 
 interface Props {
-    onSubmit(values: AdvancedConfiguration): void;
+    onSubmit(values: AdvancedConfiguration): Promise<void>;
     onChangeUseProjectSourceStorage(value: boolean): void;
     onChangeUseProjectTargetStorage(value: boolean): void;
     onChangeSourceStorageLocation: (value: StorageLocation) => void;
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
-    installedGit: boolean;
+    onChangeSortingMethod(value: SortingMethod): void;
     projectId: number | null;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
     activeFileManagerTab: string;
-    dumpers: [];
     sourceStorageLocation: StorageLocation;
     targetStorageLocation: StorageLocation;
 }
@@ -100,47 +95,6 @@ function validateURL(_: RuleObject, value: string): Promise<void> {
 
     return Promise.resolve();
 }
-
-function validateRepositoryPath(_: RuleObject, value: string): Promise<void> {
-    if (value && !patterns.validatePath.pattern.test(value)) {
-        return Promise.reject(new Error('Repository path is not a valid path'));
-    }
-
-    return Promise.resolve();
-}
-
-function validateRepository(_: RuleObject, value: string): Promise<[void, void]> | Promise<void> {
-    if (value) {
-        const [url, path] = value.split(/\s+/);
-        return Promise.all([validateURL(_, url), validateRepositoryPath(_, path)]);
-    }
-
-    return Promise.resolve();
-}
-
-const isInteger = ({ min, max }: { min?: number; max?: number }) => (
-    _: RuleObject,
-    value?: number | string,
-): Promise<void> => {
-    if (typeof value === 'undefined' || value === '') {
-        return Promise.resolve();
-    }
-
-    const intValue = +value;
-    if (Number.isNaN(intValue) || !Number.isInteger(intValue)) {
-        return Promise.reject(new Error('Value must be a positive integer'));
-    }
-
-    if (typeof min !== 'undefined' && intValue < min) {
-        return Promise.reject(new Error(`Value must be more than ${min}`));
-    }
-
-    if (typeof max !== 'undefined' && intValue > max) {
-        return Promise.reject(new Error(`Value must be less than ${max}`));
-    }
-
-    return Promise.resolve();
-};
 
 const validateOverlapSize: RuleRender = ({ getFieldValue }): RuleObject => ({
     validator(_: RuleObject, value?: string | number): Promise<void> {
@@ -195,7 +149,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                     );
 
-                    onSubmit({
+                    return onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
                         sourceStorage: values.useProjectSourceStorage ?
@@ -205,9 +159,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             new Storage(project.targetStorage || { location: StorageLocation.LOCAL }) :
                             new Storage(values.targetStorage),
                     });
-                    return Promise.resolve();
                 });
             }
+
             return this.formRef.current.validateFields()
                 .then(
                     (values: Store): Promise<void> => {
@@ -216,13 +170,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                         );
 
-                        onSubmit({
+                        return onSubmit({
                             ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                             frameFilter,
                             sourceStorage: new Storage(values.sourceStorage),
                             targetStorage: new Storage(values.targetStorage),
                         });
-                        return Promise.resolve();
                     },
                 );
         }
@@ -252,6 +205,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     private renderSortingMethodRadio(): JSX.Element {
+        const { onChangeSortingMethod } = this.props;
+
         return (
             <Form.Item
                 label='Sorting method'
@@ -264,7 +219,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group buttonStyle='solid'>
+                <Radio.Group buttonStyle='solid' onChange={(e) => onChangeSortingMethod(e.target.value)}>
                     <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
                     </Radio.Button>
@@ -352,79 +307,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
-    private renderGitLFSBox(): JSX.Element {
-        return (
-            <Space>
-                <Form.Item
-                    name='lfs'
-                    valuePropName='checked'
-                    className='cvat-settings-switch'
-                >
-                    <Switch />
-                </Form.Item>
-                <Text className='cvat-text-color'>Use LFS (Large File Support):</Text>
-                <Tooltip title='If annotation files are large, you can use git LFS feature.'>
-                    <QuestionCircleOutlined style={{ opacity: 0.5 }} />
-                </Tooltip>
-            </Space>
-        );
-    }
-
-    private renderGitRepositoryURL(): JSX.Element {
-        return (
-            <Form.Item
-                hasFeedback
-                name='repository'
-                label='Dataset repository URL'
-                extra='Attach a repository to store annotations there'
-                rules={[{ validator: validateRepository }]}
-            >
-                <Input size='large' placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]' />
-            </Form.Item>
-        );
-    }
-
-    private renderGitFormat(): JSX.Element {
-        const { dumpers } = this.props;
-        return (
-            <Form.Item
-                initialValue='CVAT for video 1.1'
-                name='format'
-                label='Choose format'
-            >
-                <Select style={{ width: '100%' }}>
-                    {
-                        dumpers.map((dumper: any) => (
-                            <Option
-                                key={dumper.name}
-                                value={dumper.name}
-                            >
-                                {dumper.name}
-                            </Option>
-                        ))
-                    }
-                </Select>
-            </Form.Item>
-        );
-    }
-
-    private renderGit(): JSX.Element {
-        return (
-            <>
-                <Row>
-                    <Col span={24}>{this.renderGitRepositoryURL()}</Col>
-                </Row>
-                <Row>
-                    <Col span={24}>{this.renderGitFormat()}</Col>
-                </Row>
-                <Row>
-                    <Col span={24}>{this.renderGitLFSBox()}</Col>
-                </Row>
-
-            </>
-        );
-    }
-
     private renderBugTracker(): JSX.Element {
         return (
             <Form.Item
@@ -502,6 +384,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderConsensusReplicas(): JSX.Element {
+        return (
+            <Form.Item
+                label='Consensus Replicas'
+                name='consensusReplicas'
+                rules={[
+                    {
+                        validator: isInteger({
+                            min: 0,
+                            max: 10,
+                            filter: (intValue: number): boolean => intValue !== 1,
+                        }),
+                    },
+                ]}
+            >
+                <Input
+                    size='large'
+                    type='number'
+                    min={0}
+                    max={10}
+                    step={1}
+                />
+            </Form.Item>
+        );
+    }
+
     private renderSourceStorage(): JSX.Element {
         const {
             projectId,
@@ -545,7 +453,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { installedGit, activeFileManagerTab } = this.props;
+        const { activeFileManagerTab } = this.props;
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
                 <Row>
@@ -583,8 +491,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
                 </Row>
-
-                {installedGit ? this.renderGit() : null}
+                <Row justify='start'>
+                    <Col span={7}>
+                        {this.renderConsensusReplicas()}
+                    </Col>
+                </Row>
 
                 <Row>
                     <Col span={24}>{this.renderBugTracker()}</Col>

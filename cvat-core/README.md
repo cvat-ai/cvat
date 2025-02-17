@@ -5,20 +5,12 @@
 This CVAT module is a client-side JavaScript library for management of objects, frames, logs, etc.
 It contains the core logic of the Computer Vision Annotation Tool.
 
-## Versioning
-
-If you make changes in this package, please do following:
-
-- After not important changes (typos, backward compatible bug fixes, refactoring) do: `yarn version --patch`
-- After changing API (backward compatible new features) do: `yarn version --minor`
-- After changing API (changes that break backward compatibility) do: `yarn version --major`
-
 ### Commands
 
 - Dependencies installation
 
 ```bash
-yarn ci --frozen-lockfile
+yarn install --frozen-lockfile
 ```
 
 - Building the module from sources in the `dist` directory:

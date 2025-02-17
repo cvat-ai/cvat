@@ -1,15 +1,28 @@
 ---
+title: 'VGGFace2'
 linkTitle: 'VGGFace2'
 weight: 12
+description: 'How to export and import data in VGGFace2 format'
 ---
 
-# [VGGFace2](https://github.com/ox-vgg/vgg_face2)
+The VGGFace2 is primarily designed for face recognition tasks and is
+most commonly used with deep learning models specifically designed for face recognition,
+verification, and similar tasks.
 
+For more information, see:
+
+- [VGGFace2 Github](https://github.com/ox-vgg/vgg_face2)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/vgg_face2_dataset)
 
 ## VGGFace2 export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes, Points (landmarks - groups of 5 points).
+- Attributes: Not supported.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -27,8 +40,6 @@ taskname.zip/
 label0 <class0>
 label1 <class1>
 ```
-
-- supported annotations: Rectangles, Points (landmarks - groups of 5 points)
 
 ## VGGFace2 import
 

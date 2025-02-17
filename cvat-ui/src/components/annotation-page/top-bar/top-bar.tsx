@@ -1,16 +1,16 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
-    ActiveControl, CombinedState, ToolsBlockerState, Workspace,
+    ActiveControl, NavigationType, ToolsBlockerState, Workspace,
 } from 'reducers';
-import { usePlugins } from 'utils/hooks';
+import { Job } from 'cvat-core-wrapper';
+import { KeyMap } from 'utils/mousetrap-react';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -22,13 +22,12 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
-    inputFrameRef: React.RefObject<Input>;
+    inputFrameRef: React.RefObject<HTMLInputElement>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;
     redoAction?: string;
     workspace: Workspace;
-    saveShortcut: string;
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
@@ -39,28 +38,30 @@ interface Props {
     previousFrameShortcut: string;
     forwardShortcut: string;
     backwardShortcut: string;
-    prevButtonType: string;
-    nextButtonType: string;
+    navigationType: NavigationType;
     focusFrameInputShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
-    deleteFrameAvailable: boolean;
+    annotationFilters: object[];
+    initialOpenGuide: boolean;
+    keyMap: KeyMap;
+    jobInstance: Job;
+    ranges: string;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
     onSwitchPlay(): void;
-    onSaveAnnotation(): void;
     onPrevFrame(): void;
     onNextFrame(): void;
     onForward(): void;
     onBackward(): void;
     onFirstFrame(): void;
     onLastFrame(): void;
-    setPrevButtonType(type: 'regular' | 'filtered' | 'empty'): void;
-    setNextButtonType(type: 'regular' | 'filtered' | 'empty'): void;
+    onSearchAnnotations(direction: 'forward' | 'backward'): void;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
+    onCopyFilenameIconClick(): void;
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
@@ -68,8 +69,7 @@ interface Props {
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
-    jobInstance: any;
-    ranges: string;
+    setNavigationType(navigationType: NavigationType): void;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -86,7 +86,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         workspace,
-        saveShortcut,
         undoShortcut,
         redoShortcut,
         drawShortcut,
@@ -97,61 +96,53 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         previousFrameShortcut,
         forwardShortcut,
         backwardShortcut,
-        prevButtonType,
-        nextButtonType,
         focusFrameInputShortcut,
         activeControl,
         toolsBlockerState,
+        annotationFilters,
+        initialOpenGuide,
+        navigationType,
+        jobInstance,
+        keyMap,
         showStatistics,
         showFilters,
         changeWorkspace,
         onSwitchPlay,
-        onSaveAnnotation,
         onPrevFrame,
         onNextFrame,
         onForward,
         onBackward,
         onFirstFrame,
         onLastFrame,
-        setPrevButtonType,
-        setNextButtonType,
+        onSearchAnnotations,
         onSliderChange,
         onInputChange,
         onURLIconClick,
+        onCopyFilenameIconClick,
         onUndoClick,
         onRedoClick,
         onFinishDraw,
         onSwitchToolsBlockerState,
         onDeleteFrame,
-        deleteFrameAvailable,
         onRestoreFrame,
+        setNavigationType,
         switchNavigationBlocked,
-        jobInstance,
     } = props;
 
-    const playerPlugins = usePlugins(
-        (state: CombinedState) => state.plugins.components.annotationPage.header.player, props,
-    );
     const playerItems: [JSX.Element, number][] = [];
-    playerItems.push(
-        ...playerPlugins.map(({ component: Component, weight }, index) => {
-            const component = <Component targetProps={props} key={index} />;
-            return [component, weight] as [JSX.Element, number];
-        }),
-    );
 
     playerItems.push([(
         <PlayerButtons
             key='player_buttons'
             playing={playing}
             playPauseShortcut={playPauseShortcut}
-            deleteFrameShortcut={deleteFrameShortcut}
             nextFrameShortcut={nextFrameShortcut}
             previousFrameShortcut={previousFrameShortcut}
             forwardShortcut={forwardShortcut}
             backwardShortcut={backwardShortcut}
-            prevButtonType={prevButtonType}
-            nextButtonType={nextButtonType}
+            navigationType={navigationType}
+            keyMap={keyMap}
+            workspace={workspace}
             onPrevFrame={onPrevFrame}
             onNextFrame={onNextFrame}
             onForward={onForward}
@@ -159,8 +150,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             onFirstFrame={onFirstFrame}
             onLastFrame={onLastFrame}
             onSwitchPlay={onSwitchPlay}
-            setPrevButton={setPrevButtonType}
-            setNextButton={setNextButtonType}
+            onSearchAnnotations={onSearchAnnotations}
+            setNavigationType={setNavigationType}
         />
     ), 0]);
 
@@ -177,13 +168,15 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             deleteFrameShortcut={deleteFrameShortcut}
             focusFrameInputShortcut={focusFrameInputShortcut}
             inputFrameRef={inputFrameRef}
+            keyMap={keyMap}
+            workspace={workspace}
             onSliderChange={onSliderChange}
             onInputChange={onInputChange}
             onURLIconClick={onURLIconClick}
+            onCopyFilenameIconClick={onCopyFilenameIconClick}
             onDeleteFrame={onDeleteFrame}
             onRestoreFrame={onRestoreFrame}
             switchNavigationBlocked={switchNavigationBlocked}
-            deleteFrameAvailable={deleteFrameAvailable}
         />
     ), 10]);
 
@@ -193,18 +186,17 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 saving={saving}
                 undoAction={undoAction}
                 redoAction={redoAction}
-                saveShortcut={saveShortcut}
                 undoShortcut={undoShortcut}
                 redoShortcut={redoShortcut}
                 activeControl={activeControl}
                 drawShortcut={drawShortcut}
                 switchToolsBlockerShortcut={switchToolsBlockerShortcut}
                 toolsBlockerState={toolsBlockerState}
-                onSaveAnnotation={onSaveAnnotation}
                 onUndoClick={onUndoClick}
                 onRedoClick={onRedoClick}
                 onFinishDraw={onFinishDraw}
                 onSwitchToolsBlockerState={onSwitchToolsBlockerState}
+                keyMap={keyMap}
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>
@@ -215,6 +207,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             <RightGroup
                 workspace={workspace}
                 jobInstance={jobInstance}
+                annotationFilters={annotationFilters}
+                initialOpenGuide={initialOpenGuide}
                 changeWorkspace={changeWorkspace}
                 showStatistics={showStatistics}
                 showFilters={showFilters}

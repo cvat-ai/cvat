@@ -1,15 +1,17 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { Config } from 'react-awesome-query-builder';
+import { Config } from '@react-awesome-query-builder/antd';
+import asyncFetchUsers from 'components/resource-sorting-filtering/request-users';
 
 export const config: Partial<Config> = {
     fields: {
         state: {
             label: 'State',
             type: 'select',
-            operators: ['select_any_in', 'select_equals'], // ['select_equals', 'select_not_equals', 'select_any_in', 'select_not_any_in']
+            operators: ['select_any_in', 'select_equals'],
             valueSources: ['value'],
             fieldSettings: {
                 listValues: [
@@ -47,28 +49,13 @@ export const config: Partial<Config> = {
         },
         assignee: {
             label: 'Assignee',
-            type: 'text', // todo: change to select
+            type: 'select',
             valueSources: ['value'],
+            operators: ['select_equals'],
             fieldSettings: {
-                // useAsyncSearch: true,
-                // forceAsyncSearch: true,
-                // async fetch does not work for now in this library for AntdConfig
-                // but that issue was solved, see https://github.com/ukrbublik/react-awesome-query-builder/issues/616
-                // waiting for a new release, alternative is to use material design, but it is not the best option too
-                // asyncFetch: async (search: string | null) => {
-                //     const users = await core.users.get({
-                //         limit: 10,
-                //         is_active: true,
-                //         ...(search ? { search } : {}),
-                //     });
-
-                //     return {
-                //         values: users.map((user: any) => ({
-                //             value: user.username, title: user.username,
-                //         })),
-                //         hasMore: false,
-                //     };
-                // },
+                useAsyncSearch: true,
+                forceAsyncSearch: true,
+                asyncFetch: asyncFetchUsers,
             },
         },
         updated_date: {
@@ -108,6 +95,19 @@ export const config: Partial<Config> = {
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
+        },
+        type: {
+            label: 'Job Type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
+                ],
+            },
         },
     },
 };

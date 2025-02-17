@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,9 +6,10 @@ import base64
 import json
 import shutil
 from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Type, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, Union, cast
 
 from attrs import define
 
@@ -39,18 +40,16 @@ class UpdatePolicy(Enum):
     """
 
 
-_CacheObject = Dict[str, Any]
+_CacheObject = dict[str, Any]
 
 
 class _CacheObjectModel(metaclass=ABCMeta):
     @abstractmethod
-    def dump(self) -> _CacheObject:
-        ...
+    def dump(self) -> _CacheObject: ...
 
     @classmethod
     @abstractmethod
-    def load(cls, obj: _CacheObject):
-        ...
+    def load(cls, obj: _CacheObject): ...
 
 
 _ModelType = TypeVar("_ModelType", bound=Union[OpenApiModel, _CacheObjectModel])
@@ -108,34 +107,30 @@ class CacheManager(metaclass=ABCMeta):
         else:
             raise NotImplementedError("Unexpected model type")
 
-    def load_model(self, path: Path, model_type: Type[_ModelType]) -> _ModelType:
+    def load_model(self, path: Path, model_type: type[_ModelType]) -> _ModelType:
         return self._deserialize_model(self._load_object(path), model_type)
 
     def save_model(self, path: Path, model: _ModelType) -> None:
         return self._save_object(path, self._serialize_model(model))
 
     @abstractmethod
-    def retrieve_task(self, task_id: int) -> Task:
-        ...
+    def retrieve_task(self, task_id: int) -> Task: ...
 
     @abstractmethod
     def ensure_task_model(
         self,
         task_id: int,
         filename: str,
-        model_type: Type[_ModelType],
+        model_type: type[_ModelType],
         downloader: Callable[[], _ModelType],
         model_description: str,
-    ) -> _ModelType:
-        ...
+    ) -> _ModelType: ...
 
     @abstractmethod
-    def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        ...
+    def ensure_chunk(self, task: Task, chunk_index: int) -> None: ...
 
     @abstractmethod
-    def retrieve_project(self, project_id: int) -> Project:
-        ...
+    def retrieve_project(self, project_id: int) -> Project: ...
 
 
 class _CacheManagerOnline(CacheManager):
@@ -172,7 +167,7 @@ class _CacheManagerOnline(CacheManager):
         self,
         task_id: int,
         filename: str,
-        model_type: Type[_ModelType],
+        model_type: type[_ModelType],
         downloader: Callable[[], _ModelType],
         model_description: str,
     ) -> _ModelType:
@@ -231,7 +226,7 @@ class _CacheManagerOffline(CacheManager):
         self,
         task_id: int,
         filename: str,
-        model_type: Type[_ModelType],
+        model_type: type[_ModelType],
         downloader: Callable[[], _ModelType],
         model_description: str,
     ) -> _ModelType:
@@ -253,7 +248,7 @@ class _CacheManagerOffline(CacheManager):
 @define
 class _OfflineTaskModel(_CacheObjectModel):
     api_model: models.ITaskRead
-    labels: List[models.ILabel]
+    labels: list[models.ILabel]
 
     def dump(self) -> _CacheObject:
         return {
@@ -284,15 +279,15 @@ class _OfflineTaskProxy(Task):
         self._offline_model = cached_model
         self._cache_manager = cache_manager
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return self._offline_model.labels
 
 
 @define
 class _OfflineProjectModel(_CacheObjectModel):
     api_model: models.IProjectRead
-    task_ids: List[int]
-    labels: List[models.ILabel]
+    task_ids: list[int]
+    labels: list[models.ILabel]
 
     def dump(self) -> _CacheObject:
         return {
@@ -326,14 +321,14 @@ class _OfflineProjectProxy(Project):
         self._offline_model = cached_model
         self._cache_manager = cache_manager
 
-    def get_tasks(self) -> List[Task]:
+    def get_tasks(self) -> list[Task]:
         return [self._cache_manager.retrieve_task(t) for t in self._offline_model.task_ids]
 
-    def get_labels(self) -> List[models.ILabel]:
+    def get_labels(self) -> list[models.ILabel]:
         return self._offline_model.labels
 
 
-_CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, Type[CacheManager]] = {
+_CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, type[CacheManager]] = {
     UpdatePolicy.IF_MISSING_OR_STALE: _CacheManagerOnline,
     UpdatePolicy.NEVER: _CacheManagerOffline,
 }

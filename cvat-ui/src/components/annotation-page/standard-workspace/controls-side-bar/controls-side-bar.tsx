@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,12 +7,15 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 
 import {
-    ActiveControl, ObjectType, Rotation, ShapeType,
+    ActiveControl, Rotation, CombinedState,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { LabelOptColor } from 'components/labels-editor/common';
+import { LabelType } from 'cvat-core-wrapper';
 
+import { ShortcutScope } from 'utils/enums';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { subKeyMap } from 'utils/component-subkeymap';
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
@@ -32,19 +35,21 @@ import DrawSkeletonControl, { Props as DrawSkeletonControlProps } from './draw-s
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
 import GroupControl, { Props as GroupControlProps } from './group-control';
+import JoinControl, { Props as JoinControlProps } from './join-control';
 import SplitControl, { Props as SplitControlProps } from './split-control';
+import SliceControl, { Props as SliceControlProps } from './slice-control';
+
+type Label = CombinedState['annotation']['job']['labels'][0];
 
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
+    labels: Label[];
     frameData: any;
 
-    mergeObjects(enabled: boolean): void;
-    groupObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
@@ -52,7 +57,67 @@ interface Props {
     redrawShape(): void;
 }
 
-// We use the observer to see if these controls are in the viewport
+const componentShortcuts = {
+    CLOCKWISE_ROTATION_STANDARD_CONTROLS: {
+        name: 'Rotate clockwise',
+        description: 'Change image angle (add 90 degrees)',
+        sequences: ['ctrl+r'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: {
+        name: 'Rotate anticlockwise',
+        description: 'Change image angle (subtract 90 degrees)',
+        sequences: ['ctrl+shift+r'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    PASTE_SHAPE: {
+        name: 'Paste shape',
+        description: 'Paste a shape from internal CVAT clipboard',
+        sequences: ['ctrl+v'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Draw mode',
+        description:
+            'Repeat the latest procedure of drawing with the same parameters',
+        sequences: ['n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_REDRAW_MODE_STANDARD_CONTROLS: {
+        name: 'Redraw shape',
+        description: 'Remove selected shape and redraw it from scratch',
+        sequences: ['shift+n'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_GROUP_MODE_STANDARD_CONTROLS: {
+        name: 'Group mode',
+        description: 'Activate or deactivate mode to grouping shapes',
+        sequences: ['g'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    RESET_GROUP_STANDARD_CONTROLS: {
+        name: 'Reset group',
+        description: 'Reset group for selected shapes (in group mode)',
+        sequences: ['shift+g'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_MERGE_MODE_STANDARD_CONTROLS: {
+        name: 'Merge mode',
+        description: 'Activate or deactivate mode to merging shapes',
+        sequences: ['m'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+    SWITCH_SPLIT_MODE_STANDARD_CONTROLS: {
+        name: 'Split mode',
+        description: 'Activate or deactivate mode to splitting shapes',
+        sequences: ['alt+m'],
+        scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+    },
+};
+
+registerComponentShortcuts(componentShortcuts);
+
+// We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl);
@@ -72,7 +137,9 @@ const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonContro
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
 const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
+const ObservedJoinControl = ControlVisibilityObserver<JoinControlProps>(JoinControl);
 const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
+const ObservedSliceControl = ControlVisibilityObserver<SliceControlProps>(SliceControl);
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -81,9 +148,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         normalizedKeyMap,
         keyMap,
         labels,
-        mergeObjects,
-        groupObjects,
-        splitTrack,
+        updateActiveControl,
         rotateFrame,
         repeatDrawShape,
         pasteShape,
@@ -102,16 +167,16 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let cuboidControlVisible = withUnspecifiedType;
     let maskControlVisible = withUnspecifiedType;
     let tagControlVisible = withUnspecifiedType;
-    const skeletonControlVisible = labels.some((label: LabelOptColor) => label.type === 'skeleton');
-    labels.forEach((label: LabelOptColor) => {
-        rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
-        polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
-        polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
-        pointsControlVisible = pointsControlVisible || label.type === ShapeType.POINTS;
-        ellipseControlVisible = ellipseControlVisible || label.type === ShapeType.ELLIPSE;
-        cuboidControlVisible = cuboidControlVisible || label.type === ShapeType.CUBOID;
-        maskControlVisible = maskControlVisible || label.type === ShapeType.MASK;
-        tagControlVisible = tagControlVisible || label.type === ObjectType.TAG;
+    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
+    labels.forEach((label: Label) => {
+        rectangleControlVisible = rectangleControlVisible || label.type === LabelType.RECTANGLE;
+        polygonControlVisible = polygonControlVisible || label.type === LabelType.POLYGON;
+        polylineControlVisible = polylineControlVisible || label.type === LabelType.POLYLINE;
+        pointsControlVisible = pointsControlVisible || label.type === LabelType.POINTS;
+        ellipseControlVisible = ellipseControlVisible || label.type === LabelType.ELLIPSE;
+        cuboidControlVisible = cuboidControlVisible || label.type === LabelType.CUBOID;
+        maskControlVisible = maskControlVisible || label.type === LabelType.MASK;
+        tagControlVisible = tagControlVisible || label.type === LabelType.TAG;
     });
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -120,27 +185,133 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    let subKeyMap: any = {
-        CANCEL: keyMap.CANCEL,
-        CLOCKWISE_ROTATION: keyMap.CLOCKWISE_ROTATION,
-        ANTICLOCKWISE_ROTATION: keyMap.ANTICLOCKWISE_ROTATION,
-    };
+    const dynamicMergeIconProps =
+        activeControl === ActiveControl.MERGE ?
+            {
+                className: 'cvat-merge-control cvat-active-canvas-control',
+                onClick: (): void => {
+                    canvasInstance.merge({ enabled: false });
+                    updateActiveControl(ActiveControl.CURSOR);
+                },
+            } :
+            {
+                className: 'cvat-merge-control',
+                onClick: (): void => {
+                    canvasInstance.cancel();
+                    canvasInstance.merge({ enabled: true });
+                    updateActiveControl(ActiveControl.MERGE);
+                },
+            };
 
-    let handlers: any = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            if (activeControl !== ActiveControl.CURSOR) {
+    const dynamicGroupIconProps =
+    activeControl === ActiveControl.GROUP ?
+        {
+            className: 'cvat-group-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.group({ enabled: false });
+                updateActiveControl(ActiveControl.CURSOR);
+            },
+        } :
+        {
+            className: 'cvat-group-control',
+            onClick: (): void => {
                 canvasInstance.cancel();
-            }
-        },
-        CLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
+                canvasInstance.group({ enabled: true });
+                updateActiveControl(ActiveControl.GROUP);
+            },
+        };
+
+    const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
+        {
+            className: 'cvat-split-track-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.split({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-split-track-control',
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance.split({ enabled: true });
+                updateActiveControl(ActiveControl.SPLIT);
+            },
+        };
+
+    let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
+        CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.CLOCKWISE90);
         },
-        ANTICLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
+        ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.ANTICLOCKWISE90);
         },
+        SWITCH_GROUP_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
+            if (event) event.preventDefault();
+            dynamicGroupIconProps.onClick();
+        },
+        RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
+            if (event) event.preventDefault();
+            const grouping = activeControl === ActiveControl.GROUP;
+            if (!grouping) {
+                return;
+            }
+            resetGroup();
+            canvasInstance.group({ enabled: false });
+            updateActiveControl(ActiveControl.CURSOR);
+        },
+        SWITCH_MERGE_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
+            if (event) event.preventDefault();
+            dynamicMergeIconProps.onClick();
+        },
+        SWITCH_SPLIT_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            dynamicTrackIconProps.onClick();
+        },
+    };
+
+    const handleDrawMode = (event: KeyboardEvent | undefined, action: 'draw' | 'redraw'): void => {
+        preventDefault(event);
+        const drawing = [
+            ActiveControl.DRAW_POINTS,
+            ActiveControl.DRAW_POLYGON,
+            ActiveControl.DRAW_POLYLINE,
+            ActiveControl.DRAW_RECTANGLE,
+            ActiveControl.DRAW_CUBOID,
+            ActiveControl.DRAW_ELLIPSE,
+            ActiveControl.DRAW_SKELETON,
+            ActiveControl.DRAW_MASK,
+            ActiveControl.AI_TOOLS,
+            ActiveControl.OPENCV_TOOLS,
+        ].includes(activeControl);
+        const editing = canvasInstance.mode() === CanvasMode.EDIT;
+
+        if (!drawing) {
+            if (editing) {
+                // users probably will press N as they are used to do when they want to finish editing
+                // in this case, if a mask or polyline is being edited we probably want to finish editing first
+                canvasInstance.edit({ enabled: false });
+                return;
+            }
+
+            canvasInstance.cancel();
+            // repeateDrawShapes gets all the latest parameters
+            // and calls canvasInstance.draw() with them
+
+            if (action === 'draw') {
+                repeatDrawShape();
+            } else {
+                redrawShape();
+            }
+        } else {
+            if ([ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl)) {
+                // separated API method
+                canvasInstance.interact({ enabled: false });
+                return;
+            }
+
+            canvasInstance.draw({ enabled: false });
+        }
     };
 
     if (!controlsDisabled) {
@@ -151,60 +322,18 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance.cancel();
                 pasteShape();
             },
-            SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const drawing = [
-                    ActiveControl.DRAW_POINTS,
-                    ActiveControl.DRAW_POLYGON,
-                    ActiveControl.DRAW_POLYLINE,
-                    ActiveControl.DRAW_RECTANGLE,
-                    ActiveControl.DRAW_CUBOID,
-                    ActiveControl.DRAW_ELLIPSE,
-                    ActiveControl.DRAW_SKELETON,
-                    ActiveControl.DRAW_MASK,
-                    ActiveControl.AI_TOOLS,
-                    ActiveControl.OPENCV_TOOLS,
-                ].includes(activeControl);
-                const editing = canvasInstance.mode() === CanvasMode.EDIT;
-
-                if (!drawing) {
-                    if (editing) {
-                        // users probably will press N as they are used to do when they want to finish editing
-                        // in this case, if a mask is being edited we probably want to finish editing first
-                        canvasInstance.edit({ enabled: false });
-                        return;
-                    }
-
-                    canvasInstance.cancel();
-                    // repeateDrawShapes gets all the latest parameters
-                    // and calls canvasInstance.draw() with them
-
-                    if (event && event.shiftKey) {
-                        redrawShape();
-                    } else {
-                        repeatDrawShape();
-                    }
-                } else {
-                    if ([ActiveControl.AI_TOOLS, ActiveControl.OPENCV_TOOLS].includes(activeControl)) {
-                        // separated API method
-                        canvasInstance.interact({ enabled: false });
-                        return;
-                    }
-
-                    canvasInstance.draw({ enabled: false });
-                }
+            SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+                handleDrawMode(event, 'draw');
             },
-        };
-        subKeyMap = {
-            ...subKeyMap,
-            PASTE_SHAPE: keyMap.PASTE_SHAPE,
-            SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+            SWITCH_REDRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
+                handleDrawMode(event, 'redraw');
+            },
         };
     }
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
+            <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
@@ -212,8 +341,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedRotateControl
-                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION}
-                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION}
+                anticlockwiseShortcut={normalizedKeyMap.ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS}
+                clockwiseShortcut={normalizedKeyMap.CLOCKWISE_ROTATION_STANDARD_CONTROLS}
                 rotateFrame={rotateFrame}
             />
 
@@ -308,45 +437,31 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                mergeObjects={mergeObjects}
                 canvasInstance={canvasInstance}
-                activeControl={activeControl}
+                dynamicIconProps={dynamicMergeIconProps}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_MERGE_MODE: {
-                        details: keyMap.SWITCH_MERGE_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_MERGE_MODE,
-                    },
-                }}
             />
             <ObservedGroupControl
-                groupObjects={groupObjects}
-                resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
-                activeControl={activeControl}
+                dynamicIconProps={dynamicGroupIconProps}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_GROUP_MODE: {
-                        details: keyMap.SWITCH_GROUP_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_GROUP_MODE,
-                    },
-                    RESET_GROUP: {
-                        details: keyMap.RESET_GROUP,
-                        displayValue: normalizedKeyMap.RESET_GROUP,
-                    },
-                }}
             />
             <ObservedSplitControl
-                splitTrack={splitTrack}
+                canvasInstance={canvasInstance}
+                dynamicIconProps={dynamicTrackIconProps}
+                disabled={controlsDisabled}
+            />
+            <ObservedJoinControl
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
-                shortcuts={{
-                    SWITCH_SPLIT_MODE: {
-                        details: keyMap.SWITCH_SPLIT_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
-                    },
-                }}
+            />
+            <ObservedSliceControl
+                updateActiveControl={updateActiveControl}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                disabled={controlsDisabled}
             />
 
             <ExtraControlsControl />

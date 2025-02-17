@@ -1,64 +1,42 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-models-page {
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
     overflow: auto;
-    position: fixed;
     height: 100%;
     width: 100%;
 
-    >div:nth-child(2) {
-        height: 80%;
+    .cvat-models-page-top-bar {
+        padding-bottom: $grid-unit-size;
     }
 }
 
 .cvat-empty-models-list {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    .ant-empty {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .cvat-models-list {
     display: flex;
     flex-wrap: wrap;
-}
-
-.cvat-models-list-item {
-    position: relative;
-    width: 100%;
-    height: auto;
-    border: 1px solid $border-color-1;
-    border-radius: 3px;
-    margin-bottom: $grid-unit-size * 2;
-    padding: $grid-unit-size * 2;
-    background: $background-color-1;
-
-    &:hover {
-        border: 1px solid $border-color-hover;
-    }
 
     > div {
-        display: flex;
-        align-items: center;
-    }
+        width: 100%;
+        margin-bottom: $grid-unit-size;
 
-    > div:nth-child(2) > span {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    > div:nth-child(3) > span {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
+        > div:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
     }
 }
 
@@ -68,11 +46,8 @@
 }
 
 .cvat-models-page-top-bar {
-    margin: $grid-unit-size * 3 0;
-
     .cvat-models-page-search-bar {
         width: $grid-unit-size * 32;
-        padding-left: $grid-unit-size * 0.5;
     }
 
     > div {
@@ -92,16 +67,11 @@
 
     > div {
         display: flex;
-        margin-right: $grid-unit-size * 4;
 
         > button {
             margin-right: $grid-unit-size;
         }
     }
-}
-
-.cvat-models-add-wrapper {
-    display: inline-block;
 }
 
 .cvat-model-delete {
@@ -118,8 +88,6 @@
 }
 
 .cvat-models-item-card {
-    width: 25%;
-    border-width: $grid-unit-size * 0.5;
     height: $grid-unit-size * 28;
     overflow: hidden;
 
@@ -129,6 +97,18 @@
 
     &:nth-child(4n) {
         border-right: 0;
+    }
+
+    .cvat-models-item-card-preview-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: $grid-unit-size * 18;
+        overflow: hidden;
+
+        &:hover {
+            cursor: pointer;
+        }
     }
 }
 
@@ -147,33 +127,14 @@
     padding-top: $grid-unit-size * 3;
 }
 
-.cvat-models-item-card-preview-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: $grid-unit-size * 18;
-    overflow: hidden;
-
-    &:hover {
-        cursor: pointer;
-    }
-}
-
-.cvat-model-item-provider {
+.cvat-model-item-top-bar {
+    width: 100%;
     position: absolute;
-    top: $grid-unit-size;
-    right: $grid-unit-size;
-}
-
-.cvat-model-item-provider-inner {
-    @extend .cvat-model-item-provider;
-
-    right: $grid-unit-size * 2;
-
-    svg {
-        width: $grid-unit-size * 4;
-        height: $grid-unit-size * 4;
-    }
+    display: flex;
+    justify-content: flex-end;
+    top: 0;
+    left: 0;
+    padding: $grid-unit-size;
 }
 
 .cvat-models-item-description {

@@ -1,18 +1,19 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
 from typing import Any, Dict, Optional, Sequence
 
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError, models, transaction
+from django.db import models, transaction
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, Project, ShapeType, Task
+from cvat.apps.engine.models import Job, Project, ShapeType, Task, User
 
 
 class AnnotationConflictType(str, Enum):
@@ -70,6 +71,19 @@ class QualityReportTarget(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class QualityTargetMetricType(str, Enum):
+    ACCURACY = "accuracy"
+    PRECISION = "precision"
+    RECALL = "recall"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class QualityReport(models.Model):
     job = models.ForeignKey(
         Job, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
@@ -89,6 +103,11 @@ class QualityReport(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
     gt_last_updated = models.DateTimeField(null=True)
+
+    assignee = models.ForeignKey(
+        User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
+    )
+    assignee_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
 
@@ -203,6 +222,18 @@ class AnnotationId(models.Model):
             raise ValidationError(f"Unexpected type value '{self.type}'")
 
 
+class PointSizeBase(str, Enum):
+    IMAGE_SIZE = "image_size"
+    GROUP_BBOX_SIZE = "group_bbox_size"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class QualitySettingsQuerySet(models.QuerySet):
     @transaction.atomic
     def create(self, **kwargs: Any):
@@ -236,27 +267,8 @@ class QualitySettingsQuerySet(models.QuerySet):
                 "'task[_id]' and 'project[_id]' cannot be used together"
             )
 
-        task_id = obj.get("task_id")
-        if not task_id:
-            return
-
-        try:
-            task = Task.objects.get(id=task_id)
-        except Task.DoesNotExist as ex:
-            raise QualitySettings.InvalidParametersError(
-                f"Task with id '{task_id}' does not exist"
-            ) from ex
-
-        if task.project_id:
-            raise QualitySettings.SettingsAlreadyExistError(
-                "Can't define quality settings for a task if the task is in a project."
-            )
-
 
 class QualitySettings(models.Model):
-    class SettingsAlreadyExistError(ValidationError):
-        pass
-
     class InvalidParametersError(ValidationError):
         pass
 
@@ -269,11 +281,17 @@ class QualitySettings(models.Model):
         Project, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
     )  # OneToOneField implies unique
 
+    inherit = models.BooleanField(default=True)
+
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
     line_thickness = models.FloatField()
 
     low_overlap_threshold = models.FloatField()
+
+    point_size_base = models.CharField(
+        max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
+    )
 
     compare_line_orientation = models.BooleanField()
     line_orientation_threshold = models.FloatField()
@@ -287,6 +305,18 @@ class QualitySettings(models.Model):
     panoptic_comparison = models.BooleanField()
 
     compare_attributes = models.BooleanField()
+
+    empty_is_annotated = models.BooleanField(default=False)
+
+    target_metric = models.CharField(
+        max_length=32,
+        choices=QualityTargetMetricType.choices(),
+        default=QualityTargetMetricType.ACCURACY,
+    )
+
+    target_metric_threshold = models.FloatField(default=0.7)
+
+    max_validations_per_job = models.PositiveIntegerField(default=0)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())
@@ -310,26 +340,9 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        if self.task:
-            return getattr(self.task.organization, "id", None)
-        elif self.project:
-            return getattr(self.project.organization, "id", None)
-        return None
+        if self.task_id:
+            return self.task.organization_id
+        elif self.project_id:
+            return self.project.organization_id
 
-    @transaction.atomic
-    def save(self, *args, **kwargs) -> None:
-        try:
-            return super().save(*args, **kwargs)
-        except IntegrityError as ex:
-            message = str(ex)
-            if "duplicate key value violates unique constraint" in message:
-                if "project_id" in message:
-                    raise self.SettingsAlreadyExistError(
-                        f"Quality parameters for the project id {self.project_id} already exist"
-                    )
-                elif "task_id" in message:
-                    raise self.SettingsAlreadyExistError(
-                        f"Quality parameters for the task id {self.task_id} already exist"
-                    )
-                else:
-                    raise
+        assert False

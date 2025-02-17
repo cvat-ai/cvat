@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-actions';
 import { ModelsActionTypes, ModelsActions } from 'actions/models-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
@@ -17,9 +18,9 @@ const defaultState: ModelsState = {
     detectors: [],
     trackers: [],
     reid: [],
-    classifiers: [],
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
+    requestedInferenceIDs: {},
     inferences: {},
     totalCount: 0,
     query: {
@@ -28,10 +29,6 @@ const defaultState: ModelsState = {
         search: null,
         filter: null,
         sort: null,
-    },
-    providers: {
-        fetching: false,
-        list: [],
     },
     previews: {},
 };
@@ -63,9 +60,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 reid: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.REID
                 )),
-                classifiers: action.payload.models.filter((model: MLModel) => (
-                    model.kind === ModelKind.CLASSIFIER
-                )),
                 totalCount: action.payload.count,
                 initialized: true,
                 fetching: false,
@@ -76,36 +70,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 ...state,
                 initialized: true,
                 fetching: false,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL: {
-            return {
-                ...state,
-                fetching: true,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                fetching: false,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
-            const mutual = {
-                ...state,
-                fetching: false,
-            };
-
-            if (action.payload.model.kind === ModelKind.REID) {
-                return {
-                    ...mutual,
-                    reid: [...state.reid, action.payload.model],
-                };
-            }
-
-            return {
-                ...mutual,
-                [`${action.payload.model.kind}s`]: [...state[`${action.payload.model.kind}s`], action.payload.model],
             };
         }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
@@ -122,15 +86,28 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 modelRunnerTask: null,
             };
         }
+        case ModelsActionTypes.GET_INFERENCES_SUCCESS: {
+            const { requestedInferenceIDs } = state;
+
+            return {
+                ...state,
+                requestedInferenceIDs: {
+                    ...requestedInferenceIDs,
+                    ...action.payload.requestedInferenceIDs,
+                },
+            };
+        }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
-            const { inferences } = state;
+            const { inferences, requestedInferenceIDs } = state;
 
             if (action.payload.activeInference.status === 'finished') {
+                const { taskID, activeInference } = action.payload;
+                const { id: inferenceID } = activeInference;
+
                 return {
                     ...state,
-                    inferences: Object.fromEntries(
-                        Object.entries(inferences).filter(([key]): boolean => +key !== action.payload.taskID),
-                    ),
+                    inferences: omit(inferences, taskID),
+                    requestedInferenceIDs: omit(requestedInferenceIDs, inferenceID),
                 };
             }
 
@@ -157,39 +134,14 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             };
         }
         case ModelsActionTypes.CANCEL_INFERENCE_SUCCESS: {
-            const { inferences } = state;
-            delete inferences[action.payload.taskID];
+            const { inferences, requestedInferenceIDs } = state;
+            const { taskID, activeInference } = action.payload;
+            const { id: inferenceID } = activeInference;
 
             return {
                 ...state,
-                inferences: { ...inferences },
-            };
-        }
-        case ModelsActionTypes.GET_MODEL_PROVIDERS: {
-            return {
-                ...state,
-                providers: {
-                    ...state.providers,
-                    fetching: true,
-                },
-            };
-        }
-        case ModelsActionTypes.GET_MODEL_PROVIDERS_SUCCESS: {
-            return {
-                ...state,
-                providers: {
-                    fetching: false,
-                    list: action.payload.providers,
-                },
-            };
-        }
-        case ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED: {
-            return {
-                ...state,
-                providers: {
-                    ...state.providers,
-                    fetching: false,
-                },
+                inferences: omit(inferences, taskID),
+                requestedInferenceIDs: omit(requestedInferenceIDs, inferenceID),
             };
         }
         case ModelsActionTypes.GET_MODEL_PREVIEW: {

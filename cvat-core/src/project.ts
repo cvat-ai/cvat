@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,17 +25,32 @@ export default class Project {
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
-    public readonly taskSubsets: string[];
+    public readonly subsets: string[];
     public readonly dimension: DimensionType;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
     public labels: Label[];
     public annotations: {
-        exportDataset: CallableFunction;
-        importDataset: CallableFunction;
-    }
+        exportDataset: (
+            format: string,
+            saveImages: boolean,
+            useDefaultSettings: boolean,
+            targetStorage: Storage,
+            name?: string,
+        ) => Promise<string | void>;
+        importDataset: (
+            format: string,
+            useDefaultSettings: boolean,
+            sourceStorage: Storage,
+            file: File | string,
+            options?: {
+                convMaskToPoly?: boolean,
+                updateStatusCallback?: (s: string, n: number) => void,
+            },
+        ) => Promise<string>;
+    };
 
-    constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
+    constructor(initialData: Readonly<SerializedProject & { labels?: SerializedLabel[] }>) {
         const data = {
             id: undefined,
             name: undefined,
@@ -68,6 +83,16 @@ export default class Project {
             data.labels = initialData.labels
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
+
+        data.source_storage = new Storage({
+            location: initialData.source_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.source_storage?.cloud_storage_id,
+        });
+
+        data.target_storage = new Storage({
+            location: initialData.target_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
 
         Object.defineProperties(
             this,
@@ -173,20 +198,10 @@ export default class Project {
                     get: () => [...data.task_subsets],
                 },
                 sourceStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.source_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.source_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.source_storage,
                 },
                 targetStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.target_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.target_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.target_storage,
                 },
                 _internalData: {
                     get: () => data,
@@ -198,30 +213,29 @@ export default class Project {
         );
 
         // When we call a function, for example: project.annotations.get()
-        // In the method get we lose the project context
-        // So, we need to bind it
+        // In the method get we lose the project context, so, we need to bind it
         this.annotations = {
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
             importDataset: Object.getPrototypeOf(this).annotations.importDataset.bind(this),
         };
     }
 
-    async preview() {
+    async preview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.preview);
         return result;
     }
 
-    async save() {
+    async save(): Promise<Project> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.save);
         return result;
     }
 
-    async delete() {
+    async delete(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.delete);
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Project.prototype.backup,
@@ -232,7 +246,7 @@ export default class Project {
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string) {
+    static async restore(storage: Storage, file: File | string): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
         return result;
     }
@@ -249,11 +263,11 @@ Object.defineProperties(
         annotations: Object.freeze({
             value: {
                 async exportDataset(
-                    format: string,
-                    saveImages: boolean,
-                    useDefaultSettings: boolean,
-                    targetStorage: Storage,
-                    customName?: string,
+                    format: Parameters<typeof Project.prototype.annotations.exportDataset>[0],
+                    saveImages: Parameters<typeof Project.prototype.annotations.exportDataset>[1],
+                    useDefaultSettings: Parameters<typeof Project.prototype.annotations.exportDataset>[2],
+                    targetStorage: Parameters<typeof Project.prototype.annotations.exportDataset>[3],
+                    customName: Parameters<typeof Project.prototype.annotations.exportDataset>[4],
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -267,14 +281,11 @@ Object.defineProperties(
                     return result;
                 },
                 async importDataset(
-                    format: string,
-                    useDefaultSettings: boolean,
-                    sourceStorage: Storage,
-                    file: File | string,
-                    options?: {
-                        convMaskToPoly?: boolean,
-                        updateStatusCallback?: (s: string, n: number) => void,
-                    },
+                    format: Parameters<typeof Project.prototype.annotations.importDataset>[0],
+                    useDefaultSettings: Parameters<typeof Project.prototype.annotations.importDataset>[1],
+                    sourceStorage: Parameters<typeof Project.prototype.annotations.importDataset>[2],
+                    file: Parameters<typeof Project.prototype.annotations.importDataset>[3],
+                    options: Parameters<typeof Project.prototype.annotations.importDataset>[4],
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,

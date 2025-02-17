@@ -1,102 +1,59 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import functools
-import hashlib
 
-from django.utils.functional import SimpleLazyObject
-from django.http import Http404, HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework import views, serializers
-from rest_framework.exceptions import ValidationError, NotFound
-from rest_framework.permissions import AllowAny
-from django.conf import settings
-from django.http import HttpResponse
-from django.views.decorators.http import etag as django_etag
-from rest_framework.response import Response
-from dj_rest_auth.registration.views import RegisterView
-from dj_rest_auth.views import LoginView
 from allauth.account import app_settings as allauth_settings
+from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
 from allauth.account.views import ConfirmEmailView
-from allauth.account.utils import has_verified_email, send_email_confirmation
-
-from furl import furl
-
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
+from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
+from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.utils import jwt_encode
+from dj_rest_auth.views import LoginView
+from django.conf import settings
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
+from django.views.decorators.http import etag as django_etag
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from furl import furl
+from rest_framework import serializers, views
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from .authentication import Signer
+from .utils import get_opa_bundle
 
-def get_organization(request):
-    from cvat.apps.organizations.models import Organization
 
-    IAM_ROLES = {role: priority for priority, role in enumerate(settings.IAM_ROLES)}
-    groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
-    groups.sort(key=lambda group: IAM_ROLES[group.name])
-    privilege = groups[0] if groups else None
-
-    organization = None
-
-    try:
-        org_slug = request.GET.get('org')
-        org_id = request.GET.get('org_id')
-        org_header = request.headers.get('X-Organization')
-
-        if org_id is not None and (org_slug is not None or org_header is not None):
-            raise ValidationError('You cannot specify "org_id" query parameter with '
-                '"org" query parameter or "X-Organization" HTTP header at the same time.')
-
-        if org_slug is not None and org_header is not None and org_slug != org_header:
-            raise ValidationError('You cannot specify "org" query parameter and '
-                '"X-Organization" HTTP header with different values.')
-
-        org_slug = org_slug if org_slug is not None else org_header
-
-        if org_slug:
-            organization = Organization.objects.get(slug=org_slug)
-        elif org_id:
-            organization = Organization.objects.get(id=int(org_id))
-    except Organization.DoesNotExist:
-        raise NotFound(f'{org_slug or org_id} organization does not exist.')
-
-    context = {
-        "organization": organization,
-        "privilege": getattr(privilege, 'name', None)
-    }
-
-    return context
-
-class ContextMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-
-        # https://stackoverflow.com/questions/26240832/django-and-middleware-which-uses-request-user-is-always-anonymous
-        request.iam_context = SimpleLazyObject(lambda: get_organization(request))
-
-        return self.get_response(request)
-
-@extend_schema(tags=['auth'])
-@extend_schema_view(post=extend_schema(
-    summary='This method signs URL for access to the server',
-    description='Signed URL contains a token which authenticates a user on the server.'
-                'Signed URL is valid during 30 seconds since signing.',
-    request=inline_serializer(
-        name='Signing',
-        fields={
-            'url': serializers.CharField(),
-        }
-    ),
-    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}))
+@extend_schema(tags=["auth"])
+@extend_schema_view(
+    post=extend_schema(
+        summary="This method signs URL for access to the server",
+        description="Signed URL contains a token which authenticates a user on the server."
+        "Signed URL is valid during 30 seconds since signing.",
+        request=inline_serializer(
+            name="Signing",
+            fields={
+                "url": serializers.CharField(),
+            },
+        ),
+        responses={"200": OpenApiResponse(response=OpenApiTypes.STR, description="text URL")},
+    )
+)
 class SigningView(views.APIView):
 
     def post(self, request):
-        url = request.data.get('url')
+        url = request.data.get("url")
         if not url:
-            raise ValidationError('Please provide `url` parameter')
+            raise ValidationError("Please provide `url` parameter")
 
         signer = Signer()
         url = self.request.build_absolute_uri(url)
@@ -104,6 +61,7 @@ class SigningView(views.APIView):
 
         url = furl(url).add({Signer.QUERY_PARAM: sign}).url
         return Response(url)
+
 
 class LoginViewEx(LoginView):
     """
@@ -117,6 +75,7 @@ class LoginViewEx(LoginView):
     Accept the following POST parameters: username, email, password
     Return the REST Framework Token Object's key.
     """
+
     @extend_schema(responses=get_token_serializer_class())
     def post(self, request, *args, **kwargs):
         self.request = request
@@ -125,9 +84,9 @@ class LoginViewEx(LoginView):
             self.serializer.is_valid(raise_exception=True)
         except ValidationError:
             user = self.serializer.get_auth_user(
-                self.serializer.data.get('username'),
-                self.serializer.data.get('email'),
-                self.serializer.data.get('password')
+                self.serializer.data.get("username"),
+                self.serializer.data.get("email"),
+                self.serializer.data.get("password"),
             )
             if not user:
                 raise
@@ -139,23 +98,51 @@ class LoginViewEx(LoginView):
                 # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
                 # because redirect will make a POST request and we'll get a 404 code
                 # (although in the browser request method will be displayed like GET)
-                return HttpResponseBadRequest('Unverified email')
-        except Exception: # nosec
+                return HttpResponseBadRequest("Unverified email")
+        except Exception:  # nosec
             pass
 
         self.login()
         return self.get_response()
 
+
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
-        data = self.get_serializer(user).data
-        data['email_verification_required'] = True
-        data['key'] = None
-        if allauth_settings.EMAIL_VERIFICATION != \
-            allauth_settings.EmailVerificationMethod.MANDATORY:
-            data['email_verification_required'] = False
-            data['key'] = user.auth_token.key
-        return data
+        serializer = self.get_serializer(user)
+        return serializer.data
+
+    # NOTE: we should reimplement this method to fix the following issue:
+    # In the previous used version of dj-rest-auth 2.2.7, if the REST_SESSION_LOGIN setting was not defined in the settings file,
+    # the default value specified in the documentation (https://dj-rest-auth.readthedocs.io/en/2.2.7/configuration.html)
+    # was not applied for some unknown reason, and an authentication token was added to a user.
+    # With the dj-rest-auth version 5.0.2, there have been changes to how settings are handled,
+    # and now the default value is properly taken into account.
+    # However, even with the updated code, it still does not handle the scenario
+    # of handling two authentication flows simultaneously during registration process.
+    # Since there is no mention in the dj-rest-auth documentation that session authentication
+    # cannot be used alongside token authentication (https://dj-rest-auth.readthedocs.io/en/latest/configuration.html),
+    # and given the login implementation (https://github.com/iMerica/dj-rest-auth/blob/c6b6530eb0bfa5b10fd7b9e955a39301156e49d2/dj_rest_auth/views.py#L69-L75),
+    # this situation appears to be a bug.
+    # Link to the issue: https://github.com/iMerica/dj-rest-auth/issues/604
+    def perform_create(self, serializer):
+        user = serializer.save(self.request)
+        if (
+            allauth_settings.EMAIL_VERIFICATION
+            != allauth_settings.EmailVerificationMethod.MANDATORY
+        ):
+            if dj_rest_auth_settings.USE_JWT:
+                self.access_token, self.refresh_token = jwt_encode(user)
+            elif self.token_model:
+                dj_rest_auth_settings.TOKEN_CREATOR(self.token_model, user, serializer)
+
+        complete_signup(
+            self.request._request,
+            user,
+            allauth_settings.EMAIL_VERIFICATION,
+            None,
+        )
+        return user
+
 
 def _etag(etag_func):
     """
@@ -164,6 +151,7 @@ def _etag(etag_func):
     It calls Django's original decorator but pass correct request object to it.
     Django's original decorator doesn't work with DRF request object.
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(obj_self, request, *args, **kwargs):
@@ -176,8 +164,11 @@ def _etag(etag_func):
                 return func(obj_self, drf_request, *args, **kwargs)
 
             return patched_viewset_method(wsgi_request, *args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 class RulesView(views.APIView):
     serializer_class = None
@@ -185,22 +176,13 @@ class RulesView(views.APIView):
     authentication_classes = []
     iam_organization_field = None
 
-    @staticmethod
-    def _get_bundle_path():
-        return settings.IAM_OPA_BUNDLE_PATH
-
-    @staticmethod
-    def _etag_func(file_path):
-        with open(file_path, 'rb') as f:
-            return hashlib.blake2b(f.read()).hexdigest()
-
-    @_etag(lambda _: RulesView._etag_func(RulesView._get_bundle_path()))
+    @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):
-        file_obj = open(self._get_bundle_path() ,"rb")
-        return HttpResponse(file_obj, content_type='application/x-tar')
+        return HttpResponse(get_opa_bundle()[0], content_type="application/x-tar")
+
 
 class ConfirmEmailViewEx(ConfirmEmailView):
-    template_name = 'account/email/email_confirmation_signup_message.html'
+    template_name = "account/email/email_confirmation_signup_message.html"
 
     def get(self, *args, **kwargs):
         try:

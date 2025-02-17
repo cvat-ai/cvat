@@ -6,11 +6,10 @@ metadata:
     version: 2
     type: interactor
     spec:
-    framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
     startswith_box: true
-    animated_gif: https://raw.githubusercontent.com/opencv/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/iog_example.gif
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/iog_example.gif
     help_message: The interactor allows to get a mask of an object using its wrapping bounding box, positive, and negative points inside it
 
 spec:
@@ -43,7 +42,7 @@ spec:
         - kind: RUN
           value: conda install -y -c conda-forge pycocotools scipy
         - kind: RUN
-          value: pip install opencv-python
+          value: pip install opencv-python gdown
         - kind: RUN
           value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
         - kind: WORKDIR
@@ -53,7 +52,7 @@ spec:
         - kind: ENV
           value: filename=IOG_PASCAL_SBD.pth
         - kind: RUN
-          value: curl -L "https://drive.google.com/uc?export=download&confirm=t&id=${fileid}" -o ${filename}
+          value: gdown https://drive.google.com/uc?id=${fileid} -O ${filename}
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: ENTRYPOINT
@@ -61,7 +60,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

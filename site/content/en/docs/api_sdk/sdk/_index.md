@@ -12,10 +12,14 @@ simplify server interaction and provide additional functionality like data valid
 and serialization.
 
 SDK API includes several layers:
-- Low-level API with REST API wrappers. Located at `cvat_sdk.api_client`. [Read more](/docs/api_sdk/sdk/lowlevel-api)
-- High-level API. Located at `cvat_sdk.core`. [Read more](/docs/api_sdk/sdk/highlevel-api)
-- PyTorch adapter. Located at `cvat_sdk.pytorch`. [Read more](/docs/api_sdk/sdk/pytorch-adapter)
-- Auto-annotation API. Located at `cvat_sdk.auto_annotation.` [Read more](/docs/api_sdk/sdk/auto-annotation)
+- Low-level API with REST API wrappers. Located at `cvat_sdk.api_client`.
+  {{< ilink "/docs/api_sdk/sdk/lowlevel-api" "Read more" >}}
+- High-level API. Located at `cvat_sdk.core`.
+  {{< ilink "/docs/api_sdk/sdk/highlevel-api" "Read more" >}}
+- PyTorch adapter. Located at `cvat_sdk.pytorch`.
+  {{< ilink "/docs/api_sdk/sdk/pytorch-adapter" "Read more" >}}
+- Auto-annotation API. Located at `cvat_sdk.auto_annotation.`
+  {{< ilink "/docs/api_sdk/sdk/auto-annotation" "Read more" >}}
 
 In general, the low-level API provides single-request operations, while the high-level one
 implements composite, multi-request operations, and provides local proxies for server objects.
@@ -38,13 +42,20 @@ To install an [official release of CVAT SDK](https://pypi.org/project/cvat-sdk/)
 pip install cvat-sdk
 ```
 
-To use the PyTorch adapter, request the `pytorch` extra:
+To use the `cvat_sdk.masks` module, request the `masks` extra:
+
+```bash
+pip install "cvat-sdk[masks]"
+```
+
+To use the PyTorch adapter or the built-in PyTorch-based auto-annotation functions,
+request the `pytorch` extra:
 
 ```bash
 pip install "cvat-sdk[pytorch]"
 ```
 
-We support Python versions 3.8 and higher.
+We support Python versions 3.9 and higher.
 
 ## Usage
 

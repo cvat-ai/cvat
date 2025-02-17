@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,29 +19,19 @@ context('Object propagate.', () => {
         secondY: 450,
     };
 
-    function startPropagation() {
-        cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
-        cy.get('.cvat-object-item-menu').within(() => {
-            cy.contains('button', 'Propagate').click();
-        });
-    }
-
     function setupUpToFrame(value) {
-        cy.get('.cvat-propagate-confirm-up-to-input')
-            .find('input')
-            .clear()
-            .type(value)
-            .blur()
-            .should('have.value', value);
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').clear();
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').type(value);
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').blur();
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').should('have.value', value);
     }
 
     function setupPropagateFrames(value) {
-        cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
-            .find('input')
-            .clear()
-            .type(value)
-            .blur()
-            .should('have.value', value);
+        // Change value in the "copy of the object on frame" field
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').clear();
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').type(value);
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').blur();
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').should('have.value', value);
     }
 
     before(() => {
@@ -59,7 +49,7 @@ context('Object propagate.', () => {
             const FROM_FRAME = 0;
             const PROPAGATE_FRAMES = 1;
 
-            startPropagation();
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             setupPropagateFrames(PROPAGATE_FRAMES);
             cy.get('.cvat-propagate-confirm-up-to-input') // Value of "up to the frame" field should be same
                 .find('input')
@@ -78,7 +68,7 @@ context('Object propagate.', () => {
             const FROM_FRAME = 0;
             const PROPAGATE_FRAMES = 2;
 
-            startPropagation();
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             setupUpToFrame(FROM_FRAME + PROPAGATE_FRAMES);
             cy.get('.cvat-propagate-confirm-object-on-frames') // Value of "copy of the object on frames" field should be same
                 .find('input')
@@ -99,7 +89,7 @@ context('Object propagate.', () => {
             const UP_TO_FRAME = 1;
             cy.goCheckFrameNumber(FROM_FRAME);
             cy.createCuboid(createCuboidShape2Points);
-            startPropagation();
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             setupUpToFrame(UP_TO_FRAME);
             cy.contains('button', 'Yes').click();
 

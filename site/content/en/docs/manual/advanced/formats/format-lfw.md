@@ -1,40 +1,36 @@
 ---
+title: 'LFW'
 linkTitle: 'LFW'
 weight: 17
+description: 'How to export and import data in LFW format'
 ---
 
-# [LFW](http://vis-www.cs.umass.edu/lfw/)
+The Labeled Faces in the Wild (LFW) format
+is primarily used for face verification and face recognition tasks.
+The LFW format is designed to be straightforward and
+is compatible with a variety of machine learning and deep learning frameworks.
 
+For more information, see:
+
+- [LFW site](http://vis-www.cs.umass.edu/lfw/)
 - [Format specification](http://vis-www.cs.umass.edu/lfw/README.txt)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/lfw_dataset)
 
-- Supported annotations: tags, points.
+# Export LFW annotation
 
-- Supported attributes:
+For export of images:
+
+- Supported annotations: Tags, Skeletons.
+- Attributes:
 
   - `negative_pairs` (should be defined for labels as `text`):
     list of image names with mismatched persons.
   - `positive_pairs` (should be defined for labels as `text`):
     list of image names with matched persons.
 
-# Import LFW annotation
+- Tracks: Not supported.
 
-The uploaded annotations file should be a zip file with the following structure:
-
-```bash
-<archive_name>.zip/
-    └── annotations/
-        ├── landmarks.txt # list with landmark points for each image
-        ├── pairs.txt # list of matched and mismatched pairs of person
-        └── people.txt # optional file with a list of persons name
-```
-
-Full information about the content of annotation files is available
-[here](http://vis-www.cs.umass.edu/lfw/README.txt)
-
-# Export LFW annotation
-
-Downloaded file: a zip archive of the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 <archive_name>.zip/
@@ -52,6 +48,21 @@ Downloaded file: a zip archive of the following structure:
     ├── pairs.txt
     └── people.txt
 ```
+
+# Import LFW annotation
+
+The uploaded annotations file should be a zip file with the following structure:
+
+```bash
+<archive_name>.zip/
+    └── annotations/
+        ├── landmarks.txt # list with landmark points for each image
+        ├── pairs.txt # list of matched and mismatched pairs of person
+        └── people.txt # optional file with a list of persons name
+```
+
+Full information about the content of annotation files is available
+[here](http://vis-www.cs.umass.edu/lfw/README.txt)
 
 # Example: create task with images and upload LFW annotations into it
 

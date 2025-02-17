@@ -1,7 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
+/* stylelint-disable selector-class-pattern, selector-id-pattern */
 
 .cvat_canvas_hidden {
     display: none;
@@ -61,19 +63,21 @@ polyline.cvat_shape_drawing_opacity {
     stroke: red;
 }
 
-.cvat_canvas_threshold {
-    stroke: red;
-}
-
-.cvat_canvas_shape_grouping {
+.cvat_canvas_shape_selection {
     @extend .cvat_shape_action_dasharray;
     @extend .cvat_shape_action_opacity;
 
-    fill: darkmagenta;
+    fill: #fcfbfc;
 }
 
-image.cvat_canvas_shape_grouping {
+image.cvat_canvas_shape_selection {
     visibility: hidden;
+}
+
+.cvat_canvas_selection_box {
+    fill: white;
+    fill-opacity: 0.1;
+    stroke: white;
 }
 
 .cvat_canvas_shape_region_selection {
@@ -85,6 +89,7 @@ image.cvat_canvas_shape_grouping {
 }
 
 .cvat_canvas_issue_region {
+    pointer-events: none;
     stroke-width: 0;
 }
 
@@ -92,7 +97,7 @@ circle.cvat_canvas_issue_region {
     opacity: 1 !important;
 }
 
-polyline.cvat_canvas_shape_grouping {
+polyline.cvat_canvas_shape_selection {
     @extend .cvat_shape_action_dasharray;
     @extend .cvat_shape_action_opacity;
 
@@ -246,10 +251,6 @@ g.cvat_canvas_shape_occluded {
         auto;
 }
 
-.cvat_canvas_interact_intermediate_shape_point {
-    pointer-events: none;
-}
-
 .svg_select_boundingRect {
     opacity: 0;
     pointer-events: none;
@@ -314,14 +315,10 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat_canvas_pixelized {
-    image-rendering: optimizeSpeed;             /* Legal fallback */
-    image-rendering: -moz-crisp-edges;          /* Firefox        */
-    image-rendering: -o-crisp-edges;            /* Opera          */
-    image-rendering: -webkit-optimize-contrast; /* Safari         */
-    image-rendering: optimize-contrast;         /* CSS3 Proposed  */
-    image-rendering: crisp-edges;               /* CSS4 Proposed  */
-    image-rendering: pixelated;                 /* CSS4 Proposed  */
-    -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
+    image-rendering: optimizeSpeed;
+    image-rendering: optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
 }
 
 .cvat_canvas_removed_image {
@@ -385,7 +382,7 @@ g.cvat_canvas_shape_occluded {
     background-repeat: no-repeat;
     width: 100%;
     height: 100%;
-    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.75);
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 75%);
 }
 
 #cvat_canvas_bitmap {
@@ -397,7 +394,7 @@ g.cvat_canvas_shape_occluded {
     background: black;
     width: 100%;
     height: 100%;
-    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.75);
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 75%);
 }
 
 #cvat_canvas_grid {
@@ -414,6 +411,8 @@ g.cvat_canvas_shape_occluded {
 }
 
 #cvat_canvas_content {
+    @extend .cvat_canvas_pixelized;
+
     filter: contrast(120%) saturate(150%);
     position: absolute;
     z-index: 2;
@@ -423,6 +422,8 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat_masks_canvas_wrapper {
+    @extend .cvat_canvas_pixelized;
+
     z-index: 3;
     display: none;
 }
@@ -436,24 +437,24 @@ g.cvat_canvas_shape_occluded {
     user-select: none;
 }
 
-@keyframes loadingAnimation {
-    0% {
-        stroke-dashoffset: 1;
-        stroke: #09c;
-    }
-
-    50% {
-        stroke-dashoffset: 100;
-        stroke: #f44;
-    }
-
-    100% {
-        stroke-dashoffset: 300;
-        stroke: #09c;
-    }
-}
-
 .cvat_canvas_shape_darken {
     fill: #838383;
     stroke: #838383;
+}
+
+.cvat_canvas_sliced_contour  {
+    fill-opacity: 0.01;
+}
+
+.cvat_canvas_slicing_line {
+    pointer-events: none;
+    fill-opacity: 0;
+}
+
+.cvat-canvas-notification-list-warning {
+    color: orange;
+}
+
+.cvat-canvas-notification-list-shortcuts {
+    color: yellow;
 }

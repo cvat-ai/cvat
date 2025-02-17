@@ -1,11 +1,10 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
 
 import cvat_sdk.datasets as cvatds
 import PIL.Image
@@ -21,8 +20,10 @@ from .util import restrict_api_requests
 @pytest.fixture(autouse=True)
 def _common_setup(
     tmp_path: Path,
-    fxt_login: Tuple[Client, str],
-    fxt_logger: Tuple[Logger, io.StringIO],
+    fxt_login: tuple[Client, str],
+    fxt_logger: tuple[Logger, io.StringIO],
+    restore_redis_ondisk_per_function,
+    restore_redis_inmem_per_function,
 ):
     logger = fxt_logger[0]
     client = fxt_login[0]
@@ -39,7 +40,7 @@ class TestTaskDataset:
     def setup(
         self,
         tmp_path: Path,
-        fxt_login: Tuple[Client, str],
+        fxt_login: tuple[Client, str],
     ):
         self.client = fxt_login[0]
         self.images = generate_image_files(10)
@@ -206,3 +207,17 @@ class TestTaskDataset:
         )
 
         assert dataset.samples[6].annotations.shapes[0].label_id == self.expected_labels[0].id
+
+    def test_no_annotations(self):
+        dataset = cvatds.TaskDataset(self.client, self.task.id, load_annotations=False)
+
+        for index, sample in enumerate(dataset.samples):
+            assert sample.frame_index == index
+            assert sample.frame_name == self.images[index].name
+
+            actual_image = sample.media.load_image()
+            expected_image = PIL.Image.open(self.images[index])
+
+            assert actual_image == expected_image
+
+            assert sample.annotations is None

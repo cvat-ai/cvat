@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,23 +6,41 @@ from __future__ import annotations
 
 import itertools
 import math
+from abc import ABCMeta
 from collections import Counter
+from collections.abc import Hashable, Sequence
 from copy import deepcopy
-from datetime import timedelta
 from functools import cached_property, partial
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Set, Tuple, Union, cast
-from uuid import uuid4
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Hashable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import datumaro as dm
+import datumaro.components.annotations.matcher
+import datumaro.components.comparator
+import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import django_rq
 import numpy as np
+import rq
 from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Q
-from django.utils import timezone
+from django_rq.queues import DjangoRQ as RqQueue
+from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
 
 from cvat.apps.dataset_manager.bindings import (
@@ -34,9 +52,12 @@ from cvat.apps.dataset_manager.bindings import (
 )
 from cvat.apps.dataset_manager.formats.registry import dm_env
 from cvat.apps.dataset_manager.task import JobAnnotation
-from cvat.apps.dataset_manager.util import bulk_create
+from cvat.apps.engine import serializers as engine_serializers
+from cvat.apps.engine.frame_provider import TaskFrameProvider
+from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     DimensionType,
+    Image,
     Job,
     JobType,
     Project,
@@ -44,7 +65,11 @@ from cvat.apps.engine.models import (
     StageChoice,
     StateChoice,
     Task,
+    User,
+    ValidationMode,
 )
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -54,9 +79,10 @@ from cvat.apps.quality_control.models import (
 )
 
 
-class _Serializable:
+@define
+class Serializable(metaclass=ABCMeta):
     def _value_serializer(self, v):
-        if isinstance(v, _Serializable):
+        if isinstance(v, Serializable):
             return v.to_dict()
         elif isinstance(v, (list, tuple, set, frozenset)):
             return [self._value_serializer(vv) for vv in v]
@@ -68,7 +94,7 @@ class _Serializable:
     def to_dict(self) -> dict:
         return self._value_serializer(self._fields_dict())
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         d = asdict(self, recurse=False)
 
         for field_name in include_properties or []:
@@ -81,13 +107,10 @@ class _Serializable:
         raise NotImplementedError("Must be implemented in the subclass")
 
 
-class _ReportNode(_Serializable):
-    _CHECK_SETATTR_FIELD_NAME = "_check_setattr"
-
-    _CACHED_FIELDS: Optional[List[str]] = None
-    """
-    Fields that can be set externally or be computed on access
-    """
+@define(slots=False)
+class ReportNode(Serializable):
+    CACHED_FIELDS: ClassVar[Optional[List[str]]] = None
+    "Fields that can be set externally or be computed on access"
 
     @classmethod
     def _find_cached_fields(cls) -> List[str]:
@@ -99,37 +122,32 @@ class _ReportNode(_Serializable):
 
     @classmethod
     def _get_cached_fields(cls, recursive: bool = True) -> List[str]:
-        if "_CACHED_FIELDS" not in cls.__dict__:
+        if "CACHED_FIELDS" not in cls.__dict__:
             fields = cls._find_cached_fields() or []
         else:
-            fields = list(cls.__dict__["_CACHED_FIELDS"])
+            fields = list(cls.__dict__["CACHED_FIELDS"])
 
         if recursive:
             for base_class in cls.__bases__:
-                if issubclass(base_class, _ReportNode) and base_class != _ReportNode:
+                if issubclass(base_class, ReportNode) and base_class != ReportNode:
                     fields += base_class._get_cached_fields(recursive=False)
 
         return fields
 
     def __init__(self, *args, **kwargs):
-        for field_name in self._get_cached_fields():
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
+        cached_field_kwargs = {
+            field_name: kwargs.pop(field_name)
+            for field_name in self._get_cached_fields()
+            if field_name in kwargs
+        }
 
-        if attrs_init := getattr(self, "__attrs_init__"):
-            attrs_init(*args, **kwargs)
+        self.__attrs_init__(*args, **kwargs)
 
-        self._enable_setattr_checks(True)
-
-    def _enable_setattr_checks(self, value: bool):
-        setattr(self, self._CHECK_SETATTR_FIELD_NAME, value)
+        for field_name, field_value in cached_field_kwargs.items():
+            setattr(self, field_name, field_value)
 
     def __setattr__(self, __name: str, __value: Any) -> None:
-        if (
-            __name != self._CHECK_SETATTR_FIELD_NAME
-            and getattr(self, self._CHECK_SETATTR_FIELD_NAME, False) is True
-            and __name not in self._get_cached_fields()
-        ):
+        if __name not in self._get_cached_fields():
             self.reset_cached_fields()
 
         return super().__setattr__(__name, __value)
@@ -146,7 +164,7 @@ class _ReportNode(_Serializable):
 
 
 @define(kw_only=True, init=False)
-class AnnotationId(_ReportNode):
+class AnnotationId(ReportNode):
     obj_id: int
     job_id: int
     type: AnnotationType
@@ -169,10 +187,10 @@ class AnnotationId(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class AnnotationConflict(_ReportNode):
+class AnnotationConflict(ReportNode):
     frame_id: int
     type: AnnotationConflictType
-    annotation_ids: List[AnnotationId]
+    annotation_ids: list[AnnotationId]
 
     @property
     def severity(self) -> AnnotationConflictSeverity:
@@ -201,7 +219,7 @@ class AnnotationConflict(_ReportNode):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["severity"])
 
     @classmethod
@@ -214,7 +232,7 @@ class AnnotationConflict(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonParameters(_ReportNode):
+class ComparisonParameters(ReportNode):
     included_annotation_types: List[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
@@ -222,12 +240,16 @@ class ComparisonParameters(_ReportNode):
         dm.AnnotationType.polygon,
         dm.AnnotationType.polyline,
         dm.AnnotationType.skeleton,
+        dm.AnnotationType.label,
     ]
+
+    non_groupable_ann_type = dm.AnnotationType.label
+    "Annotation type that can't be grouped"
 
     compare_attributes: bool = True
     "Enables or disables attribute checks"
 
-    ignored_attributes: List[str] = []
+    ignored_attributes: list[str] = []
 
     iou_threshold: float = 0.4
     "Used for distinction between matched / unmatched shapes"
@@ -237,6 +259,9 @@ class ComparisonParameters(_ReportNode):
 
     oks_sigma: float = 0.09
     "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
+
+    point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE
+    "Determines how to obtain the object size for point comparisons"
 
     line_thickness: float = 0.01
     "Thickness of polylines, relatively to the (image area) ^ 0.5"
@@ -265,6 +290,14 @@ class ComparisonParameters(_ReportNode):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
+    empty_is_annotated: bool = False
+    """
+    Consider unannotated (empty) frames virtually annotated as "nothing".
+    If disabled, quality metrics, such as accuracy, will be 0 if both GT and DS frames
+    have no annotations. When enabled, they will be 1 instead.
+    This will also add virtual annotations to empty frames in the comparison results.
+    """
+
     def _value_serializer(self, v):
         if isinstance(v, dm.AnnotationType):
             return str(v.name)
@@ -278,12 +311,13 @@ class ComparisonParameters(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ConfusionMatrix(_ReportNode):
-    labels: List[str]
-    rows: np.array
-    precision: np.array
-    recall: np.array
-    accuracy: np.array
+class ConfusionMatrix(ReportNode):
+    labels: list[str]
+    rows: np.ndarray
+    precision: np.ndarray
+    recall: np.ndarray
+    accuracy: np.ndarray
+    jaccard_index: Optional[np.ndarray]
 
     @property
     def axes(self):
@@ -295,7 +329,7 @@ class ConfusionMatrix(_ReportNode):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["axes"])
 
     @classmethod
@@ -306,11 +340,14 @@ class ConfusionMatrix(_ReportNode):
             precision=np.asarray(d["precision"]),
             recall=np.asarray(d["recall"]),
             accuracy=np.asarray(d["accuracy"]),
+            # This field didn't exist at first, so it might not be present
+            # in old serialized instances.
+            jaccard_index=np.asarray(d["jaccard_index"]) if "jaccard_index" in d else None,
         )
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportAnnotationsSummary(_ReportNode):
+class ComparisonReportAnnotationsSummary(ReportNode):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -363,7 +400,7 @@ class ComparisonReportAnnotationsSummary(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportAnnotationShapeSummary(_ReportNode):
+class ComparisonReportAnnotationShapeSummary(ReportNode):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -402,7 +439,7 @@ class ComparisonReportAnnotationShapeSummary(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportAnnotationLabelSummary(_ReportNode):
+class ComparisonReportAnnotationLabelSummary(ReportNode):
     valid_count: int
     invalid_count: int
     total_count: int
@@ -426,7 +463,7 @@ class ComparisonReportAnnotationLabelSummary(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportAnnotationComponentsSummary(_ReportNode):
+class ComparisonReportAnnotationComponentsSummary(ReportNode):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
 
@@ -443,8 +480,19 @@ class ComparisonReportAnnotationComponentsSummary(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportComparisonSummary(_ReportNode):
-    frames: List[str]
+class ComparisonReportComparisonSummary(ReportNode):
+    frame_share: float
+    frames: list[str]
+
+    conflict_count: int
+    warning_count: int
+    error_count: int
+    conflicts_by_type: dict[AnnotationConflictType, int]
+    frames_with_errors: int
+    total_frames: int
+
+    annotations: ComparisonReportAnnotationsSummary
+    annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
 
     @cached_property
     def frame_share(self) -> float:
@@ -453,16 +501,6 @@ class ComparisonReportComparisonSummary(_ReportNode):
     @cached_property
     def mean_conflict_count(self) -> float:
         return self.conflict_count / (self.frame_count or 1)
-
-    conflict_count: int
-    warning_count: int
-    error_count: int
-    conflicts_by_type: Dict[AnnotationConflictType, int]
-    frames_with_errors: int
-    total_frames: int
-
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
 
     @cached_property
     def frame_count(self) -> int:
@@ -503,8 +541,11 @@ class ComparisonReportComparisonSummary(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportFrameSummary(_ReportNode):
+class ComparisonReportFrameSummary(ReportNode):
     conflicts: List[AnnotationConflict]
+
+    annotations: ComparisonReportAnnotationsSummary
+    annotation_components: ComparisonReportAnnotationComponentsSummary
 
     @cached_property
     def conflict_count(self) -> int:
@@ -519,11 +560,8 @@ class ComparisonReportFrameSummary(_ReportNode):
         return len([c for c in self.conflicts if c.severity == AnnotationConflictSeverity.ERROR])
 
     @cached_property
-    def conflicts_by_type(self) -> Dict[AnnotationConflictType, int]:
+    def conflicts_by_type(self) -> dict[AnnotationConflictType, int]:
         return Counter(c.type for c in self.conflicts)
-
-    annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
 
     def _value_serializer(self, v):
         if isinstance(v, AnnotationConflictType):
@@ -538,13 +576,15 @@ class ComparisonReportFrameSummary(_ReportNode):
         }
         return cls(
             **{field: d[field] for field in optional_fields if field in d},
-            **dict(
-                conflicts_by_type={
-                    AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
-                }
-            )
-            if "conflicts_by_type" in d
-            else {},
+            **(
+                dict(
+                    conflicts_by_type={
+                        AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
+                    }
+                )
+                if "conflicts_by_type" in d
+                else {}
+            ),
             conflicts=[AnnotationConflict.from_dict(v) for v in d["conflicts"]],
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
@@ -554,17 +594,17 @@ class ComparisonReportFrameSummary(_ReportNode):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReport(_ReportNode):
+class ComparisonReport(ReportNode):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
-    frame_results: Dict[int, ComparisonReportFrameSummary]
+    frame_results: dict[int, ComparisonReportFrameSummary]
 
     @property
-    def conflicts(self) -> List[AnnotationConflict]:
+    def conflicts(self) -> list[AnnotationConflict]:
         return list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> ComparisonReport:
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReport:
         return cls(
             parameters=ComparisonParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportComparisonSummary.from_dict(d["comparison_summary"]),
@@ -655,7 +695,7 @@ class _MemoizingAnnotationConverterFactory:
     def clear(self):
         self._annotation_mapping.clear()
 
-    def __call__(self, *args, **kwargs) -> List[dm.Annotation]:
+    def __call__(self, *args, **kwargs) -> list[dm.Annotation]:
         converter = _MemoizingAnnotationConverter(*args, factory=self, **kwargs)
         return converter.convert()
 
@@ -682,13 +722,31 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         return converted
 
 
-def _match_segments(
-    a_segms,
-    b_segms,
-    distance=dm.ops.segment_iou,
-    dist_thresh=1.0,
-    label_matcher=lambda a, b: a.label == b.label,
-):
+_ShapeT1 = TypeVar("_ShapeT1")
+_ShapeT2 = TypeVar("_ShapeT2")
+ShapeSimilarityFunction = Callable[
+    [_ShapeT1, _ShapeT2], float
+]  # (shape1, shape2) -> [0; 1], returns 0 for mismatches, 1 for matches
+LabelEqualityFunction = Callable[[_ShapeT1, _ShapeT2], bool]
+SegmentMatchingResult = tuple[
+    list[tuple[_ShapeT1, _ShapeT2]],  # matches
+    list[tuple[_ShapeT1, _ShapeT2]],  # mismatches
+    list[_ShapeT1],  # a unmatched
+    list[_ShapeT2],  # b unmatched
+]
+
+
+def match_segments(
+    a_segms: Sequence[_ShapeT1],
+    b_segms: Sequence[_ShapeT2],
+    *,
+    distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
+    dist_thresh: float = 1.0,
+    label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
+) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
+    # Comparing to the dm version, this one changes the algorithm to match shapes first
+    # label comparison is only used to distinguish between matches and mismatches
+
     assert callable(distance), distance
     assert callable(label_matcher), label_matcher
 
@@ -702,6 +760,7 @@ def _match_segments(
             for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
         ]
     )
+    distances[~np.isfinite(distances)] = 1
     distances[distances > 1 - dist_thresh] = 1
 
     if a_segms and b_segms:
@@ -710,11 +769,11 @@ def _match_segments(
         a_matches = []
         b_matches = []
 
-    # matches: boxes we succeeded to match completely
-    # mispred: boxes we succeeded to match, having label mismatch
+    # matches: segments we succeeded to match completely
+    # mispred: segments we succeeded to match, having label mismatch
     matches = []
     mispred = []
-    # *_umatched: boxes of (*) we failed to match
+    # *_umatched: segments of (*) we failed to match
     a_unmatched = []
     b_unmatched = []
 
@@ -740,7 +799,7 @@ def _match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
+def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -751,37 +810,43 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
     if len(p1) != len(p2):
         return 0
 
-    if visibility is None:
-        visibility = np.ones(len(p1))
+    if visibility_a is None:
+        visibility_a = np.full(len(p1), True)
     else:
-        visibility = np.asarray(visibility, dtype=float)
+        visibility_a = np.asarray(visibility_a, dtype=bool)
+
+    if visibility_b is None:
+        visibility_b = np.full(len(p2), True)
+    else:
+        visibility_b = np.asarray(visibility_b, dtype=bool)
 
     if not scale:
         if bbox is None:
-            bbox = dm.ops.mean_bbox([a, b])
+            bbox = datumaro.util.annotation_util.mean_bbox([a, b])
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
-    return np.sum(visibility * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))) / np.sum(
-        visibility
-    )
+    return np.sum(
+        visibility_a * visibility_b * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))
+    ) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
 @define(kw_only=True)
-class _KeypointsMatcher(dm.ops.PointsMatcher):
+class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
+        if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
 
-        bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-        return _OKS(
+        bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+        return oks(
             a,
             b,
             sigma=self.sigma,
             bbox=bbox,
-            visibility=[v == dm.Points.Visibility.visible for v in a.visibility],
+            visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
+            visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
         )
 
 
@@ -791,7 +856,7 @@ def _arr_div(a_arr: np.ndarray, b_arr: np.ndarray) -> np.ndarray:
     return a_arr / divisor
 
 
-def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
+def to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
     from pycocotools import mask as mask_utils
 
     if ann.type == dm.AnnotationType.polygon:
@@ -804,7 +869,7 @@ def _to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
         assert False
 
 
-def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
+def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -> float:
     """
     Generic IoU computation with masks and polygons.
     Returns -1 if no intersection, [0; 1] otherwise
@@ -815,15 +880,15 @@ def _segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) 
 
     from pycocotools import mask as mask_utils
 
-    a = _to_rle(a, img_h=img_h, img_w=img_w)
-    b = _to_rle(b, img_h=img_h, img_w=img_w)
+    a = to_rle(a, img_h=img_h, img_w=img_w)
+    b = to_rle(b, img_h=img_h, img_w=img_w)
 
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
 
 
 @define(kw_only=True)
-class _LineMatcher(dm.ops.LineMatcher):
+class LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
     EPSILON = 1e-7
 
     torso_r: float = 0.25
@@ -877,7 +942,7 @@ class _LineMatcher(dm.ops.LineMatcher):
         return sum(np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))) / len(a)
 
     @classmethod
-    def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Creates 2 polylines with the same numbers of points,
         the points are placed on the original lines with the same step.
@@ -970,17 +1035,18 @@ class _LineMatcher(dm.ops.LineMatcher):
         return a_new_points, b_new_points
 
 
-class _DistanceComparator(dm.ops.DistanceComparator):
+class DistanceComparator(datumaro.components.comparator.DistanceComparator):
     def __init__(
         self,
         categories: dm.CategoriesInfo,
         *,
-        included_ann_types: Optional[List[dm.AnnotationType]] = None,
+        included_ann_types: Optional[list[dm.AnnotationType]] = None,
         return_distances: bool = False,
         iou_threshold: float = 0.5,
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
         oks_sigma: float = 0.09,
+        point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE,
         compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
@@ -994,6 +1060,9 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.oks_sigma = oks_sigma
         "% of the shape area"
 
+        self.point_size_base = point_size_base
+        "Compare point groups using the group bbox size or the image size"
+
         self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
 
@@ -1004,22 +1073,39 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         self.panoptic_comparison = panoptic_comparison
         "Compare only the visible parts of polygons and masks"
 
-    def _instance_bbox(
+    def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
-    ) -> Tuple[float, float, float, float]:
-        return dm.ops.max_bbox(
+    ) -> tuple[float, float, float, float]:
+        return datumaro.util.annotation_util.max_bbox(
             a.get_bbox() if isinstance(a, dm.Skeleton) else a
             for a in instance_anns
             if hasattr(a, "get_bbox") and not a.attributes.get("outside", False)
         )
 
     @staticmethod
-    def _get_ann_type(t, item: dm.Annotation) -> Sequence[dm.Annotation]:
+    def to_polygon(bbox_ann: dm.Bbox):
+        points = bbox_ann.as_polygon()
+        angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
+
+        if angle:
+            points = np.reshape(points, (-1, 2))
+            center = (points[0] + points[2]) / 2
+            rel_points = points - center
+            cos = np.cos(angle)
+            sin = np.sin(angle)
+            rotation_matrix = ((cos, sin), (-sin, cos))
+            points = np.matmul(rel_points, rotation_matrix) + center
+            points = points.flatten()
+
+        return dm.Polygon(points)
+
+    @staticmethod
+    def _get_ann_type(t: dm.AnnotationType, item: dm.DatasetItem) -> Sequence[dm.Annotation]:
         return [
             a for a in item.annotations if a.type == t and not a.attributes.get("outside", False)
         ]
 
-    def _match_ann_type(self, t, *args):
+    def _match_ann_type(self, t: dm.AnnotationType, *args):
         if t not in self.included_ann_types:
             return None
 
@@ -1040,16 +1126,32 @@ class _DistanceComparator(dm.ops.DistanceComparator):
         else:
             return None
 
-    def _match_segments(
+    def match_labels(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+        def label_distance(a: dm.Label, b: dm.Label) -> float:
+            if a is None or b is None:
+                return 0
+            return 0.5 + (a.label == b.label) / 2
+
+        return self.match_segments(
+            dm.AnnotationType.label,
+            item_a,
+            item_b,
+            distance=label_distance,
+            label_matcher=lambda a, b: a.label == b.label,
+            dist_thresh=0.5,
+        )
+
+    def match_segments(
         self,
-        t,
-        item_a,
-        item_b,
+        t: dm.AnnotationType,
+        item_a: dm.DatasetItem,
+        item_b: dm.DatasetItem,
         *,
-        distance: Callable = dm.ops.segment_iou,
-        label_matcher: Callable = None,
-        a_objs: Optional[Sequence[dm.Annotation]] = None,
-        b_objs: Optional[Sequence[dm.Annotation]] = None,
+        distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
+        label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] | None = None,
+        a_objs: Sequence[_ShapeT1] | None = None,
+        b_objs: Sequence[_ShapeT2] | None = None,
+        dist_thresh: float | None = None,
     ):
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
@@ -1067,8 +1169,12 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
-            returned_values = _match_segments(
-                a_objs, b_objs, distance=distance, dist_thresh=self.iou_threshold, **extra_args
+            returned_values = match_segments(
+                a_objs,
+                b_objs,
+                distance=distance,
+                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
+                **extra_args,
             )
 
         if self.return_distances:
@@ -1076,44 +1182,28 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         return returned_values
 
-    def match_boxes(self, item_a, item_b):
-        def _to_polygon(bbox_ann: dm.Bbox):
-            points = bbox_ann.as_polygon()
-            angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
-
-            if angle:
-                points = np.reshape(points, (-1, 2))
-                center = (points[0] + points[2]) / 2
-                rel_points = points - center
-                cos = np.cos(angle)
-                sin = np.sin(angle)
-                rotation_matrix = ((cos, sin), (-sin, cos))
-                points = np.matmul(rel_points, rotation_matrix) + center
-                points = points.flatten()
-
-            return dm.Polygon(points)
-
+    def match_boxes(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
-                return dm.ops.bbox_iou(a, b)
+                return datumaro.util.annotation_util.bbox_iou(a, b)
             else:
-                return _segment_iou(_to_polygon(a), _to_polygon(b), img_h=img_h, img_w=img_w)
+                return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
-        img_h, img_w = item_a.image.size
-        return self._match_segments(
+        img_h, img_w = item_a.media_as(dm.Image).size
+        return self.match_segments(
             dm.AnnotationType.bbox,
             item_a,
             item_b,
             distance=partial(_bbox_iou, img_h=img_h, img_w=img_w),
         )
 
-    def match_segmentations(self, item_a, item_b):
+    def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         def _get_segmentations(item):
             return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
                 dm.AnnotationType.mask, item
             )
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         def _find_instances(annotations):
             # Group instance annotations by label.
@@ -1121,7 +1211,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in dm.ops.find_instances(annotations):
+            for ann_group in datumaro.util.annotation_util.find_instances(annotations):
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -1133,21 +1223,29 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             return instances, instance_map
 
         def _get_compiled_mask(
-            anns: Sequence[dm.Annotation], *, instance_ids: Dict[int, int]
+            anns: Sequence[dm.Annotation], *, instance_ids: dict[int, int]
         ) -> dm.CompiledMask:
             if not anns:
                 return None
 
             from pycocotools import mask as mask_utils
 
-            object_rle_groups = [_to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
+            # Merge instance groups
+            object_rle_groups = [to_rle(ann, img_h=img_h, img_w=img_w) for ann in anns]
             object_rles = [mask_utils.merge(g) for g in object_rle_groups]
-            object_masks = mask_utils.decode(object_rles)
+
+            # Mask materialization can consume a lot of memory,
+            # avoid storing all the masks simultaneously
+            def _make_lazy_decode(i: int):
+                def _lazy_decode() -> dm.BinaryMaskImage:
+                    return mask_utils.decode([object_rles[i]])[:, :, 0]
+
+                return _lazy_decode
 
             return dm.CompiledMask.from_instance_masks(
                 # need to increment labels and instance ids by 1 to avoid confusion with background
                 instance_masks=(
-                    dm.Mask(image=object_masks[:, :, i], z_order=ann.z_order, label=ann.label + 1)
+                    dm.Mask(image=_make_lazy_decode(i), z_order=ann.z_order, label=ann.label + 1)
                     for i, ann in enumerate(anns)
                 ),
                 instance_ids=(iid + 1 for iid in instance_ids),
@@ -1192,7 +1290,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                     # Create merged RLE for the instance shapes
                     object_anns = instances[obj_id]
                     object_rle_groups = [
-                        _to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
+                        to_rle(ann, img_h=img_h, img_w=img_w) for ann in object_anns
                     ]
                     rle = mask_utils.merge(list(itertools.chain.from_iterable(object_rle_groups)))
 
@@ -1215,7 +1313,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             b = b_instances[b_inst_id][0]
             return a.label == b.label
 
-        results = self._match_segments(
+        results = self.match_segments(
             dm.AnnotationType.polygon,
             item_a,
             item_b,
@@ -1259,31 +1357,31 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         return returned_values
 
-    def match_lines(self, item_a, item_b):
-        matcher = _LineMatcher(
+    def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+        matcher = LineMatcher(
             oriented=self.compare_line_orientation,
             torso_r=self.line_torso_radius,
-            scale=np.prod(item_a.image.size),
+            scale=np.prod(item_a.media_as(dm.Image).size),
         )
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.polyline, item_a, item_b, distance=matcher.distance
         )
 
-    def match_points(self, item_a, item_b):
+    def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
-            source_instances = dm.ops.find_instances(source_anns)
+            source_instances = datumaro.util.annotation_util.find_instances(source_anns)
             for instance_group in source_instances:
-                instance_bbox = self._instance_bbox(instance_group)
+                instance_bbox = self.instance_bbox(instance_group)
 
                 for ann in instance_group:
-                    if ann.type == dm.AnnotationType.points:
+                    if ann.type == datumaro.AnnotationType.points:
                         instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        img_h, img_w = item_a.image.size
+        img_h, img_w = item_a.media_as(dm.Image).size
 
         def _distance(a: dm.Points, b: dm.Points) -> float:
             a_bbox = instance_map[id(a)][1]
@@ -1294,26 +1392,33 @@ class _DistanceComparator(dm.ops.DistanceComparator):
             if a_area == 0 and b_area == 0:
                 # Simple case: singular points without bbox
                 # match them in the image space
-                return _OKS(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
+                return oks(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
 
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
                 # Try to align points and then return the metric
-                # match them in their bbox space
 
-                if dm.ops.bbox_iou(a_bbox, b_bbox) <= 0:
-                    return 0
+                if self.point_size_base == models.PointSizeBase.IMAGE_SIZE:
+                    scale = img_h * img_w
+                elif self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
+                    # match points in their bbox space
 
-                bbox = dm.ops.mean_bbox([a_bbox, b_bbox])
-                scale = bbox[2] * bbox[3]
+                    if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+                        # this early exit may not work for points forming an axis-aligned line
+                        return 0
+
+                    bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+                    scale = bbox[2] * bbox[3]
+                else:
+                    assert False, f"Unknown point size base {self.point_size_base}"
 
                 a_points = np.reshape(a.points, (-1, 2))
                 b_points = np.reshape(b.points, (-1, 2))
 
-                matches, mismatches, a_extra, b_extra = _match_segments(
+                matches, mismatches, a_extra, b_extra = match_segments(
                     range(len(a_points)),
                     range(len(b_points)),
-                    distance=lambda ai, bi: _OKS(
+                    distance=lambda ai, bi: oks(
                         dm.Points(a_points[ai]),
                         dm.Points(b_points[bi]),
                         sigma=self.oks_sigma,
@@ -1340,7 +1445,7 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                     len(matched_points) + len(a_extra) + len(b_extra)
                 )
 
-        return self._match_segments(
+        return self.match_segments(
             dm.AnnotationType.points,
             item_a,
             item_b,
@@ -1413,8 +1518,8 @@ class _DistanceComparator(dm.ops.DistanceComparator):
 
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
-            for instance_group in dm.ops.find_instances(source):
-                instance_bbox = self._instance_bbox(instance_group)
+            for instance_group in datumaro.util.annotation_util.find_instances(source):
+                instance_bbox = self.instance_bbox(instance_group)
 
                 instance_group = [
                     skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
@@ -1424,9 +1529,9 @@ class _DistanceComparator(dm.ops.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = _KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
 
-        results = self._match_segments(
+        results = self.match_segments(
             dm.AnnotationType.points,
             item_a,
             item_b,
@@ -1522,7 +1627,8 @@ class _Comparator:
             "outside",  # handled by other means
         }
         self.included_ann_types = settings.included_annotation_types
-        self._annotation_comparator = _DistanceComparator(
+        self.non_groupable_ann_type = settings.non_groupable_ann_type
+        self._annotation_comparator = DistanceComparator(
             categories,
             included_ann_types=set(self.included_ann_types)
             - {dm.AnnotationType.mask},  # masks are compared together with polygons
@@ -1530,6 +1636,7 @@ class _Comparator:
             panoptic_comparison=settings.panoptic_comparison,
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
+            point_size_base=settings.point_size_base,
             line_torso_radius=settings.line_thickness,
             compare_line_orientation=False,  # should not be taken from outside, handled differently
         )
@@ -1566,9 +1673,13 @@ class _Comparator:
 
     def find_groups(
         self, item: dm.DatasetItem
-    ) -> Tuple[Dict[int, List[dm.Annotation]], Dict[int, int]]:
-        ann_groups = dm.ops.find_instances(
-            [ann for ann in item.annotations if ann.type in self.included_ann_types]
+    ) -> tuple[dict[int, list[dm.Annotation]], dict[int, int]]:
+        ann_groups = datumaro.util.annotation_util.find_instances(
+            [
+                ann
+                for ann in item.annotations
+                if ann.type in self.included_ann_types and ann.type != self.non_groupable_ann_type
+            ]
         )
 
         groups = {}
@@ -1593,7 +1704,7 @@ class _Comparator:
             union = len(gt_groups[gt_group_id]) + len(ds_groups[ds_group_id]) - intersection
             return intersection / (union or 1)
 
-        matches, mismatches, gt_unmatched, ds_unmatched = _match_segments(
+        matches, mismatches, gt_unmatched, ds_unmatched = match_segments(
             list(gt_groups),
             list(ds_groups),
             distance=_group_distance,
@@ -1611,7 +1722,7 @@ class _Comparator:
 
         return ds_to_gt_groups
 
-    def find_covered(self, item: dm.DatasetItem) -> List[dm.Annotation]:
+    def find_covered(self, item: dm.DatasetItem) -> list[dm.Annotation]:
         # Get annotations that can cover or be covered
         spatial_types = {
             dm.AnnotationType.polygon,
@@ -1633,7 +1744,7 @@ class _Comparator:
             else:
                 assert False
 
-        img_h, img_w = item.image.size
+        img_h, img_w = item.media_as(dm.Image).size
         covered_ids = _find_covered_segments(
             segms, img_w=img_w, img_h=img_h, visibility_threshold=self.coverage_threshold
         )
@@ -1643,6 +1754,7 @@ class _Comparator:
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
         merged_results = [[], [], [], [], {}]
+        shape_merged_results = [[], [], [], [], {}]
         for shape_type in self.included_ann_types:
             shape_type_results = per_type_results.get(shape_type, None)
             if shape_type_results is None:
@@ -1651,9 +1763,14 @@ class _Comparator:
             for merged_field, field in zip(merged_results, shape_type_results[:-1]):
                 merged_field.extend(field)
 
+            if shape_type != dm.AnnotationType.label:
+                for merged_field, field in zip(shape_merged_results, shape_type_results[:-1]):
+                    merged_field.extend(field)
+                shape_merged_results[-1].update(per_type_results[shape_type][-1])
+
             merged_results[-1].update(per_type_results[shape_type][-1])
 
-        return merged_results
+        return {"all_ann_types": merged_results, "all_shape_ann_types": shape_merged_results}
 
     def get_distance(
         self, pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
@@ -1682,14 +1799,19 @@ class DatasetComparator:
         self._gt_dataset = self._gt_data_provider.dm_dataset
         self._task = task
 
-        self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
+        self._frame_results: dict[int, ComparisonReportFrameSummary] = {}
 
         self.comparator = _Comparator(self._gt_dataset.categories(), settings=settings)
 
-        self.included_frames = gt_data_provider.job_data._db_job.segment.frame_set
+    def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
+        if dataset is self._ds_dataset:
+            source_data_provider = self._ds_data_provider
+        elif dataset is self._gt_dataset:
+            source_data_provider = self._gt_data_provider
+        else:
+            assert False
 
-    def _dm_item_to_frame_id(self, item: dm.DatasetItem) -> int:
-        return self._gt_data_provider.dm_item_id_to_frame_id(item)
+        return source_data_provider.dm_item_id_to_frame_id(item)
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset):
         if dataset is self._ds_dataset:
@@ -1709,16 +1831,16 @@ class DatasetComparator:
         gt_job_dataset = self._gt_dataset
 
         for gt_item in gt_job_dataset:
-            ds_item = ds_job_dataset.get(gt_item.id)
+            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
             if not ds_item:
                 continue  # we need to compare only intersecting frames
 
             self._process_frame(ds_item, gt_item)
 
-    def _process_frame(self, ds_item, gt_item):
-        frame_id = self._dm_item_to_frame_id(ds_item)
-        if self.included_frames is not None and frame_id not in self.included_frames:
-            return
+    def _process_frame(
+        self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
+    ) -> list[AnnotationConflict]:
+        frame_id = self._dm_item_to_frame_id(ds_item, self._ds_dataset)
 
         frame_results = self.comparator.match_annotations(gt_item, ds_item)
         self._frame_results.setdefault(frame_id, {})
@@ -1729,16 +1851,25 @@ class DatasetComparator:
 
     def _generate_frame_annotation_conflicts(
         self, frame_id: str, frame_results, *, gt_item: dm.DatasetItem, ds_item: dm.DatasetItem
-    ) -> List[AnnotationConflict]:
+    ) -> list[AnnotationConflict]:
         conflicts = []
 
-        matches, mismatches, gt_unmatched, ds_unmatched, pairwise_distances = frame_results
+        matches, mismatches, gt_unmatched, ds_unmatched, _ = frame_results["all_ann_types"]
+        (
+            shape_matches,
+            shape_mismatches,
+            shape_gt_unmatched,
+            shape_ds_unmatched,
+            shape_pairwise_distances,
+        ) = frame_results["all_shape_ann_types"]
 
         def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
-            return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
+            return self.comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
 
         _matched_shapes = set(
-            id(shape) for shape_pair in itertools.chain(matches, mismatches) for shape in shape_pair
+            id(shape)
+            for shape_pair in itertools.chain(shape_matches, shape_mismatches)
+            for shape in shape_pair
         )
 
         def _find_closest_unmatched_shape(shape: dm.Annotation):
@@ -1746,7 +1877,7 @@ class DatasetComparator:
 
             this_shape_distances = []
 
-            for (gt_shape_id, ds_shape_id), dist in pairwise_distances.items():
+            for (gt_shape_id, ds_shape_id), dist in shape_pairwise_distances.items():
                 if gt_shape_id == this_shape_id:
                     other_shape_id = ds_shape_id
                 elif ds_shape_id == this_shape_id:
@@ -1804,14 +1935,14 @@ class DatasetComparator:
             )
 
         resulting_distances = [
-            _get_similarity(gt_ann, ds_ann)
-            for gt_ann, ds_ann in itertools.chain(matches, mismatches)
+            _get_similarity(shape_gt_ann, shape_ds_ann)
+            for shape_gt_ann, shape_ds_ann in itertools.chain(shape_matches, shape_mismatches)
         ]
 
-        for unmatched_ann in itertools.chain(gt_unmatched, ds_unmatched):
-            matched_ann_id, similarity = _find_closest_unmatched_shape(unmatched_ann)
-            if matched_ann_id is not None:
-                _matched_shapes.add(matched_ann_id)
+        for shape_unmatched_ann in itertools.chain(shape_gt_unmatched, shape_ds_unmatched):
+            shape_matched_ann_id, similarity = _find_closest_unmatched_shape(shape_unmatched_ann)
+            if shape_matched_ann_id is not None:
+                _matched_shapes.add(shape_matched_ann_id)
             resulting_distances.append(similarity)
 
         resulting_distances = [
@@ -1825,10 +1956,10 @@ class DatasetComparator:
             and dm.AnnotationType.polyline in self.comparator.included_ann_types
         ):
             # Check line directions
-            line_matcher = _LineMatcher(
+            line_matcher = LineMatcher(
                 torso_r=self.settings.line_thickness,
                 oriented=True,
-                scale=np.prod(gt_item.image.size),
+                scale=np.prod(gt_item.media_as(dm.Image).size),
             )
 
             for gt_ann, ds_ann in itertools.chain(matches, mismatches):
@@ -1887,10 +2018,12 @@ class DatasetComparator:
         if self.settings.compare_groups:
             gt_groups, gt_group_map = self.comparator.find_groups(gt_item)
             ds_groups, ds_group_map = self.comparator.find_groups(ds_item)
-            matched_objects = matches + mismatches
-            ds_to_gt_groups = self.comparator.match_groups(gt_groups, ds_groups, matched_objects)
+            shape_matched_objects = shape_matches + shape_mismatches
+            ds_to_gt_groups = self.comparator.match_groups(
+                gt_groups, ds_groups, shape_matched_objects
+            )
 
-            for gt_ann, ds_ann in matched_objects:
+            for gt_ann, ds_ann in shape_matched_objects:
                 gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
                 ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
                 ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
@@ -1913,28 +2046,23 @@ class DatasetComparator:
                         )
                     )
 
-        valid_shapes_count = len(matches) + len(mismatches)
-        missing_shapes_count = len(gt_unmatched)
-        extra_shapes_count = len(ds_unmatched)
-        total_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched) + len(ds_unmatched)
-        ds_shapes_count = len(matches) + len(mismatches) + len(ds_unmatched)
-        gt_shapes_count = len(matches) + len(mismatches) + len(gt_unmatched)
+        valid_shapes_count = len(shape_matches) + len(shape_mismatches)
+        missing_shapes_count = len(shape_gt_unmatched)
+        extra_shapes_count = len(shape_ds_unmatched)
+        total_shapes_count = (
+            len(shape_matches)
+            + len(shape_mismatches)
+            + len(shape_gt_unmatched)
+            + len(shape_ds_unmatched)
+        )
+        ds_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_ds_unmatched)
+        gt_shapes_count = len(shape_matches) + len(shape_mismatches) + len(shape_gt_unmatched)
 
         valid_labels_count = len(matches)
         invalid_labels_count = len(mismatches)
         total_labels_count = valid_labels_count + invalid_labels_count
 
-        confusion_matrix_labels = {
-            i: label.name
-            for i, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
-            if not label.parent
-        }
-        confusion_matrix_labels[None] = "unmatched"
-        confusion_matrix_labels_rmap = {k: i for i, k in enumerate(confusion_matrix_labels.keys())}
-        confusion_matrix_label_count = len(confusion_matrix_labels)
-        confusion_matrix = np.zeros(
-            (confusion_matrix_label_count, confusion_matrix_label_count), dtype=int
-        )
+        confusion_matrix_labels, confusion_matrix, label_id_map = self._make_zero_confusion_matrix()
         for gt_ann, ds_ann in itertools.chain(
             # fully matched annotations - shape, label, attributes
             matches,
@@ -1942,45 +2070,28 @@ class DatasetComparator:
             zip(itertools.repeat(None), ds_unmatched),
             zip(gt_unmatched, itertools.repeat(None)),
         ):
-            ds_label_idx = confusion_matrix_labels_rmap[ds_ann.label if ds_ann else ds_ann]
-            gt_label_idx = confusion_matrix_labels_rmap[gt_ann.label if gt_ann else gt_ann]
+            ds_label_idx = label_id_map[ds_ann.label] if ds_ann else self._UNMATCHED_IDX
+            gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = _arr_div(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+        if self.settings.empty_is_annotated:
+            # Add virtual annotations for empty frames
+            if not gt_item.annotations and not ds_item.annotations:
+                valid_labels_count = 1
+                total_labels_count = 1
 
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
-        extra_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
-        total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = (
-            np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
-        )
-        gt_annotations_count = (
-            np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
-        )
+                valid_shapes_count = 1
+                total_shapes_count = 1
+
+            if not ds_item.annotations:
+                ds_shapes_count = 1
+
+            if not gt_item.annotations:
+                gt_shapes_count = 1
 
         self._frame_results[frame_id] = ComparisonReportFrameSummary(
-            annotations=ComparisonReportAnnotationsSummary(
-                valid_count=valid_annotations_count,
-                missing_count=missing_annotations_count,
-                extra_count=extra_annotations_count,
-                total_count=total_annotations_count,
-                ds_count=ds_annotations_count,
-                gt_count=gt_annotations_count,
-                confusion_matrix=ConfusionMatrix(
-                    labels=list(confusion_matrix_labels.values()),
-                    rows=confusion_matrix,
-                    precision=label_precisions,
-                    recall=label_recalls,
-                    accuracy=label_accuracies,
-                ),
+            annotations=self._generate_frame_annotations_summary(
+                confusion_matrix, confusion_matrix_labels
             ),
             annotation_components=ComparisonReportAnnotationComponentsSummary(
                 shape=ComparisonReportAnnotationShapeSummary(
@@ -2003,21 +2114,90 @@ class DatasetComparator:
 
         return conflicts
 
-    def generate_report(self) -> ComparisonReport:
-        self._find_gt_conflicts()
+    # row/column index in the confusion matrix corresponding to unmatched annotations
+    _UNMATCHED_IDX = -1
 
-        # accumulate stats
-        intersection_frames = []
-        conflicts = []
-        annotations = ComparisonReportAnnotationsSummary(
-            valid_count=0,
-            missing_count=0,
-            extra_count=0,
-            total_count=0,
-            ds_count=0,
-            gt_count=0,
-            confusion_matrix=None,
+    def _make_zero_confusion_matrix(self) -> tuple[list[str], np.ndarray, dict[int, int]]:
+        label_id_idx_map = {}
+        label_names = []
+        for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
+            if not label.parent:
+                label_id_idx_map[label_id] = len(label_names)
+                label_names.append(label.name)
+
+        label_names.append("unmatched")
+
+        num_labels = len(label_names)
+        confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+        return label_names, confusion_matrix, label_id_idx_map
+
+    def _compute_annotations_summary(
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
+    ) -> ComparisonReportAnnotationsSummary:
+        matched_ann_counts = np.diag(confusion_matrix)
+        ds_ann_counts = np.sum(confusion_matrix, axis=1)
+        gt_ann_counts = np.sum(confusion_matrix, axis=0)
+        total_annotations_count = np.sum(confusion_matrix)
+
+        label_jaccard_indices = _arr_div(
+            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
         )
+        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
+        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
+        label_accuracies = (
+            total_annotations_count  # TP + TN + FP + FN
+            - (ds_ann_counts - matched_ann_counts)  # - FP
+            - (gt_ann_counts - matched_ann_counts)  # - FN
+            # ... = TP + TN
+        ) / (total_annotations_count or 1)
+
+        valid_annotations_count = np.sum(matched_ann_counts)
+        missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
+        extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
+        ds_annotations_count = np.sum(ds_ann_counts[: self._UNMATCHED_IDX])
+        gt_annotations_count = np.sum(gt_ann_counts[: self._UNMATCHED_IDX])
+
+        return ComparisonReportAnnotationsSummary(
+            valid_count=valid_annotations_count,
+            missing_count=missing_annotations_count,
+            extra_count=extra_annotations_count,
+            total_count=total_annotations_count,
+            ds_count=ds_annotations_count,
+            gt_count=gt_annotations_count,
+            confusion_matrix=ConfusionMatrix(
+                labels=confusion_matrix_labels,
+                rows=confusion_matrix,
+                precision=label_precisions,
+                recall=label_recalls,
+                accuracy=label_accuracies,
+                jaccard_index=label_jaccard_indices,
+            ),
+        )
+
+    def _generate_frame_annotations_summary(
+        self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
+    ) -> ComparisonReportAnnotationsSummary:
+        summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
+
+        if self.settings.empty_is_annotated:
+            # Add virtual annotations for empty frames
+            if not summary.total_count:
+                summary.valid_count = 1
+                summary.total_count = 1
+
+            if not summary.ds_count:
+                summary.ds_count = 1
+
+            if not summary.gt_count:
+                summary.gt_count = 1
+
+        return summary
+
+    def _generate_dataset_annotations_summary(
+        self, frame_summaries: dict[int, ComparisonReportFrameSummary]
+    ) -> tuple[ComparisonReportAnnotationsSummary, ComparisonReportAnnotationComponentsSummary]:
+        # accumulate stats
         annotation_components = ComparisonReportAnnotationComponentsSummary(
             shape=ComparisonReportAnnotationShapeSummary(
                 valid_count=0,
@@ -2035,56 +2215,62 @@ class DatasetComparator:
             ),
         )
         mean_ious = []
-        confusion_matrices = []
-        for frame_id, frame_result in self._frame_results.items():
-            intersection_frames.append(frame_id)
-            conflicts += frame_result.conflicts
+        empty_gt_frames = set()
+        empty_ds_frames = set()
+        confusion_matrix_labels, confusion_matrix, _ = self._make_zero_confusion_matrix()
 
-            if annotations is None:
-                annotations = deepcopy(frame_result.annotations)
-            else:
-                annotations.accumulate(frame_result.annotations)
-            confusion_matrices.append(frame_result.annotations.confusion_matrix.rows)
+        for frame_id, frame_result in frame_summaries.items():
+            confusion_matrix += frame_result.annotations.confusion_matrix.rows
+
+            if self.settings.empty_is_annotated and not np.any(
+                frame_result.annotations.confusion_matrix.rows[
+                    np.triu_indices_from(frame_result.annotations.confusion_matrix.rows)
+                ]
+            ):
+                empty_ds_frames.add(frame_id)
+
+            if self.settings.empty_is_annotated and not np.any(
+                frame_result.annotations.confusion_matrix.rows[
+                    np.tril_indices_from(frame_result.annotations.confusion_matrix.rows)
+                ]
+            ):
+                empty_gt_frames.add(frame_id)
 
             if annotation_components is None:
                 annotation_components = deepcopy(frame_result.annotation_components)
             else:
                 annotation_components.accumulate(frame_result.annotation_components)
+
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
-        mean_ious = mean_ious or [0]
-
-        confusion_matrix_labels = {
-            i: label.name
-            for i, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
-            if not label.parent
-        }
-        confusion_matrix_labels[None] = "unmatched"
-        confusion_matrix_labels_rmap = {k: i for i, k in enumerate(confusion_matrix_labels.keys())}
-        if confusion_matrices:
-            confusion_matrix = np.sum(confusion_matrices, axis=0)
-        else:
-            confusion_matrix = np.zeros(
-                (len(confusion_matrix_labels), len(confusion_matrix_labels)), dtype=int
-            )
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        label_accuracies = _arr_div(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
+        annotation_summary = self._compute_annotations_summary(
+            confusion_matrix, confusion_matrix_labels
         )
-        label_precisions = _arr_div(matched_ann_counts, ds_ann_counts)
-        label_recalls = _arr_div(matched_ann_counts, gt_ann_counts)
 
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[confusion_matrix_labels_rmap[None], :])
-        extra_annotations_count = np.sum(confusion_matrix[:, confusion_matrix_labels_rmap[None]])
-        total_annotations_count = np.sum(confusion_matrix)
-        ds_annotations_count = (
-            np.sum(ds_ann_counts) - ds_ann_counts[confusion_matrix_labels_rmap[None]]
-        )
-        gt_annotations_count = (
-            np.sum(gt_ann_counts) - gt_ann_counts[confusion_matrix_labels_rmap[None]]
+        if self.settings.empty_is_annotated:
+            # Add virtual annotations for empty frames,
+            # they are not included in the confusion matrix
+            annotation_summary.valid_count += len(empty_ds_frames & empty_gt_frames)
+            annotation_summary.total_count += len(empty_ds_frames | empty_gt_frames)
+            annotation_summary.ds_count += len(empty_ds_frames)
+            annotation_summary.gt_count += len(empty_gt_frames)
+
+        # Cannot be computed in accumulate()
+        annotation_components.shape.mean_iou = np.mean(mean_ious)
+
+        return annotation_summary, annotation_components
+
+    def generate_report(self) -> ComparisonReport:
+        self._find_gt_conflicts()
+
+        intersection_frames = []
+        conflicts = []
+        for frame_id, frame_result in self._frame_results.items():
+            intersection_frames.append(frame_id)
+            conflicts += frame_result.conflicts
+
+        annotation_summary, annotations_component_summary = (
+            self._generate_dataset_annotations_summary(self._frame_results)
         )
 
         return ComparisonReport(
@@ -2094,6 +2280,7 @@ class DatasetComparator:
                     len(intersection_frames) / (len(self._ds_data_provider.job_data.rel_range) or 1)
                 ),
                 frames=intersection_frames,
+                total_frames=self._get_total_frames(),
                 conflict_count=len(conflicts),
                 warning_count=len(
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.WARNING]
@@ -2102,114 +2289,36 @@ class DatasetComparator:
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
-                frames_with_errors=len([f for f in self._frame_results.values() if f.error_count]),
-                total_frames=self._get_total_frames(),
-                annotations=ComparisonReportAnnotationsSummary(
-                    valid_count=valid_annotations_count,
-                    missing_count=missing_annotations_count,
-                    extra_count=extra_annotations_count,
-                    total_count=total_annotations_count,
-                    ds_count=ds_annotations_count,
-                    gt_count=gt_annotations_count,
-                    confusion_matrix=ConfusionMatrix(
-                        labels=list(confusion_matrix_labels.values()),
-                        rows=confusion_matrix,
-                        precision=label_precisions,
-                        recall=label_recalls,
-                        accuracy=label_accuracies,
-                    ),
-                ),
-                annotation_components=ComparisonReportAnnotationComponentsSummary(
-                    shape=ComparisonReportAnnotationShapeSummary(
-                        valid_count=annotation_components.shape.valid_count,
-                        missing_count=annotation_components.shape.missing_count,
-                        extra_count=annotation_components.shape.extra_count,
-                        total_count=annotation_components.shape.total_count,
-                        ds_count=annotation_components.shape.ds_count,
-                        gt_count=annotation_components.shape.gt_count,
-                        mean_iou=np.mean(mean_ious),
-                    ),
-                    label=ComparisonReportAnnotationLabelSummary(
-                        valid_count=annotation_components.label.valid_count,
-                        invalid_count=annotation_components.label.invalid_count,
-                        total_count=annotation_components.label.total_count,
-                    ),
-                ),
+                annotations=annotation_summary,
+                annotation_components=annotations_component_summary,
             ),
             frame_results=self._frame_results,
         )
 
 
-class TaskQualityReportUpdateManager:
-    _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
+class TaskQualityReportManager:
+    _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
 
-    @classmethod
-    def _get_quality_check_job_delay(cls) -> timedelta:
-        return timedelta(seconds=settings.QUALITY_CHECK_JOB_DELAY)
-
-    def _get_scheduler(self):
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
-
-    def _get_queue(self):
+    def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_queue_job_prefix(self, task: Task) -> str:
-        return f"{self._QUEUE_JOB_PREFIX}{task.id}-"
-
-    def _make_custom_quality_check_job_id(self) -> str:
-        return uuid4().hex
-
-    def _make_initial_queue_job_id(self, task: Task) -> str:
-        return f"{self._make_queue_job_prefix(task)}initial"
-
-    def _make_regular_queue_job_id(self, task: Task, start_time: timezone.datetime) -> str:
-        return f"{self._make_queue_job_prefix(task)}{start_time.timestamp()}"
-
-    @classmethod
-    def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
-        try:
-            report = models.QualityReport.objects.filter(task=task).latest("created_date")
-        except models.QualityReport.DoesNotExist:
-            return None
-
-        return report.created_date
-
-    def _find_next_job_id(
-        self, existing_job_ids: Sequence[str], task: Task, *, now: timezone.datetime
+    def _make_custom_quality_check_job_id(
+        self, *, user_id: int, project_id: int | None = None, task_id: int | None = None
     ) -> str:
-        job_id_prefix = self._make_queue_job_prefix(task)
+        assert project_id ^ task_id
 
-        def _get_timestamp(job_id: str) -> timezone.datetime:
-            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
-            if job_timestamp == "initial":
-                return timezone.datetime.min.replace(tzinfo=timezone.utc)
-            else:
-                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
+        # FUTURE-TODO: it looks like job ID template should not include user_id because:
+        # 1. There is no need to compute quality reports several times for different users
+        # 2. Each user (not only rq job owner) that has permission to access a task should
+        # be able to check the status of the computation process
+        if project_id:
+            instance_suffix = f"project-{project_id}"
+        elif task_id:
+            instance_suffix = f"task-{task_id}"
 
-        max_job_id = max(
-            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
-            key=_get_timestamp,
-            default=None,
-        )
-        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
-
-        last_update_time = self._get_last_report_time(task)
-        if last_update_time is None:
-            # Report has never been computed, is queued, or is being computed
-            queue_job_id = self._make_initial_queue_job_id(task)
-        elif max_timestamp is not None and now < max_timestamp:
-            # Reuse the existing next job
-            queue_job_id = max_job_id
-        else:
-            # Add an updating job in the queue in the next time frame
-            delay = self._get_quality_check_job_delay()
-            intervals = max(1, 1 + (now - last_update_time) // delay)
-            next_update_time = last_update_time + delay * intervals
-            queue_job_id = self._make_regular_queue_job_id(task, next_update_time)
-
-        return queue_job_id
+        return f"{self._QUEUE_CUSTOM_JOB_PREFIX}{instance_suffix}-user-{user_id}"
 
     class QualityReportsNotAvailable(Exception):
         pass
@@ -2228,64 +2337,52 @@ class TaskQualityReportUpdateManager:
                 f"and in the {StateChoice.COMPLETED} state"
             )
 
-    def _should_update(self, task: Task) -> bool:
-        try:
-            self._check_quality_reporting_available(task)
-            return True
-        except self.QualityReportsNotAvailable:
-            return False
+    class JobAlreadyExists(QualityReportsNotAvailable):
+        def __str__(self):
+            return "Quality computation job for this task already enqueued"
 
-    def schedule_quality_autoupdate_job(self, task: Task):
-        """
-        This function schedules a quality report autoupdate job
-        """
-
-        # The algorithm is lock-free. It should keep the following properties:
-        # - job names are stable between potential writers
-        # - if multiple simultaneous writes can happen, the objects written must be the same
-        # - once a job is created, it can only be updated by the scheduler and the handling worker
-
-        if not self._should_update(task):
-            return
-
-        now = timezone.now()
-        delay = self._get_quality_check_job_delay()
-        next_job_time = now.utcnow() + delay
-
-        scheduler = self._get_scheduler()
-        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
-
-        queue_job_id = self._find_next_job_id(existing_job_ids, task, now=now)
-        if queue_job_id not in existing_job_ids:
-            scheduler.enqueue_at(
-                next_job_time,
-                self._check_task_quality,
-                task_id=task.id,
-                job_id=queue_job_id,
-            )
-
-    def schedule_quality_check_job(self, task: Task, *, user_id: int) -> str:
+    def schedule_custom_quality_check_job(
+        self, request: ExtendedRequest, task: Task, *, user_id: int
+    ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
         """
 
         self._check_quality_reporting_available(task)
 
-        rq_id = self._make_custom_quality_check_job_id()
-
         queue = self._get_queue()
-        queue.enqueue(
-            self._check_task_quality,
-            task_id=task.id,
-            job_id=rq_id,
-            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE},
-            result_ttl=self._JOB_RESULT_TTL,
-            failure_ttl=self._JOB_RESULT_TTL,
-        )
+
+        with get_rq_lock_by_user(queue, user_id=user_id):
+            rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
+            rq_job = queue.fetch_job(rq_id)
+            if rq_job:
+                if rq_job.get_status(refresh=False) in (
+                    rq.job.JobStatus.QUEUED,
+                    rq.job.JobStatus.STARTED,
+                    rq.job.JobStatus.SCHEDULED,
+                    rq.job.JobStatus.DEFERRED,
+                ):
+                    raise self.JobAlreadyExists()
+
+                rq_job.delete()
+
+            dependency = define_dependent_job(
+                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+            )
+
+            queue.enqueue(
+                self._check_task_quality,
+                task_id=task.id,
+                job_id=rq_id,
+                meta=get_rq_job_meta(request=request, db_obj=task),
+                result_ttl=self._JOB_RESULT_TTL,
+                failure_ttl=self._JOB_RESULT_TTL,
+                depends_on=dependency,
+            )
 
         return rq_id
 
-    def get_quality_check_job(self, rq_id: str):
+    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
 
@@ -2294,8 +2391,8 @@ class TaskQualityReportUpdateManager:
 
         return rq_job
 
-    def is_custom_quality_check_job(self, rq_job) -> bool:
-        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
+    def is_custom_quality_check_job(self, rq_job: RqJob) -> bool:
+        return isinstance(rq_job.id, str) and rq_job.id.startswith(self._QUEUE_CUSTOM_JOB_PREFIX)
 
     @classmethod
     @silk_profile()
@@ -2304,10 +2401,16 @@ class TaskQualityReportUpdateManager:
 
     def _compute_reports(self, task_id: int) -> int:
         with transaction.atomic():
-            # The task could have been deleted during scheduling
             try:
+                # Preload all the data for the computations.
+                # It must be done atomically and before all the computations,
+                # because the task and jobs can be changed after the beginning,
+                # which will lead to inconsistent results
+                # TODO: check performance of select_for_update(),
+                # maybe make several fetching attempts if received data is outdated
                 task = Task.objects.select_related("data").get(id=task_id)
             except Task.DoesNotExist:
+                # The task could have been deleted during scheduling
                 return
 
             quality_params = self._get_task_quality_params(task)
@@ -2341,22 +2444,36 @@ class TaskQualityReportUpdateManager:
             for job in job_queryset:
                 job.segment.task = gt_job.segment.task
 
-            # Preload all the data for the computations
-            # It must be done in a single transaction and before all the remaining computations
-            # because the task and jobs can be changed after the beginning,
-            # which will lead to inconsistent results
             gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
-            gt_job_frames = gt_job_data_provider.job_data.get_included_frames()
+            active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
 
-            jobs: List[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
+            validation_layout = task.data.validation_layout
+            if validation_layout.mode == ValidationMode.GT_POOL:
+                task_frame_provider = TaskFrameProvider(task)
+                active_validation_frames = set(
+                    task_frame_provider.get_rel_frame_number(abs_frame)
+                    for abs_frame, abs_real_frame in (
+                        Image.objects.filter(data=task.data, is_placeholder=True)
+                        .values_list("frame", "real_frame")
+                        .iterator(chunk_size=10000)
+                    )
+                    if task_frame_provider.get_rel_frame_number(abs_real_frame)
+                    in active_validation_frames
+                )
+
+            jobs: list[Job] = [j for j in job_queryset if j.type == JobType.ANNOTATION]
             job_data_providers = {
                 job.id: JobDataProvider(
-                    job.id, queryset=job_queryset, included_frames=gt_job_frames
+                    job.id,
+                    queryset=job_queryset,
+                    included_frames=active_validation_frames,
                 )
                 for job in jobs
             }
 
-        job_comparison_reports: Dict[int, ComparisonReport] = {}
+            quality_params = self._get_task_quality_params(task)
+
+        job_comparison_reports: dict[int, ComparisonReport] = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = DatasetComparator(
@@ -2376,15 +2493,6 @@ class TaskQualityReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
-            last_report_time = self._get_last_report_time(task)
-            if not self.is_custom_quality_check_job(self._get_current_job()) and (
-                last_report_time
-                and timezone.now() < last_report_time + self._get_quality_check_job_delay()
-            ):
-                # Discard this report as it has probably been computed in parallel
-                # with another one
-                return
-
             # The task could have been moved to a project during the computations
             if updated_task.project_id != task.project_id:
                 return
@@ -2396,6 +2504,8 @@ class TaskQualityReportUpdateManager:
                     job=job,
                     target_last_updated=job.updated_date,
                     gt_last_updated=gt_job.updated_date,
+                    assignee_id=job.assignee_id,
+                    assignee_last_updated=job.assignee_updated_date,
                     data=job_comparison_report.to_json(),
                     conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
                 )
@@ -2407,6 +2517,8 @@ class TaskQualityReportUpdateManager:
                     task=task,
                     target_last_updated=task.updated_date,
                     gt_last_updated=gt_job.updated_date,
+                    assignee_id=task.assignee_id,
+                    assignee_last_updated=task.assignee_updated_date,
                     data=task_comparison_report.to_json(),
                     conflicts=[],  # the task doesn't have own conflicts
                 ),
@@ -2415,25 +2527,21 @@ class TaskQualityReportUpdateManager:
 
         return task_report.id
 
-    def _get_current_job(self):
-        from rq import get_current_job
-
-        return get_current_job()
-
     def _compute_task_report(
-        self, task: Task, job_reports: Dict[int, ComparisonReport]
+        self, task: Task, job_reports: dict[int, ComparisonReport]
     ) -> ComparisonReport:
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
         # Thus, a separate report could be computed for the task. Instead, here we only
         # compute the combined summary of the job reports.
         task_intersection_frames = set()
-        task_conflicts: List[AnnotationConflict] = []
+        task_conflicts: list[AnnotationConflict] = []
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
         task_frame_results: Dict[int, Optional[ComparisonReportFrameSummary]] = {}
         task_frame_results_counts = {}
+        confusion_matrix = None
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
             task_conflicts.extend(r.conflicts)
@@ -2442,6 +2550,12 @@ class TaskQualityReportUpdateManager:
                 task_annotations_summary.accumulate(r.comparison_summary.annotations)
             else:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
@@ -2473,6 +2587,8 @@ class TaskQualityReportUpdateManager:
                 task_frame_results_counts[frame_id] = 1 + frame_results_count
                 task_frame_results[frame_id] = task_frame_result
 
+        task_annotations_summary.confusion_matrix.rows = confusion_matrix
+
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
         task_report_data = ComparisonReport(
@@ -2498,13 +2614,15 @@ class TaskQualityReportUpdateManager:
 
         return task_report_data
 
-    def _save_reports(self, *, task_report: Dict, job_reports: List[Dict]) -> models.QualityReport:
+    def _save_reports(self, *, task_report: dict, job_reports: list[dict]) -> models.QualityReport:
         # TODO: add validation (e.g. ann id count for different types of conflicts)
 
         db_task_report = models.QualityReport(
             task=task_report["task"],
             target_last_updated=task_report["target_last_updated"],
             gt_last_updated=task_report["gt_last_updated"],
+            assignee_id=task_report["assignee_id"],
+            assignee_last_updated=task_report["assignee_last_updated"],
             data=task_report["data"],
         )
         db_task_report.save()
@@ -2515,14 +2633,14 @@ class TaskQualityReportUpdateManager:
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
+                assignee_id=job_report["assignee_id"],
+                assignee_last_updated=job_report["assignee_last_updated"],
                 data=job_report["data"],
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(
-            db_model=models.QualityReport, objects=db_job_reports, flt_param={}
-        )
-        db_task_report.children.add(*db_job_reports)
+        db_job_reports = bulk_create(db_model=models.QualityReport, objs=db_job_reports)
+        db_task_report.children.add(*db_job_reports)  # TODO: replace with copying children reports
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2537,9 +2655,7 @@ class TaskQualityReportUpdateManager:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(
-            db_model=models.AnnotationConflict, objects=db_conflicts, flt_param={}
-        )
+        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objs=db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2555,7 +2671,7 @@ class TaskQualityReportUpdateManager:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        db_ann_ids = bulk_create(db_model=models.AnnotationId, objects=db_ann_ids, flt_param={})
+        db_ann_ids = bulk_create(db_model=models.AnnotationId, objs=db_ann_ids)
 
         return db_task_report
 
@@ -2570,142 +2686,74 @@ class TaskQualityReportUpdateManager:
         return ComparisonParameters.from_dict(quality_params.to_dict())
 
 
-class ProjectQualityReportUpdateManager:
-    _QUEUE_JOB_PREFIX = "update-quality-metrics-project-"
+# TODO: refactor, reuse code
+class ProjectQualityReportManager:
+    _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
-    _DEFAULT_DB_BATCH_SIZE = 1000
 
-    @classmethod
-    def _get_quality_check_job_delay(cls) -> timedelta:
-        return timedelta(seconds=settings.PROJECT_QUALITY_CHECK_JOB_DELAY)
-
-    def _get_scheduler(self):
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
-
-    def _get_queue(self):
+    def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_queue_job_prefix(self, project: Project) -> str:
-        return f"{self._QUEUE_JOB_PREFIX}{project.id}-"
-
-    def _make_custom_quality_check_job_id(self) -> str:
-        return uuid4().hex
-
-    def _make_initial_queue_job_id(self, project: Project) -> str:
-        return f"{self._make_queue_job_prefix(project)}initial"
-
-    def _make_regular_queue_job_id(self, project: Project, start_time: timezone.datetime) -> str:
-        return f"{self._make_queue_job_prefix(project)}{start_time.timestamp()}"
-
-    @classmethod
-    def _get_last_report_time(cls, project: Project) -> Optional[timezone.datetime]:
-        try:
-            report = models.QualityReport.objects.filter(project=project).latest("created_date")
-        except models.QualityReport.DoesNotExist:
-            return None
-
-        return report.created_date
-
-    def _find_next_job_id(
-        self, existing_job_ids: Sequence[str], project: Project, *, now: timezone.datetime
-    ) -> str:
-        job_id_prefix = self._make_queue_job_prefix(project)
-
-        def _get_timestamp(job_id: str) -> timezone.datetime:
-            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
-            if job_timestamp == "initial":
-                return timezone.datetime.min.replace(tzinfo=timezone.utc)
-            else:
-                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
-
-        max_job_id = max(
-            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
-            key=_get_timestamp,
-            default=None,
-        )
-        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
-
-        last_update_time = self._get_last_report_time(project)
-        if last_update_time is None:
-            # Report has never been computed, is queued, or is being computed
-            queue_job_id = self._make_initial_queue_job_id(project)
-        elif max_timestamp is not None and now < max_timestamp:
-            # Reuse the existing next job
-            queue_job_id = max_job_id
-        else:
-            # Add an updating job in the queue in the next time frame
-            delay = self._get_quality_check_job_delay()
-            intervals = max(1, 1 + (now - last_update_time) // delay)
-            next_update_time = last_update_time + delay * intervals
-            queue_job_id = self._make_regular_queue_job_id(project, next_update_time)
-
-        return queue_job_id
+    def _make_custom_quality_check_job_id(self, *, user_id: int, project_id: int) -> str:
+        # FUTURE-TODO: it looks like job ID template should not include user_id because:
+        # 1. There is no need to compute quality reports several times for different users
+        # 2. Each user (not only rq job owner) that has permission to access a task should
+        # be able to check the status of the computation process
+        return f"{self._QUEUE_CUSTOM_JOB_PREFIX}project-{project_id}-user-{user_id}"
 
     class QualityReportsNotAvailable(Exception):
         pass
 
     def _check_quality_reporting_available(self, project: Project):
-        pass  # nothing prevents report computation
+        return  # nothing prevents quality computaiton
 
-    def _should_update(self, project: Project) -> bool:
-        try:
-            self._check_quality_reporting_available(project)
-            return True
-        except self.QualityReportsNotAvailable:
-            return False
+    class JobAlreadyExists(QualityReportsNotAvailable):
+        def __str__(self):
+            return "Quality computation job for this project already enqueued"
 
-    def schedule_quality_autoupdate_job(self, project: Project):
-        """
-        This function schedules a quality report autoupdate job
-        """
-
-        # The algorithm is lock-free. It should keep the following properties:
-        # - job names are stable between potential writers
-        # - if multiple simultaneous writes can happen, the objects written must be the same
-        # - once a job is created, it can only be updated by the scheduler and the handling worker
-
-        if not self._should_update(project):
-            return
-
-        now = timezone.now()
-        delay = self._get_quality_check_job_delay()
-        next_job_time = now.utcnow() + delay
-
-        scheduler = self._get_scheduler()
-        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
-
-        queue_job_id = self._find_next_job_id(existing_job_ids, project, now=now)
-        if queue_job_id not in existing_job_ids:
-            scheduler.enqueue_at(
-                next_job_time,
-                self._check_project_quality,
-                project_id=project.id,
-                job_id=queue_job_id,
-            )
-
-    def schedule_quality_check_job(self, project: Project, *, user_id: int) -> str:
+    def schedule_custom_quality_check_job(
+        self, request: ExtendedRequest, project: Project, *, user_id: int
+    ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
         """
 
         self._check_quality_reporting_available(project)
 
-        rq_id = self._make_custom_quality_check_job_id()
-
         queue = self._get_queue()
-        queue.enqueue(
-            self._check_project_quality,
-            project_id=project.id,
-            job_id=rq_id,
-            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE},
-            result_ttl=self._JOB_RESULT_TTL,
-            failure_ttl=self._JOB_RESULT_TTL,
-        )
+
+        with get_rq_lock_by_user(queue, user_id=user_id):
+            rq_id = self._make_custom_quality_check_job_id(project_id=project.id, user_id=user_id)
+            rq_job = queue.fetch_job(rq_id)
+            if rq_job:
+                if rq_job.get_status(refresh=False) in (
+                    rq.job.JobStatus.QUEUED,
+                    rq.job.JobStatus.STARTED,
+                    rq.job.JobStatus.SCHEDULED,
+                    rq.job.JobStatus.DEFERRED,
+                ):
+                    raise self.JobAlreadyExists()
+
+                rq_job.delete()
+
+            dependency = define_dependent_job(
+                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+            )
+
+            queue.enqueue(
+                self._check_project_quality,
+                project_id=project.id,
+                job_id=rq_id,
+                meta=get_rq_job_meta(request=request, db_obj=project),
+                result_ttl=self._JOB_RESULT_TTL,
+                failure_ttl=self._JOB_RESULT_TTL,
+                depends_on=dependency,
+            )
 
         return rq_id
 
-    def get_quality_check_job(self, rq_id: str):
+    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
 
@@ -2714,13 +2762,8 @@ class ProjectQualityReportUpdateManager:
 
         return rq_job
 
-    def is_custom_quality_check_job(self, rq_job) -> bool:
-        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
-
-    def _get_current_job(self):
-        from rq import get_current_job
-
-        return get_current_job()
+    def is_custom_quality_check_job(self, rq_job: RqJob) -> bool:
+        return isinstance(rq_job.id, str) and rq_job.id.startswith(self._QUEUE_CUSTOM_JOB_PREFIX)
 
     @classmethod
     @silk_profile()
@@ -2779,15 +2822,6 @@ class ProjectQualityReportUpdateManager:
             try:
                 Project.objects.get(id=project_id)
             except Project.DoesNotExist:
-                return
-
-            last_report_time = self._get_last_report_time(project)
-            if not self.is_custom_quality_check_job(self._get_current_job()) and (
-                last_report_time
-                and timezone.now() < last_report_time + self._get_quality_check_job_delay()
-            ):
-                # Discard this report as it has probably been computed in parallel
-                # with another one
                 return
 
             project_report = self._save_reports(
@@ -2991,6 +3025,16 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         assert False
 
     # Add ids for the hierarchy objects, don't add empty ids
+    def _serialize_assignee(assignee: Optional[User]) -> Optional[dict]:
+        if not db_report.assignee:
+            return None
+
+        reported_keys = ["id", "username", "first_name", "last_name"]
+        assert set(reported_keys).issubset(engine_serializers.BasicUserSerializer.Meta.fields)
+        # check that only safe fields are reported
+
+        return {k: getattr(assignee, k) for k in reported_keys}
+
     serialized_data = dict(
         id=db_report.id,
         **dict(job_id=db_report.job.id) if job_id else {},
@@ -2999,7 +3043,8 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         **dict(parent_id=db_report.parent.id) if db_report.parent else {},
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
-        gt_last_updated=str(db_report.gt_last_updated) if db_report.gt_last_updated else "",
+        **dict(gt_last_updated=str(db_report.gt_last_updated)) if db_report.gt_last_updated else {},
+        assignee=_serialize_assignee(db_report.assignee),
     )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())

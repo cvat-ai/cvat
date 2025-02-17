@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -29,6 +29,7 @@ class _S3ResourceTest(_CloudStorageResourceTest):
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestExportResourceToS3(_S3ResourceTest):
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
     @pytest.mark.parametrize("cloud_storage_id", [3])
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
@@ -53,6 +54,7 @@ class TestExportResourceToS3(_S3ResourceTest):
 
         self._export_resource(cloud_storage, obj_id, obj, resource, **kwargs)
 
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
     @pytest.mark.parametrize("user_type", ["admin", "assigned_supervisor_org_member"])
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
@@ -175,8 +177,9 @@ class TestExportResourceToS3(_S3ResourceTest):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_cvat_data_per_function")
 class TestImportResourceFromS3(_S3ResourceTest):
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
     @pytest.mark.parametrize("cloud_storage_id", [3])
     @pytest.mark.parametrize(
         "obj_id, obj, resource",
@@ -201,6 +204,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
         self._export_resource(cloud_storage, obj_id, obj, resource, **export_kwargs)
         self._import_resource(cloud_storage, resource, obj_id, obj, **kwargs)
 
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
     @pytest.mark.parametrize(
         "user_type",
         ["admin", "assigned_supervisor_org_member"],

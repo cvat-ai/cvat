@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -83,6 +83,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                         resource={cloudStorage}
                         manifestPath={selectedSource === config.BUCKET_CONTENT_KEY ? undefined : selectedSource}
                         onSelectFiles={onSelectFiles}
+                        defaultPrefix={cloudStorage.prefix}
                     />
                 </Form.Item>
             ) : null}

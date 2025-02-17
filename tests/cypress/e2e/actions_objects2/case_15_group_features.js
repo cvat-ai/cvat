@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -67,7 +67,8 @@ context('Group features', () => {
     function testGroupObjects(objectsArray, cancelGrouping) {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of objectsArray) {
-            cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeToGroup).click();
+            cy.get(shapeToGroup).should('have.class', 'cvat_canvas_shape_selection');
         }
         if (cancelGrouping) {
             cy.get('body').type('{Esc}');
@@ -79,22 +80,16 @@ context('Group features', () => {
     function testUnGroupObjects() {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of shapeArray) {
-            cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeToGroup).click();
+            cy.get(shapeToGroup).should('have.class', 'cvat_canvas_shape_selection');
         }
         cy.get('body').type('{Shift}g');
     }
 
     function changeGroupColor(object, color) {
-        cy.get(object).within(() => {
-            cy.get('[aria-label="more"]').click();
-        });
-        cy.get('.ant-dropdown')
-            .should('be.visible')
-            .not('.ant-dropdown-hidden')
-            .within(() => {
-                cy.contains('Change group color').click();
-            });
+        cy.interactAnnotationObjectMenu(object, 'Change group color');
         cy.changeColorViaBadge(color);
+        cy.get('.cvat-label-color-picker').should('not.exist');
     }
 
     function testShapesFillEquality(equal) {
@@ -169,11 +164,10 @@ context('Group features', () => {
             testShapesFillEquality(true);
             // Start grouping. Cancel grouping via click to the same shape.
             cy.get('.cvat-group-control').click();
-            cy.get(shapeArray[0])
-                .click()
-                .should('have.class', 'cvat_canvas_shape_grouping')
-                .click()
-                .should('not.have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeArray[0]).click();
+            cy.get(shapeArray[0]).should('have.class', 'cvat_canvas_shape_selection');
+            cy.get(shapeArray[0]).click();
+            cy.get(shapeArray[0]).should('not.have.class', 'cvat_canvas_shape_selection');
             cy.get('body').type('{Esc}'); // Cancel grouping
         });
 

@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 #
@@ -68,7 +68,6 @@ services:
 
   cvat_worker_analytics_reports:
     environment:
-      CVAT_ANALYTICS_CHECK_JOB_DELAY: 5
       # For debugging, make sure to set 1 process
       # Due to the supervisord specifics, the extra processes will fail and
       # after few attempts supervisord will give up restarting, leaving only 1 process
@@ -101,6 +100,22 @@ services:
         socks_proxy:
       dockerfile: Dockerfile.ui
 
+  cvat_clickhouse:
+    ports:
+      - '8123:8123'
+
   cvat_opa:
     ports:
       - '8181:8181'
+
+  cvat_redis_inmem:
+    ports:
+      - '6379:6379'
+
+  cvat_redis_ondisk:
+    ports:
+      - '6666:6666'
+
+  cvat_vector:
+    ports:
+      - '8282:80'

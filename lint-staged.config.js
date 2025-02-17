@@ -26,12 +26,12 @@ module.exports = (stagedFiles) => {
     const mapping = {};
     const commands = [];
     mapping['npx stylelint --fix '] = scssFiles.join(' ');
-    mapping['yarn run precommit:cvat-tests -- '] = tests.join(' ');
-    mapping['yarn run precommit:cvat-ui -- '] = cvatUI.join(' ');
-    mapping['yarn run precommit:cvat-data -- '] = cvatData.join(' ');
-    mapping['yarn run precommit:cvat-core -- '] = cvatCore.join(' ');
-    mapping['yarn run precommit:cvat-canvas -- '] = cvatCanvas.join(' ');
-    mapping['yarn run precommit:cvat-canvas3d -- '] = cvatCanvas3d.join(' ');
+    mapping['yarn run precommit:cvat-tests '] = tests.join(' ');
+    mapping['yarn run precommit:cvat-ui '] = cvatUI.join(' ');
+    mapping['yarn run precommit:cvat-data '] = cvatData.join(' ');
+    mapping['yarn run precommit:cvat-core '] = cvatCore.join(' ');
+    mapping['yarn run precommit:cvat-canvas '] = cvatCanvas.join(' ');
+    mapping['yarn run precommit:cvat-canvas3d '] = cvatCanvas3d.join(' ');
 
     for (const command of Object.keys(mapping)) {
         const files = mapping[command];

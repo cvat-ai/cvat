@@ -1,10 +1,19 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const';
+
+Cypress.automation('remote:debugger:protocol', {
+    command: 'Browser.grantPermissions',
+    params: {
+        permissions: ['clipboardReadWrite', 'clipboardSanitizedWrite'],
+        origin: window.location.origin,
+    },
+});
 
 context('Create a link for shape, frame.', () => {
     const caseId = '102';
@@ -26,15 +35,16 @@ context('Create a link for shape, frame.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create a link for a shape.', () => {
-            cy.window().then((win) => {
-                cy.stub(win, 'prompt').returns(win.prompt).as('copyToClipboardPromptShape');
-            });
-            cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Create object URL').click();
-            cy.get('@copyToClipboardPromptShape').should('be.called');
-            cy.get('@copyToClipboardPromptShape').then((prompt) => {
-                const url = prompt.args[0][1];
+            cy.window()
+                .its('navigator.clipboard')
+                .then((clipboard) => {
+                    cy.spy(clipboard, 'writeText').as('copyTextToClipboard');
+                });
+
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Create object URL');
+            cy.get('@copyTextToClipboard').should('be.called');
+            cy.get('@copyTextToClipboard').then((stub) => {
+                const url = stub.args[0][0];
                 expect(url).include('frame=');
                 expect(url).include('type=');
                 expect(url).include('serverID=');
@@ -45,13 +55,16 @@ context('Create a link for shape, frame.', () => {
         });
 
         it('Create a link for a frame.', () => {
-            cy.window().then((win) => {
-                cy.stub(win, 'prompt').returns(win.prompt).as('copyToClipboardPromptFrame');
-            });
+            cy.window()
+                .its('navigator.clipboard')
+                .then((clipboard) => {
+                    cy.spy(clipboard, 'writeText').as('copyTextToClipboard');
+                });
+
             cy.get('.cvat-player-frame-url-icon').click();
-            cy.get('@copyToClipboardPromptFrame').should('be.called');
-            cy.get('@copyToClipboardPromptFrame').then((prompt) => {
-                const url = prompt.args[0][1];
+            cy.get('@copyTextToClipboard').should('be.called');
+            cy.get('@copyTextToClipboard').then((stub) => {
+                const url = stub.args[0][0];
                 expect(url).include('frame=');
                 expect(url).not.include('type=');
                 expect(url).not.include('serverID=');

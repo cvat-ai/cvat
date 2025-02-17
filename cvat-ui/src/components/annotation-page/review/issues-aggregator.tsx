@@ -1,21 +1,21 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch, shallowEqual } from 'react-redux';
 
-import { ActiveControl, CombinedState } from 'reducers';
-import { Canvas } from 'cvat-canvas/src/typescript/canvas';
+import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
 import {
     AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
 } from 'cvat-core-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 
-import { highlightConflict } from 'actions/annotation-actions';
+import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
 import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
@@ -26,30 +26,50 @@ interface ConflictMappingElement {
     severity: ConflictSeverity;
     x: number;
     y: number;
-    clientID: number;
+    serverID: number;
     conflict: QualityConflict;
 }
 
 export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
+
+    const {
+        frameIssues,
+        issuesHidden,
+        issuesResolvedHidden,
+        canvasInstance,
+        canvasIsReady,
+        annotationsZLayer,
+        newIssuePosition,
+        newIssueSource,
+        issueFetching,
+        qualityConflicts,
+        objectStates,
+        showConflicts,
+        highlightedConflict,
+        activeControl,
+    } = useSelector((state: CombinedState) => ({
+        frameIssues: state.review.frameIssues,
+        issuesHidden: state.review.issuesHidden,
+        issuesResolvedHidden: state.review.issuesResolvedHidden,
+        canvasInstance: state.annotation.canvas.instance,
+        canvasIsReady: state.annotation.canvas.ready,
+        annotationsZLayer: state.annotation.annotations.zLayer.cur,
+        newIssuePosition: state.review.newIssue.position,
+        newIssueSource: state.review.newIssue.source,
+        issueFetching: state.review.fetching.issueId,
+        qualityConflicts: state.review.frameConflicts,
+        objectStates: state.annotation.annotations.states,
+        showConflicts: state.settings.shapes.showGroundTruth,
+        highlightedConflict: state.annotation.annotations.highlightedConflict,
+        activeControl: state.annotation.canvas.activeControl,
+    }), shallowEqual);
+
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
-    const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
-    const issuesHidden = useSelector((state: CombinedState): boolean => state.review.issuesHidden);
-    const issuesResolvedHidden = useSelector((state: CombinedState): boolean => state.review.issuesResolvedHidden);
-    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
-    const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
-    const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
 
-    const qualityConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
-    const objectStates = useSelector((state: CombinedState) => state.annotation.annotations.states);
-    const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
-    const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
-
-    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts?.map((c: AnnotationConflict) => c.clientID);
-
-    const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
+    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
+        ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
     const canvasReady = canvasInstance instanceof Canvas && canvasIsReady;
 
@@ -70,6 +90,13 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const issueDialogs: JSX.Element[] = [];
     const conflictLabels: JSX.Element[] = [];
 
+    const onCreateIssue = useCallback(() => {
+        if (canvasReady && canvasInstance.mode() === CanvasMode.SELECT_REGION) {
+            canvasInstance.selectRegion(false);
+            dispatch(updateActiveControl(ActiveControl.CURSOR));
+        }
+    }, [canvasReady, canvasInstance]);
+
     useEffect(() => {
         if (canvasReady) {
             const { geometry: updatedGeometry } = canvasInstance;
@@ -86,7 +113,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
             return () => {
                 canvasInstance.html().removeEventListener('canvas.zoom', geometryListener);
                 canvasInstance.html().removeEventListener('canvas.fit', geometryListener);
-                canvasInstance.html().addEventListener('canvas.reshape', geometryListener);
+                canvasInstance.html().removeEventListener('canvas.reshape', geometryListener);
             };
         }
 
@@ -127,30 +154,37 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     }, [newIssuePosition, frameIssues, issuesResolvedHidden, issuesHidden, canvasReady, showConflicts]);
 
     useEffect(() => {
-        if (canvasReady && showConflicts) {
-            const newconflictMapping = qualityConflicts.map((conflict: QualityConflict) => {
-                const c = conflict.annotationConflicts[0];
-                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobID && s.serverID === c.serverID);
-                if (state) {
-                    const points = canvasInstance.setupConflictsRegions(state);
-                    if (points) {
-                        return {
-                            description: conflict.description,
-                            severity: conflict.severity,
-                            x: points[0],
-                            y: points[1],
-                            clientID: c.clientID,
-                            conflict,
-                        };
+        if (canvasReady && showConflicts && qualityConflicts.length) {
+            const updatedConflictMapping = qualityConflicts
+                .map((conflict: QualityConflict) => {
+                    const mainAnnotationsConflict = conflict.annotationConflicts[0];
+                    const state = objectStates.find((_state: ObjectState) => (
+                        _state.serverID === mainAnnotationsConflict.serverID &&
+                        _state.objectType === mainAnnotationsConflict.type
+                    ));
+
+                    if (state && state.zOrder <= annotationsZLayer && !state.hidden) {
+                        const points = canvasInstance.setupConflictRegions(state);
+                        if (points) {
+                            return {
+                                description: conflict.description,
+                                severity: conflict.severity,
+                                x: points[0],
+                                y: points[1],
+                                serverID: state.serverID,
+                                conflict,
+                            };
+                        }
                     }
-                }
-                return null;
-            }).filter((element) => element);
-            setConflictMapping(newconflictMapping as ConflictMappingElement[]);
+
+                    return null;
+                }).filter((element) => element) as ConflictMappingElement[];
+
+            setConflictMapping(updatedConflictMapping);
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, canvasReady]);
+    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, annotationsZLayer]);
 
     if (!canvasReady || !geometry) {
         return null;
@@ -238,6 +272,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         null;
 
     for (const conflict of conflictMapping) {
+        const isConflictHighligted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
         conflictLabels.push(
             <ConflictLabel
                 key={(Math.random() + 1).toString(36).substring(7)}
@@ -247,25 +282,24 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
                 severity={conflict.severity}
-                darken={!!highlightedConflict && !!highlightedObjectsIDs &&
-                        (!highlightedObjectsIDs.includes(conflict.clientID))}
+                darken={!isConflictHighligted}
                 conflict={conflict.conflict}
                 onEnter={onEnter}
                 onLeave={onLeave}
-                tooltipVisible={!!highlightedConflict && !!highlightedObjectsIDs &&
-                        highlightedObjectsIDs.includes(conflict.clientID)}
+                tooltipVisible={isConflictHighligted}
             />,
         );
     }
 
     return (
         <>
-            {createLeft !== null && createTop !== null ? (
+            {newIssueSource === NewIssueSource.ISSUE_TOOL && createLeft !== null && createTop !== null ? (
                 <CreateIssueDialog
                     top={createTop}
                     left={createLeft}
                     angle={-geometry.angle}
                     scale={1 / geometry.scale}
+                    onCreateIssue={onCreateIssue}
                 />
             ) : null}
             {issueDialogs}

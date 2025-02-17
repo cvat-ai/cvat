@@ -1,0 +1,19 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-modal-upload-file-status .ant-modal-body {
+    display: flex;
+    align-items: center;
+    flex-flow: column;
+
+    .ant-progress {
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .ant-alert {
+        width: 100%;
+    }
+}

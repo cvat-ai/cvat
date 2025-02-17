@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -62,7 +63,7 @@ context('Actions on polygon', () => {
             cy.get('.cvat-canvas-container').click();
         });
 
-        it('Second shape is over the first shape', () => {
+        it('Second shape is over the first shape', () => {
             // The larger the index of an element in the array the closer it is to us
             cy.get('.cvat_canvas_shape').then(($canvasShape) => {
                 expect(Number($canvasShape[1].id.match(/\d+$/))).to.be.equal(2);
@@ -70,11 +71,12 @@ context('Actions on polygon', () => {
         });
 
         it('Activate first shape', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove').trigger('mouseover');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
 
-        it('First shape is over the second shape', () => {
+        it('First shape is over the second shape', () => {
             // The larger the index of an element in the array the closer it is to us
             cy.get('.cvat_canvas_shape').then(($canvasShape) => {
                 expect(Number($canvasShape[1].id.match(/\d+$/))).to.be.equal(1);

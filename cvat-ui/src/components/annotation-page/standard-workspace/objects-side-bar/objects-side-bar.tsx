@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ import React, { Dispatch, TransitionEvent } from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Layout from 'antd/lib/layout';
 
@@ -89,29 +88,27 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         >
             {/* eslint-disable-next-line */}
             <span
-                className={`cvat-objects-sidebar-sider
-                    ant-layout-sider-zero-width-trigger
-                    ant-layout-sider-zero-width-trigger-left`}
+                className='cvat-objects-sidebar-sider'
                 onClick={collapse}
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
 
-            <Tabs type='card' defaultActiveKey='objects' className='cvat-objects-sidebar-tabs'>
-                <Tabs.TabPane tab={<Text strong>Objects</Text>} key='objects'>
-                    {objectsList}
-                </Tabs.TabPane>
-                <Tabs.TabPane forceRender tab={<Text strong>Labels</Text>} key='labels'>
-                    <LabelsList />
-                </Tabs.TabPane>
-
-                {is2D ? (
-                    <Tabs.TabPane tab={<Text strong>Issues</Text>} key='issues'>
-                        <IssuesListComponent />
-                    </Tabs.TabPane>
-                ) : null}
-            </Tabs>
-
+            <Tabs
+                type='card'
+                defaultActiveKey='objects'
+                className='cvat-objects-sidebar-tabs'
+                items={[{
+                    key: 'objects',
+                    label: 'Objects',
+                    children: objectsList,
+                }, {
+                    key: 'labels',
+                    label: 'Labels',
+                    forceRender: true,
+                    children: <LabelsList />,
+                }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
+            />
             {!sidebarCollapsed && <AppearanceBlock />}
         </Layout.Sider>
     );

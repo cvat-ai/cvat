@@ -1,10 +1,11 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
 from time import sleep
+from typing import Any
 
 import pytest
 
@@ -20,14 +21,14 @@ def _post_task_remote_data(username, task_id, resources):
     return post_method(username, f"tasks/{task_id}/data", data)
 
 
-def _wait_until_task_is_created(username, task_id):
-    url = f"tasks/{task_id}/status"
+def _wait_until_task_is_created(username: str, rq_id: str) -> dict[str, Any]:
+    url = f"requests/{rq_id}"
 
     for _ in range(100):
         response = get_method(username, url)
-        response_json = response.json()
-        if response_json["state"] == "Finished" or response_json["state"] == "Failed":
-            return response
+        request_details = response.json()
+        if request_details["status"] in ("finished", "failed"):
+            return request_details
         sleep(1)
     raise Exception("Cannot create task")
 
@@ -39,18 +40,22 @@ class TestCreateFromRemote:
     def _test_can_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
+        response = response.json()
+        rq_id = response.get("rq_id")
+        assert rq_id, "The rq_id param was not found in the server response"
 
-        response = _wait_until_task_is_created(user, task_id)
-        response_json = response.json()
-        assert response_json["state"] == "Finished"
+        response_json = _wait_until_task_is_created(user, rq_id)
+        assert response_json["status"] == "finished"
 
     def _test_cannot_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
+        response = response.json()
+        rq_id = response.get("rq_id")
+        assert rq_id, "The rq_id param was not found in the server response"
 
-        response = _wait_until_task_is_created(user, task_id)
-        response_json = response.json()
-        assert response_json["state"] == "Failed"
+        response_json = _wait_until_task_is_created(user, rq_id)
+        assert response_json["status"] == "failed"
 
     def test_cannot_create(self, find_users):
         user = find_users(privilege="admin")[0]["username"]
@@ -60,6 +65,6 @@ class TestCreateFromRemote:
 
     def test_can_create(self, find_users):
         user = find_users(privilege="admin")[0]["username"]
-        remote_resources = ["https://opencv.github.io/cvat/favicons/favicon-32x32.png"]
+        remote_resources = ["https://docs.cvat.ai/favicons/favicon-32x32.png"]
 
         self._test_can_create(user, self.task_id, remote_resources)

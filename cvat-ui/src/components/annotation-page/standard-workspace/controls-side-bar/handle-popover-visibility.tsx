@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import Popover, { PopoverProps } from 'antd/lib/popover';
 
 interface OwnProps {
@@ -11,9 +12,8 @@ interface OwnProps {
 }
 
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
-    return (props: OwnProps & PopoverProps): JSX.Element => {
-        const [visible, setVisible] = useState<boolean>(false);
-        const { overlayClassName, onVisibleChange, ...rest } = props;
+    return function (props: OwnProps & PopoverProps): JSX.Element {
+        const { overlayClassName, onOpenChange, ...rest } = props;
         const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
         const popoverClassName = `cvat-${popoverType}-popover`;
         overlayClassNames.push(popoverClassName);
@@ -24,12 +24,10 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                 {...rest}
                 overlayStyle={{
                     ...(typeof overlayStyle === 'object' ? overlayStyle : {}),
-                    animationDuration: '0s',
-                    animationDelay: '0s',
                 }}
-                trigger={visible ? 'click' : 'hover'}
+                trigger={['click']}
                 overlayClassName={overlayClassNames.join(' ').trim()}
-                onVisibleChange={(_visible: boolean) => {
+                onOpenChange={(_visible: boolean) => {
                     if (_visible) {
                         const [element] = window.document.getElementsByClassName(popoverClassName);
                         if (element) {
@@ -38,8 +36,7 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                             (element as HTMLElement).style.opacity = '';
                         }
                     }
-                    setVisible(_visible);
-                    if (onVisibleChange) onVisibleChange(_visible);
+                    if (onOpenChange) onOpenChange(_visible);
                 }}
             />
         );

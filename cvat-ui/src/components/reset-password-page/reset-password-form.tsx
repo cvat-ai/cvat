@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,10 @@ import Icon from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import { BackArrowIcon } from 'icons';
 import { Col, Row } from 'antd/lib/grid';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import CVATSigningInput from 'components/signing-common/cvat-signing-input';
+import { useAuthQuery } from 'utils/hooks';
 
 export interface ResetPasswordData {
     email: string;
@@ -25,14 +26,21 @@ interface Props {
 
 function ResetPasswordFormComponent({ fetching, onSubmit }: Props): JSX.Element {
     const [form] = Form.useForm();
-    const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const defaultCredential = params.get('credential');
+    const authQuery = useAuthQuery();
+    const defaultCredential = authQuery?.email;
     return (
         <div className='cvat-password-reset-form-wrapper'>
             <Row justify='space-between' className='cvat-credentials-navigation'>
                 <Icon
-                    component={() => <Link to='/auth/login'><BackArrowIcon /></Link>}
+                    component={() => (
+                        <Link to={{
+                            pathname: '/auth/login',
+                            search: authQuery ? new URLSearchParams(authQuery).toString() : '',
+                        }}
+                        >
+                            <BackArrowIcon />
+                        </Link>
+                    )}
                 />
             </Row>
             <Row>

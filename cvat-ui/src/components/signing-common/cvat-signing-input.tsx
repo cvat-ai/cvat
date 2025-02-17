@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 import React, { useEffect, useState } from 'react';
@@ -13,6 +13,7 @@ interface SocialAccountLinkProps {
     placeholder: string;
     value?: string;
     type?: CVATInputType;
+    disabled?: boolean;
     onReset?: () => void;
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -24,9 +25,9 @@ export enum CVATInputType {
 
 function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {
     const {
-        id, autoComplete, type, onReset, placeholder, value, onChange,
+        id, autoComplete, type, onReset, placeholder, value, onChange, disabled,
     } = props;
-    const [valueNonEmpty, setValueNonEmpty] = useState(false);
+    const [valueNonEmpty, setValueNonEmpty] = useState(!!disabled);
     useEffect((): void => {
         setValueNonEmpty(!!value);
     }, [value]);
@@ -43,6 +44,7 @@ function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {
             />
         );
     }
+
     return (
         <Input
             value={value}
@@ -50,7 +52,8 @@ function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {
             className={valueNonEmpty ? 'cvat-input-floating-label-above' : 'cvat-input-floating-label'}
             prefix={<Text>{placeholder}</Text>}
             id={id}
-            suffix={valueNonEmpty && (
+            disabled={disabled}
+            suffix={valueNonEmpty && !disabled && (
                 <Icon
                     component={ClearIcon}
                     onClick={() => {

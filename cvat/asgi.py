@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,13 +18,13 @@ from django.core.handlers.asgi import ASGIHandler
 
 import cvat.utils.remote_debugger as debug
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.{}" \
-    .format(os.environ.get("DJANGO_CONFIGURATION", "development")))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.development")
 
 application = get_asgi_application()
 
 
 if debug.is_debugging_enabled():
+
     class DebuggerApp(ASGIHandler):
         """
         Support for VS code debugger

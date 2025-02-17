@@ -1,12 +1,12 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { RefObject } from 'react';
 
-import Tabs from 'antd/lib/tabs';
+import Tabs, { TabsProps } from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import { RcFile } from 'antd/lib/upload';
 import { FormInstance } from 'antd/lib/form';
@@ -120,12 +120,15 @@ export class FileManager extends React.PureComponent<Props, State> {
         });
     }
 
-    private renderLocalSelector(): JSX.Element {
+    private renderLocalSelector(): NonNullable<TabsProps['items']>[0] {
         const { many, onUploadLocalFiles } = this.props;
         const { files } = this.state;
 
-        return (
-            <Tabs.TabPane className='cvat-file-manager-local-tab' key='local' tab='My computer'>
+        return {
+            key: 'local',
+            label: 'My computer',
+            className: 'cvat-file-manager-local-tab',
+            children: (
                 <LocalFiles
                     files={files.local}
                     many={many}
@@ -140,27 +143,33 @@ export class FileManager extends React.PureComponent<Props, State> {
                         return false;
                     }}
                 />
-            </Tabs.TabPane>
-        );
+            ),
+        };
     }
 
-    private renderShareSelector(): JSX.Element {
-        return (
-            <Tabs.TabPane key='share' tab='Connected file share'>
+    private renderShareSelector(): NonNullable<TabsProps['items']>[0] {
+        return {
+            key: 'share',
+            label: 'Connected file share',
+            className: 'cvat-file-manager-share-tab',
+            children: (
                 <RemoteBrowser
                     resource='share'
                     onSelectFiles={this.handleUploadSharedStorageFiles}
                 />
-            </Tabs.TabPane>
-        );
+            ),
+        };
     }
 
-    private renderRemoteSelector(): JSX.Element {
+    private renderRemoteSelector(): NonNullable<TabsProps['items']>[0] {
         const { onUploadRemoteFiles } = this.props;
         const { files } = this.state;
 
-        return (
-            <Tabs.TabPane key='remote' tab='Remote sources'>
+        return {
+            key: 'remote',
+            label: 'Remote sources',
+            className: 'cvat-file-manager-remote-tab',
+            children: (
                 <Input.TextArea
                     className='cvat-file-selector-remote'
                     placeholder='Enter one URL per line'
@@ -177,18 +186,18 @@ export class FileManager extends React.PureComponent<Props, State> {
                         onUploadRemoteFiles(urls.filter(Boolean));
                     }}
                 />
-            </Tabs.TabPane>
-        );
+            ),
+        };
     }
 
-    private renderCloudStorageSelector(): JSX.Element {
+    private renderCloudStorageSelector(): NonNullable<TabsProps['items']>[0] {
         const { cloudStorage, potentialCloudStorage } = this.state;
-        return (
-            <Tabs.TabPane
-                key='cloudStorage'
-                className='cvat-create-task-page-cloud-storage-tab'
-                tab={<span> Cloud Storage </span>}
-            >
+
+        return {
+            key: 'cloudStorage',
+            label: 'Cloud Storage',
+            className: 'cvat-create-task-page-cloud-storage-tab',
+            children: (
                 <CloudStorageTab
                     formRef={this.cloudStorageTabFormRef}
                     cloudStorage={cloudStorage}
@@ -201,8 +210,8 @@ export class FileManager extends React.PureComponent<Props, State> {
                     }}
                     onSelectFiles={this.handleUploadCloudStorageFiles}
                 />
-            </Tabs.TabPane>
-        );
+            ),
+        };
     }
 
     public render(): JSX.Element {
@@ -210,24 +219,23 @@ export class FileManager extends React.PureComponent<Props, State> {
         const { active } = this.state;
 
         return (
-            <>
-                <Tabs
-                    type='card'
-                    activeKey={active}
-                    tabBarGutter={5}
-                    onChange={(activeKey: string): void => {
-                        onChangeActiveKey(activeKey);
-                        this.setState({
-                            active: activeKey as any,
-                        });
-                    }}
-                >
-                    {this.renderLocalSelector()}
-                    {this.renderShareSelector()}
-                    {this.renderRemoteSelector()}
-                    {this.renderCloudStorageSelector()}
-                </Tabs>
-            </>
+            <Tabs
+                type='card'
+                activeKey={active}
+                tabBarGutter={5}
+                onChange={(activeKey: string): void => {
+                    onChangeActiveKey(activeKey);
+                    this.setState({
+                        active: activeKey as any,
+                    });
+                }}
+                items={[
+                    this.renderLocalSelector(),
+                    this.renderShareSelector(),
+                    this.renderRemoteSelector(),
+                    this.renderCloudStorageSelector(),
+                ]}
+            />
         );
     }
 }

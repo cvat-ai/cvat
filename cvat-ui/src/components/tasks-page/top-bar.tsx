@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,8 +8,8 @@ import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 
 import { Row, Col } from 'antd/lib/grid';
-import Dropdown from 'antd/lib/dropdown';
-import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
+import Popover from 'antd/lib/popover';
+import { LoadingOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import { importActions } from 'actions/import-actions';
@@ -17,12 +17,11 @@ import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'componen
 import { TasksQuery } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import { MultiPlusIcon } from 'icons';
+import dimensions from 'utils/dimensions';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
-
-import dimensions from '../projects-page/dimensions';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
@@ -93,9 +92,11 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                     </div>
                 </div>
                 <div>
-                    <Dropdown
+                    <Popover
                         trigger={['click']}
-                        overlay={(
+                        destroyTooltipOnHide
+                        overlayInnerStyle={{ padding: 0 }}
+                        content={(
                             <CvatDropdownMenuPaper>
                                 <Button
                                     className='cvat-create-task-button'
@@ -117,17 +118,16 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     className='cvat-import-task-button'
                                     type='primary'
                                     disabled={importing}
-                                    icon={<UploadOutlined />}
+                                    icon={importing ? <LoadingOutlined /> : <UploadOutlined />}
                                     onClick={() => dispatch(importActions.openImportBackupModal('task'))}
                                 >
                                     Create from backup
-                                    {importing && <LoadingOutlined />}
                                 </Button>
                             </CvatDropdownMenuPaper>
                         )}
                     >
                         <Button type='primary' className='cvat-create-task-dropdown' icon={<PlusOutlined />} />
-                    </Dropdown>
+                    </Popover>
                 </div>
             </Col>
         </Row>

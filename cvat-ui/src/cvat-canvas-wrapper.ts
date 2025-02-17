@@ -5,15 +5,15 @@
 import {
     Canvas,
     CanvasMode,
-    CanvasVersion,
     RectDrawingMethod,
     CuboidDrawingMethod,
+    CanvasHint as _CanvasHint,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
     HighlightSeverity as _HighlightSeverity,
 } from 'cvat-canvas/src/typescript/canvas';
 
-export function convertShapesForInteractor(shapes: InteractionResult[], button: number): number[][] {
+export function convertShapesForInteractor(shapes: InteractionResult[], type: 'points' | 'rectangle', button: number): number[][] {
     const reducer = (acc: number[][], _: number, index: number, array: number[]): number[][] => {
         if (!(index % 2)) {
             // 0, 2, 4
@@ -23,7 +23,7 @@ export function convertShapesForInteractor(shapes: InteractionResult[], button: 
     };
 
     return shapes
-        .filter((shape: InteractionResult): boolean => shape.button === button)
+        .filter((shape: InteractionResult): boolean => shape.button === button && shape.shapeType === type)
         .map((shape: InteractionResult): number[] => shape.points)
         .flat()
         .reduce(reducer, []);
@@ -32,7 +32,8 @@ export function convertShapesForInteractor(shapes: InteractionResult[], button: 
 export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
+export type CanvasHint = _CanvasHint;
 
 export {
-    Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,
+    Canvas, CanvasMode, RectDrawingMethod, CuboidDrawingMethod,
 };

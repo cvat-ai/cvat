@@ -6,7 +6,7 @@ weight: 14
 
 `Standard 3d mode` - Designed to work with 3D data.
 The mode is automatically available if you add PCD or Kitty BIN format data when you create a task.
-[read more](/docs/manual/basics/create_an_annotation_task/)
+{{< ilink "/docs/manual/basics/create_an_annotation_task" "read more" >}}
 
 You can adjust the size of the projections, to do so, simply drag the boundary between the projections.
 

@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -80,8 +81,8 @@ export class MergeHandlerImpl implements MergeHandler {
     }
 
     public constructor(
-        onMergeDone: (objects: any[] | null, duration?: number) => void,
-        onFindObject: (event: MouseEvent) => void,
+        onMergeDone: MergeHandlerImpl['onMergeDone'],
+        onFindObject: MergeHandlerImpl['onFindObject'],
         canvas: SVG.Container,
     ) {
         this.onMergeDone = onMergeDone;

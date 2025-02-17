@@ -1,35 +1,44 @@
 ---
+title: 'KITTI'
 linkTitle: 'KITTI'
 weight: 17
+description: 'How to export and import data in KITTI format'
 ---
 
-# [KITTI](http://www.cvlibs.net/datasets/kitti/)
+The KITTI format is widely used for a range of computer
+vision tasks related to autonomous driving, including
+but not limited to 3D object detection, multi-object tracking,
+and scene flow estimation. Given its special focus on
+automotive scenes, the KITTI format is generally
+used with models that are designed or adapted for these types of tasks.
 
+For more information, see:
+
+- [KITTI site](http://www.cvlibs.net/datasets/kitti/)
 - [Format specification for KITTI detection](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_object.zip)
 - [Format specification for KITTI segmentation](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset)
 
-- supported annotations:
-
-  - Rectangles (detection task)
-  - Polygon (segmentation task)
-
-- supported attributes:
-
-  - `occluded` (both UI option and a separate attribute).
-    Indicates that a significant portion of the object within
-    the bounding box is occluded by another object
-  - `truncated` supported only for rectangles
-    (should be defined for labels as `checkbox` -es).
-    Indicates that the bounding box specified for the object
-    does not correspond to the full extent of the object
-  - 'is_crowd' supported only for polygons
-    (should be defined for labels as `checkbox` -es).
-    Indicates that the annotation covers multiple instances of the same class
-
 ## KITTI annotations export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes (detection), Polygons (segmentation).
+- Supported attributes:
+  - `occluded` (Available both as a UI option and a separate attribute)
+    Denotes that a major portion of the object within
+    the bounding box is obstructed by another object.
+  - `truncated` (Only applicable to bounding boxes)
+    Must be represented as `checkboxes` for labels.
+    Suggests that the bounding box does not
+    encompass the entire object; some part is cut off.
+  - `is_crowd` (Only valid for polygons). Should be indicated
+    using `checkboxes` for labels.
+    Signifies that the annotation encapsulates
+    multiple instances of the same object class.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```
 └─ annotations.zip/

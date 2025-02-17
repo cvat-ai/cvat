@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,16 +42,9 @@ context('Canvas 3D functionality. Grouping.', () => {
     let bgColorItem;
 
     function changeGroupColor(object, color) {
-        cy.get(object).within(() => {
-            cy.get('[aria-label="more"]').click();
-        });
-        cy.wait(300);
-        cy.get('.ant-dropdown')
-            .not('.ant-dropdown-hidden')
-            .within(() => {
-                cy.contains('Change group color').click();
-            });
+        cy.interactAnnotationObjectMenu(object, 'Change group color');
         cy.changeColorViaBadge(color);
+        cy.get('.cvat-label-color-picker').should('not.exist');
     }
 
     before(() => {
@@ -68,8 +61,10 @@ context('Canvas 3D functionality. Grouping.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Grouping two cuboids.', () => {
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280).click(400, 280);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280).click(500, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280);
+            cy.get('.cvat-canvas3d-perspective').click(400, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280);
+            cy.get('.cvat-canvas3d-perspective').click(500, 280);
             cy.get('.cvat-group-control').click();
             cy.changeAppearance('Group');
             cy.get('#cvat-objects-sidebar-state-item-1').invoke('attr', 'style').then((bgColorItem1) => {
@@ -93,7 +88,6 @@ context('Canvas 3D functionality. Grouping.', () => {
 
         it('Change group color.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-2', yellowHex);
-            cy.get('.cvat-label-color-picker').should('be.hidden');
             for (const groupedSidebarItemShape of shapeSidebarItemArray) {
                 cy.get(groupedSidebarItemShape)
                     .should('have.attr', 'style')
@@ -109,8 +103,10 @@ context('Canvas 3D functionality. Grouping.', () => {
         it('Reset group.', () => {
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_reset_group');
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280).click(400, 280);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280).click(500, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280);
+            cy.get('.cvat-canvas3d-perspective').click(400, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280);
+            cy.get('.cvat-canvas3d-perspective').click(500, 280);
             cy.get('body').type('{Shift}g');
             cy.get('#cvat-objects-sidebar-state-item-2').invoke('attr', 'style').then((bgColorItem2) => {
                 expect(bgColorItem).to.be.equal(bgColorItem2);

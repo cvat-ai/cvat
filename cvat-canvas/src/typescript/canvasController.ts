@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,11 +13,14 @@ import {
     MergeData,
     SplitData,
     GroupData,
+    JoinData,
+    SliceData,
     Mode,
     InteractionData,
     Configuration,
     MasksEditData,
     HighlightedElements,
+    PolyEditData,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -28,11 +31,13 @@ export interface CanvasController {
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
-    readonly editData: MasksEditData;
+    readonly editData: MasksEditData | PolyEditData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
+    readonly joinData: JoinData;
+    readonly sliceData: SliceData;
     readonly selected: any;
     readonly configuration: Configuration;
     mode: Mode;
@@ -40,12 +45,7 @@ export interface CanvasController {
 
     zoom(x: number, y: number, direction: number): void;
     draw(drawData: DrawData): void;
-    edit(editData: MasksEditData): void;
-    interact(interactionData: InteractionData): void;
-    merge(mergeData: MergeData): void;
-    split(splitData: SplitData): void;
-    group(groupData: GroupData): void;
-    selectRegion(enabled: boolean): void;
+    edit(editData: MasksEditData | PolyEditData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -97,28 +97,8 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.draw(drawData);
     }
 
-    public edit(editData: MasksEditData): void {
+    public edit(editData: MasksEditData | PolyEditData): void {
         this.model.edit(editData);
-    }
-
-    public interact(interactionData: InteractionData): void {
-        this.model.interact(interactionData);
-    }
-
-    public merge(mergeData: MergeData): void {
-        this.model.merge(mergeData);
-    }
-
-    public split(splitData: SplitData): void {
-        this.model.split(splitData);
-    }
-
-    public group(groupData: GroupData): void {
-        this.model.group(groupData);
-    }
-
-    public selectRegion(enable: boolean): void {
-        this.model.selectRegion(enable);
     }
 
     public get geometry(): Geometry {
@@ -157,7 +137,7 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.drawData;
     }
 
-    public get editData(): MasksEditData {
+    public get editData(): MasksEditData | PolyEditData {
         return this.model.editData;
     }
 
@@ -175,6 +155,14 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get groupData(): GroupData {
         return this.model.groupData;
+    }
+
+    public get joinData(): JoinData {
+        return this.model.joinData;
+    }
+
+    public get sliceData(): SliceData {
+        return this.model.sliceData;
     }
 
     public get selected(): any {

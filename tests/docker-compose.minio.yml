@@ -1,4 +1,15 @@
+x-allow-minio: &allow-minio
+  depends_on:
+    - minio
+  volumes:
+    - ./tests/allow_minio.sh:/etc/cvat/init.d/allow_minio.sh:ro
+
 services:
+  cvat_server: *allow-minio
+  cvat_worker_export: *allow-minio
+  cvat_worker_import: *allow-minio
+  cvat_worker_chunks: *allow-minio
+
   minio:
     image: quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z
     hostname: minio

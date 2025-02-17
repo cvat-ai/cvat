@@ -4,27 +4,16 @@ jobs:
   Linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-            node-version: '16.x'
-      - id: files
-        uses: tj-actions/changed-files@v35.9.2
-        with:
-          files: |
-              **/*.css
-              **/*.scss
+            node-version: '22.x'
+
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
 
       - name: Run checks
         run: |
-          CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
-
-          if [[ ! -z $CHANGED_FILES ]]; then
-            yarn install --frozen-lockfile
-
-            echo "StyleLint version: "$(npx stylelint --version)
-            echo "The files will be checked: "$(echo $CHANGED_FILES)
-            npx stylelint $CHANGED_FILES
-          else
-            echo "No files with the \"css|scss\" extension found"
-          fi
+          echo "StyleLint version: "$(yarn run -s stylelint --version)
+          yarn run stylelint '**/*.css' '**/*.scss'

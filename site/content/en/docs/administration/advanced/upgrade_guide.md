@@ -15,13 +15,14 @@ upgrading PostgreSQL base image major version. See details [here](#how-to-upgrad
 To upgrade CVAT, follow these steps:
 
 - It is highly recommended backup all CVAT data before updating, follow the
-  [backup guide](/docs/administration/advanced/backup_guide/) and backup all CVAT volumes.
+  {{< ilink "/docs/administration/advanced/backup_guide" "backup guide" >}} and backup all CVAT volumes.
 
 - Go to the previously cloned CVAT directory and stop all CVAT containers with:
   ```shell
   docker compose down
   ```
-  If you have included [additional components](/docs/administration/basics/installation/#additional-components),
+  If you have included
+  {{< ilink "/docs/administration/basics/installation#additional-components" "additional components" >}},
   include all compose configuration files that are used, e.g.:
   ```shell
   docker compose -f docker-compose.yml -f components/serverless/docker-compose.serverless.yml down
@@ -30,16 +31,17 @@ To upgrade CVAT, follow these steps:
 - Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
   Note that you need to download the entire source code, not just the Docker Compose configuration file.
   Check the
-  [installation guide](/docs/administration/basics/installation/#how-to-get-cvat-source-code) for details.
+  {{< ilink "/docs/administration/basics/installation#how-to-get-cvat-source-code" "installation guide" >}} for details.
 
 - Verify settings:
   The installation process is changed/modified from version to version and
   you may need to export some environment variables, for example
-  [CVAT_HOST](/docs/administration/basics/installation/#use-your-own-domain).
+  {{< ilink "/docs/administration/basics/installation#use-your-own-domain" "CVAT_HOST" >}}.
 
 - Update local CVAT images.
   Pull or build new CVAT images, see
-  [How to pull/build/update CVAT images section](/docs/administration/basics/installation/#how-to-pullbuildupdate-cvat-images)
+  {{< ilink "/docs/administration/basics/installation#how-to-pullbuildupdate-cvat-images"
+    "How to pull/build/update CVAT images section" >}}
   for details.
 
 - Start CVAT with:
@@ -54,6 +56,28 @@ To upgrade CVAT, follow these steps:
   docker logs cvat_server -f
   ```
 
+## Upgrade CVAT after v2.26.0
+
+In version 2.26.0, CVAT changed the location where the export cache is stored.
+To clean up the outdated cache, run the command depending on how CVAT is deployed:
+
+<!--lint disable no-undefined-references-->
+
+{{< tabpane lang="shell" >}}
+  {{< tab header="Docker" >}}
+  docker exec -it cvat_server python manage.py cleanuplegacyexportcache
+  {{< /tab >}}
+  {{< tab header="Kubernetes" >}}
+  cvat_backend_pod=$(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}')
+  kubectl exec -it ${cvat_backend_pod} -- python manage.py cleanuplegacyexportcache
+  {{< /tab >}}
+  {{< tab header="Development" >}}
+  python manage.py cleanuplegacyexportcache
+  {{< /tab >}}
+{{< /tabpane >}}
+
+<!--lint enable no-undefined-references-->
+
 ## How to upgrade CVAT from v2.2.0 to v2.3.0.
 
 Step by step commands how to upgrade CVAT from v2.2.0 to v2.3.0.
@@ -66,7 +90,7 @@ docker volume rm cvat_cvat_db
 export CVAT_VERSION="v2.3.0"
 cd ..
 mv cvat cvat_220
-wget https://github.com/opencv/cvat/archive/refs/tags/${CVAT_VERSION}.zip
+wget https://github.com/cvat-ai/cvat/archive/refs/tags/${CVAT_VERSION}.zip
 unzip ${CVAT_VERSION}.zip && mv cvat-${CVAT_VERSION:1} cvat
 unset CVAT_VERSION
 cd cvat
@@ -88,7 +112,7 @@ cd cvat
 docker compose down
 cd ..
 mv cvat cvat_170
-wget https://github.com/opencv/cvat/archive/refs/tags/${CVAT_VERSION}.zip
+wget https://github.com/cvat-ai/cvat/archive/refs/tags/${CVAT_VERSION}.zip
 unzip ${CVAT_VERSION}.zip && mv cvat-${CVAT_VERSION:1} cvat
 cd cvat
 docker pull cvat/server:${CVAT_VERSION}
@@ -101,7 +125,7 @@ docker compose up -d
 ## How to upgrade PostgreSQL database base image
 
 1. It is highly recommended backup all CVAT data before updating, follow the
-   [backup guide](/docs/administration/advanced/backup_guide/) and backup CVAT database volume.
+   {{< ilink "/docs/administration/advanced/backup_guide" "backup guide" >}} and backup CVAT database volume.
 
 1. Run previously used CVAT version as usual
 
@@ -122,7 +146,8 @@ docker compose up -d
 
 1. Update CVAT source code by any preferable way: clone with git or download zip file from GitHub.
    Check the
-   [installation guide](/docs/administration/basics/installation/#how-to-get-cvat-source-code) for details.
+   {{< ilink "/docs/administration/basics/installation#how-to-get-cvat-source-code" "installation guide" >}}
+   for details.
 
 1. Start database container only:
    ```shell

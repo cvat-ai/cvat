@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +13,6 @@ import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
-import Tooltip from 'antd/lib/tooltip';
 
 import { CombinedState, CloudStorage } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
@@ -20,6 +20,7 @@ import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Space from 'antd/lib/space';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
 import S3Region from './s3-region';
 import GCSLocation from './gcs-locatiion';
@@ -321,11 +322,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         className: 'cvat-cloud-storage-form-item',
     };
 
-    const credentialsBlok = (): JSX.Element => {
+    const credentialsBlok = (): JSX.Element | null => {
         const internalCommonProps = {
             ...commonProps,
-            labelCol: { span: 8, offset: 2 },
-            wrapperCol: { offset: 2 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-2`,
         };
 
         if (providerType === ProviderType.AWS_S3_BUCKET && credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
@@ -352,7 +352,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={44}
+                            maxLength={64}
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
@@ -404,40 +404,36 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (providerType === ProviderType.AZURE_CONTAINER && credentialsType === CredentialsType.ANONYMOUS_ACCESS) {
             return (
-                <>
-                    <Form.Item
-                        label='Account name'
-                        name='account_name'
-                        rules={[{ required: true, message: 'Please, specify your account name' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            minLength={3}
-                            maxLength={24}
-                            visibilityToggle={accountNameVisibility}
-                            onChange={() => setAccountNameVisibility(true)}
-                        />
-                    </Form.Item>
-                </>
+                <Form.Item
+                    label='Account name'
+                    name='account_name'
+                    rules={[{ required: true, message: 'Please, specify your account name' }]}
+                    {...internalCommonProps}
+                >
+                    <Input.Password
+                        minLength={3}
+                        maxLength={24}
+                        visibilityToggle={accountNameVisibility}
+                        onChange={() => setAccountNameVisibility(true)}
+                    />
+                </Form.Item>
             );
         }
 
         if (providerType === ProviderType.AZURE_CONTAINER && credentialsType === CredentialsType.CONNECTION_STRING) {
             return (
-                <>
-                    <Form.Item
-                        label='Connection string'
-                        name='connection_string'
-                        rules={[{ required: true, message: 'Please, specify your connection string' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            maxLength={440}
-                            visibilityToggle={connectionStringVisibility}
-                            onChange={() => setConnectionStringVisibility(true)}
-                        />
-                    </Form.Item>
-                </>
+                <Form.Item
+                    label='Connection string'
+                    name='connection_string'
+                    rules={[{ required: true, message: 'Please, specify your connection string' }]}
+                    {...internalCommonProps}
+                >
+                    <Input.Password
+                        maxLength={1024}
+                        visibilityToggle={connectionStringVisibility}
+                        onChange={() => setConnectionStringVisibility(true)}
+                    />
+                </Form.Item>
             );
         }
 
@@ -447,7 +443,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     name='key_file'
                     {...internalCommonProps}
                     label={(
-                        <Tooltip title='You can upload a key file.
+                        <CVATTooltip title='You can upload a key file.
                                 If you leave this field blank, the environment variable
                                 GOOGLE_APPLICATION_CREDENTIALS will be used.'
                         >
@@ -460,7 +456,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             >
                                 <QuestionCircleOutlined />
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
 
                     )}
                 >
@@ -489,14 +485,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
-        return <></>;
+        return null;
     };
 
-    const AWSS3Configuration = (): JSX.Element => {
+    const awsS3Configuration = (): JSX.Element => {
         const internalCommonProps = {
-            ...commonProps,
-            labelCol: { offset: 1 },
-            wrapperCol: { offset: 1 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
         };
 
         return (
@@ -510,7 +504,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Input disabled={!!cloudStorage} maxLength={63} />
                 </Form.Item>
                 <Form.Item
-                    label='Authorization type'
+                    label='Authentication type'
                     name='credentials_type'
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
@@ -540,11 +534,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
-    const AzureBlobStorageConfiguration = (): JSX.Element => {
+    const azureBlobStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
-            ...commonProps,
-            labelCol: { offset: 1 },
-            wrapperCol: { offset: 1 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
         };
 
         return (
@@ -558,7 +550,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Input disabled={!!cloudStorage} maxLength={63} />
                 </Form.Item>
                 <Form.Item
-                    label='Authorization type'
+                    label='Authentication type'
                     name='credentials_type'
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
@@ -577,11 +569,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
-    const GoogleCloudStorageConfiguration = (): JSX.Element => {
+    const googleCloudStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
-            ...commonProps,
-            labelCol: { span: 6, offset: 1 },
-            wrapperCol: { offset: 1 },
+            className: `${commonProps.className} cvat-cloud-storage-form-item-offset-1`,
         };
 
         return (
@@ -596,7 +586,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     <Input disabled={!!cloudStorage} maxLength={222} />
                 </Form.Item>
                 <Form.Item
-                    label='Authorization type'
+                    label='Authentication type'
                     name='credentials_type'
                     rules={[{ required: true, message: 'Please, specify credentials type' }]}
                     {...internalCommonProps}
@@ -609,13 +599,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select>
                 </Form.Item>
                 {credentialsBlok()}
-                <Form.Item
-                    label='Prefix'
-                    name='prefix'
-                    {...internalCommonProps}
-                >
-                    <Input />
-                </Form.Item>
                 <Form.Item
                     label='Project ID'
                     name='project_id'
@@ -684,9 +667,20 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select.Option>
                 </Select>
             </Form.Item>
-            {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
-            {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
-            {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && GoogleCloudStorageConfiguration()}
+            {providerType === ProviderType.AWS_S3_BUCKET && awsS3Configuration()}
+            {providerType === ProviderType.AZURE_CONTAINER && azureBlobStorageConfiguration()}
+            {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && googleCloudStorageConfiguration()}
+            <Form.Item
+                label={(
+                    <CVATTooltip title='Prefix is used to filter bucket content'>
+                        Prefix
+                        <QuestionCircleOutlined className='cvat-cloud-storage-help-button' />
+                    </CVATTooltip>
+                )}
+                name='prefix'
+            >
+                <Input />
+            </Form.Item>
             <ManifestsManager form={form} manifestNames={manifestNames} setManifestNames={setManifestNames} />
             <Row justify='end'>
                 <Col>

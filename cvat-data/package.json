@@ -1,12 +1,11 @@
 {
   "name": "cvat-data",
-  "version": "2.0.0",
+  "type": "module",
+  "version": "2.1.0",
   "description": "",
   "main": "src/ts/cvat-data.ts",
   "scripts": {
-    "patch": "cd src/ts && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
-    "build": "yarn run patch; webpack --config ./webpack.config.js",
-    "server": "yarn run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'",
+    "build": "webpack --config ./webpack.config.cjs",
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check --watch"
   },
@@ -14,7 +13,7 @@
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
-    "Firefox > 58",
+    "Firefox > 102",
     "not IE 11",
     "> 2%"
   ],

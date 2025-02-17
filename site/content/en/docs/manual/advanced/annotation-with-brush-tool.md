@@ -10,7 +10,7 @@ such as a house hiding behind trees, a car behind a pedestrian, or a pillar behi
 traffic sign.
 The brush tool has several modes, for example: erase pixels, change brush shapes, and polygon-to-mask mode.
 
-Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see [Creating masks](/docs/manual/advanced/annotation-with-polygons/creating-mask/).
+Use brush tool for Semantic (Panoptic) and Instance Image Segmentation tasks. <br>For more information about segmentation masks in CVAT, see {{< ilink "/docs/manual/advanced/annotation-with-polygons/creating-mask" "Creating masks" >}}.
 
 See:
 
@@ -29,27 +29,31 @@ The brush tool menu appears on the top of the screen after you click **Shape**:
 
 It has the following elements:
 
-|Element|Description|
-|----|-----|
-|![Tick icon](/images/tick_icon.png)| **Save mask** saves the created  mask. The saved mask will appear on the object sidebar|
-|![Save mask and continue](/images/brushing_tools_add_label.png)| **Save mask and continue** adds a new mask to the object sidebar and allows you to draw a new one immediately.|
-|![Brush](/images/brushing_tools_icon.png)| **Brush**  adds new mask/ new regions to the previously added mask).|
-|![Eraser](/images/brushing_tools_erase.png)|**Eraser** removes part of the mask.|
-|![Add poly](/images/brushing_tools_add_poly.png)|**Polygon**  selection tool. Selection will become a mask.|
-|![Remove poly](/images/brushing_tools_remove_poly.png)|**Remove polygon selection** subtracts part of the polygon selection.|
-|![Brush size](/images/brushing_tools_brush_size.png)|**Brush size** in pixels. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.|
-|![Brush shape](/images/brushing_tools_brush_shape.png)|**Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.|
-|![Pixel remove](/images/brushing_tools_pixels.png)|**Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted.|
-|![Label](/images/brushing_tools_label_drop.png)|**Label** that will be assigned to the newly created mask||
-|![Move](/images/brushing_tools_brush_move.png)|**Move**. Click and hold to move the menu bar to the other place on the screen|
+<!--lint disable maximum-line-length-->
 
+| Element                                                         | Description                                                                                                                                                                                              |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| ![Tick icon](/images/tick_icon.png)                             | **Save mask** saves the created mask. The saved mask will appear on the object sidebar                                                                                                                   |
+| ![Save mask and continue](/images/brushing_tools_add_label.png) | **Save mask and continue** adds a new mask to the object sidebar and allows you to draw a new one immediately.                                                                                           |
+| ![Brush](/images/brushing_tools_icon.png)                       | **Brush** adds new mask/ new regions to the previously added mask).                                                                                                                                      |
+| ![Eraser](/images/brushing_tools_erase.png)                     | **Eraser** removes part of the mask.                                                                                                                                                                     |
+| ![Add poly](/images/brushing_tools_add_poly.png)                | **Polygon** selection tool. Selection will become a mask.                                                                                                                                                |
+| ![Remove poly](/images/brushing_tools_remove_poly.png)          | **Remove polygon selection** subtracts part of the polygon selection.                                                                                                                                    |
+| ![Brush size](/images/brushing_tools_brush_size.png)            | **Brush size** in pixels. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.                                                                                                          |
+| ![Brush shape](/images/brushing_tools_brush_shape.png)          | **Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.                                                                               |
+| ![Pixel remove](/images/brushing_tools_pixels.png)              | **Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted. |
+| ![Hide mask](/images/brushing_tools_hide.png)              | **Hide mask**. When drawing or editing a mask, you can enable this feature to temporarily hide the mask, allowing you to see the objects underneath more clearly. |
+| ![Label](/images/brushing_tools_label_drop.png)                 | **Label** that will be assigned to the newly created mask                                                                                                                                                |     |
+| ![Move](/images/brushing_tools_brush_move.png)                  | **Move**. Click and hold to move the menu bar to the other place on the screen                                                                                                                           |
 
+<!--lint enable maximum-line-length-->
 
 ## Annotation with brush
 
 To annotate with brush, do the following:
 
-1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
+1. From the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar" "controls sidebar" >}},
+   select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
@@ -59,20 +63,21 @@ To annotate with brush, do the following:
    ![Brushing](/images/brushing_tools.gif)
 
 4. After you applied the mask, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
-5. Added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
+5. Added object will appear on the
+   {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
-All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
+All added objects will be visible on the image and the
+{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
-To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
-
-
+To save the job with all added objects, on the top menu, click **Save** ![Save](/images/brushing_tools_save.png).
 
 ## Annotation with polygon-to-mask
 
-To annotat with polygon-to-mask, do the following:
+To annotate with polygon-to-mask, do the following:
 
-1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
+1. From the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/controls-sidebar" "controls sidebar" >}},
+   select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.
 
    ![BT context menu](/images/brushing_tools_context_menu.png)
@@ -84,26 +89,25 @@ To annotat with polygon-to-mask, do the following:
    ![Brushing](/images/brushing_tools_polygon.gif)
 
 6. After you added the polygon selection, on the top menu bar click **Save mask** ![Tick icon](/images/tick_icon.png) <br>to finish the process (or **N** on the keyboard).
-7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the [objects sidebar](/docs/manual/basics/objects-sidebar/).
+7. Click **Save mask** ![Tick icon](/images/tick_icon.png) again (or **N** on the keyboard). <br>The added object will appear on the {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
 To add the next object, repeat steps 1 to 5.
 
-All added objects will be visible on the image and the  [objects sidebar](/docs/manual/basics/objects-sidebar/).
+All added objects will be visible on the image and the
+{{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar" "objects sidebar" >}}.
 
-To save the job with all added objects, on the top menu click **Save** ![Save](/images/brushing_tools_save.png).
-
+To save the job with all added objects, on the top menu, click **Save** ![Save](/images/brushing_tools_save.png).
 
 ## Remove underlying pixels
 
 Use **Remove underlying pixels** tool when you want to add a mask and simultaneously delete the pixels of <br>other masks that are located at the same positions. It is a highly useful feature to avoid meticulous drawing edges twice between two different objects.
 
-
 ![Remove pixel](/images/brushing_tools_pixel_underlying.gif)
 
 ## AI Tools
 
-You can convert [AI tool](/docs/manual/advanced/ai-tools/) masks to polygons.
-To do this, use the following [AI tool](/docs/manual/advanced/ai-tools/) menu:
+You can convert {{< ilink "/docs/manual/advanced/ai-tools" "AI tool" >}} masks to polygons.
+To do this, use the following {{< ilink "/docs/manual/advanced/ai-tools" "AI tool" >}} menu:
 
 ![Save](/images/brushing_tool_ai.jpg)
 
@@ -114,12 +118,12 @@ To do this, use the following [AI tool](/docs/manual/advanced/ai-tools/) menu:
 
 ## Import and export
 
-For export, see [Export dataset](/docs/manual/advanced/export-import-datasets/)
+For export, see {{< ilink "/docs/manual/advanced/import-datasets" "Export dataset" >}}
 
-Import follows the general [import dataset](/docs/manual/advanced/export-import-datasets/) procedure,
+Import follows the general {{< ilink "/docs/manual/advanced/import-datasets" "import dataset" >}} procedure,
 with the additional option of converting masks to polygons.
 
->**Note:** This option is available for formats that work with masks only.
+> **Note:** This option is available for formats that work with masks only.
 
 To use it, when uploading the dataset, switch the **Convert masks to polygon** toggle to the right:
 

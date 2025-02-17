@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,42 +26,31 @@ context('Delete unlock/lock object', () => {
         });
     }
 
-    function deleteObjectViaShortcut(shortcut, stateLockObject) {
-        if (stateLockObject === 'unlock') {
-            cy.get('.cvat-canvas-container').within(() => {
-                cy.get('.cvat_canvas_shape').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
-            });
-        }
+    function deleteObjectViaShortcut(shortcut) {
+        cy.get('body').click();
+        cy.get('.cvat-objects-sidebar-state-item').trigger('mouseover');
+        cy.get('.cvat-objects-sidebar-state-item').should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
-    }
-
-    function clickRemoveOnDropdownMenu() {
-        cy.get('.cvat-object-item-menu').contains(new RegExp('^Remove$', 'g')).click({ force: true });
     }
 
     function deleteObjectViaGUIFromSidebar() {
         cy.get('.cvat-objects-sidebar-states-list').within(() => {
-            cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('span[aria-label="more"]').click();
-            });
+            cy.interactAnnotationObjectMenu('.cvat-objects-sidebar-state-item', 'Remove');
         });
-        clickRemoveOnDropdownMenu();
     }
 
     function deleteObjectViaGUIFromObject() {
         cy.get('.cvat-canvas-container').within(() => {
-            cy.get('.cvat_canvas_shape').trigger('mousemove').rightclick();
+            cy.get('.cvat_canvas_shape').trigger('mousemove');
+            cy.get('.cvat_canvas_shape').rightclick();
         });
         cy.get('.cvat-canvas-context-menu').within(() => {
-            cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('span[aria-label="more"]').click();
-            });
+            cy.interactAnnotationObjectMenu('.cvat-objects-sidebar-state-item', 'Remove');
         });
-        clickRemoveOnDropdownMenu();
     }
 
     function actionOnConfirmWindow(textBuntton) {
-        cy.get('.cvat-modal-confirm').within(() => {
+        cy.get('.cvat-modal-confirm-remove-object').within(() => {
             cy.contains(new RegExp(`^${textBuntton}$`, 'g')).click();
         });
     }
@@ -71,11 +61,12 @@ context('Delete unlock/lock object', () => {
     }
 
     function checkFailDeleteLockObject(shortcut) {
-        deleteObjectViaShortcut(shortcut, 'lock');
+        deleteObjectViaShortcut(shortcut);
         checkExistObject('exist');
-        cy.get('.cvat-modal-confirm').should('exist');
-        cy.get('.cvat-modal-confirm').within(() => {
+        cy.get('.cvat-modal-confirm-remove-object').should('exist');
+        cy.get('.cvat-modal-confirm-remove-object').within(() => {
             cy.contains('Cancel').click();
+            cy.get('.cvat-modal-confirm-remove-object').should('not.exist');
         });
     }
 
@@ -86,7 +77,7 @@ context('Delete unlock/lock object', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Create and delete object via "Delete" shortcut', () => {
             cy.createRectangle(createRectangleShape2Points);
-            deleteObjectViaShortcut('{del}', 'unlock');
+            deleteObjectViaShortcut('{del}');
             checkExistObject('not.exist');
         });
 
@@ -100,7 +91,7 @@ context('Delete unlock/lock object', () => {
             cy.createRectangle(createRectangleShape2Points);
             lockObject();
             checkFailDeleteLockObject('{del}');
-            deleteObjectViaShortcut('{shift}{del}', 'lock');
+            deleteObjectViaShortcut('{shift}{del}');
             checkExistObject('not.exist');
         });
 

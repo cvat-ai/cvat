@@ -18,8 +18,6 @@
         }
     ],
     "npm.exclude": "**/.env/**",
-    "licenser.license": "Custom",
-    "licenser.customHeader": "Copyright (C) @YEAR@ CVAT.ai Corporation\n\nSPDX-License-Identifier: MIT",
     "files.trimTrailingWhitespace": true,
     "sqltools.connections": [
         {
@@ -29,15 +27,24 @@
             "database": "${workspaceFolder:cvat}/db.sqlite3"
         }
     ],
+    "python.analysis.exclude": [
+        // VS Code defaults
+        "**/node_modules",
+        "**/__pycache__",
+        ".git",
+
+        "cvat-cli/build",
+        "cvat-sdk/build",
+    ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pycodestyleEnabled": false,
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.testing.pytestPath": "${workspaceFolder}/.env/bin/pytest",
-    "python.testing.cwd": "${workspaceFolder}/tests"
+    "python.testing.cwd": "${workspaceFolder}/tests",
+    "cSpell.words": [
+        "crowdsourcing"
+    ]
 }

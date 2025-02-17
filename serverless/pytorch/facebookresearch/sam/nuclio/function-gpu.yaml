@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,10 +10,10 @@ metadata:
     version: 2
     type: interactor
     spec:
-    framework: pytorch
-    min_pos_points: 1
+    min_pos_points: 0
     min_neg_points: 0
-    animated_gif: https://raw.githubusercontent.com/opencv/cvat/develop/site/content/en/images/hrnet_example.gif
+    startswith_box_optional: true
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
     help_message: The interactor allows to get a mask of an object using at least one positive, and any negative points inside it
 
 spec:
@@ -26,7 +26,7 @@ spec:
       value: /opt/nuclio/sam
 
   build:
-    image: cvat.pth.facebookresearch.sam.vit_h
+    image: cvat.pth.facebookresearch.sam.vit_h:latest-gpu
     baseImage: ubuntu:22.04
 
     directives:
@@ -47,7 +47,7 @@ spec:
           value: apt-get update && apt-get -y install curl git python3 python3-pip ffmpeg libsm6 libxext6
       # install sam deps
         - kind: RUN
-          value: pip3 install torch torchvision torchaudio opencv-python pycocotools matplotlib onnxruntime onnx
+          value: pip3 install torch torchvision torchaudio pycocotools matplotlib onnxruntime onnx
       # install sam code
         - kind: RUN
           value: pip3 install git+https://github.com/facebookresearch/segment-anything.git
@@ -59,7 +59,7 @@ spec:
           value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
   triggers:
     myHttpTrigger:
-      maxWorkers: 1
+      numWorkers: 1
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

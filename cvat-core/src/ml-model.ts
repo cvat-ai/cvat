@@ -1,19 +1,18 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
-import { decodePreview } from './frames';
-import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
-    SerializedModel, ModelAttribute, ModelParams, ModelTip,
+    LabelType, ModelProviders, ModelKind,
+} from './enums';
+import {
+    SerializedModel, ModelParams, MLModelTip, MLModelLabel,
 } from './core-types';
 
 export default class MLModel {
     private serialized: SerializedModel;
-    private changeToolsBlockerStateCallback?: (event: string) => void;
 
     constructor(serialized: SerializedModel) {
         this.serialized = { ...serialized };
@@ -27,20 +26,12 @@ export default class MLModel {
         return this.serialized.name;
     }
 
-    public get labels(): string[] {
-        return Array.isArray(this.serialized.labels) ? [...this.serialized.labels] : [];
+    public get labels(): MLModelLabel[] {
+        return Array.isArray(this.serialized.labels_v2) ? [...this.serialized.labels_v2] : [];
     }
 
     public get version(): number {
         return this.serialized.version;
-    }
-
-    public get attributes(): Record<string, ModelAttribute> {
-        return this.serialized.attributes || {};
-    }
-
-    public get framework(): string {
-        return this.serialized.framework;
     }
 
     public get description(): string {
@@ -51,23 +42,31 @@ export default class MLModel {
         return this.serialized.kind;
     }
 
+    public get displayKind(): string {
+        if (this.kind === ModelKind.DETECTOR) {
+            switch (this.returnType) {
+                case LabelType.TAG: return 'classifier';
+                case LabelType.MASK: return 'segmenter';
+                default: // fall back on the original kind
+            }
+        }
+        return this.kind;
+    }
+
     public get params(): ModelParams {
         const result: ModelParams = {
             canvas: {
                 minPosVertices: this.serialized.min_pos_points,
                 minNegVertices: this.serialized.min_neg_points,
                 startWithBox: this.serialized.startswith_box,
+                startWithBoxOptional: this.serialized.startswith_box_optional,
             },
         };
-
-        if (this.changeToolsBlockerStateCallback) {
-            result.canvas.onChangeToolsBlockerState = this.changeToolsBlockerStateCallback;
-        }
 
         return result;
     }
 
-    public get tip(): ModelTip {
+    public get tip(): MLModelTip {
         return {
             message: this.serialized.help_message,
             gif: this.serialized.animated_gif,
@@ -98,23 +97,13 @@ export default class MLModel {
         return this.serialized?.url;
     }
 
-    public get returnType(): ModelReturnType | undefined {
-        return this.serialized?.return_type;
-    }
+    public get returnType(): LabelType {
+        const uniqueLabelTypes = new Set(this.labels.map((label) => label.type));
 
-    // Used to set a callback when the tool is blocked in UI
-    public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
-        this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
-    }
+        if (uniqueLabelTypes.size !== 1) return LabelType.ANY;
 
-    public async save(): Promise<MLModel> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.save);
-        return result;
-    }
-
-    public async delete(): Promise<MLModel> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.delete);
-        return result;
+        const [labelType] = uniqueLabelTypes;
+        return labelType;
     }
 
     public async preview(): Promise<string> {
@@ -123,44 +112,12 @@ export default class MLModel {
     }
 }
 
-Object.defineProperties(MLModel.prototype.save, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(this: MLModel): Promise<MLModel> {
-            const modelData = {
-                provider: this.provider,
-                url: this.serialized.url,
-                api_key: this.serialized.api_key,
-            };
-
-            const model = await serverProxy.functions.create(modelData);
-            return new MLModel(model);
-        },
-    },
-});
-
-Object.defineProperties(MLModel.prototype.delete, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(this: MLModel): Promise<void> {
-            if (this.isDeletable) {
-                await serverProxy.functions.delete(this.id);
-            }
-        },
-    },
-});
-
 Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(this: MLModel): Promise<string> {
-            if (this.provider === ModelProviders.CVAT) return '';
-            const preview = await serverProxy.functions.getPreview(this.id);
-            if (!preview) return '';
-            return decodePreview(preview);
+        value: async function implementation(): Promise<string | null> {
+            return null;
         },
     },
 });

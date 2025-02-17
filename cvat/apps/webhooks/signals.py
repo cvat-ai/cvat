@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,17 +12,22 @@ import django_rq
 import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models.signals import (post_delete, post_save, pre_delete,
-                                      pre_save)
+from django.db import transaction
+from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.dispatch import Signal, receiver
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.events.handlers import (get_request, get_serializer, get_user,
-                                       get_instance_diff, organization_id,
-                                       project_id)
+from cvat.apps.events.handlers import (
+    get_instance_diff,
+    get_request,
+    get_serializer,
+    get_user,
+    organization_id,
+    project_id,
+)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
-from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
+from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
 from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
@@ -32,6 +37,7 @@ RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
 signal_redelivery = Signal()
 signal_ping = Signal()
+
 
 def send_webhook(webhook, payload, redelivery=False):
     headers = {}
@@ -58,9 +64,7 @@ def send_webhook(webhook, payload, redelivery=False):
                 proxies=PROXIES_FOR_UNTRUSTED_URLS,
             )
             status_code = response.status_code
-            response_body = response.raw.read(
-                RESPONSE_SIZE_LIMIT + 1, decode_content=True
-            )
+            response_body = response.raw.read(RESPONSE_SIZE_LIMIT + 1, decode_content=True)
     except requests.ConnectionError:
         status_code = HTTPStatus.BAD_GATEWAY
     except requests.Timeout:
@@ -81,6 +85,7 @@ def send_webhook(webhook, payload, redelivery=False):
     )
 
     return delivery
+
 
 def add_to_queue(webhook, payload, redelivery=False):
     queue = django_rq.get_queue(settings.CVAT_QUEUES.WEBHOOKS.value)
@@ -135,24 +140,32 @@ def get_sender(instance):
 @receiver(pre_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:pre_save")
 @receiver(pre_save, sender=Membership, dispatch_uid=__name__ + ":membership:pre_save")
 def pre_save_resource_event(sender, instance, **kwargs):
-    try:
-        old_instance = sender.objects.get(pk=instance.pk)
-    except ObjectDoesNotExist:
+    instance._webhooks_selected_webhooks = []
+
+    if instance.pk is None:
+        created = True
+    else:
+        try:
+            old_instance = sender.objects.get(pk=instance.pk)
+            created = False
+        except ObjectDoesNotExist:
+            created = True
+
+    resource_name = instance.__class__.__name__.lower()
+
+    event_type = event_name("create" if created else "update", resource_name)
+    if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
-    old_serializer = get_serializer(instance=old_instance)
-    serializer = get_serializer(instance=instance)
-    diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
-
-    if not diff:
+    instance._webhooks_selected_webhooks = select_webhooks(instance, event_type)
+    if not instance._webhooks_selected_webhooks:
         return
 
-    before_update = {
-        attr: value["old_value"]
-        for attr, value in diff.items()
-    }
-
-    instance._before_update = before_update
+    if created:
+        instance._webhooks_old_data = None
+    else:
+        old_serializer = get_serializer(instance=old_instance)
+        instance._webhooks_old_data = old_serializer.data
 
 
 @receiver(post_save, sender=Project, dispatch_uid=__name__ + ":project:post_save")
@@ -163,30 +176,37 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
 @receiver(post_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_save")
 @receiver(post_save, sender=Membership, dispatch_uid=__name__ + ":membership:post_save")
-def post_save_resource_event(sender, instance, created, **kwargs):
+def post_save_resource_event(sender, instance, **kwargs):
+    selected_webhooks = instance._webhooks_selected_webhooks
+    del instance._webhooks_selected_webhooks
+
+    if not selected_webhooks:
+        return
+
+    old_data = instance._webhooks_old_data
+    del instance._webhooks_old_data
+
+    created = old_data is None
+
     resource_name = instance.__class__.__name__.lower()
-
     event_type = event_name("create" if created else "update", resource_name)
-    if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
-        return
 
-    filtered_webhooks = select_webhooks(instance, event_type)
-    if not filtered_webhooks:
-        return
+    serializer = get_serializer(instance=instance)
 
     data = {
         "event": event_type,
-        resource_name: get_serializer(instance=instance).data,
+        resource_name: serializer.data,
         "sender": get_sender(instance),
     }
 
     if not created:
-        if before_update := getattr(instance, "_before_update", None):
-            data["before_update"] = before_update
-        else:
-            return
+        if diff := get_instance_diff(old_data=old_data, data=serializer.data):
+            data["before_update"] = {attr: value["old_value"] for attr, value in diff.items()}
 
-    batch_add_to_queue(filtered_webhooks, data)
+    transaction.on_commit(
+        lambda: batch_add_to_queue(selected_webhooks, data),
+        robust=True,
+    )
 
 
 @receiver(pre_delete, sender=Project, dispatch_uid=__name__ + ":project:pre_delete")
@@ -232,9 +252,16 @@ def post_delete_resource_event(sender, instance, **kwargs):
         "sender": get_sender(instance),
     }
 
-    batch_add_to_queue(filtered_webhooks, data)
-    related_webhooks = [webhook for webhook in getattr(instance, "_related_webhooks", []) if webhook.id not in map(lambda a: a.id, filtered_webhooks)]
-    batch_add_to_queue(related_webhooks, data)
+    related_webhooks = [
+        webhook
+        for webhook in getattr(instance, "_related_webhooks", [])
+        if webhook.id not in map(lambda a: a.id, filtered_webhooks)
+    ]
+
+    transaction.on_commit(
+        lambda: batch_add_to_queue(filtered_webhooks + related_webhooks, data),
+        robust=True,
+    )
 
 
 @receiver(signal_redelivery)

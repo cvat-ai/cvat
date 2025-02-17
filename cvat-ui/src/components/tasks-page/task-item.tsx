@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,22 +9,23 @@ import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
-
-import { Task, RQStatus } from 'cvat-core-wrapper';
+import { Task, RQStatus, Request } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
+import StatusMessage from 'components/requests-page/request-status';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
     taskInstance: any;
     deleted: boolean;
     activeInference: ActiveInference | null;
+    activeRequest: Request | null;
     ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
     updateTaskInState(task: Task): void;
@@ -55,33 +56,50 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public componentDidMount(): void {
-        const { taskInstance, updateTaskInState } = this.props;
+        const { taskInstance, updateTaskInState, activeRequest } = this.props;
         const { importingState } = this.state;
 
-        if (importingState !== null) {
-            taskInstance.listenToCreate((state: RQStatus, progress: number, message: string) => {
-                if (!this.#isUnmounted) {
-                    this.setState({
-                        importingState: {
-                            message,
-                            progress: Math.floor(progress * 100),
-                            state,
-                        },
-                    });
-                }
-            }).then((createdTask: Task) => {
+        if (importingState !== null && activeRequest !== null) {
+            if (!this.#isUnmounted) {
+                this.setState({
+                    importingState: {
+                        message: activeRequest.message,
+                        progress: Math.floor(activeRequest.progress * 100),
+                        state: activeRequest.status,
+                    },
+                });
+            }
+            taskInstance.listenToCreate(activeRequest.id, {
+                callback: (request: Request) => {
+                    if (!this.#isUnmounted) {
+                        this.setState({
+                            importingState: {
+                                message: request.message,
+                                progress: Math.floor(request.progress * 100),
+                                state: request.status,
+                            },
+                        });
+                    }
+                },
+                initialRequest: activeRequest,
+            },
+            ).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
                     this.setState({ importingState: null });
+
                     setTimeout(() => {
-                        const { taskInstance: currentTaskInstance } = this.props;
-                        if (currentTaskInstance.size !== createdTask.size) {
-                            // update state only if it was not updated anywhere else
-                            // for example in createTaskAsync
-                            updateTaskInState(createdTask);
+                        if (!this.#isUnmounted) {
+                            // check again, because the component may be unmounted to this moment
+                            const { taskInstance: currentTaskInstance } = this.props;
+                            if (currentTaskInstance.size !== createdTask.size) {
+                                // update state only if it was not updated anywhere else
+                                // for example in createTaskAsync
+                                updateTaskInState(createdTask);
+                            }
                         }
                     }, 1000);
                 }
-            });
+            }).catch(() => {});
         }
     }
 
@@ -112,14 +130,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const updated = moment(taskInstance.updatedDate).fromNow();
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
 
-        // Get and truncate a task name
-        const name = `${taskInstance.name.substring(0, 70)}${taskInstance.name.length > 70 ? '...' : ''}`;
-
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                <Text strong className='cvat-item-task-name'>
-                    {name}
+                <Text ellipsis={{ tooltip: taskInstance.name }}>
+                    <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                    <Text strong className='cvat-item-task-name'>
+                        {taskInstance.name}
+                    </Text>
                 </Text>
                 <br />
                 {owner && (
@@ -138,31 +155,22 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { importingState } = this.state;
 
         if (importingState) {
-            let textType: 'success' | 'danger' = 'success';
-            if (!!importingState.state && [RQStatus.FAILED, RQStatus.UNKNOWN].includes(importingState.state)) {
-                textType = 'danger';
-            }
-
             return (
                 <Col span={7}>
                     <Row>
                         <Col span={24} className='cvat-task-item-progress-wrapper'>
                             <div>
-                                <Text
-                                    strong
-                                    type={[RQStatus.QUEUED, null].includes(importingState.state) ? undefined : textType}
-                                >
-                                    {`\u2022 ${importingState.message || importingState.state}`}
-                                    { !!importingState.state && [RQStatus.QUEUED, RQStatus.STARTED]
-                                        .includes(importingState.state) && <LoadingOutlined /> }
-                                </Text>
+                                <StatusMessage status={importingState.state} message={importingState.message} />
                             </div>
-                            <Progress
-                                percent={importingState.progress}
-                                strokeColor='#1890FF'
-                                strokeWidth={5}
-                                size='small'
-                            />
+                            {
+                                importingState.state !== RQStatus.FAILED ? (
+                                    <Progress
+                                        percent={importingState.progress}
+                                        strokeColor='#1890FF'
+                                        size='small'
+                                    />
+                                ) : null
+                            }
                         </Col>
                     </Row>
                 </Col>
@@ -210,7 +218,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             }}
                             strokeColor='#1890FF'
                             showInfo={false}
-                            strokeWidth={5}
                             size='small'
                         />
                     </Col>
@@ -230,6 +237,9 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         const onViewAnalytics = (): void => {
             history.push(`/tasks/${taskInstance.id}/analytics`);
+        };
+        const onViewQualityControl = (): void => {
+            history.push(`/tasks/${taskInstance.id}/quality-control`);
         };
 
         return (
@@ -254,11 +264,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row justify='end'>
                     <Dropdown
+                        trigger={['click']}
                         destroyPopupOnHide
                         overlay={(
                             <ActionsMenuContainer
                                 taskInstance={taskInstance}
                                 onViewAnalytics={onViewAnalytics}
+                                onViewQualityControl={onViewQualityControl}
                             />
                         )}
                     >

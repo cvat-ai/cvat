@@ -1,45 +1,13 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-export interface SerializedQualityReportData {
-    id?: number;
-    parent_id?: number;
-    project_id?: number;
-    task_id?: number;
-    job_id?: number;
-    target: string;
-    created_date?: string;
-    gt_last_updated?: string;
-    summary?: {
-        frame_count: number,
-        frame_share: number,
-        frames_with_errors: number,
-        total_frames: number,
-        conflict_count: number,
-        valid_count: number,
-        ds_count: number,
-        gt_count: number,
-        error_count: number,
-        warning_count: number,
-        conflicts_by_type: {
-            extra_annotation: number,
-            missing_annotation: number,
-            mismatching_label: number,
-            low_overlap: number,
-            mismatching_direction: number,
-            mismatching_attributes: number,
-            mismatching_groups: number,
-            covered_annotation: number,
-        }
-    };
-}
+import { SerializedQualityReportData } from './server-response-types';
+import User from './user';
 
 export interface QualitySummary {
     frameCount: number;
     frameSharePercent: number;
-    framesWithErrors: number;
-    totalFrames: number;
     conflictCount: number;
     validCount: number;
     dsCount: number;
@@ -63,45 +31,46 @@ export interface QualitySummary {
 
 export default class QualityReport {
     #id: number;
-    #parentId: number;
-    #projectId: number;
-    #taskId: number;
-    #jobId: number;
+    #parentID: number;
+    #taskID: number;
+    #jobID: number;
     #target: string;
     #createdDate: string;
     #gtLastUpdated: string;
+    #assignee: User | null;
     #summary: Partial<SerializedQualityReportData['summary']>;
 
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
-        this.#parentId = initialData.parent_id;
-        this.#projectId = initialData.project_id;
-        this.#taskId = initialData.task_id;
-        this.#jobId = initialData.job_id;
+        this.#parentID = initialData.parent_id;
+        this.#taskID = initialData.task_id;
+        this.#jobID = initialData.job_id;
         this.#target = initialData.target;
         this.#gtLastUpdated = initialData.gt_last_updated;
         this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
+
+        if (initialData.assignee) {
+            this.#assignee = new User(initialData.assignee);
+        } else {
+            this.#assignee = null;
+        }
     }
 
     get id(): number {
         return this.#id;
     }
 
-    get parentId(): number {
-        return this.#parentId;
+    get parentID(): number {
+        return this.#parentID;
     }
 
-    get projectId(): number {
-        return this.#projectId;
+    get taskID(): number {
+        return this.#taskID;
     }
 
-    get taskId(): number {
-        return this.#taskId;
-    }
-
-    get jobId(): number {
-        return this.#jobId;
+    get jobID(): number {
+        return this.#jobID;
     }
 
     get target(): string {
@@ -116,18 +85,19 @@ export default class QualityReport {
         return this.#createdDate;
     }
 
+    get assignee(): User | null {
+        return this.#assignee;
+    }
+
     get summary(): QualitySummary {
         return {
             frameCount: this.#summary.frame_count,
             frameSharePercent: this.#summary.frame_share * 100,
-            framesWithErrors: this.#summary.frames_with_errors,
-            totalFrames: this.#summary.total_frames,
             conflictCount: this.#summary.conflict_count,
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,
             gtCount: this.#summary.gt_count,
-            accuracy: (this.#summary.valid_count /
-                (this.#summary.ds_count + this.#summary.gt_count - this.#summary.valid_count)) * 100,
+            accuracy: (this.#summary.valid_count / this.#summary.total_count) * 100,
             precision: (this.#summary.valid_count / this.#summary.gt_count) * 100,
             recall: (this.#summary.valid_count / this.#summary.ds_count) * 100,
             conflictsByType: {

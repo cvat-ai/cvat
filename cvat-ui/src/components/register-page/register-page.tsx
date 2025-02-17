@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,23 +10,22 @@ import { Row, Col } from 'antd/lib/grid';
 
 import { UserAgreement } from 'reducers';
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
-import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
+import RegisterForm, { RegisterData } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
     userAgreements: UserAgreement[];
     onRegister: (
-        username: string,
-        firstName: string,
-        lastName: string,
-        email: string,
-        password: string,
-        confirmations: UserConfirmation[],
+        registerData: RegisterData,
     ) => void;
+    predefinedEmail?: string;
+    hideLoginLink?: boolean;
 }
 
 function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
-    const { fetching, userAgreements, onRegister } = props;
+    const {
+        fetching, userAgreements, onRegister, predefinedEmail, hideLoginLink,
+    } = props;
 
     return (
         <SigningLayout>
@@ -36,15 +35,10 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                         <RegisterForm
                             fetching={fetching}
                             userAgreements={userAgreements}
+                            predefinedEmail={predefinedEmail}
+                            hideLoginLink={hideLoginLink}
                             onSubmit={(registerData: RegisterData): void => {
-                                onRegister(
-                                    registerData.username,
-                                    registerData.firstName,
-                                    registerData.lastName,
-                                    registerData.email,
-                                    registerData.password,
-                                    registerData.confirmations,
-                                );
+                                onRegister(registerData);
                             }}
                         />
                     </Col>

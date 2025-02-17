@@ -1,13 +1,6 @@
-{{- $version := .Capabilities.KubeVersion.GitVersion -}}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "cvat.fullname" . -}}
-{{- if semverCompare ">=1.19-0" $version -}}
 apiVersion: networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" $version -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
 kind: Ingress
 metadata:
   name: {{ $fullName }}
@@ -19,40 +12,35 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-{{- if semverCompare ">=1.19-0" $version }}
-  ingressClassName: {{ .Values.ingress.className }}
+{{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className | toYaml }}
+{{- else if and .Values.traefik.enabled .Values.traefik.ingressClass.enabled }}
+  ingressClassName: {{ .Values.traefik.ingressClass.name | default (include "traefik.fullname" .Subcharts.traefik) }}
 {{- end }}
-{{- if .Values.ingress.tls }}
+  {{- if .Values.ingress.tls }}
   tls:
-  {{- range .Values.ingress.tls }}
-    - hosts:
-      {{- range .hosts }}
-        - {{ . | quote }}
-      {{- end }}
-      secretName: {{ .secretName }}
+  - hosts:
+    - {{ .Values.ingress.hostname }}
+    secretName: {{ .Values.ingress.tlsSecretName }}
   {{- end }}
-{{- end }}
   rules:
-  {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
-      http:
-        paths:
-        {{- range .paths }}
-          - path: {{ .path }}
-            {{- if .pathType }}
-            pathType: {{ .pathType }}
-            {{- end }}
-            {{- if semverCompare ">=1.19-0" $version }}
-            backend:
-              service:
-                name: {{ $.Release.Name }}-{{ .service.name }}
-                port:
-                  number: {{ .service.port }}
-            {{- else }}
-            backend:
-              serviceName: {{ .service.name }}
-              servicePort: {{ .service.port }}
-            {{- end }}
-        {{- end }}
-  {{- end }}
+  - host: {{ .Values.ingress.hostname }}
+    http:
+      paths:
+      {{- range tuple "api" "admin" "static" "django-rq" "profiler" }}
+      - path: "/{{ . }}"
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Release.Name }}-backend-service
+            port:
+              number: 8080
+      {{- end }}
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-frontend-service
+            port:
+              number: 80
 {{- end }}

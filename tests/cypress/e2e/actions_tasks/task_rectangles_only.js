@@ -1,4 +1,5 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +25,7 @@ context('Creating a task with only bounding boxes', () => {
     let taskID = null;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(
             imagesFolder,
@@ -71,17 +72,19 @@ context('Creating a task with only bounding boxes', () => {
                         cy.get(`.cvat-label-type-option-${labelSpecification.type}`).click();
                     });
             }
-            cy.contains('Continue').scrollIntoView().click();
+            cy.contains('Continue').scrollIntoView();
+            cy.contains('Continue').click();
             cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
 
             cy.intercept('/api/tasks?**').as('taskPost');
-            cy.contains('Submit & Open').scrollIntoView().click();
+            cy.contains('Submit & Open').scrollIntoView();
+            cy.contains('Submit & Open').click();
 
             cy.wait('@taskPost').then((interception) => {
                 taskID = interception.response.body.id;
                 expect(interception.response.statusCode).to.be.equal(201);
                 cy.intercept(`/api/tasks/${taskID}`).as('getTask');
-                cy.wait('@getTask', { timeout: 10000 });
+                cy.wait('@getTask');
                 cy.get('.cvat-job-item').should('exist').and('be.visible');
                 cy.openJob();
 

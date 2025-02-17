@@ -1,15 +1,14 @@
-// Copyright (C) 2021-2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { Dispatch } from 'react';
+import React from 'react';
 import { ObjectState } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { AnyAction } from 'redux';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
-import { LogType } from 'cvat-logger';
 import { connect } from 'react-redux';
+import { ThunkDispatch } from 'utils/redux';
 
 interface OwnProps {
     readonly: boolean;
@@ -20,7 +19,6 @@ interface OwnProps {
 interface StateToProps {
     collapsed: boolean;
     state: ObjectState | null;
-    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -48,9 +46,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 collapsedAll,
                 collapsed: statesCollapsed,
             },
-            job: {
-                instance: jobInstance,
-            },
         },
     } = state;
 
@@ -59,11 +54,10 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         collapsed,
         state: objectState,
-        jobInstance,
     };
 }
 
-function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
+function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
         updateState(state: ObjectState): void {
             dispatch(updateAnnotationsAsync([state]));
@@ -77,15 +71,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
 type Props = StateToProps & DispatchToProps & OwnProps;
 class ObjectItemDetailsContainer extends React.PureComponent<Props> {
     private changeAttribute = (id: number, value: string): void => {
-        const {
-            state, readonly, jobInstance, updateState,
-        } = this.props;
+        const { state, readonly, updateState } = this.props;
         if (!readonly && state) {
-            jobInstance.logger.log(LogType.changeAttribute, {
-                id,
-                value,
-                object_id: state.clientID,
-            });
             const attr: Record<number, string> = {};
             attr[id] = value;
             state.attributes = attr;

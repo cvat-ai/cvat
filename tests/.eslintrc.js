@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-const globalConfig = require('../.eslintrc.js');
+const globalConfig = require('../.eslintrc.cjs');
 
 module.exports = {
     root: true,
     parserOptions: {
-        parser: 'babel-eslint',
+        parser: '@babel/eslint-parser',
         sourceType: 'module',
     },
     ignorePatterns: [

@@ -1,8 +1,12 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
+import operator
+from collections import defaultdict
+from collections.abc import Iterable
+from copy import deepcopy
 
 import pytest
 
@@ -58,6 +62,79 @@ def tasks():
         return Container(json.load(f)["results"])
 
 
+def filter_assets(resources: Iterable, **kwargs):
+    filtered_resources = []
+    exclude_prefix = "exclude_"
+
+    for resource in resources:
+        is_matched = True
+        for key, value in kwargs.items():
+            if not is_matched:
+                break
+
+            op = operator.eq
+            if key.startswith(exclude_prefix):
+                key = key[len(exclude_prefix) :]
+                op = operator.ne
+
+            cur_value, rest = resource, key
+            while rest:
+                field_and_rest = rest.split("__", maxsplit=1)
+                if 2 == len(field_and_rest):
+                    field, rest = field_and_rest
+                else:
+                    field, rest = field_and_rest[0], None
+                cur_value = cur_value[field]
+                # e.g. task has null target_storage
+                if not cur_value:
+                    break
+
+            if not (not rest and op(cur_value, value) or rest and op == operator.ne):
+                is_matched = False
+
+        if is_matched:
+            filtered_resources.append(resource)
+
+    return filtered_resources
+
+
+@pytest.fixture(scope="session")
+def filter_projects(projects):
+    def filter_(**kwargs):
+        return filter_assets(projects, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
+def filter_tasks(tasks):
+    def filter_(**kwargs):
+        return filter_assets(tasks, **kwargs)
+
+    return filter_
+
+
+@pytest.fixture(scope="session")
+def tasks_wlc(labels, tasks):  # tasks with labels count
+    tasks = deepcopy(tasks)
+    tasks_by_project = defaultdict(list)
+    for task in tasks:
+        tasks_by_project[task["project_id"]].append(task)
+        task["labels"]["count"] = 0
+
+    for label in labels:
+        task_id = label.get("task_id")
+        project_id = label.get("project_id")
+        if not label["parent_id"]:
+            if task_id:
+                tasks[task_id]["labels"]["count"] += 1
+            elif project_id:
+                for task in tasks_by_project[project_id]:
+                    task["labels"]["count"] += 1
+
+    return tasks
+
+
 @pytest.fixture(scope="session")
 def projects():
     with open(ASSETS_DIR / "projects.json") as f:
@@ -65,9 +142,32 @@ def projects():
 
 
 @pytest.fixture(scope="session")
+def projects_wlc(projects, labels):  # projects with labels count
+    projects = deepcopy(projects)
+    for project in projects:
+        project["labels"]["count"] = 0
+
+    for label in labels:
+        project_id = label.get("project_id")
+        if not label["parent_id"] and project_id:
+            projects[project_id]["labels"]["count"] += 1
+
+    return projects
+
+
+@pytest.fixture(scope="session")
 def jobs():
     with open(ASSETS_DIR / "jobs.json") as f:
         return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
+def jobs_wlc(jobs, tasks_wlc):  # jobs with labels count
+    jobs = deepcopy(jobs)
+    for job in jobs:
+        tid = job["task_id"]
+        job["labels"]["count"] = tasks_wlc[tid]["labels"]["count"]
+    return jobs
 
 
 @pytest.fixture(scope="session")
@@ -82,8 +182,11 @@ def annotations():
         return json.load(f)
 
 
+CloudStorageAssets = Container
+
+
 @pytest.fixture(scope="session")
-def cloud_storages():
+def cloud_storages() -> CloudStorageAssets:
     with open(ASSETS_DIR / "cloudstorages.json") as f:
         return Container(json.load(f)["results"])
 
@@ -246,10 +349,8 @@ def is_issue_admin(issues, jobs, is_task_staff):
 def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
-        assert any(kwargs.values())
 
         data = test_db
-        kwargs = dict(filter(lambda a: a[1] is not None, kwargs.items()))
         for field, value in kwargs.items():
             if field.startswith("exclude_"):
                 field = field.split("_", maxsplit=1)[1]
@@ -266,14 +367,28 @@ def find_users(test_db):
 @pytest.fixture(scope="session")
 def test_db(users, users_by_name, memberships):
     data = []
-    fields = ["username", "id", "privilege", "role", "org", "membership_id"]
+    fields = [
+        "username",
+        "id",
+        "privilege",
+        "role",
+        "org",
+        "membership_id",
+        "is_superuser",
+        "has_analytics_access",
+    ]
 
     def add_row(**kwargs):
         data.append({field: kwargs.get(field) for field in fields})
 
     for user in users:
         for group in user["groups"]:
-            add_row(username=user["username"], id=user["id"], privilege=group)
+            add_row(
+                username=user["username"],
+                id=user["id"],
+                privilege=group,
+                has_analytics_access=user["has_analytics_access"],
+            )
 
     for membership in memberships:
         username = membership["user"]["username"]
@@ -285,6 +400,7 @@ def test_db(users, users_by_name, memberships):
                 id=membership["user"]["id"],
                 org=membership["organization"],
                 membership_id=membership["id"],
+                has_analytics_access=users_by_name[username]["has_analytics_access"],
             )
 
     return data
@@ -420,3 +536,14 @@ def regular_lonely_user(users):
         if user["username"] == "lonely_user":
             return user["username"]
     raise Exception("Can't find the lonely user in the test DB")
+
+
+@pytest.fixture(scope="session")
+def job_has_annotations(annotations) -> bool:
+    def check_has_annotations(job_id: int) -> bool:
+        job_annotations = annotations["job"][str(job_id)]
+        return bool(
+            job_annotations["tags"] or job_annotations["shapes"] or job_annotations["tracks"]
+        )
+
+    return check_has_annotations

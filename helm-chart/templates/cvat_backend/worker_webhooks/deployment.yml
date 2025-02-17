@@ -1,0 +1,85 @@
+{{- $localValues := .Values.cvat.backend.worker.webhooks -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend-worker-webhooks
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: cvat-app
+    tier: backend
+    component: worker-webhooks
+    {{- include "cvat.labels" . | nindent 4 }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $localValues.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "cvat.labels" . | nindent 6 }}
+      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      app: cvat-app
+      tier: backend
+      component: worker-webhooks
+  template:
+    metadata:
+      labels:
+        app: cvat-app
+        tier: backend
+        component: worker-webhooks
+        {{- include "cvat.labels" . | nindent 8 }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
+      containers:
+        - name: cvat-backend
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args: ["run", "worker.webhooks"]
+          env:
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- $probeArgs := list "webhooks" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+          volumeMounts:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
+      volumes:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

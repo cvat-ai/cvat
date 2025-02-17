@@ -9,6 +9,7 @@ import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
 import { CombinedState } from 'reducers';
+import { Membership } from 'cvat-core-wrapper';
 import TopBarComponent from './top-bar';
 import MembersList from './members-list';
 
@@ -16,7 +17,7 @@ function fetchMembers(
     organizationInstance: any,
     page: number,
     pageSize: number,
-    setMembers: (members: any[]) => void,
+    setMembers: (members: Membership[]) => void,
     setFetching: (fetching: boolean) => void,
 ): void {
     setFetching(true);
@@ -37,7 +38,7 @@ function OrganizationPage(): JSX.Element | null {
     const updating = useSelector((state: CombinedState) => state.organizations.updating);
     const user = useSelector((state: CombinedState) => state.auth.user);
     const [membersFetching, setMembersFetching] = useState<boolean>(true);
-    const [members, setMembers] = useState<any[]>([]);
+    const [members, setMembers] = useState<Membership[]>([]);
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
 

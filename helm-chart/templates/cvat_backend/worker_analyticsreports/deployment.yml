@@ -1,3 +1,5 @@
+{{- $localValues := .Values.cvat.backend.worker.analyticsreports -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -8,68 +10,73 @@ metadata:
     tier: backend
     component: worker-analyticsreports
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with .Values.cvat.backend.worker.analyticsreports.labels }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.cvat.backend.worker.analyticsreports.annotations }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.cvat.backend.worker.analyticsreports.replicas }}
+  replicas: {{ $localValues.replicas }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
-      {{- with .Values.cvat.backend.worker.analyticsreports.labels }}
+      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-      app: cvat-app-worker-analyticsreports
+      app: cvat-app
       tier: backend
       component: worker-analyticsreports
   template:
     metadata:
       labels:
-        app: cvat-app-worker-analyticsreports
+        app: cvat-app
         tier: backend
         component: worker-analyticsreports
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with .Values.cvat.backend.worker.analyticsreports.labels }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.cvat.backend.worker.analyticsreports.annotations }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: {{ include "cvat.backend.serviceAccountName" . }}
       containers:
-        - name: cvat-app-backend-worker-analyticsreports-container
+        - name: cvat-backend
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
-          {{- with .Values.cvat.backend.worker.analyticsreports.resources }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args: ["run", "worker.analytics_reports"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{- with .Values.cvat.backend.worker.analyticsreports.additionalEnv }}
+          {{ include "cvat.sharedClickhouseEnv" . | indent 10 }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with .Values.cvat.backend.worker.analyticsreports.additionalVolumeMounts }}
+          {{- $probeArgs := list "analytics_reports" -}}
+          {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
+          {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
-      {{- with .Values.cvat.backend.worker.analyticsreports.affinity }}
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.worker.analyticsreports.tolerations }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.worker.analyticsreports.additionalVolumes }}
+      {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
       volumes:
       {{- toYaml . | nindent 8 }}
       {{- end }}

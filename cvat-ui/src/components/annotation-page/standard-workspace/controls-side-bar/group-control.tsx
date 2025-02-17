@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,105 +7,42 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 
 import { GroupIcon } from 'icons';
-import { DimensionType } from 'cvat-core-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { Canvas } from 'cvat-canvas-wrapper';
 
 export interface Props {
-    groupObjects(enabled: boolean): void;
-    resetGroup(): void;
-    canvasInstance: Canvas | Canvas3d;
-    activeControl: ActiveControl;
     disabled?: boolean;
-    jobInstance?: any;
-    shortcuts: {
-        SWITCH_GROUP_MODE: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-        RESET_GROUP: {
-            details: KeyMapItem;
-            displayValue: string;
-        };
-    }
+    dynamicIconProps: Record<string, any>;
+    canvasInstance: Canvas | Canvas3d;
 }
 
 function GroupControl(props: Props): JSX.Element {
     const {
-        groupObjects,
-        resetGroup,
-        activeControl,
-        canvasInstance,
         disabled,
-        jobInstance,
-        shortcuts,
+        dynamicIconProps,
+        canvasInstance,
     } = props;
 
-    const dynamicIconProps =
-        activeControl === ActiveControl.GROUP ?
-            {
-                className: 'cvat-group-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.group({ enabled: false });
-                    groupObjects(false);
-                },
-            } :
-            {
-                className: 'cvat-group-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.group({ enabled: true });
-                    groupObjects(true);
-                },
-            };
+    const { normalizedKeyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
-    const title = [
-        `Group shapes${
-            jobInstance && jobInstance.dimension === DimensionType.DIMENSION_3D ? '' : '/tracks'
-        } ${shortcuts.SWITCH_GROUP_MODE.displayValue}. `,
-        `Select and press ${shortcuts.RESET_GROUP.displayValue} to reset a group.`,
-    ].join(' ');
-
-    const shortcutHandlers = {
-        SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            const grouping = activeControl === ActiveControl.GROUP;
-            if (!grouping) {
-                canvasInstance.cancel();
-            }
-            canvasInstance.group({ enabled: !grouping });
-            groupObjects(!grouping);
-        },
-        RESET_GROUP: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            const grouping = activeControl === ActiveControl.GROUP;
-            if (!grouping) {
-                return;
-            }
-            resetGroup();
-            canvasInstance.group({ enabled: false });
-            groupObjects(false);
-        },
-    };
+    const title = [];
+    if (canvasInstance instanceof Canvas) {
+        title.push(`Group shapes ${normalizedKeyMap.SWITCH_GROUP_MODE_STANDARD_CONTROLS}`);
+        title.push(`Select and press ${normalizedKeyMap.RESET_GROUP_STANDARD_CONTROLS} to reset a group.`);
+    } else if (canvasInstance instanceof Canvas3d) {
+        title.push(`Group shapes/tracks ${normalizedKeyMap.SWITCH_GROUP_MODE_STANDARD_3D_CONTROLS}`);
+        title.push(`Select and press ${normalizedKeyMap.RESET_GROUP_STANDARD_3D_CONTROLS} to reset a group.`);
+    }
 
     return disabled ? (
         <Icon className='cvat-group-control cvat-disabled-canvas-control' component={GroupIcon} />
     ) : (
-        <>
-            <GlobalHotKeys
-                keyMap={{
-                    SWITCH_GROUP_MODE: shortcuts.SWITCH_GROUP_MODE.details,
-                    RESET_GROUP: shortcuts.RESET_GROUP.details,
-                }}
-                handlers={shortcutHandlers}
-            />
-            <CVATTooltip title={title} placement='right'>
-                <Icon {...dynamicIconProps} component={GroupIcon} />
-            </CVATTooltip>
-        </>
+        <CVATTooltip title={title.join(' ')} placement='right'>
+            <Icon {...dynamicIconProps} component={GroupIcon} />
+        </CVATTooltip>
     );
 }
 

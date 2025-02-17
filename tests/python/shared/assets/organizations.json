@@ -12,11 +12,11 @@
       "id": 2,
       "name": "Organization #2",
       "owner": {
-        "first_name": "Business",
+        "first_name": "User",
         "id": 10,
-        "last_name": "First",
+        "last_name": "Seventh",
         "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
+        "username": "user7"
       },
       "slug": "org2",
       "updated_date": "2021-12-14T19:51:38.667000Z"

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,12 +14,9 @@ import Spin from 'antd/lib/spin';
 import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
-import ReactMarkdown from 'react-markdown';
-import 'antd/dist/antd.css';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
-import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
 import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
@@ -32,6 +29,7 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ExportBackupModal from 'components/export-backup/export-backup-modal';
 import ImportDatasetModal from 'components/import-dataset/import-dataset-modal';
 import ImportBackupModal from 'components/import-backup/import-backup-modal';
+import UploadFileStatusModal from 'components/common/upload-file-status-modal';
 
 import JobsPageComponent from 'components/jobs-page/jobs-page';
 import ModelsPageComponent from 'components/models-page/models-page';
@@ -56,13 +54,17 @@ import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
-import GuidePage from 'components/md-guide/guide-page';
+import AnnotationGuidePage from 'components/md-guide/annotation-guide-page';
+
+import InvitationsPage from 'components/invitations-page/invitations-page';
+
+import RequestsPage from 'components/requests-page/requests-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import { getCore } from 'cvat-core-wrapper';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { NotificationsState, PluginsState } from 'reducers';
-import { customWaViewHit } from 'utils/environment';
+import { Organization, getCore } from 'cvat-core-wrapper';
+import {
+    ErrorState, NotificationState, NotificationsState, PluginsState,
+} from 'reducers';
 import showPlatformNotification, {
     platformInfo,
     stopNotifications,
@@ -70,33 +72,35 @@ import showPlatformNotification, {
 } from 'utils/platform-checker';
 import '../styles.scss';
 import appConfig from 'config';
-import EventRecorder from 'utils/controls-logger';
+import EventRecorder from 'utils/event-recorder';
+import { authQuery } from 'utils/auth-query';
+import CVATMarkdown from './common/cvat-markdown';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
-import CreateModelPage from './create-model-page/create-model-page';
 import CreateJobPage from './create-job-page/create-job-page';
-import OrganizationWatcher from './watchers/organization-watcher';
 import AnalyticsPage from './analytics-page/analytics-page';
+import QualityControlPage from './quality-control/quality-control-page';
+import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
     loadFormats: () => void;
     loadAbout: () => void;
-    verifyAuthorized: () => void;
+    verifyAuthenticated: () => void;
     loadUserAgreements: () => void;
     initPlugins: () => void;
     initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    switchShortcutsDialog: () => void;
-    switchSettingsDialog: () => void;
-    loadAuthActions: () => void;
-    loadOrganizations: () => void;
-    keyMap: KeyMap;
+    loadOrganization: () => void;
+    initInvitations: () => void;
+    initRequests: () => void;
+    loadServerAPISchema: () => void;
+    onChangeLocation: (from: string, to: string) => void;
     userInitialized: boolean;
     userFetching: boolean;
-    organizationsFetching: boolean;
-    organizationsInitialized: boolean;
+    organizationFetching: boolean;
+    organizationInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
@@ -107,19 +111,24 @@ interface CVATAppProps {
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
+    invitationsFetching: boolean;
+    invitationsInitialized: boolean;
+    requestsFetching: boolean;
+    requestsInitialized: boolean;
+    serverAPISchemaFetching: boolean;
+    serverAPISchemaInitialized: boolean;
+    isPasswordResetEnabled: boolean;
+    isRegistrationEnabled: boolean;
 }
 
 interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
 }
-
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
         super(props);
@@ -132,27 +141,39 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     public componentDidMount(): void {
         const core = getCore();
-        const { history, location } = this.props;
+        const { history, onChangeLocation } = this.props;
         const {
-            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
-            RESET_NOTIFICATIONS_PATHS,
+            HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT,
+            SERVER_UNAVAILABLE_COMPONENT, RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
-        // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
-        const userActivityCallback: (() => void)[] = [];
         window.addEventListener('click', (event: MouseEvent) => {
-            userActivityCallback.forEach((handler) => handler());
-            EventRecorder.log(event);
+            EventRecorder.recordMouseEvent(event);
         });
 
-        core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-        EventRecorder.initSave();
+        core.logger.configure(() => window.document.hasFocus());
+        core.config.onOrganizationChange = (newOrgId: number | null) => {
+            if (newOrgId === null) {
+                localStorage.removeItem('currentOrganization');
+                window.location.reload();
+            } else {
+                core.organizations.get({
+                    filter: `{"and":[{"==":[{"var":"id"},${newOrgId}]}]}`,
+                }).then(([organization]: Organization[]) => {
+                    if (organization) {
+                        localStorage.setItem('currentOrganization', organization.slug);
+                        window.location.reload();
+                    }
+                });
+            }
+        };
 
-        customWaViewHit(location.pathname, location.search, location.hash);
         history.listen((newLocation) => {
-            customWaViewHit(newLocation.pathname, newLocation.search, newLocation.hash);
             const { location: prevLocation } = this.props;
+
+            onChangeLocation(prevLocation.pathname, newLocation.pathname);
+
             const shouldResetNotifications = RESET_NOTIFICATIONS_PATHS.from.some(
                 (pathname) => prevLocation.pathname === pathname,
             );
@@ -236,20 +257,20 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: CVATAppProps): void {
         const {
-            verifyAuthorized,
+            verifyAuthenticated,
             loadFormats,
             loadAbout,
             loadUserAgreements,
             initPlugins,
             initModels,
-            loadOrganizations,
-            loadAuthActions,
+            loadOrganization,
+            loadServerAPISchema,
             userInitialized,
             userFetching,
-            organizationsFetching,
-            organizationsInitialized,
+            organizationFetching,
+            organizationInitialized,
             formatsInitialized,
             formatsFetching,
             aboutInitialized,
@@ -261,9 +282,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
-            authActionsFetching,
-            authActionsInitialized,
             isModelPluginActive,
+            invitationsInitialized,
+            invitationsFetching,
+            initInvitations,
+            requestsFetching,
+            requestsInitialized,
+            initRequests,
+            history,
+            serverAPISchemaFetching,
+            serverAPISchemaInitialized,
         } = this.props;
 
         const { backendIsHealthy } = this.state;
@@ -276,8 +304,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         this.showMessages();
 
         if (!userInitialized && !userFetching) {
-            verifyAuthorized();
+            verifyAuthenticated();
             return;
+        }
+
+        if (user !== prevProps.user) {
+            if (user) {
+                EventRecorder.initSave();
+            } else {
+                EventRecorder.cancelSave();
+            }
         }
 
         if (!userAgreementsInitialized && !userAgreementsFetching) {
@@ -285,28 +321,37 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (!authActionsInitialized && !authActionsFetching) {
-            loadAuthActions();
+        if (!serverAPISchemaInitialized && !serverAPISchemaFetching) {
+            loadServerAPISchema();
         }
 
-        if (user == null || !user.isVerified) {
+        if (!aboutInitialized && !aboutFetching) {
+            loadAbout();
             return;
         }
 
-        if (!organizationsInitialized && !organizationsFetching) {
-            loadOrganizations();
+        if (user == null || !user.isVerified || !user.id) {
+            return;
+        }
+
+        if (!organizationInitialized && !organizationFetching) {
+            loadOrganization();
         }
 
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
         }
 
-        if (!aboutInitialized && !aboutFetching) {
-            loadAbout();
+        if (organizationInitialized && !requestsInitialized && !requestsFetching) {
+            initRequests();
         }
 
         if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
+        }
+
+        if (!invitationsInitialized && !invitationsFetching && history.location.pathname !== '/invitations') {
+            initInvitations();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -315,24 +360,27 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showMessages(): void {
-        function showMessage(title: string): void {
+        const { notifications, resetMessages, history } = this.props;
+
+        function showMessage(notificationState: NotificationState): void {
             notification.info({
                 message: (
-                    <ReactMarkdown>{title}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{notificationState.message}</CVATMarkdown>
                 ),
-                duration: null,
+                description: notificationState?.description && (
+                    <CVATMarkdown history={history}>{notificationState?.description}</CVATMarkdown>
+                ),
+                duration: notificationState.duration || null,
             });
         }
-
-        const { notifications, resetMessages } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.messages)) {
             for (const what of Object.keys((notifications as any).messages[where])) {
-                const message = (notifications as any).messages[where][what];
-                shown = shown || !!message;
-                if (message) {
-                    showMessage(message);
+                const notificationState = (notifications as any).messages[where][what] as NotificationState;
+                shown = shown || !!notificationState;
+                if (notificationState) {
+                    showMessage(notificationState);
                 }
             }
         }
@@ -343,31 +391,45 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
-        function showError(title: string, _error: any, className?: string): void {
-            const error = _error.toString();
+        const { notifications, resetErrors, history } = this.props;
+
+        function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
+            const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
+
+            let errorLength = error.length;
+            // Do not count the length of the link in the Markdown error message
+            if (/]\(.+\)/.test(error)) {
+                errorLength = error.replace(/]\(.+\)/, ']').length;
+            }
+
             notification.error({
                 ...dynamicProps,
                 message: (
-                    <ReactMarkdown>{title}</ReactMarkdown>
+                    <CVATMarkdown history={history}>{title}</CVATMarkdown>
                 ),
                 duration: null,
-                description: error.length > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
+                description: errorLength > appConfig.MAXIMUM_NOTIFICATION_MESSAGE_LENGTH ?
+                    'Open the Browser Console to get details' : <CVATMarkdown history={history}>{error}</CVATMarkdown>,
             });
 
-            // eslint-disable-next-line no-console
-            console.error(error);
+            if (shouldLog) {
+                setTimeout(() => {
+                    // throw the error to be caught by global listener
+                    throw _error;
+                });
+            } else {
+                console.error(error);
+            }
         }
-
-        const { notifications, resetErrors } = this.props;
 
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
             for (const what of Object.keys((notifications as any).errors[where])) {
-                const error = (notifications as any).errors[where][what];
+                const error = (notifications as any).errors[where][what] as ErrorState;
                 shown = shown || !!error;
                 if (error) {
-                    showError(error.message, error.reason, error.className);
+                    showError(error.message, error.reason, error.shouldLog, error.className);
                 }
             }
         }
@@ -393,58 +455,38 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             formatsInitialized,
             modelsInitialized,
-            organizationsInitialized,
+            organizationInitialized,
             userAgreementsInitialized,
-            authActionsInitialized,
-            switchShortcutsDialog,
-            switchSettingsDialog,
+            serverAPISchemaInitialized,
             pluginComponents,
             user,
-            keyMap,
             location,
             isModelPluginActive,
+            isPasswordResetEnabled,
+            isRegistrationEnabled,
         } = this.props;
 
         const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
-        let readyForRender = userAgreementsInitialized && authActionsInitialized;
+        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized;
         readyForRender = readyForRender && (notRegisteredUserInitialized ||
             (
                 userInitialized &&
                 formatsInitialized &&
                 pluginsInitialized &&
                 aboutInitialized &&
-                organizationsInitialized &&
+                organizationInitialized &&
                 (!isModelPluginActive || modelsInitialized)
             )
         );
-
-        const subKeyMap = {
-            SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-            SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
-        };
-
-        const handlers = {
-            SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
-                if (event) event.preventDefault();
-
-                switchShortcutsDialog();
-            },
-            SWITCH_SETTINGS: (event: KeyboardEvent) => {
-                if (event) event.preventDefault();
-
-                switchSettingsDialog();
-            },
-        };
 
         const routesToRender = pluginComponents.router
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component());
 
-        const loggedInModals = pluginComponents.loggedInModals
-            .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
-            .map(({ component: Component }) => Component);
+        const queryParams = new URLSearchParams(location.search);
+        const authParams = authQuery(queryParams);
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -455,69 +497,70 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <Header />
                                 <Layout.Content style={{ height: '100%' }}>
                                     <ShortcutsDialog />
-                                    <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
-                                        <Switch>
-                                            <Route exact path='/auth/logout' component={LogoutComponent} />
-                                            <Route exact path='/projects' component={ProjectsPageComponent} />
-                                            <Route exact path='/projects/create' component={CreateProjectPageComponent} />
-                                            <Route exact path='/projects/:id' component={ProjectPageComponent} />
-                                            <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
-                                            <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
-                                            <Route exact path='/projects/:id/guide' component={GuidePage} />
-                                            <Route exact path='/tasks' component={TasksPageContainer} />
-                                            <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                            <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                            <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
-                                            <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
-                                            <Route exact path='/tasks/:id/guide' component={GuidePage} />
-                                            <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                            <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
-                                            <Route exact path='/jobs' component={JobsPageComponent} />
-                                            <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                    <Switch>
+                                        <Route exact path='/auth/logout' component={LogoutComponent} />
+                                        <Route exact path='/projects' component={ProjectsPageComponent} />
+                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
+                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
+                                        <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
+                                        <Route exact path='/projects/:id/guide' component={AnnotationGuidePage} />
+                                        <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/tasks' component={TasksPageContainer} />
+                                        <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
+                                        <Route exact path='/tasks/:id' component={TaskPageComponent} />
+                                        <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/tasks/:tid/quality-control' component={QualityControlPage} />
+                                        <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
+                                        <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/jobs' component={JobsPageComponent} />
+                                        <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/create'
+                                            component={CreateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/update/:id'
+                                            component={UpdateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/organizations/create'
+                                            component={CreateOrganizationComponent}
+                                        />
+                                        <Route exact path='/organization/webhooks' component={WebhooksPage} />
+                                        <Route exact path='/webhooks/create' component={CreateWebhookPage} />
+                                        <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
+                                        <Route exact path='/invitations' component={InvitationsPage} />
+                                        <Route exact path='/organization' component={OrganizationPage} />
+                                        <Route exact path='/requests' component={RequestsPage} />
+                                        { routesToRender }
+                                        {isModelPluginActive && (
                                             <Route
-                                                exact
-                                                path='/cloudstorages/create'
-                                                component={CreateCloudStoragePageComponent}
-                                            />
-                                            <Route
-                                                exact
-                                                path='/cloudstorages/update/:id'
-                                                component={UpdateCloudStoragePageComponent}
-                                            />
-                                            <Route
-                                                exact
-                                                path='/organizations/create'
-                                                component={CreateOrganizationComponent}
-                                            />
-                                            <Route exact path='/organization/webhooks' component={WebhooksPage} />
-                                            <Route exact path='/webhooks/create' component={CreateWebhookPage} />
-                                            <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
-                                            <Route exact path='/organization' component={OrganizationPage} />
-                                            { routesToRender }
-                                            {isModelPluginActive && (
-                                                <Route
-                                                    path='/models'
-                                                >
-                                                    <Switch>
-                                                        <Route exact path='/models' component={ModelsPageComponent} />
-                                                        <Route exact path='/models/create' component={CreateModelPage} />
-                                                    </Switch>
-                                                </Route>
-                                            )}
-                                            <Redirect
-                                                push
-                                                to={new URLSearchParams(location.search).get('next') || '/tasks'}
-                                            />
-                                        </Switch>
-                                    </GlobalHotKeys>
+                                                path='/models'
+                                            >
+                                                <Switch>
+                                                    <Route exact path='/models' component={ModelsPageComponent} />
+                                                </Switch>
+                                            </Route>
+                                        )}
+                                        <Redirect
+                                            push
+                                            to={{
+                                                pathname: queryParams.get('next') || '/tasks',
+                                                search: authParams ? new URLSearchParams(authParams).toString() : '',
+                                            }}
+                                        />
+                                    </Switch>
                                     <ExportDatasetModal />
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
-                                    { loggedInModals.map((Component, idx) => (
-                                        <Component key={idx} targetProps={this.props} targetState={this.state} />
-                                    ))}
-                                    <OrganizationWatcher />
+                                    <InvitationWatcher />
+                                    <UploadFileStatusModal />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>
@@ -529,29 +572,33 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
             return (
                 <GlobalErrorBoundary>
-                    <Switch>
-                        <Route exact path='/auth/register' component={RegisterPageContainer} />
-                        <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
-                        <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
-                        <Route exact path='/auth/login' component={LoginPageContainer} />
-                        <Route
-                            exact
-                            path='/auth/login-with-token/:token'
-                            component={LoginWithTokenComponent}
-                        />
-                        <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
-                        <Route
-                            exact
-                            path='/auth/password/reset/confirm'
-                            component={ResetPasswordPageConfirmComponent}
-                        />
+                    <>
+                        <Switch>
+                            {isRegistrationEnabled && (
+                                <Route exact path='/auth/register' component={RegisterPageContainer} />
+                            )}
+                            <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
+                            <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
+                            <Route exact path='/auth/login' component={LoginPageContainer} />
+                            {isPasswordResetEnabled && (
+                                <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
+                            )}
+                            {isPasswordResetEnabled && (
+                                <Route
+                                    exact
+                                    path='/auth/password/reset/confirm'
+                                    component={ResetPasswordPageConfirmComponent}
+                                />
+                            )}
 
-                        <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-                        { routesToRender }
-                        <Redirect
-                            to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
-                        />
-                    </Switch>
+                            <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
+                            { routesToRender }
+                            <Redirect
+                                to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
+                            />
+                        </Switch>
+                        <InvitationWatcher />
+                    </>
                 </GlobalErrorBoundary>
             );
         }
@@ -565,7 +612,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             );
         }
 
-        return <Spin size='large' className='cvat-spinner' tip='Connecting...' />;
+        return (
+            <Spin size='large' fullscreen className='cvat-spinner' tip='Connecting...' />
+        );
     }
 }
 

@@ -1,8 +1,9 @@
 ---
-title: "Manual drawing"
-linkTitle: "Manual drawing"
+title: 'Manual drawing'
+linkTitle: 'Manual drawing'
 weight: 1
 ---
+
 It is used for semantic / instance segmentation.
 
 Before starting, you need to select `Polygon` on the controls sidebar and choose the correct Label.
@@ -21,7 +22,8 @@ Before starting, you need to select `Polygon` on the controls sidebar and choose
   wheel) and move (when clicking the mouse wheel and moving the mouse), you can also
   delete the previous point by right-clicking on it.
 - You can use the `Selected opacity` slider in the `Objects sidebar` to change the opacity of the polygon.
-  You can read more in the [Objects sidebar](/docs/manual/basics/objects-sidebar/#appearance) section.
+  You can read more in the
+  {{< ilink "/docs/manual/basics/CVAT-annotation-Interface/objects-sidebar#appearance" "Objects sidebar" >}} section.
 - Press `N` again or click the `Done` button on the top panel for completing the shape.
 - After creating the polygon, you can move the points or delete them by right-clicking and selecting `Delete point`
   or clicking with pressed `Alt` key in the context menu.

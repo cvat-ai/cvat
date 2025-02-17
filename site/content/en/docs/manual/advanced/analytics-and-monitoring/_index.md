@@ -1,6 +1,6 @@
 ---
-title: 'CVAT Analytics and quality assessment in Cloud'
-linkTitle: 'Analytics and quality assessment'
+title: 'CVAT Analytics and QA in Cloud'
+linkTitle: 'Analytics and QA'
 weight: 14
 description: 'Analytics and quality assessment in CVAT Cloud'
 ---

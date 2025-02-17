@@ -1,9 +1,10 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
@@ -15,8 +16,7 @@ import Space from 'antd/lib/space';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
-import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
+import Popover from 'antd/lib/popover';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
 
@@ -31,7 +31,7 @@ import {
     removeOrganizationAsync,
     updateOrganizationAsync,
 } from 'actions/organization-actions';
-import { useHistory } from 'react-router-dom';
+import Menu from 'components/dropdown-menu';
 
 export interface Props {
     organizationInstance: any;
@@ -120,38 +120,42 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Text>
                             </Col>
                             <Col>
-                                <Dropdown overlay={() => (
-                                    <Menu className='cvat-organization-actions-menu'>
-                                        <Menu.Item key={MenuActions.SET_WEBHOOKS}>
-                                            <a
-                                                href='/organization/webhooks'
-                                                onClick={(e: React.MouseEvent) => {
-                                                    e.preventDefault();
-                                                    history.push({
-                                                        pathname: '/organization/webhooks',
-                                                    });
-                                                    return false;
-                                                }}
-                                            >
-                                                Setup webhooks
-                                            </a>
-                                        </Menu.Item>
-                                        {owner && userID === owner.id ? (
-                                            <Menu.Item
-                                                key={MenuActions.REMOVE_ORGANIZATION}
-                                                onClick={onRemove}
-                                            >
-                                                Remove organization
+                                <Popover
+                                    trigger={['click']}
+                                    destroyTooltipOnHide
+                                    overlayInnerStyle={{ padding: 0 }}
+                                    content={() => (
+                                        <Menu className='cvat-organization-actions-menu'>
+                                            <Menu.Item key={MenuActions.SET_WEBHOOKS}>
+                                                <a
+                                                    href='/organization/webhooks'
+                                                    onClick={(e: React.MouseEvent) => {
+                                                        e.preventDefault();
+                                                        history.push({
+                                                            pathname: '/organization/webhooks',
+                                                        });
+                                                        return false;
+                                                    }}
+                                                >
+                                                    Setup webhooks
+                                                </a>
                                             </Menu.Item>
-                                        ) : null}
-                                    </Menu>
-                                )}
+                                            {owner && userID === owner.id ? (
+                                                <Menu.Item
+                                                    key={MenuActions.REMOVE_ORGANIZATION}
+                                                    onClick={onRemove}
+                                                >
+                                                    Remove organization
+                                                </Menu.Item>
+                                            ) : null}
+                                        </Menu>
+                                    )}
                                 >
                                     <Button size='middle' className='cvat-organization-page-actions-button'>
                                         <Text className='cvat-text-color'>Actions</Text>
                                         <MoreOutlined className='cvat-menu-icon' />
                                     </Button>
-                                </Dropdown>
+                                </Popover>
                             </Col>
 
                         </Row>
@@ -281,7 +285,10 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 onClick={() => {
                                     Modal.confirm({
                                         onOk: () => {
-                                            dispatch(leaveOrganizationAsync(organizationInstance));
+                                            dispatch(leaveOrganizationAsync(organizationInstance, () => {
+                                                localStorage.removeItem('currentOrganization');
+                                                window.location.reload();
+                                            }));
                                         },
                                         className: 'cvat-modal-organization-leave-confirm',
                                         content: (
@@ -314,7 +321,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
             </Row>
             <Modal
                 className='cvat-organization-invitation-modal'
-                visible={visibleInviteModal}
+                open={visibleInviteModal}
                 onCancel={() => {
                     setVisibleInviteModal(false);
                     form.resetFields(['users']);

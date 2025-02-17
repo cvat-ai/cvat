@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -51,7 +52,7 @@ context('Cannot read property label of undefined', { browser: ['!chrome', '!fire
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -82,7 +83,8 @@ context('Cannot read property label of undefined', { browser: ['!chrome', '!fire
 
         it('Go to another frame. During this procedure open context menu for a shape.', () => {
             cy.get('body').type('f');
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').rightclick();
         });
 
         it('Page with the error is missing', () => {
