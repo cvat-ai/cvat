@@ -13,7 +13,6 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
-from functools import partial
 from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional, Union
 from urllib import parse as urlparse
@@ -596,11 +595,9 @@ def _create_thread(
     job = rq.get_current_job()
     rq_job_meta = ImportRQMeta.from_job(job)
 
-    def _update_status(rq_job_meta: ImportRQMeta, msg: str) -> None:
+    def update_status(msg: str) -> None:
         rq_job_meta.status = msg
         rq_job_meta.save()
-
-    update_status = partial(_update_status, rq_job_meta)
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
 

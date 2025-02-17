@@ -40,8 +40,6 @@ from cvat.apps.engine.types import ExtendedRequest
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
-KEY_TO_EXCLUDE_FROM_DEPENDENCY = 'exclude_from_dependency'
-
 def parse_imports(source_code: str):
     root = ast.parse(source_code)
 
@@ -192,12 +190,7 @@ def define_dependent_job(
         if Job.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
             return None
 
-    user_jobs = [
-        job for job in all_user_jobs
-        if not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY)
-    ]
-
-    return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
+    return Dependency(jobs=[sorted(all_user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if all_user_jobs else None
 
 
 def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int] = 30, blocking_timeout: Optional[int] = None) -> Union[Lock, nullcontext]:

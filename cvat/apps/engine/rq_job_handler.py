@@ -20,20 +20,18 @@ from cvat.apps.engine.types import ExtendedRequest
 
 from .models import RequestAction, RequestSubresource, RequestTarget
 
-str_validator = attrs.validators.instance_of(str)
-int_validator = attrs.validators.instance_of(int)
-optional_str_validator = attrs.validators.optional(attrs.validators.instance_of(str))
-optional_int_validator = attrs.validators.optional(attrs.validators.instance_of(int))
-optional_bool_validator = attrs.validators.optional(attrs.validators.instance_of(bool))
-optional_float_validator = attrs.validators.optional(attrs.validators.instance_of(float))
-
+_str_validator = attrs.validators.instance_of(str)
+_int_validator = attrs.validators.instance_of(int)
+_optional_str_validator = attrs.validators.optional(attrs.validators.instance_of(str))
+_optional_int_validator = attrs.validators.optional(attrs.validators.instance_of(int))
+_optional_float_validator = attrs.validators.optional(attrs.validators.instance_of(float))
 
 
 @attrs.frozen(kw_only=True)
 class UserInfo:
-    id: int = attrs.field(validator=[int_validator])
-    username: str = attrs.field(validator=[str_validator])
-    email: str = attrs.field(validator=[str_validator])
+    id: int = attrs.field(validator=[_int_validator])
+    username: str = attrs.field(validator=[_str_validator])
+    email: str = attrs.field(validator=[_str_validator])
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -41,7 +39,7 @@ class UserInfo:
 
 @attrs.frozen(kw_only=True)
 class RequestInfo:
-    uuid: str = attrs.field(validator=[str_validator])
+    uuid: str = attrs.field(validator=[_str_validator])
     timestamp: datetime = attrs.field(validator=[attrs.validators.instance_of(datetime)])
 
     def to_dict(self) -> dict[str, Any]:
@@ -80,13 +78,15 @@ class AbstractRQMeta(metaclass=ABCMeta):
 
         return {k: v for k, v in self._job.meta.items() if k not in resettable_fields}
 
+
 on_setattr = attrs.setters.pipe(attrs.setters.validate, AbstractRQMeta.update_value)
+
 
 @attrs.define(kw_only=True)
 class RQMetaWithFailureInfo(AbstractRQMeta):
     # mutable && optional fields
     formatted_exception: str | None = attrs.field(
-        validator=[optional_str_validator],
+        validator=[_optional_str_validator],
         default=None,
         on_setattr=on_setattr,
     )
@@ -94,15 +94,13 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
         default=None,
         on_setattr=on_setattr,
     )
+
     @exc_type.validator
     def _check_exc_type(self, attribute: attrs.Attribute, value: Any):
         if value is not None and not issubclass(value, Exception):
             raise ValueError("Wrong exception type")
 
-    exc_args: Iterable | None = attrs.field(
-        default=None,
-        on_setattr=on_setattr
-    )
+    exc_args: Iterable | None = attrs.field(default=None, on_setattr=on_setattr)
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -129,34 +127,35 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
     # immutable and optional fields
     org_id: int | None = attrs.field(
-        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
     )
     org_slug: str | None = attrs.field(
-        validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen
+        validator=[_optional_str_validator], default=None, on_setattr=attrs.setters.frozen
     )
     project_id: int | None = attrs.field(
-        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
     )
     task_id: int | None = attrs.field(
-        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
     )
     job_id: int | None = attrs.field(
-        validator=[optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
     )
 
     # mutable fields
     progress: float | None = attrs.field(
-        validator=[optional_float_validator],
+        validator=[_optional_float_validator],
         default=None,
         on_setattr=on_setattr,
     )
-    status: str = attrs.field(
-        validator=[str_validator], default="", on_setattr=on_setattr
-    )
+    status: str = attrs.field(validator=[_str_validator], default="", on_setattr=on_setattr)
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
-        return RQMetaWithFailureInfo._get_resettable_fields() + [RQJobMetaField.PROGRESS, RQJobMetaField.STATUS]
+        return RQMetaWithFailureInfo._get_resettable_fields() + [
+            RQJobMetaField.PROGRESS,
+            RQJobMetaField.STATUS,
+        ]
 
     @classmethod
     def build(
@@ -198,7 +197,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 @attrs.define(kw_only=True)
 class ExportRQMeta(BaseRQMeta):
     # will be changed to ExportResultInfo in the next PR
-    result_url: str | None = attrs.field(validator=[optional_str_validator], default=None)
+    result_url: str | None = attrs.field(validator=[_optional_str_validator], default=None)
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -225,13 +224,13 @@ class ExportRQMeta(BaseRQMeta):
 class ImportRQMeta(BaseRQMeta):
     # immutable && optional fields
     tmp_file: str | None = attrs.field(
-        validator=[optional_str_validator], default=None, on_setattr=attrs.setters.frozen
+        validator=[_optional_str_validator], default=None, on_setattr=attrs.setters.frozen
     )
 
     # mutable fields
     task_progress: float | None = attrs.field(
-        validator=[optional_float_validator], default=None, on_setattr=on_setattr
-    ) # used when importing project dataset
+        validator=[_optional_float_validator], default=None, on_setattr=on_setattr
+    )  # used when importing project dataset
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -253,6 +252,7 @@ class ImportRQMeta(BaseRQMeta):
             **base_meta,
             tmp_file=tmp_file,
         ).to_dict()
+
 
 class RQJobMetaField:
     # common fields
@@ -277,7 +277,7 @@ class RQJobMetaField:
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
-    return rq_job.meta.get(RQJobMetaField.USER, {}).get("id") == user_id
+    return BaseRQMeta.from_job(rq_job).user.id == user_id
 
 
 @attrs.frozen()

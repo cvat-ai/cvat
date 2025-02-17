@@ -3564,7 +3564,7 @@ class RequestSerializer(serializers.Serializer):
     @extend_schema_field(UserIdentifiersSerializer())
     def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
         assert self._base_rq_job_meta
-        return UserIdentifiersSerializer(self._base_rq_job_meta.user.to_dict()).data
+        return UserIdentifiersSerializer(self._base_rq_job_meta.user).data
 
     @extend_schema_field(
         serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
@@ -3610,7 +3610,7 @@ class RequestSerializer(serializers.Serializer):
         if representation["status"] in (RQJobStatus.DEFERRED, RQJobStatus.SCHEDULED):
             representation["status"] = RQJobStatus.QUEUED
 
-        if  representation["status"] == RQJobStatus.FINISHED:
+        if representation["status"] == RQJobStatus.FINISHED:
             if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
                 representation["result_url"] = ExportRQMeta.from_job(rq_job).result_url
 
