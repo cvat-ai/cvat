@@ -21,7 +21,7 @@ from rq.job import JobStatus as RqJobStatus
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Task
-from cvat.apps.engine.rq_job_handler import BaseRQMeta
+from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.quality_control import quality_reports as qc

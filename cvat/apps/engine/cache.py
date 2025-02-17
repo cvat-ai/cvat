@@ -53,7 +53,7 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     load_image,
 )
-from cvat.apps.engine.rq_job_handler import RQMetaWithFailureInfo
+from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
     format_list,

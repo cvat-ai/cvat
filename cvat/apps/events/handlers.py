@@ -22,7 +22,7 @@ from cvat.apps.engine.models import (
     Task,
     User,
 )
-from cvat.apps.engine.rq_job_handler import BaseRQMeta
+from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import (
     BasicUserSerializer,
     CloudStorageReadSerializer,

@@ -34,7 +34,7 @@ from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
-from rq.job import Dependency, Job
+from rq.job import Job
 
 from cvat.apps.engine.types import ExtendedRequest
 
@@ -154,43 +154,6 @@ def process_failed_job(rq_job: Job):
     log = logging.getLogger('cvat.server.engine')
     log.error(msg)
     return msg
-
-
-def define_dependent_job(
-    queue: DjangoRQ,
-    user_id: int,
-    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
-    *,
-    rq_id: Optional[str] = None,
-) -> Optional[Dependency]:
-    if not should_be_dependent:
-        return None
-
-    queues = [queue.deferred_job_registry, queue, queue.started_job_registry]
-    # Since there is no cleanup implementation in DeferredJobRegistry,
-    # this registry can contain "outdated" jobs that weren't deleted from it
-    # but were added to another registry. Probably such situations can occur
-    # if there are active or deferred jobs when restarting the worker container.
-    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
-    all_user_jobs = []
-    for q, f in zip(queues, filters):
-        job_ids = q.get_job_ids()
-        jobs = q.job_class.fetch_many(job_ids, q.connection)
-        jobs = filter(lambda job: job and job.meta.get("user", {}).get("id") == user_id and f(job), jobs)
-        all_user_jobs.extend(jobs)
-
-    # prevent possible cyclic dependencies
-    if rq_id:
-        all_job_dependency_ids = {
-            dep_id.decode()
-            for job in all_user_jobs
-            for dep_id in job.dependency_ids or ()
-        }
-
-        if Job.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
-            return None
-
-    return Dependency(jobs=[sorted(all_user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if all_user_jobs else None
 
 
 def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int] = 30, blocking_timeout: Optional[int] = None) -> Union[Lock, nullcontext]:

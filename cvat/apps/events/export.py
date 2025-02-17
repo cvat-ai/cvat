@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq_job_handler import RQMetaWithFailureInfo
+from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import sendfile
 
 slogger = ServerLogManager(__name__)

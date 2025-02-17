@@ -12,8 +12,11 @@ from uuid import UUID
 
 import attrs
 from attrs import asdict
+from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
+from django_rq.queues import DjangoRQ
+from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
@@ -392,3 +395,46 @@ class RQId:
 
         except Exception as ex:
             raise ValueError(f"The {rq_id!r} RQ ID cannot be parsed: {str(ex)}") from ex
+
+
+def define_dependent_job(
+    queue: DjangoRQ,
+    user_id: int,
+    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
+    *,
+    rq_id: Optional[str] = None,
+) -> RQDependency:
+    if not should_be_dependent:
+        return None
+
+    queues = [queue.deferred_job_registry, queue, queue.started_job_registry]
+    # Since there is no cleanup implementation in DeferredJobRegistry,
+    # this registry can contain "outdated" jobs that weren't deleted from it
+    # but were added to another registry. Probably such situations can occur
+    # if there are active or deferred jobs when restarting the worker container.
+    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
+    all_user_jobs = []
+    for q, f in zip(queues, filters):
+        job_ids = q.get_job_ids()
+        jobs = q.job_class.fetch_many(job_ids, q.connection)
+        jobs = filter(
+            lambda job: job and BaseRQMeta.from_job(job).user.id == user_id and f(job), jobs
+        )
+        all_user_jobs.extend(jobs)
+
+    # prevent possible cyclic dependencies
+    if rq_id:
+        all_job_dependency_ids = {
+            dep_id.decode() for job in all_user_jobs for dep_id in job.dependency_ids or ()
+        }
+
+        if RQJob.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
+            return None
+
+    return (
+        RQDependency(
+            jobs=[sorted(all_user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True
+        )
+        if all_user_jobs
+        else None
+    )

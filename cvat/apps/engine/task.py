@@ -47,12 +47,11 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.rq_job_handler import ImportRQMeta, RQId
+from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
     format_list,
     get_rq_lock_by_user,
     take_by,

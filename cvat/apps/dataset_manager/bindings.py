@@ -45,7 +45,7 @@ from cvat.apps.engine.models import (
     ShapeType,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import ImportRQMeta
+from cvat.apps.engine.rq import ImportRQMeta
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager

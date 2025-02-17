@@ -122,11 +122,12 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import (
+from cvat.apps.engine.rq import (
     ImportRQMeta,
     RQId,
     RQMetaWithFailureInfo,
     is_rq_job_owner,
+    define_dependent_job,
 )
 from cvat.apps.engine.serializers import (
     AboutSerializer,
@@ -172,7 +173,6 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
     get_rq_lock_by_user,
     import_resource_with_clean_up_after,
     parse_exception_message,

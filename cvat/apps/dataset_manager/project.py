@@ -18,7 +18,7 @@ from cvat.apps.dataset_manager.util import TmpDirManager
 from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.model_utils import bulk_create
-from cvat.apps.engine.rq_job_handler import ImportRQMeta
+from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.serializers import DataSerializer, TaskWriteSerializer
 from cvat.apps.engine.task import _create_thread as create_task
 

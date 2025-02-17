@@ -45,10 +45,10 @@ from cvat.apps.engine.models import (
     SourceType,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.rq import RQId, define_dependent_job
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import define_dependent_job, get_rq_lock_by_user
+from cvat.apps.engine.utils import get_rq_lock_by_user
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind

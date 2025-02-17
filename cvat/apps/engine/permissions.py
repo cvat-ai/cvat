@@ -13,7 +13,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.viewsets import ViewSet
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq_job_handler import is_rq_job_owner
+from cvat.apps.engine.rq import is_rq_job_owner
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (

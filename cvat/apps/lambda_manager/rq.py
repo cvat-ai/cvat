@@ -8,7 +8,7 @@ import attrs
 from django.db.models import Model
 from rq.job import Job as RQJob
 
-from cvat.apps.engine.rq_job_handler import BaseRQMeta, RQJobMetaField, on_setattr
+from cvat.apps.engine.rq import BaseRQMeta, RQJobMetaField, on_setattr
 from cvat.apps.engine.types import ExtendedRequest
 
 

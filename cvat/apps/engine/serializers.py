@@ -41,7 +41,7 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq_job_handler import (
+from cvat.apps.engine.rq import (
     BaseRQMeta,
     ExportRQMeta,
     ImportRQMeta,

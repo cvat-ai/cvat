@@ -20,7 +20,7 @@ import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
-from cvat.apps.engine.rq_job_handler import ExportRQMeta
+from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
