@@ -268,3 +268,6 @@ class LazyList(list[T], metaclass=LazyListMeta):
         self._parsed = state["parsed"]
         if self._parsed:
             self.extend(state["parsed_elements"])
+
+    def lazy_copy(self):
+        return LazyList(string=self._string, separator=self._separator, converter=self._converter)
