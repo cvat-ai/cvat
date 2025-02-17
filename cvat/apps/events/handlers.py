@@ -102,7 +102,7 @@ def get_user(instance=None) -> User | dict | None:
         # RQ jobs created in the chunks queue have no user info
         try:
             return BaseRQMeta.from_job(rq_job).user.to_dict()
-        except AttributeError:
+        except TypeError:
             return None
 
     # Try to get current user from request
@@ -129,7 +129,7 @@ def get_request(instance=None):
         # RQ jobs created in the chunks queue have no request info
         try:
             return BaseRQMeta.from_job(rq_job).request.to_dict()
-        except AttributeError:
+        except TypeError:
             return None
 
     request = get_current_request()
