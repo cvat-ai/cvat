@@ -11,20 +11,7 @@ from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
 from functools import cached_property, partial
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Hashable,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, ClassVar, Hashable, Sequence, TypeVar, Union, cast
 
 import datumaro as dm
 import datumaro.components.annotations.matcher
@@ -92,9 +79,9 @@ class Serializable(metaclass=ABCMeta):
             return v
 
     def to_dict(self) -> dict:
-        return self._value_serializer(self._fields_dict())
+        return self._value_serializer(self._as_dict())
 
-    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
+    def _as_dict(self, *, include_properties: list[str] | None = None) -> dict:
         d = asdict(self, recurse=False)
 
         for field_name in include_properties or []:
@@ -109,11 +96,11 @@ class Serializable(metaclass=ABCMeta):
 
 @define(slots=False)
 class ReportNode(Serializable):
-    CACHED_FIELDS: ClassVar[Optional[List[str]]] = None
+    _CACHED_FIELDS: ClassVar[list[str] | None] = None
     "Fields that can be set externally or be computed on access"
 
     @classmethod
-    def _find_cached_fields(cls) -> List[str]:
+    def _find_cached_fields(cls) -> list[str]:
         return [
             member.attrname
             for _, member in cls.__dict__.items()
@@ -121,11 +108,17 @@ class ReportNode(Serializable):
         ]
 
     @classmethod
-    def _get_cached_fields(cls, recursive: bool = True) -> List[str]:
-        if "CACHED_FIELDS" not in cls.__dict__:
+    def _get_computable_fields(cls) -> list[str]:
+        return [
+            member.attrname for _, member in cls.__dict__.items() if isinstance(member, property)
+        ]
+
+    @classmethod
+    def _get_cached_fields(cls, recursive: bool = True) -> list[str]:
+        if "_CACHED_FIELDS" not in cls.__dict__:
             fields = cls._find_cached_fields() or []
         else:
-            fields = list(cls.__dict__["CACHED_FIELDS"])
+            fields = list(cls.__dict__["_CACHED_FIELDS"])
 
         if recursive:
             for base_class in cls.__bases__:
@@ -146,7 +139,7 @@ class ReportNode(Serializable):
         for field_name, field_value in cached_field_kwargs.items():
             setattr(self, field_name, field_value)
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
+    def __setattr__(self, __name: str, __value: Any):
         if __name not in self._get_cached_fields():
             self.reset_cached_fields()
 
@@ -157,9 +150,10 @@ class ReportNode(Serializable):
             if hasattr(self, field):
                 delattr(self, field)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(
-            include_properties=include_properties or self._get_cached_fields()
+    def _as_dict(self, *, include_properties: list[str] | None = None) -> dict:
+        return super()._as_dict(
+            include_properties=include_properties
+            or (self._get_computable_fields() + self._get_cached_fields())
         )
 
 
@@ -168,7 +162,7 @@ class AnnotationId(ReportNode):
     obj_id: int
     job_id: int
     type: AnnotationType
-    shape_type: Optional[ShapeType]
+    shape_type: ShapeType | None
 
     def _value_serializer(self, v):
         if isinstance(v, (AnnotationType, ShapeType)):
@@ -219,9 +213,6 @@ class AnnotationConflict(ReportNode):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["severity"])
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -233,7 +224,7 @@ class AnnotationConflict(ReportNode):
 
 @define(kw_only=True, init=False)
 class ComparisonParameters(ReportNode):
-    included_annotation_types: List[dm.AnnotationType] = [
+    included_annotation_types: list[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
         dm.AnnotationType.mask,
@@ -317,7 +308,7 @@ class ConfusionMatrix(ReportNode):
     precision: np.ndarray
     recall: np.ndarray
     accuracy: np.ndarray
-    jaccard_index: Optional[np.ndarray]
+    jaccard_index: np.ndarray | None
 
     @property
     def axes(self):
@@ -328,9 +319,6 @@ class ConfusionMatrix(ReportNode):
             return v.tolist()
         else:
             return super()._value_serializer(v)
-
-    def _fields_dict(self, *, include_properties: Optional[list[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["axes"])
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -354,17 +342,17 @@ class ComparisonReportAnnotationsSummary(ReportNode):
     total_count: int
     ds_count: int
     gt_count: int
-    confusion_matrix: Optional[ConfusionMatrix]
+    confusion_matrix: ConfusionMatrix | None
 
-    @cached_property
+    @property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
-    @cached_property
+    @property
     def precision(self) -> float:
         return self.valid_count / (self.ds_count or 1)
 
-    @cached_property
+    @property
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
 
@@ -393,9 +381,6 @@ class ComparisonReportAnnotationsSummary(ReportNode):
                 if d.get("confusion_matrix")
                 else None
             ),
-            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
-            **dict(precision=d["precision"]) if "precision" in d else {},
-            **dict(recall=d["recall"]) if "recall" in d else {},
         )
 
 
@@ -409,7 +394,7 @@ class ComparisonReportAnnotationShapeSummary(ReportNode):
     gt_count: int
     mean_iou: float
 
-    @cached_property
+    @property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
@@ -434,7 +419,6 @@ class ComparisonReportAnnotationShapeSummary(ReportNode):
             ds_count=d["ds_count"],
             gt_count=d["gt_count"],
             mean_iou=d["mean_iou"],
-            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
         )
 
 
@@ -444,7 +428,7 @@ class ComparisonReportAnnotationLabelSummary(ReportNode):
     invalid_count: int
     total_count: int
 
-    @cached_property
+    @property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
@@ -458,7 +442,6 @@ class ComparisonReportAnnotationLabelSummary(ReportNode):
             valid_count=d["valid_count"],
             invalid_count=d["invalid_count"],
             total_count=d["total_count"],
-            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
         )
 
 
@@ -481,24 +464,22 @@ class ComparisonReportAnnotationComponentsSummary(ReportNode):
 
 @define(kw_only=True, init=False)
 class ComparisonReportComparisonSummary(ReportNode):
-    frame_share: float
-    frames: list[str]
+    frames: list[str] | None  # project reports don't have it
+    total_frames: int
 
     conflict_count: int
     warning_count: int
     error_count: int
     conflicts_by_type: dict[AnnotationConflictType, int]
-    frames_with_errors: int
-    total_frames: int
 
     annotations: ComparisonReportAnnotationsSummary
-    annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
+    annotation_components: ComparisonReportAnnotationComponentsSummary
 
-    @cached_property
+    @cached_property  # cached_ for backward compatibility with older reports, TODO: maybe add migration instead
     def frame_share(self) -> float:
         return self.frame_count / (self.total_frames or 1)
 
-    @cached_property
+    @property
     def mean_conflict_count(self) -> float:
         return self.conflict_count / (self.frame_count or 1)
 
@@ -516,33 +497,25 @@ class ComparisonReportComparisonSummary(ReportNode):
     def from_dict(cls, d: dict):
         return cls(
             frames=list(d["frames"]),
+            **(dict(total_frames=d["total_frames"]) if "total_frames" in d else {}),
             **(dict(frame_share=d["frame_share"]) if "frame_share" in d else {}),
             **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
-            **(
-                dict(mean_conflict_count=d["mean_conflict_count"])
-                if "mean_conflict_count" in d
-                else {}
-            ),
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
             error_count=d.get("error_count", 0),
-            frames_with_errors=d.get("frames_with_errors", 0),
-            total_frames=d.get("total_frames", 0),
             conflicts_by_type={
                 AnnotationConflictType(k): v for k, v in d.get("conflicts_by_type", {}).items()
             },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=(
                 ComparisonReportAnnotationComponentsSummary.from_dict(d["annotation_components"])
-                if d.get("annotation_components")
-                else None
             ),
         )
 
 
 @define(kw_only=True, init=False)
 class ComparisonReportFrameSummary(ReportNode):
-    conflicts: List[AnnotationConflict]
+    conflicts: list[AnnotationConflict]
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
@@ -1040,7 +1013,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         self,
         categories: dm.CategoriesInfo,
         *,
-        included_ann_types: Optional[list[dm.AnnotationType]] = None,
+        included_ann_types: list[dm.AnnotationType] | None = None,
         return_distances: bool = False,
         iou_threshold: float = 0.5,
         # https://cocodataset.org/#keypoints-eval
@@ -1273,9 +1246,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         segment_cache = {}
 
-        def _get_segment(
-            obj_id: int, *, compiled_mask: Optional[dm.CompiledMask] = None, instances
-        ):
+        def _get_segment(obj_id: int, *, compiled_mask: dm.CompiledMask | None = None, instances):
             key = (id(instances), obj_id)
             rle = segment_cache.get(key)
 
@@ -1774,7 +1745,7 @@ class _Comparator:
 
     def get_distance(
         self, pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
-    ) -> Optional[float]:
+    ) -> float | None:
         return pairwise_distances.get((id(gt_ann), id(ds_ann)))
 
 
@@ -1787,7 +1758,7 @@ class DatasetComparator:
         gt_data_provider: JobDataProvider,
         task: Task,
         *,
-        settings: Optional[ComparisonParameters] = None,
+        settings: ComparisonParameters | None = None,
     ) -> None:
         if settings is None:
             settings = self.DEFAULT_SETTINGS
@@ -1863,7 +1834,7 @@ class DatasetComparator:
             shape_pairwise_distances,
         ) = frame_results["all_shape_ann_types"]
 
-        def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
+        def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float | None:
             return self.comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
 
         _matched_shapes = set(
@@ -2382,7 +2353,7 @@ class TaskQualityReportManager:
 
         return rq_id
 
-    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
+    def get_quality_check_job(self, rq_id: str) -> RqJob | None:
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
 
@@ -2539,7 +2510,7 @@ class TaskQualityReportManager:
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
-        task_frame_results: Dict[int, Optional[ComparisonReportFrameSummary]] = {}
+        task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         task_frame_results_counts = {}
         confusion_matrix = None
         for r in job_reports.values():
@@ -2564,9 +2535,7 @@ class TaskQualityReportManager:
             task_mean_shape_ious.append(task_ann_components_summary.shape.mean_iou)
 
             for frame_id, job_frame_result in r.frame_results.items():
-                task_frame_result = cast(
-                    Optional[ComparisonReportFrameSummary], task_frame_results.get(frame_id)
-                )
+                task_frame_result = task_frame_results.get(frame_id)
                 frame_results_count = task_frame_results_counts.get(frame_id, 0)
 
                 if task_frame_result is None:
@@ -2753,7 +2722,7 @@ class ProjectQualityReportManager:
 
         return rq_id
 
-    def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
+    def get_quality_check_job(self, rq_id: str) -> RqJob | None:
         queue = self._get_queue()
         rq_job = queue.fetch_job(rq_id)
 
@@ -2800,8 +2769,8 @@ class ProjectQualityReportManager:
                 ),
             ).filter(quality_reports__count__gt=0, gt_jobs__gt=0)
 
-            task_quality_reports: Dict[int, models.QualityReport] = {}
-            task_comparison_reports: Dict[int, ComparisonReport] = {}
+            task_quality_reports: dict[int, models.QualityReport] = {}
+            task_comparison_reports: dict[int, ComparisonReport] = {}
             for task in tasks_with_reports:
                 last_quality_report = models.QualityReport.objects.filter(task=task).latest(
                     "created_date"
@@ -2842,18 +2811,18 @@ class ProjectQualityReportManager:
 
     def _compute_project_report(
         self,
-        tasks: List[Task],
-        task_reports: Dict[int, ComparisonReport],
+        tasks: list[Task],
+        task_reports: dict[int, ComparisonReport],
         quality_params: ComparisonParameters,
     ) -> ComparisonReport:
         # It's possible that there are no children reports available,
         # but we still need to return a meaningful report
 
-        project_intersection_frames: Dict[int, Set[int]] = {}
-        project_conflicts: List[AnnotationConflict] = []
+        project_intersection_frames: dict[int, set[int]] = {}
+        project_conflicts: list[AnnotationConflict] = []
         project_annotations_summary = None
         project_ann_components_summary = None
-        project_frame_results = {}
+        project_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         project_frame_results_counts = {}
         for task_id, r in task_reports.items():
             project_intersection_frames[task_id] = r.comparison_summary.frames
@@ -2874,9 +2843,7 @@ class ProjectQualityReportManager:
                 )
 
             for frame_id, job_frame_result in r.frame_results.items():
-                project_frame_result = cast(
-                    Optional[ComparisonReportFrameSummary], project_frame_results.get(frame_id)
-                )
+                project_frame_result = project_frame_results.get(frame_id)
                 frame_results_count = project_frame_results_counts.get(frame_id, 0)
 
                 if project_frame_result is None:
@@ -2971,7 +2938,7 @@ class ProjectQualityReportManager:
         return project_report_data
 
     def _save_reports(
-        self, *, project_report: Dict, task_reports: List[models.QualityReport]
+        self, *, project_report: dict, task_reports: list[models.QualityReport]
     ) -> models.QualityReport:
         # TODO: add validation (e.g. ann id count for different types of conflicts)
 
@@ -3002,7 +2969,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     project_id = None
     task_id = None
     job_id = None
-    jobs_to_tasks: Dict[int, int] = {}
+    jobs_to_tasks: dict[int, int] = {}
     if db_report.project:
         project_id = db_report.project.id
 
@@ -3025,7 +2992,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         assert False
 
     # Add ids for the hierarchy objects, don't add empty ids
-    def _serialize_assignee(assignee: Optional[User]) -> Optional[dict]:
+    def _serialize_assignee(assignee: User | None) -> dict | None:
         if not db_report.assignee:
             return None
 

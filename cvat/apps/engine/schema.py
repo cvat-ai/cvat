@@ -228,4 +228,5 @@ class CloudStorageReadSerializerExtension(_CloudStorageSerializerExtension):
 class CloudStorageWriteSerializerExtension(_CloudStorageSerializerExtension):
     target_class = 'cvat.apps.engine.serializers.CloudStorageWriteSerializer'
 
+
 __all__ = [] # No public symbols here
