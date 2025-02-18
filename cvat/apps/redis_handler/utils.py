@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from pathlib import Path
 import importlib
+from pathlib import Path
 
 
 def get_class_from_module(module_path: str | Path, class_name: str) -> type | None:
