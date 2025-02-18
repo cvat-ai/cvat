@@ -36,7 +36,6 @@ class QualityReportSummarySerializer(serializers.Serializer):
     warning_count = serializers.IntegerField()
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
-    frames_with_errors = serializers.IntegerField()
     total_frames = serializers.IntegerField()
 
     valid_count = serializers.IntegerField(source="annotations.valid_count")
@@ -225,13 +224,3 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 param_kwargs.setdefault("default", defaults[param_name])
 
         return extra_kwargs
-
-    def validate(self, attrs):
-        field_validation.require_one_of_fields(attrs, ["task_id", "project_id"])
-        return attrs
-
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except models.QualitySettings.InvalidParametersError as ex:
-            raise ValidationError(ex.message)

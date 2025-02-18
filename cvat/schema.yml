@@ -10315,8 +10315,6 @@ components:
           type: object
           additionalProperties:
             type: integer
-        frames_with_errors:
-          type: integer
         total_frames:
           type: integer
         valid_count:
@@ -10344,7 +10342,6 @@ components:
       - error_count
       - frame_count
       - frame_share
-      - frames_with_errors
       - gt_count
       - precision
       - recall
