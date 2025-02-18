@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Optional
-
+import os
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
@@ -109,17 +109,15 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            for i in range(len(resources)):
-                if not isinstance(resources[i], str):
-                    try:
-                        resources[i] = str(resources[i])
-                    except:
-                        raise TypeError(f"resources: expected instances of str or a type convertible to string, got {type(resources[i])}")
+            str_resources = []
+
+            for resource in resources:
+                str_resources.append(os.fspath(resource))
 
             if resource_type is ResourceType.REMOTE:
-                data["remote_files"] = resources
+                data["remote_files"] = str_resources
             elif resource_type is ResourceType.SHARE:
-                data["server_files"] = resources
+                data["server_files"] = str_resources
 
             result, _ = self.api.create_data(
                 self.id,
