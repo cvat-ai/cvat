@@ -7,26 +7,20 @@ from typing import Callable
 import os
 
 import fakeredis
-# import redis
 
 from django.core.management import call_command
-
-
-
 from unittest.mock import Mock, patch, _patch
 from unittest import TestCase
 
-from cvat.apps.redis_handler.migration_loader import MigrationLoader, BaseMigration#, LoaderError
+from cvat.apps.redis_handler.migration_loader import MigrationLoader, BaseMigration, LoaderError
 from cvat.apps.redis_handler.utils import get_class_from_module
 from .utils import path_to_module
-
 
 WORKDIR = PosixPath("cvat/apps")
 
 MIGRATION_DIR = MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
 MIGRATION_CLASS_NAME = MigrationLoader.REDIS_MIGRATION_CLASS_NAME
-MIGRATION_BASE_CLASS_NAME = f"Base{MIGRATION_CLASS_NAME}"
-BASELINE_MIGRATION_NAME = f"engine.001_cleanup_scheduled_jobs"
+BASELINE_MIGRATION_NAME = "engine.001_cleanup_scheduled_jobs"
 
 MIGRATION_NAME_FORMAT = '{:03}_{}'
 
@@ -38,10 +32,10 @@ class Migration(BaseMigration):
     def run(cls): ...
 
 '''
+BAD_MIGRATION_FILE_CONTENT = MIGRATION_FILE_CONTENT.replace('(BaseMigration)', '')
 
 MUT = 'cvat.apps.redis_handler'
 
-MigrationType = type[BaseMigration]
 
 @patch(f"{MUT}.migration_loader.Redis", return_value=fakeredis.FakeRedis())
 @patch(f"{MUT}.management.commands.migrateredis.Redis", return_value=fakeredis.FakeRedis())
@@ -49,7 +43,7 @@ class TestRedisMigrations(TestCase):
     class TestMigration:
 
         def __init__ (
-            self, app_name: str, migration_name: str, runner: Callable[[MigrationType], None], number: int = 0
+            self, app_name: str, migration_name: str, runner: Callable[[BaseMigration], None], number: int = 0
         ):
             self.app_name = app_name
             self.app_path = WORKDIR / app_name
@@ -61,11 +55,10 @@ class TestRedisMigrations(TestCase):
             mock_migration_module_path = path_to_module(self.migration_file_path)
 
             self.test_class = get_class_from_module(mock_migration_module_path, MIGRATION_CLASS_NAME)
-            self.patcher: _patch = patch.object(self.test_class, 'run')#new_callable=lambda: runner)
+            self.patcher: _patch = patch.object(self.test_class, 'run')
             self.runner_mock: Mock = self.patcher.start()
 
             self.exp_migration_name = app_name + "." + self.make_migration_name()
-            # ???: what does loader do if a migration doesn't have a number?
 
         def make_migration_name(self):
             return MIGRATION_NAME_FORMAT.format(self.number, self.migration_name)
@@ -82,20 +75,16 @@ class TestRedisMigrations(TestCase):
 
         def cleanup(self):
             self.patcher.stop()
-            self.logic = None
+            self.runner_mock = None
             os.remove(self.migration_file_path)
 
 
-    def setUp(self):
-
-        def _runner1(cls: BaseMigration):
-            ...
+    def test_migration_added_and_applied(self, redis1, _):
+        def _runner1(_: BaseMigration): ...
 
         self.test_migration = self.TestMigration("redis_handler", "first", _runner1)
-
         self.addCleanup(self.test_migration.cleanup)
 
-    def test_migration_added_and_applied(self, redis1, _):
         call_command("migrateredis")
         exp_migrations = {
             bytes(BASELINE_MIGRATION_NAME, encoding='utf8'),
@@ -107,5 +96,17 @@ class TestRedisMigrations(TestCase):
                 exp_migrations
             )
         self.test_migration.runner_mock.assert_called_once()
-        # '''Add a migration, validate it is there'''
-        # '''Restore redis, validate it is not there'''
+
+    def test_migration_bad_class(self, redis1, _):
+        def _runner2(_: BaseMigration): ...
+
+        with redis1() as conn:
+            conn.flushall()
+        with (
+            patch(f'{__name__}.MIGRATION_FILE_CONTENT' , new=BAD_MIGRATION_FILE_CONTENT),
+        ):
+            self.test_migration = self.TestMigration("redis_handler", "second", _runner2)
+            self.addCleanup(self.test_migration.cleanup)
+            with self.assertRaises(LoaderError):
+                call_command("migrateredis")
+
