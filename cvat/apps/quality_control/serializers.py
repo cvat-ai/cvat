@@ -49,13 +49,17 @@ class QualityReportSummarySerializer(serializers.Serializer):
     recall = serializers.FloatField(source="annotations.recall")
 
 
+class QualityReportTargetSerializer(serializers.ChoiceField):
+    # Make a separate class in API schema, otherwise it gets merged with AnalyticsReportTarget enum
+    def __init__(self, **kwargs):
+        super().__init__(choices=models.QualityReportTarget.choices(), **kwargs)
+
+
 class QualityReportSerializer(serializers.ModelSerializer):
-    target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    target = QualityReportTargetSerializer()
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
-    parent_id = serializers.IntegerField(
-        source="parent_id", default=None, allow_null=True, read_only=True
-    )
+    parent_id = serializers.IntegerField(default=None, allow_null=True, read_only=True)
     task_id = serializers.IntegerField(
         source="get_task.id", default=None, allow_null=True, read_only=True
     )
