@@ -2,7 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Protocol
 from uuid import uuid4
+
+
+class WithUUID(Protocol):
+    uuid: str
 
 
 class RequestTrackingMiddleware:

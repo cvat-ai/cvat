@@ -7,7 +7,6 @@
 from typing import Optional
 
 from django.db.models.query import QuerySet
-from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
@@ -17,6 +16,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.parsers import TusUploadParser
+from cvat.apps.engine.types import ExtendedRequest
 
 
 def make_paginated_response(
@@ -25,7 +25,7 @@ def make_paginated_response(
     viewset: GenericViewSet,
     response_type: Optional[type[HttpResponse]] = None,
     serializer_type: Optional[type[Serializer]] = None,
-    request: Optional[type[HttpRequest]] = None,
+    request: Optional[type[ExtendedRequest]] = None,
     **serializer_params
 ):
     # Adapted from the mixins.ListModelMixin.list()
