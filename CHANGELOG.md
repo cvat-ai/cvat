@@ -2141,7 +2141,6 @@ This release has changes only in the Enterprise version.
   <https://github.com/opencv/cvat/pull/6649>)
 - Included an indication for cached frames in the interface
   (<https://github.com/opencv/cvat/pull/6586>)
-- Quality analytics for projects (<https://github.com/opencv/cvat/pull/6367>)
 
 ### Changed
 
