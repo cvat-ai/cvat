@@ -187,10 +187,10 @@ def define_dependent_job(
     if rq_id:
         # Prevent cases where an RQ job depends on itself.
         # It isn't possible to have multiple RQ jobs with the same ID in Redis.
-        # However, it is possible to achieve a situation
-        # where 2 parallel requests try to enqueue RQ jobs with the same ID
-        # if an rq_job with a defined ID is fetched without a lock,
-        # but a lock is used when defining the dependent job.
+        # However, a race condition in request processing can lead to self-dependencies
+        # when 2 parallel requests attempt to enqueue RQ jobs with the same ID.
+        # This happens if an rq_job is fetched without a lock,
+        # but a lock is used when defining the dependent job and enqueuing a new one.
         if any(rq_id == job.id for job in all_user_jobs):
             return None
 
