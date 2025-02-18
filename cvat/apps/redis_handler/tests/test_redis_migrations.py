@@ -108,3 +108,4 @@ class TestRedisMigrations(TestCase):
                 call_command("migrateredis")
 
             self.assertEqual(conn.smembers("cvat:applied_migrations"), exp_migrations)
+            self.test_migration.runner_mock.assert_not_called()
