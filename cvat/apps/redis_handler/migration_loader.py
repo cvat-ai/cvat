@@ -111,7 +111,9 @@ class MigrationLoader:
 
     def get_migration_class(self, app_name: str, migration_name: str) -> BaseMigration:
         migration_module_path = ".".join([app_name, self.REDIS_MIGRATIONS_DIR_NAME, migration_name])
-        MigrationClass = get_class_from_module(migration_module_path, self.REDIS_MIGRATION_CLASS_NAME)
+        MigrationClass = get_class_from_module(
+            migration_module_path, self.REDIS_MIGRATION_CLASS_NAME
+        )
 
         if not MigrationClass or not issubclass(MigrationClass, BaseMigration):
             raise LoaderError(f"Invalid migration: {migration_module_path}")
