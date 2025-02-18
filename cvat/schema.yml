@@ -2154,9 +2154,9 @@ paths:
       operationId: jobs_create_annotations
       description: |2
 
-        The request POST /api/jobs/id/annotations will initiate the import and will create
-        the rq job on the server in which the import will be carried out.
-        Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+        The request POST /api/jobs/id/annotations initiates a background process to import annotations into a job.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a job
       parameters:
       - in: query
@@ -2233,7 +2233,7 @@ paths:
         in favor of the new requests API:
         GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
         on initializing request.
-      summary: Replace job annotations
+      summary: Replace job annotations / Get annotation import status
       parameters:
       - in: query
         name: cloud_storage_id
@@ -3974,9 +3974,9 @@ paths:
       operationId: projects_create_dataset
       description: |2
 
-        The request POST /api/projects/id/dataset will initiate file upload and will create
-        the rq job on the server in which the process of dataset import from a file
-        will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+        The request POST /api/projects/id/dataset initiates a background process to import dataset into a project.
+        Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+        The `rq_id` parameter can be found in the response on initiating request.
       summary: Import a dataset into a project
       parameters:
       - in: query
@@ -5401,8 +5401,7 @@ paths:
       operationId: tasks_create_annotations
       description: |2
 
-        The request POST /api/tasks/id/annotations initiates the import and creates
-        the rq job on the server in which the import is carried out.
+        The request POST /api/tasks/id/annotations initiates a background process to import annotations into a task.
         Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
         The `rq_id` parameter can be found in the response on initiating request.
       summary: Import annotations into a task
@@ -5482,7 +5481,7 @@ paths:
 
         GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
         on initializing request.
-      summary: Replace task annotations
+      summary: Replace task annotations / Get annotation import status
       parameters:
       - in: query
         name: format
@@ -5503,7 +5502,7 @@ paths:
         name: rq_id
         schema:
           type: string
-        description: rq id
+        description: Request ID
         deprecated: true
       tags:
       - tasks

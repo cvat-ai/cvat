@@ -438,9 +438,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['POST'],
         summary='Import a dataset into a project',
         description=textwrap.dedent("""
-            The request POST /api/projects/id/dataset will initiate file upload and will create
-            the rq job on the server in which the process of dataset import from a file
-            will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+            The request POST /api/projects/id/dataset initiates a background process to import dataset into a project.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
@@ -1515,7 +1515,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['PUT'], summary='Replace task annotations',
+    @extend_schema(methods=['PUT'], summary='Replace task annotations / Get annotation import status',
         description=textwrap.dedent("""
             Utilizing this endpoint to check status of the import process is deprecated
             in favor of the new requests API:
@@ -1549,8 +1549,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['POST'],
         summary="Import annotations into a task",
         description=textwrap.dedent("""
-            The request POST /api/tasks/id/annotations initiates the import and creates
-            the rq job on the server in which the import is carried out.
+            The request POST /api/tasks/id/annotations initiates a background process to import annotations into a task.
             Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
             The `rq_id` parameter can be found in the response on initiating request.
         """),
@@ -2100,9 +2099,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(methods=['POST'],
         summary='Import annotations into a job',
         description=textwrap.dedent("""
-            The request POST /api/jobs/id/annotations will initiate the import and will create
-            the rq job on the server in which the import will be carried out.
-            Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+            The request POST /api/jobs/id/annotations initiates a background process to import annotations into a job.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -2125,7 +2124,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PUT'],
-                   summary='Replace job annotations',
+                   summary='Replace job annotations / Get annotation import status',
         description=textwrap.dedent("""
             Utilizing this endpoint to check status of the import process is deprecated
             in favor of the new requests API:

@@ -190,7 +190,7 @@ def define_dependent_job(
         # where 2 parallel requests try to enqueue RQ jobs with the same ID
         # if an rq_job with a defined ID is fetched without a lock,
         # but a lock is used when defining the dependent job.
-        if rq_id in {job.id for job in all_user_jobs}:
+        if any(rq_id == job.id for job in all_user_jobs):
             return None
 
         # prevent possible cyclic dependencies
