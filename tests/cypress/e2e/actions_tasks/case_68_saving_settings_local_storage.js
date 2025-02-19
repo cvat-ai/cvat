@@ -26,6 +26,11 @@ context('Saving setting to local storage.', () => {
         bumpGamma(nsteps);
         cy.get('.cvat-canvas-image-setups-trigger').click();
     }
+    function resetColorSettings() {
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+        cy.contains('Reset color settings').click();
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+    }
 
     function setupAndSaveSettings(check) {
         cy.openSettings();
@@ -83,6 +88,7 @@ context('Saving setting to local storage.', () => {
                     expect(gammaFilter.params.gamma[0]).to.equal(expValue);
                 });
         });
+        resetColorSettings();
     }
 
     before(() => {
@@ -97,11 +103,9 @@ context('Saving setting to local storage.', () => {
             testCheckedSettings(true);
             testGammaSetting();
 
-            setUpGamma(nbumps);
             setupAndSaveSettings(false);
             cy.reload();
             testCheckedSettings(false);
-            testGammaSetting();
         });
     });
 });
