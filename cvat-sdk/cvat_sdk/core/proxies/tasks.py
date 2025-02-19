@@ -7,13 +7,14 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
+import os
 import shutil
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Optional
-import os
+
 from PIL import Image
 
 from cvat_sdk.api_client import apis, exceptions, models
@@ -111,8 +112,7 @@ class Task(
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
             str_resources = []
 
-            for resource in resources:
-                str_resources.append(os.fspath(resource))
+            str_resources = list(map(os.fspath, resources))
 
             if resource_type is ResourceType.REMOTE:
                 data["remote_files"] = str_resources
