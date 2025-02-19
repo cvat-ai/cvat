@@ -4,6 +4,8 @@
 
 /// <reference types="cypress" />
 
+/* eslint security/detect-non-literal-fs-filename: 0 */
+
 const fs = require('fs');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
@@ -28,7 +30,6 @@ module.exports = (on, config) => {
     });
     on('task', {
         listFiles(folderName) {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
             return fs.readdirSync(folderName);
         },
     });
@@ -45,8 +46,7 @@ module.exports = (on, config) => {
     });
     on('after:spec', (spec, results) => {
         if (results && results.stats.failures === 0 && results.video) {
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            fs.unlinkSync(results.video);
+            // fs.unlinkSync(results.video);
         }
     });
     return config;
