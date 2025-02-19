@@ -21,7 +21,6 @@ from cvat_sdk import Client, models
 from cvat_sdk.auto_annotation.driver import (
     _AnnotationMapper,
     _DetectionFunctionContextImpl,
-    _LabelNameMapping,
     _SpecNameMapping,
 )
 from cvat_sdk.exceptions import ApiException
@@ -145,28 +144,42 @@ class _Agent:
         labels_by_name = {label.name: label for label in self._function_spec.labels}
 
         for remote_label in remote_function["labels_v2"]:
+            label_desc = f"label {remote_label['name']!r}"
             label = labels_by_name.get(remote_label["name"])
 
             if not label:
-                raise CriticalError(
-                    incompatible_msg + f"label {remote_label['name']!r} is not supported."
-                )
+                raise CriticalError(incompatible_msg + f"{label_desc} is not supported.")
 
             if (
                 remote_label["type"] not in {"any", "unknown"}
                 and remote_label["type"] != label.type
             ):
                 raise CriticalError(
-                    incompatible_msg
-                    + f"label {remote_label['name']!r} has type {remote_label['type']!r}, "
-                    f"but the function object expects type {label.type!r}."
+                    incompatible_msg + f"{label_desc} has type {remote_label['type']!r}, "
+                    f"but the function object declares type {label.type!r}."
                 )
 
-            if remote_label["attributes"]:
-                raise CriticalError(
-                    incompatible_msg
-                    + f"label {remote_label['name']!r} has attributes, which is not supported."
-                )
+            attrs_by_name = {attr.name: attr for attr in getattr(label, "attributes", [])}
+
+            for remote_attr in remote_label["attributes"]:
+                attr_desc = f"attribute {remote_attr['name']!r} of {label_desc}"
+                attr = attrs_by_name.get(remote_attr["name"])
+
+                if not attr:
+                    raise CriticalError(incompatible_msg + f"{attr_desc} is not supported.")
+
+                if remote_attr["input_type"] != attr.input_type.value:
+                    raise CriticalError(
+                        incompatible_msg
+                        + f"{attr_desc} has input type {remote_attr['input_type']!r},"
+                        f" but the function object declares input type {attr.input_type.value!r}."
+                    )
+
+                if remote_attr["values"] != attr.values:
+                    raise CriticalError(
+                        incompatible_msg + f"{attr_desc} has values {remote_attr['values']!r},"
+                        f" but the function object declares values {attr.values!r}."
+                    )
 
     def _wait_between_polls(self):
         # offset the interval randomly to avoid synchronization between workers
@@ -288,11 +301,13 @@ class _Agent:
         self._update_ar(ar_id, 0)
         last_update_timestamp = datetime.now(tz=timezone.utc)
 
-        mapping = ar_params["mapping"]
         conv_mask_to_poly = ar_params["conv_mask_to_poly"]
 
-        spec_nm = _SpecNameMapping(
-            labels={k: _LabelNameMapping(v["name"]) for k, v in mapping.items()}
+        spec_nm = _SpecNameMapping.from_api(
+            {
+                k: models.LabelMappingEntryRequest._from_openapi_data(**v)
+                for k, v in ar_params["mapping"].items()
+            }
         )
 
         mapper = _AnnotationMapper(
