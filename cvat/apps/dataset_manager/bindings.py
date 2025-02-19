@@ -1705,12 +1705,12 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
                 else:
                     dm_media = dm.Image.from_file(**dm_media_args)
 
-            # do not keep parsed lazy list data after this frame
+            # do not keep parsed lazy list data after this iteration
             frame_data = frame_data._replace(
                 labeled_shapes=[
                     (
                         shape._replace(points=shape.points.lazy_copy())
-                        if isinstance(shape.points, LazyList)
+                        if isinstance(shape.points, LazyList) and not shape.points.is_parsed
                         else shape
                     )
                     for shape in frame_data.labeled_shapes
