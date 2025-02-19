@@ -21,7 +21,7 @@ import datumaro.util.mask_tools
 import django_rq
 import numpy as np
 import rq
-from attrs import asdict, define, fields_dict
+from attrs import asdict, define, fields_dict, frozen
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
@@ -486,6 +486,12 @@ class ComparisonReportComparisonSummary(ReportNode):
     @cached_property
     def frame_count(self) -> int:
         return len(self.frames)
+
+    def __init__(self, **kwargs):
+        if not ("frames" in kwargs or "frame_count" in kwargs):
+            raise AssertionError('"frames" or "frame_count" must be present')
+
+        super().__init__(**kwargs)
 
     def _value_serializer(self, v):
         if isinstance(v, AnnotationConflictType):
@@ -2267,7 +2273,7 @@ class DatasetComparator:
         )
 
 
-class TaskQualityReportManager:
+class QualityReportManager:
     _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
@@ -2275,56 +2281,82 @@ class TaskQualityReportManager:
     def _get_queue(self) -> RqQueue:
         return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
 
-    def _make_custom_quality_check_job_id(
-        self, *, user_id: int, project_id: int | None = None, task_id: int | None = None
-    ) -> str:
-        assert project_id ^ task_id
-
+    def _make_custom_quality_check_job_id(self, *, user_id: int, target: Task | Project) -> str:
         # FUTURE-TODO: it looks like job ID template should not include user_id because:
         # 1. There is no need to compute quality reports several times for different users
         # 2. Each user (not only rq job owner) that has permission to access a task should
         # be able to check the status of the computation process
-        if project_id:
-            instance_suffix = f"project-{project_id}"
-        elif task_id:
-            instance_suffix = f"task-{task_id}"
+        if isinstance(target, Project):
+            instance_suffix = f"project-{target.id}"
+        elif isinstance(target, Task):
+            instance_suffix = f"task-{target.id}"
 
         return f"{self._QUEUE_CUSTOM_JOB_PREFIX}{instance_suffix}-user-{user_id}"
 
     class QualityReportsNotAvailable(Exception):
         pass
 
-    def _check_quality_reporting_available(self, task: Task):
-        if task.dimension != DimensionType.DIM_2D:
-            raise self.QualityReportsNotAvailable("Quality reports are only supported in 2d tasks")
+    def _check_quality_reporting_available(self, target: Task | Project):
+        if isinstance(target, Project):
+            return  # nothing prevents project reports
+        elif isinstance(target, Task):
+            task = target
 
-        gt_job = task.gt_job
-        if gt_job is None or not (
-            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StateChoice.COMPLETED
-        ):
-            raise self.QualityReportsNotAvailable(
-                "Quality reports require a Ground Truth job in the task "
-                f"at the {StageChoice.ACCEPTANCE} stage "
-                f"and in the {StateChoice.COMPLETED} state"
+            if task.dimension != DimensionType.DIM_2D:
+                raise self.QualityReportsNotAvailable(
+                    "Quality reports are only supported in 2d tasks"
+                )
+
+            gt_job = task.gt_job
+            if gt_job is None or not (
+                gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StateChoice.COMPLETED
+            ):
+                raise self.QualityReportsNotAvailable(
+                    "Quality reports require a Ground Truth job in the task "
+                    f"at the {StageChoice.ACCEPTANCE} stage "
+                    f"and in the {StateChoice.COMPLETED} state"
+                )
+        else:
+            assert False
+
+    @frozen
+    class JobAlreadyExists(QualityReportsNotAvailable):
+        target: Task | Project
+
+        def __str__(self):
+            return f"Quality computation job for this {type(self.target).__name__} already enqueued"
+
+    def _make_rq_job_params(
+        self, target: Task | Project
+    ) -> tuple[Callable[..., None], dict[str, Any]]:
+        if isinstance(target, Task):
+            return (
+                self._check_task_quality,
+                {
+                    "task_id": target.id,
+                },
+            )
+        elif isinstance(target, Project):
+            return (
+                self._check_project_quality,
+                {
+                    "project_id": target.id,
+                },
             )
 
-    class JobAlreadyExists(QualityReportsNotAvailable):
-        def __str__(self):
-            return "Quality computation job for this task already enqueued"
-
     def schedule_custom_quality_check_job(
-        self, request: ExtendedRequest, task: Task, *, user_id: int
+        self, request: ExtendedRequest, target: Task | Project, *, user_id: int
     ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
         """
 
-        self._check_quality_reporting_available(task)
+        self._check_quality_reporting_available(target)
 
         queue = self._get_queue()
 
         with get_rq_lock_by_user(queue, user_id=user_id):
-            rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
+            rq_id = self._make_custom_quality_check_job_id(target=target, user_id=user_id)
             rq_job = queue.fetch_job(rq_id)
             if rq_job:
                 if rq_job.get_status(refresh=False) in (
@@ -2333,7 +2365,7 @@ class TaskQualityReportManager:
                     rq.job.JobStatus.SCHEDULED,
                     rq.job.JobStatus.DEFERRED,
                 ):
-                    raise self.JobAlreadyExists()
+                    raise self.JobAlreadyExists(target=target)
 
                 rq_job.delete()
 
@@ -2341,11 +2373,12 @@ class TaskQualityReportManager:
                 queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
             )
 
+            job_callback, job_params = self._make_rq_job_params(target=target)
             queue.enqueue(
-                self._check_task_quality,
-                task_id=task.id,
+                job_callback,
+                **job_params,
                 job_id=rq_id,
-                meta=get_rq_job_meta(request=request, db_obj=task),
+                meta=get_rq_job_meta(request=request, db_obj=target),
                 result_ttl=self._JOB_RESULT_TTL,
                 failure_ttl=self._JOB_RESULT_TTL,
                 depends_on=dependency,
@@ -2368,9 +2401,16 @@ class TaskQualityReportManager:
     @classmethod
     @silk_profile()
     def _check_task_quality(cls, *, task_id: int) -> int:
-        return cls()._compute_reports(task_id=task_id)
+        return TaskQualityReportCalculator().compute_report(task_id=task_id)
 
-    def _compute_reports(self, task_id: int) -> int:
+    @classmethod
+    @silk_profile()
+    def _check_project_quality(cls, *, project_id: int) -> int:
+        return ProjectQualityCalculator().compute_report(project_id=project_id)
+
+
+class TaskQualityReportCalculator:
+    def compute_report(self, task_id: int) -> int:
         with transaction.atomic():
             try:
                 # Preload all the data for the computations.
@@ -2383,8 +2423,6 @@ class TaskQualityReportManager:
             except Task.DoesNotExist:
                 # The task could have been deleted during scheduling
                 return
-
-            quality_params = self._get_task_quality_params(task)
 
             # Try to use a shared queryset to minimize DB requests
             job_queryset = Job.objects.select_related("segment")
@@ -2442,7 +2480,7 @@ class TaskQualityReportManager:
                 for job in jobs
             }
 
-            quality_params = self._get_task_quality_params(task)
+            quality_params = self._get_task_quality_params(task)  # TODO: support inheriting
 
         job_comparison_reports: dict[int, ComparisonReport] = {}
         for job in jobs:
@@ -2560,21 +2598,16 @@ class TaskQualityReportManager:
 
         task_ann_components_summary.shape.mean_iou = np.mean(task_mean_shape_ious)
 
+        conflicts_by_severity = Counter(c.severity for c in task_conflicts)
         task_report_data = ComparisonReport(
             parameters=next(iter(job_reports.values())).parameters,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share=len(task_intersection_frames) / (task.data.size or 1),
+                total_frames=task.data.size,
                 frames=sorted(task_intersection_frames),
                 conflict_count=len(task_conflicts),
-                warning_count=len(
-                    [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.WARNING]
-                ),
-                error_count=len(
-                    [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
-                ),
+                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING),
+                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
-                frames_with_errors=len([f for f in task_frame_results.values() if f.error_count]),
-                total_frames=task.data.size,
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
             ),
@@ -2584,8 +2617,6 @@ class TaskQualityReportManager:
         return task_report_data
 
     def _save_reports(self, *, task_report: dict, job_reports: list[dict]) -> models.QualityReport:
-        # TODO: add validation (e.g. ann id count for different types of conflicts)
-
         db_task_report = models.QualityReport(
             task=task_report["task"],
             target_last_updated=task_report["target_last_updated"],
@@ -2608,8 +2639,8 @@ class TaskQualityReportManager:
             )
             db_job_reports.append(db_job_report)
 
-        db_job_reports = bulk_create(db_model=models.QualityReport, objs=db_job_reports)
-        db_task_report.children.add(*db_job_reports)  # TODO: replace with copying children reports
+        db_job_reports = bulk_create(models.QualityReport, db_job_reports)
+        db_task_report.children.add(*db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2624,7 +2655,7 @@ class TaskQualityReportManager:
                 )
                 db_conflicts.append(db_conflict)
 
-        db_conflicts = bulk_create(db_model=models.AnnotationConflict, objs=db_conflicts)
+        db_conflicts = bulk_create(models.AnnotationConflict, db_conflicts)
 
         db_ann_ids = []
         db_conflicts_iter = iter(db_conflicts)
@@ -2640,7 +2671,7 @@ class TaskQualityReportManager:
                     )
                     db_ann_ids.append(db_ann_id)
 
-        db_ann_ids = bulk_create(db_model=models.AnnotationId, objs=db_ann_ids)
+        bulk_create(models.AnnotationId, db_ann_ids)
 
         return db_task_report
 
@@ -2655,91 +2686,8 @@ class TaskQualityReportManager:
         return ComparisonParameters.from_dict(quality_params.to_dict())
 
 
-# TODO: refactor, reuse code
-class ProjectQualityReportManager:
-    _QUEUE_CUSTOM_JOB_PREFIX = "quality-check-"
-    _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
-    _JOB_RESULT_TTL = 120
-
-    def _get_queue(self) -> RqQueue:
-        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
-
-    def _make_custom_quality_check_job_id(self, *, user_id: int, project_id: int) -> str:
-        # FUTURE-TODO: it looks like job ID template should not include user_id because:
-        # 1. There is no need to compute quality reports several times for different users
-        # 2. Each user (not only rq job owner) that has permission to access a task should
-        # be able to check the status of the computation process
-        return f"{self._QUEUE_CUSTOM_JOB_PREFIX}project-{project_id}-user-{user_id}"
-
-    class QualityReportsNotAvailable(Exception):
-        pass
-
-    def _check_quality_reporting_available(self, project: Project):
-        return  # nothing prevents quality computaiton
-
-    class JobAlreadyExists(QualityReportsNotAvailable):
-        def __str__(self):
-            return "Quality computation job for this project already enqueued"
-
-    def schedule_custom_quality_check_job(
-        self, request: ExtendedRequest, project: Project, *, user_id: int
-    ) -> str:
-        """
-        Schedules a quality report computation job, supposed for updates by a request.
-        """
-
-        self._check_quality_reporting_available(project)
-
-        queue = self._get_queue()
-
-        with get_rq_lock_by_user(queue, user_id=user_id):
-            rq_id = self._make_custom_quality_check_job_id(project_id=project.id, user_id=user_id)
-            rq_job = queue.fetch_job(rq_id)
-            if rq_job:
-                if rq_job.get_status(refresh=False) in (
-                    rq.job.JobStatus.QUEUED,
-                    rq.job.JobStatus.STARTED,
-                    rq.job.JobStatus.SCHEDULED,
-                    rq.job.JobStatus.DEFERRED,
-                ):
-                    raise self.JobAlreadyExists()
-
-                rq_job.delete()
-
-            dependency = define_dependent_job(
-                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
-            )
-
-            queue.enqueue(
-                self._check_project_quality,
-                project_id=project.id,
-                job_id=rq_id,
-                meta=get_rq_job_meta(request=request, db_obj=project),
-                result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_RESULT_TTL,
-                depends_on=dependency,
-            )
-
-        return rq_id
-
-    def get_quality_check_job(self, rq_id: str) -> RqJob | None:
-        queue = self._get_queue()
-        rq_job = queue.fetch_job(rq_id)
-
-        if rq_job and not self.is_custom_quality_check_job(rq_job):
-            rq_job = None
-
-        return rq_job
-
-    def is_custom_quality_check_job(self, rq_job: RqJob) -> bool:
-        return isinstance(rq_job.id, str) and rq_job.id.startswith(self._QUEUE_CUSTOM_JOB_PREFIX)
-
-    @classmethod
-    @silk_profile()
-    def _check_project_quality(cls, *, project_id: int) -> int:
-        return cls()._compute_reports(project_id=project_id)
-
-    def _compute_reports(self, project_id: int) -> int:
+class ProjectQualityCalculator:
+    def compute_report(self, project_id: int) -> int:
         with transaction.atomic():
             # Preload all the data for the computations
             # It must be done in a single transaction and before all the remaining computations
@@ -2753,8 +2701,6 @@ class ProjectQualityReportManager:
                 ).get(id=project_id)
             except Project.DoesNotExist:
                 return
-
-            quality_params = self._get_quality_params(project)
 
             tasks_with_reports = project.tasks.annotate(
                 Count("quality_reports"),
@@ -2780,10 +2726,16 @@ class ProjectQualityReportManager:
                     last_quality_report.get_json_report()
                 )
 
+                # TODO: add report computation for tasks with outdated reports or no reports
+
+            project_quality_params = self._get_quality_params(project)
+
+            # TODO: support tasks with individual parameters
+
         project_comparison_report = self._compute_project_report(
             project.tasks.all(),
             task_comparison_reports,
-            quality_params,
+            project_quality_params,
         )
 
         with transaction.atomic():
@@ -2818,20 +2770,27 @@ class ProjectQualityReportManager:
         # It's possible that there are no children reports available,
         # but we still need to return a meaningful report
 
-        project_intersection_frames: dict[int, set[int]] = {}
+        total_intersection_frames = 0
         project_conflicts: list[AnnotationConflict] = []
         project_annotations_summary = None
         project_ann_components_summary = None
         project_frame_results: dict[int, ComparisonReportFrameSummary] = {}
         project_frame_results_counts = {}
+        confusion_matrix = None
         for task_id, r in task_reports.items():
-            project_intersection_frames[task_id] = r.comparison_summary.frames
+            total_intersection_frames += len(r.comparison_summary.frames)
             project_conflicts.extend(r.conflicts)
 
             if project_annotations_summary:
                 project_annotations_summary.accumulate(r.comparison_summary.annotations)
             else:
                 project_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if confusion_matrix is None:
+                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+
+            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
 
             if project_ann_components_summary:
                 project_ann_components_summary.accumulate(
@@ -2891,6 +2850,7 @@ class ProjectQualityReportManager:
                 r.comparison_summary.annotation_components.label.accuracy * task_weights[tid]
                 for tid, r in task_reports.items()
             )
+            project_annotations_summary.confusion_matrix.rows = confusion_matrix
         else:
             project_annotations_summary = ComparisonReportAnnotationsSummary(
                 valid_count=0,
@@ -2902,37 +2862,22 @@ class ProjectQualityReportManager:
                 confusion_matrix=None,
             )
 
-        total_intersection_frames = sum(
-            len(task_intersection_frames)
-            for task_intersection_frames in project_intersection_frames.values()
-        )
         total_frames = sum(t.data.size for t in tasks)
+        conflicts_by_severity = Counter(c.severity for c in project_conflicts)
         project_report_data = ComparisonReport(
             parameters=quality_params,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share=total_intersection_frames / (total_frames or 1),
-                frame_count=total_intersection_frames,
-                frames=[],  # project reports do not provide this info
-                conflict_count=len(project_conflicts),
-                warning_count=len(
-                    [
-                        c
-                        for c in project_conflicts
-                        if c.severity == AnnotationConflictSeverity.WARNING
-                    ]
-                ),
-                error_count=len(
-                    [c for c in project_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
-                ),
-                conflicts_by_type=Counter(c.type for c in project_conflicts),
-                frames_with_errors=sum(
-                    s.comparison_summary.frames_with_errors for s in task_reports.values()
-                ),
                 total_frames=total_frames,
+                frame_count=total_intersection_frames,
+                frames=None,  # project reports do not provide this info
+                conflict_count=len(project_conflicts),
+                warning_count=conflicts_by_severity.get(AnnotationConflictSeverity.WARNING, 0),
+                error_count=conflicts_by_severity.get(AnnotationConflictSeverity.ERROR, 0),
+                conflicts_by_type=Counter(c.type for c in project_conflicts),
                 annotations=project_annotations_summary,
                 annotation_components=project_ann_components_summary,
             ),
-            frame_results={},  # this is a too detailed representation for the project report
+            frame_results={},  # this is too detailed for a project report
         )
 
         return project_report_data
@@ -2940,8 +2885,6 @@ class ProjectQualityReportManager:
     def _save_reports(
         self, *, project_report: dict, task_reports: list[models.QualityReport]
     ) -> models.QualityReport:
-        # TODO: add validation (e.g. ann id count for different types of conflicts)
-
         db_project_report = models.QualityReport(
             project=project_report["project"],
             target_last_updated=project_report["target_last_updated"],
@@ -2949,7 +2892,6 @@ class ProjectQualityReportManager:
             data=project_report["data"],
         )
         db_project_report.save()
-
         db_project_report.children.add(*task_reports)
 
         return db_project_report
