@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, Project, ShapeType, Task, User
+from cvat.apps.engine.models import Job, Project, ShapeType, Task, TimestampedModel, User
 
 
 class AnnotationConflictType(str, Enum):
@@ -268,7 +268,7 @@ class QualitySettingsQuerySet(models.QuerySet):
             )
 
 
-class QualitySettings(models.Model):
+class QualitySettings(TimestampedModel):
     class InvalidParametersError(ValidationError):
         pass
 
