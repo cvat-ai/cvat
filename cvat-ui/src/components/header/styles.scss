@@ -86,7 +86,7 @@
 }
 
 .cvat-header-menu {
-    width: $grid-unit-size * 24;
+    width: $grid-unit-size * 28;
 }
 
 .cvat-header-menu-active-organization-item {
@@ -108,4 +108,15 @@
         max-height: $grid-unit-size * 70;
         overflow-y: auto;
     }
+}
+
+.cvat-header-menu-maxar-tools-dropdown .ant-dropdown-menu {
+    width: auto !important; /* Allows width to fit content */
+    min-width: unset !important; /* Resets any previously set min-width */
+    max-width: none !important; /* Ensures no restrictions */
+    white-space: nowrap; /* Prevents text wrapping */
+}
+
+.cvat-header-dropdown-maxar-icon {
+    margin: 5px;
 }
