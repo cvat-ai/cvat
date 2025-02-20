@@ -2310,7 +2310,6 @@ class QualityReportUpdateManager:
                     depends_on=dependency,
                 )
 
-
         return rq_id
 
     def get_quality_check_job(self, rq_id: str) -> Optional[RqJob]:
