@@ -18,6 +18,7 @@ from django.utils import timezone
 from django_rq.queues import DjangoRQ
 from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
+from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
 
@@ -407,13 +408,17 @@ def define_dependent_job(
     if not should_be_dependent:
         return None
 
-    queues = [queue.deferred_job_registry, queue, queue.started_job_registry]
+    queues: list[RQBaseRegistry | DjangoRQ] = [
+        queue.deferred_job_registry,
+        queue,
+        queue.started_job_registry,
+    ]
     # Since there is no cleanup implementation in DeferredJobRegistry,
     # this registry can contain "outdated" jobs that weren't deleted from it
     # but were added to another registry. Probably such situations can occur
     # if there are active or deferred jobs when restarting the worker container.
     filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
-    all_user_jobs = []
+    all_user_jobs: list[RQJob] = []
     for q, f in zip(queues, filters):
         job_ids = q.get_job_ids()
         jobs = q.job_class.fetch_many(job_ids, q.connection)
@@ -422,8 +427,17 @@ def define_dependent_job(
         )
         all_user_jobs.extend(jobs)
 
-    # prevent possible cyclic dependencies
     if rq_id:
+        # Prevent cases where an RQ job depends on itself.
+        # It isn't possible to have multiple RQ jobs with the same ID in Redis.
+        # However, a race condition in request processing can lead to self-dependencies
+        # when 2 parallel requests attempt to enqueue RQ jobs with the same ID.
+        # This happens if an rq_job is fetched without a lock,
+        # but a lock is used when defining the dependent job and enqueuing a new one.
+        if any(rq_id == job.id for job in all_user_jobs):
+            return None
+
+        # prevent possible cyclic dependencies
         all_job_dependency_ids = {
             dep_id.decode() for job in all_user_jobs for dep_id in job.dependency_ids or ()
         }

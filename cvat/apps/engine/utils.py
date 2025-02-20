@@ -34,7 +34,8 @@ from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
-from rq.job import Job
+from rq.job import Job as RQJob
+
 
 from cvat.apps.engine.types import ExtendedRequest
 
@@ -146,7 +147,7 @@ def parse_exception_message(msg: str) -> str:
         pass
     return parsed_msg
 
-def process_failed_job(rq_job: Job):
+def process_failed_job(rq_job: RQJob):
     exc_info = str(rq_job.exc_info or '')
     rq_job.delete()
 

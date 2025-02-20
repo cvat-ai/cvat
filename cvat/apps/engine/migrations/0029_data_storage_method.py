@@ -16,24 +16,33 @@ def unzip(apps, schema_editor):
     archive_paths = []
 
     for data_instance in data_q_set:
-        for root, _, files in os.walk(os.path.join(settings.MEDIA_DATA_ROOT, '{}/raw/'.format(data_instance.id))):
-            archive_paths.extend([os.path.join(root, file) for file in files if _is_archive(file) or _is_zip(file)])
+        for root, _, files in os.walk(
+            os.path.join(settings.MEDIA_DATA_ROOT, "{}/raw/".format(data_instance.id))
+        ):
+            archive_paths.extend(
+                [os.path.join(root, file) for file in files if _is_archive(file) or _is_zip(file)]
+            )
 
     for path in archive_paths:
         Archive(path).extractall(os.path.dirname(path))
         os.remove(path)
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0028_labelcolor'),
+        ("engine", "0028_labelcolor"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='data',
-            name='storage_method',
-            field=models.CharField(choices=[('cache', 'CACHE'), ('file_system', 'FILE_SYSTEM')], default=cvat.apps.engine.models.StorageMethodChoice('file_system'), max_length=15),
+            model_name="data",
+            name="storage_method",
+            field=models.CharField(
+                choices=[("cache", "CACHE"), ("file_system", "FILE_SYSTEM")],
+                default=cvat.apps.engine.models.StorageMethodChoice("file_system"),
+                max_length=15,
+            ),
         ),
         migrations.RunPython(unzip),
     ]
