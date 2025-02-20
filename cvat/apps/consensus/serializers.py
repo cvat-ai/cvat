@@ -33,7 +33,7 @@ class ConsensusSettingsSerializer(serializers.ModelSerializer):
             "task_id",
         )
 
-        extra_kwargs = {k: {"required": False} for k in fields}
+        extra_kwargs = {}
 
         for field_name, help_text in {
             "iou_threshold": "Pairwise annotation matching IoU threshold",
