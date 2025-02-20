@@ -4,9 +4,6 @@
 
 import textwrap
 
-import django_rq
-from django.conf import settings
-from django_rq.queues import DjangoRQ as RqQueue
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiResponse,
@@ -31,6 +28,7 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import process_failed_job
 
 slogger = ServerLogManager(__name__)
@@ -75,7 +73,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
             ),
         },
     )
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         rq_id = request.query_params.get(self.CREATE_MERGE_RQ_ID_PARAMETER, None)
 
         if rq_id is None:

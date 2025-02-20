@@ -10,7 +10,6 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
-from rest_framework.request import Request
 from rq.job import Job as RqJob
 from rq.job import JobStatus as RqJobStatus
 
@@ -28,6 +27,7 @@ from cvat.apps.engine.models import (
     User,
     clear_annotations_in_jobs,
 )
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
@@ -184,7 +184,7 @@ class MergingManager:
     def _check_merging_available(self, task: Task, job: Job | None):
         _TaskMerger(task=task).check_merging_available(parent_job_id=job.id if job else None)
 
-    def schedule_merge(self, target: Task | Job, *, request: Request) -> str:
+    def schedule_merge(self, target: Task | Job, *, request: ExtendedRequest) -> str:
         if isinstance(target, Job):
             target_task = target.segment.task
             target_job = target

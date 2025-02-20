@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import TaskPermission
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
 from .models import ConsensusSettings
@@ -23,7 +24,9 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
         VIEW_STATUS = "view:status"
 
     @classmethod
-    def create_scope_check_status(cls, request, rq_job_owner_id: int, iam_context=None):
+    def create_scope_check_status(
+        cls, request: ExtendedRequest, rq_job_owner_id: int, iam_context=None
+    ):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
         return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, rq_job_owner_id=rq_job_owner_id)
