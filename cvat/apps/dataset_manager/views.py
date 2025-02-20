@@ -98,7 +98,7 @@ def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
                 *current_rq_job.args,
                 **current_rq_job.kwargs,
                 job_id=current_rq_job.id,
-                meta=rq_job_meta.reset_meta_on_retry(),
+                meta=rq_job_meta.get_meta_on_retry(),
                 job_ttl=current_rq_job.ttl,
                 job_result_ttl=current_rq_job.result_ttl,
                 job_description=current_rq_job.description,

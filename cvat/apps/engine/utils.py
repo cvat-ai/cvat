@@ -36,7 +36,6 @@ from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
 from rq.job import Job as RQJob
 
-
 from cvat.apps.engine.types import ExtendedRequest
 
 Import = namedtuple("Import", ["module", "name", "alias"])

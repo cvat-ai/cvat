@@ -5,13 +5,11 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 from uuid import UUID
 
 import attrs
-from attrs import asdict
 from django.conf import settings
 from django.db.models import Model
 from django.utils import timezone
@@ -24,49 +22,121 @@ from cvat.apps.engine.types import ExtendedRequest
 
 from .models import RequestAction, RequestSubresource, RequestTarget
 
-_str_validator = attrs.validators.instance_of(str)
-_int_validator = attrs.validators.instance_of(int)
-_optional_str_validator = attrs.validators.optional(attrs.validators.instance_of(str))
-_optional_int_validator = attrs.validators.optional(attrs.validators.instance_of(int))
-_optional_float_validator = attrs.validators.optional(attrs.validators.instance_of(float))
+
+class RQJobMetaField:
+    # common fields
+    FORMATTED_EXCEPTION = "formatted_exception"
+    REQUEST = "request"
+    USER = "user"
+    PROJECT_ID = "project_id"
+    TASK_ID = "task_id"
+    JOB_ID = "job_id"
+    LAMBDA = "lambda"
+    ORG_ID = "org_id"
+    ORG_SLUG = "org_slug"
+    STATUS = "status"
+    PROGRESS = "progress"
+    TASK_PROGRESS = "task_progress"
+    # export specific fields
+    RESULT_URL = "result_url"
+    RESULT = "result"
+    FUNCTION_ID = "function_id"
+    EXCEPTION_TYPE = "exc_type"
+    EXCEPTION_ARGS = "exc_args"
+    TMP_FILE = "tmp_file"
 
 
-@attrs.frozen(kw_only=True)
+class _AbstractAttribute:
+    def __init__(
+        self, key: str, *, optional: bool = False, validator: Callable | None = None
+    ) -> None:
+        assert validator is None or callable(validator), "validator must be callable"
+        self._key = key
+        self._validator = validator
+        self._optional = optional
+
+
+class _SettableAttribute(_AbstractAttribute):
+    def validate(self, value):
+        if value is None and not self._optional:
+            raise ValueError(f"{self._key} is required")
+        if value is not None and self._validator and not self._validator(value):
+            raise ValueError("Wrong type")
+
+    def __set__(self, instance: AbstractRQMeta, value):
+        self.validate(value)
+        instance.meta[self._key] = value
+
+
+class _GettableAttribute(_AbstractAttribute):
+    def __get__(self, instance: AbstractRQMeta, objtype: type[AbstractRQMeta] | None = None):
+        if self._optional:
+            return instance.meta.get(self._key)
+
+        # TODO: refactor
+        if self._key == RQJobMetaField.USER:
+            return UserInfo(data=instance.meta[self._key])
+        elif self._key == RQJobMetaField.REQUEST:
+            return RequestInfo(data=instance.meta[self._key])
+
+        return instance.meta[self._key]
+
+
+class ImmutableRQMetaAttribute(_GettableAttribute):
+    pass
+
+
+class MutableRQMetaAttribute(_GettableAttribute, _SettableAttribute):
+    pass
+
+
 class UserInfo:
-    id: int = attrs.field(validator=[_int_validator])
-    username: str = attrs.field(validator=[_str_validator])
-    email: str = attrs.field(validator=[_str_validator])
+    id: int = ImmutableRQMetaAttribute("id", validator=lambda x: isinstance(x, int))
+    username: str = ImmutableRQMetaAttribute("username", validator=lambda x: isinstance(x, str))
+    email: str = ImmutableRQMetaAttribute("email", validator=lambda x: isinstance(x, str))
 
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+    def to_dict(self):
+        return self.meta
+
+    def __init__(self, *, data: dict[str, str | int]) -> None:
+        self._data = data
+
+    @property
+    def meta(self):
+        return self._data
 
 
-@attrs.frozen(kw_only=True)
 class RequestInfo:
-    uuid: str = attrs.field(validator=[_str_validator])
-    timestamp: datetime = attrs.field(validator=[attrs.validators.instance_of(datetime)])
+    uuid = ImmutableRQMetaAttribute("uuid", validator=lambda x: isinstance(x, str))
+    timestamp = ImmutableRQMetaAttribute("timestamp", validator=lambda x: isinstance(x, datetime))
+
+    def __init__(self, *, data: dict[str, str | int]) -> None:
+        self._data = data
+
+    @property
+    def meta(self):
+        return self._data
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return self.meta
 
 
-@attrs.define
 class AbstractRQMeta(metaclass=ABCMeta):
-    _job: RQJob | None = attrs.field(init=False, default=None)
+    def __init__(self, *, job: RQJob | None = None, data: dict[str, Any] | None = None) -> None:
+        assert (job and not data) or (data and not job), "Only job or data can be passed"
+        self._job = job
+        self._data = data
 
-    def update_value(self, attribute: attrs.Attribute, value: Any):
-        self._job.meta[attribute.name] = value
+    @property
+    def meta(self) -> dict[RQJobMetaField, Any]:
+        return self._job.meta if self._job else self._data
 
     def to_dict(self) -> dict:
-        return asdict(self, filter=lambda k, _: not k.name.startswith("_"))
+        pass
 
     @classmethod
-    def from_job(cls, rq_job: RQJob):
-        keys_to_keep = [k.name for k in attrs.fields(cls) if not k.name.startswith("_")]
-        meta = cls(**{k: v for k, v in rq_job.meta.items() if k in keys_to_keep})
-        meta._job = rq_job
-
-        return meta
+    def from_job(cls, job: RQJob):
+        return cls(job=job)
 
     def save(self) -> None:
         assert isinstance(self._job, RQJob), "To save meta, rq job must be set"
@@ -77,34 +147,28 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def _get_resettable_fields() -> list[RQJobMetaField]:
         """Return a list of fields that must be reset on retry"""
 
-    def reset_meta_on_retry(self) -> dict[RQJobMetaField, Any]:
+    def get_meta_on_retry(self) -> dict[RQJobMetaField, Any]:
         resettable_fields = self._get_resettable_fields()
 
         return {k: v for k, v in self._job.meta.items() if k not in resettable_fields}
 
 
-on_setattr = attrs.setters.pipe(attrs.setters.validate, AbstractRQMeta.update_value)
-
-
-@attrs.define(kw_only=True)
 class RQMetaWithFailureInfo(AbstractRQMeta):
-    # mutable && optional fields
-    formatted_exception: str | None = attrs.field(
-        validator=[_optional_str_validator],
-        default=None,
-        on_setattr=on_setattr,
+    formatted_exception = MutableRQMetaAttribute(
+        RQJobMetaField.FORMATTED_EXCEPTION,
+        validator=lambda x: isinstance(x, str),
+        optional=True,
     )
-    exc_type: type[Exception] | None = attrs.field(
-        default=None,
-        on_setattr=on_setattr,
+    exc_type = MutableRQMetaAttribute(
+        RQJobMetaField.EXCEPTION_TYPE,
+        validator=lambda x: issubclass(x, BaseException),
+        optional=True,
     )
-
-    @exc_type.validator
-    def _check_exc_type(self, attribute: attrs.Attribute, value: Any):
-        if value is not None and not issubclass(value, Exception):
-            raise ValueError("Wrong exception type")
-
-    exc_args: Iterable | None = attrs.field(default=None, on_setattr=on_setattr)
+    exc_args = MutableRQMetaAttribute(
+        RQJobMetaField.EXCEPTION_ARGS,
+        validator=lambda x: isinstance(x, tuple),
+        optional=True,
+    )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -115,44 +179,37 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
         ]
 
 
-@attrs.define(kw_only=True)
 class BaseRQMeta(RQMetaWithFailureInfo):
     # immutable and required fields
-    user: UserInfo = attrs.field(
-        validator=[attrs.validators.instance_of(UserInfo)],
-        converter=lambda x: x if isinstance(x, UserInfo) else UserInfo(**x),
-        on_setattr=attrs.setters.frozen,
-    )
-    request: RequestInfo = attrs.field(
-        validator=[attrs.validators.instance_of(RequestInfo)],
-        converter=lambda x: x if isinstance(x, RequestInfo) else RequestInfo(**x),
-        on_setattr=attrs.setters.frozen,
-    )
+    user: UserInfo = ImmutableRQMetaAttribute(RQJobMetaField.USER)
+    request: RequestInfo = ImmutableRQMetaAttribute(RQJobMetaField.REQUEST)
 
     # immutable and optional fields
-    org_id: int | None = attrs.field(
-        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    # TODO: only __get__ should be allowed
+    org_id: int | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.ORG_ID, validator=lambda x: isinstance(x, int), optional=True
     )
-    org_slug: str | None = attrs.field(
-        validator=[_optional_str_validator], default=None, on_setattr=attrs.setters.frozen
+    org_slug: int | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.ORG_SLUG, validator=lambda x: isinstance(x, str), optional=True
     )
-    project_id: int | None = attrs.field(
-        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    project_id: int | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.PROJECT_ID, validator=lambda x: isinstance(x, int), optional=True
     )
-    task_id: int | None = attrs.field(
-        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    task_id: int | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.TASK_ID, validator=lambda x: isinstance(x, int), optional=True
     )
-    job_id: int | None = attrs.field(
-        validator=[_optional_int_validator], default=None, on_setattr=attrs.setters.frozen
+    job_id: int | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.JOB_ID, validator=lambda x: isinstance(x, int), optional=True
     )
 
     # mutable fields
-    progress: float | None = attrs.field(
-        validator=[_optional_float_validator],
-        default=None,
-        on_setattr=on_setattr,
+    progress: float | None = MutableRQMetaAttribute(
+        RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, float), optional=True
     )
-    status: str = attrs.field(validator=[_str_validator], default="", on_setattr=on_setattr)
+    # todo: not nullable?
+    status: str | None = MutableRQMetaAttribute(
+        RQJobMetaField.STATUS, validator=lambda x: isinstance(x, str), optional=True
+    )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -181,27 +238,31 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         user = request.user
 
         return cls(
-            user=UserInfo(
-                id=getattr(user, "id", None),
-                username=getattr(user, "username", None),
-                email=getattr(user, "email", None),
-            ),
-            request=RequestInfo(
-                uuid=request.uuid,
-                timestamp=timezone.localtime(),
-            ),
-            org_id=oid,
-            org_slug=oslug,
-            project_id=pid,
-            task_id=tid,
-            job_id=jid,
-        ).to_dict()
+            data={
+                # TODO:
+                RQJobMetaField.USER: UserInfo(
+                    id=getattr(user, "id", None),
+                    username=getattr(user, "username", None),
+                    email=getattr(user, "email", None),
+                ),
+                RQJobMetaField.REQUEST: RequestInfo(
+                    uuid=request.uuid,
+                    timestamp=timezone.localtime(),
+                ),
+                RQJobMetaField.ORG_ID: oid,
+                RQJobMetaField.ORG_SLUG: oslug,
+                RQJobMetaField.PROJECT_ID: pid,
+                RQJobMetaField.TASK_ID: tid,
+                RQJobMetaField.JOB_ID: jid,
+            }
+        )
 
 
-@attrs.define(kw_only=True)
 class ExportRQMeta(BaseRQMeta):
     # will be changed to ExportResultInfo in the next PR
-    result_url: str | None = attrs.field(validator=[_optional_str_validator], default=None)
+    result_url: str | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.RESULT_URL, validator=lambda x: isinstance(x, str), optional=True
+    )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -218,23 +279,21 @@ class ExportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls(
-            **base_meta,
-            result_url=result_url,
-        ).to_dict()
+        return cls(data={**base_meta, RQJobMetaField.RESULT_URL: result_url})
 
 
-@attrs.define(kw_only=True)
 class ImportRQMeta(BaseRQMeta):
     # immutable && optional fields
-    tmp_file: str | None = attrs.field(
-        validator=[_optional_str_validator], default=None, on_setattr=attrs.setters.frozen
+    # todo: immutable
+    tmp_file: str | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.TMP_FILE, validator=lambda x: isinstance(x, str), optional=True
     )
 
     # mutable fields
-    task_progress: float | None = attrs.field(
-        validator=[_optional_float_validator], default=None, on_setattr=on_setattr
-    )  # used when importing project dataset
+    # used when importing project dataset
+    task_progress: float | None = MutableRQMetaAttribute(
+        RQJobMetaField.TASK_PROGRESS, validator=lambda x: isinstance(x, float), optional=True
+    )
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -252,32 +311,7 @@ class ImportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls(
-            **base_meta,
-            tmp_file=tmp_file,
-        ).to_dict()
-
-
-class RQJobMetaField:
-    # common fields
-    FORMATTED_EXCEPTION = "formatted_exception"
-    REQUEST = "request"
-    USER = "user"
-    PROJECT_ID = "project_id"
-    TASK_ID = "task_id"
-    JOB_ID = "job_id"
-    LAMBDA = "lambda"
-    ORG_ID = "org_id"
-    ORG_SLUG = "org_slug"
-    STATUS = "status"
-    PROGRESS = "progress"
-    TASK_PROGRESS = "task_progress"
-    # export specific fields
-    RESULT_URL = "result_url"
-    RESULT = "result"
-    FUNCTION_ID = "function_id"
-    EXCEPTION_TYPE = "exc_type"
-    EXCEPTION_ARGS = "exc_args"
+        return cls({**base_meta, RQJobMetaField.TMP_FILE: tmp_file})
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
