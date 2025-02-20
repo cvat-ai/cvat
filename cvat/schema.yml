@@ -4224,7 +4224,6 @@ paths:
   /api/quality/conflicts:
     get:
       operationId: quality_list_conflicts
-      description: Please note that no conflicts will be returned for project reports
       summary: List annotation conflicts in a quality report
       parameters:
       - name: X-Organization
@@ -4245,7 +4244,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'severity'].
+           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'project_id', 'severity'].
         schema:
           type: string
       - name: frame
@@ -4280,6 +4279,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: project_id
+        in: query
+        description: A simple equality filter for the project_id field
+        schema:
+          type: integer
       - in: query
         name: report_id
         schema:
@@ -4297,7 +4301,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''severity'']'
+          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''project_id'', ''severity'']'
         schema:
           type: string
       - name: task_id

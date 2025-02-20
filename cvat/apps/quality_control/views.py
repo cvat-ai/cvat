@@ -49,7 +49,6 @@ from cvat.apps.quality_control.serializers import (
 @extend_schema_view(
     list=extend_schema(
         summary="List annotation conflicts in a quality report",
-        description="Please note that no conflicts will be returned for project reports",
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -64,34 +63,29 @@ from cvat.apps.quality_control.serializers import (
     ),
 )
 class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
-    queryset = (
-        AnnotationConflict.objects.select_related(
-            "report",
-            "report__job",
-            "report__job__segment",
-            "report__job__segment__task",
-            "report__job__segment__task__organization",
-            "report__task",
-            "report__task__organization",
-        )
-        .prefetch_related(
-            "report__parents",
-            "annotation_ids",
-        )
-        .all()
-    )
+    queryset = AnnotationConflict.objects.prefetch_related("annotation_ids")
 
     iam_organization_field = [
         "report__job__segment__task__organization",
         "report__task__organization",
+        "report__project__organization",
     ]
 
     search_fields = []
-    filter_fields = list(search_fields) + ["id", "frame", "type", "job_id", "task_id", "severity"]
+    filter_fields = list(search_fields) + [
+        "id",
+        "frame",
+        "type",
+        "job_id",
+        "task_id",
+        "project_id",
+        "severity",
+    ]
     simple_filters = set(filter_fields) - {"id"}
     lookup_fields = {
         "job_id": "report__job__id",
-        "task_id": "report__job__segment__task__id",  # task reports do not contain own conflicts
+        "task_id": "report__job__segment__task__id",  # task reports do not have own conflicts
+        "project_id": "report__job__segment__task__project__id",  # project reports do not have own conflicts
     }
     ordering_fields = list(filter_fields)
     ordering = "-id"
@@ -111,15 +105,18 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
                 self.check_object_permissions(self.request, report)
 
-                if report.target == QualityReportTarget.TASK:
+                if report.target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(report=report)
+                elif report.target == QualityReportTarget.TASK:
                     queryset = queryset.filter(
                         Q(report=report) | Q(report__parents__in=[report])
                     ).distinct()
-                elif report.target == QualityReportTarget.JOB:
-                    queryset = queryset.filter(report=report)
                 elif report.target == QualityReportTarget.PROJECT:
-                    # project reports would contain too many conflicts to adequately use such info
-                    queryset = AnnotationConflict.objects.none()
+                    queryset = queryset.filter(
+                        Q(report=report)
+                        | Q(report__parents__in=[report])
+                        | Q(report__parents__parents__in=[report])
+                    ).distinct()
                 else:
                     assert False
             else:
