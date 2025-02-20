@@ -76,8 +76,6 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
         },
     )
     def create(self, request, *args, **kwargs):
-        self.check_permissions(request)
-
         rq_id = request.query_params.get(self.CREATE_MERGE_RQ_ID_PARAMETER, None)
 
         if rq_id is None:
@@ -93,7 +91,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
                     raise NotFound(f"Task {task_id} does not exist") from ex
             elif job_id:
                 try:
-                    instance = Job.objects.get(pk=job_id)
+                    instance = Job.objects.select_related("segment").get(pk=job_id)
                 except Job.DoesNotExist as ex:
                     raise NotFound(f"Jobs {job_id} do not exist") from ex
 
@@ -109,8 +107,8 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
 
-            queue: RqQueue = django_rq.get_queue(settings.CVAT_QUEUES.CONSENSUS.value)
-            rq_job = queue.fetch_job(rq_id)
+            manager = merging.MergingManager()
+            rq_job = manager.get_job(rq_id)
             if (
                 not rq_job
                 or not ConsensusMergePermission.create_scope_check_status(
@@ -192,7 +190,7 @@ class ConsensusSettingsViewSet(
     mixins.RetrieveModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = ConsensusSettings.objects.select_related("task", "task__organization").all()
+    queryset = ConsensusSettings.objects
 
     iam_organization_field = "task__organization"
 

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Optional, cast
+from typing import cast
 
 from django.conf import settings
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -15,8 +15,8 @@ from .models import ConsensusSettings
 
 
 class ConsensusMergePermission(OpenPolicyAgentPermission):
-    rq_job_owner_id: Optional[int]
-    task_id: Optional[int]
+    rq_job_owner_id: int | None
+    task_id: int | None
 
     class Scopes(StrEnum):
         CREATE = "create"
@@ -55,7 +55,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                     if task_id is not None or job_id is not None:
                         if job_id:
                             try:
-                                job = Job.objects.get(id=job_id)
+                                job = Job.objects.select_related("segment").get(id=job_id)
                             except Job.DoesNotExist:
                                 raise ValidationError("The specified job does not exist")
 
@@ -69,10 +69,6 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                             raise ValidationError("The specified task does not exist")
 
                         iam_context = get_iam_context(request, task)
-
-                        permissions.append(
-                            TaskPermission.create_scope_view(request, task, iam_context=iam_context)
-                        )
 
                     permissions.append(
                         cls.create_base_perm(
@@ -110,8 +106,8 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
         data = None
 
         if self.scope == self.Scopes.CREATE:
-            task: Optional[Task] = None
-            project: Optional[Project] = None
+            task: Task | None = None
+            project: Project | None = None
 
             if self.scope == self.Scopes.CREATE and self.task_id:
                 try:
@@ -121,24 +117,24 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
 
             if task and task.project:
                 project = task.project
-                organization = project.organization
+                organization_id = task.project.organization_id
             else:
-                organization = getattr(task, "organization", None)
+                organization_id = task.organization_id
 
             data = {
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(project.owner, "id", None)},
-                        "assignee": {"id": getattr(project.assignee, "id", None)},
+                        "owner": {"id": project.owner_id},
+                        "assignee": {"id": project.assignee_id},
                     }
                     if project
                     else None
@@ -151,7 +147,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
 
 
 class ConsensusSettingPermission(OpenPolicyAgentPermission):
-    obj: Optional[ConsensusSettings]
+    obj: ConsensusSettings | None
 
     class Scopes(StrEnum):
         LIST = "list"
@@ -223,25 +219,25 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
         if self.obj:
             task = self.obj.task
             if task.project:
-                organization = task.project.organization
+                organization_id = task.project.organization_id
             else:
-                organization = task.organization
+                organization_id = task.organization_id
 
             data = {
                 "id": self.obj.id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": task.project.owner_id},
+                        "assignee": {"id": task.project.assignee_id},
                     }
                     if task.project
                     else None

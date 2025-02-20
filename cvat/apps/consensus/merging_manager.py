@@ -234,12 +234,7 @@ class MergingManager:
 
     def get_job(self, rq_id: str) -> RqJob | None:
         queue = self._get_queue()
-        rq_job = queue.fetch_job(rq_id)
-
-        if rq_job:
-            rq_job = None
-
-        return rq_job
+        return queue.fetch_job(rq_id)
 
     @classmethod
     @silk_profile()
