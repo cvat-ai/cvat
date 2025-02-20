@@ -2344,7 +2344,7 @@ class QualityReportManager:
                 },
             )
 
-    def schedule_custom_quality_check_job(
+    def schedule_quality_check_job(
         self, request: ExtendedRequest, target: Task | Project, *, user_id: int
     ) -> str:
         """

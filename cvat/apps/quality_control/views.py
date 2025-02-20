@@ -4,7 +4,7 @@
 
 import textwrap
 
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -23,7 +23,9 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import get_server_url
+from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
     AnnotationConflict,
@@ -98,11 +100,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             if report_id := self.request.query_params.get("report_id", None):
                 # NOTE: This filter is too complex to be implemented by other means,
                 # it has a dependency on the report type
-                try:
-                    report = QualityReport.objects.get(id=report_id)
-                except QualityReport.DoesNotExist as ex:
-                    raise NotFound(f"Report {report_id} does not exist") from ex
-
+                report = get_or_404(QualityReport, report_id)
                 self.check_object_permissions(self.request, report)
 
                 if report.target == QualityReportTarget.JOB:
@@ -144,14 +142,14 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             If you want to restrict the list of results to a specific report type,
             use the "target" parameter.
 
-            The "parent_id" filter includes only direct children
-            reports, without including their 2nd-level children and forth.
+            The "parent_id" filter includes all the nested reports recursively.
+            For instance, if the "parent_id" is a project report,
+            all the related task and job reports will be returned.
 
-            Please note that a task report can be reused in several project reports,
-            but the "parent_id" response field will include only the first (the original)
-            parent report id. The "parent_id" filter, however, will return the reused tasks'
-            reports, even though the response "parent_id" values may be different
-            from the requested one.
+            Please note that a report can be reused in several parent reports,
+            but the "parent_id" field in responses will include only the first parent report id.
+            The "parent_id" filter still returns all the relevant nested reports,
+            even though the response "parent_id" values may be different from the requested one.
         """
         ),
         parameters=[
@@ -185,8 +183,9 @@ class QualityReportViewSet(
     mixins.CreateModelMixin,
 ):
     @staticmethod
-    def _add_prefetch_params(queryset):
+    def _add_prefetch_params(queryset: QuerySet[QualityReport]) -> QuerySet[QualityReport]:
         return queryset.prefetch_related(
+            "assignee",
             "job",
             "job__segment",
             "job__segment__task",
@@ -197,7 +196,7 @@ class QualityReportViewSet(
             "project__organization",
         )
 
-    queryset = _add_prefetch_params(QualityReport.objects.get_queryset()).all()
+    queryset = _add_prefetch_params(QualityReport.objects.get_queryset())
 
     iam_organization_field = [
         "job__segment__task__organization",
@@ -235,22 +234,14 @@ class QualityReportViewSet(
             # NOTE: parent id filter requires a different queryset,
             # since there is no 'contains' lookup for an m2m relation in Django
             if parent_id := self.request.query_params.get("parent_id", None):
-                try:
-                    parent_report = QualityReport.objects.get(id=parent_id)
-                except QualityReport.DoesNotExist as ex:
-                    raise NotFound(f"Quality report {parent_id} does not exist") from ex
-
+                parent_report = get_or_404(QualityReport, parent_id)
                 iam_context = get_iam_context(self.request, parent_report)
 
-                queryset = self._add_prefetch_params(parent_report.children).all()
+                queryset = self._add_prefetch_params(parent_report.children)
 
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
-                try:
-                    task = Task.objects.get(id=task_id)
-                except Task.DoesNotExist as ex:
-                    raise NotFound(f"Task {task_id} does not exist") from ex
-
+                task = get_or_404(Task, task_id)
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
 
@@ -260,11 +251,7 @@ class QualityReportViewSet(
 
             if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
-                try:
-                    project = Project.objects.get(id=project_id)
-                except Project.DoesNotExist as ex:
-                    raise NotFound(f"Project {project_id} does not exist") from ex
-
+                project = get_or_404(Project, project_id)
                 self.check_object_permissions(self.request, project)
                 iam_context = get_iam_context(self.request, project)
 
@@ -331,7 +318,7 @@ class QualityReportViewSet(
             ),
         },
     )
-    def create(self, request, *args, **kwargs):
+    def create(self, request: ExtendedRequest, *args, **kwargs):
         self.check_permissions(request)
 
         rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
@@ -341,34 +328,21 @@ class QualityReportViewSet(
             input_serializer.is_valid(raise_exception=True)
 
             if task_id := input_serializer.validated_data.get("task_id"):
-                try:
-                    task = Task.objects.get(pk=task_id)
-                except Task.DoesNotExist as ex:
-                    raise NotFound(f"Task {task_id} does not exist") from ex
-
-                manager = qc.TaskQualityReportManager()
-                job_params = {"task": task}
+                target = get_or_404(Task, task_id)
             elif project_id := input_serializer.validated_data.get("project_id"):
-                try:
-                    project = Project.objects.get(pk=project_id)
-                except Project.DoesNotExist as ex:
-                    raise NotFound(f"Project {project_id} does not exist") from ex
-
-                manager = qc.ProjectQualityReportManager()
-                job_params = {"project": project}
+                target = get_or_404(Project, project_id)
             else:
                 assert False
 
+            report_manager = qc.QualityReportManager()
+
             try:
-                rq_id = manager.schedule_quality_check_job(
-                    **job_params, request=request, user_id=request.user.id
+                rq_id = report_manager.schedule_quality_check_job(
+                    target=target, request=request, user_id=request.user.id
                 )
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except (
-                qc.TaskQualityReportManager.QualityReportsNotAvailable,
-                qc.ProjectQualityReportManager.QualityReportsNotAvailable,
-            ) as ex:
+            except qc.QualityReportManager.QualityReportsNotAvailable as ex:
                 raise ValidationError(str(ex))
 
         else:
@@ -376,7 +350,7 @@ class QualityReportViewSet(
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
 
-            report_manager = qc.TaskQualityReportManager()
+            report_manager = qc.QualityReportManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
             # FUTURE-TODO: move into permissions
             # and allow not only rq job owner to check the status
@@ -487,9 +461,7 @@ class QualitySettingsViewSet(
     mixins.CreateModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = QualitySettings.objects.select_related(
-        "task", "task__organization", "project", "project__organization"
-    ).all()
+    queryset = QualitySettings.objects
 
     iam_organization_field = "task__organization"
 
@@ -509,21 +481,13 @@ class QualitySettingsViewSet(
 
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter requires extra checks
-                try:
-                    task = Task.objects.get(id=task_id)
-                except Task.DoesNotExist as ex:
-                    raise NotFound(f"Task {task_id} does not exist") from ex
-
+                task = get_or_404(Task, task_id)
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
 
             if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter requires extra checks
-                try:
-                    project = Project.objects.get(id=project_id)
-                except Project.DoesNotExist as ex:
-                    raise NotFound(f"Project {project_id} does not exist") from ex
-
+                project = get_or_404(Project, project_id)
                 self.check_object_permissions(self.request, project)
                 iam_context = get_iam_context(self.request, project)
 
