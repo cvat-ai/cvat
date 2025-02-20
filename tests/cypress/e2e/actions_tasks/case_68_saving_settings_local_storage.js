@@ -6,7 +6,7 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
-import { generateArrowActionString } from '../../support/utils';
+import { generateString } from '../../support/utils';
 
 context('Saving setting to local storage.', () => {
     const caseId = '68';
@@ -17,7 +17,7 @@ context('Saving setting to local storage.', () => {
     function bumpGamma(nsteps) {
         const gammaFilterClass = '.cvat-image-setups-gamma';
         const wrapper = '.cvat-image-setups-filters';
-        const action = generateArrowActionString(nsteps, 'rightarrow');
+        const action = generateString(nsteps, 'rightarrow');
         cy.applyActionToSliders(wrapper, [gammaFilterClass], action);
     }
     function setUpGamma(nsteps) {

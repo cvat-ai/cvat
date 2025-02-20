@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-export function generateArrowActionString(countPointsToMove, arrow) {
+export function generateString(countPointsToMove, arrow) {
     let action = '';
     for (let i = 0; i < countPointsToMove; i++) {
         action += `{${arrow}}`;
