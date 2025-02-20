@@ -319,9 +319,23 @@ function HeaderComponent(props: Props): JSX.Element {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            const data = await response.json(); // Assuming the response is JSON
-            console.log('Fetched Data:', data);
-            return data;
+            const data = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const table = doc.querySelector('.dataframe');
+            if (table) {
+                const headers = Array.from(table.querySelectorAll('thead th')).map((th) => th?.textContent?.trim() ?? '');
+                const values = Array.from(table.querySelectorAll('tbody td')).map((td) => td?.textContent?.trim() ?? '');
+                const statusIdx = headers.indexOf('status');
+                const msgIdx = headers.indexOf('msg');
+                if (statusIdx !== -1 && msgIdx !== -1 && values[statusIdx] === '200') {
+                    return values[msgIdx];
+                }
+                if (msgIdx !== -1 && statusIdx !== -1) {
+                    throw new Error(`HTTP error! Status: ${values[msgIdx]}`);
+                }
+            }
+            return null;
         } catch (error) {
             console.error('Error fetching data:', error);
             return null;
@@ -481,6 +495,7 @@ function HeaderComponent(props: Props): JSX.Element {
                                 content: 'Project created successfully',
                                 onOk: () => {
                                     Modal.destroyAll(); // Close all modals (alert + form popup)
+                                    window.location.reload();
                                 },
                             });
                         } else {
