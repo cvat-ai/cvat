@@ -110,7 +110,6 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            str_resources = []
 
             str_resources = list(map(os.fspath, resources))
 
