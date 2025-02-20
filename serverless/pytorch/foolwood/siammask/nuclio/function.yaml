@@ -5,11 +5,10 @@ metadata:
     name: SiamMask
     type: tracker
     spec:
-    framework: pytorch
 
 spec:
   description: Fast Online Object Tracking and Segmentation
-  runtime: 'python:3.6'
+  runtime: 'python:3.9'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -27,7 +26,7 @@ spec:
         - kind: ARG
           value: PATH="/root/miniconda3/bin:${PATH}"
         - kind: RUN
-          value: apt update && apt install -y --no-install-recommends wget git ca-certificates libglib2.0-0 libsm6 libxrender1 libxext6 && rm -rf /var/lib/apt/lists/*
+          value: apt update && apt install -y --no-install-recommends wget git ca-certificates && rm -rf /var/lib/apt/lists/*
         - kind: RUN
           value: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &&
             chmod +x Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh -b &&
@@ -35,13 +34,13 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: conda create -y -n siammask python=3.6
+          value: conda create -y -n siammask python=3.9
         - kind: SHELL
           value: '["conda", "run", "-n", "siammask", "/bin/bash", "-c"]'
         - kind: RUN
           value: git clone https://github.com/foolwood/SiamMask.git
         - kind: RUN
-          value: pip install Cython==0.29.4 colorama==0.3.9 numpy==1.15.4 requests==2.21.0 fire==0.1.3 matplotlib==2.2.3 numba==0.39.0 scipy==1.1.0 h5py==2.8.0 pandas==0.23.4 tqdm==4.29.1 tensorboardX==1.6 opencv_python==3.4.3.18 torch==1.9.0 torchvision==0.2.1 jsonpickle
+          value: pip install Cython colorama 'numpy<1.20' requests fire matplotlib numba scipy h5py pandas tqdm tensorboardX 'opencv-python-headless<4.9.10' torch torchvision jsonpickle
         - kind: RUN
           value: conda install -y gcc_linux-64
         - kind: RUN
@@ -49,11 +48,11 @@ spec:
         - kind: RUN
           value: wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth
         - kind: ENTRYPOINT
-          value: '["conda", "run", "-n", "siammask"]'
+          value: '["conda", "run", "--no-capture-output", "-n", "siammask"]'
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

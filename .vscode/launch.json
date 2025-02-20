@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "REST API tests: Attach to server",
             "type": "debugpy",
@@ -145,8 +146,8 @@
             "type": "node",
             "request": "launch",
             "name": "ui.js: test",
-            "cwd": "${workspaceRoot}/tests",
-            "runtimeExecutable": "${workspaceRoot}/tests/node_modules/.bin/cypress",
+            "cwd": "${workspaceFolder}/tests",
+            "runtimeExecutable": "${workspaceFolder}/tests/node_modules/.bin/cypress",
             "args": [
                 "run",
                 "--headless",
@@ -163,13 +164,12 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "env": {
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
-                "IAM_OPA_BUNDLE": "1",
                 "DJANGO_LOG_SERVER_HOST": "localhost",
-                "DJANGO_LOG_SERVER_PORT": "8282"
+                "DJANGO_LOG_SERVER_PORT": "8282",
             },
             "args": [
                 "runserver",
@@ -179,7 +179,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole"
+            "console": "internalConsole",
         },
         {
             "name": "server: chrome",
@@ -201,7 +201,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "import",
@@ -223,7 +223,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "export",
@@ -245,7 +245,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "quality_reports",
@@ -267,7 +267,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "analytics_reports",
@@ -289,7 +289,7 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/rqscheduler.py",
+            "program": "${workspaceFolder}/rqscheduler.py",
             "django": true,
             "cwd": "${workspaceFolder}",
             "args": [
@@ -308,7 +308,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "annotation",
@@ -327,7 +327,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "webhooks",
@@ -346,10 +346,32 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "rqworker",
                 "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - chunks",
+            "type": "debugpy",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "rqworker",
+                "chunks",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker"
             ],
@@ -368,9 +390,25 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "migrate"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: sync periodic jobs",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/manage.py",
+            "args": [
+                "syncperiodicjobs"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -384,7 +422,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "test",
                 "--settings",
@@ -406,6 +444,8 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
+                "--verbose",
+                "--no-cov", // vscode debugger might not work otherwise
                 "tests/python/rest_api/"
             ],
             "cwd": "${workspaceFolder}",
@@ -487,7 +527,7 @@
             "justMyCode": false,
             "stopOnEntry": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
+            "program": "${workspaceFolder}/manage.py",
             "args": [
                 "spectacular",
                 "--file",
@@ -510,20 +550,6 @@
                 "src/api.js"
             ],
             "port": 9230
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "jest debug",
-            "cwd": "${workspaceFolder}/cvat-core",
-            "program": "${workspaceFolder}/node_modules/.bin/jest",
-            "args": [
-                "--config",
-                "${workspaceFolder}/cvat-core/jest.config.cjs"
-            ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "disableOptimisticBPs": true,
         }
     ],
     "compounds": [
@@ -538,7 +564,8 @@
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
                 "server: RQ - analytics reports",
-                "server: RQ - cleaning"
+                "server: RQ - cleaning",
+                "server: RQ - chunks",
             ]
         }
     ]

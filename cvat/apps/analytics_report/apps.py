@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,12 +9,6 @@ class EventsConfig(AppConfig):
     name = "cvat.apps.analytics_report"
 
     def ready(self):
-        from django.conf import settings
+        from cvat.apps.iam.permissions import load_app_permissions
 
-        from . import default_settings
-
-        for key in dir(default_settings):
-            if key.isupper() and not hasattr(settings, key):
-                setattr(settings, key, getattr(default_settings, key))
-
-        from . import signals  # pylint: disable=unused-import
+        load_app_permissions(self)

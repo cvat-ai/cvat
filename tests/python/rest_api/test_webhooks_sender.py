@@ -1,10 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 from http import HTTPStatus
-from time import sleep
+from time import sleep, time
 
 import pytest
 from deepdiff import DeepDiff
@@ -65,9 +65,11 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
     return response.json()
 
 
-def get_deliveries(webhook_id, expected_count=1):
+def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
+    start_time = time()
+
     delivery_response = {}
-    for _ in range(10):
+    while True:
         response = get_method("admin1", f"webhooks/{webhook_id}/deliveries")
         assert response.status_code == HTTPStatus.OK
 
@@ -75,6 +77,9 @@ def get_deliveries(webhook_id, expected_count=1):
         if deliveries["count"] == expected_count:
             delivery_response = json.loads(deliveries["results"][0]["response"])
             break
+
+        if time() - start_time > timeout:
+            raise TimeoutError("Failed to get deliveries within the specified time interval")
 
         sleep(1)
 
@@ -208,7 +213,7 @@ class TestWebhookIntersection:
         assert response.status_code == HTTPStatus.CREATED
 
         project_id = response.json()["id"]
-        events_1 = ["create:task", "update:project"]
+        events_1 = ["create:task", "update:issue"]
         events_2 = ["create:task", "create:issue"]
         webhook_id_1 = create_webhook(events_1, "project", project_id=project_id)["id"]
         webhook_id_2 = create_webhook(events_2, "project", project_id=project_id)["id"]
@@ -656,6 +661,34 @@ class TestWebhookCommentEvents:
         )
 
 
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetWebhookDeliveries:
+    def test_not_project_staff_cannot_get_webhook(self, projects, users):
+        user, project = next(
+            (user, project)
+            for user in users
+            if "user" in user["groups"]
+            for project in projects
+            if project["owner"]["id"] != user["id"]
+        )
+
+        webhook = create_webhook(["create:task"], "project", project_id=project["id"])
+        owner = next(user for user in users if user["id"] == project["owner"]["id"])
+
+        response = post_method(owner["username"], f"webhooks/{webhook['id']}/ping", {})
+        assert response.status_code == HTTPStatus.OK
+
+        delivery_id = response.json()["id"]
+
+        response = get_method(user["username"], f"webhooks/{webhook['id']}/deliveries")
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+        response = get_method(
+            user["username"], f"webhooks/{webhook['id']}/deliveries/{delivery_id}"
+        )
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookPing:
     def test_ping_webhook(self, projects):
@@ -679,6 +712,20 @@ class TestWebhookPing:
             )
             == {}
         )
+
+    def test_not_project_staff_cannot_ping(self, projects, users):
+        user, project = next(
+            (user, project)
+            for user in users
+            if "user" in user["groups"]
+            for project in projects
+            if project["owner"]["id"] != user["id"]
+        )
+
+        webhook = create_webhook(["create:task"], "project", project_id=project["id"])
+
+        response = post_method(user["username"], f"webhooks/{webhook['id']}/ping", {})
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -727,3 +774,25 @@ class TestWebhookRedelivery:
             )
             == {}
         )
+
+    def test_not_project_staff_cannot_redeliver(self, projects, users):
+        user, project = next(
+            (user, project)
+            for user in users
+            if "user" in user["groups"]
+            for project in projects
+            if project["owner"]["id"] != user["id"]
+        )
+
+        webhook = create_webhook(["create:task"], "project", project_id=project["id"])
+        owner = next(user for user in users if user["id"] == project["owner"]["id"])
+
+        response = post_method(owner["username"], f"webhooks/{webhook['id']}/ping", {})
+        assert response.status_code == HTTPStatus.OK
+
+        delivery_id = response.json()["id"]
+
+        response = post_method(
+            user["username"], f"webhooks/{webhook['id']}/deliveries/{delivery_id}/redelivery", {}
+        )
+        assert response.status_code == HTTPStatus.FORBIDDEN

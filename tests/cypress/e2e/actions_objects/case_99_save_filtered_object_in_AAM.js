@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,7 +40,7 @@ context('Save filtered object in AAM.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it(`Set filter label == “${labelName}”.`, () => {
+        it(`Set filter label == "${labelName}".`, () => {
             cy.addFiltersRule(0);
             cy.setFilter({
                 groupIndex: 0,

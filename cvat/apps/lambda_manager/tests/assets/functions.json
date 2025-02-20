@@ -90,6 +90,42 @@
         "httpPort": 49158
       }
     },
+    "test-model-has-state-building": {
+      "metadata": {
+        "name": "test-model-has-state-building",
+        "annotations": {
+          "framework": "openvino",
+          "name": "State is building",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "detector"
+        }
+      },
+      "spec": {
+        "description": "Test state building"
+      },
+      "status": {
+        "state": "building"
+      }
+    },
+    "test-model-has-state-error": {
+      "metadata": {
+        "name": "test-model-has-state-building",
+        "annotations": {
+          "framework": "openvino",
+          "name": "State is error",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "detector"
+        }
+      },
+      "spec": {
+        "description": "Test state error"
+      },
+      "status": {
+        "state": "error"
+      }
+    }
+  },
+  "negative": {
     "test-model-has-non-type": {
       "metadata": {
         "name": "test-model-has-non-type",
@@ -143,42 +179,6 @@
         "httpPort": 49162
       }
     },
-    "test-model-has-state-building": {
-      "metadata": {
-        "name": "test-model-has-state-building",
-        "annotations": {
-          "framework": "openvino",
-          "name": "State is building",
-          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
-          "type": "detector"
-        }
-      },
-      "spec": {
-        "description": "Test state building"
-      },
-      "status": {
-        "state": "building"
-      }
-    },
-    "test-model-has-state-error": {
-      "metadata": {
-        "name": "test-model-has-state-building",
-        "annotations": {
-          "framework": "openvino",
-          "name": "State is error",
-          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
-          "type": "detector"
-        }
-      },
-      "spec": {
-        "description": "Test state error"
-      },
-      "status": {
-        "state": "error"
-      }
-    }
-  },
-  "negative": {
     "test-model-has-non-unique-labels": {
       "metadata": {
         "name": "test-model-has-non-unique-labels",

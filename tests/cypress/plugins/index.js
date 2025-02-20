@@ -7,7 +7,7 @@
 const fs = require('fs');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const { isFileExist } = require('cy-verify-downloads');
-const { imageGenerator } = require('./imageGenerator/addPlugin');
+const { imageGenerator, bufferToImage } = require('./imageGenerator/addPlugin');
 const { createZipArchive } = require('./createZipArchive/addPlugin');
 const { compareImages } = require('./compareImages/addPlugin');
 const { unpackZipArchive } = require('./unpackZipArchive/addPlugin');
@@ -19,6 +19,7 @@ module.exports = (on, config) => {
     on('task', { createZipArchive });
     on('task', { compareImages });
     on('task', { unpackZipArchive });
+    on('task', { bufferToImage });
     on('task', {
         log(message) {
             console.log(message);
@@ -27,6 +28,7 @@ module.exports = (on, config) => {
     });
     on('task', {
         listFiles(folderName) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
             return fs.readdirSync(folderName);
         },
     });
@@ -40,6 +42,12 @@ module.exports = (on, config) => {
             }
         }
         return launchOptions;
+    });
+    on('after:spec', (spec, results) => {
+        if (results && results.stats.failures === 0 && results.video) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            fs.unlinkSync(results.video);
+        }
     });
     return config;
 };

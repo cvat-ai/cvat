@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,25 +11,6 @@ import os
 from isegm.inference import utils
 from isegm.inference.predictors import get_predictor
 from isegm.inference.clicker import Clicker, Click
-
-def convert_mask_to_polygon(mask):
-    contours = None
-    if int(cv2.__version__.split('.')[0]) > 3:
-        contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[0]
-    else:
-        contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)[1]
-
-    contours = max(contours, key=lambda arr: arr.size)
-    if contours.shape.count(1):
-        contours = np.squeeze(contours)
-    if contours.size < 3 * 2:
-        raise Exception('Less then three point have been detected. Can not build a polygon.')
-
-    polygon = []
-    for point in contours:
-        polygon.append([int(point[0]), int(point[1])])
-
-    return polygon
 
 class ModelHandler:
     def __init__(self):
@@ -61,9 +42,8 @@ class ModelHandler:
         object_prob = predictor.get_prediction(clicker)
         if self.device == 'cuda':
             torch.cuda.empty_cache()
-        object_mask = object_prob > threshold
-        object_mask = np.array(object_mask, dtype=np.uint8)
-        cv2.normalize(object_mask, object_mask, 0, 255, cv2.NORM_MINMAX)
-        polygon = convert_mask_to_polygon(object_mask)
+        mask = object_prob > threshold
+        mask = np.array(mask, dtype=np.uint8)
+        cv2.normalize(mask, mask, 0, 255, cv2.NORM_MINMAX)
 
-        return object_mask, polygon
+        return mask

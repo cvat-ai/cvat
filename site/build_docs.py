@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 import git
 import toml
@@ -98,7 +98,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         def run_hugo(
             destination_dir: os.PathLike,
             *,
-            extra_env_vars: Dict[str, str] = None,
+            extra_env_vars: dict[str, str] = None,
             executable: Optional[str] = "hugo",
         ):
             extra_kwargs = {}
@@ -157,9 +157,7 @@ def validate_env():
         try:
             subprocess.run([hugo, "version"], capture_output=True)  # nosec
         except (subprocess.CalledProcessError, FileNotFoundError) as ex:
-            raise Exception(
-                f"Failed to run '{hugo}', please make sure it exists."
-            ) from ex
+            raise Exception(f"Failed to run '{hugo}', please make sure it exists.") from ex
 
 
 if __name__ == "__main__":

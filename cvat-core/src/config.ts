@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,10 @@ const config = {
     },
     onOrganizationChange: null,
     globalObjectsCounter: 0,
+
+    requestsStatusDelay: null,
+
+    jobMetaDataReloadPeriod: 1 * 60 * 60 * 1000, // 1 hour
 };
 
 export default config;

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,6 +29,7 @@ module.exports = {
         'react/require-default-props': 'off',
         'react/no-unused-prop-types': 'off',
         'react/no-array-index-key': 'off',
+        'react/prop-types': 'off',
         'react/jsx-props-no-spreading': 0,
         'jsx-quotes': ['error', 'prefer-single'],
         'react/static-property-placement': ['warn', 'static public field'],

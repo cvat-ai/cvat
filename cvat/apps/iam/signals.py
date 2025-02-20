@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
-from django.db.models.signals import post_save, post_migrate
+from django.contrib.auth.models import Group, User
+from django.db.models.signals import post_migrate, post_save
 
 
 def register_groups(sender, **kwargs):
@@ -12,7 +12,9 @@ def register_groups(sender, **kwargs):
     for role in settings.IAM_ROLES:
         Group.objects.get_or_create(name=role)
 
-if settings.IAM_TYPE == 'BASIC':
+
+if settings.IAM_TYPE == "BASIC":
+
     def create_user(sender, instance, created, **kwargs):
         from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress
@@ -23,14 +25,16 @@ if settings.IAM_TYPE == 'BASIC':
 
             # create and verify EmailAddress for superuser accounts
             if allauth_settings.EMAIL_REQUIRED:
-                EmailAddress.objects.get_or_create(user=instance,
-                    email=instance.email, primary=True, verified=True)
-        else: # don't need to add default groups for superuser
-            if created and not getattr(instance, 'skip_group_assigning', None):
+                EmailAddress.objects.get_or_create(
+                    user=instance, email=instance.email, primary=True, verified=True
+                )
+        else:  # don't need to add default groups for superuser
+            if created and not getattr(instance, "skip_group_assigning", None):
                 db_group = Group.objects.get(name=settings.IAM_DEFAULT_ROLE)
                 instance.groups.add(db_group)
 
-elif settings.IAM_TYPE == 'LDAP':
+elif settings.IAM_TYPE == "LDAP":
+
     def create_user(sender, user=None, ldap_user=None, **kwargs):
         user_groups = []
         for role in settings.IAM_ROLES:
@@ -42,6 +46,9 @@ elif settings.IAM_TYPE == 'LDAP':
                     if role == settings.IAM_ADMIN_ROLE:
                         user.is_staff = user.is_superuser = True
                     break
+        # add default group if no other group has been assigned
+        if not len(user_groups):
+            user_groups.append(Group.objects.get(name=settings.IAM_DEFAULT_ROLE))
 
         # It is important to save the user before adding groups. Please read
         # https://django-auth-ldap.readthedocs.io/en/latest/users.html#populating-users
@@ -53,11 +60,12 @@ elif settings.IAM_TYPE == 'LDAP':
 
 def register_signals(app_config):
     post_migrate.connect(register_groups, app_config)
-    if settings.IAM_TYPE == 'BASIC':
+    if settings.IAM_TYPE == "BASIC":
         # Add default groups and add admin rights to super users.
         post_save.connect(create_user, sender=User)
-    elif settings.IAM_TYPE == 'LDAP':
+    elif settings.IAM_TYPE == "LDAP":
         import django_auth_ldap.backend
+
         # Map groups from LDAP to roles, convert a user to super user if he/she
         # has an admin group.
         django_auth_ldap.backend.populate_user.connect(create_user)

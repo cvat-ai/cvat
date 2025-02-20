@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,6 @@ const defaultState: ModelsState = {
     detectors: [],
     trackers: [],
     reid: [],
-    classifiers: [],
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
     requestedInferenceIDs: {},
@@ -60,9 +59,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 )),
                 reid: action.payload.models.filter((model: MLModel) => (
                     model.kind === ModelKind.REID
-                )),
-                classifiers: action.payload.models.filter((model: MLModel) => (
-                    model.kind === ModelKind.CLASSIFIER
                 )),
                 totalCount: action.payload.count,
                 initialized: true,

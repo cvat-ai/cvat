@@ -1,18 +1,19 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, ShapeType, Task
+from cvat.apps.engine.models import Job, ShapeType, Task, User
 
 
 class AnnotationConflictType(str, Enum):
@@ -69,6 +70,19 @@ class QualityReportTarget(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class QualityTargetMetricType(str, Enum):
+    ACCURACY = "accuracy"
+    PRECISION = "precision"
+    RECALL = "recall"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class QualityReport(models.Model):
     job = models.ForeignKey(
         Job, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
@@ -85,6 +99,11 @@ class QualityReport(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
     gt_last_updated = models.DateTimeField()
+
+    assignee = models.ForeignKey(
+        User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
+    )
+    assignee_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
 
@@ -178,6 +197,18 @@ class AnnotationId(models.Model):
             raise ValidationError(f"Unexpected type value '{self.type}'")
 
 
+class PointSizeBase(str, Enum):
+    IMAGE_SIZE = "image_size"
+    GROUP_BBOX_SIZE = "group_bbox_size"
+
+    def __str__(self) -> str:
+        return self.value
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+
 class QualitySettings(models.Model):
     task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
 
@@ -186,6 +217,10 @@ class QualitySettings(models.Model):
     line_thickness = models.FloatField()
 
     low_overlap_threshold = models.FloatField()
+
+    point_size_base = models.CharField(
+        max_length=32, choices=PointSizeBase.choices(), default=PointSizeBase.GROUP_BBOX_SIZE
+    )
 
     compare_line_orientation = models.BooleanField()
     line_orientation_threshold = models.FloatField()
@@ -199,6 +234,18 @@ class QualitySettings(models.Model):
     panoptic_comparison = models.BooleanField()
 
     compare_attributes = models.BooleanField()
+
+    empty_is_annotated = models.BooleanField(default=False)
+
+    target_metric = models.CharField(
+        max_length=32,
+        choices=QualityTargetMetricType.choices(),
+        default=QualityTargetMetricType.ACCURACY,
+    )
+
+    target_metric_threshold = models.FloatField(default=0.7)
+
+    max_validations_per_job = models.PositiveIntegerField(default=0)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())

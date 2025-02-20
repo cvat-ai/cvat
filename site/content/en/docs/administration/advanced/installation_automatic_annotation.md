@@ -29,7 +29,7 @@ description: 'Information about the installation of components needed for semi-a
   ```
 
 - You have to install `nuctl` command line tool to build and deploy serverless
-  functions. Download [version 1.11.24](https://github.com/nuclio/nuclio/releases/tag/1.11.24).
+  functions. Download [version 1.13.0](https://github.com/nuclio/nuclio/releases/tag/1.13.0).
   It is important that the version you download matches the version in
   [docker-compose.serverless.yml](https://github.com/cvat-ai/cvat/blob/develop/components/serverless/docker-compose.serverless.yml).
   For example, using wget.

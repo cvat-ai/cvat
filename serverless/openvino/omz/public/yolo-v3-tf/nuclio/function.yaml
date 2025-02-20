@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: YOLO v3
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 0, "name": "person", "type": "rectangle" },
@@ -101,7 +100,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

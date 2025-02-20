@@ -1,8 +1,14 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from typing import Protocol
 from uuid import uuid4
+
+
+class WithUUID(Protocol):
+    uuid: str
+
 
 class RequestTrackingMiddleware:
     def __init__(self, get_response):

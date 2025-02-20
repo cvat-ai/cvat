@@ -1,12 +1,14 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import _ from 'lodash';
+
+import { ChunkQuality } from 'cvat-data';
 import {
-    ChunkType, DimensionType, JobStage,
-    JobState, JobType, RQStatus, StorageLocation, TaskMode, TaskStatus,
+    ChunkType, DimensionType, HistoryActions, JobStage,
+    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -15,10 +17,19 @@ import { ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
-import { SerializedJob, SerializedLabel, SerializedTask } from './server-response-types';
+import {
+    SerializedCollection, SerializedJob,
+    SerializedLabel, SerializedTask,
+} from './server-response-types';
 import AnnotationGuide from './guide';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import Statistics from './statistics';
+import { Request } from './request';
+import logger from './logger';
+import Issue from './issue';
+import ObjectState from './object-state';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
+import { UpdateStatusData } from './core-types';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -48,11 +59,9 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async clear(
-                    reload = false, startframe = undefined, endframe = undefined, delTrackKeyframesOnly = true,
-                ) {
+                async clear(options) {
                     const result = await PluginRegistry.apiWrapper.call(
-                        this, prototype.annotations.clear, reload, startframe, endframe, delTrackKeyframesOnly,
+                        this, prototype.annotations.clear, options,
                     );
                     return result;
                 },
@@ -163,6 +172,17 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async commit(added, removed, frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.commit,
+                        added,
+                        removed,
+                        frame,
+                    );
+                    return result;
+                },
+
                 async exportDataset(
                     format: string,
                     saveImages: boolean,
@@ -216,26 +236,31 @@ function buildDuplicatedAPI(prototype) {
                     );
                 },
                 async save() {
-                    await PluginRegistry.apiWrapper.call(
+                    const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.save,
                     );
+                    return result;
                 },
                 async cachedChunks() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
+                    return result;
+                },
+                async frameNumbers() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.frameNumbers);
                     return result;
                 },
                 async preview() {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
                     return result;
                 },
-                async search(filters, frameFrom, frameTo) {
+                async search(filters, startFrame, stopFrame) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.search,
                         filters,
-                        frameFrom,
-                        frameTo,
+                        startFrame,
+                        stopFrame,
                     );
                     return result;
                 },
@@ -247,11 +272,11 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
-                async chunk(chunkNumber, quality) {
+                async chunk(chunkIndex, quality) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.frames.chunk,
-                        chunkNumber,
+                        chunkIndex,
                         quality,
                     );
                     return result;
@@ -304,47 +329,99 @@ function buildDuplicatedAPI(prototype) {
 
 export class Session {
     public annotations: {
-        get: CallableFunction;
-        put: CallableFunction;
-        save: CallableFunction;
-        merge: CallableFunction;
-        split: CallableFunction;
-        group: CallableFunction;
-        join: CallableFunction;
-        slice: CallableFunction;
-        clear: CallableFunction;
-        search: CallableFunction;
-        upload: CallableFunction;
-        select: CallableFunction;
-        import: CallableFunction;
-        export: CallableFunction;
+        get: (frame: number, allTracks: boolean, filters: object[]) => Promise<ObjectState[]>;
+        put: (objectStates: ObjectState[]) => Promise<number[]>;
+        merge: (objectStates: ObjectState[]) => Promise<void>;
+        split: (objectState: ObjectState, frame: number) => Promise<void>;
+        group: (objectStates: ObjectState[], reset: boolean) => Promise<number>;
+        join: (objectStates: ObjectState[], points: number[]) => Promise<void>;
+        slice: (state: ObjectState, results: number[][]) => Promise<void>;
+        clear: (options?: {
+            reload?: boolean;
+            startFrame?: number;
+            stopFrame?: number;
+            delTrackKeyframesOnly?: boolean;
+        }) => Promise<void>;
+        save: (
+            onUpdate?: (message: string) => void,
+        ) => Promise<void>;
+        search: (
+            frameFrom: number,
+            frameTo: number,
+            searchParameters: {
+                allowDeletedFrames: boolean;
+                annotationsFilters?: object[];
+                generalFilters?: {
+                    isEmptyFrame?: boolean;
+                };
+            },
+        ) => Promise<number | null>;
+        upload: (
+            format: string,
+            useDefaultSettings: boolean,
+            sourceStorage: Storage,
+            file: File | string,
+            options?: {
+                convMaskToPoly?: boolean,
+                updateStatusCallback?: (s: string, n: number) => void,
+            },
+        ) => Promise<string>;
+        select: (objectStates: ObjectState[], x: number, y: number) => Promise<{
+            state: ObjectState,
+            distance: number | null,
+        }>;
+        import: (data: Omit<SerializedCollection, 'version'>) => Promise<void>;
+        export: () => Promise<Omit<SerializedCollection, 'version'>>;
+        commit: (
+            added: Omit<SerializedCollection, 'version'>,
+            removed: Omit<SerializedCollection, 'version'>,
+            frame: number,
+        ) => Promise<void>;
         statistics: () => Promise<Statistics>;
-        hasUnsavedChanges: CallableFunction;
-        exportDataset: CallableFunction;
+        hasUnsavedChanges: () => boolean;
+        exportDataset: (
+            format: string,
+            saveImages: boolean,
+            useDefaultSettings: boolean,
+            targetStorage: Storage,
+            name?: string,
+        ) => Promise<string | void>;
     };
 
     public actions: {
-        undo: CallableFunction;
-        redo: CallableFunction;
-        freeze: CallableFunction;
-        clear: CallableFunction;
-        get: CallableFunction;
+        undo: (count?: number) => Promise<number[]>;
+        redo: (count?: number) => Promise<number[]>;
+        freeze: (frozen: boolean) => Promise<void>;
+        clear: () => Promise<void>;
+        get: () => Promise<{ undo: [HistoryActions, number][], redo: [HistoryActions, number][] }>;
     };
 
     public frames: {
         get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
-        delete: CallableFunction;
-        restore: CallableFunction;
-        save: CallableFunction;
-        cachedChunks: CallableFunction;
-        preview: CallableFunction;
-        contextImage: CallableFunction;
-        search: CallableFunction;
-        chunk: CallableFunction;
+        delete: (frame: number) => Promise<void>;
+        restore: (frame: number) => Promise<void>;
+        save: () => Promise<FramesMetaData[]>;
+        cachedChunks: () => Promise<number[]>;
+        frameNumbers: () => Promise<number[]>;
+        preview: () => Promise<string>;
+        contextImage: (frame: number) => Promise<Record<string, ImageBitmap>>;
+        search: (
+            filters: {
+                offset?: number,
+                notDeleted: boolean,
+            },
+            frameFrom: number,
+            frameTo: number,
+        ) => Promise<number | null>;
+        chunk: (chunk: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
     };
 
     public logger: {
-        log: CallableFunction;
+        log: (
+            scope: Parameters<typeof logger.log>[0],
+            payload?: Parameters<typeof logger.log>[1],
+            wait?: Parameters<typeof logger.log>[2],
+        ) => ReturnType<typeof logger.log>;
     };
 
     public constructor() {
@@ -370,6 +447,7 @@ export class Session {
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
             statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
             hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
             exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
@@ -389,6 +467,7 @@ export class Session {
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
             cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
+            frameNumbers: Object.getPrototypeOf(this).frames.frameNumbers.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
@@ -401,44 +480,50 @@ export class Session {
     }
 }
 
-export class Job extends Session {
-    public assignee: User | null;
-    public stage: JobStage;
-    public state: JobState;
-    public readonly id: number;
-    public readonly startFrame: number;
-    public readonly stopFrame: number;
-    public readonly frameCount: number;
-    public readonly projectId: number | null;
-    public readonly guideId: number | null;
-    public readonly taskId: number;
-    public readonly dimension: DimensionType;
-    public readonly dataChunkType: ChunkType;
-    public readonly dataChunkSize: number;
-    public readonly bugTracker: string | null;
-    public readonly mode: TaskMode;
-    public readonly labels: Label[];
-    public readonly type: JobType;
-    public readonly frameSelectionMethod: JobType;
-    public readonly createdDate: string;
-    public readonly updatedDate: string;
-    public readonly sourceStorage: Storage;
-    public readonly targetStorage: Storage;
+type InitializerType = Readonly<Partial<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>>;
 
-    constructor(initialData: Readonly<Omit<SerializedJob, 'labels'> & { labels?: SerializedLabel[] }>) {
+export class Job extends Session {
+    #data: {
+        id?: number;
+        assignee: User | null;
+        stage?: JobStage;
+        state?: JobState;
+        type?: JobType;
+        start_frame?: number;
+        stop_frame?: number;
+        frame_count?: number;
+        project_id: number | null;
+        guide_id: number | null;
+        task_id: number;
+        labels: Label[];
+        dimension?: DimensionType;
+        data_compressed_chunk_type?: ChunkType;
+        data_chunk_size?: number;
+        bug_tracker: string | null;
+        mode?: TaskMode;
+        created_date?: string,
+        updated_date?: string,
+        source_storage: Storage,
+        target_storage: Storage,
+        parent_job_id: number | null;
+        consensus_replicas: number;
+    };
+
+    constructor(initialData: InitializerType) {
         super();
-        const data = {
+
+        this.#data = {
             id: undefined,
             assignee: null,
             stage: undefined,
             state: undefined,
-            type: JobType.ANNOTATION,
+            type: undefined,
             start_frame: undefined,
             stop_frame: undefined,
             frame_count: undefined,
-            project_id: undefined,
+            project_id: null,
             guide_id: null,
-            task_id: undefined,
+            task_id: null,
             labels: [],
             dimension: undefined,
             data_compressed_chunk_type: undefined,
@@ -449,21 +534,27 @@ export class Job extends Session {
             updated_date: undefined,
             source_storage: undefined,
             target_storage: undefined,
+            parent_job_id: null,
+            consensus_replicas: undefined,
         };
 
-        const updateTrigger = new FieldUpdateTrigger();
+        this.#data.id = initialData.id ?? this.#data.id;
+        this.#data.type = initialData.type ?? this.#data.type;
+        this.#data.start_frame = initialData.start_frame ?? this.#data.start_frame;
+        this.#data.stop_frame = initialData.stop_frame ?? this.#data.stop_frame;
+        this.#data.frame_count = initialData.frame_count ?? this.#data.frame_count;
+        this.#data.task_id = initialData.task_id ?? this.#data.task_id;
+        this.#data.dimension = initialData.dimension ?? this.#data.dimension;
+        this.#data.data_compressed_chunk_type =
+            initialData.data_compressed_chunk_type ?? this.#data.data_compressed_chunk_type;
+        this.#data.data_chunk_size = initialData.data_chunk_size ?? this.#data.data_chunk_size;
+        this.#data.mode = initialData.mode ?? this.#data.mode;
+        this.#data.created_date = initialData.created_date ?? this.#data.created_date;
+        this.#data.parent_job_id = initialData.parent_job_id ?? this.#data.parent_job_id;
+        this.#data.consensus_replicas = initialData.consensus_replicas ?? this.#data.consensus_replicas;
 
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property)) {
-                if (property in initialData) {
-                    data[property] = initialData[property];
-                }
-            }
-        }
-
-        if (data.assignee) data.assignee = new User(data.assignee);
         if (Array.isArray(initialData.labels)) {
-            data.labels = initialData.labels.map((labelData) => {
+            this.#data.labels = initialData.labels.map((labelData) => {
                 // can be already wrapped to the class
                 // when create this job from Task constructor
                 if (labelData instanceof Label) {
@@ -474,143 +565,150 @@ export class Job extends Session {
             }).filter((label) => !label.hasParent);
         }
 
-        data.source_storage = new Storage({
-            location: initialData.source_storage?.location || StorageLocation.LOCAL,
-            cloudStorageId: initialData.source_storage?.cloud_storage_id,
-        });
-
-        data.target_storage = new Storage({
-            location: initialData.target_storage?.location || StorageLocation.LOCAL,
-            cloudStorageId: initialData.target_storage?.cloud_storage_id,
-        });
-
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                id: {
-                    get: () => data.id,
-                },
-                assignee: {
-                    get: () => data.assignee,
-                    set: (assignee) => {
-                        if (assignee !== null && !(assignee instanceof User)) {
-                            throw new ArgumentError('Value must be a user instance');
-                        }
-                        updateTrigger.update('assignee');
-                        data.assignee = assignee;
-                    },
-                },
-                stage: {
-                    get: () => data.stage,
-                    set: (stage) => {
-                        const type = JobStage;
-                        let valueInEnum = false;
-                        for (const value in type) {
-                            if (type[value] === stage) {
-                                valueInEnum = true;
-                                break;
-                            }
-                        }
-
-                        if (!valueInEnum) {
-                            throw new ArgumentError(
-                                'Value must be a value from the enumeration cvat.enums.JobStage',
-                            );
-                        }
-
-                        updateTrigger.update('stage');
-                        data.stage = stage;
-                    },
-                },
-                state: {
-                    get: () => data.state,
-                    set: (state) => {
-                        const type = JobState;
-                        let valueInEnum = false;
-                        for (const value in type) {
-                            if (type[value] === state) {
-                                valueInEnum = true;
-                                break;
-                            }
-                        }
-
-                        if (!valueInEnum) {
-                            throw new ArgumentError(
-                                'Value must be a value from the enumeration cvat.enums.JobState',
-                            );
-                        }
-
-                        updateTrigger.update('state');
-                        data.state = state;
-                    },
-                },
-                type: {
-                    get: () => data.type,
-                },
-                startFrame: {
-                    get: () => data.start_frame,
-                },
-                stopFrame: {
-                    get: () => data.stop_frame,
-                },
-                frameCount: {
-                    get: () => data.frame_count,
-                },
-                projectId: {
-                    get: () => data.project_id,
-                },
-                guideId: {
-                    get: () => data.guide_id,
-                },
-                taskId: {
-                    get: () => data.task_id,
-                },
-                labels: {
-                    get: () => [...data.labels],
-                },
-                dimension: {
-                    get: () => data.dimension,
-                },
-                dataChunkSize: {
-                    get: () => data.data_chunk_size,
-                },
-                dataChunkType: {
-                    get: () => data.data_compressed_chunk_type,
-                },
-                mode: {
-                    get: () => data.mode,
-                },
-                bugTracker: {
-                    get: () => data.bug_tracker,
-                },
-                createdDate: {
-                    get: () => data.created_date,
-                },
-                updatedDate: {
-                    get: () => data.updated_date,
-                },
-                sourceStorage: {
-                    get: () => data.source_storage,
-                },
-                targetStorage: {
-                    get: () => data.target_storage,
-                },
-                _updateTrigger: {
-                    get: () => updateTrigger,
-                },
-                _initialData: {
-                    get: () => initialData,
-                },
-            }),
-        );
+        // to avoid code duplication set mutable field in the dedicated method
+        this.reinit(initialData);
     }
 
-    async save(additionalData = {}) {
-        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, additionalData);
+    protected reinit(data: InitializerType): void {
+        if (data.assignee?.id !== this.#data.assignee?.id) {
+            if (data.assignee) {
+                this.#data.assignee = new User(data.assignee);
+            } else {
+                this.#data.assignee = null;
+            }
+        }
+
+        if (
+            !this.#data.source_storage ||
+            this.#data.source_storage.location !== data.source_storage?.location ||
+            this.#data.source_storage.cloudStorageId !== data.source_storage?.cloud_storage_id
+        ) {
+            this.#data.source_storage = new Storage({
+                location: data.source_storage?.location || StorageLocation.LOCAL,
+                cloudStorageId: data.source_storage?.cloud_storage_id,
+            });
+        }
+
+        if (
+            !this.#data.target_storage ||
+            this.#data.target_storage.location !== data.target_storage?.location ||
+            this.#data.target_storage.cloudStorageId !== data.target_storage?.cloud_storage_id
+        ) {
+            this.#data.target_storage = new Storage({
+                location: data.target_storage?.location || StorageLocation.LOCAL,
+                cloudStorageId: data.target_storage?.cloud_storage_id,
+            });
+        }
+
+        this.#data.stage = data.stage ?? this.#data.stage;
+        this.#data.state = data.state ?? this.#data.state;
+        this.#data.project_id = data.project_id ?? this.#data.project_id;
+        this.#data.guide_id = data.guide_id ?? this.#data.guide_id;
+        this.#data.updated_date = data.updated_date ?? this.#data.updated_date;
+        this.#data.bug_tracker = data.bug_tracker ?? this.#data.bug_tracker;
+
+        // TODO: labels also may get changed, but it will affect many code within the application
+        // so, need to think on this additionally
+    }
+
+    public get assignee(): User | null {
+        return this.#data.assignee;
+    }
+
+    public get stage(): JobStage {
+        return this.#data.stage;
+    }
+
+    public get state(): JobState {
+        return this.#data.state;
+    }
+
+    public get id(): number {
+        return this.#data.id;
+    }
+
+    public get startFrame(): number {
+        return this.#data.start_frame;
+    }
+
+    public get stopFrame(): number {
+        return this.#data.stop_frame;
+    }
+
+    public get frameCount(): number {
+        return this.#data.frame_count;
+    }
+
+    public get projectId(): number | null {
+        return this.#data.project_id;
+    }
+
+    public get guideId(): number | null {
+        return this.#data.guide_id;
+    }
+
+    public get taskId(): number {
+        return this.#data.task_id;
+    }
+
+    public get dimension(): DimensionType {
+        return this.#data.dimension;
+    }
+
+    public get parentJobId(): number | null {
+        return this.#data.parent_job_id;
+    }
+
+    public get consensusReplicas(): number {
+        return this.#data.consensus_replicas;
+    }
+
+    public get dataChunkType(): ChunkType {
+        return this.#data.data_compressed_chunk_type;
+    }
+
+    public get dataChunkSize(): number {
+        return this.#data.data_chunk_size;
+    }
+
+    public get bugTracker(): string | null {
+        return this.#data.bug_tracker;
+    }
+
+    public get mode(): TaskMode {
+        return this.#data.mode;
+    }
+
+    public get labels(): Label[] {
+        return [...this.#data.labels];
+    }
+
+    public get type(): JobType {
+        return this.#data.type;
+    }
+
+    public get createdDate(): string {
+        return this.#data.created_date;
+    }
+
+    public get updatedDate(): string {
+        return this.#data.updated_date;
+    }
+
+    public get sourceStorage(): Storage {
+        return this.#data.source_storage;
+    }
+
+    public get targetStorage(): Storage {
+        return this.#data.target_storage;
+    }
+
+    async save(fields: Record<string, any> = {}): Promise<Job> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, fields);
         return result;
     }
 
-    async issues() {
+    async issues(): Promise<Issue[]> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.issues);
         return result;
     }
@@ -620,12 +718,17 @@ export class Job extends Session {
         return result;
     }
 
-    async openIssue(issue, message) {
+    async validationLayout(): Promise<JobValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.validationLayout);
+        return result;
+    }
+
+    async openIssue(issue: Issue, message: string): Promise<Issue> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
     }
 
-    async close() {
+    async close(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
         return result;
     }
@@ -662,6 +765,7 @@ export class Task extends Session {
     public readonly organization: number | null;
     public readonly progress: { count: number; completed: number };
     public readonly jobs: Job[];
+    public readonly consensusEnabled: boolean;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -669,8 +773,13 @@ export class Task extends Session {
     public readonly useZipChunks: boolean;
     public readonly useCache: boolean;
     public readonly copyData: boolean;
-    public readonly cloudStorageID: number;
+    public readonly cloudStorageId: number;
     public readonly sortingMethod: string;
+
+    public readonly validationMode: string | null;
+    public readonly validationFramesPercent: number;
+    public readonly validationFramesPerJobPercent: number;
+    public readonly frameSelectionMethod: string;
 
     constructor(initialData: Readonly<Omit<SerializedTask, 'labels' | 'jobs'> & {
         labels?: SerializedLabel[];
@@ -716,8 +825,9 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
+            consensus_enabled: undefined,
 
-            quality_settings: undefined,
+            validation_mode: null,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -793,6 +903,8 @@ export class Task extends Session {
                     data_chunk_size: data.data_chunk_size,
                     target_storage: initialData.target_storage,
                     source_storage: initialData.source_storage,
+                    parent_job_id: job.parent_job_id,
+                    consensus_replicas: job.consensus_replicas,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -899,6 +1011,9 @@ export class Task extends Session {
                 },
                 copyData: {
                     get: () => data.copy_data,
+                },
+                consensusEnabled: {
+                    get: () => data.consensus_enabled,
                 },
                 labels: {
                     get: () => [...data.labels],
@@ -1045,6 +1160,9 @@ export class Task extends Session {
                 progress: {
                     get: () => data.progress,
                 },
+                validationMode: {
+                    get: () => data.validation_mode,
+                },
                 _internalData: {
                     get: () => data,
                 },
@@ -1055,20 +1173,24 @@ export class Task extends Session {
         );
     }
 
-    async close(): Promise<Task> {
+    async close(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.close);
         return result;
     }
 
-    async save(onUpdate = () => {}): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
+    async save(
+        fields: Record<string, any> = {},
+        options?: { updateStatusCallback?: (updateData: Request | UpdateStatusData) => void },
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, fields, options);
         return result;
     }
 
     async listenToCreate(
-        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+        rqID,
+        options,
     ): Promise<Task> {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, onUpdate);
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, rqID, options);
         return result;
     }
 
@@ -1077,7 +1199,7 @@ export class Task extends Session {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string): Promise<string | void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Task.prototype.backup,
@@ -1088,18 +1210,23 @@ export class Task extends Session {
         return result;
     }
 
-    async issues() {
+    async issues(): Promise<Issue[]> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.issues);
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string) {
+    static async restore(storage: Storage, file: File | string): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
         return result;
     }
 
     async guide(): Promise<AnnotationGuide | null> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
+        return result;
+    }
+
+    async validationLayout(): Promise<TaskValidationLayout | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.validationLayout);
         return result;
     }
 }

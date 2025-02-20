@@ -1,9 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-task-details-wrapper {
     overflow-y: auto;
@@ -15,9 +15,14 @@
         width: 100%;
         height: auto;
         border: 1px solid $border-color-1;
-        border-radius: 3px;
+        border-radius: $border-radius-base;
         padding: 20px;
         background: $background-color-1;
+
+        .cvat-task-name {
+            margin: 0;
+            margin-bottom: $grid-unit-size * 2;
+        }
 
         .cvat-task-details-user-block {
             > div:nth-child(2) > span {
@@ -77,10 +82,6 @@
     width: 100%;
     height: auto;
     margin-top: $grid-unit-size * 2;
-
-    .cvat-job-item {
-        margin-bottom: $grid-unit-size;
-    }
 }
 
 .cvat-task-top-bar {
@@ -117,15 +118,6 @@
     margin-bottom: 0;
     font-size: 20px;
     font-weight: bold;
-}
-
-/* Pagination in center */
-.cvat-task-jobs-table > div > div {
-    text-align: center;
-
-    > .ant-table-pagination.ant-pagination {
-        float: none;
-    }
 }
 
 .cvat-job-item-stage {

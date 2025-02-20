@@ -1,10 +1,8 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-
-from typing import List
 
 from cvat_sdk.api_client import apis, models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -53,7 +51,7 @@ class Issue(
 ):
     _model_partial_update_arg = "patched_issue_write_request"
 
-    def get_comments(self) -> List[Comment]:
+    def get_comments(self) -> list[Comment]:
         return [
             Comment(self._client, m)
             for m in get_paginated_collection(

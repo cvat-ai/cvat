@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: Attributed face detection
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 0, "name": "face", "type": "rectangle", "attributes": [
@@ -38,7 +37,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

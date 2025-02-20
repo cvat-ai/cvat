@@ -6,10 +6,9 @@ metadata:
     version: 2
     type: interactor
     spec:
-    framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
-    animated_gif: https://raw.githubusercontent.com/opencv/cvat/develop/site/content/en/images/hrnet_example.gif
+    animated_gif: https://raw.githubusercontent.com/cvat-ai/cvat/develop/site/content/en/images/hrnet_example.gif
     help_message: The interactor allows to get a mask for an object using positive points, and negative points
 
 spec:
@@ -54,7 +53,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 1
+      numWorkers: 1
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

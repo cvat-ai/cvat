@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -98,26 +98,23 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                     <br />
                     {percent === 100 && countFailed ? (
                         <Row>
-                            <Collapse style={{
-                                width: '100%',
-                                marginBottom: 5,
-                            }}
-                            >
-                                <Collapse.Panel
-                                    header={(
-                                        <Text strong>
-                                            Failed files
-                                        </Text>
-                                    )}
-                                    key='appearance'
-                                >
-                                    <List
-                                        size='small'
-                                        dataSource={failedFiles}
-                                        renderItem={(item: string) => <List.Item>{ item }</List.Item>}
-                                    />
-                                </Collapse.Panel>
-                            </Collapse>
+                            <Collapse
+                                style={{
+                                    width: '100%',
+                                    marginBottom: 5,
+                                }}
+                                items={[{
+                                    key: 'appearance',
+                                    label: <Text strong> Failed files </Text>,
+                                    children: (
+                                        <List
+                                            size='small'
+                                            dataSource={failedFiles}
+                                            renderItem={(item: string) => <List.Item>{ item }</List.Item>}
+                                        />
+                                    ),
+                                }]}
+                            />
                         </Row>
                     ) : null }
                     <Row justify='end' gutter={5}>

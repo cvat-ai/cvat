@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ context('Changing a label name via label constructor.', () => {
     const secondLabelName = `Second case ${caseId}`;
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').click();
@@ -21,6 +21,7 @@ context('Changing a label name via label constructor.', () => {
         it('Set empty label name. Press "Continue" button. Label name is not created. Label constructor is closed.', () => {
             cy.get('.cvat-constructor-viewer-new-item').click(); // Open label constructor
             cy.contains('[type="submit"]', 'Continue').click();
+            cy.contains('[type="submit"]', 'Continue').trigger('mouseout');
             cy.contains('[role="alert"]', 'Please specify a name').should('exist').and('be.visible');
             cy.contains('[type="button"]', 'Cancel').click(); // Close label constructor
         });

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,6 +36,7 @@ context('Button "Continue" in label editor.', () => {
             cy.get('.cvat-constructor-viewer-new-item').click();
             cy.get('.cvat-label-constructor-creator').within(() => {
                 cy.contains('button', 'Continue').click();
+                cy.contains('button', 'Continue').trigger('mouseout');
                 cy.get('.cvat-label-constructor-creator').should('not.exist');
             });
         });

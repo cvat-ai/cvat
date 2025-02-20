@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,10 +12,6 @@
 
 .cvat-action-runner-list,
 .cvat-action-runner-frames-predefined {
-    margin-top: $grid-unit-size * 2;
-}
-
-.cvat-action-runner-info:not(:first-child) {
     margin-top: $grid-unit-size * 2;
 }
 

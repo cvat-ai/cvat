@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,7 +61,10 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Kitti Raw Format',
             };
             cy.exportProject(exportAnnotation3d);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         it('Export project with 3D task. Dataset.', () => {
@@ -73,11 +76,11 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Sly Point Cloud Format',
             };
             cy.exportProject(exportDataset3d);
-            cy.getDownloadFileName().then((file) => {
+            cy.downloadExport().then((file) => {
                 datasetArchiveName = file;
                 cy.verifyDownload(datasetArchiveName);
             });
-            cy.verifyNotification();
+            cy.goBack();
         });
 
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
@@ -90,7 +93,10 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 archiveCustomName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         // FIXME: Activate after implementation

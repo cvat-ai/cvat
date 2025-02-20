@@ -1,15 +1,17 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+import json
 from contextlib import closing
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.core.helpers import expect_status
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
 
@@ -56,8 +58,15 @@ class Downloader:
             except ValueError:
                 file_size = None
 
-            with atomic_writer(output_path, "wb") as fd, pbar.task(
-                total=file_size, desc="Downloading", unit_scale=True, unit="B", unit_divisor=1024
+            with (
+                atomic_writer(output_path, "wb") as fd,
+                pbar.task(
+                    total=file_size,
+                    desc="Downloading",
+                    unit_scale=True,
+                    unit="B",
+                    unit_divisor=1024,
+                ),
             ):
                 while True:
                     chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
@@ -67,14 +76,12 @@ class Downloader:
                     pbar.advance(len(chunk))
                     fd.write(chunk)
 
-    def prepare_and_download_file_from_endpoint(
+    def prepare_file(
         self,
         endpoint: Endpoint,
-        filename: Path,
         *,
-        url_params: Optional[Dict[str, Any]] = None,
-        query_params: Optional[Dict[str, Any]] = None,
-        pbar: Optional[ProgressReporter] = None,
+        url_params: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
         status_check_period: Optional[int] = None,
     ):
         client = self._client
@@ -86,18 +93,47 @@ class Downloader:
         url = client.api_map.make_endpoint_url(
             endpoint.path, kwsub=url_params, query_params=query_params
         )
-        client.wait_for_completion(
-            url,
-            method="GET",
-            positive_statuses=[202],
-            success_status=201,
+
+        # initialize background process
+        response = client.api_client.rest_client.request(
+            method=endpoint.settings["http_method"],
+            url=url,
+            headers=client.api_client.get_common_headers(),
+        )
+
+        client.logger.debug("STATUS %s", response.status)
+        expect_status(202, response)
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "Request identifier was not found in server response"
+
+        # wait until background process will be finished or failed
+        request, response = client.wait_for_completion(
+            rq_id, status_check_period=status_check_period
+        )
+
+        return request
+
+    def prepare_and_download_file_from_endpoint(
+        self,
+        endpoint: Endpoint,
+        filename: Path,
+        *,
+        url_params: Optional[dict[str, Any]] = None,
+        query_params: Optional[dict[str, Any]] = None,
+        pbar: Optional[ProgressReporter] = None,
+        status_check_period: Optional[int] = None,
+    ):
+        client = self._client
+
+        if status_check_period is None:
+            status_check_period = client.config.status_check_period
+
+        export_request = self.prepare_file(
+            endpoint,
+            url_params=url_params,
+            query_params=query_params,
             status_check_period=status_check_period,
         )
 
-        query_params = dict(query_params or {})
-        query_params["action"] = "download"
-        url = client.api_map.make_endpoint_url(
-            endpoint.path, kwsub=url_params, query_params=query_params
-        )
-        downloader = Downloader(client)
-        downloader.download_file(url, output_path=filename, pbar=pbar)
+        assert export_request.result_url, "Result url was not found in server response"
+        self.download_file(export_request.result_url, output_path=filename, pbar=pbar)

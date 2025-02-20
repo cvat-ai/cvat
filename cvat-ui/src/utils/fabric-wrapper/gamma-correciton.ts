@@ -1,8 +1,9 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
+import { ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
 import FabricFilter from './fabric-wrapper';
 
 export interface GammaFilterOptions {
@@ -32,6 +33,15 @@ export default class GammaCorrection extends FabricFilter {
 
         const { gamma: newGamma } = options as GammaFilterOptions;
         this.#gamma = newGamma;
+    }
+
+    public toJSON(): SerializedImageFilter {
+        return {
+            alias: ImageFilterAlias.GAMMA_CORRECTION,
+            params: {
+                gamma: this.#gamma,
+            },
+        };
     }
 
     get gamma(): number {

@@ -24,8 +24,8 @@ that can _perfectly_ annotate 50% of your data equates to reducing manual annota
 Since we know DL models can help us to annotate faster, how then do we use them?
 In CVAT all such DL models are implemented as serverless functions using the [Nuclio][nuclio-homepage]
 serverless platform. There are multiple implemented functions that can be
-found in the [serverless][cvat-builtin-serverless] directory such as _Mask RCNN,
-Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
+found in the [serverless][cvat-builtin-serverless] directory such as
+_Mask RCNN, Faster RCNN, SiamMask, Inside Outside Guidance, Deep Extreme Cut_, etc.
 Follow [the installation guide][cvat-auto-annotation-guide] to build and deploy
 these serverless functions. See [the user guide][cvat-ai-tools-user-guide] to
 understand how to use these functions in the UI to automatically annotate data.
@@ -110,19 +110,21 @@ nuctl create project cvat
 nuctl deploy --project-name cvat --path "./serverless/pytorch/foolwood/siammask/nuclio" --platform local
 ```
 ```
-21.05.07 13:00:22.233                     nuctl (I) Deploying function {"name": ""}
-21.05.07 13:00:22.233                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
-21.05.07 13:00:22.652                     nuctl (I) Cleaning up before deployment {"functionName": "pth-foolwood-siammask"}
-21.05.07 13:00:22.705                     nuctl (I) Staging files and preparing base images
-21.05.07 13:00:22.706                     nuctl (I) Building processor image {"imageName": "cvat/pth.foolwood.siammask:latest"}
-21.05.07 13:00:22.706     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.5.16-amd64"}
-21.05.07 13:00:26.351     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
-21.05.07 13:00:29.819            nuctl.platform (I) Building docker image {"image": "cvat/pth.foolwood.siammask:latest"}
-21.05.07 13:00:30.103            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/pth.foolwood.siammask:latest", "registry": ""}
-21.05.07 13:00:30.103            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/pth.foolwood.siammask:latest"}
-21.05.07 13:00:30.104                     nuctl (I) Build complete {"result": {"Image":"cvat/pth.foolwood.siammask:latest","UpdatedFunctionConfig":{"metadata":{"name":"pth-foolwood-siammask","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"pytorch","name":"SiamMask","spec":"","type":"tracker"}},"spec":{"description":"Fast Online Object Tracking and Segmentation","handler":"main:handler","runtime":"python:3.6","env":[{"name":"PYTHONPATH","value":"/opt/nuclio/SiamMask:/opt/nuclio/SiamMask/experiments/siammask_sharp"}],"resources":{},"image":"cvat/pth.foolwood.siammask:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"myHttpTrigger","maxWorkers":2,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"build":{"image":"cvat/pth.foolwood.siammask","baseImage":"continuumio/miniconda3","directives":{"preCopy":[{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"conda create -y -n siammask python=3.6"},{"kind":"SHELL","value":"[\"conda\", \"run\", \"-n\", \"siammask\", \"/bin/bash\", \"-c\"]"},{"kind":"RUN","value":"git clone https://github.com/foolwood/SiamMask.git"},{"kind":"RUN","value":"pip install -r SiamMask/requirements.txt jsonpickle"},{"kind":"RUN","value":"conda install -y gcc_linux-64"},{"kind":"RUN","value":"cd SiamMask \u0026\u0026 bash make.sh \u0026\u0026 cd -"},{"kind":"RUN","value":"wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth"},{"kind":"ENTRYPOINT","value":"[\"conda\", \"run\", \"-n\", \"siammask\"]"}]},"codeEntryType":"image"},"platform":{"attributes":{"mountMode":"volume","restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"securityContext":{},"eventTimeout":"30s"}}}}
-21.05.07 13:00:31.387            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
-21.05.07 13:00:32.796                     nuctl (I) Function deploy complete {"functionName": "pth-foolwood-siammask", "httpPort": 49155}
+24.04.18 20:52:47.910 (I)                     nuctl Deploying function {"name": "pth-foolwood-siammask"}
+24.04.18 20:52:47.910 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.13.0, Git commit: c4422eb772781fb50fbf017698aae96199d81388, OS: linux, Arch: amd64, Go version: go1.21.7", "name": "pth-foolwood-siammask"}
+24.04.18 20:52:47.929 (W)            nuctl.platform MaxWorkers is deprecated and will be removed in v1.15.x, use NumWorkers instead
+24.04.18 20:52:48.044 (I)                     nuctl Staging files and preparing base images
+24.04.18 20:52:48.044 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:20.04"}
+24.04.18 20:52:48.044 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:52:48.044 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.13.0-amd64"}
+24.04.18 20:52:49.717 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+24.04.18 20:52:51.363 (I)            nuctl.platform Building docker image {"image": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:55:58.853 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.foolwood.siammask:latest", "registry": ""}
+24.04.18 20:55:58.853 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:55:58.853 (I)                     nuctl Build complete {"image": "cvat.pth.foolwood.siammask:latest"}
+24.04.18 20:55:58.861 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-foolwood-siammask"}
+24.04.18 20:55:59.593 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
+24.04.18 20:56:01.315 (I)                     nuctl Function deploy complete {"functionName": "pth-foolwood-siammask", "httpPort": 33453, "internalInvocationURLs": ["172.17.0.5:8080"], "externalInvocationURLs": ["0.0.0.0:33453"]}
 ```
 
 ```bash
@@ -159,7 +161,8 @@ Finally you will get bounding boxes.
 ![SiamMask results](/images/siammask_results.gif)
 
 `SiamMask` model is more optimized to work on Nvidia GPUs.
-For more information about deploying the model for the GPU, [read on](#objects-segmentation-using-mask-rcnn).
+
+- For more information about deploying the model for the GPU, [read on](#object-segmentation-using-segment-anything).
 
 ### Object detection using YOLO-v3
 
@@ -206,67 +209,60 @@ above. Choose the `magic wand` tool, go to the `Detectors` tab, and select
 `YOLO v3` model. Press `Annotate` button and after a couple of seconds you
 should see detection results. Do not forget to save annotations.
 
-![YOLO v3 results](/images/yolo_v3_results.jpg)
+![YOLO v3 results](/images/yolo_v3_results.png)
 
 Also it is possible to run a detector for the whole annotation task. Thus
 CVAT will run the serverless function on every frame of the task and submit
 results directly into database. For more details please read
 [the guide][cvat-auto-annotation-user-guide].
 
-### Objects segmentation using Mask-RCNN
+### Object segmentation using Segment Anything
 
-If you have a detector, which returns polygons, you can segment objects. One
-of such detectors is `Mask-RCNN`. There are several implementations of the
-detector available out of the box:
+If you have an interactor that returns masks, you can use it to segment objects.
+One such interactor is `Segment Anything`. Several implementations are available out of the box:
 
-- `serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco` is
-  optimized using [Intel OpenVINO framework][intel-openvino-url] and works well
-  if it is run on an Intel CPU.
-- `serverless/tensorflow/matterport/mask_rcnn/` is optimized for GPU.
+- `serverless/pytorch/facebookresearch/sam/`  Includes two versions: one optimized for CPU and another for GPU.
 
-The deployment process for a serverless function optimized for GPU is similar.
-Just need to run `serverless/deploy_gpu.sh` script. It runs mostly the same
-commands but utilize `function-gpu.yaml` configuration file instead of
-`function.yaml` internally. See next sections if you want to understand the
-difference.
+Deploying a serverless function optimized for GPU follows a similar process.
+You only need to run the `serverless/deploy_gpu.sh` script, which executes the
+same commands but utilizes the `function-gpu.yaml` configuration file instead of `function.yaml`.
+See the following sections for details on the differences.
 
-_Note: Please do not run several GPU functions at the same time. In many cases it
-will not work out of the box. For now you should manually schedule different
-functions on different GPUs and it requires source code modification. Nuclio
-autoscaler does not support the local platform (docker)._
+_Note: Please do not run several GPU functions at the same time. In many cases, it will not work out of the box.
+For now, you should manually schedule different functions on different GPUs and it requires source code modification.
+Nuclio autoscaler does not support the local platform (docker)._
 
 <details>
 <summary>
 
 ```bash
-serverless/deploy_gpu.sh serverless/tensorflow/matterport/mask_rcnn
+serverless/deploy_gpu.sh serverless/pytorch/facebookresearch/sam/
 ```
 
 </summary>
 
 ```
-Deploying serverless/tensorflow/matterport/mask_rcnn function...
-21.07.12 16:48:48.995                     nuctl (I) Deploying function {"name": ""}
-21.07.12 16:48:48.995                     nuctl (I) Building {"versionInfo": "Label: 1.5.16, Git commit: ae43a6a560c2bec42d7ccfdf6e8e11a1e3cc3774, OS: linux, Arch: amd64, Go version: go1.14.3", "name": ""}
-21.07.12 16:48:49.356                     nuctl (I) Cleaning up before deployment {"functionName": "tf-matterport-mask-rcnn"}
-21.07.12 16:48:49.470                     nuctl (I) Function already exists, deleting function containers {"functionName": "tf-matterport-mask-rcnn"}
-21.07.12 16:48:50.247                     nuctl (I) Staging files and preparing base images
-21.07.12 16:48:50.248                     nuctl (I) Building processor image {"imageName": "cvat/tf.matterport.mask_rcnn:latest"}
-21.07.12 16:48:50.249     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.5.16-amd64"}
-21.07.12 16:48:53.674     nuctl.platform.docker (I) Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
-21.07.12 16:48:57.424            nuctl.platform (I) Building docker image {"image": "cvat/tf.matterport.mask_rcnn:latest"}
-21.07.12 16:48:57.763            nuctl.platform (I) Pushing docker image into registry {"image": "cvat/tf.matterport.mask_rcnn:latest", "registry": ""}
-21.07.12 16:48:57.764            nuctl.platform (I) Docker image was successfully built and pushed into docker registry {"image": "cvat/tf.matterport.mask_rcnn:latest"}
-21.07.12 16:48:57.764                     nuctl (I) Build complete {"result": {"Image":"cvat/tf.matterport.mask_rcnn:latest","UpdatedFunctionConfig":{"metadata":{"name":"tf-matterport-mask-rcnn","namespace":"nuclio","labels":{"nuclio.io/project-name":"cvat"},"annotations":{"framework":"tensorflow","name":"Mask RCNN via Tensorflow","spec":"[\n  { \"id\": 0, \"name\": \"BG\" },\n  { \"id\": 1, \"name\": \"person\" },\n  { \"id\": 2, \"name\": \"bicycle\" },\n  { \"id\": 3, \"name\": \"car\" },\n  { \"id\": 4, \"name\": \"motorcycle\" },\n  { \"id\": 5, \"name\": \"airplane\" },\n  { \"id\": 6, \"name\": \"bus\" },\n  { \"id\": 7, \"name\": \"train\" },\n  { \"id\": 8, \"name\": \"truck\" },\n  { \"id\": 9, \"name\": \"boat\" },\n  { \"id\": 10, \"name\": \"traffic_light\" },\n  { \"id\": 11, \"name\": \"fire_hydrant\" },\n  { \"id\": 12, \"name\": \"stop_sign\" },\n  { \"id\": 13, \"name\": \"parking_meter\" },\n  { \"id\": 14, \"name\": \"bench\" },\n  { \"id\": 15, \"name\": \"bird\" },\n  { \"id\": 16, \"name\": \"cat\" },\n  { \"id\": 17, \"name\": \"dog\" },\n  { \"id\": 18, \"name\": \"horse\" },\n  { \"id\": 19, \"name\": \"sheep\" },\n  { \"id\": 20, \"name\": \"cow\" },\n  { \"id\": 21, \"name\": \"elephant\" },\n  { \"id\": 22, \"name\": \"bear\" },\n  { \"id\": 23, \"name\": \"zebra\" },\n  { \"id\": 24, \"name\": \"giraffe\" },\n  { \"id\": 25, \"name\": \"backpack\" },\n  { \"id\": 26, \"name\": \"umbrella\" },\n  { \"id\": 27, \"name\": \"handbag\" },\n  { \"id\": 28, \"name\": \"tie\" },\n  { \"id\": 29, \"name\": \"suitcase\" },\n  { \"id\": 30, \"name\": \"frisbee\" },\n  { \"id\": 31, \"name\": \"skis\" },\n  { \"id\": 32, \"name\": \"snowboard\" },\n  { \"id\": 33, \"name\": \"sports_ball\" },\n  { \"id\": 34, \"name\": \"kite\" },\n  { \"id\": 35, \"name\": \"baseball_bat\" },\n  { \"id\": 36, \"name\": \"baseball_glove\" },\n  { \"id\": 37, \"name\": \"skateboard\" },\n  { \"id\": 38, \"name\": \"surfboard\" },\n  { \"id\": 39, \"name\": \"tennis_racket\" },\n  { \"id\": 40, \"name\": \"bottle\" },\n  { \"id\": 41, \"name\": \"wine_glass\" },\n  { \"id\": 42, \"name\": \"cup\" },\n  { \"id\": 43, \"name\": \"fork\" },\n  { \"id\": 44, \"name\": \"knife\" },\n  { \"id\": 45, \"name\": \"spoon\" },\n  { \"id\": 46, \"name\": \"bowl\" },\n  { \"id\": 47, \"name\": \"banana\" },\n  { \"id\": 48, \"name\": \"apple\" },\n  { \"id\": 49, \"name\": \"sandwich\" },\n  { \"id\": 50, \"name\": \"orange\" },\n  { \"id\": 51, \"name\": \"broccoli\" },\n  { \"id\": 52, \"name\": \"carrot\" },\n  { \"id\": 53, \"name\": \"hot_dog\" },\n  { \"id\": 54, \"name\": \"pizza\" },\n  { \"id\": 55, \"name\": \"donut\" },\n  { \"id\": 56, \"name\": \"cake\" },\n  { \"id\": 57, \"name\": \"chair\" },\n  { \"id\": 58, \"name\": \"couch\" },\n  { \"id\": 59, \"name\": \"potted_plant\" },\n  { \"id\": 60, \"name\": \"bed\" },\n  { \"id\": 61, \"name\": \"dining_table\" },\n  { \"id\": 62, \"name\": \"toilet\" },\n  { \"id\": 63, \"name\": \"tv\" },\n  { \"id\": 64, \"name\": \"laptop\" },\n  { \"id\": 65, \"name\": \"mouse\" },\n  { \"id\": 66, \"name\": \"remote\" },\n  { \"id\": 67, \"name\": \"keyboard\" },\n  { \"id\": 68, \"name\": \"cell_phone\" },\n  { \"id\": 69, \"name\": \"microwave\" },\n  { \"id\": 70, \"name\": \"oven\" },\n  { \"id\": 71, \"name\": \"toaster\" },\n  { \"id\": 72, \"name\": \"sink\" },\n  { \"id\": 73, \"name\": \"refrigerator\" },\n  { \"id\": 74, \"name\": \"book\" },\n  { \"id\": 75, \"name\": \"clock\" },\n  { \"id\": 76, \"name\": \"vase\" },\n  { \"id\": 77, \"name\": \"scissors\" },\n  { \"id\": 78, \"name\": \"teddy_bear\" },\n  { \"id\": 79, \"name\": \"hair_drier\" },\n  { \"id\": 80, \"name\": \"toothbrush\" }\n]\n","type":"detector"}},"spec":{"description":"Mask RCNN optimized for GPU","handler":"main:handler","runtime":"python:3.6","env":[{"name":"MASK_RCNN_DIR","value":"/opt/nuclio/Mask_RCNN"}],"resources":{"limits":{"nvidia.com/gpu":"1"}},"image":"cvat/tf.matterport.mask_rcnn:latest","targetCPU":75,"triggers":{"myHttpTrigger":{"class":"","kind":"http","name":"myHttpTrigger","maxWorkers":1,"workerAvailabilityTimeoutMilliseconds":10000,"attributes":{"maxRequestBodySize":33554432}}},"volumes":[{"volume":{"name":"volume-1","hostPath":{"path":"/home/nmanovic/Workspace/cvat/serverless/common"}},"volumeMount":{"name":"volume-1","mountPath":"/opt/nuclio/common"}}],"build":{"functionConfigPath":"serverless/tensorflow/matterport/mask_rcnn/nuclio/function-gpu.yaml","image":"cvat/tf.matterport.mask_rcnn","baseImage":"tensorflow/tensorflow:1.15.5-gpu-py3","directives":{"postCopy":[{"kind":"WORKDIR","value":"/opt/nuclio"},{"kind":"RUN","value":"apt update \u0026\u0026 apt install --no-install-recommends -y git curl"},{"kind":"RUN","value":"git clone --depth 1 https://github.com/matterport/Mask_RCNN.git"},{"kind":"RUN","value":"curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5"},{"kind":"RUN","value":"pip3 install numpy cython pyyaml keras==2.1.0 scikit-image Pillow"}]},"codeEntryType":"image"},"platform":{"attributes":{"mountMode":"volume","restartPolicy":{"maximumRetryCount":3,"name":"always"}}},"readinessTimeoutSeconds":60,"securityContext":{},"eventTimeout":"30s"}}}}
-21.07.12 16:48:59.071            nuctl.platform (I) Waiting for function to be ready {"timeout": 60}
-21.07.12 16:49:00.437                     nuctl (I) Function deploy complete {"functionName": "tf-matterport-mask-rcnn", "httpPort": 49155}
+25.01.30 11:02:07.034 (I)                     nuctl Deploying function {"name": "pth-facebookresearch-sam-vit-h"}
+25.01.30 11:02:07.034 (I)                     nuctl Building {"builderKind": "docker", "versionInfo": "Label: 1.13.0, Git commit: c4422eb772781fb50fbf017698aae96199d81388, OS: linux, Arch: amd64, Go version: go1.21.7", "name": "pth-facebookresearch-sam-vit-h"}
+25.01.30 11:02:07.159 (I)                     nuctl Staging files and preparing base images
+25.01.30 11:02:07.160 (W)                     nuctl Using user provided base image, runtime interpreter version is provided by the base image {"baseImage": "ubuntu:22.04"}
+25.01.30 11:02:07.160 (I)                     nuctl Building processor image {"registryURL": "", "taggedImageName": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:02:07.160 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/handler-builder-python-onbuild:1.13.0-amd64"}
+25.01.30 11:02:09.656 (I)     nuctl.platform.docker Pulling image {"imageName": "quay.io/nuclio/uhttpc:0.0.1-amd64"}
+25.01.30 11:02:12.174 (I)            nuctl.platform Building docker image {"image": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:20:54.431 (I)            nuctl.platform Pushing docker image into registry {"image": "cvat.pth.facebookresearch.sam.vit_h:latest", "registry": ""}
+25.01.30 11:20:54.431 (I)            nuctl.platform Docker image was successfully built and pushed into docker registry {"image": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:20:54.431 (I)                     nuctl Build complete {"image": "cvat.pth.facebookresearch.sam.vit_h:latest"}
+25.01.30 11:20:54.436 (I)                     nuctl Cleaning up before deployment {"functionName": "pth-facebookresearch-sam-vit-h"}
+25.01.30 11:20:55.018 (I)            nuctl.platform Waiting for function to be ready {"timeout": 120}
+25.01.30 11:20:56.719 (I)                     nuctl Function deploy complete {"functionName": "pth-facebookresearch-sam-vit-h", "httpPort": 32771, "internalInvocationURLs": ["172.18.0.22:8080"], "externalInvocationURLs": ["0.0.0.0:32771"]}
 ```
 
 </details>
 
-Now you should be able to annotate objects using segmentation masks.
+Now you should be able to annotate objects using segment anything.
 
-![Mask RCNN results](/images/mask_rcnn_results.jpg)
+![Segment Anything results](/images/interactors_SAM.gif)
 
 ## Adding your own DL models
 
@@ -438,7 +434,6 @@ metadata:
   annotations:
     name: RetinaNet R101
     type: detector
-    framework: pytorch
     spec: |
       [
         { "id": 1, "name": "person" },
@@ -973,9 +968,9 @@ you can use the Ubuntu subsystem, for this do the following:
 [detectron2-tutorial]: https://detectron2.readthedocs.io/en/latest/tutorials/getting_started.html
 [retinanet-model-zoo]: https://github.com/facebookresearch/detectron2/blob/master/MODEL_ZOO.md#retinanet
 [faster-rcnn-function]: https://raw.githubusercontent.com/cvat-ai/cvat/38b774046d41d604ed85a521587e4bacce61b69c/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio/function.yaml
-[nuclio-doc]: https://nuclio.io/docs/latest/reference/function-configuration/function-configuration-reference/
-[nuclio-http-trigger-doc]: https://nuclio.io/docs/latest/reference/triggers/http/
-[nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls/
+[nuclio-doc]: https://nuclio.io/docs/latest/reference/function-configuration/function-configuration-reference.html
+[nuclio-http-trigger-doc]: https://nuclio.io/docs/latest/reference/triggers/http.html
+[nuclio-bkms-doc]: https://nuclio.io/docs/latest/concepts/best-practices-and-common-pitfalls.html
 [retinanet-function-yaml]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/function.yaml
 [retinanet-main-py]: https://github.com/cvat-ai/cvat/blob/b2f616859ca64687c385e636b4a25014fbb9d17c/serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio/main.py
 [nuclio-homepage]: https://nuclio.io/

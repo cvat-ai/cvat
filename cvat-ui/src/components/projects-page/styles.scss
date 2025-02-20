@@ -1,9 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base';
+@import 'base';
 
 .cvat-projects-page {
     padding-top: $grid-unit-size * 2;
@@ -53,7 +53,7 @@
     flex-direction: column;
     background: $background-color-1;
     padding: $grid-unit-size;
-    border-radius: 4px;
+    border-radius: $border-radius-base;
     box-shadow: $box-shadow-base;
 
     > * {
@@ -95,7 +95,6 @@
 
             .cvat-projects-page-search-bar {
                 width: $grid-unit-size * 32;
-                padding-left: $grid-unit-size * 0.5;
             }
         }
     }
@@ -123,9 +122,6 @@
     padding-bottom: $grid-unit-size;
 
     .ant-ribbon-wrapper {
-        width: 25%;
-        border: $grid-unit-size * 0.5 solid #f0f0f0;
-
         .cvat-projects-project-item-card {
             .cvat-projects-project-item-card-preview-wrapper {
                 height: 100%;
@@ -206,6 +202,15 @@
 .cvat-projects-list {
     display: flex;
     flex-wrap: wrap;
+
+    > div {
+        width: 100%;
+        margin-bottom: $grid-unit-size;
+
+        > div:not(:first-child) {
+            padding-left: $grid-unit-size;
+        }
+    }
 }
 
 .cvat-export-project-loading {

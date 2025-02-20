@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,16 +17,17 @@ import {
 } from 'actions/tasks-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
+import { RQStatus } from 'cvat-core-wrapper';
 
 interface OwnProps {
     taskInstance: any;
     onViewAnalytics: () => void;
+    onViewQualityControl: () => void;
 }
 
 interface StateToProps {
     annotationFormats: any;
     inferenceIsActive: boolean;
-    backupIsActive: boolean;
 }
 
 interface DispatchToProps {
@@ -46,10 +47,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         formats: { annotationFormats },
     } = state;
 
+    const inference = state.models.inferences[tid];
+
     return {
         annotationFormats,
-        inferenceIsActive: tid in state.models.inferences,
-        backupIsActive: state.export.tasks.backup.current[tid],
+        inferenceIsActive: inference &&
+            ![RQStatus.FAILED, RQStatus.FINISHED].includes(inference.status),
     };
 }
 
@@ -82,13 +85,13 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         taskInstance,
         annotationFormats: { loaders, dumpers },
         inferenceIsActive,
-        backupIsActive,
         showExportModal,
         showImportModal,
         deleteTask,
         openRunModelWindow,
         openMoveTaskToProjectWindow,
         onViewAnalytics,
+        onViewQualityControl,
     } = props;
     const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
@@ -108,6 +111,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             showImportModal(taskInstance);
         } else if (action === Actions.VIEW_ANALYTICS) {
             onViewAnalytics();
+        } else if (action === Actions.QUALITY_CONTROL) {
+            onViewQualityControl();
         }
     };
 
@@ -122,7 +127,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             inferenceIsActive={inferenceIsActive}
             onClickMenu={onClickMenu}
             taskDimension={taskInstance.dimension}
-            backupIsActive={backupIsActive}
         />
     );
 }

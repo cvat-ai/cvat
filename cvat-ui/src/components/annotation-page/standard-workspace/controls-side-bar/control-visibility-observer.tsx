@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,8 +37,8 @@ export function ExtraControlsControl(): JSX.Element {
 
     return (
         <CustomPopover
-            visible={visible}
-            onVisibleChange={setVisible}
+            open={visible}
+            onOpenChange={setVisible}
             trigger={initialized ? 'hover' : 'click'} // trigger='hover' allows to close the popover by body click
             placement='right'
             overlayStyle={{ display: initialized ? '' : 'none' }}

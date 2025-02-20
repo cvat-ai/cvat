@@ -1,11 +1,13 @@
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { getCore, Webhook } from 'cvat-core-wrapper';
-import { Dispatch, ActionCreator, Store } from 'redux';
+import { Store } from 'redux';
 import { WebhooksQuery } from 'reducers';
-import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import {
+    ActionUnion, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
@@ -45,7 +47,7 @@ const webhooksActions = {
 };
 
 export const getWebhooksAsync = (query: WebhooksQuery): ThunkAction => (
-    async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    async (dispatch: ThunkDispatch): Promise<void> => {
         dispatch(webhooksActions.getWebhooks(query));
 
         const filteredQuery = filterNull(query);

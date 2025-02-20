@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,7 @@ interface OwnProps {
 
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
     return function (props: OwnProps & PopoverProps): JSX.Element {
-        const { overlayClassName, onVisibleChange, ...rest } = props;
+        const { overlayClassName, onOpenChange, ...rest } = props;
         const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
         const popoverClassName = `cvat-${popoverType}-popover`;
         overlayClassNames.push(popoverClassName);
@@ -24,12 +24,10 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                 {...rest}
                 overlayStyle={{
                     ...(typeof overlayStyle === 'object' ? overlayStyle : {}),
-                    animationDuration: '0s',
-                    animationDelay: '0s',
                 }}
                 trigger={['click']}
                 overlayClassName={overlayClassNames.join(' ').trim()}
-                onVisibleChange={(_visible: boolean) => {
+                onOpenChange={(_visible: boolean) => {
                     if (_visible) {
                         const [element] = window.document.getElementsByClassName(popoverClassName);
                         if (element) {
@@ -38,7 +36,7 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                             (element as HTMLElement).style.opacity = '';
                         }
                     }
-                    if (onVisibleChange) onVisibleChange(_visible);
+                    if (onOpenChange) onOpenChange(_visible);
                 }}
             />
         );

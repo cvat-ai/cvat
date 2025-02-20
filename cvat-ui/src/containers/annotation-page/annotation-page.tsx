@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,6 +24,7 @@ interface StateToProps {
     job: any | null | undefined;
     frameNumber: number;
     fetching: boolean;
+    annotationsInitialized: boolean;
     workspace: Workspace;
 }
 
@@ -46,6 +47,9 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                     number: frameNumber,
                 },
             },
+            annotations: {
+                initialized: annotationsInitialized,
+            },
         },
     } = state;
 
@@ -54,6 +58,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         fetching,
         workspace,
         frameNumber,
+        annotationsInitialized,
     };
 }
 

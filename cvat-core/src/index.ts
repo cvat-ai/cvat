@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import { AnnotationFormats } from './annotation-formats';
 import logger from './logger';
 import * as enums from './enums';
 import config from './config';
-import { mask2Rle, rle2Mask } from './object-utils';
+import { mask2Rle, rle2Mask, propagateShapes } from './object-utils';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -23,7 +23,7 @@ import ObjectState from './object-state';
 import MLModel from './ml-model';
 import Issue from './issue';
 import Comment from './comment';
-import { FrameData } from './frames';
+import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
@@ -32,7 +32,17 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
-import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
+import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
+import { Request } from './request';
+import AboutData from './about';
+import {
+    runAction,
+    callAction,
+    listActions,
+    registerAction,
+} from './annotations-actions/annotations-actions';
+import { BaseCollectionAction } from './annotations-actions/base-collection-action';
+import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
@@ -52,7 +62,7 @@ export default interface CVATCore {
         requests: typeof lambdaManager.requests;
     };
     server: {
-        about: typeof serverProxy.server.about;
+        about: () => Promise<AboutData>;
         share: (dir: string) => Promise<{
             mimeType: string;
             name: string;
@@ -66,11 +76,10 @@ export default interface CVATCore {
         changePassword: any;
         requestPasswordReset: any;
         resetPassword: any;
-        authorized: any;
+        authenticated: any;
         healthCheck: any;
         request: any;
         setAuthData: any;
-        removeAuthData: any;
         installedApps: any;
         apiSchema: typeof serverProxy.server.apiSchema;
     };
@@ -105,11 +114,11 @@ export default interface CVATCore {
     projects: {
         get: (
             filter: {
-                id: number;
-                page: number;
-                search: string;
-                sort: string;
-                filter: string;
+                id?: number;
+                page?: number;
+                search?: string;
+                sort?: string;
+                filter?: string;
             }
         ) => Promise<PaginatedResource<Project>>;
         searchNames: any;
@@ -141,15 +150,31 @@ export default interface CVATCore {
         };
         performance: {
             reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
+            calculate: (
+                body: { jobID?: number; taskID?: number; projectID?: number; },
+                onUpdate: (status: enums.RQStatus, progress: number, message: string) => void,
+            ) => Promise<void>;
         };
     };
     frames: {
         getMeta: any;
     };
+    requests: {
+        list: () => Promise<PaginatedResource<Request>>;
+        listen: (
+            rqID: string,
+            options: {
+                callback: (request: Request) => void,
+                initialRequest?: Request,
+            }
+        ) => Promise<Request>;
+        cancel: (rqID: string) => Promise<void>;
+    };
     actions: {
         list: typeof listActions;
         register: typeof registerAction;
-        run: typeof runActions;
+        run: typeof runAction;
+        call: typeof callAction;
     };
     logger: typeof logger;
     config: {
@@ -162,10 +187,9 @@ export default interface CVATCore {
         };
         onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
+        requestsStatusDelay: typeof config.requestsStatusDelay;
+        jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
     },
-    client: {
-        version: string;
-    };
     enums,
     exceptions: {
         Exception: typeof Exception,
@@ -192,10 +216,20 @@ export default interface CVATCore {
         Organization: typeof Organization;
         Webhook: typeof Webhook;
         AnnotationGuide: typeof AnnotationGuide;
-        BaseSingleFrameAction: typeof BaseSingleFrameAction;
+        BaseShapesAction: typeof BaseShapesAction;
+        BaseCollectionAction: typeof BaseCollectionAction;
+        QualityReport: typeof QualityReport;
+        QualityConflict: typeof QualityConflict;
+        QualitySettings: typeof QualitySettings;
+        AnalyticsReport: typeof AnalyticsReport;
+        Request: typeof Request;
+        FramesMetaData: typeof FramesMetaData;
+        JobValidationLayout: typeof JobValidationLayout;
+        TaskValidationLayout: typeof TaskValidationLayout;
     };
     utils: {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
+        propagateShapes: typeof propagateShapes;
     };
 }

@@ -7,7 +7,6 @@ metadata:
   annotations:
     name: Mask RCNN
     type: detector
-    framework: openvino
     spec: |
       [
         { "id": 1, "name": "person", "type": "mask" },
@@ -104,7 +103,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

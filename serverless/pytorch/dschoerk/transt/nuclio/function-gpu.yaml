@@ -5,7 +5,6 @@ metadata:
     name: TransT
     type: tracker
     spec:
-    framework: pytorch
 
 spec:
   description: Fast Online Object Tracking and Segmentation
@@ -47,7 +46,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 1
+      numWorkers: 1
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

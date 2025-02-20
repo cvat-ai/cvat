@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,20 +18,24 @@ class ModelHandler:
         self.tracker = Tracker(name='transt', net=net, window_penalty=0.49, exemplar_size=128, instance_size=256)
 
     def decode_state(self, state):
-        self.tracker.net.net.zf = jsonpickle.decode(state['model.net.net.zf'])
-        self.tracker.net.net.pos_template = jsonpickle.decode(state['model.net.net.pos_template'])
+        # The server ensures that `state` is one of the values that the function itself
+        # has previously output. Therefore it should be safe to use jsonpickle.
+        decode = jsonpickle.decode  # nosec: B301
 
-        self.tracker.window = jsonpickle.decode(state['model.window'])
-        self.tracker.center_pos = jsonpickle.decode(state['model.center_pos'])
-        self.tracker.size = jsonpickle.decode(state['model.size'])
-        self.tracker.channel_average = jsonpickle.decode(state['model.channel_average'])
-        self.tracker.mean = jsonpickle.decode(state['model.mean'])
-        self.tracker.std = jsonpickle.decode(state['model.std'])
-        self.tracker.inplace = jsonpickle.decode(state['model.inplace'])
+        self.tracker.net.net.zf = decode(state['model.net.net.zf'])
+        self.tracker.net.net.pos_template = decode(state['model.net.net.pos_template'])
+
+        self.tracker.window = decode(state['model.window'])
+        self.tracker.center_pos = decode(state['model.center_pos'])
+        self.tracker.size = decode(state['model.size'])
+        self.tracker.channel_average = decode(state['model.channel_average'])
+        self.tracker.mean = decode(state['model.mean'])
+        self.tracker.std = decode(state['model.std'])
+        self.tracker.inplace = decode(state['model.inplace'])
 
         self.tracker.features_initialized = False
         if 'model.features_initialized' in state:
-            self.tracker.features_initialized = jsonpickle.decode(state['model.features_initialized'])
+            self.tracker.features_initialized = decode(state['model.features_initialized'])
 
     def encode_state(self):
         state = {}

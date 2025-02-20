@@ -17,6 +17,9 @@ cvat:
     additionalEnv: []
     additionalVolumes: []
     additionalVolumeMounts: []
+    # -- The service account the backend pods will use to interact with the Kubernetes API
+    serviceAccount:
+      name: default
 
     initializer:
       labels: {}
@@ -36,11 +39,24 @@ cvat:
       tolerations: []
       envs:
         ALLOWED_HOSTS: "*"
-        DJANGO_MODWSGI_EXTRA_ARGS: ""
       additionalEnv: []
       additionalVolumes: []
       additionalVolumeMounts: []
+      readinessProbe:
+        enabled: true
+        periodSeconds: 15
+        initialDelaySeconds: 15
+      livenessProbe:
+        enabled: true
+        periodSeconds: 15
+        failureThreshold: 5
+        initialDelaySeconds: 60
     worker:
+      livenessProbe:
+        enabled: true
+        periodSeconds: 120
+        initialDelaySeconds: 30
+        timeoutSeconds: 10
       export:
         replicas: 2
         labels: {}
@@ -101,6 +117,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      chunks:
+        replicas: 2
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -118,8 +144,7 @@ cvat:
     permissionFix:
       enabled: true
     service:
-      annotations:
-        traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+      annotations: {}
       spec:
         type: ClusterIP
         ports:
@@ -133,7 +158,6 @@ cvat:
 #        accessModes:
 #         - ReadWriteMany
         size: 20Gi
-    disableDistinctCachePerService: false
   frontend:
     replicas: 1
     image: cvat/ui
@@ -170,6 +194,14 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      failureThreshold: 5
     service:
       type: ClusterIP
       ports:
@@ -214,6 +246,14 @@ cvat:
     #     name: tmp
     #     subPath: test
     composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    readinessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
+    livenessProbe:
+      enabled: true
+      periodSeconds: 15
+      initialDelaySeconds: 15
     service:
       type: ClusterIP
       ports:
@@ -264,6 +304,14 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
+    readinessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
+    livenessProbe:
+      enabled: true
+      periodSeconds: 10
+      initialDelaySeconds: 30
     defaultStorage:
       enabled: true
 #     storageClassName: default
@@ -275,9 +323,11 @@ postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
   external:
-    host: 127.0.0.1
-    port: 5432
- # If not external following config will be applied by default
+    # Ignored if an empty value is set
+    host: ""
+    # Ignored if an empty value is set
+    port: ""
+  # If not external following config will be applied by default
   auth:
     existingSecret: "{{ .Release.Name }}-postgres-secret"
     username: cvat
@@ -309,6 +359,8 @@ redis:
 
 nuclio:
   enabled: false
+  dashboard:
+    containerBuilderKind: kaniko
 # See https://github.com/nuclio/nuclio/blob/master/hack/k8s/helm/nuclio/values.yaml for more info
 #  registry:
 #    loginUrl: someurl
@@ -317,11 +369,13 @@ nuclio:
 #      password: somepass
 
 analytics:
+  # Set clickhouse.enabled to false if you disable analytics or use an external database
   enabled: true
   clickhouseDb: cvat
   clickhouseUser: user
   clickhousePassword: user
   clickhouseHost: "{{ .Release.Name }}-clickhouse"
+  clickhousePort: 8123
 
 vector:
   envFrom:
@@ -343,6 +397,8 @@ vector:
     tag: "0.26.0-alpine"
 
 clickhouse:
+  # Set to false in case of external db usage
+  enabled: true
   shards: 1
   replicaCount: 1
   extraEnvVarsSecret: cvat-analytics-secret
@@ -356,6 +412,7 @@ clickhouse:
     enabled: false
 
 grafana:
+  envFromSecret: cvat-analytics-secret
   datasources:
     datasources.yaml:
       apiVersion: 1
@@ -364,13 +421,14 @@ grafana:
         type: 'grafana-clickhouse-datasource'
         isDefault: true
         jsonData:
-          defaultDatabase: cvat
-          port: 9000
-          server: "{{ .Release.Name }}-clickhouse"
-          username: user
+          defaultDatabase: ${CLICKHOUSE_DB}
+          port: ${CLICKHOUSE_PORT}
+          server: ${CLICKHOUSE_HOST}
+          username: ${CLICKHOUSE_USER}
           tlsSkipVerify: false
+          protocol: http
         secureJsonData:
-          password: user
+          password: ${CLICKHOUSE_PASSWORD}
         editable: false
   dashboardProviders:
     dashboardproviders.yaml:
@@ -418,7 +476,7 @@ ingress:
   ##   kubernetes.io/ingress.class: nginx
   ##
   annotations: {}
-  ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## @param ingress.className IngressClass that will be used to implement the Ingress (Kubernetes 1.18+)
   ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##
@@ -454,6 +512,9 @@ traefik:
             RequestProtocol: keep
             RouterName: keep
             StartUTC: keep
+  providers:
+    kubernetesIngress:
+      allowEmptyServices: true
 
 smokescreen:
   opts: ''

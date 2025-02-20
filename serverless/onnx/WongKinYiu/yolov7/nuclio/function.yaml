@@ -4,7 +4,6 @@ metadata:
   annotations:
     name: YOLO v7
     type: detector
-    framework: onnx
     spec: |
       [
         { "id": 0, "name": "person", "type": "rectangle" },
@@ -114,7 +113,7 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

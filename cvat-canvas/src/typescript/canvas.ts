@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,15 +11,13 @@ import {
     CanvasModel, CanvasModelImpl, RectDrawingMethod,
     CuboidDrawingMethod, Configuration, Geometry, Mode,
     HighlightSeverity as _HighlightSeverity, CanvasHint as _CanvasHint,
+    PolyEditData,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
 import { CanvasView, CanvasViewImpl } from './canvasView';
 
 import '../scss/canvas.scss';
-import pjson from '../../package.json';
-
-const CanvasVersion = pjson.version;
 
 interface Canvas {
     html(): HTMLDivElement;
@@ -35,7 +33,7 @@ interface Canvas {
 
     interact(interactionData: InteractionData): void;
     draw(drawData: DrawData): void;
-    edit(editData: MasksEditData): void;
+    edit(editData: MasksEditData | PolyEditData): void;
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
     slice(sliceData: SliceData): void;
@@ -137,7 +135,7 @@ class CanvasImpl implements Canvas {
         this.model.draw(drawData);
     }
 
-    public edit(editData: MasksEditData): void {
+    public edit(editData: MasksEditData | PolyEditData): void {
         this.model.edit(editData);
     }
 
@@ -196,5 +194,5 @@ export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
 
 export {
-    CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
+    CanvasImpl as Canvas, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
 };

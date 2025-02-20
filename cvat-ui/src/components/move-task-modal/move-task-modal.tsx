@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -174,7 +174,7 @@ function MoveTaskModal({
 
     return (
         <Modal
-            visible={visible}
+            open={visible}
             onCancel={onCancel}
             onOk={submitMove}
             okButtonProps={{ disabled: isUpdating }}

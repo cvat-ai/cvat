@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +10,7 @@ function CVATTooltip(props: TooltipProps): JSX.Element {
     const { children, ...rest } = props;
 
     return (
-        <Tooltip destroyTooltipOnHide={{ keepParent: false }} mouseLeaveDelay={0} {...rest}>
+        <Tooltip destroyTooltipOnHide mouseEnterDelay={0.25} mouseLeaveDelay={0} {...rest}>
             {children}
         </Tooltip>
     );

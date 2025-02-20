@@ -1,8 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import 'base';
 
 .cvat-create-organization-page {
     text-align: center;
@@ -24,7 +25,7 @@
     width: 100%;
     height: auto;
     border: 1px solid $border-color-1;
-    border-radius: 3px;
+    border-radius: $border-radius-base;
     padding: $grid-unit-size * 2;
     background: $background-color-1;
 

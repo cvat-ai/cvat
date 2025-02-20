@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +26,7 @@ context('The filter in the URL is correctly escaped', () => {
     }
 
     before(() => {
-        cy.visit('/');
+        cy.visit('/auth/login');
         cy.login();
 
         cy.goToProjectsList();

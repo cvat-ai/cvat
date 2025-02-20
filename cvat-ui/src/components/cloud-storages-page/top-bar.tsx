@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,7 +53,7 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                     />
                     <div>
                         <SortingComponent
-                            visible={visibility.sorting}
+                            open={visibility.sorting}
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}

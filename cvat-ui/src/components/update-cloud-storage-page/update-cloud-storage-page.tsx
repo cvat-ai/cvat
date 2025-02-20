@@ -3,17 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
-import Result from 'antd/lib/result';
 import Text from 'antd/lib/typography/Text';
 
 import { CombinedState } from 'reducers';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import CreateCloudStorageForm from 'components/create-cloud-storage-page/cloud-storage-form';
+import { CloudStorageNotFoundComponent } from 'components/common/not-found';
 
 interface ParamType {
     id: string;
@@ -22,30 +22,30 @@ interface ParamType {
 export default function UpdateCloudStoragePageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const cloudStorageId = +useParams<ParamType>().id;
-    const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
-    const isInitialized = useSelector((state: CombinedState) => state.cloudStorages.initialized);
-    const cloudStorages = useSelector((state: CombinedState) => state.cloudStorages.current);
-    const [cloudStorage] = cloudStorages.filter((_cloudStorage) => _cloudStorage.id === cloudStorageId);
+    const [requested, setRequested] = useState(false);
+    const {
+        isFetching,
+        isInitialized,
+        cloudStorage,
+    } = useSelector((state: CombinedState) => ({
+        isFetching: state.cloudStorages.fetching,
+        isInitialized: state.cloudStorages.initialized,
+        cloudStorage: state.cloudStorages.current.find((_cloudStorage) => _cloudStorage.id === cloudStorageId),
+    }), shallowEqual);
 
     useEffect(() => {
-        if (!cloudStorage && !isFetching) {
+        if (!cloudStorage && !requested && !isFetching) {
+            setRequested(true);
             dispatch(getCloudStoragesAsync({ id: cloudStorageId }));
         }
-    }, [isFetching]);
+    }, [requested, cloudStorage, isFetching]);
 
     if (!cloudStorage && !isInitialized) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
     if (!cloudStorage) {
-        return (
-            <Result
-                className='cvat-not-found'
-                status='404'
-                title={`Sorry, but the cloud storage #${cloudStorageId} was not found`}
-                subTitle='Please, be sure id you requested exists and you have appropriate permissions'
-            />
-        );
+        return <CloudStorageNotFoundComponent />;
     }
 
     return (

@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,13 +25,11 @@ context('Tests source & target storage for backups.', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
 
-    const serverHost = Cypress.config('baseUrl').includes('3000') ? 'localhost' : 'minio';
-
     const cloudStorageData = {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'manifest.jsonl',
-        endpointUrl: `http://${serverHost}:9000`,
+        endpointUrl: Cypress.config('minioUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -88,7 +86,7 @@ context('Tests source & target storage for backups.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         createdCloudStorageId = cy.attachS3Bucket(cloudStorageData);
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
@@ -141,7 +139,10 @@ context('Tests source & target storage for backups.', () => {
                 { location: 'Local' },
                 false,
             );
-            cy.waitForDownload();
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
+            });
+            cy.goBack();
         });
 
         it('Export project to default minio bucket', () => {

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,7 @@ context('Value must be a user instance.', () => {
             cy.get('.cvat-task-details-user-block').within(() => {
                 cy.get('.cvat-user-search-field').click();
             });
-            cy.get('.ant-select-dropdown')
+            cy.get('.cvat-user-search-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();
@@ -30,7 +30,7 @@ context('Value must be a user instance.', () => {
             cy.get('.cvat-task-details-user-block').within(() => {
                 cy.get('.cvat-user-search-field').click();
             });
-            cy.get('.ant-select-dropdown')
+            cy.get('.cvat-user-search-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();

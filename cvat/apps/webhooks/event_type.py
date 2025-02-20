@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -47,7 +47,11 @@ class AllEvents:
 
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
-    events = [*Events.select(["task", "job", "label", "issue", "comment"]), event_name("update", "project"), event_name("delete", "project")]
+    events = [
+        *Events.select(["task", "job", "label", "issue", "comment"]),
+        event_name("update", "project"),
+        event_name("delete", "project"),
+    ]
 
 
 class OrganizationEvents:

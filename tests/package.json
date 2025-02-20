@@ -8,7 +8,7 @@
     "@cypress/code-coverage": "^3.9.10",
     "archiver": "^5.3.0",
     "cy-verify-downloads": "^0.0.5",
-    "cypress": "^12.17.4",
+    "cypress": "^13.10.0",
     "cypress-file-upload": "^5.0.8",
     "cypress-localstorage-commands": "^1.7.0",
     "cypress-real-events": "^1.6.0",
@@ -16,5 +16,6 @@
     "fs-extra": "^10.1.0",
     "jimp": "^0.22.10"
   },
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "devDependencies": {}
 }

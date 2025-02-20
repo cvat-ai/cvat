@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -130,7 +130,7 @@ context('Edit handler.', () => {
                         cy.get('.cvat_canvas_shape_drawing')
                             .should('exist')
                             .and('have.attr', 'data-origin-client-id', '2');
-                        cy.get('body').type('{Ctrl}');
+                        cy.get('body').type('{Ctrl}a');
                         cy.get('.cvat_canvas_autoborder_point')
                             .should('exist')
                             .and('be.visible')

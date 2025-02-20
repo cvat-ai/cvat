@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+import { isInteger } from 'utils/validate-integer';
 import { StorageLocation } from 'reducers';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
@@ -47,6 +48,7 @@ export interface AdvancedConfiguration {
     sortingMethod: SortingMethod;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
+    consensusReplicas: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -59,6 +61,7 @@ const initialValues: AdvancedConfiguration = {
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
+    consensusReplicas: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -71,11 +74,12 @@ const initialValues: AdvancedConfiguration = {
 };
 
 interface Props {
-    onSubmit(values: AdvancedConfiguration): void;
+    onSubmit(values: AdvancedConfiguration): Promise<void>;
     onChangeUseProjectSourceStorage(value: boolean): void;
     onChangeUseProjectTargetStorage(value: boolean): void;
     onChangeSourceStorageLocation: (value: StorageLocation) => void;
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
+    onChangeSortingMethod(value: SortingMethod): void;
     projectId: number | null;
     useProjectSourceStorage: boolean;
     useProjectTargetStorage: boolean;
@@ -91,30 +95,6 @@ function validateURL(_: RuleObject, value: string): Promise<void> {
 
     return Promise.resolve();
 }
-
-const isInteger = ({ min, max }: { min?: number; max?: number }) => (
-    _: RuleObject,
-    value?: number | string,
-): Promise<void> => {
-    if (typeof value === 'undefined' || value === '') {
-        return Promise.resolve();
-    }
-
-    const intValue = +value;
-    if (Number.isNaN(intValue) || !Number.isInteger(intValue)) {
-        return Promise.reject(new Error('Value must be a positive integer'));
-    }
-
-    if (typeof min !== 'undefined' && intValue < min) {
-        return Promise.reject(new Error(`Value must be more than ${min}`));
-    }
-
-    if (typeof max !== 'undefined' && intValue > max) {
-        return Promise.reject(new Error(`Value must be less than ${max}`));
-    }
-
-    return Promise.resolve();
-};
 
 const validateOverlapSize: RuleRender = ({ getFieldValue }): RuleObject => ({
     validator(_: RuleObject, value?: string | number): Promise<void> {
@@ -169,7 +149,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                     );
 
-                    onSubmit({
+                    return onSubmit({
                         ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                         frameFilter,
                         sourceStorage: values.useProjectSourceStorage ?
@@ -179,9 +159,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             new Storage(project.targetStorage || { location: StorageLocation.LOCAL }) :
                             new Storage(values.targetStorage),
                     });
-                    return Promise.resolve();
                 });
             }
+
             return this.formRef.current.validateFields()
                 .then(
                     (values: Store): Promise<void> => {
@@ -190,13 +170,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             (entry: [string, unknown]): boolean => entry[0] !== frameFilter,
                         );
 
-                        onSubmit({
+                        return onSubmit({
                             ...((Object.fromEntries(entries) as any) as AdvancedConfiguration),
                             frameFilter,
                             sourceStorage: new Storage(values.sourceStorage),
                             targetStorage: new Storage(values.targetStorage),
                         });
-                        return Promise.resolve();
                     },
                 );
         }
@@ -226,6 +205,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     private renderSortingMethodRadio(): JSX.Element {
+        const { onChangeSortingMethod } = this.props;
+
         return (
             <Form.Item
                 label='Sorting method'
@@ -238,7 +219,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
                 help='Specify how to sort images. It is not relevant for videos.'
             >
-                <Radio.Group buttonStyle='solid'>
+                <Radio.Group buttonStyle='solid' onChange={(e) => onChangeSortingMethod(e.target.value)}>
                     <Radio.Button value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
                         Lexicographical
                     </Radio.Button>
@@ -403,6 +384,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderConsensusReplicas(): JSX.Element {
+        return (
+            <Form.Item
+                label='Consensus Replicas'
+                name='consensusReplicas'
+                rules={[
+                    {
+                        validator: isInteger({
+                            min: 0,
+                            max: 10,
+                            filter: (intValue: number): boolean => intValue !== 1,
+                        }),
+                    },
+                ]}
+            >
+                <Input
+                    size='large'
+                    type='number'
+                    min={0}
+                    max={10}
+                    step={1}
+                />
+            </Form.Item>
+        );
+    }
+
     private renderSourceStorage(): JSX.Element {
         const {
             projectId,
@@ -483,6 +490,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
+                </Row>
+                <Row justify='start'>
+                    <Col span={7}>
+                        {this.renderConsensusReplicas()}
+                    </Col>
                 </Row>
 
                 <Row>

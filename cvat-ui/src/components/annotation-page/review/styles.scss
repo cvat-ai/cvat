@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +30,7 @@
     max-width: 16 * $grid-unit-size;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-radius: 0;
+    border-radius: $border-radius-base;
     transform-origin: top left;
 
     &:hover {
@@ -45,7 +46,7 @@
     pointer-events: auto;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-radius: 0;
+    border-radius: $border-radius-base;
     transform-origin: top left;
     background: none;
     border: none;
@@ -71,7 +72,7 @@
     padding: $grid-unit-size;
     transform-origin: top left;
     box-shadow: $box-shadow-base;
-    border-radius: 0.5 * $grid-unit-size;
+    border-radius: $border-radius-base;
 
     .cvat-issue-dialog-chat {
         > div {

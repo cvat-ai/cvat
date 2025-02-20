@@ -1,8 +1,8 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../styles.scss';
+@import '../../styles';
 
 .cvat-webhooks-list {
     height: 100%;
@@ -14,12 +14,12 @@
     width: 100%;
     height: $grid-unit-size * 16;
     border: 1px solid $border-color-1;
-    border-radius: 3px;
+    border-radius: $border-radius-base;
     margin-bottom: $grid-unit-size * 2;
     padding: $grid-unit-size * 2 0 $grid-unit-size * 0.5 0;
     background: $background-color-1;
 
-    @media screen and (min-width: 1080px) {
+    @media screen and (width >= 1080px) {
         height: $grid-unit-size * 15;
     }
 

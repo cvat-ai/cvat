@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -189,7 +189,7 @@ export default class AnnotationsSaver {
         for (const type of Object.keys(indexes)) {
             for (let i = 0; i < indexes[type].length; i++) {
                 const clientID = indexes[type][i];
-                this.collection.objects[clientID].updateServerID(saved[type][i]);
+                this.collection.objects[clientID].updateFromServerResponse(saved[type][i]);
             }
         }
     }

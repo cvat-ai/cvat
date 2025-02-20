@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import {
     OrderedListOutlined, SortAscendingOutlined, SortDescendingOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Radio from 'antd/lib/radio';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -175,12 +175,12 @@ function SortingModalComponent(props: Props): JSX.Element {
     }, [appliedSorting]);
 
     return (
-        <Dropdown
-            disabled={disabled}
-            destroyPopupOnHide
-            visible={visible}
+        <Popover
+            destroyTooltipOnHide
+            open={visible}
             placement='bottomLeft'
-            overlay={(
+            overlayInnerStyle={{ padding: 0 }}
+            content={(
                 <SortableList
                     onSortEnd={({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
                         if (oldIndex !== newIndex) {
@@ -196,11 +196,16 @@ function SortingModalComponent(props: Props): JSX.Element {
                 />
             )}
         >
-            <Button className='cvat-switch-sort-constructor-button' type='default' onClick={() => onVisibleChange(!visible)}>
+            <Button
+                disabled={disabled}
+                className='cvat-switch-sort-constructor-button'
+                type='default'
+                onClick={() => onVisibleChange(!visible)}
+            >
                 Sort by
                 <OrderedListOutlined />
             </Button>
-        </Dropdown>
+        </Popover>
     );
 }
 

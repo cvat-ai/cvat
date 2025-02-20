@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,14 +12,14 @@ context('Review pipeline feature', () => {
             username: 'annotator',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'annotator@local.local',
+            email: 'annotator@local.local',
             password: 'UfdU21!dds',
         },
         reviewer: {
             username: 'reviewer',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            emailAddr: 'reviewer@local.local',
+            email: 'reviewer@local.local',
             password: 'Fv5Df3#f55g',
         },
     };
@@ -56,14 +56,12 @@ context('Review pipeline feature', () => {
     let jobIDs = null;
 
     before(() => {
-        cy.visit('auth/login');
-        cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
+        cy.headlessLogout();
+        cy.visit('/auth/login');
 
         // register additional users
-        cy.clearCookies();
         for (const user of Object.values(additionalUsers)) {
             cy.headlessCreateUser(user);
-            cy.clearCookies();
         }
 
         // create main task
@@ -137,9 +135,9 @@ context('Review pipeline feature', () => {
             // Annotator updates job state, both times update is successfull, logout
             // check: https://github.com/cvat-ai/cvat/pull/7158
             cy.intercept('PATCH', `/api/jobs/${jobIDs[0]}`).as('updateJobState');
-            cy.setJobState('completed');
+            cy.updateJobStateOnAnnotationView('completed');
             cy.wait('@updateJobState').its('response.statusCode').should('equal', 200);
-            cy.setJobState('completed');
+            cy.updateJobStateOnAnnotationView('completed');
             cy.wait('@updateJobState').its('response.statusCode').should('equal', 200);
             cy.logout();
 
@@ -147,7 +145,7 @@ context('Review pipeline feature', () => {
             cy.login();
             cy.openTask(taskSpec.name);
             cy.get('.cvat-job-item').first().within(() => {
-                cy.get('.cvat-job-item-state').should('have.text', 'Completed');
+                cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'completed');
                 cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', 'annotation');
             });
             cy.setJobStage(jobIDs[0], 'validation');
@@ -231,7 +229,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-notification-notice-save-annotations-failed').should('not.exist');
 
             // Finally, the reviewer rejects the job, logouts
-            cy.setJobState('rejected');
+            cy.updateJobStateOnAnnotationView('rejected');
             cy.logout();
 
             // Requester logins and assignes the job to the annotator, sets job stage to annotation
@@ -239,7 +237,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-tasks-page').should('exist').and('be.visible');
             cy.openTask(taskSpec.name);
             cy.get('.cvat-job-item').first().within(() => {
-                cy.get('.cvat-job-item-state').should('have.text', 'Rejected');
+                cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'rejected');
                 cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', 'validation');
             });
             cy.setJobStage(jobIDs[0], 'annotation');
@@ -333,7 +331,7 @@ context('Review pipeline feature', () => {
                 }
             }
 
-            cy.setJobState('completed');
+            cy.updateJobStateOnAnnotationView('completed');
             cy.logout();
 
             // Requester logins, removes all the issues, finishes the job
@@ -358,15 +356,19 @@ context('Review pipeline feature', () => {
                 });
             }
 
-            // check: https://github.com/cvat-ai/cvat/issues/7206
             cy.interactMenu('Finish the job');
+
             cy.get('.cvat-modal-content-finish-job').within(() => {
                 cy.contains('button', 'Continue').click();
             });
+
+            cy.interactMenu('Open the task');
             cy.get('.cvat-job-item').first().within(() => {
-                cy.get('.cvat-job-item-state').should('have.text', 'Completed');
-                cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', 'acceptance');
+                cy.get('.cvat-job-item-state .ant-select-selection-item').should('have.text', 'completed');
             });
+
+            cy.setJobStage(jobIDs[0], 'acceptance');
+            cy.setJobState(jobIDs[0], 'completed');
         });
     });
 });

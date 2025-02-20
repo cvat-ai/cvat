@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -26,12 +26,10 @@ def handler(context, event):
     buf = io.BytesIO(base64.b64decode(data["image"]))
     image = Image.open(buf).convert('RGB')
 
-    mask, polygon = context.user_data.model.handle(image, pos_points,
-        neg_points, threshold)
-    return context.Response(body=json.dumps({
-            'points': polygon,
-            'mask': mask.tolist(),
-        }),
+    mask = context.user_data.model.handle(image, pos_points, neg_points, threshold)
+    return context.Response(
+        body=json.dumps({ 'mask': mask.tolist() }),
         headers={},
         content_type='application/json',
-        status_code=200)
+        status_code=200
+    )

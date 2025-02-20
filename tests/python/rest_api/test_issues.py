@@ -1,12 +1,12 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 from cvat_sdk import models
@@ -55,8 +55,6 @@ class TestPostIssues:
         [
             ("admin", True, True),
             ("admin", False, True),
-            ("business", True, True),
-            ("business", False, False),
             ("worker", True, True),
             ("worker", False, False),
             ("user", True, True),
@@ -185,8 +183,6 @@ class TestPatchIssues:
         [
             ("admin", True, None, True),
             ("admin", False, None, True),
-            ("business", True, None, True),
-            ("business", False, None, False),
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
@@ -275,8 +271,6 @@ class TestDeleteIssues:
         [
             ("admin", True, None, True),
             ("admin", False, None, True),
-            ("business", True, None, True),
-            ("business", False, None, False),
             ("user", True, None, True),
             ("user", False, None, False),
             ("worker", False, True, True),
@@ -355,7 +349,7 @@ class TestIssuesListFilters(CollectionSimpleFilterTestBase):
         ("owner", "assignee", "job_id", "resolved", "frame_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 class TestCommentsListFilters(CollectionSimpleFilterTestBase):
@@ -373,7 +367,7 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.comments_api.list_endpoint
 
-    def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
+    def _get_field_samples(self, field: str) -> tuple[Any, list[dict[str, Any]]]:
         if field == "job_id":
             issue_id, issue_comments = super()._get_field_samples("issue_id")
             issue = next((s for s in self.sample_issues if s["id"] == issue_id))
@@ -393,7 +387,7 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
         ("owner", "issue_id", "job_id", "frame_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
-        return super().test_can_use_simple_filter_for_object_list(field)
+        return super()._test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

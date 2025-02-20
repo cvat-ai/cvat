@@ -1,11 +1,11 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import PluginRegistry from './plugins';
 import {
-    ModelProviders, ModelKind, ModelReturnType,
+    LabelType, ModelProviders, ModelKind,
 } from './enums';
 import {
     SerializedModel, ModelParams, MLModelTip, MLModelLabel,
@@ -13,7 +13,6 @@ import {
 
 export default class MLModel {
     private serialized: SerializedModel;
-    private changeToolsBlockerStateCallback?: (event: string) => void;
 
     constructor(serialized: SerializedModel) {
         this.serialized = { ...serialized };
@@ -35,10 +34,6 @@ export default class MLModel {
         return this.serialized.version;
     }
 
-    public get framework(): string {
-        return this.serialized.framework;
-    }
-
     public get description(): string {
         return this.serialized.description;
     }
@@ -47,18 +42,26 @@ export default class MLModel {
         return this.serialized.kind;
     }
 
+    public get displayKind(): string {
+        if (this.kind === ModelKind.DETECTOR) {
+            switch (this.returnType) {
+                case LabelType.TAG: return 'classifier';
+                case LabelType.MASK: return 'segmenter';
+                default: // fall back on the original kind
+            }
+        }
+        return this.kind;
+    }
+
     public get params(): ModelParams {
         const result: ModelParams = {
             canvas: {
                 minPosVertices: this.serialized.min_pos_points,
                 minNegVertices: this.serialized.min_neg_points,
                 startWithBox: this.serialized.startswith_box,
+                startWithBoxOptional: this.serialized.startswith_box_optional,
             },
         };
-
-        if (this.changeToolsBlockerStateCallback) {
-            result.canvas.onChangeToolsBlockerState = this.changeToolsBlockerStateCallback;
-        }
 
         return result;
     }
@@ -94,13 +97,13 @@ export default class MLModel {
         return this.serialized?.url;
     }
 
-    public get returnType(): ModelReturnType | undefined {
-        return this.serialized?.return_type;
-    }
+    public get returnType(): LabelType {
+        const uniqueLabelTypes = new Set(this.labels.map((label) => label.type));
 
-    // Used to set a callback when the tool is blocked in UI
-    public set onChangeToolsBlockerState(onChangeToolsBlockerState: (event: string) => void) {
-        this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
+        if (uniqueLabelTypes.size !== 1) return LabelType.ANY;
+
+        const [labelType] = uniqueLabelTypes;
+        return labelType;
     }
 
     public async preview(): Promise<string> {

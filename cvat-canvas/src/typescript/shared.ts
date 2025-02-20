@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -99,7 +100,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .fill('white')
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
-            let text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
+            let text = `${Math.floor(shape.width())}x${Math.floor(shape.height())}px`;
             if (shape.type === 'rect' || shape.type === 'ellipse') {
                 let rotation = shape.transform().rotation || 0;
                 // be sure, that rotation in range [0; 360]
@@ -531,6 +532,16 @@ export function segmentsFromPoints(points: number[], circuit = false): Segment[]
                 acc.push([[arr[idx - 1], val], [arr[idx + 1], arr[idx + 2]]]);
             }
         }
+        return acc;
+    }, []);
+}
+
+export function toReversed<T>(array: Array<T>): Array<T> {
+    // actually toReversed already exists in ESMA specification
+    // but not all CVAT customers uses a browser fresh enough to use it
+    // instead of using a library with polyfills I will prefer just to rewrite it with reduceRight
+    return array.reduceRight<Array<T>>((acc, val: T) => {
+        acc.push(val);
         return acc;
     }, []);
 }

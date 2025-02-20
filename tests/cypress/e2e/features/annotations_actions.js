@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,7 @@ context('Testing annotations actions workflow', () => {
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
@@ -85,47 +85,6 @@ context('Testing annotations actions workflow', () => {
             }
 
             cy.closeAnnotationsActionsModal();
-        });
-
-        it('Recommendation to save the job appears if there are unsaved changes', () => {
-            cy.createRectangle({
-                points: 'By 2 Points',
-                type: 'Shape',
-                labelName: taskPayload.labels[0].name,
-                firstX: 250,
-                firstY: 350,
-                secondX: 350,
-                secondY: 450,
-            });
-
-            cy.openAnnotationsActionsModal();
-            cy.intercept(`/api/jobs/${jobID}/annotations?**action=create**`).as('createAnnotationsRequest');
-            cy.get('.cvat-action-runner-save-job-recommendation').should('exist').and('be.visible').click();
-            cy.wait('@createAnnotationsRequest').its('response.statusCode').should('equal', 200);
-            cy.get('.cvat-action-runner-save-job-recommendation').should('not.exist');
-
-            cy.closeAnnotationsActionsModal();
-        });
-
-        it('Recommendation to disable automatic saving appears in modal if automatic saving is enabled', () => {
-            cy.openSettings();
-            cy.contains('Workspace').click();
-            cy.get('.cvat-workspace-settings-auto-save').within(() => {
-                cy.get('[type="checkbox"]').check();
-            });
-            cy.closeSettings();
-
-            cy.openAnnotationsActionsModal();
-            cy.get('.cvat-action-runner-disable-autosave-recommendation').should('exist').and('be.visible').click();
-            cy.get('.cvat-action-runner-disable-autosave-recommendation').should('not.exist');
-            cy.closeAnnotationsActionsModal();
-
-            cy.openSettings();
-            cy.contains('Workspace').click();
-            cy.get('.cvat-workspace-settings-auto-save').within(() => {
-                cy.get('[type="checkbox"]').should('not.be.checked');
-            });
-            cy.closeSettings();
         });
     });
 
@@ -270,6 +229,119 @@ context('Testing annotations actions workflow', () => {
             frames.forEach((frame) => {
                 cy.goCheckFrameNumber(frame);
                 cy.get('.cvat_canvas_shape').should('have.length', 1);
+            });
+        });
+    });
+
+    describe('Test action: "Propagate shapes"', () => {
+        const ACTION_NAME = 'Propagate shapes';
+        const FORMAT_NAME = 'Segmentation mask 1.1';
+
+        function checkFramesContainShapes(from, to, amount) {
+            frames.forEach((frame) => {
+                cy.goCheckFrameNumber(frame);
+
+                if (frame >= from && frame <= to) {
+                    cy.get('.cvat_canvas_shape').should('have.length', amount);
+                } else {
+                    cy.get('.cvat_canvas_shape').should('have.length', 0);
+                }
+            });
+        }
+
+        before(() => {
+            const shapes = [{
+                type: 'rectangle',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                points: [250, 350, 350, 450],
+                rotation: 0,
+                attributes: [],
+                elements: [],
+                frame: 0,
+                label_id: labels[0].id,
+                group: 0,
+                source: 'manual',
+            }, {
+                type: 'rectangle',
+                occluded: false,
+                outside: false,
+                z_order: 0,
+                points: [350, 450, 450, 550],
+                rotation: 0,
+                attributes: [],
+                elements: [],
+                frame: 0,
+                label_id: labels[1].id,
+                group: 0,
+                source: 'manual',
+            }];
+
+            cy.window().then((window) => {
+                window.cvat.server.request(`/api/jobs/${jobID}/annotations`, {
+                    method: 'PUT',
+                    data: { shapes },
+                });
+            });
+        });
+
+        beforeEach(() => {
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('not.exist');
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+        });
+
+        it('Apply action on specific frames', () => {
+            const middleFrame = Math.round(latestFrameNumber / 2);
+            cy.openAnnotationsActionsModal();
+            cy.selectAnnotationsAction(ACTION_NAME);
+            cy.setAnnotationActionParameter('Target frame', 'input', middleFrame);
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
+            checkFramesContainShapes(0, middleFrame, 2);
+        });
+
+        it('Apply action on current frame', () => {
+            cy.openAnnotationsActionsModal();
+            cy.selectAnnotationsAction(ACTION_NAME);
+            cy.setAnnotationActionParameter('Target frame', 'input', 0);
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
+            checkFramesContainShapes(0, 0, 2);
+        });
+
+        it('Apply action on mask with different frame sizes. Mask is cropped. Segmentation mask export is available', () => {
+            // Default frame size is 800x800, but last frame is 500x500
+            cy.goCheckFrameNumber(latestFrameNumber - 1);
+            cy.startMaskDrawing();
+            cy.drawMask([{
+                method: 'brush',
+                coordinates: [[620, 620], [700, 620], [700, 700], [620, 700]],
+            }]);
+            cy.finishMaskDrawing();
+
+            cy.openAnnotationsActionsModal();
+            cy.selectAnnotationsAction(ACTION_NAME);
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
+
+            cy.get('.cvat_canvas_shape').should('have.length', 1);
+            cy.goCheckFrameNumber(latestFrameNumber);
+            cy.get('.cvat_canvas_shape').should('have.length', 1);
+
+            cy.saveJob('PATCH', 200, 'saveJob');
+            const exportAnnotation = {
+                as: 'exportAnnotations',
+                type: 'annotations',
+                format: FORMAT_NAME,
+            };
+            cy.exportJob(exportAnnotation);
+            cy.downloadExport().then((file) => {
+                cy.verifyDownload(file);
             });
         });
     });

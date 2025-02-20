@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,12 +8,6 @@ import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
 import { RQStatus, ShapeType } from './enums';
 
-export interface ModelProvider {
-    name: string;
-    icon: string;
-    attributes: Record<string, string>;
-}
-
 export interface InteractorResults {
     mask: number[][];
     points?: [number, number][];
@@ -21,7 +15,7 @@ export interface InteractorResults {
 }
 
 export interface DetectedShape {
-    type: ShapeType;
+    type: ShapeType | 'tag';
     rotation?: number;
     attributes: { name: string; value: string }[];
     label: string;

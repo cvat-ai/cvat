@@ -1,8 +1,9 @@
 package utils
 
+import rego.v1
+
 # Groups
 ADMIN := "admin"
-BUSINESS := "business"
 USER := "user"
 WORKER := "worker"
 
@@ -34,6 +35,7 @@ RESEND := "resend"
 UPDATE_DESC := "update:desc"
 UPDATE_ASSIGNEE := "update:assignee"
 UPDATE_OWNER := "update:owner"
+UPDATE_ASSOCIATED_STORAGE := "update:associated_storage"
 EXPORT_ANNOTATIONS := "export:annotations"
 EXPORT_DATASET := "export:dataset"
 CREATE_IN_PROJECT := "create@project"
@@ -55,48 +57,46 @@ IMPORT_DATASET := "import:dataset"
 IMPORT_BACKUP := "import:backup"
 EXPORT_BACKUP := "export:backup"
 UPDATE_ORG := "update:organization"
+VIEW_STATUS := "view:status"
+VIEW_VALIDATION_LAYOUT := "view:validation_layout"
+UPDATE_VALIDATION_LAYOUT := "update:validation_layout"
 
 
 get_priority(privilege) := {
     ADMIN: 0,
-    BUSINESS: 50,
     USER: 75,
     WORKER: 100,
     null: 1000
 }[privilege]
 
-has_perm(group) {
+has_perm(group) if {
     get_priority(input.auth.user.privilege) <= get_priority(group)
 }
 
-is_admin {
+is_admin if {
     input.auth.user.privilege == ADMIN
 }
 
-is_business {
-    input.auth.user.privilege == BUSINESS
-}
-
-is_user {
+is_user if {
     input.auth.user.privilege == USER
 }
 
-is_worker {
+is_worker if {
     input.auth.user.privilege == WORKER
 }
 
-is_resource_owner {
+is_resource_owner if {
     input.resource.owner.id == input.auth.user.id
 }
 
-is_resource_assignee {
+is_resource_assignee if {
     input.resource.assignee.id == input.auth.user.id
 }
 
-is_sandbox {
+is_sandbox if {
     input.auth.organization == null
 }
 
-is_organization {
+is_organization if {
     input.auth.organization != null
 }
