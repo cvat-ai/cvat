@@ -6,28 +6,44 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0064_delete_or_rename_wrong_labels'),
+        ("engine", "0064_delete_or_rename_wrong_labels"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='label',
+            name="label",
             unique_together=set(),
         ),
         migrations.AddConstraint(
-            model_name='label',
-            constraint=models.UniqueConstraint(condition=models.Q(('parent__isnull', True), ('task__isnull', True)), fields=('project', 'name'), name='project_name_unique'),
+            model_name="label",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("parent__isnull", True), ("task__isnull", True)),
+                fields=("project", "name"),
+                name="project_name_unique",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='label',
-            constraint=models.UniqueConstraint(condition=models.Q(('parent__isnull', True), ('project__isnull', True)), fields=('task', 'name'), name='task_name_unique'),
+            model_name="label",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("parent__isnull", True), ("project__isnull", True)),
+                fields=("task", "name"),
+                name="task_name_unique",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='label',
-            constraint=models.UniqueConstraint(condition=models.Q(('task__isnull', True)), fields=('project', 'name', 'parent'), name='project_name_parent_unique'),
+            model_name="label",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("task__isnull", True)),
+                fields=("project", "name", "parent"),
+                name="project_name_parent_unique",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='label',
-            constraint=models.UniqueConstraint(condition=models.Q(('project__isnull', True)), fields=('task', 'name', 'parent'), name='task_name_parent_unique'),
+            model_name="label",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("project__isnull", True)),
+                fields=("task", "name", "parent"),
+                name="task_name_parent_unique",
+            ),
         ),
     ]
