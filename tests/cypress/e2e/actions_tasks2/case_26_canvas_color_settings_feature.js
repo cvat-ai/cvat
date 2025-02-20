@@ -6,7 +6,7 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
-import { generateArrowActionString } from '../../support/utils';
+import { generateString } from '../../support/utils';
 
 context('Canvas color settings feature', () => {
     const caseId = '26';
@@ -55,7 +55,7 @@ context('Canvas color settings feature', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check application of CSS filters', () => {
-            const stringAction = generateArrowActionString(countActionMoveSlider, 'rightarrow');
+            const stringAction = generateString(countActionMoveSlider, 'rightarrow');
             cy.applyActionToSliders(
                 '.cvat-canvas-image-setups-content', classNameSliders, stringAction,
             );
@@ -67,7 +67,7 @@ context('Canvas color settings feature', () => {
         });
 
         it('Check application of image processing filters', () => {
-            const stringAction = generateArrowActionString(countActionMoveFilterSlider, 'rightarrow');
+            const stringAction = generateString(countActionMoveFilterSlider, 'rightarrow');
             cy.applyActionToSliders(
                 '.cvat-image-setups-filters', filterSlidersClassNames, stringAction,
             );
@@ -90,8 +90,8 @@ context('Canvas color settings feature', () => {
         });
 
         it('Check persisting image filters across jobs', () => {
-            const sliderAction = generateArrowActionString(countActionMoveSlider, 'rightarrow');
-            const filterAction = generateArrowActionString(countActionMoveFilterSlider, 'rightarrow');
+            const sliderAction = generateString(countActionMoveSlider, 'rightarrow');
+            const filterAction = generateString(countActionMoveFilterSlider, 'rightarrow');
             cy.applyActionToSliders(
                 '.cvat-canvas-image-setups-content', classNameSliders, sliderAction,
             );
