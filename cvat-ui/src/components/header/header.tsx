@@ -303,7 +303,7 @@ function HeaderComponent(props: Props): JSX.Element {
             project_name: encodeURIComponent(values.project_name || ''),
             organization: encodeURIComponent(values.organization || ''),
             user_id: user.id,
-            project_id: values.project_id || '',
+            project_id: values.project_id || -1,
         });
 
         return `${baseURL}?${params.toString()}`;
