@@ -12,7 +12,7 @@ def init_consensus_settings_in_existing_consensus_tasks(apps, schema_editor):
         segment__job__type="consensus_replica", consensus_settings__isnull=True
     ).distinct()
     ConsensusSettings.objects.bulk_create(
-        [ConsensusSettings(task=t, quorum=0.5, iou_threshold=0.4) for t in tasks_with_consensus],
+        [ConsensusSettings(task=t) for t in tasks_with_consensus],
         batch_size=10000,
     )
 
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("quorum", models.FloatField(default=0.5)),
-                ("iou_threshold", models.FloatField()),
+                ("iou_threshold", models.FloatField(default=0.4)),
                 (
                     "task",
                     models.ForeignKey(
