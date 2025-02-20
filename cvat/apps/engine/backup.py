@@ -86,6 +86,7 @@ from cvat.apps.engine.serializers import (
     ValidationParamsSerializer,
 )
 from cvat.apps.engine.task import JobFileMapping, _create_thread
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
     define_dependent_job,
@@ -1179,7 +1180,16 @@ def create_backup(
         log_exception(logger)
         raise
 
-def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
+def _import(
+    importer: TaskImporter | ProjectImporter,
+    request: ExtendedRequest,
+    queue: django_rq.queues.DjangoRQ,
+    rq_id: str,
+    Serializer: type[TaskFileSerializer] | type[ProjectFileSerializer],
+    file_field_name: str,
+    location_conf: dict,
+    filename: str | None = None,
+):
     rq_job = queue.fetch_job(rq_id)
 
     if (user_id_from_meta := getattr(rq_job, 'meta', {}).get(RQJobMetaField.USER, {}).get('id')) and user_id_from_meta != request.user.id:
@@ -1267,7 +1277,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
 def get_backup_dirname():
     return TmpDirManager.TMP_ROOT
 
-def import_project(request, queue_name, filename=None):
+def import_project(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -1296,7 +1306,7 @@ def import_project(request, queue_name, filename=None):
         filename=filename
     )
 
-def import_task(request, queue_name, filename=None):
+def import_task(request: ExtendedRequest, queue_name: str, filename: str | None = None):
     rq_id = request.data.get('rq_id', RQId(
         RequestAction.IMPORT, RequestTarget.TASK, uuid.uuid4(),
         subresource=RequestSubresource.BACKUP,

@@ -25,7 +25,6 @@ from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
-from rest_framework.request import Request
 from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
 
@@ -53,7 +52,13 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import (
+    define_dependent_job,
+    get_rq_job_meta,
+    get_rq_lock_by_user,
+    get_rq_lock_for_job,
+)
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -2300,7 +2305,7 @@ class QualityReportUpdateManager:
             return "Quality computation job for this task already enqueued"
 
     def schedule_custom_quality_check_job(
-        self, request: Request, task: Task, *, user_id: int
+        self, request: ExtendedRequest, task: Task, *, user_id: int
     ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
@@ -2309,11 +2314,11 @@ class QualityReportUpdateManager:
         self._check_quality_reporting_available(task)
 
         queue = self._get_queue()
+        rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
 
-        with get_rq_lock_by_user(queue, user_id=user_id):
-            rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
-            rq_job = queue.fetch_job(rq_id)
-            if rq_job:
+        # ensure that there is no race condition when processing parallel requests
+        with get_rq_lock_for_job(queue, rq_id):
+            if rq_job := queue.fetch_job(rq_id):
                 if rq_job.get_status(refresh=False) in (
                     rq.job.JobStatus.QUEUED,
                     rq.job.JobStatus.STARTED,
@@ -2324,19 +2329,20 @@ class QualityReportUpdateManager:
 
                 rq_job.delete()
 
-            dependency = define_dependent_job(
-                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
-            )
+            with get_rq_lock_by_user(queue, user_id=user_id):
+                dependency = define_dependent_job(
+                    queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+                )
 
-            queue.enqueue(
-                self._check_task_quality,
-                task_id=task.id,
-                job_id=rq_id,
-                meta=get_rq_job_meta(request=request, db_obj=task),
-                result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_RESULT_TTL,
-                depends_on=dependency,
-            )
+                queue.enqueue(
+                    self._check_task_quality,
+                    task_id=task.id,
+                    job_id=rq_id,
+                    meta=get_rq_job_meta(request=request, db_obj=task),
+                    result_ttl=self._JOB_RESULT_TTL,
+                    failure_ttl=self._JOB_RESULT_TTL,
+                    depends_on=dependency,
+                )
 
         return rq_id
 

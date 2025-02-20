@@ -35,6 +35,7 @@ import {
     QualitySettingsFilter, SerializedAsset, ConsensusSettingsFilter,
 } from './server-response-types';
 import QualityReport from './quality-report';
+import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
@@ -73,7 +74,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
     implementationMixin(cvat.server.about, async () => {
         const result = await serverProxy.server.about();
-        return result;
+        return new AboutData(result);
     });
     implementationMixin(cvat.server.share, async (directory: string, searchPrefix?: string) => {
         const result = await serverProxy.server.share(directory, searchPrefix);

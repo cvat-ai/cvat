@@ -8,13 +8,13 @@ import cvat.apps.engine.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0052_alter_cloudstorage_specific_attributes'),
+        ("engine", "0052_alter_cloudstorage_specific_attributes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='data',
-            name='deleted_frames',
-            field=cvat.apps.engine.models.IntArrayField(default=''),
+            model_name="data",
+            name="deleted_frames",
+            field=cvat.apps.engine.models.IntArrayField(default=""),
         ),
     ]
