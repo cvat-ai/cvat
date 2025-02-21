@@ -3,14 +3,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from collections import namedtuple
 from collections.abc import Sequence
-from typing import Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.viewsets import ViewSet
 from rq.job import Job as RQJob
 
 from cvat.apps.engine.rq_job_handler import is_rq_job_owner
@@ -26,6 +27,8 @@ from cvat.apps.organizations.models import Organization
 
 from .models import AnnotationGuide, CloudStorage, Comment, Issue, Job, Label, Project, Task, User
 
+if TYPE_CHECKING:
+    from rest_framework.viewsets import ViewSet
 
 def _get_key(d: dict[str, Any], key_path: Union[str, Sequence[str]]) -> Optional[Any]:
     """
