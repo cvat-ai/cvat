@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-/// / <reference types="../../support/index.d.ts" />
+/// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
 import { generateString } from '../../support/utils';

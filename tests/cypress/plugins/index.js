@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-/* eslint security/detect-non-literal-fs-filename: 0 */
+/* eslint-disable security/detect-non-literal-fs-filename */
 
 const fs = require('fs');
 // eslint-disable-next-line import/no-extraneous-dependencies
