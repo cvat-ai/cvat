@@ -1250,7 +1250,7 @@ def _import(
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
     else:
-        rq_job_meta = ImportRQMeta.from_job(rq_job)
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
         if rq_job_meta.user.id != request.user.id:
             return Response(status=status.HTTP_403_FORBIDDEN)
 

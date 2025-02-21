@@ -88,7 +88,7 @@ def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
             settings.CVAT_QUEUES.EXPORT_DATA.value
         )
 
-        rq_job_meta = ExportRQMeta.from_job(current_rq_job)
+        rq_job_meta = ExportRQMeta.for_job(current_rq_job)
         user_id = rq_job_meta.user.id or -1
 
         with get_rq_lock_by_user(settings.CVAT_QUEUES.EXPORT_DATA.value, user_id):

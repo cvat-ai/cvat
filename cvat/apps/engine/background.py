@@ -227,7 +227,7 @@ class DatasetExportManager(_ResourceExportManager):
     ) -> Optional[Response]:
 
         def is_result_outdated() -> bool:
-            return ExportRQMeta.from_job(rq_job).request.timestamp < instance_update_time
+            return ExportRQMeta.for_job(rq_job).request.timestamp < instance_update_time
 
         def handle_local_download() -> Response:
             with dm.util.get_export_cache_lock(
@@ -340,7 +340,7 @@ class DatasetExportManager(_ResourceExportManager):
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
         elif rq_job_status == RQJobStatus.FAILED:
-            exc_info = ExportRQMeta.from_job(rq_job).formatted_exception or str(rq_job.exc_info)
+            exc_info = ExportRQMeta.for_job(rq_job).formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
@@ -549,7 +549,7 @@ class BackupExportManager(_ResourceExportManager):
     ) -> Optional[Response]:
 
         def is_result_outdated() -> bool:
-            return ExportRQMeta.from_job(rq_job).request.timestamp < last_instance_update_time
+            return ExportRQMeta.for_job(rq_job).request.timestamp < last_instance_update_time
 
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
@@ -645,7 +645,7 @@ class BackupExportManager(_ResourceExportManager):
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
         elif rq_job_status == RQJobStatus.FAILED:
-            exc_info = ExportRQMeta.from_job(rq_job).formatted_exception or str(rq_job.exc_info)
+            exc_info = ExportRQMeta.for_job(rq_job).formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (

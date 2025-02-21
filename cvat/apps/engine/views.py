@@ -735,7 +735,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
-        rq_job_meta = ImportRQMeta.from_job(job)
+        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -1700,7 +1700,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
-        rq_job_meta = ImportRQMeta.from_job(job)
+        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -3381,7 +3381,7 @@ class AnnotationGuidesViewSet(
         target.touch()
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
-    rq_job_meta = RQMetaWithFailureInfo.from_job(rq_job)
+    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
     rq_job_meta.formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:

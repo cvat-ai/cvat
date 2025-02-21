@@ -3509,7 +3509,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
 
-        base_rq_job_meta = BaseRQMeta.from_job(rq_job)
+        base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = {
             "type": ":".join(
                 [
@@ -3523,7 +3523,7 @@ class RequestDataOperationSerializer(serializers.Serializer):
             "job_id": base_rq_job_meta.job_id,
         }
         if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
-            representation["function_id"] = LambdaRQMeta.from_job(rq_job).function_id
+            representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
         elif parsed_rq_id.action in (RequestAction.IMPORT, RequestAction.EXPORT):
             representation["format"] = parsed_rq_id.format
 
@@ -3564,7 +3564,7 @@ class RequestSerializer(serializers.Serializer):
         serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
     )
     def get_progress(self, rq_job: RQJob) -> Decimal:
-        rq_job_meta = ImportRQMeta.from_job(rq_job)
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
         # progress of task creation is stored in "task_progress" field
         # progress of project import is stored in "progress" field
         return Decimal(rq_job_meta.progress or rq_job_meta.task_progress or 0.)
@@ -3597,7 +3597,7 @@ class RequestSerializer(serializers.Serializer):
         return message
 
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
-        self._base_rq_job_meta = BaseRQMeta.from_job(rq_job)
+        self._base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = super().to_representation(rq_job)
 
         # FUTURE-TODO: support such statuses on UI
@@ -3606,7 +3606,7 @@ class RequestSerializer(serializers.Serializer):
 
         if representation["status"] == RQJobStatus.FINISHED:
             if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
-                representation["result_url"] = ExportRQMeta.from_job(rq_job).result_url
+                representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT

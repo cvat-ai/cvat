@@ -591,7 +591,7 @@ class LambdaQueue:
         )
         jobs = queue.job_class.fetch_many(job_ids, queue.connection)
 
-        return [LambdaJob(job) for job in jobs if job and LambdaRQMeta.from_job(job).lambda_]
+        return [LambdaJob(job) for job in jobs if job and LambdaRQMeta.for_job(job).lambda_]
 
     def enqueue(
         self,
@@ -662,7 +662,7 @@ class LambdaQueue:
     def fetch_job(self, pk):
         queue = self._get_queue()
         rq_job = queue.fetch_job(pk)
-        if rq_job is None or not LambdaRQMeta.from_job(rq_job).lambda_:
+        if rq_job is None or not LambdaRQMeta.for_job(rq_job).lambda_:
             raise ValidationError(
                 "{} lambda job is not found".format(pk), code=status.HTTP_404_NOT_FOUND
             )
@@ -691,7 +691,7 @@ class LambdaJob:
                 ),
             },
             "status": self.job.get_status(),
-            "progress": LambdaRQMeta.from_job(self.job).progress,
+            "progress": LambdaRQMeta.for_job(self.job).progress,
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
@@ -905,7 +905,7 @@ class LambdaJob:
     # progress is in [0, 1] range
     def _update_progress(progress):
         job = rq.get_current_job()
-        rq_job_meta = LambdaRQMeta.from_job(job)
+        rq_job_meta = LambdaRQMeta.for_job(job)
         # If the job has been deleted, get_status will return None. Thus it will
         # exist the loop.
         rq_job_meta.progress = int(progress * 100)

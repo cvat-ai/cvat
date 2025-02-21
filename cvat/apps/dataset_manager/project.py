@@ -198,7 +198,7 @@ class ProjectAnnotationAndData:
 @transaction.atomic
 def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_poly):
     rq_job = rq.get_current_job()
-    rq_job_meta = ImportRQMeta.from_job(rq_job)
+    rq_job_meta = ImportRQMeta.for_job(rq_job)
     rq_job_meta.status = 'Dataset import has been started...'
     rq_job_meta.progress = 0.
     rq_job_meta.save()

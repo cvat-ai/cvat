@@ -2452,7 +2452,7 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
-        job_meta = ImportRQMeta.from_job(job)
+        job_meta = ImportRQMeta.for_job(job)
         job_meta.status = 'Task from dataset is being created...'
         job_meta.progress = (subset_id + (job_meta.task_progress or 0.)) / len(dataset.subsets().keys())
         job_meta.save()

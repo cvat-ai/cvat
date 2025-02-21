@@ -101,7 +101,7 @@ def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         # RQ jobs created in the chunks queue have no user info
         try:
-            return BaseRQMeta.from_job(rq_job).user.to_dict()
+            return BaseRQMeta.for_job(rq_job).user.to_dict()
         except TypeError:
             return None
 
@@ -128,7 +128,7 @@ def get_request(instance=None):
     def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         # RQ jobs created in the chunks queue have no request info
         try:
-            return BaseRQMeta.from_job(rq_job).request.to_dict()
+            return BaseRQMeta.for_job(rq_job).request.to_dict()
         except TypeError:
             return None
 
@@ -583,7 +583,7 @@ def handle_function_call(
 
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
-    rq_job_meta = BaseRQMeta.from_job(rq_job)
+    rq_job_meta = BaseRQMeta.for_job(rq_job)
     oid = rq_job_meta.org_id
     oslug = rq_job_meta.org_slug
     pid = rq_job_meta.project_id

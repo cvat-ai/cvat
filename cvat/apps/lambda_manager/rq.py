@@ -4,9 +4,7 @@
 
 from __future__ import annotations
 
-import attrs
 from django.db.models import Model
-from rq.job import Job as RQJob
 
 from cvat.apps.engine.rq import (
     BaseRQMeta,
@@ -45,4 +43,4 @@ class LambdaRQMeta(BaseRQMeta):
                 RQJobMetaField.FUNCTION_ID: function_id,
                 RQJobMetaField.LAMBDA: True,
             }
-        )
+        ).to_dict()

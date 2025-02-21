@@ -587,7 +587,7 @@ def _create_thread(
     slogger.glob.info("create task #{}".format(db_task.id))
 
     job = rq.get_current_job()
-    rq_job_meta = ImportRQMeta.from_job(job)
+    rq_job_meta = ImportRQMeta.for_job(job)
 
     def update_status(msg: str) -> None:
         rq_job_meta.status = msg
@@ -1550,7 +1550,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                     status_message, progress_animation[self._call_counter]
                 )
 
-            rq_job_meta = ImportRQMeta.from_job(self._rq_job)
+            rq_job_meta = ImportRQMeta.for_job(self._rq_job)
             rq_job_meta.status = status_message
             rq_job_meta.task_progress = progress or 0.
             rq_job_meta.save()

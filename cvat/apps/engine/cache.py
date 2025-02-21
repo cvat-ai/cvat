@@ -108,7 +108,7 @@ def wait_for_rq_job(rq_job: rq.job.Job):
             return
         elif job_status in ("failed",):
             rq_job.get_meta()  # refresh from Redis
-            job_meta = RQMetaWithFailureInfo.from_job(rq_job)
+            job_meta = RQMetaWithFailureInfo.for_job(rq_job)
             exc_type = job_meta.exc_type or Exception
             exc_args = job_meta.exc_args or ("Cannot create chunk",)
             raise exc_type(*exc_args)

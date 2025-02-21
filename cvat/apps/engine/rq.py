@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Protocol, Union
 from uuid import UUID
 
 import attrs
@@ -24,6 +24,15 @@ from .models import RequestAction, RequestSubresource, RequestTarget
 
 
 class RQJobMetaField:
+    class UserField:
+        ID = "id"
+        USERNAME = "username"
+        EMAIL = "email"
+
+    class RequestField:
+        UUID = "uuid"
+        TIMESTAMP = "timestamp"
+
     # common fields
     FORMATTED_EXCEPTION = "formatted_exception"
     REQUEST = "request"
@@ -46,7 +55,11 @@ class RQJobMetaField:
     TMP_FILE = "tmp_file"
 
 
-class _AbstractAttribute:
+class WithMeta(Protocol):
+    meta: dict[str, Any]
+
+
+class _AbstractRQMetaAttribute:
     def __init__(
         self, key: str, *, optional: bool = False, validator: Callable | None = None
     ) -> None:
@@ -56,44 +69,62 @@ class _AbstractAttribute:
         self._optional = optional
 
 
-class _SettableAttribute(_AbstractAttribute):
+class _GettableRQMetaAttribute(_AbstractRQMetaAttribute):
+    def __get__(self, instance: WithMeta, objtype: type[WithMeta] | None = None):
+        if self._optional:
+            return instance.meta.get(self._key)
+
+        return instance.meta[self._key]
+
+
+class _SettableRQMetaAttribute(_AbstractRQMetaAttribute):
     def validate(self, value):
         if value is None and not self._optional:
             raise ValueError(f"{self._key} is required")
         if value is not None and self._validator and not self._validator(value):
             raise ValueError("Wrong type")
 
-    def __set__(self, instance: AbstractRQMeta, value):
+    def __set__(self, instance: WithMeta, value: Any):
         self.validate(value)
         instance.meta[self._key] = value
 
 
-class _GettableAttribute(_AbstractAttribute):
-    def __get__(self, instance: AbstractRQMeta, objtype: type[AbstractRQMeta] | None = None):
-        if self._optional:
-            return instance.meta.get(self._key)
-
-        # TODO: refactor
-        if self._key == RQJobMetaField.USER:
-            return UserInfo(data=instance.meta[self._key])
-        elif self._key == RQJobMetaField.REQUEST:
-            return RequestInfo(data=instance.meta[self._key])
-
-        return instance.meta[self._key]
-
-
-class ImmutableRQMetaAttribute(_GettableAttribute):
+class ImmutableRQMetaAttribute(_GettableRQMetaAttribute):
     pass
 
 
-class MutableRQMetaAttribute(_GettableAttribute, _SettableAttribute):
+class MutableRQMetaAttribute(_GettableRQMetaAttribute, _SettableRQMetaAttribute):
     pass
 
 
-class UserInfo:
-    id: int = ImmutableRQMetaAttribute("id", validator=lambda x: isinstance(x, int))
-    username: str = ImmutableRQMetaAttribute("username", validator=lambda x: isinstance(x, str))
-    email: str = ImmutableRQMetaAttribute("email", validator=lambda x: isinstance(x, str))
+class UserRQMetaAttribute(ImmutableRQMetaAttribute):
+    def __init__(self, *, optional: bool = False, validator: Callable | None = None) -> None:
+        super().__init__(RQJobMetaField.USER, optional=optional, validator=validator)
+
+    def __get__(self, instance: WithMeta, objtype: type[WithMeta] | None = None):
+        assert RQJobMetaField.USER == self._key
+        return UserMeta(data=instance.meta[self._key])
+
+
+class RequestRQMetaAttribute(ImmutableRQMetaAttribute):
+    def __init__(self, *, optional: bool = False, validator: Callable | None = None) -> None:
+        super().__init__(RQJobMetaField.REQUEST, optional=optional, validator=validator)
+
+    def __get__(self, instance: WithMeta, objtype: type[WithMeta] | None = None):
+        assert RQJobMetaField.REQUEST == self._key
+        return RequestMeta(data=instance.meta[self._key])
+
+
+class UserMeta:
+    id: int = ImmutableRQMetaAttribute(
+        RQJobMetaField.UserField.ID, validator=lambda x: isinstance(x, int)
+    )
+    username: str = ImmutableRQMetaAttribute(
+        RQJobMetaField.UserField.USERNAME, validator=lambda x: isinstance(x, str)
+    )
+    email: str = ImmutableRQMetaAttribute(
+        RQJobMetaField.UserField.EMAIL, validator=lambda x: isinstance(x, str)
+    )
 
     def to_dict(self):
         return self.meta
@@ -106,9 +137,13 @@ class UserInfo:
         return self._data
 
 
-class RequestInfo:
-    uuid = ImmutableRQMetaAttribute("uuid", validator=lambda x: isinstance(x, str))
-    timestamp = ImmutableRQMetaAttribute("timestamp", validator=lambda x: isinstance(x, datetime))
+class RequestMeta:
+    uuid = ImmutableRQMetaAttribute(
+        RQJobMetaField.RequestField.UUID, validator=lambda x: isinstance(x, str)
+    )
+    timestamp = ImmutableRQMetaAttribute(
+        RQJobMetaField.RequestField.TIMESTAMP, validator=lambda x: isinstance(x, datetime)
+    )
 
     def __init__(self, *, data: dict[str, str | int]) -> None:
         self._data = data
@@ -132,10 +167,10 @@ class AbstractRQMeta(metaclass=ABCMeta):
         return self._job.meta if self._job else self._data
 
     def to_dict(self) -> dict:
-        pass
+        return self.meta
 
     @classmethod
-    def from_job(cls, job: RQJob):
+    def for_job(cls, job: RQJob):
         return cls(job=job)
 
     def save(self) -> None:
@@ -180,12 +215,11 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
 
 
 class BaseRQMeta(RQMetaWithFailureInfo):
-    # immutable and required fields
-    user: UserInfo = ImmutableRQMetaAttribute(RQJobMetaField.USER)
-    request: RequestInfo = ImmutableRQMetaAttribute(RQJobMetaField.REQUEST)
+    # immutable && required fields
+    user: UserMeta = UserRQMetaAttribute()
+    request: RequestMeta = RequestRQMetaAttribute()
 
-    # immutable and optional fields
-    # TODO: only __get__ should be allowed
+    # immutable && optional fields
     org_id: int | None = ImmutableRQMetaAttribute(
         RQJobMetaField.ORG_ID, validator=lambda x: isinstance(x, int), optional=True
     )
@@ -202,11 +236,10 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         RQJobMetaField.JOB_ID, validator=lambda x: isinstance(x, int), optional=True
     )
 
-    # mutable fields
+    # mutable && optional fields
     progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, float), optional=True
     )
-    # todo: not nullable?
     status: str | None = MutableRQMetaAttribute(
         RQJobMetaField.STATUS, validator=lambda x: isinstance(x, str), optional=True
     )
@@ -239,30 +272,32 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
         return cls(
             data={
-                # TODO:
-                RQJobMetaField.USER: UserInfo(
-                    id=getattr(user, "id", None),
-                    username=getattr(user, "username", None),
-                    email=getattr(user, "email", None),
-                ),
-                RQJobMetaField.REQUEST: RequestInfo(
-                    uuid=request.uuid,
-                    timestamp=timezone.localtime(),
-                ),
+                RQJobMetaField.USER: UserMeta(
+                    data={
+                        RQJobMetaField.UserField.ID: user.id,
+                        RQJobMetaField.UserField.USERNAME: user.username,
+                        RQJobMetaField.UserField.EMAIL: getattr(user, "email", ""),
+                    }
+                ).to_dict(),
+                RQJobMetaField.REQUEST: RequestMeta(
+                    data={
+                        RQJobMetaField.RequestField.UUID: request.uuid,
+                        RQJobMetaField.RequestField.TIMESTAMP: timezone.localtime(),
+                    }
+                ).to_dict(),
                 RQJobMetaField.ORG_ID: oid,
                 RQJobMetaField.ORG_SLUG: oslug,
                 RQJobMetaField.PROJECT_ID: pid,
                 RQJobMetaField.TASK_ID: tid,
                 RQJobMetaField.JOB_ID: jid,
             }
-        )
+        ).to_dict()
 
 
 class ExportRQMeta(BaseRQMeta):
-    # will be changed to ExportResultInfo in the next PR
     result_url: str | None = ImmutableRQMetaAttribute(
         RQJobMetaField.RESULT_URL, validator=lambda x: isinstance(x, str), optional=True
-    )
+    )  # will be changed to ExportResultInfo in the next PR
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -279,21 +314,19 @@ class ExportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls(data={**base_meta, RQJobMetaField.RESULT_URL: result_url})
+        return cls(data={**base_meta, RQJobMetaField.RESULT_URL: result_url}).to_dict()
 
 
 class ImportRQMeta(BaseRQMeta):
     # immutable && optional fields
-    # todo: immutable
     tmp_file: str | None = ImmutableRQMetaAttribute(
         RQJobMetaField.TMP_FILE, validator=lambda x: isinstance(x, str), optional=True
-    )
+    )  # used only when importing annotations|datasets|backups
 
     # mutable fields
-    # used when importing project dataset
     task_progress: float | None = MutableRQMetaAttribute(
         RQJobMetaField.TASK_PROGRESS, validator=lambda x: isinstance(x, float), optional=True
-    )
+    )  # used when importing project dataset
 
     @staticmethod
     def _get_resettable_fields() -> list[RQJobMetaField]:
@@ -311,11 +344,11 @@ class ImportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls({**base_meta, RQJobMetaField.TMP_FILE: tmp_file})
+        return cls(data={**base_meta, RQJobMetaField.TMP_FILE: tmp_file}).to_dict()
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
-    return BaseRQMeta.from_job(rq_job).user.id == user_id
+    return BaseRQMeta.for_job(rq_job).user.id == user_id
 
 
 @attrs.frozen()
@@ -457,7 +490,7 @@ def define_dependent_job(
         job_ids = q.get_job_ids()
         jobs = q.job_class.fetch_many(job_ids, q.connection)
         jobs = filter(
-            lambda job: job and BaseRQMeta.from_job(job).user.id == user_id and f(job), jobs
+            lambda job: job and BaseRQMeta.for_job(job).user.id == user_id and f(job), jobs
         )
         all_user_jobs.extend(jobs)
 
