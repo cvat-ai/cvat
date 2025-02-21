@@ -1049,6 +1049,176 @@ paths:
       responses:
         '204':
           description: The comment has been deleted
+  /api/consensus/merges:
+    post:
+      operationId: consensus_create_merge
+      summary: Create a consensus merge
+      parameters:
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The consensus merge request id. Can be specified to check operation status.
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsensusMergeCreateRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          description: No response body
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A consensus merge request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the consensus merge request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
+  /api/consensus/settings:
+    get:
+      operationId: consensus_list_settings
+      summary: List consensus settings instances
+      parameters:
+      - name: X-Organization
+        in: header
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'task_id'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: Organization unique slug
+        schema:
+          type: string
+      - name: org_id
+        in: query
+        description: Organization identifier
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      - name: task_id
+        in: query
+        description: A simple equality filter for the task_id field
+        schema:
+          type: integer
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsensusSettingsList'
+          description: ''
+  /api/consensus/settings/{id}:
+    get:
+      operationId: consensus_retrieve_settings
+      summary: Get consensus settings instance details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
+    patch:
+      operationId: consensus_partial_update_settings
+      summary: Update a consensus settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a consensus settings instance
+        required: true
+      tags:
+      - consensus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedConsensusSettingsRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/ConsensusSettings'
+          description: ''
   /api/events:
     get:
       operationId: events_list
@@ -7452,6 +7622,37 @@ components:
           type: string
           format: uri
           readOnly: true
+    ConsensusMergeCreateRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          writeOnly: true
+        job_id:
+          type: integer
+          writeOnly: true
+    ConsensusSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Pairwise annotation matching IoU threshold
+        quorum:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimum required share of sources having an annotation for it to be accepted
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -9126,6 +9327,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CommentRead'
+    PaginatedConsensusSettingsList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsensusSettings'
     PaginatedInvitationReadList:
       type: object
       required:
@@ -9564,6 +9788,22 @@ components:
         message:
           type: string
           minLength: 1
+    PatchedConsensusSettingsRequest:
+      type: object
+      properties:
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: Pairwise annotation matching IoU threshold
+        quorum:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          description: |
+            Minimum required share of sources having an annotation for it to be accepted
     PatchedDataMetaWriteRequest:
       type: object
       properties:
@@ -9767,6 +10007,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -9780,10 +10022,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -9811,6 +10057,8 @@ components:
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -9818,6 +10066,8 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
@@ -9826,6 +10076,8 @@ components:
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
@@ -9836,6 +10088,8 @@ components:
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
@@ -9846,6 +10100,8 @@ components:
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
@@ -10274,6 +10530,8 @@ components:
         target_metric_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
@@ -10287,10 +10545,14 @@ components:
         iou_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox side, used as the radius of the circle around the GT point,
@@ -10318,6 +10580,8 @@ components:
         line_thickness:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -10325,6 +10589,8 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
@@ -10333,6 +10599,8 @@ components:
         line_orientation_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
@@ -10343,6 +10611,8 @@ components:
         group_match_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
@@ -10353,6 +10623,8 @@ components:
         object_visibility_threshold:
           type: number
           format: double
+          maximum: 1
+          minimum: 0
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.

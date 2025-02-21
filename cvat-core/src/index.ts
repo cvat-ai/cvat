@@ -4,6 +4,7 @@
 
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
+    ConsensusSettingsFilter,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -30,6 +31,7 @@ import Webhook from './webhook';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
+import ConsensusSettings from './consensus-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
@@ -140,6 +142,11 @@ export default interface CVATCore {
     webhooks: {
         get: any;
     };
+    consensus: {
+        settings: {
+            get: (filter: ConsensusSettingsFilter) => Promise<ConsensusSettings>;
+        };
+    }
     analytics: {
         quality: {
             reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
