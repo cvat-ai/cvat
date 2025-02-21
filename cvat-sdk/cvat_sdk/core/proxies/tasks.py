@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
+import os
 import shutil
 from collections.abc import Sequence
 from enum import Enum
@@ -109,14 +110,13 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            for resource in resources:
-                if not isinstance(resource, str):
-                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+
+            str_resources = list(map(os.fspath, resources))
 
             if resource_type is ResourceType.REMOTE:
-                data["remote_files"] = resources
+                data["remote_files"] = str_resources
             elif resource_type is ResourceType.SHARE:
-                data["server_files"] = resources
+                data["server_files"] = str_resources
 
             result, _ = self.api.create_data(
                 self.id,
