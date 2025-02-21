@@ -498,6 +498,7 @@ function HeaderComponent(props: Props): JSX.Element {
                                 </div>
                             ),
                             cancelButtonProps: { style: { display: 'none' } }, // Hide cancel button
+                            okButtonProps: { style: { display: 'none' } },
                             closable: false, // Prevent closing while loading
                         });
                         const fusedURL = generateFusedURL(values);
