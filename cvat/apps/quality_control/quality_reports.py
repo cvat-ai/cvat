@@ -54,12 +54,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import (
-    define_dependent_job,
-    get_rq_job_meta,
-    get_rq_lock_by_user,
-    get_rq_lock_for_job,
-)
+from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
