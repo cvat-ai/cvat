@@ -18,7 +18,7 @@ description: 'Installing a development environment for different operating syste
   ```bash
   # Install Node.js 20 and yarn
   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
-  sudo apt-get install -y nodejs
+  sudo apt-get install -y nodejs npm
   sudo npm install --global yarn
   ```
 
