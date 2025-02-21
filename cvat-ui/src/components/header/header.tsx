@@ -33,6 +33,7 @@ import {
 } from 'antd';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
+import Spin from 'antd/lib/spin';
 
 import config from 'config';
 
@@ -487,11 +488,24 @@ function HeaderComponent(props: Props): JSX.Element {
             onOk: () => {
                 form.validateFields()
                     .then(async (values) => {
+                        // Loading
+                        const loadingModal = Modal.confirm({
+                            title: 'Processing...',
+                            content: (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Spin />
+                                    <span>Creating project, please wait...</span>
+                                </div>
+                            ),
+                            cancelButtonProps: { style: { display: 'none' } }, // Hide cancel button
+                            closable: false, // Prevent closing while loading
+                        });
                         const fusedURL = generateFusedURL(values);
                         const responseData = await fetchFusedData(fusedURL);
                         console.log('API Response:', responseData);
                         if (responseData) {
                             form.resetFields();
+                            loadingModal.destroy();
                             Modal.success({
                                 title: 'Success',
                                 content: 'Project created successfully',
@@ -501,6 +515,7 @@ function HeaderComponent(props: Props): JSX.Element {
                                 },
                             });
                         } else {
+                            loadingModal.destroy();
                             Modal.error({
                                 title: 'Project creation error',
                                 content: 'The project was not created. Please contact ipr.support@maxar.com',
