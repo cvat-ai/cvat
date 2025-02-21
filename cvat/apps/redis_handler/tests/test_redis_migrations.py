@@ -103,5 +103,4 @@ class TestRedisMigrations(TestCase):
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
 
-
             self.test_migration.runner_mock.assert_not_called()
