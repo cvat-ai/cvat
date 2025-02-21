@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-/// <reference types="cypress" />
+/// / <reference types="../../support/index.d.ts" />
 
 import { taskName } from '../../support/const';
 import { generateString } from '../../support/utils';
@@ -13,7 +13,6 @@ context('Saving setting to local storage.', () => {
     const defaultGammaValue = 1;
     const nbumps = 5;
     const step = 0.01;
-
     function bumpGamma(nsteps) {
         const gammaFilterClass = '.cvat-image-setups-gamma';
         const wrapper = '.cvat-image-setups-filters';
@@ -78,17 +77,11 @@ context('Saving setting to local storage.', () => {
     }
     function testGammaSetting() {
         const expValue = defaultGammaValue + nbumps * step;
-        cy.window().then((window) => {
-            const { localStorage } = window;
-            cy.wrap(localStorage.getItem('clientSettings'))
-                .should('exist').and('not.be.null')
-                .then((settings) => {
-                    const filters = JSON.parse(settings).imageFilters;
-                    const gammaFilter = filters[0];
-                    expect(gammaFilter.params.gamma[0]).to.equal(expValue);
-                });
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+        cy.get('.cvat-image-setups-gamma').within(() => {
+            cy.get('[role=slider]').should('have.attr', 'aria-valuenow', expValue);
         });
-        resetColorSettings();
+        cy.get('.cvat-canvas-image-setups-trigger').click();
     }
 
     before(() => {
@@ -102,6 +95,7 @@ context('Saving setting to local storage.', () => {
             cy.reload();
             testCheckedSettings(true);
             testGammaSetting();
+            resetColorSettings();
 
             setupAndSaveSettings(false);
             cy.reload();
