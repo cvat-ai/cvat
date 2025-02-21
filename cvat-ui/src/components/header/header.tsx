@@ -324,16 +324,18 @@ function HeaderComponent(props: Props): JSX.Element {
             const doc = parser.parseFromString(data, 'text/html');
             const table = doc.querySelector('.dataframe');
             if (table) {
-                const headers = Array.from(table.querySelectorAll('thead th')).map((th) => th?.textContent?.trim() ?? '');
-                const values = Array.from(table.querySelectorAll('tbody td')).map((td) => td?.textContent?.trim() ?? '');
-                const statusIdx = headers.indexOf('status');
-                const msgIdx = headers.indexOf('msg');
-                if (statusIdx !== -1 && msgIdx !== -1 && values[statusIdx] === '200') {
-                    return values[msgIdx];
+                const headers = Array.from(table.querySelectorAll('thead th'))
+                    .map((th) => th?.textContent?.trim() ?? '')
+                    .filter((h) => h); // Remove empty headers (first column)
+                const values = Array.from(table.querySelectorAll('tbody tr'))
+                    .map((row) => Array.from(row.querySelectorAll('td'))
+                        .map((td) => td?.textContent?.trim() ?? ''));
+                const df = values.map((row) => Object.fromEntries(headers.map((key, i) => [key, row[i]])));
+
+                if (df.length > 0 && df[0].status === '200') {
+                    return df[0].msg;
                 }
-                if (msgIdx !== -1 && statusIdx !== -1) {
-                    throw new Error(`HTTP error! Status: ${values[msgIdx]}`);
-                }
+                throw new Error(`HTTP error! Status: ${df[0].msg}`);
             }
             return null;
         } catch (error) {
