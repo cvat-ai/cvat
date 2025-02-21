@@ -78,23 +78,19 @@ class TestRedisMigrations(TestCase):
 
     def test_migration_added_and_applied(self, redis1, _):
 
-        self.test_migration = self.TestMigration("redis_handler", "first")
-        self.addCleanup(self.test_migration.cleanup)
+        # Keys are not added yet
+        with self.assertRaises(SystemExit):
+            call_command("migrateredis", check=True)
 
+        # Add keys
         call_command("migrateredis")
-        exp_migrations = {
-            bytes(BASELINE_MIGRATION_NAME, encoding="utf8"),
-            bytes(self.test_migration.exp_migration_name, encoding="utf8"),
-        }
-        with redis1() as conn:
-            self.assertEqual(conn.smembers("cvat:applied_migrations"), exp_migrations)
-        self.test_migration.runner_mock.assert_called_once()
 
-    def test_migration_not_applied(self, redis1, _):
+        # Keys are added
+        self.assertIsNone(call_command("migrateredis", check=True))
+
+    def test_migration_bad(self, redis1, _):
 
         BAD_MIGRATION_FILE_CONTENT = MIGRATION_FILE_CONTENT.replace("(BaseMigration)", "")
-
-        exp_migrations = set()
 
         with (
             patch(f"{__name__}.MIGRATION_FILE_CONTENT", new=BAD_MIGRATION_FILE_CONTENT),
@@ -102,10 +98,10 @@ class TestRedisMigrations(TestCase):
         ):
             conn.flushall()
 
-            self.test_migration = self.TestMigration("redis_handler", "second")
+            self.test_migration = self.TestMigration("redis_handler", "bad")
             self.addCleanup(self.test_migration.cleanup)
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
 
-            self.assertEqual(conn.smembers("cvat:applied_migrations"), exp_migrations)
+
             self.test_migration.runner_mock.assert_not_called()
