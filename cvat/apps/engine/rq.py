@@ -103,7 +103,7 @@ class UserRQMetaAttribute(ImmutableRQMetaAttribute):
 
     def __get__(self, instance: WithMeta, objtype: type[WithMeta] | None = None):
         assert RQJobMetaField.USER == self._key
-        return UserMeta(data=instance.meta[self._key])
+        return UserMeta(instance.meta[self._key])
 
 
 class RequestRQMetaAttribute(ImmutableRQMetaAttribute):
@@ -112,7 +112,7 @@ class RequestRQMetaAttribute(ImmutableRQMetaAttribute):
 
     def __get__(self, instance: WithMeta, objtype: type[WithMeta] | None = None):
         assert RQJobMetaField.REQUEST == self._key
-        return RequestMeta(data=instance.meta[self._key])
+        return RequestMeta(instance.meta[self._key])
 
 
 class UserMeta:
@@ -126,15 +126,15 @@ class UserMeta:
         RQJobMetaField.UserField.EMAIL, validator=lambda x: isinstance(x, str)
     )
 
-    def to_dict(self):
-        return self.meta
-
-    def __init__(self, *, data: dict[str, str | int]) -> None:
-        self._data = data
+    def __init__(self, meta: dict[RQJobMetaField.UserField, Any]) -> None:
+        self._meta = meta
 
     @property
-    def meta(self):
-        return self._data
+    def meta(self) -> dict[RQJobMetaField.UserField, Any]:
+        return self._meta
+
+    def to_dict(self):
+        return self.meta
 
 
 class RequestMeta:
@@ -145,33 +145,39 @@ class RequestMeta:
         RQJobMetaField.RequestField.TIMESTAMP, validator=lambda x: isinstance(x, datetime)
     )
 
-    def __init__(self, *, data: dict[str, str | int]) -> None:
-        self._data = data
+    def __init__(self, meta: dict[RQJobMetaField.RequestField, Any]) -> None:
+        self._meta = meta
 
     @property
-    def meta(self):
-        return self._data
+    def meta(self) -> dict[RQJobMetaField.RequestField, Any]:
+        return self._meta
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self):
         return self.meta
 
 
 class AbstractRQMeta(metaclass=ABCMeta):
-    def __init__(self, *, job: RQJob | None = None, data: dict[str, Any] | None = None) -> None:
-        assert (job and not data) or (data and not job), "Only job or data can be passed"
+    def __init__(
+        self, *, job: RQJob | None = None, meta: dict[RQJobMetaField, Any] | None = None
+    ) -> None:
+        assert (job and not meta) or (meta and not job), "Only job or meta can be passed"
         self._job = job
-        self._data = data
+        self._meta = meta
 
     @property
     def meta(self) -> dict[RQJobMetaField, Any]:
-        return self._job.meta if self._job else self._data
+        return self._job.meta if self._job else self._meta
 
-    def to_dict(self) -> dict:
+    def to_dict(self):
         return self.meta
 
     @classmethod
     def for_job(cls, job: RQJob):
         return cls(job=job)
+
+    @classmethod
+    def for_meta(cls, meta: dict[RQJobMetaField, Any]):
+        return cls(meta=meta)
 
     def save(self) -> None:
         assert isinstance(self._job, RQJob), "To save meta, rq job must be set"
@@ -270,17 +276,17 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
         user = request.user
 
-        return cls(
-            data={
+        return cls.for_meta(
+            {
                 RQJobMetaField.USER: UserMeta(
-                    data={
+                    {
                         RQJobMetaField.UserField.ID: user.id,
                         RQJobMetaField.UserField.USERNAME: user.username,
                         RQJobMetaField.UserField.EMAIL: getattr(user, "email", ""),
                     }
                 ).to_dict(),
                 RQJobMetaField.REQUEST: RequestMeta(
-                    data={
+                    {
                         RQJobMetaField.RequestField.UUID: request.uuid,
                         RQJobMetaField.RequestField.TIMESTAMP: timezone.localtime(),
                     }
@@ -314,7 +320,7 @@ class ExportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls(data={**base_meta, RQJobMetaField.RESULT_URL: result_url}).to_dict()
+        return cls.for_meta({**base_meta, RQJobMetaField.RESULT_URL: result_url}).to_dict()
 
 
 class ImportRQMeta(BaseRQMeta):
@@ -344,7 +350,7 @@ class ImportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls(data={**base_meta, RQJobMetaField.TMP_FILE: tmp_file}).to_dict()
+        return cls.for_meta({**base_meta, RQJobMetaField.TMP_FILE: tmp_file}).to_dict()
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
