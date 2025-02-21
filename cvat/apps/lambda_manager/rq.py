@@ -25,7 +25,7 @@ class LambdaRQMeta(BaseRQMeta):
     )
     # FUTURE-FIXME: progress should be in [0, 1] range
     progress: int | None = MutableRQMetaAttribute(
-        RQJobMetaField.FUNCTION_ID, validator=lambda x: isinstance(x, int), optional=True
+        RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, int), optional=True
     )
 
     @classmethod
@@ -37,8 +37,8 @@ class LambdaRQMeta(BaseRQMeta):
         function_id: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
-        return cls(
-            data={
+        return cls.for_meta(
+            {
                 **base_meta,
                 RQJobMetaField.FUNCTION_ID: function_id,
                 RQJobMetaField.LAMBDA: True,

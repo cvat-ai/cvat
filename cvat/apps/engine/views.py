@@ -745,7 +745,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = { "state": "Failed", "message": job.exc_info }
         else:
             response = { "state": "Started" }
-            response['message'] = rq_job_meta.status
+            response['message'] = rq_job_meta.status or ""
             response['progress'] = rq_job_meta.progress or 0.
 
         return response

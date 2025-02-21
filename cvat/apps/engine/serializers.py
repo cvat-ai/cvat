@@ -3590,7 +3590,7 @@ class RequestSerializer(serializers.Serializer):
         message = ''
 
         if RQJobStatus.STARTED == rq_job_status:
-            message = self._base_rq_job_meta.status
+            message = self._base_rq_job_meta.status or message
         elif RQJobStatus.FAILED == rq_job_status:
             message = self._base_rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
 
