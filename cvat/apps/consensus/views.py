@@ -23,15 +23,12 @@ from cvat.apps.consensus.serializers import (
     ConsensusMergeCreateSerializer,
     ConsensusSettingsSerializer,
 )
-from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.rq_job_handler import RQJobMetaField
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import process_failed_job
-
-slogger = ServerLogManager(__name__)
 
 
 @extend_schema(tags=["consensus"])
@@ -120,7 +117,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
 
             rq_job_status = rq_job.get_status(refresh=False)
             if rq_job_status == RqJobStatus.FAILED:
-                exc_info = process_failed_job(rq_job, logger=slogger.glob)
+                exc_info = process_failed_job(rq_job)
 
                 exc_name_pattern = f"{merging.MergingNotAvailable.__name__}: "
                 if (exc_pos := exc_info.find(exc_name_pattern)) != -1:

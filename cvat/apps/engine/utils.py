@@ -151,16 +151,13 @@ def parse_exception_message(msg: str) -> str:
         pass
     return parsed_msg
 
-def process_failed_job(rq_job: RQJob, *, logger: logging.Logger | None = None) -> str:
+def process_failed_job(rq_job: RQJob) -> str:
     exc_info = str(rq_job.exc_info or '')
     rq_job.delete()
 
     msg = parse_exception_message(exc_info)
-
-    if not logger:
-        logger = logging.getLogger('cvat.server.engine')
-
-    logger.error(msg)
+    log = logging.getLogger('cvat.server.engine')
+    log.error(msg)
     return msg
 
 
