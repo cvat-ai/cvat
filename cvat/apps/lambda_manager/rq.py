@@ -17,12 +17,8 @@ from cvat.apps.engine.types import ExtendedRequest
 
 class LambdaRQMeta(BaseRQMeta):
     # immutable fields
-    function_id: str = ImmutableRQMetaAttribute(
-        RQJobMetaField.FUNCTION_ID, validator=lambda x: isinstance(x, str)
-    )
-    lambda_: bool = ImmutableRQMetaAttribute(
-        RQJobMetaField.LAMBDA, validator=lambda x: isinstance(x, str)
-    )
+    function_id: str = ImmutableRQMetaAttribute(RQJobMetaField.FUNCTION_ID)
+    lambda_: bool = ImmutableRQMetaAttribute(RQJobMetaField.LAMBDA)
     # FUTURE-FIXME: progress should be in [0, 1] range
     progress: int | None = MutableRQMetaAttribute(
         RQJobMetaField.PROGRESS, validator=lambda x: isinstance(x, int), optional=True
