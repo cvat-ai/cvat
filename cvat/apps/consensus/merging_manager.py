@@ -28,7 +28,8 @@ from cvat.apps.engine.models import (
     clear_annotations_in_jobs,
 )
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.engine.utils import get_rq_lock_by_user
+from cvat.apps.engine.rq import define_dependent_job, BaseRQMeta
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
 
@@ -224,7 +225,7 @@ class MergingManager:
                 target_type=type(target),
                 target_id=target.id,
                 job_id=rq_id,
-                meta=get_rq_job_meta(request=request, db_obj=target),
+                meta=BaseRQMeta.build(request=request, db_obj=target),
                 result_ttl=self._JOB_RESULT_TTL,
                 failure_ttl=self._JOB_RESULT_TTL,
                 depends_on=dependency,
