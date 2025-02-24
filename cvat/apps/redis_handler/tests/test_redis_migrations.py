@@ -35,7 +35,6 @@ class Migration(BaseMigration):
 MUT = "cvat.apps.redis_handler"
 
 
-@patch(f"{MUT}.migration_loader.Redis", return_value=fakeredis.FakeRedis())
 @patch(f"{MUT}.management.commands.migrateredis.Redis", return_value=fakeredis.FakeRedis())
 class TestRedisMigrations(TestCase):
     class TestMigration:
@@ -76,7 +75,7 @@ class TestRedisMigrations(TestCase):
             self.runner_mock = None
             os.remove(self.migration_file_path)
 
-    def test_migration_added_and_applied(self, redis1, _):
+    def test_migration_added_and_applied(self, redis):
 
         # Keys are not added yet
         with self.assertRaises(SystemExit):
@@ -88,13 +87,13 @@ class TestRedisMigrations(TestCase):
         # Keys are added
         self.assertIsNone(call_command("migrateredis", check=True))
 
-    def test_migration_bad(self, redis1, _):
+    def test_migration_bad(self, redis):
 
         BAD_MIGRATION_FILE_CONTENT = MIGRATION_FILE_CONTENT.replace("(BaseMigration)", "")
 
         with (
             patch(f"{__name__}.MIGRATION_FILE_CONTENT", new=BAD_MIGRATION_FILE_CONTENT),
-            redis1() as conn,
+            redis() as conn,
         ):
             conn.flushall()
 
