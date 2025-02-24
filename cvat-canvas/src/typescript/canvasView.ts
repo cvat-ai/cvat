@@ -2444,10 +2444,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 shape.untransform();
             }
 
-            if (
-                state.points.length !== drawnState.points.length ||
-                state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
-            ) {
+            const pointsUpdated = state.points.length !== drawnState.points.length ||
+                state.points.some((p: number, id: number): boolean => p !== drawnState.points[id]);
+
+            if (pointsUpdated) {
                 if (state.shapeType === 'mask') {
                     // if masks points were updated, draw from scratch
                     this.deleteObjects([this.drawnStates[+clientID]]);
@@ -2493,9 +2493,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             const stateDescriptions = state.descriptions;
             const drawnStateDescriptions = drawnState.descriptions;
+            const rotationUpdated = drawnState.rotation !== state.rotation;
 
             if (
                 drawnState.label.id !== state.label.id ||
+                pointsUpdated ||
+                rotationUpdated ||
                 drawnStateDescriptions.length !== stateDescriptions.length ||
                 drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
             ) {
@@ -3090,6 +3093,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withLabel = content.includes('label');
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
+        const withDimensions = content.includes('dimensions');
         const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions,
@@ -3116,6 +3120,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 `${withSource ? `(${source})` : ''}`).style({
                     'text-transform': 'uppercase',
                 });
+                if (withDimensions && ['rectangle', 'ellipse'].includes(state.shapeType)) {
+                    let width = state.points[2] - state.points[0];
+                    let height = state.points[3] - state.points[1];
+
+                    if (state.shapeType === 'ellipse') {
+                        width *= 2;
+                        height *= -2;
+                    }
+
+                    const normWidth = width.toFixed(1);
+                    const normHeight = height.toFixed(1);
+                    const normRot = state.rotation === 0 ? '' : `\u00B0${state.rotation.toFixed(1)}`;
+
+                    block
+                        .tspan(`${normWidth}x${normHeight}${normRot}`)
+                        .attr({
+                            dy: '1em',
+                            x: 0,
+                        })
+                        .addClass('cvat_canvas_text_dimensions');
+                }
                 if (withDescriptions) {
                     for (const desc of descriptions) {
                         block
