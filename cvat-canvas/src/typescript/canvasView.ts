@@ -3134,7 +3134,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const normRot = state.rotation === 0 ? '' : `${state.rotation.toFixed(1)}\u00B0`;
 
                     block
-                        .tspan(`${normWidth}x${normHeight}px${normRot}`)
+                        .tspan(`${normWidth}x${normHeight}px ${normRot}`)
                         .attr({
                             dy: '1em',
                             x: 0,
