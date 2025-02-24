@@ -12,10 +12,13 @@ from typing import ClassVar, Iterable, Sequence
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
+import numpy as np
 from datumaro.components.errors import FailedLabelVotingError
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
+from cvat.apps.engine.utils import grouped
+from cvat.apps.quality_control.models import PointSizeBase
 from cvat.apps.quality_control.quality_reports import (
     ComparisonParameters,
     DistanceComparator,
@@ -59,6 +62,9 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     def get_ann_dataset_id(self, ann_id: int) -> int:
         return self._dataset_map[self.get_ann_source(ann_id)][1]
+
+    def get_ann_dataset(self, ann_id: int) -> dm.IDataset:
+        return self._dataset_map[self.get_ann_source(ann_id)][0]
 
     def get_ann_source_item(self, ann_id: int) -> dm.DatasetItem:
         return self._item_map[self._ann_map[ann_id][1]][0]
@@ -202,6 +208,7 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
             # the whole merging algorithm, as it's likely to produce clusters with annotations
             # from the same source or some new annotations (instances).
             allow_groups=False,
+            point_size_base=PointSizeBase.IMAGE_SIZE,
         )
 
         self._distance = CachedSimilarityFunction()
@@ -443,7 +450,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
 
     def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
         shape = self.merge_cluster_shape_mean_nearest(cluster)
-        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
+        shape_score = 1  # sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
 
     def merge_cluster(self, cluster):
@@ -489,13 +496,110 @@ class LineMerger(ShapeMerger, LineMatcher):
 @attrs.define(kw_only=True, slots=False)
 class SkeletonMerger(ShapeMerger, SkeletonMatcher):
     def merge_cluster_shape_mean_nearest(self, cluster):
-        dist = {}
-        for idx, a in enumerate(cluster):
-            a_cluster_distance = 0
-            for b in cluster:
-                # (1 - x) because it's actually a similarity function
-                a_cluster_distance += 1 - self.distance(a, b)
+        return self.merge_cluster_shape_structural_nearest(cluster)
+        # dist = {}
+        # for idx, a in enumerate(cluster):
+        #     a_cluster_distance = 0
+        #     for b in cluster:
+        #         # (1 - x) because it's actually a similarity function
+        #         a_cluster_distance += 1 - self.distance(a, b)
 
-            dist[idx] = a_cluster_distance / len(cluster)
+        #     dist[idx] = a_cluster_distance / len(cluster)
 
-        return cluster[min(dist, key=dist.get)]
+        # return cluster[min(dist, key=dist.get)]
+
+    def merge_cluster_shape_structural_average(self, cluster: list[dm.Skeleton]):
+        merged_cat: dm.CategoriesInfo = self._context._categories
+        merged_label_cat: dm.LabelCategories = merged_cat[dm.AnnotationType.label]
+
+        def get_label_key(label_id: int, *, categories: dm.CategoriesInfo) -> tuple[str, str]:
+            label_cat: dm.LabelCategories = categories[dm.AnnotationType.label]
+            label = label_cat[label_id]
+            return (label.name, label.parent)
+
+        keypoint_clusters: dict[int, list[dm.Points]] = {}  # merged label id -> cluster points
+        merged_skeleton_points: dict[int, dm.Points] = {}  # merged label id -> point
+
+        for src_ann in cluster:
+            src_dataset = self._context.get_ann_dataset(id(src_ann))
+            src_categories = src_dataset.categories()
+
+            for src_point in src_ann.elements:
+                point_label_key = get_label_key(src_point.label, categories=src_categories)
+                keypoint_label_id = merged_label_cat.find(*point_label_key)[0]
+                keypoint_clusters.setdefault(keypoint_label_id, []).append(src_point)
+
+        for keypoint_label_id, keypoint_cluster in keypoint_clusters.items():
+            points_by_visibility = grouped(keypoint_cluster, key=lambda p: p.visibility[0])
+
+            visibility_scores: dict[dm.Points.Visibility, float] = {
+                v: len(g) / len(keypoint_cluster) for v, g in points_by_visibility.items()
+            }
+
+            merged_visibility, visibility_score = max(visibility_scores.items(), key=lambda e: e[1])
+            if merged_visibility == dm.Points.Visibility.absent or visibility_score < self.quorum:
+                continue
+
+            merged_visibility_group = points_by_visibility.get(
+                dm.Points.Visibility.hidden, []
+            ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
+
+            point_positions = np.array([p.points for p in merged_visibility_group])
+            merged_pos = np.average(point_positions, axis=0)
+
+            merged_skeleton_points[keypoint_label_id] = dm.Points(
+                merged_pos, visibility=[merged_visibility], label=keypoint_label_id
+            )
+
+        return dm.Skeleton(list(merged_skeleton_points.values()))
+
+    def merge_cluster_shape_structural_nearest(self, cluster: list[dm.Skeleton]):
+        merged_cat: dm.CategoriesInfo = self._context._categories
+        merged_label_cat: dm.LabelCategories = merged_cat[dm.AnnotationType.label]
+
+        def get_label_key(label_id: int, *, categories: dm.CategoriesInfo) -> tuple[str, str]:
+            label_cat: dm.LabelCategories = categories[dm.AnnotationType.label]
+            label = label_cat[label_id]
+            return (label.name, label.parent)
+
+        keypoint_clusters: dict[int, list[dm.Points]] = {}  # merged label id -> cluster points
+        merged_skeleton_points: dict[int, dm.Points] = {}  # merged label id -> point
+
+        for src_ann in cluster:
+            src_dataset = self._context.get_ann_dataset(id(src_ann))
+            src_categories = src_dataset.categories()
+
+            for src_point in src_ann.elements:
+                point_label_key = get_label_key(src_point.label, categories=src_categories)
+                keypoint_label_id = merged_label_cat.find(*point_label_key)[0]
+                keypoint_clusters.setdefault(keypoint_label_id, []).append(src_point)
+
+        for keypoint_label_id, keypoint_cluster in keypoint_clusters.items():
+            points_by_visibility = grouped(keypoint_cluster, key=lambda p: p.visibility[0])
+
+            visibility_scores: dict[dm.Points.Visibility, float] = {
+                v: len(g) for v, g in points_by_visibility.items()
+            }
+
+            merged_is_absent = (
+                visibility_scores.pop(dm.Points.Visibility.absent, 0) > len(keypoint_cluster) // 2
+            )
+            if merged_is_absent:
+                continue
+
+            merged_visibility, _ = max(visibility_scores.items(), key=lambda e: e[1])
+
+            cluster_visible_points = points_by_visibility.get(
+                dm.Points.Visibility.hidden, []
+            ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
+
+            point_coords = np.array([p.points for p in cluster_visible_points])
+            mean_point_coords = np.average(point_coords, axis=0)
+            mean_distances = np.linalg.norm(point_coords - mean_point_coords, axis=1)
+            mean_nearest_coords = point_coords[np.argmin(mean_distances)].tolist()
+
+            merged_skeleton_points[keypoint_label_id] = dm.Points(
+                mean_nearest_coords, visibility=[merged_visibility], label=keypoint_label_id
+            )
+
+        return dm.Skeleton(list(merged_skeleton_points.values()))

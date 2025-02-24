@@ -1497,7 +1497,11 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         instance_map = {}
         for source in [item_a.annotations, item_b.annotations]:
             for instance_group in datumaro.util.annotation_util.find_instances(source):
-                instance_bbox = self.instance_bbox(instance_group)
+                if self.point_size_base == models.PointSizeBase.GROUP_BBOX_SIZE:
+                    instance_bbox = self.instance_bbox(instance_group)
+                elif self.point_size_base == models.PointSizeBase.IMAGE_SIZE:
+                    img_h, img_w = item_a.media_as(dm.Image).size
+                    instance_bbox = [0, 0, img_w, img_h]
 
                 instance_group = [
                     skeleton_map[id(a)] if isinstance(a, dm.Skeleton) else a
