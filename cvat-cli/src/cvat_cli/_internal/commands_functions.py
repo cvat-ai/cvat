@@ -60,6 +60,14 @@ class FunctionCreateNative:
                 remote_function["labels_v2"].append(
                     {
                         "name": label_spec.name,
+                        "attributes": [
+                            {
+                                "name": attribute_spec.name,
+                                "input_type": attribute_spec.input_type,
+                                "values": attribute_spec.values,
+                            }
+                            for attribute_spec in getattr(label_spec, "attributes", [])
+                        ],
                     }
                 )
 
