@@ -292,8 +292,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         const { objectState, readonly, minZLayer } = this.props;
 
         if (!readonly) {
-            objectState.zOrder = Math.max(objectState.zOrder - 1, minZLayer);
-            this.commit();
+            const newZOrder = objectState.zOrder - 1;
+            if (newZOrder <= minZLayer) {
+                objectState.zOrder = newZOrder;
+                this.commit();
+            }
         }
     };
 
@@ -301,8 +304,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         const { objectState, readonly, maxZLayer } = this.props;
 
         if (!readonly) {
-            objectState.zOrder = Math.min(objectState.zOrder + 1, maxZLayer);
-            this.commit();
+            const newZOrder = objectState.zOrder + 1;
+            if (newZOrder >= maxZLayer) {
+                objectState.zOrder = newZOrder;
+                this.commit();
+            }
         }
     };
 

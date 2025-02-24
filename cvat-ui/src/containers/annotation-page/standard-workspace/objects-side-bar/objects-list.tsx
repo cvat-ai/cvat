@@ -605,7 +605,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    state.zOrder = Math.max(state.zOrder - 1, minZLayer);
+                    const newZOrder = state.zOrder - 1;
+                    state.zOrder = newZOrder;
                     updateAnnotations([state]);
                 }
             },
@@ -613,7 +614,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 const state = activatedState(true);
                 if (state && !readonly && state.objectType !== ObjectType.TAG) {
-                    state.zOrder = Math.min(state.zOrder + 1, maxZLayer);
+                    const newZOrder = state.zOrder + 1;
+                    state.zOrder = newZOrder;
                     updateAnnotations([state]);
                 }
             },
