@@ -72,6 +72,9 @@ class ImmutableRQMetaAttribute:
 
         return instance.meta[self._key]
 
+    def __set__(self, instance: WithMeta, value: Any):
+        raise AttributeError("Immutable attributes cannot be set")
+
 
 class MutableRQMetaAttribute(ImmutableRQMetaAttribute):
     def __init__(
