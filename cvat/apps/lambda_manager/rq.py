@@ -33,10 +33,8 @@ class LambdaRQMeta(BaseRQMeta):
         function_id: str,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
-        return cls.for_meta(
-            {
-                **base_meta,
-                RQJobMetaField.FUNCTION_ID: function_id,
-                RQJobMetaField.LAMBDA: True,
-            }
-        ).to_dict()
+        return {
+            **base_meta,
+            RQJobMetaField.FUNCTION_ID: function_id,
+            RQJobMetaField.LAMBDA: True,
+        }

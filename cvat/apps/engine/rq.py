@@ -124,21 +124,18 @@ class RequestMeta:
 
 
 class AbstractRQMeta(metaclass=ABCMeta):
-    def __init__(self, *, job: RQJob | None = None, meta: dict[str, Any] | None = None) -> None:
-        if job and meta:
+    def __init__(self, *, meta: dict[str, Any], job: RQJob | None = None) -> None:
+        if job:
             assert (
                 meta is job.meta
             ), "When passed together, job.meta and meta should refer to the same object"
 
         self._job = job
-        self._meta = meta or job.meta
+        self._meta = meta
 
     @property
     def meta(self) -> dict[str, Any]:
         return self._meta
-
-    def to_dict(self):
-        return self.meta
 
     @classmethod
     def for_job(cls, job: RQJob):
@@ -240,28 +237,22 @@ class BaseRQMeta(RQMetaWithFailureInfo):
 
         user: User = request.user
 
-        return cls.for_meta(
-            {
-                RQJobMetaField.USER: UserMeta(
-                    {
-                        RQJobMetaField.UserField.ID: user.id,
-                        RQJobMetaField.UserField.USERNAME: user.username,
-                        RQJobMetaField.UserField.EMAIL: user.email,
-                    }
-                ).to_dict(),
-                RQJobMetaField.REQUEST: RequestMeta(
-                    {
-                        RQJobMetaField.RequestField.UUID: request.uuid,
-                        RQJobMetaField.RequestField.TIMESTAMP: timezone.now(),
-                    }
-                ).to_dict(),
-                RQJobMetaField.ORG_ID: oid,
-                RQJobMetaField.ORG_SLUG: oslug,
-                RQJobMetaField.PROJECT_ID: pid,
-                RQJobMetaField.TASK_ID: tid,
-                RQJobMetaField.JOB_ID: jid,
-            }
-        ).to_dict()
+        return {
+            RQJobMetaField.USER: {
+                RQJobMetaField.UserField.ID: user.pk,
+                RQJobMetaField.UserField.USERNAME: user.username,
+                RQJobMetaField.UserField.EMAIL: user.email,
+            },
+            RQJobMetaField.REQUEST: {
+                RQJobMetaField.RequestField.UUID: request.uuid,
+                RQJobMetaField.RequestField.TIMESTAMP: timezone.now(),
+            },
+            RQJobMetaField.ORG_ID: oid,
+            RQJobMetaField.ORG_SLUG: oslug,
+            RQJobMetaField.PROJECT_ID: pid,
+            RQJobMetaField.TASK_ID: tid,
+            RQJobMetaField.JOB_ID: jid,
+        }
 
 
 class ExportRQMeta(BaseRQMeta):
@@ -284,7 +275,7 @@ class ExportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls.for_meta({**base_meta, RQJobMetaField.RESULT_URL: result_url}).to_dict()
+        return {**base_meta, RQJobMetaField.RESULT_URL: result_url}
 
 
 class ImportRQMeta(BaseRQMeta):
@@ -314,7 +305,7 @@ class ImportRQMeta(BaseRQMeta):
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return cls.for_meta({**base_meta, RQJobMetaField.TMP_FILE: tmp_file}).to_dict()
+        return {**base_meta, RQJobMetaField.TMP_FILE: tmp_file}
 
 
 def is_rq_job_owner(rq_job: RQJob, user_id: int) -> bool:
