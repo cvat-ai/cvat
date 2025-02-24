@@ -16,6 +16,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.30.0'></a>
+## \[2.30.0\] - 2025-02-14
+
+### Added
+
+- Gamma filter settings are now automatically saved and restored upon reload
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+- Ability to customize `api/sever/about` endpoint via settings including logo and sign-in page subtitle
+  (<https://github.com/cvat-ai/cvat/pull/9052>)
+
+### Changed
+
+- Client settings are now saved automatically
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+### Fixed
+
+- \[SDK\] `skeleton_label_spec` now correctly forwards `kwargs` to
+  `PatchedLabelRequest`
+  (<https://github.com/cvat-ai/cvat/pull/9087>)
+
+- Error: Cannot read properties of undefined (reading 'width') that occurs when changing frames in a video-based GT job
+  (<https://github.com/cvat-ai/cvat/pull/9095>)
+
+<a id='changelog-2.29.0'></a>
+## \[2.29.0\] - 2025-02-10
+
+### Added
+
+- Tasks created from cloud storage can be backed up now
+  (<https://github.com/cvat-ai/cvat/pull/8972>)
+
+- \[CLI\] `function create-native` now sends the function's declared label types
+  to the server
+  (<https://github.com/cvat-ai/cvat/pull/9035>)
+
+### Changed
+
+- When invoking Nuclio functions, labels of type `any` can now be mapped to
+  labels of all types except `skeleton`
+  (<https://github.com/cvat-ai/cvat/pull/9050>)
+
+### Fixed
+
+- Fixed invalid server-side track interpolation in tasks with deleted frames
+  (<https://github.com/cvat-ai/cvat/pull/9059>)
+
+<a id='changelog-2.28.0'></a>
+## \[2.28.0\] - 2025-02-06
+
+### Added
+
+- Support for managing Redis migrations
+  (<https://github.com/cvat-ai/cvat/pull/8898>)
+
+### Changed
+
+- Updated limitation for minimal object size from 9px area to 1px in dimensions
+  (<https://github.com/cvat-ai/cvat/pull/9055>)
+
+### Fixed
+
+- Invalid chunks and backups after honeypot updates in tasks with cloud storage data
+  (<https://github.com/cvat-ai/cvat/pull/9010>)
+
+- In some cases effect of drag/resize may be reset implicitly for a user
+  (<https://github.com/cvat-ai/cvat/pull/9053>)
+
 <a id='changelog-2.27.0'></a>
 ## \[2.27.0\] - 2025-02-04
 

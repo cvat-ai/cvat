@@ -15,7 +15,7 @@ import sys
 import traceback
 import urllib.parse
 from collections import namedtuple
-from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
@@ -28,7 +28,6 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.http.request import HttpRequest
 from django.utils import timezone
 from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
@@ -36,7 +35,11 @@ from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
-from rq.job import Dependency, Job
+from rq.job import Dependency as RQDependency
+from rq.job import Job as RQJob
+from rq.registry import BaseRegistry as RQBaseRegistry
+
+from cvat.apps.engine.types import ExtendedRequest
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -135,7 +138,7 @@ def parse_specific_attributes(specific_attributes):
     } if parsed_specific_attributes else dict()
 
 
-def parse_exception_message(msg):
+def parse_exception_message(msg: str) -> str:
     parsed_msg = msg
     try:
         if 'ErrorDetail' in msg:
@@ -148,7 +151,7 @@ def parse_exception_message(msg):
         pass
     return parsed_msg
 
-def process_failed_job(rq_job: Job):
+def process_failed_job(rq_job: RQJob) -> str:
     exc_info = str(rq_job.exc_info or '')
     rq_job.delete()
 
@@ -163,33 +166,42 @@ def define_dependent_job(
     user_id: int,
     should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
     *,
-    rq_id: Optional[str] = None,
-) -> Optional[Dependency]:
+    rq_id: str | None = None,
+) -> RQDependency | None:
     if not should_be_dependent:
         return None
 
-    queues = [queue.deferred_job_registry, queue, queue.started_job_registry]
+    queues: list[RQBaseRegistry | DjangoRQ] = [queue.deferred_job_registry, queue, queue.started_job_registry]
     # Since there is no cleanup implementation in DeferredJobRegistry,
     # this registry can contain "outdated" jobs that weren't deleted from it
     # but were added to another registry. Probably such situations can occur
     # if there are active or deferred jobs when restarting the worker container.
     filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
-    all_user_jobs = []
+    all_user_jobs: list[RQJob] = []
     for q, f in zip(queues, filters):
         job_ids = q.get_job_ids()
         jobs = q.job_class.fetch_many(job_ids, q.connection)
         jobs = filter(lambda job: job and job.meta.get("user", {}).get("id") == user_id and f(job), jobs)
         all_user_jobs.extend(jobs)
 
-    # prevent possible cyclic dependencies
     if rq_id:
+        # Prevent cases where an RQ job depends on itself.
+        # It isn't possible to have multiple RQ jobs with the same ID in Redis.
+        # However, a race condition in request processing can lead to self-dependencies
+        # when 2 parallel requests attempt to enqueue RQ jobs with the same ID.
+        # This happens if an rq_job is fetched without a lock,
+        # but a lock is used when defining the dependent job and enqueuing a new one.
+        if any(rq_id == job.id for job in all_user_jobs):
+            return None
+
+        # prevent possible cyclic dependencies
         all_job_dependency_ids = {
             dep_id.decode()
             for job in all_user_jobs
             for dep_id in job.dependency_ids or ()
         }
 
-        if Job.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
+        if RQJob.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
             return None
 
     user_jobs = [
@@ -197,7 +209,7 @@ def define_dependent_job(
         if not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY)
     ]
 
-    return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
+    return RQDependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
 
 def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int] = 30, blocking_timeout: Optional[int] = None) -> Union[Lock, nullcontext]:
@@ -221,7 +233,7 @@ def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, block
     )
 
 def get_rq_job_meta(
-    request: HttpRequest,
+    request: ExtendedRequest,
     db_obj: Any,
     *,
     result_url: Optional[str] = None,
@@ -261,7 +273,7 @@ def get_rq_job_meta(
 
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[dict[str, str]] = None,
-    request: Optional[HttpRequest] = None,
+    request: ExtendedRequest | None = None,
 ) -> str:
     """
     The same as rest_framework's reverse(), but adds custom query params support.
@@ -276,7 +288,7 @@ def reverse(viewname, *, args=None, kwargs=None,
 
     return url
 
-def get_server_url(request: HttpRequest) -> str:
+def get_server_url(request: ExtendedRequest) -> str:
     return request.build_absolute_uri('/')
 
 def build_field_filter_params(field: str, value: Any) -> dict[str, str]:
@@ -347,7 +359,7 @@ def make_attachment_file_name(filename: str) -> str:
     return filename
 
 def sendfile(
-    request, filename,
+    request: ExtendedRequest, filename,
     attachment=False, attachment_filename=None, mimetype=None, encoding=None
 ):
     """
@@ -420,7 +432,7 @@ def directory_tree(path, max_depth=None) -> str:
             tree += f"{indent}-{file}\n"
     return tree
 
-def is_dataset_export(request: HttpRequest) -> bool:
+def is_dataset_export(request: ExtendedRequest) -> bool:
     return to_bool(request.query_params.get('save_images', False))
 
 _T = TypeVar('_T')
@@ -463,9 +475,7 @@ _K = TypeVar("_K")
 _V = TypeVar("_V")
 
 
-def grouped(
-    items: Iterator[_V] | Iterable[_V], *, key: Callable[[_V], _K]
-) -> Mapping[_K, Sequence[_V]]:
+def grouped(items: Iterable[_V], *, key: Callable[[_V], _K]) -> Mapping[_K, Sequence[_V]]:
     """
     Returns a mapping with input iterable elements grouped by key, for example:
 

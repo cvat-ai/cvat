@@ -60,8 +60,21 @@ class FunctionCreateNative:
                 remote_function["labels_v2"].append(
                     {
                         "name": label_spec.name,
+                        "attributes": [
+                            {
+                                "name": attribute_spec.name,
+                                "input_type": attribute_spec.input_type,
+                                "values": attribute_spec.values,
+                            }
+                            for attribute_spec in getattr(label_spec, "attributes", [])
+                        ],
                     }
                 )
+
+                if getattr(label_spec, "type", "any") != "any":
+                    # Add the type conditionally, to stay compatible with older
+                    # CVAT versions when the function doesn't define label types.
+                    remote_function["labels_v2"][-1]["type"] = label_spec.type
         else:
             raise cvataa.BadFunctionError(
                 f"Unsupported function spec type: {type(function.spec).__name__}"

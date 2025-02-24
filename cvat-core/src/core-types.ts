@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    ModelKind, ModelReturnType, RQStatus, ShapeType,
+    LabelType, ModelKind, RQStatus,
 } from './enums';
 
 export interface ModelAttribute {
@@ -28,7 +28,7 @@ export interface MLModelTip {
 
 export interface MLModelLabel {
     name: string;
-    type: ShapeType | 'unknown';
+    type: LabelType;
     attributes: ModelAttribute[];
     sublabels?: MLModelLabel[];
     svg?: string,
@@ -42,7 +42,6 @@ export interface SerializedModel {
     description?: string;
     kind?: ModelKind;
     type?: string;
-    return_type?: ModelReturnType;
     owner?: any;
     provider?: string;
     url?: string;
