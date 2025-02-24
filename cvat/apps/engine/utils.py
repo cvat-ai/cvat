@@ -146,7 +146,7 @@ def parse_exception_message(msg: str) -> str:
         pass
     return parsed_msg
 
-def process_failed_job(rq_job: RQJob):
+def process_failed_job(rq_job: RQJob) -> str:
     exc_info = str(rq_job.exc_info or '')
     rq_job.delete()
 
