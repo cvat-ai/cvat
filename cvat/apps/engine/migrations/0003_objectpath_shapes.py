@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -11,13 +10,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0002_labeledpoints_labeledpointsattributeval_labeledpolygon_labeledpolygonattributeval_labeledpolyline_la'),
+        (
+            "engine",
+            "0002_labeledpoints_labeledpointsattributeval_labeledpolygon_labeledpolygonattributeval_labeledpolyline_la",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='objectpath',
-            name='shapes',
-            field=models.CharField(default='boxes', max_length=10),
+            model_name="objectpath",
+            name="shapes",
+            field=models.CharField(default="boxes", max_length=10),
         ),
     ]

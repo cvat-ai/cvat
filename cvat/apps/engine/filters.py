@@ -21,7 +21,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
-from rest_framework.request import Request
+
+from cvat.apps.engine.types import ExtendedRequest
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
@@ -39,7 +40,7 @@ def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> dict[str,
 
 
 class SearchFilter(filters.SearchFilter):
-    def get_search_fields(self, view, request):
+    def get_search_fields(self, view, request: ExtendedRequest):
         search_fields = getattr(view, 'search_fields') or []
         return get_lookup_fields(view, search_fields).values()
 
@@ -82,7 +83,7 @@ class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
     reverse_flag = "-"
 
-    def get_ordering(self, request, queryset, view):
+    def get_ordering(self, request: ExtendedRequest, queryset, view):
         ordering = []
         lookup_fields = self._get_lookup_fields(request, queryset, view)
         for term in super().get_ordering(request, queryset, view):
@@ -94,7 +95,7 @@ class OrderingFilter(filters.OrderingFilter):
 
         return ordering
 
-    def _get_lookup_fields(self, request, queryset, view):
+    def _get_lookup_fields(self, request: ExtendedRequest, queryset: QuerySet, view):
         ordering_fields = self.get_valid_fields(queryset, view, {'request': request})
         ordering_fields = [v[0] for v in ordering_fields]
         return get_lookup_fields(view, ordering_fields)
@@ -201,7 +202,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
         return queryset.filter(q_object)
 
-    def filter_queryset(self, request, queryset, view):
+    def filter_queryset(self, request: ExtendedRequest, queryset: QuerySet, view):
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
             parsed_rules = self._parse_query(json_rules)
@@ -413,7 +414,7 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
                 parameters.append(parameter)
         return parameters
 
-    def filter_queryset(self, request: Request, queryset: Iterable, view):
+    def filter_queryset(self, request: ExtendedRequest, queryset: Iterable, view):
         filtered_queryset = queryset
 
         query_params = request.query_params
@@ -455,7 +456,7 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
     ?sort=-field1,-field2
     """
 
-    def get_ordering(self, request, queryset, view) -> tuple[list[str], bool]:
+    def get_ordering(self, request: ExtendedRequest, queryset: Iterable, view) -> tuple[list[str], bool]:
         ordering = super().get_ordering(request, queryset, view)
         result, reverse = [], False
         for field in ordering:
@@ -466,7 +467,7 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
 
         return result, reverse
 
-    def filter_queryset(self, request: Request, queryset: Iterable, view) -> Iterable:
+    def filter_queryset(self, request: ExtendedRequest, queryset: Iterable, view) -> Iterable:
         ordering, reverse = self.get_ordering(request, queryset, view)
 
         if ordering:
@@ -521,7 +522,7 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
-    def filter_queryset(self, request: Request, queryset: Iterable, view) -> Iterable:
+    def filter_queryset(self, request: ExtendedRequest, queryset: Iterable, view) -> Iterable:
         filtered_queryset = queryset
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
