@@ -34,6 +34,8 @@ interface Props {
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
+    moveToPreviousLayerShortcut: string;
+    moveToNextLayerShortcut: string;
     removeShortcut: string;
     runAnnotationsActionShortcut: string;
     changeColor(value: string): void;
@@ -44,6 +46,8 @@ interface Props {
     switchOrientation(): void;
     toBackground(): void;
     toForeground(): void;
+    moveToPreviousLayer(): void;
+    moveToNextLayer(): void;
     resetCuboidPerspective(): void;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
@@ -181,7 +185,7 @@ function ToBackgroundItem(props: ItemProps): JSX.Element {
                 className='cvat-object-item-menu-to-background'
             >
                 <Icon component={BackgroundIcon} />
-                Move to previous layer
+                To background
             </Button>
         </CVATTooltip>
     );
@@ -196,6 +200,40 @@ function ToForegroundItem(props: ItemProps): JSX.Element {
                 type='link'
                 onClick={toForeground}
                 className='cvat-object-item-menu-to-foreground'
+            >
+                <Icon component={ForegroundIcon} />
+                To foreground
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function MoveToPreviousLayerItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { moveToPreviousLayerShortcut, moveToPreviousLayer } = toolProps;
+    return (
+        <CVATTooltip title={`${moveToPreviousLayerShortcut}`}>
+            <Button
+                type='link'
+                onClick={moveToPreviousLayer}
+                className='cvat-object-item-menu-move-to-previous-layer'
+            >
+                <Icon component={BackgroundIcon} />
+                Move to previous layer
+            </Button>
+        </CVATTooltip>
+    );
+}
+
+function MoveToNextLayerItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { moveToNextLayerShortcut, moveToNextLayer } = toolProps;
+    return (
+        <CVATTooltip title={`${moveToNextLayerShortcut}`}>
+            <Button
+                type='link'
+                onClick={moveToNextLayer}
+                className='cvat-object-item-menu-move-to-next-layer'
             >
                 <Icon component={ForegroundIcon} />
                 Move to next layer
@@ -265,6 +303,8 @@ export default function ItemMenu(props: Props): MenuProps {
         RESET_PERSPECIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
+        MOVE_TO_PREVIOUS_LAYER = 'move_to_previous_layer',
+        MOVE_TO_NEXT_LAYER = 'move_to_next_layer',
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
@@ -330,6 +370,16 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.TO_FOREGROUND,
             label: <ToForegroundItem toolProps={props} />,
+        });
+
+        items.push({
+            key: MenuKeys.MOVE_TO_PREVIOUS_LAYER,
+            label: <MoveToPreviousLayerItem toolProps={props} />,
+        });
+
+        items.push({
+            key: MenuKeys.MOVE_TO_NEXT_LAYER,
+            label: <MoveToNextLayerItem toolProps={props} />,
         });
     }
 

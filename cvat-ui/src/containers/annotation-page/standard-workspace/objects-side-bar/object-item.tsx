@@ -274,12 +274,30 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         const { objectState, readonly, minZLayer } = this.props;
 
         if (!readonly) {
-            objectState.zOrder = Math.max(objectState.zOrder - 1, minZLayer);
+            objectState.zOrder = minZLayer - 1;
             this.commit();
         }
     };
 
     private toForeground = (): void => {
+        const { objectState, readonly, maxZLayer } = this.props;
+
+        if (!readonly) {
+            objectState.zOrder = maxZLayer + 1;
+            this.commit();
+        }
+    };
+
+    private moveToPreviousLayer = (): void => {
+        const { objectState, readonly, minZLayer } = this.props;
+
+        if (!readonly) {
+            objectState.zOrder = Math.max(objectState.zOrder - 1, minZLayer);
+            this.commit();
+        }
+    };
+
+    private moveToNextLayer = (): void => {
         const { objectState, readonly, maxZLayer } = this.props;
 
         if (!readonly) {
@@ -419,6 +437,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 switchOrientation={this.switchOrientation}
                 toBackground={this.toBackground}
                 toForeground={this.toForeground}
+                moveToPreviousLayer={this.moveToPreviousLayer}
+                moveToNextLayer={this.moveToNextLayer}
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}
