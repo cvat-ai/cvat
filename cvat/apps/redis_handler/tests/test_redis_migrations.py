@@ -19,14 +19,12 @@ WORKDIR = Path("cvat/apps")
 
 MIGRATION_DIR = MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
 MIGRATION_CLASS_NAME = MigrationLoader.REDIS_MIGRATION_CLASS_NAME
-BASELINE_MIGRATION_NAME = "engine.001_cleanup_scheduled_jobs"
+MIGRATION_FILES = f'./**/{MIGRATION_DIR}/[0-9]*.py'
 
 MIGRATION_NAME_FORMAT = "{:03}_{}"
 
-MIGRATION_FILE_CONTENT = """\
-from cvat.apps.redis_handler.migration_loader import BaseMigration
-
-class Migration(BaseMigration):
+BAD_MIGRATION_FILE = """\
+class Migration:
     @classmethod
     def run(cls): ...
 
@@ -37,7 +35,7 @@ MUT = "cvat.apps.redis_handler"
 
 @patch(f"{MUT}.management.commands.migrateredis.Redis", return_value=fakeredis.FakeRedis())
 class TestRedisMigrations(TestCase):
-    class TestMigration:
+    class BadMigration:
 
         def __init__(self, app_name: str, migration_name: str, number: int = 0):
             self.app_name = app_name
@@ -66,8 +64,8 @@ class TestRedisMigrations(TestCase):
                 os.mkdir(migration_dir)
             filename = self.make_migration_name() + ".py"
             migration_file_path = migration_dir / filename
-            with open(migration_file_path, "w", encoding="utf8") as file:
-                file.write(MIGRATION_FILE_CONTENT)
+            with open(migration_file_path, "w") as file:
+                file.write(BAD_MIGRATION_FILE)
             return migration_file_path
 
         def cleanup(self):
@@ -76,6 +74,12 @@ class TestRedisMigrations(TestCase):
             os.remove(self.migration_file_path)
 
     def test_migration_added_and_applied(self, redis):
+
+        def file_to_migration_name(path: Path) -> str:
+            name = path_to_module(path)
+            name = name.removeprefix('cvat.apps.')
+            name = name.replace('redis_migrations.', '')
+            return name
 
         # Keys are not added yet
         with self.assertRaises(SystemExit):
@@ -87,17 +91,23 @@ class TestRedisMigrations(TestCase):
         # Keys are added
         self.assertIsNone(call_command("migrateredis", check=True))
 
+        # Check keys added
+        migration_files = WORKDIR.glob(MIGRATION_FILES)
+        expected_migrations = set(
+            file_to_migration_name(file).encode('utf8')
+            for file in migration_files
+        )
+        with redis() as conn:
+            applied_migrations = conn.smembers('cvat:applied_migrations')
+            self.assertEqual(expected_migrations, applied_migrations)
+
+
     def test_migration_bad(self, redis):
 
-        BAD_MIGRATION_FILE_CONTENT = MIGRATION_FILE_CONTENT.replace("(BaseMigration)", "")
-
-        with (
-            patch(f"{__name__}.MIGRATION_FILE_CONTENT", new=BAD_MIGRATION_FILE_CONTENT),
-            redis() as conn,
-        ):
+        with redis() as conn:
             conn.flushall()
 
-            self.test_migration = self.TestMigration("redis_handler", "bad")
+            self.test_migration = self.BadMigration("redis_handler", "bad")
             self.addCleanup(self.test_migration.cleanup)
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
