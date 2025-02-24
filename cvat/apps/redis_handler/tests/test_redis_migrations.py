@@ -19,7 +19,7 @@ WORKDIR = Path("cvat/apps")
 
 MIGRATION_DIR = MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
 MIGRATION_CLASS_NAME = MigrationLoader.REDIS_MIGRATION_CLASS_NAME
-MIGRATION_FILES = f'./**/{MIGRATION_DIR}/[0-9]*.py'
+MIGRATION_FILES = f"./**/{MIGRATION_DIR}/[0-9]*.py"
 
 MIGRATION_NAME_FORMAT = "{:03}_{}.py"
 BAD_MIGRATION_FILE = """\
@@ -28,9 +28,11 @@ class Migration:
     def run(cls): ...
 
 """
+
+
 @patch(
     f"cvat.apps.redis_handler.management.commands.migrateredis.Redis",
-    return_value=fakeredis.FakeRedis()
+    return_value=fakeredis.FakeRedis(),
 )
 class TestRedisMigrations(TestCase):
     class BadMigration:
@@ -74,8 +76,8 @@ class TestRedisMigrations(TestCase):
 
         def file_to_migration_name(path: Path) -> str:
             name = path_to_module(path)
-            name = name.removeprefix('cvat.apps.')
-            name = name.replace('redis_migrations.', '')
+            name = name.removeprefix("cvat.apps.")
+            name = name.replace("redis_migrations.", "")
             return name
 
         # Keys are not added yet
@@ -91,13 +93,11 @@ class TestRedisMigrations(TestCase):
         # Check keys added
         migration_files = WORKDIR.glob(MIGRATION_FILES)
         expected_migrations = set(
-            file_to_migration_name(file).encode('utf8')
-            for file in migration_files
+            file_to_migration_name(file).encode("utf8") for file in migration_files
         )
         with redis() as conn:
-            applied_migrations = conn.smembers('cvat:applied_migrations')
+            applied_migrations = conn.smembers("cvat:applied_migrations")
             self.assertEqual(expected_migrations, applied_migrations)
-
 
     def test_migration_bad(self, redis):
         with redis() as conn:
