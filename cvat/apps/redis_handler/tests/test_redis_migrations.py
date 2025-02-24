@@ -5,7 +5,7 @@
 import os
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import Mock, _patch, patch
+from unittest.mock import Mock, patch
 
 import fakeredis
 from django.core.management import call_command
@@ -21,28 +21,26 @@ MIGRATION_DIR = MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
 MIGRATION_CLASS_NAME = MigrationLoader.REDIS_MIGRATION_CLASS_NAME
 MIGRATION_FILES = f'./**/{MIGRATION_DIR}/[0-9]*.py'
 
-MIGRATION_NAME_FORMAT = "{:03}_{}"
-
+MIGRATION_NAME_FORMAT = "{:03}_{}.py"
 BAD_MIGRATION_FILE = """\
 class Migration:
     @classmethod
     def run(cls): ...
 
 """
-
-MUT = "cvat.apps.redis_handler"
-
-
-@patch(f"{MUT}.management.commands.migrateredis.Redis", return_value=fakeredis.FakeRedis())
+@patch(
+    f"cvat.apps.redis_handler.management.commands.migrateredis.Redis",
+    return_value=fakeredis.FakeRedis()
+)
 class TestRedisMigrations(TestCase):
     class BadMigration:
 
-        def __init__(self, app_name: str, migration_name: str, number: int = 0):
+        def __init__(self, app_name: str, migration_name: str):
             self.app_name = app_name
             self.app_path = WORKDIR / app_name
             assert self.app_path.exists()
             self.migration_name = migration_name
-            self.number = number
+            self.number = 0
 
             self.migration_file_path = self.generate_migration_file()
             mock_migration_module_path = path_to_module(self.migration_file_path)
@@ -50,10 +48,9 @@ class TestRedisMigrations(TestCase):
             self.test_class = get_class_from_module(
                 mock_migration_module_path, MIGRATION_CLASS_NAME
             )
-            self.patcher: _patch = patch.object(self.test_class, "run")
+            assert self.test_class is not None
+            self.patcher = patch.object(self.test_class, "run")
             self.runner_mock: Mock | None = self.patcher.start()
-
-            self.exp_migration_name = app_name + "." + self.make_migration_name()
 
         def make_migration_name(self):
             return MIGRATION_NAME_FORMAT.format(self.number, self.migration_name)
@@ -62,7 +59,7 @@ class TestRedisMigrations(TestCase):
             migration_dir = self.app_path / MIGRATION_DIR
             if not os.path.exists(migration_dir):
                 os.mkdir(migration_dir)
-            filename = self.make_migration_name() + ".py"
+            filename = self.make_migration_name()
             migration_file_path = migration_dir / filename
             with open(migration_file_path, "w") as file:
                 file.write(BAD_MIGRATION_FILE)
@@ -103,12 +100,12 @@ class TestRedisMigrations(TestCase):
 
 
     def test_migration_bad(self, redis):
-
         with redis() as conn:
             conn.flushall()
 
             self.test_migration = self.BadMigration("redis_handler", "bad")
             self.addCleanup(self.test_migration.cleanup)
+
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
 
