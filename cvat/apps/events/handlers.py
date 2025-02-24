@@ -99,10 +99,10 @@ def job_id(instance):
 
 def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
-        # RQ jobs created in the chunks queue have no user info
+        # RQ jobs created in the chunks|annotation queues have no user info
         try:
             return BaseRQMeta.for_job(rq_job).user.to_dict()
-        except TypeError:
+        except KeyError:
             return None
 
     # Try to get current user from request
@@ -126,10 +126,10 @@ def get_user(instance=None) -> User | dict | None:
 
 def get_request(instance=None):
     def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
-        # RQ jobs created in the chunks queue have no request info
+        # RQ jobs created in the chunks|annotation queues have no request info
         try:
             return BaseRQMeta.for_job(rq_job).request.to_dict()
-        except TypeError:
+        except KeyError:
             return None
 
     request = get_current_request()
