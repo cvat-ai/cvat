@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from pathlib import PosixPath
+from pathlib import Path
 from unittest import TestCase
 from unittest.mock import Mock, _patch, patch
 
@@ -15,7 +15,7 @@ from cvat.apps.redis_handler.utils import get_class_from_module
 
 from .utils import path_to_module
 
-WORKDIR = PosixPath("cvat/apps")
+WORKDIR = Path("cvat/apps")
 
 MIGRATION_DIR = MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
 MIGRATION_CLASS_NAME = MigrationLoader.REDIS_MIGRATION_CLASS_NAME
@@ -61,7 +61,7 @@ class TestRedisMigrations(TestCase):
         def make_migration_name(self):
             return MIGRATION_NAME_FORMAT.format(self.number, self.migration_name)
 
-        def generate_migration_file(self) -> PosixPath:
+        def generate_migration_file(self) -> Path:
             migration_dir = self.app_path / MIGRATION_DIR
             if not os.path.exists(migration_dir):
                 os.mkdir(migration_dir)
