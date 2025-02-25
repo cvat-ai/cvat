@@ -51,8 +51,6 @@ class TestRedisMigrations(TestCase):
                 mock_migration_module_path, MIGRATION_CLASS_NAME
             )
             assert self.test_class is not None
-            self.patcher = patch.object(self.test_class, "run")
-            self.runner_mock: Mock | None = self.patcher.start()
 
         def make_migration_name(self):
             return MIGRATION_NAME_FORMAT.format(self.number, self.migration_name)
@@ -68,8 +66,6 @@ class TestRedisMigrations(TestCase):
             return migration_file_path
 
         def cleanup(self):
-            self.patcher.stop()
-            self.runner_mock = None
             os.remove(self.migration_file_path)
 
     def test_migration_added_and_applied(self, redis):
@@ -99,14 +95,12 @@ class TestRedisMigrations(TestCase):
             applied_migrations = conn.smembers("cvat:applied_migrations")
             self.assertEqual(expected_migrations, applied_migrations)
 
-    def test_migration_bad(self, redis):
-        with redis() as conn:
-            conn.flushall()
+    def test_migration_bad(self, _):
+        self.test_migration = self.BadMigration("redis_handler", "bad")
+        self.addCleanup(self.test_migration.cleanup)
 
-            self.test_migration = self.BadMigration("redis_handler", "bad")
-            self.addCleanup(self.test_migration.cleanup)
-
+        with patch.object(self.test_migration.test_class, "run") as mock_run:
+            mock_run.side_effect = self.test_migration.test_class.run
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
-
-            self.test_migration.runner_mock.assert_not_called()
+            mock_run.assert_not_called()
