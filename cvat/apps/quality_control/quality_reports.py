@@ -9,6 +9,7 @@ import math
 from abc import ABCMeta
 from collections import Counter
 from collections.abc import Hashable, Sequence
+from contextlib import suppress
 from copy import deepcopy
 from functools import cached_property, lru_cache, partial
 from typing import Any, Callable, ClassVar, Hashable, Sequence, TypeVar, Union, cast
@@ -25,7 +26,7 @@ from attrs import asdict, define, fields_dict, frozen
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, OuterRef, Prefetch, Q, Subquery
 from django_rq.queues import DjangoRQ as RqQueue
 from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
@@ -376,7 +377,7 @@ class ComparisonReportAnnotationsSummary(ReportNode):
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
 
-    def accumulate(self, other: ComparisonReportAnnotationsSummary):
+    def accumulate(self, other: ComparisonReportAnnotationsSummary, *, weight: float = 1):
         for field in [
             "valid_count",
             "missing_count",
@@ -385,7 +386,7 @@ class ComparisonReportAnnotationsSummary(ReportNode):
             "ds_count",
             "gt_count",
         ]:
-            setattr(self, field, getattr(self, field) + getattr(other, field))
+            setattr(self, field, getattr(self, field) + math.ceil(getattr(other, field) * weight))
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -523,7 +524,7 @@ class ComparisonReportComparisonSummary(ReportNode):
     def from_dict(cls, d: dict):
         return cls(
             frames=list(d["frames"]),
-            **(dict(total_frames=d["total_frames"]) if "total_frames" in d else {}),
+            total_frames=d.get("total_frames", 0),
             **(dict(frame_share=d["frame_share"]) if "frame_share" in d else {}),
             **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
             conflict_count=d["conflict_count"],
@@ -2426,7 +2427,7 @@ class QualityReportManager:
     @classmethod
     @silk_profile()
     def _check_project_quality(cls, *, project_id: int) -> int:
-        return ProjectQualityCalculator().compute_report(project_id=project_id)
+        return ProjectQualityCalculator().compute_report(project_id=project_id).id
 
 
 class TaskQualityReportCalculator:
@@ -2685,186 +2686,172 @@ class TaskQualityReportCalculator:
     def _get_quality_params(self, task: Task) -> ComparisonParameters:
         quality_settings, _ = models.QualitySettings.objects.get_or_create(task=task)
 
+        if quality_settings.inherit and task.project:
+            quality_settings, _ = models.QualitySettings.objects.get_or_create(project=task.project)
+
         return ComparisonParameters.from_dict(quality_settings.to_dict())
 
 
 class ProjectQualityCalculator:
-    def compute_report(self, project_id: int) -> int:
+    def is_task_report_actual(self, quality_report: models.QualityReport) -> bool:
+        assert quality_report.target == models.QualityReportTarget.TASK
+
+        task = quality_report.task
+        quality_settings: models.QualitySettings = task.quality_settings
+        if quality_settings.inherit:
+            quality_settings = task.project.quality_settings
+
+        return (quality_report.target_last_updated >= task.updated_date) and (
+            quality_report.target_last_updated >= quality_settings.updated_date
+        )
+
+    def compute_report(self, project_id: int) -> models.QualityReport:
         with transaction.atomic():
-            # Preload all the data for the computations
-            # It must be done in a single transaction and before all the remaining computations
-            # because the it can be changed after the beginning,
-            # which will lead to inconsistent results
+            # Preload the required data for computations.
+            # Ideally, we would lock the task to fetch all the data and produce
+            # consistent report. However, data fetching can also take long time.
+            # For this reason, we don't guarantee absolute consistency.
 
-            # The project could have been deleted during scheduling
-            try:
-                project = Project.objects.prefetch_related(
-                    "tasks", "tasks__data", "tasks__segment_set__job_set", "quality_settings"
-                ).get(id=project_id)
-            except Project.DoesNotExist:
-                return
-
-            tasks_with_reports = project.tasks.annotate(
-                Count("quality_reports"),
-                gt_jobs=Count(
-                    "segment__job",
-                    filter=Q(
-                        segment__job__type=JobType.GROUND_TRUTH,
-                        segment__job__stage=StageChoice.ACCEPTANCE,
-                        segment__job__state=StateChoice.COMPLETED,
+            project = Project.objects.prefetch_related(
+                "quality_settings",
+                Prefetch(
+                    "tasks",
+                    queryset=Task.objects.annotate(
+                        gt_jobs_count=Count(
+                            "segment__job",
+                            filter=Q(
+                                segment__job__type=JobType.GROUND_TRUTH,
+                                segment__job__stage=StageChoice.ACCEPTANCE,
+                                segment__job__state=StateChoice.COMPLETED,
+                            ),
+                            distinct=True,
+                        )
+                    )
+                    .filter(gt_jobs_count__gt=0)
+                    .annotate(
+                        latest_quality_report_id=Subquery(
+                            models.QualityReport.objects.filter(
+                                created_date__isnull=False,
+                                task_id=OuterRef("id"),
+                            )
+                            .order_by("-created_date")
+                            .values("id")[:1]
+                        )
                     ),
-                    distinct=True,
                 ),
-            ).filter(quality_reports__count__gt=0, gt_jobs__gt=0)
-
-            task_quality_reports: dict[int, models.QualityReport] = {}
-            task_comparison_reports: dict[int, ComparisonReport] = {}
-            for task in tasks_with_reports:
-                last_quality_report = models.QualityReport.objects.filter(task=task).latest(
-                    "created_date"
-                )
-                task_quality_reports[task.id] = last_quality_report
-                task_comparison_reports[task.id] = ComparisonReport.from_json(
-                    last_quality_report.get_json_report()
-                )
-
-                # TODO: add report computation for tasks with outdated reports or no reports
+                "tasks__data",
+                "tasks__segment_set__job_set",
+                "tasks__quality_settings",
+            ).get(id=project_id)
 
             project_quality_params = self._get_quality_params(project)
 
-            # TODO: support tasks with individual parameters
+            tasks = project.tasks.all()
+
+            latest_quality_report_ids = set(t.latest_quality_report_id for t in tasks)
+            latest_quality_reports = {
+                r.id: r
+                for r in models.QualityReport.objects.filter(id__in=latest_quality_report_ids)
+            }
+
+            task_quality_reports: dict[int, models.QualityReport] = {}
+            for task in tasks:
+                latest_task_quality_report_id = getattr(task, "latest_quality_report_id", None)
+                latest_task_quality_report = latest_quality_reports.get(
+                    latest_task_quality_report_id
+                )
+                latest_task_quality_report.task = task  # put prefetched object
+                if not self.is_task_report_actual(latest_task_quality_report):
+                    continue
+
+                task_quality_reports[task.id] = latest_task_quality_report
+
+        tasks_without_reports = {t.id for t in tasks}.difference(task_quality_reports)
+        tasks_with_individual_settings = {t.id for t in tasks if not t.quality_settings.inherit}
+
+        # Compute required task reports
+        # This loop can take long time, maybe use RQ dependencies for each task instead
+        for task_id in tasks_without_reports:
+            # Tasks could have been deleted during report computations, ignore them.
+            # Tasks could be moved between projects. It can't be
+            # reliably checked and it is quite rare, so we ignore it.
+            with suppress(Task.DoesNotExist):
+                task_report_calculator = TaskQualityReportCalculator()
+                task_report = task_report_calculator.compute_report(task_id)
+                task_quality_reports[task_id] = task_report
+
+        task_comparison_reports: dict[int, ComparisonReport] = {
+            task.id: ComparisonReport.from_json(task_quality_reports[task.id].get_json_report())
+            for task in tasks
+            # Don't need to include these tasks in the project report
+            if task.id not in tasks_with_individual_settings
+        }
 
         project_comparison_report = self._compute_project_report(
-            project.tasks.all(),
-            task_comparison_reports,
-            project_quality_params,
+            task_reports=task_comparison_reports,
+            quality_params=project_quality_params,
         )
 
         with transaction.atomic():
-            # The project could have been deleted during processing
-            try:
-                Project.objects.get(id=project_id)
-            except Project.DoesNotExist:
-                return
-
-            project_report = self._save_reports(
-                project_report=dict(
+            project_report = self._save_report(
+                models.QualityReport(
                     project=project,
                     target_last_updated=project.updated_date,
-                    gt_last_updated=max(
-                        [r.gt_last_updated for r in task_quality_reports.values()],
-                        default=None,
-                    ),
+                    gt_last_updated=None,
                     data=project_comparison_report.to_json(),
-                    conflicts=[],  # the project doesn't have own conflicts
+                    # project reports don't include conflicts
                 ),
-                task_reports=list(task_quality_reports.values()),
+                child_reports=[
+                    r for r in task_quality_reports.values() if r.task.id in task_comparison_reports
+                ],
             )
 
-        return project_report.id
+        return project_report
 
     def _compute_project_report(
         self,
-        tasks: list[Task],
         task_reports: dict[int, ComparisonReport],
         quality_params: ComparisonParameters,
     ) -> ComparisonReport:
         # It's possible that there are no children reports available,
         # but we still need to return a meaningful report
 
+        # Compute the combined weighted summary of the task reports.
+        # The resulting percents are weighted wrt the
+        # project frame shares in corresponding tasks
+        total_frames = sum((r.comparison_summary.total_frames for r in task_reports.values()), 0)
+        task_weights = {
+            task_id: r.comparison_summary.total_frames / (total_frames or 1)
+            for task_id, r in task_reports.items()
+        }
+
+        project_annotations_summary = ComparisonReportAnnotationsSummary(
+            valid_count=0,
+            missing_count=0,
+            extra_count=0,
+            total_count=0,
+            ds_count=0,
+            gt_count=0,
+            confusion_matrix=None,
+        )
+
         total_intersection_frames = 0
         project_conflicts: list[AnnotationConflict] = []
-        project_annotations_summary = None
         project_ann_components_summary = None
-        project_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        project_frame_results_counts = {}
-        confusion_matrix = None
         for task_id, r in task_reports.items():
-            total_intersection_frames += len(r.comparison_summary.frames)
+            weight = task_weights[task_id]
+
+            total_intersection_frames += r.comparison_summary.frame_count
+
             project_conflicts.extend(r.conflicts)
 
-            if project_annotations_summary:
-                project_annotations_summary.accumulate(r.comparison_summary.annotations)
-            else:
-                project_annotations_summary = deepcopy(r.comparison_summary.annotations)
+            # TODO: here we extrapolate results using task weights, but the reported counts are
+            # still real. This can create a confusing discrepancy in results. Need to resolve it
+            # somehow.
+            project_annotations_summary.accumulate(r.comparison_summary.annotations, weight=weight)
 
-            if confusion_matrix is None:
-                num_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
-                confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
+            # TODO: add other fields
 
-            confusion_matrix += r.comparison_summary.annotations.confusion_matrix.rows
-
-            if project_ann_components_summary:
-                project_ann_components_summary.accumulate(
-                    r.comparison_summary.annotation_components
-                )
-            else:
-                project_ann_components_summary = deepcopy(
-                    r.comparison_summary.annotation_components
-                )
-
-            for frame_id, job_frame_result in r.frame_results.items():
-                project_frame_result = project_frame_results.get(frame_id)
-                frame_results_count = project_frame_results_counts.get(frame_id, 0)
-
-                if project_frame_result is None:
-                    project_frame_result = deepcopy(job_frame_result)
-                else:
-                    project_frame_result.conflicts += job_frame_result.conflicts
-
-                    project_frame_result.annotations.accumulate(job_frame_result.annotations)
-                    project_frame_result.annotation_components.accumulate(
-                        job_frame_result.annotation_components
-                    )
-
-                    project_frame_result.annotation_components.shape.mean_iou = (
-                        project_frame_result.annotation_components.shape.mean_iou
-                        * frame_results_count
-                        + job_frame_result.annotation_components.shape.mean_iou
-                    ) / (frame_results_count + 1)
-
-                project_frame_results_counts[frame_id] = 1 + frame_results_count
-                project_frame_results[frame_id] = project_frame_result
-
-        if task_reports:
-            # Compute the combined weighted summary of the task reports.
-            # The resulting percents are weighted wrt the
-            # project frame shares in corresponding tasks
-            project_qa_total_frames = sum(t.data.size for t in tasks if t.id in task_reports)
-            task_weights = {
-                task.id: task.data.size / (project_qa_total_frames or 1)
-                for task in tasks
-                if task.id in task_reports
-            }
-            project_annotations_summary.accuracy = sum(
-                r.comparison_summary.annotations.accuracy * task_weights[tid]
-                for tid, r in task_reports.items()
-            )
-            project_ann_components_summary.shape.mean_iou = sum(
-                r.comparison_summary.annotation_components.shape.mean_iou * task_weights[tid]
-                for tid, r in task_reports.items()
-            )
-            project_ann_components_summary.shape.accuracy = sum(
-                r.comparison_summary.annotation_components.shape.accuracy * task_weights[tid]
-                for tid, r in task_reports.items()
-            )
-            project_ann_components_summary.label.accuracy = sum(
-                r.comparison_summary.annotation_components.label.accuracy * task_weights[tid]
-                for tid, r in task_reports.items()
-            )
-            project_annotations_summary.confusion_matrix.rows = confusion_matrix
-        else:
-            project_annotations_summary = ComparisonReportAnnotationsSummary(
-                valid_count=0,
-                missing_count=0,
-                extra_count=0,
-                total_count=0,
-                ds_count=0,
-                gt_count=0,
-                confusion_matrix=None,
-            )
-
-        total_frames = sum(t.data.size for t in tasks)
         conflicts_by_severity = Counter(c.severity for c in project_conflicts)
         project_report_data = ComparisonReport(
             parameters=quality_params,
@@ -2884,19 +2871,13 @@ class ProjectQualityCalculator:
 
         return project_report_data
 
-    def _save_reports(
-        self, *, project_report: dict, task_reports: list[models.QualityReport]
+    def _save_report(
+        self, project_report: models.QualityReport, child_reports: list[models.QualityReport]
     ) -> models.QualityReport:
-        db_project_report = models.QualityReport(
-            project=project_report["project"],
-            target_last_updated=project_report["target_last_updated"],
-            gt_last_updated=project_report["gt_last_updated"],
-            data=project_report["data"],
-        )
-        db_project_report.save()
-        db_project_report.children.add(*task_reports)
+        project_report.save()
+        project_report.children.add(*child_reports)
 
-        return db_project_report
+        return project_report
 
     def _get_quality_params(self, project: Project) -> ComparisonParameters:
         quality_params, _ = models.QualitySettings.objects.get_or_create(project_id=project.id)
