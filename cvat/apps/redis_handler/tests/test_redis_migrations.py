@@ -5,12 +5,12 @@
 import os
 from pathlib import Path
 from unittest import TestCase
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import fakeredis
 from django.core.management import call_command
 
-from cvat.apps.redis_handler.migration_loader import LoaderError, MigrationLoader
+from cvat.apps.redis_handler.migration_loader import AppliedMigration, LoaderError, MigrationLoader
 from cvat.apps.redis_handler.utils import get_class_from_module
 
 from .utils import path_to_module
@@ -19,8 +19,6 @@ WORKDIR = Path("cvat/apps")
 
 MIGRATION_DIR = MigrationLoader.REDIS_MIGRATIONS_DIR_NAME
 MIGRATION_CLASS_NAME = MigrationLoader.REDIS_MIGRATION_CLASS_NAME
-MIGRATION_FILES = f"./**/{MIGRATION_DIR}/[0-9]*.py"
-
 MIGRATION_NAME_FORMAT = "{:03}_{}.py"
 BAD_MIGRATION_FILE = """\
 class Migration:
@@ -70,12 +68,6 @@ class TestRedisMigrations(TestCase):
 
     def test_migration_added_and_applied(self, redis):
 
-        def file_to_migration_name(path: Path) -> str:
-            name = path_to_module(path)
-            name = name.removeprefix("cvat.apps.")
-            name = name.replace("redis_migrations.", "")
-            return name
-
         # Keys are not added yet
         with self.assertRaises(SystemExit):
             call_command("migrateredis", check=True)
@@ -87,12 +79,17 @@ class TestRedisMigrations(TestCase):
         self.assertIsNone(call_command("migrateredis", check=True))
 
         # Check keys added
-        migration_files = WORKDIR.glob(MIGRATION_FILES)
-        expected_migrations = set(
-            file_to_migration_name(file).encode("utf8") for file in migration_files
-        )
+        expected_migrations = {
+            f"{app_config.label}.{f.stem}".encode()
+            for app_config in MigrationLoader._find_app_configs()
+            for f in (Path(app_config.path) / MigrationLoader.REDIS_MIGRATIONS_DIR_NAME).glob(
+                "[0-9]*.py"
+            )
+        }
+        assert len(expected_migrations)
+
         with redis() as conn:
-            applied_migrations = conn.smembers("cvat:applied_migrations")
+            applied_migrations = conn.smembers(AppliedMigration.SET_KEY)
             self.assertEqual(expected_migrations, applied_migrations)
 
     def test_migration_bad(self, _):

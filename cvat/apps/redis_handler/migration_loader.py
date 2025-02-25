@@ -74,12 +74,13 @@ class MigrationLoader:
         self._init_applied_migrations()
         self._init_unapplied_migrations()
 
-    def _find_app_configs(self) -> list[AppConfig]:
+    @classmethod
+    def _find_app_configs(cls) -> list[AppConfig]:
         return [
             app_config
             for app_config in apps.get_app_configs()
             if app_config.name.startswith("cvat")
-            and (Path(app_config.path) / self.REDIS_MIGRATIONS_DIR_NAME).exists()
+            and (Path(app_config.path) / cls.REDIS_MIGRATIONS_DIR_NAME).exists()
         ]
 
     def _load_from_disk(self):
