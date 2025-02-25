@@ -189,11 +189,10 @@ class QualityReportViewSet(
             "job",
             "job__segment",
             "job__segment__task",
-            "job__segment__task__organization",
+            "job__segment__task__project",
             "task",
-            "task__organization",
+            "task__project",
             "project",
-            "project__organization",
         )
 
     queryset = _add_prefetch_params(QualityReport.objects.get_queryset())
@@ -319,8 +318,6 @@ class QualityReportViewSet(
         },
     )
     def create(self, request: ExtendedRequest, *args, **kwargs):
-        self.check_permissions(request)
-
         rq_id = request.query_params.get(self.CREATE_REPORT_RQ_ID_PARAMETER, None)
 
         if rq_id is None:

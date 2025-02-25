@@ -5,7 +5,6 @@
 import textwrap
 
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers

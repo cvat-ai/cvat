@@ -6,20 +6,21 @@
 from typing import Optional, Union, cast
 
 from django.conf import settings
-from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
+from cvat.apps.engine.view_utils import get_or_404
 from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
 
 from .models import AnnotationConflict, QualityReport, QualitySettings
+from .serializers import QualityReportCreateSerializer
 
 
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]
     rq_job_owner_id: Optional[int]
-    project_id: Optional[int]
-    task_id: Optional[int]
+    project: int | Project | None
+    task: int | Task | None
 
     class Scopes(StrEnum):
         LIST = "list"
@@ -36,10 +37,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
     @classmethod
     def create_scope_view(cls, request, report: Union[int, QualityReport], iam_context=None):
         if isinstance(report, int):
-            try:
-                report = QualityReport.objects.get(id=report)
-            except QualityReport.DoesNotExist as ex:
-                raise ValidationError(str(ex))
+            report = get_or_404(QualityReport, report)
 
         # Access rights are the same as in the owning object
         # This component doesn't define its own rules in this case
@@ -68,74 +66,50 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 if scope == Scopes.VIEW:
                     permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
-                    permissions.append(TaskPermission.create_scope_view(request, task=obj))
+                    permissions.append(TaskPermission.create_scope_view(request, obj))
                 elif scope == Scopes.LIST and isinstance(obj, Project):
-                    permissions.append(ProjectPermission.create_scope_view(request, project=obj))
+                    permissions.append(ProjectPermission.create_scope_view(request, obj))
                 elif scope == Scopes.CREATE:
-                    # Note: POST /api/quality/reports is used to initiate report creation and to check the process status
+                    # POST /api/quality/reports is used to initiate report creation
+                    # and to check the process status
                     rq_id = request.query_params.get("rq_id")
-                    task_id = request.data.get("task_id")
-                    project_id = request.data.get("project_id")
 
                     if rq_id is not None:
                         # There will be another check for this case during request processing
                         continue
-                    elif task_id is not None:
-                        # The request may have a different org or org unset
-                        # We need to retrieve iam_context for this user, based on the task_id
-                        try:
-                            task = Task.objects.get(id=task_id)
-                        except Task.DoesNotExist:
-                            raise ValidationError("The specified task does not exist")
 
-                        iam_context = get_iam_context(request, task)
+                    serializer = QualityReportCreateSerializer(data=request.data)
+                    serializer.is_valid(raise_exception=True)
+                    task_id = serializer.validated_data.get("task_id")
+                    project_id = serializer.validated_data.get("project_id")
+                    assert task_id or project_id
 
-                        permissions.append(
-                            TaskPermission.create_scope_view(request, task, iam_context=iam_context)
-                        )
-
-                        permissions.append(
-                            cls.create_base_perm(
-                                request,
-                                view,
-                                scope,
-                                iam_context,
-                                obj,
-                                task_id=task_id,
-                            )
-                        )
+                    if task_id is not None:
+                        target = get_or_404(Task, task_id)
+                        target_permission_class = TaskPermission
                     elif project_id is not None:
-                        # The request may have a different org or org unset
-                        # We need to retrieve iam_context for this user, based on the project_id
-                        try:
-                            project = Project.objects.get(id=task_id)
-                        except Project.DoesNotExist:
-                            raise ValidationError("The specified project does not exist")
+                        target = get_or_404(Project, project_id)
+                        target_permission_class = ProjectPermission
 
-                        iam_context = get_iam_context(request, project)
+                    # The request may have a different org or org unset
+                    # We need to retrieve iam_context based on the task or project
+                    iam_context = get_iam_context(request, target)
 
-                        permissions.append(
-                            ProjectPermission.create_scope_view(
-                                request, project, iam_context=iam_context
-                            )
+                    permissions.append(
+                        target_permission_class.create_scope_view(request, target, iam_context)
+                    )
+
+                    permissions.append(
+                        cls.create_base_perm(
+                            request,
+                            view,
+                            scope,
+                            iam_context,
+                            obj,
+                            task=target if task_id else None,
+                            project=target if project_id else None,
                         )
-
-                        permissions.append(
-                            cls.create_base_perm(
-                                request,
-                                view,
-                                scope,
-                                iam_context,
-                                obj,
-                                project_id=project_id,
-                            )
-                        )
-                    else:
-                        # TODO: replace with a request validator
-                        raise PermissionDenied(
-                            "Either task_id, project_id or rq_id must be specified"
-                        )
-
+                    )
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
@@ -164,26 +138,24 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         data = None
 
         if self.obj or self.scope == self.Scopes.CREATE:
-            task: Optional[Task] = None
-            project: Optional[Project] = None
-            obj_id: Optional[int] = None
+            task: Task | None = None
+            project: Project | None = None
+            obj_id: int | None = None
 
             if self.obj:
                 obj_id = self.obj.id
                 task = self.obj.get_task()
                 project = self.obj.get_project()
-            elif self.scope == self.Scopes.CREATE and self.task_id:
-                try:
-                    task = Task.objects.get(id=self.task_id)
-                except Task.DoesNotExist:
-                    raise ValidationError("The specified task does not exist")
+            elif self.scope == self.Scopes.CREATE and self.task:
+                task = self.task
+                if not isinstance(task, Task):
+                    task = get_or_404(Task, self.task)
 
                 project = task.project
-            elif self.scope == self.Scopes.CREATE and self.project_id:
-                try:
-                    project = Project.objects.get(id=self.project_id)
-                except Project.DoesNotExist:
-                    raise ValidationError("The specified project does not exist")
+            elif self.scope == self.Scopes.CREATE and self.project:
+                project = self.project
+                if not isinstance(project, Project):
+                    project = get_or_404(Project, self.project)
 
             if project:
                 organization_id = project.organization_id
