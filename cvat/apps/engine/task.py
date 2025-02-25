@@ -48,16 +48,10 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import RequestAction, RequestTarget
-from cvat.apps.engine.rq_job_handler import ImportRQMeta, RQId
+from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import (
-    av_scan_paths,
-    define_dependent_job,
-    format_list,
-    get_rq_lock_by_user,
-    take_by,
-)
+from cvat.apps.engine.utils import av_scan_paths, format_list, get_rq_lock_by_user, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -84,7 +78,7 @@ def create(
             func=_create_thread,
             args=(db_task.pk, data),
             job_id=rq_id,
-            meta=ImportRQMeta.build(request=request, db_obj=db_task),
+            meta=ImportRQMeta.build_for(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
@@ -594,13 +588,11 @@ def _create_thread(
     slogger.glob.info("create task #{}".format(db_task.id))
 
     job = rq.get_current_job()
-    rq_job_meta = ImportRQMeta.from_job(job)
+    rq_job_meta = ImportRQMeta.for_job(job)
 
-    def _update_status(rq_job_meta: ImportRQMeta, msg: str) -> None:
+    def update_status(msg: str) -> None:
         rq_job_meta.status = msg
         rq_job_meta.save()
-
-    update_status = partial(_update_status, rq_job_meta)
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
 
@@ -1559,7 +1551,7 @@ def _create_static_chunks(db_task: models.Task, *, media_extractor: IMediaReader
                     status_message, progress_animation[self._call_counter]
                 )
 
-            rq_job_meta = ImportRQMeta.from_job(self._rq_job)
+            rq_job_meta = ImportRQMeta.for_job(self._rq_job)
             rq_job_meta.status = status_message
             rq_job_meta.task_progress = progress or 0.
             rq_job_meta.save()

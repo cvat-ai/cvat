@@ -1805,3 +1805,29 @@ Cypress.Commands.add('makeCustomImage', (directory, fileName,
         );
     });
 });
+
+Cypress.Commands.add('checkSlidersValues', (wrapper, slidersClassNames, expectedResults) => {
+    cy.get(wrapper).within(() => {
+        cy.wrap(slidersClassNames).each(($el, index) => {
+            cy.wrap($el)
+                .get($el)
+                .within(() => {
+                    cy.get('[role=slider]')
+                        .should('have.attr', 'aria-valuenow', expectedResults[index]);
+                });
+        });
+    });
+});
+
+Cypress.Commands.add('applyActionToSliders', (wrapper, slidersClassNames, action) => {
+    cy.get(wrapper).within(() => {
+        cy.wrap(slidersClassNames).each(($el) => {
+            cy.wrap($el)
+                .get($el)
+                .within(() => {
+                    cy.get('[role=slider]').type(action);
+                });
+        });
+    });
+    cy.get('.ant-tooltip').invoke('hide');
+});

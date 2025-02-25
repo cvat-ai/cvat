@@ -68,7 +68,7 @@ from cvat.apps.engine.models import (
     StorageMethodChoice,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import ImportRQMeta, RQId
+from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -90,7 +90,6 @@ from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
     get_rq_lock_by_user,
     import_resource_with_clean_up_after,
     process_failed_job,
@@ -1237,7 +1236,7 @@ def _import(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build(
+            meta = ImportRQMeta.build_for(
                 request=request,
                 db_obj=None,
                 tmp_file=filename,
@@ -1252,7 +1251,7 @@ def _import(
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
     else:
-        rq_job_meta = ImportRQMeta.from_job(rq_job)
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
         if rq_job_meta.user.id != request.user.id:
             return Response(status=status.HTTP_403_FORBIDDEN)
 

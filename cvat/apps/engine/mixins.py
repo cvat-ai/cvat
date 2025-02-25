@@ -41,7 +41,7 @@ from cvat.apps.engine.models import (
     RequestTarget,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import RQId
+from cvat.apps.engine.rq import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export

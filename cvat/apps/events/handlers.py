@@ -22,7 +22,7 @@ from cvat.apps.engine.models import (
     Task,
     User,
 )
-from cvat.apps.engine.rq_job_handler import BaseRQMeta
+from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import (
     BasicUserSerializer,
     CloudStorageReadSerializer,
@@ -99,10 +99,10 @@ def job_id(instance):
 
 def get_user(instance=None) -> User | dict | None:
     def _get_user_from_rq_job(rq_job: rq.job.Job) -> dict | None:
-        # RQ jobs created in the chunks queue have no user info
+        # RQ jobs created in the chunks|annotation queues have no user info
         try:
-            return BaseRQMeta.from_job(instance).user.to_dict()
-        except AttributeError:
+            return BaseRQMeta.for_job(rq_job).user.to_dict()
+        except KeyError:
             return None
 
     # Try to get current user from request
@@ -126,10 +126,10 @@ def get_user(instance=None) -> User | dict | None:
 
 def get_request(instance=None):
     def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
-        # RQ jobs created in the chunks queue have no request info
+        # RQ jobs created in the chunks|annotation queues have no request info
         try:
-            return BaseRQMeta.from_job(instance).request.to_dict()
-        except AttributeError:
+            return BaseRQMeta.for_job(rq_job).request.to_dict()
+        except KeyError:
             return None
 
     request = get_current_request()
@@ -583,7 +583,7 @@ def handle_function_call(
 
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
-    rq_job_meta = BaseRQMeta.from_job(rq_job)
+    rq_job_meta = BaseRQMeta.for_job(rq_job)
     oid = rq_job_meta.org_id
     oslug = rq_job_meta.org_slug
     pid = rq_job_meta.project_id

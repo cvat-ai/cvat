@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Optional
+from typing import Callable, Optional, Union
 
 import attrs
 from typing_extensions import TypeAlias
@@ -16,13 +16,39 @@ from cvat_sdk.core import Client
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.datasets.task_dataset import TaskDataset
 
+from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
 from .interface import DetectionFunction, DetectionFunctionContext, DetectionFunctionSpec
 
 
 @attrs.frozen
+class _AttributeNameMapping:
+    name: str
+
+
+@attrs.frozen
 class _SublabelNameMapping:
     name: str
+    attributes: Optional[Mapping[str, _AttributeNameMapping]] = attrs.field(
+        kw_only=True, default=None
+    )
+
+    def map_attribute(self, name: str) -> Optional[_AttributeNameMapping]:
+        if self.attributes is None:
+            return _AttributeNameMapping(name)
+
+        return self.attributes.get(name)
+
+    @classmethod
+    def from_api(cls, raw: models.SublabelMappingEntryRequest, /) -> _SublabelNameMapping:
+        return _SublabelNameMapping(
+            name=raw.name,
+            attributes=(
+                {k: _AttributeNameMapping(v) for k, v in raw.attributes.items()}
+                if hasattr(raw, "attributes")
+                else None
+            ),
+        )
 
 
 @attrs.frozen
@@ -31,30 +57,52 @@ class _LabelNameMapping(_SublabelNameMapping):
         kw_only=True, default=None
     )
 
-    def map_sublabel(self, name: str):
+    def map_sublabel(self, name: str) -> Optional[_SublabelNameMapping]:
         if self.sublabels is None:
             return _SublabelNameMapping(name)
 
         return self.sublabels.get(name)
+
+    @classmethod
+    def from_api(cls, raw: models.LabelMappingEntryRequest, /) -> _LabelNameMapping:
+        return _LabelNameMapping(
+            **attrs.asdict(_SublabelNameMapping.from_api(raw), recurse=False),
+            sublabels=(
+                {k: _SublabelNameMapping.from_api(v) for k, v in raw.sublabels.items()}
+                if hasattr(raw, "sublabels")
+                else None
+            ),
+        )
 
 
 @attrs.frozen
 class _SpecNameMapping:
     labels: Optional[Mapping[str, _LabelNameMapping]] = attrs.field(kw_only=True, default=None)
 
-    def map_label(self, name: str):
+    def map_label(self, name: str) -> Optional[_LabelNameMapping]:
         if self.labels is None:
             return _LabelNameMapping(name)
 
         return self.labels.get(name)
 
+    @classmethod
+    def from_api(cls, raw: dict[str, models.LabelMappingEntryRequest], /) -> _SpecNameMapping:
+        return cls(labels={k: _LabelNameMapping.from_api(v) for k, v in raw.items()})
+
 
 class _AnnotationMapper:
-    _SublabelIdMapping: TypeAlias = int
+    @attrs.frozen
+    class _AttributeIdMapping:
+        id: int
+        value_validator: Callable[[str], bool]
 
     @attrs.frozen
-    class _LabelIdMapping:
+    class _SublabelIdMapping:
         id: int
+        attributes: Mapping[int, Optional[_AnnotationMapper._AttributeIdMapping]]
+
+    @attrs.frozen
+    class _LabelIdMapping(_SublabelIdMapping):
         sublabels: Mapping[int, Optional[_AnnotationMapper._SublabelIdMapping]]
         expected_num_elements: int
         expected_type: str
@@ -78,17 +126,99 @@ class _AnnotationMapper:
             )
         return fun_output_type
 
+    def _build_attribute_id_mapping(
+        self, fun_attr: models.IAttribute, ds_attr: models.IAttribute, attr_desc: str
+    ) -> _AttributeIdMapping:
+        # We could potentially be more lax with these checks. For example, we could permit
+        # fun_attr.values to be a subset of ds_attr.values. For simplicity though,
+        # we'll just use exact comparisons for now.
+        if ds_attr.input_type != fun_attr.input_type:
+            raise BadFunctionError(
+                f"{attr_desc} has input type {fun_attr.input_type!r} in the function,"
+                f" but {ds_attr.input_type!r} in the dataset"
+            )
+
+        if ds_attr.input_type.value in {"text", "checkbox"}:
+            values_match = True
+        elif ds_attr.input_type.value in {"select", "radio"}:
+            values_match = sorted(ds_attr.values) == sorted(fun_attr.values)
+        else:
+            values_match = ds_attr.values == fun_attr.values
+
+        if not values_match:
+            raise BadFunctionError(
+                f"{attr_desc} has values {fun_attr.values!r} in the function,"
+                f" but {ds_attr.values!r} in the dataset"
+            )
+
+        return self._AttributeIdMapping(
+            id=ds_attr.id,
+            value_validator=attribute_value_validator(fun_attr),
+        )
+
+    def _build_sublabel_id_mapping(
+        self,
+        fun_sl: models.ISublabel,
+        ds_sl: models.ISublabel,
+        sl_desc: str,
+        *,
+        sl_nm: _SublabelNameMapping,
+        allow_unmatched_labels: bool,
+    ) -> _SublabelIdMapping:
+        ds_attrs_by_name = {ds_attr.name: ds_attr for ds_attr in ds_sl.attributes}
+
+        def attribute_mapping(
+            fun_attr: models.IAttribute,
+        ) -> Optional[_AnnotationMapper._AttributeIdMapping]:
+            attr_desc = f"attribute {fun_attr.name!r} of {sl_desc}"
+
+            attr_nm = sl_nm.map_attribute(fun_attr.name)
+            if attr_nm is None:
+                return None
+
+            ds_attr = ds_attrs_by_name.get(attr_nm.name)
+            if not ds_attr:
+                if not allow_unmatched_labels:
+                    raise BadFunctionError(f"{attr_desc} is not in dataset")
+
+                self._logger.info(
+                    "%s is not in dataset; any annotations using it will be ignored", attr_desc
+                )
+                return None
+
+            return self._build_attribute_id_mapping(fun_attr, ds_attr, attr_desc)
+
+        return self._SublabelIdMapping(
+            ds_sl.id,
+            attributes={
+                attr.id: attribute_mapping(attr) for attr in getattr(fun_sl, "attributes", [])
+            },
+        )
+
     def _build_label_id_mapping(
         self,
         fun_label: models.ILabel,
         ds_label: models.ILabel,
+        label_desc: str,
         *,
         label_nm: _LabelNameMapping,
         allow_unmatched_labels: bool,
-    ) -> Optional[_LabelIdMapping]:
+    ) -> _LabelIdMapping:
+        base_mapping = self._build_sublabel_id_mapping(
+            fun_label,
+            ds_label,
+            label_desc,
+            sl_nm=label_nm,
+            allow_unmatched_labels=allow_unmatched_labels,
+        )
+
         ds_sublabels_by_name = {ds_sl.name: ds_sl for ds_sl in ds_label.sublabels}
 
-        def sublabel_mapping(fun_sl: models.ILabel) -> Optional[int]:
+        def sublabel_mapping(
+            fun_sl: models.ISublabel,
+        ) -> Optional[_AnnotationMapper._SublabelIdMapping]:
+            sl_desc = f"sublabel {fun_sl.name!r} of {label_desc}"
+
             sublabel_nm = label_nm.map_sublabel(fun_sl.name)
             if sublabel_nm is None:
                 return None
@@ -96,21 +226,23 @@ class _AnnotationMapper:
             ds_sl = ds_sublabels_by_name.get(sublabel_nm.name)
             if not ds_sl:
                 if not allow_unmatched_labels:
-                    raise BadFunctionError(
-                        f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
-                    )
+                    raise BadFunctionError(f"{sl_desc} is not in dataset")
 
                 self._logger.info(
-                    "sublabel %r of label %r is not in dataset; any annotations using it will be ignored",
-                    fun_sl.name,
-                    fun_label.name,
+                    "%s is not in dataset; any annotations using it will be ignored", sl_desc
                 )
                 return None
 
-            return ds_sl.id
+            return self._build_sublabel_id_mapping(
+                fun_sl,
+                ds_sl,
+                sl_desc,
+                sl_nm=sublabel_nm,
+                allow_unmatched_labels=allow_unmatched_labels,
+            )
 
         return self._LabelIdMapping(
-            ds_label.id,
+            **attrs.asdict(base_mapping, recurse=False),
             sublabels={
                 fun_sl.id: sublabel_mapping(fun_sl)
                 for fun_sl in getattr(fun_label, "sublabels", [])
@@ -129,7 +261,11 @@ class _AnnotationMapper:
     ) -> _SpecIdMapping:
         ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
 
-        def label_id_mapping(fun_label: models.ILabel) -> Optional[self._LabelIdMapping]:
+        def label_id_mapping(
+            fun_label: models.ILabel,
+        ) -> Optional[_AnnotationMapper._LabelIdMapping]:
+            label_desc = f"label {fun_label.name!r}"
+
             label_nm = spec_nm.map_label(fun_label.name)
             if label_nm is None:
                 return None
@@ -137,17 +273,17 @@ class _AnnotationMapper:
             ds_label = ds_labels_by_name.get(label_nm.name)
             if ds_label is None:
                 if not allow_unmatched_labels:
-                    raise BadFunctionError(f"label {fun_label.name!r} is not in dataset")
+                    raise BadFunctionError(f"{label_desc} is not in dataset")
 
                 self._logger.info(
-                    "label %r is not in dataset; any annotations using it will be ignored",
-                    fun_label.name,
+                    "%s is not in dataset; any annotations using it will be ignored", label_desc
                 )
                 return None
 
             return self._build_label_id_mapping(
                 fun_label,
                 ds_label,
+                label_desc,
                 label_nm=label_nm,
                 allow_unmatched_labels=allow_unmatched_labels,
             )
@@ -170,6 +306,51 @@ class _AnnotationMapper:
         self._spec_id_mapping = self._build_spec_id_mapping(
             fun_labels, ds_labels, spec_nm=spec_nm, allow_unmatched_labels=allow_unmatched_labels
         )
+
+    def _remap_attribute(
+        self,
+        attribute: models.AttributeValRequest,
+        label_id_mapping: _SublabelIdMapping,
+        seen_attr_ids: set[int],
+    ) -> bool:
+        try:
+            attr_id_mapping = label_id_mapping.attributes[attribute.spec_id]
+        except KeyError:
+            raise BadFunctionError(
+                f"function output attribute with unknown ID ({attribute.spec_id})"
+            )
+
+        if not attr_id_mapping:
+            return False
+
+        if attr_id_mapping.id in seen_attr_ids:
+            raise BadFunctionError("function output shape with multiple attributes with same ID")
+
+        if not attr_id_mapping.value_validator(attribute.value):
+            raise BadFunctionError(
+                f"function output attribute value ({attribute.value!r})"
+                f" that is unsuitable for its attribute ({attribute.spec_id})"
+            )
+
+        attribute.spec_id = attr_id_mapping.id
+
+        seen_attr_ids.add(attr_id_mapping.id)
+
+        return True
+
+    def _remap_attributes(
+        self,
+        shape: Union[models.LabeledShapeRequest, models.SubLabeledShapeRequest],
+        label_id_mapping: _SublabelIdMapping,
+    ) -> None:
+        seen_attr_ids = set()
+
+        if hasattr(shape, "attributes"):
+            shape.attributes[:] = [
+                attribute
+                for attribute in shape.attributes
+                if self._remap_attribute(attribute, label_id_mapping, seen_attr_ids)
+            ]
 
     def _remap_element(
         self,
@@ -198,23 +379,25 @@ class _AnnotationMapper:
             )
 
         try:
-            mapped_sl_id = label_id_mapping.sublabels[element.label_id]
+            sl_id_mapping = label_id_mapping.sublabels[element.label_id]
         except KeyError:
             raise BadFunctionError(
                 f"function output shape with unknown sublabel ID ({element.label_id})"
             )
 
-        if not mapped_sl_id:
+        if not sl_id_mapping:
             return False
 
-        if mapped_sl_id in seen_sl_ids:
+        if sl_id_mapping.id in seen_sl_ids:
             raise BadFunctionError(
                 "function output skeleton with multiple elements with same sublabel"
             )
 
-        element.label_id = mapped_sl_id
+        element.label_id = sl_id_mapping.id
 
-        seen_sl_ids.add(mapped_sl_id)
+        seen_sl_ids.add(sl_id_mapping.id)
+
+        self._remap_attributes(element, sl_id_mapping)
 
         return True
 
@@ -280,10 +463,7 @@ class _AnnotationMapper:
         if shape.type.value == "mask" and self._conv_mask_to_poly:
             raise BadFunctionError("function output mask shape despite conv_mask_to_poly=True")
 
-        if getattr(shape, "attributes", None):
-            raise BadFunctionError(
-                "function output shape with attributes, which is not yet supported"
-            )
+        self._remap_attributes(shape, label_id_mapping)
 
         self._remap_elements(shape, ds_frame, label_id_mapping)
 
@@ -343,9 +523,11 @@ def annotate_task(
     Otherwise, they are kept, and the new annotations are added to them.
 
     The allow_unmatched_labels parameter controls the behavior in the case when a detection
-    function declares a label in its spec that has no corresponding label in the task.
-    If it's set to true, then such labels are allowed, and any annotations returned by the
-    function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
+    function declares a label/sublabel/attribute in its spec
+    that has no corresponding label/sublabel/attribute in the task.
+    If it's set to True, any annotations/keypoints/attribute values
+    returned by the function that refer to such labels/sublabels/attributes are dropped.
+    If it's set to False, BadFunctionError is raised.
 
     The conf_threshold parameter must be None or a number between 0 and 1. It will be passed
     to the AA function as the conf_threshold attribute of the context object.

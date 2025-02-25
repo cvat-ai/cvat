@@ -45,14 +45,15 @@ from cvat.apps.engine.models import (
     SourceType,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import LambdaRQMeta, RQId
+from cvat.apps.engine.rq import RQId, define_dependent_job
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import define_dependent_job, get_rq_lock_by_user
+from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
 from cvat.apps.events.handlers import handle_function_call
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.lambda_manager.models import FunctionKind
 from cvat.apps.lambda_manager.permissions import LambdaPermission
+from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer,
     FunctionCallSerializer,
@@ -590,7 +591,7 @@ class LambdaQueue:
         )
         jobs = queue.job_class.fetch_many(job_ids, queue.connection)
 
-        return [LambdaJob(job) for job in jobs if job and job.meta.get("lambda")]
+        return [LambdaJob(job) for job in jobs if job and LambdaRQMeta.for_job(job).lambda_]
 
     def enqueue(
         self,
@@ -608,71 +609,60 @@ class LambdaQueue:
         queue = self._get_queue()
         rq_id = RQId(RequestAction.AUTOANNOTATE, RequestTarget.TASK, task).render()
 
-        # It is still possible to run several concurrent jobs for the same task.
-        # But the race isn't critical. The filtration is just a light-weight
-        # protection.
-        rq_job = queue.fetch_job(rq_id)
+        # Ensure that there is no race condition when processing parallel requests.
+        # Enqueuing an RQ job with (queue, user) lock  but without (queue, rq_id) lock
+        # may lead to queue jamming for a user due to self-dependencies.
+        with get_rq_lock_for_job(queue, rq_id):
+            if rq_job := queue.fetch_job(rq_id):
+                if rq_job.get_status(refresh=False) not in {
+                    rq.job.JobStatus.FAILED,
+                    rq.job.JobStatus.FINISHED,
+                }:
+                    raise ValidationError(
+                        "Only one running request is allowed for the same task #{}".format(task),
+                        code=status.HTTP_409_CONFLICT,
+                    )
+                rq_job.delete()
 
-        have_conflict = rq_job and rq_job.get_status(refresh=False) not in {
-            rq.job.JobStatus.FAILED,
-            rq.job.JobStatus.FINISHED,
-        }
+            # LambdaJob(None) is a workaround for python-rq. It has multiple issues
+            # with invocation of non-trivial functions. For example, it cannot run
+            # staticmethod, it cannot run a callable class. Thus I provide an object
+            # which has __call__ function.
+            user_id = request.user.id
 
-        # There could be some jobs left over from before the current naming convention was adopted.
-        # TODO: remove this check after a few releases.
-        have_legacy_conflict = any(
-            job.get_task() == task and not (job.is_finished or job.is_failed)
-            for job in self.get_jobs()
-        )
-        if have_conflict or have_legacy_conflict:
-            raise ValidationError(
-                "Only one running request is allowed for the same task #{}".format(task),
-                code=status.HTTP_409_CONFLICT,
-            )
+            with get_rq_lock_by_user(queue, user_id):
+                meta = LambdaRQMeta.build_for(
+                    request=request,
+                    db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
+                    function_id=lambda_func.id,
+                )
+                rq_job = queue.create_job(
+                    LambdaJob(None),
+                    job_id=rq_id,
+                    meta=meta,
+                    kwargs={
+                        "function": lambda_func,
+                        "threshold": threshold,
+                        "task": task,
+                        "job": job,
+                        "cleanup": cleanup,
+                        "conv_mask_to_poly": conv_mask_to_poly,
+                        "mapping": mapping,
+                        "max_distance": max_distance,
+                    },
+                    depends_on=define_dependent_job(queue, user_id),
+                    result_ttl=self.RESULT_TTL.total_seconds(),
+                    failure_ttl=self.FAILED_TTL.total_seconds(),
+                )
 
-        if rq_job:
-            rq_job.delete()
-
-        # LambdaJob(None) is a workaround for python-rq. It has multiple issues
-        # with invocation of non-trivial functions. For example, it cannot run
-        # staticmethod, it cannot run a callable class. Thus I provide an object
-        # which has __call__ function.
-        user_id = request.user.id
-
-        with get_rq_lock_by_user(queue, user_id):
-            meta = LambdaRQMeta.build(
-                request=request,
-                db_obj=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
-                function_id=lambda_func.id,
-            )
-
-            rq_job = queue.create_job(
-                LambdaJob(None),
-                job_id=rq_id,
-                meta=meta,
-                kwargs={
-                    "function": lambda_func,
-                    "threshold": threshold,
-                    "task": task,
-                    "job": job,
-                    "cleanup": cleanup,
-                    "conv_mask_to_poly": conv_mask_to_poly,
-                    "mapping": mapping,
-                    "max_distance": max_distance,
-                },
-                depends_on=define_dependent_job(queue, user_id),
-                result_ttl=self.RESULT_TTL.total_seconds(),
-                failure_ttl=self.FAILED_TTL.total_seconds(),
-            )
-
-            queue.enqueue_job(rq_job)
+                queue.enqueue_job(rq_job)
 
         return LambdaJob(rq_job)
 
     def fetch_job(self, pk):
         queue = self._get_queue()
         rq_job = queue.fetch_job(pk)
-        if rq_job is None or not LambdaRQMeta.from_job(rq_job).lambda_:
+        if rq_job is None or not LambdaRQMeta.for_job(rq_job).lambda_:
             raise ValidationError(
                 "{} lambda job is not found".format(pk), code=status.HTTP_404_NOT_FOUND
             )
@@ -701,7 +691,7 @@ class LambdaJob:
                 ),
             },
             "status": self.job.get_status(),
-            "progress": self.job.meta.get("progress", 0),
+            "progress": LambdaRQMeta.for_job(self.job).progress,
             "enqueued": self.job.enqueued_at,
             "started": self.job.started_at,
             "ended": self.job.ended_at,
@@ -915,7 +905,7 @@ class LambdaJob:
     # progress is in [0, 1] range
     def _update_progress(progress):
         job = rq.get_current_job()
-        rq_job_meta = LambdaRQMeta.from_job(job)
+        rq_job_meta = LambdaRQMeta.for_job(job)
         # If the job has been deleted, get_status will return None. Thus it will
         # exist the loop.
         rq_job_meta.progress = int(progress * 100)

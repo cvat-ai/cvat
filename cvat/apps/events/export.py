@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import log_exception
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.rq_job_handler import RQMetaWithFailureInfo
+from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import sendfile
 
 slogger = ServerLogManager(__name__)
@@ -152,7 +152,7 @@ def export(request, filter_query, queue_name):
                 if os.path.exists(file_path):
                     return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
-            rq_job_meta = RQMetaWithFailureInfo.from_job(rq_job)
+            rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
             exc_info = rq_job_meta.formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

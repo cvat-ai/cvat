@@ -123,10 +123,11 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import (
+from cvat.apps.engine.rq import (
     ImportRQMeta,
     RQId,
     RQMetaWithFailureInfo,
+    define_dependent_job,
     is_rq_job_owner,
 )
 from cvat.apps.engine.serializers import (
@@ -161,6 +162,7 @@ from cvat.apps.engine.serializers import (
     ProjectReadSerializer,
     ProjectWriteSerializer,
     RequestSerializer,
+    RqStatusSerializer,
     RqIdSerializer,
     TaskFileSerializer,
     TaskReadSerializer,
@@ -172,8 +174,8 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
     get_rq_lock_by_user,
+    get_rq_lock_for_job,
     import_resource_with_clean_up_after,
     process_failed_job,
     sendfile,
@@ -448,9 +450,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['POST'],
         summary='Import a dataset into a project',
         description=textwrap.dedent("""
-            The request POST /api/projects/id/dataset will initiate file upload and will create
-            the rq job on the server in which the process of dataset import from a file
-            will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+            The request POST /api/projects/id/dataset initiates a background process to import dataset into a project.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
@@ -657,6 +659,25 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
 
         return data_getter()
+
+    @staticmethod
+    def _get_rq_response(queue, job_id):
+        queue = django_rq.get_queue(queue)
+        job = queue.fetch_job(job_id)
+        rq_job_meta = ImportRQMeta.for_job(job)
+        response = {}
+        if job is None or job.is_finished:
+            response = { "state": "Finished" }
+        elif job.is_queued or job.is_deferred:
+            response = { "state": "Queued" }
+        elif job.is_failed:
+            response = { "state": "Failed", "message": job.exc_info }
+        else:
+            response = { "state": "Started" }
+            response['message'] = rq_job_meta.status or ""
+            response['progress'] = rq_job_meta.progress or 0.
+
+        return response
 
 
 class _DataGetter(metaclass=ABCMeta):
@@ -1420,17 +1441,24 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @extend_schema(methods=['PUT'], summary='Replace task annotations / Get annotation import status',
         description=textwrap.dedent("""
-            To check the status of an import request:
+            Utilizing this endpoint to check status of the import process is deprecated
+            in favor of the new requests API:
 
-            After initiating the annotation import, you will receive an rq_id parameter.
-            Make sure to include this parameter as a query parameter in your subsequent
-            PUT /api/tasks/id/annotations requests to track the status of the import.
+            GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+            on initializing request.
         """),
         parameters=[
-            OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
-            OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='rq id'),
+            # deprecated parameters
+            OpenApiParameter(
+                'format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
+                deprecated=True,
+            ),
+            OpenApiParameter(
+                'rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='rq id',
+                deprecated=True,
+            ),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
             # TODO: refactor to use required=False when possible
@@ -1445,9 +1473,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['POST'],
         summary="Import annotations into a task",
         description=textwrap.dedent("""
-            The request POST /api/tasks/id/annotations will initiate the import and will create
-            the rq job on the server in which the import will be carried out.
-            Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+            The request POST /api/tasks/id/annotations initiates a background process to import annotations into a task.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -1516,6 +1544,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             )
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
+            # deprecated logic, will be removed in one of the next releases
             if format_name:
                 # NOTE: continue process of import annotations
                 conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
@@ -1558,6 +1587,53 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return self.append_tus_chunk(request, file_id)
 
 
+    ### --- DEPRECATED METHOD --- ###
+    @extend_schema(
+        summary='Get the creation status of a task',
+        responses={
+            '200': RqStatusSerializer,
+        },
+        deprecated=True,
+        description="This method is deprecated and will be removed in one of the next releases. "
+                    "To check status of task creation, use new common API "
+                    "for managing background operations: GET /api/requests/?action=create&task_id=<task_id>",
+    )
+    @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
+    def status(self, request, pk):
+        task = self.get_object() # force call of check_object_permissions()
+        response = self._get_rq_response(
+            queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+            job_id=RQId(RequestAction.CREATE, RequestTarget.TASK, task.id).render()
+        )
+        serializer = RqStatusSerializer(data=response)
+
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data,  headers={'Deprecation': 'true'})
+
+    ### --- DEPRECATED METHOD--- ###
+    @staticmethod
+    def _get_rq_response(queue, job_id):
+        queue = django_rq.get_queue(queue)
+        job = queue.fetch_job(job_id)
+        rq_job_meta = ImportRQMeta.for_job(job)
+        response = {}
+        if job is None or job.is_finished:
+            response = { "state": "Finished" }
+        elif job.is_queued or job.is_deferred:
+            response = { "state": "Queued" }
+        elif job.is_failed:
+            # FIXME: It seems that in some cases exc_info can be None.
+            # It's not really clear how it is possible, but it can
+            # lead to an error in serializing the response
+            # https://github.com/cvat-ai/cvat/issues/5215
+            response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
+        else:
+            response = { "state": "Started" }
+            if rq_job_meta.status:
+                response['message'] = rq_job_meta.status
+            response['progress'] = rq_job_meta.progress or 0.
+
+        return response
 
     @extend_schema(methods=['GET'], summary='Get metainformation for media files in a task',
         responses={
@@ -1894,9 +1970,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(methods=['POST'],
         summary='Import annotations into a job',
         description=textwrap.dedent("""
-            The request POST /api/jobs/id/annotations will initiate the import and will create
-            the rq job on the server in which the import will be carried out.
-            Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+            The request POST /api/jobs/id/annotations initiates a background process to import annotations into a job.
+            Please, use the GET /api/requests/<rq_id> endpoint for checking status of the process.
+            The `rq_id` parameter can be found in the response on initiating request.
         """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -1921,27 +1997,34 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @extend_schema(methods=['PUT'],
                    summary='Replace job annotations / Get annotation import status',
         description=textwrap.dedent("""
-            To check the status of an import request:
-
-            After initiating the annotation import, you will receive an rq_id parameter.
-            Make sure to include this parameter as a query parameter in your subsequent
-            PUT /api/jobs/id/annotations requests to track the status of the import.
+            Utilizing this endpoint to check status of the import process is deprecated
+            in favor of the new requests API:
+            GET /api/requests/<rq_id>, where `rq_id` parameter is returned in the response
+            on initializing request.
         """),
         parameters=[
+
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+                description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats',
+                deprecated=True,
+            ),
             OpenApiParameter('location', description='where to import the annotation from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                enum=Location.list()),
+                enum=Location.list(),
+                deprecated=True,
+            ),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
-            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
-                default=True, deprecated=True),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
+                deprecated=True,
+            ),
             OpenApiParameter('filename', description='Annotation file name',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                deprecated=True,
+            ),
             OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
-                description='rq id'),
+                description='rq id',
+                deprecated=True,
+            ),
         ],
         request=PolymorphicProxySerializer(
             component_name='JobAnnotationsUpdate',
@@ -1995,6 +2078,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
+                # deprecated logic, will be removed in one of the next releases
                 conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
                 location_conf = get_location_configuration(
                     db_instance=self._object, query_params=request.query_params, field_name=StorageType.SOURCE
@@ -3113,8 +3197,8 @@ class AnnotationGuidesViewSet(
         super().perform_destroy(instance)
         target.touch()
 
-def rq_exception_handler(rq_job: RQJob, exc_type: Type[Exception], exc_value, tb):
-    rq_job_meta = RQMetaWithFailureInfo.from_job(rq_job)
+def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
+    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
     rq_job_meta.formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
@@ -3149,102 +3233,115 @@ def _import_annotations(
         rq_id = rq_id_factory(db_obj.pk).render()
 
     queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    rq_job = queue.fetch_job(rq_id)
 
-    if rq_job and rq_id_should_be_checked and not is_rq_job_owner(rq_job, request.user.id):
-        return Response(status=status.HTTP_403_FORBIDDEN)
+    # ensure that there is no race condition when processing parallel requests
+    with get_rq_lock_for_job(queue, rq_id):
+        rq_job = queue.fetch_job(rq_id)
 
-    if rq_job and request.method == 'POST':
-        # If there is a previous job that has not been deleted
-        if rq_job.is_finished or rq_job.is_failed:
-            rq_job.delete()
-            rq_job = queue.fetch_job(rq_id)
-        else:
-            return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+        if rq_job:
+            if rq_id_should_be_checked and not is_rq_job_owner(rq_job, request.user.id):
+                return Response(status=status.HTTP_403_FORBIDDEN)
 
-    if not rq_job:
-        # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
-        # Then we dont need to create temporary file
-        # Or filename specify key in cloud storage so we need to download file
-        location = location_conf.get('location') if location_conf else Location.LOCAL
-        db_storage = None
+            if request.method == 'POST':
+                if rq_job.get_status(refresh=False) not in (RQJobStatus.FINISHED, RQJobStatus.FAILED):
+                    return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
-        if not filename or location == Location.CLOUD_STORAGE:
-            if location != Location.CLOUD_STORAGE:
-                serializer = AnnotationFileSerializer(data=request.data)
-                if serializer.is_valid(raise_exception=True):
-                    anno_file = serializer.validated_data['annotation_file']
+                rq_job.delete()
+                rq_job = None
+
+        if not rq_job:
+            # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
+            # Then we dont need to create temporary file
+            # Or filename specify key in cloud storage so we need to download file
+            location = location_conf.get('location') if location_conf else Location.LOCAL
+            db_storage = None
+
+            if not filename or location == Location.CLOUD_STORAGE:
+                if location != Location.CLOUD_STORAGE:
+                    serializer = AnnotationFileSerializer(data=request.data)
+                    if serializer.is_valid(raise_exception=True):
+                        anno_file = serializer.validated_data['annotation_file']
+                        with NamedTemporaryFile(
+                            prefix='cvat_{}'.format(db_obj.pk),
+                            dir=settings.TMP_FILES_ROOT,
+                            delete=False) as tf:
+                            filename = tf.name
+                            for chunk in anno_file.chunks():
+                                tf.write(chunk)
+                else:
+                    assert filename, 'The filename was not specified'
+
+                    try:
+                        storage_id = location_conf['storage_id']
+                    except KeyError:
+                        raise serializers.ValidationError(
+                            'Cloud storage location was selected as the source,'
+                            ' but cloud storage id was not specified')
+                    db_storage = get_cloud_storage_for_import_or_export(
+                        storage_id=storage_id, request=request,
+                        is_default=location_conf['is_default'])
+
+                    key = filename
                     with NamedTemporaryFile(
                         prefix='cvat_{}'.format(db_obj.pk),
                         dir=settings.TMP_FILES_ROOT,
                         delete=False) as tf:
                         filename = tf.name
-                        for chunk in anno_file.chunks():
-                            tf.write(chunk)
-            else:
-                assert filename, 'The filename was not specified'
 
-                try:
-                    storage_id = location_conf['storage_id']
-                except KeyError:
-                    raise serializers.ValidationError(
-                        'Cloud storage location was selected as the source,'
-                        ' but cloud storage id was not specified')
-                db_storage = get_cloud_storage_for_import_or_export(
-                    storage_id=storage_id, request=request,
-                    is_default=location_conf['is_default'])
+            func = import_resource_with_clean_up_after
+            func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
 
-                key = filename
-                with NamedTemporaryFile(
-                    prefix='cvat_{}'.format(db_obj.pk),
-                    dir=settings.TMP_FILES_ROOT,
-                    delete=False) as tf:
-                    filename = tf.name
+            if location == Location.CLOUD_STORAGE:
+                func_args = (db_storage, key, func) + func_args
+                func = import_resource_from_cloud_storage
 
-        func = import_resource_with_clean_up_after
-        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+            av_scan_paths(filename)
+            user_id = request.user.id
 
-        if location == Location.CLOUD_STORAGE:
-            func_args = (db_storage, key, func) + func_args
-            func = import_resource_from_cloud_storage
+            with get_rq_lock_by_user(queue, user_id):
+                meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
+                queue.enqueue_call(
+                    func=func,
+                    args=func_args,
+                    job_id=rq_id,
+                    depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
+                    meta=meta,
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+                )
 
-        av_scan_paths(filename)
-        user_id = request.user.id
-
-        with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build(request=request, db_obj=db_obj, tmp_file=filename)
-            rq_job = queue.enqueue_call(
-                func=func,
-                args=func_args,
-                job_id=rq_id,
-                depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                meta=meta,
-                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-            )
-
+    # log events after releasing Redis lock
+    if not rq_job:
         handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
 
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-    else:
-        if rq_job.is_finished:
-            rq_job.delete()
-            return Response(status=status.HTTP_201_CREATED)
-        elif rq_job.is_failed:
-            exc_info = process_failed_job(rq_job)
 
-            import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
-            if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
-                exc_message = exc_info.split(import_error_prefix)[-1].strip()
-                return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                return Response(data=exc_info,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # Deprecated logic, /api/requests API should be used instead
+    # https://greenbytes.de/tech/webdav/draft-ietf-httpapi-deprecation-header-latest.html#the-deprecation-http-response-header-field
+    deprecation_timestamp = int(datetime(2025, 2, 14, tzinfo=timezone.utc).timestamp())
+    response_headers  = {
+        "Deprecation": f"@{deprecation_timestamp}"
+    }
 
-    return Response(status=status.HTTP_202_ACCEPTED)
+    rq_job_status = rq_job.get_status(refresh=False)
+    if RQJobStatus.FINISHED == rq_job_status:
+        rq_job.delete()
+        return Response(status=status.HTTP_201_CREATED, headers=response_headers)
+    elif RQJobStatus.FAILED == rq_job_status:
+        exc_info = process_failed_job(rq_job)
+
+        import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
+        if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
+            exc_message = exc_info.split(import_error_prefix)[-1].strip()
+            return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST, headers=response_headers)
+        else:
+            return Response(data=exc_info,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR, headers=response_headers)
+
+    return Response(status=status.HTTP_202_ACCEPTED, headers=response_headers)
 
 def _import_project_dataset(
     request: ExtendedRequest,
@@ -3266,15 +3363,22 @@ def _import_project_dataset(
 
     rq_id = rq_id_factory(db_obj.pk).render()
 
-    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    rq_job = queue.fetch_job(rq_id)
+    queue: DjangoRQ = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 
-    if not rq_job or rq_job.is_finished or rq_job.is_failed:
-        if rq_job and (rq_job.is_finished or rq_job.is_failed):
+    # ensure that there is no race condition when processing parallel requests
+    with get_rq_lock_for_job(queue, rq_id):
+        rq_job = queue.fetch_job(rq_id)
+
+        if rq_job:
+            rq_job_status = rq_job.get_status(refresh=False)
+            if rq_job_status not in (RQJobStatus.FINISHED, RQJobStatus.FAILED):
+                return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+
             # for some reason the previous job has not been deleted
             # (e.g the user closed the browser tab when job has been created
             # but no one requests for checking status were not made)
             rq_job.delete()
+            rq_job = None
 
         location = location_conf.get('location') if location_conf else None
         db_storage = None
@@ -3320,8 +3424,8 @@ def _import_project_dataset(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
-            meta = ImportRQMeta.build(request=request, db_obj=db_obj, tmp_file=filename)
-            rq_job = queue.enqueue_call(
+            meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
+            queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
@@ -3331,9 +3435,8 @@ def _import_project_dataset(
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
-    else:
-        return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+
+    handle_dataset_import(db_obj, format_name=format_name, cloud_storage_id=db_storage.id if db_storage else None)
 
     serializer = RqIdSerializer(data={'rq_id': rq_id})
     serializer.is_valid(raise_exception=True)

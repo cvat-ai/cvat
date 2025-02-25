@@ -16,6 +16,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.30.0'></a>
+## \[2.30.0\] - 2025-02-14
+
+### Added
+
+- Gamma filter settings are now automatically saved and restored upon reload
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+- Ability to customize `api/sever/about` endpoint via settings including logo and sign-in page subtitle
+  (<https://github.com/cvat-ai/cvat/pull/9052>)
+
+### Changed
+
+- Client settings are now saved automatically
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+### Fixed
+
+- \[SDK\] `skeleton_label_spec` now correctly forwards `kwargs` to
+  `PatchedLabelRequest`
+  (<https://github.com/cvat-ai/cvat/pull/9087>)
+
+- Error: Cannot read properties of undefined (reading 'width') that occurs when changing frames in a video-based GT job
+  (<https://github.com/cvat-ai/cvat/pull/9095>)
+
 <a id='changelog-2.29.0'></a>
 ## \[2.29.0\] - 2025-02-10
 
