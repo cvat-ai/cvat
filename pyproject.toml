@@ -49,7 +49,6 @@ extend-exclude = """
         |permissions.py
         |plugins.py
         |renderers.py
-        |rq_job_handler.py
         |schema.py
         |serializers.py
         |signals.py

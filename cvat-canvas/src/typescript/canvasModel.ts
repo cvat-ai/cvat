@@ -590,7 +590,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 };
 
                 this.data.image = data;
-                this.fit();
+                this.resetScale();
 
                 // restore correct image position after switching to a new frame
                 // if corresponding option is disabled
@@ -684,7 +684,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_FOCUSED);
     }
 
-    public fit(): void {
+    private resetScale(): boolean {
         const { angle } = this.data;
 
         let updatedScale = this.data.scale;
@@ -713,6 +713,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             // scale is changed during zooming or translating
             // so, remember fitted scale to compute fit-relative scaling
             this.data.fittedScale = this.data.scale;
+            return true;
+        }
+
+        return false;
+    }
+
+    public fit(): void {
+        if (this.resetScale()) {
             this.notify(UpdateReasons.IMAGE_FITTED);
         }
     }
