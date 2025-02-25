@@ -10,7 +10,7 @@ from abc import ABCMeta
 from collections import Counter
 from collections.abc import Hashable, Sequence
 from copy import deepcopy
-from functools import cached_property, partial
+from functools import cached_property, lru_cache, partial
 from typing import Any, Callable, ClassVar, Hashable, Sequence, TypeVar, Union, cast
 
 import datumaro as dm
@@ -81,10 +81,10 @@ class Serializable(metaclass=ABCMeta):
     def to_dict(self) -> dict:
         return self._value_serializer(self._as_dict())
 
-    def _as_dict(self, *, include_properties: list[str] | None = None) -> dict:
+    def _as_dict(self, *, include_fields: list[str] | None = None) -> dict:
         d = asdict(self, recurse=False)
 
-        for field_name in include_properties or []:
+        for field_name in include_fields or []:
             d[field_name] = getattr(self, field_name)
 
         return d
@@ -97,7 +97,7 @@ class Serializable(metaclass=ABCMeta):
 @define(slots=False)
 class ReportNode(Serializable):
     _CACHED_FIELDS: ClassVar[list[str] | None] = None
-    "Fields that can be set externally or be computed on access"
+    "Fields that can be set externally or be computed on access. Can be defined in a subclass"
 
     @classmethod
     def _find_cached_fields(cls) -> list[str]:
@@ -108,22 +108,40 @@ class ReportNode(Serializable):
         ]
 
     @classmethod
-    def _get_computable_fields(cls) -> list[str]:
+    def _find_computable_fields(cls) -> list[str]:
         return [
-            member.attrname for _, member in cls.__dict__.items() if isinstance(member, property)
+            attrname for attrname, member in cls.__dict__.items() if isinstance(member, property)
         ]
 
     @classmethod
-    def _get_cached_fields(cls, recursive: bool = True) -> list[str]:
-        if "_CACHED_FIELDS" not in cls.__dict__:
-            fields = cls._find_cached_fields() or []
-        else:
-            fields = list(cls.__dict__["_CACHED_FIELDS"])
+    def _collect_base_fields(cls, method: str) -> set:
+        fields = set()
+
+        for base_class in cls.__bases__:
+            if issubclass(base_class, ReportNode) and base_class is not ReportNode:
+                fields.update(getattr(base_class, method)(recursive=False))
+
+        return fields
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def _get_computable_fields(cls, recursive: bool = True) -> list[str]:
+        fields = cls._find_computable_fields()
 
         if recursive:
-            for base_class in cls.__bases__:
-                if issubclass(base_class, ReportNode) and base_class != ReportNode:
-                    fields += base_class._get_cached_fields(recursive=False)
+            fields = list(set(fields) | cls._collect_base_fields("_get_computable_fields"))
+
+        return fields
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def _get_cached_fields(cls, recursive: bool = True) -> list[str]:
+        fields = cls.__dict__.get("_CACHED_FIELDS")
+        if fields is None:
+            fields = cls._find_cached_fields()
+
+        if recursive:
+            fields = list(set(fields) | cls._collect_base_fields("_get_cached_fields"))
 
         return fields
 
@@ -136,11 +154,13 @@ class ReportNode(Serializable):
 
         self.__attrs_init__(*args, **kwargs)
 
+        self.__setattr__ = self.__checking_setattr__
+
         for field_name, field_value in cached_field_kwargs.items():
             setattr(self, field_name, field_value)
 
-    def __setattr__(self, __name: str, __value: Any):
-        if __name not in self._get_cached_fields():
+    def __checking_setattr__(self, __name: str, __value: Any):
+        if self._enable_setattr_checks and __name not in self._get_cached_fields():
             self.reset_cached_fields()
 
         return super().__setattr__(__name, __value)
@@ -150,9 +170,9 @@ class ReportNode(Serializable):
             if hasattr(self, field):
                 delattr(self, field)
 
-    def _as_dict(self, *, include_properties: list[str] | None = None) -> dict:
+    def _as_dict(self, *, include_fields: list[str] | None = None) -> dict:
         return super()._as_dict(
-            include_properties=include_properties
+            include_fields=include_fields
             or (self._get_computable_fields() + self._get_cached_fields())
         )
 
