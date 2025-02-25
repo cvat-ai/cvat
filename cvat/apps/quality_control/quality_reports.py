@@ -2421,7 +2421,7 @@ class QualityReportManager:
     @classmethod
     @silk_profile()
     def _check_task_quality(cls, *, task_id: int) -> int:
-        return TaskQualityReportCalculator().compute_report(task_id=task_id)
+        return TaskQualityReportCalculator().compute_report(task_id=task_id).id
 
     @classmethod
     @silk_profile()
@@ -2430,19 +2430,13 @@ class QualityReportManager:
 
 
 class TaskQualityReportCalculator:
-    def compute_report(self, task_id: int) -> int:
+    def compute_report(self, task_id: int) -> models.QualityReport:
         with transaction.atomic():
-            try:
-                # Preload all the data for the computations.
-                # It must be done atomically and before all the computations,
-                # because the task and jobs can be changed after the beginning,
-                # which will lead to inconsistent results
-                # TODO: check performance of select_for_update(),
-                # maybe make several fetching attempts if received data is outdated
-                task = Task.objects.select_related("data").get(id=task_id)
-            except Task.DoesNotExist:
-                # The task could have been deleted during scheduling
-                return
+            # Preload all the required data for computations.
+            # Ideally, we would lock the task to fetch all the data and produce
+            # consistent report. However, data fetching can also take long time.
+            # For this reason, we don't guarantee absolute consistency.
+            task = Task.objects.select_related("data").get(id=task_id)
 
             # Try to use a shared queryset to minimize DB requests
             job_queryset = Job.objects.select_related("segment")
@@ -2500,13 +2494,16 @@ class TaskQualityReportCalculator:
                 for job in jobs
             }
 
-            quality_params = self._get_task_quality_params(task)  # TODO: support inheriting
+            quality_params = self._get_quality_params(task)
 
         job_comparison_reports: dict[int, ComparisonReport] = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = DatasetComparator(
-                job_data_provider, gt_job_data_provider, task=task, settings=quality_params
+                job_data_provider,
+                gt_job_data_provider,
+                task=task,
+                settings=quality_params,
             )
             job_comparison_reports[job.id] = comparator.generate_report()
 
@@ -2516,16 +2513,6 @@ class TaskQualityReportCalculator:
         task_comparison_report = self._compute_task_report(task, job_comparison_reports)
 
         with transaction.atomic():
-            # The task could have been deleted during processing
-            try:
-                updated_task = Task.objects.get(id=task_id)
-            except Task.DoesNotExist:
-                return
-
-            # The task could have been moved to a project during the computations
-            if updated_task.project_id != task.project_id:
-                return
-
             job_quality_reports = {}
             for job in jobs:
                 job_comparison_report = job_comparison_reports[job.id]
@@ -2554,7 +2541,7 @@ class TaskQualityReportCalculator:
                 job_reports=list(job_quality_reports.values()),
             )
 
-        return task_report.id
+        return task_report
 
     def _compute_task_report(
         self, task: Task, job_reports: dict[int, ComparisonReport]
@@ -2695,15 +2682,10 @@ class TaskQualityReportCalculator:
 
         return db_task_report
 
-    def _get_task_quality_params(self, task: Task) -> ComparisonParameters:
-        params = {}
-        if task.project:
-            params["project"] = task.project
-        else:
-            params["task"] = task
+    def _get_quality_params(self, task: Task) -> ComparisonParameters:
+        quality_settings, _ = models.QualitySettings.objects.get_or_create(task=task)
 
-        quality_params, _ = models.QualitySettings.objects.get_or_create(**params)
-        return ComparisonParameters.from_dict(quality_params.to_dict())
+        return ComparisonParameters.from_dict(quality_settings.to_dict())
 
 
 class ProjectQualityCalculator:
