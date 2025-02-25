@@ -60,7 +60,7 @@ LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 class ResourceExportManager(ABC):
     QUEUE_NAME = settings.CVAT_QUEUES.EXPORT_DATA.value
     SUPPORTED_RESOURCES: ClassVar[set[RequestSubresource]]
-    SUPPORTEd_SUBRESOURCES: ClassVar[set[RequestSubresource]]
+    SUPPORTED_SUBRESOURCES: ClassVar[set[RequestSubresource]]
 
     def __init__(
         self,
@@ -70,13 +70,15 @@ class ResourceExportManager(ABC):
         """
         Args:
             db_instance (Union[models.Project, models.Task, models.Job]): Model instance
-            export_callback (Callable): Main function that will be executed in the background
+            request (ExtendedRequest): Incoming HTTP request
         """
         self.db_instance = db_instance
         self.request = request
         self.resource = db_instance.__class__.__name__.lower()
         if self.resource not in self.SUPPORTED_RESOURCES:
             raise ValueError("Unexpected type of db_instance: {}".format(type(db_instance)))
+
+    ### Initialization logic ###
 
     def initialize_export_args(self, *, export_callback: Callable[..., str]) -> None:
         self.export_callback = export_callback
@@ -85,33 +87,8 @@ class ResourceExportManager(ABC):
     def validate_export_args(self) -> Response | None:
         pass
 
-    def export(self) -> Response:
-        assert hasattr(self, "export_callback")
-        assert hasattr(self, "export_args")
-
-        if invalid_response := self.validate_export_args():
-            return invalid_response
-
-        queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
-        rq_id = self.build_rq_id()
-
-        # ensure that there is no race condition when processing parallel requests
-        with get_rq_lock_for_job(queue, rq_id):
-            rq_job = queue.fetch_job(rq_id)
-            if response := self.handle_rq_job(rq_job, queue):
-                return response
-            self.setup_background_job(queue, rq_id)
-
-        self.send_events()
-
-        serializer = RqIdSerializer(data={"rq_id": rq_id})
-        serializer.is_valid(raise_exception=True)
-
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-
     @abstractmethod
-    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None:
-        pass
+    def build_rq_id(self) -> str: ...
 
     def handle_rq_job(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
         if not rq_job:
@@ -146,25 +123,46 @@ class ResourceExportManager(ABC):
 
         return result_url + f"?rq_id={rq_id}"
 
-    # TODO: move method to the model class (or remove it and use just instance.updated_date)
-    def get_instance_update_time(self) -> datetime:
-        instance_update_time = timezone.localtime(self.db_instance.updated_date)
-        if isinstance(self.db_instance, Project):
-            tasks_update = list(
-                map(
-                    lambda db_task: timezone.localtime(db_task.updated_date),
-                    self.db_instance.tasks.all(),
-                )
-            )
-            instance_update_time = max(tasks_update + [instance_update_time])
-        return instance_update_time
-
-    # TODO: move into a model class
-    def get_timestamp(self, time_: datetime) -> str:
-        return datetime.strftime(time_, "%Y_%m_%d_%H_%M_%S")
+    def get_updated_date_timestamp(self) -> str:
+        # use only updated_date for the related resource, don't check children objects
+        # because every child update should touch the updated_date of the parent resource
+        return datetime.strftime(self.db_instance.updated_date, "%Y_%m_%d_%H_%M_%S")
 
     @abstractmethod
-    def get_result_filename(self) -> str: ...
+    def get_result_filename(self) -> tuple[str, str | None]: ...
+
+    @abstractmethod
+    def send_events(self) -> None: ...
+
+    @abstractmethod
+    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None:
+        pass
+
+    def export(self) -> Response:
+        assert hasattr(self, "export_callback")
+        assert hasattr(self, "export_args")
+
+        if invalid_response := self.validate_export_args():
+            return invalid_response
+
+        queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
+        rq_id = self.build_rq_id()
+
+        # ensure that there is no race condition when processing parallel requests
+        with get_rq_lock_for_job(queue, rq_id):
+            rq_job = queue.fetch_job(rq_id)
+            if response := self.handle_rq_job(rq_job, queue):
+                return response
+            self.setup_background_job(queue, rq_id)
+
+        self.send_events()
+
+        serializer = RqIdSerializer(data={"rq_id": rq_id})
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+    ### Logic related with prepared file downloading ###
 
     def validate_rq_id(self, *, rq_id: str | None) -> HttpResponseBadRequest | None:
         if not rq_id:
@@ -174,13 +172,7 @@ class ResourceExportManager(ABC):
         assert parsed_rq_id.action == RequestAction.EXPORT
         assert parsed_rq_id.target == RequestTarget(self.resource)
         assert parsed_rq_id.identifier == self.db_instance.pk
-        assert parsed_rq_id.subresource in self.SUPPORTEd_SUBRESOURCES
-
-    @abstractmethod
-    def build_rq_id(self) -> str: ...
-
-    @abstractmethod
-    def send_events(self) -> None: ...
+        assert parsed_rq_id.subresource in self.SUPPORTED_SUBRESOURCES
 
     def download_file(self) -> Response:
         queue: DjangoRQ = django_rq.get_queue(self.QUEUE_NAME)
@@ -204,7 +196,7 @@ class ResourceExportManager(ABC):
             if rq_job_status != RQJobStatus.FINISHED:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-            rq_job_meta = ExportRQMeta.from_job(rq_job)
+            rq_job_meta = ExportRQMeta.for_job(rq_job)
             file_path = rq_job.return_value()
 
             if not file_path:
@@ -227,7 +219,9 @@ class ResourceExportManager(ABC):
                     )
 
                 # TODO: write redis migration
-                filename = rq_job_meta.result.filename + osp.splitext(file_path)[1]
+                filename = rq_job_meta.result.filename + (
+                    rq_job_meta.result.ext or osp.splitext(file_path)[1]
+                )
 
                 return sendfile(
                     self.request,
@@ -246,7 +240,7 @@ def cancel_and_delete(rq_job: RQJob) -> None:
 
 class DatasetExportManager(ResourceExportManager):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK, RequestTarget.JOB}
-    SUPPORTEd_SUBRESOURCES = {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
+    SUPPORTED_SUBRESOURCES = {RequestSubresource.DATASET, RequestSubresource.ANNOTATIONS}
 
     @dataclass
     class ExportArgs:
@@ -364,28 +358,10 @@ class DatasetExportManager(ResourceExportManager):
                 request=self.request,
                 is_default=self.export_args.location_config["is_default"],
             )
-            ###----------------------------------------###
-            instance_update_time = self.get_instance_update_time()
-            instance_timestamp = self.get_timestamp(instance_update_time)
-            # todo: think how improve it
-            # TODO: check that there is no filename.zip.zip in case when filename is specified
-            filename_pattern = build_annotations_file_name(
-                class_name=self.db_instance.__class__.__name__,
-                identifier=(
-                    self.db_instance.name
-                    if isinstance(self.db_instance, (models.Task, models.Project))
-                    else self.db_instance.id
-                ),
-                timestamp=instance_timestamp,
-                format_name=self.export_args.format,
-                is_annotation_file=not self.export_args.save_images,
-            )
-            ###----------------------------------------###
+
             func = export_resource_to_cloud_storage
             func_args = (
                 db_storage,
-                self.export_args.filename,
-                filename_pattern,
                 self.export_callback,
             ) + func_args
         else:
@@ -393,12 +369,13 @@ class DatasetExportManager(ResourceExportManager):
             result_url = self.make_result_url(rq_id=rq_id)
 
         with get_rq_lock_by_user(queue, user_id):
-            result_filename = self.get_result_filename()
+            result_filename, result_ext = self.get_result_filename()
             meta = ExportRQMeta.build_for(
                 request=self.request,
                 db_obj=self.db_instance,
-                result_filename=result_filename,
                 result_url=result_url,
+                result_filename=result_filename,
+                result_ext=result_ext,
             )
             queue.enqueue_call(
                 func=func,
@@ -413,14 +390,13 @@ class DatasetExportManager(ResourceExportManager):
                 failure_ttl=cache_ttl.total_seconds(),
             )
 
-    def get_result_filename(self) -> str:
+    def get_result_filename(self) -> tuple[str, str | None]:
         filename = self.export_args.filename
 
         if filename:
-            return osp.splitext(filename)[0]
+            return osp.splitext(filename)
 
-        instance_update_time = self.get_instance_update_time()
-        instance_timestamp = self.get_timestamp(instance_update_time)
+        instance_timestamp = self.get_updated_date_timestamp()
         filename = build_annotations_file_name(
             class_name=self.resource,
             identifier=self.db_instance.id,
@@ -429,7 +405,7 @@ class DatasetExportManager(ResourceExportManager):
             is_annotation_file=not self.export_args.save_images,
         )
 
-        return filename
+        return filename, None
 
     def get_download_api_endpoint_view_name(self) -> str:
         return f"{self.resource}-download-dataset"
@@ -437,7 +413,7 @@ class DatasetExportManager(ResourceExportManager):
 
 class BackupExportManager(ResourceExportManager):
     SUPPORTED_RESOURCES = {RequestTarget.PROJECT, RequestTarget.TASK}
-    SUPPORTEd_SUBRESOURCES = {RequestSubresource.BACKUP}
+    SUPPORTED_SUBRESOURCES = {RequestSubresource.BACKUP}
 
     @dataclass
     class ExportArgs:
@@ -462,14 +438,13 @@ class BackupExportManager(ResourceExportManager):
     def validate_export_args(self):
         return
 
-    def get_result_filename(self) -> str:
+    def get_result_filename(self) -> tuple[str, str | None]:
         filename = self.export_args.filename
 
         if filename:
-            return osp.splitext(filename)[0]
+            return osp.splitext(filename)
 
-        instance_update_time = self.get_instance_update_time()
-        instance_timestamp = self.get_timestamp(instance_update_time)
+        instance_timestamp = self.get_updated_date_timestamp()
 
         filename = build_backup_file_name(
             class_name=self.resource,
@@ -477,7 +452,7 @@ class BackupExportManager(ResourceExportManager):
             timestamp=instance_timestamp,
         )
 
-        return filename
+        return filename, None
 
     def build_rq_id(self):
         return RQId(
@@ -488,19 +463,22 @@ class BackupExportManager(ResourceExportManager):
             user_id=self.request.user.id,
         ).render()
 
+    # TODO: make a common func
     def setup_background_job(
         self,
         queue: DjangoRQ,
         rq_id: str,
     ) -> None:
+        cache_ttl = get_export_cache_ttl(self.db_instance)
+        user_id = self.request.user.id
+
+        # move into a separate method
         if isinstance(self.db_instance, Task):
             logger = slogger.task[self.db_instance.pk]
             Exporter = TaskExporter
-            cache_ttl = dm.views.TASK_CACHE_TTL
         else:
             logger = slogger.project[self.db_instance.pk]
             Exporter = ProjectExporter
-            cache_ttl = dm.views.PROJECT_CACHE_TTL
 
         func = self.export_callback
         func_args = (
@@ -526,33 +504,22 @@ class BackupExportManager(ResourceExportManager):
                 is_default=self.export_args.location_config["is_default"],
             )
 
-            last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
-            timestamp = self.get_timestamp(last_instance_update_time)
-
-            filename_pattern = build_backup_file_name(
-                class_name=self.resource,
-                identifier=self.db_instance.name,
-                timestamp=timestamp,
-            )
             func = export_resource_to_cloud_storage
             func_args = (
                 db_storage,
-                self.export_args.filename,
-                filename_pattern,
                 self.export_callback,
             ) + func_args
         else:
             result_url = self.make_result_url(rq_id=rq_id)
 
-        user_id = self.request.user.id
-
         with get_rq_lock_by_user(queue, user_id):
-            result_filename = self.get_result_filename()
+            result_filename, result_ext = self.get_result_filename()
             meta = ExportRQMeta.build_for(
                 request=self.request,
                 db_obj=self.db_instance,
-                result_filename=result_filename,
                 result_url=result_url,
+                result_filename=result_filename,
+                result_ext=result_ext,
             )
 
             queue.enqueue_call(

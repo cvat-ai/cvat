@@ -3606,7 +3606,7 @@ class RequestSerializer(serializers.Serializer):
 
         if representation["status"] == RQJobStatus.FINISHED:
             if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
-                representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
+                representation["result_url"] = ExportRQMeta.for_job(rq_job).result.url
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT

@@ -14,6 +14,7 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
+from rq import get_current_job
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -33,6 +34,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number, take_by
+from cvat.apps.engine.rq import ExportRQMeta
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 
 
@@ -1025,16 +1027,26 @@ def import_resource_from_cloud_storage(
 
     return cleanup_func(import_func, filename, *args, **kwargs)
 
+
+
+
 def export_resource_to_cloud_storage(
     db_storage: Any,
-    key: str,
-    key_pattern: str,
-    func: Callable[[int, Optional[str], Optional[str]], str],
+    # TODO: write Redis migration
+    # key: str,
+    # key_pattern: str,
+    func: Callable[[int, str | None, str | None], str],
     *args,
     **kwargs,
 ) -> str:
+    rq_job = get_current_job()
+    assert rq_job, "func can be executed only from a background job"
+
     file_path = func(*args, **kwargs)
+    rq_job_meta = ExportRQMeta.for_job(rq_job)
+    key = rq_job_meta.result.filename + (rq_job_meta.result.ext or os.path.splitext(file_path)[1].lower())
+
     storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(file_path, key if key else key_pattern.format(os.path.splitext(file_path)[1].lower()))
+    storage.upload_file(file_path, key)
 
     return file_path

@@ -35,26 +35,33 @@ class RQJobMetaField:
         UUID = "uuid"
         TIMESTAMP = "timestamp"
 
-    # common fields
+    class ExportResultField:
+        URL = "url"
+        FILENAME = "filename"
+        EXT = "ext"
+
+    # failure info fields
     FORMATTED_EXCEPTION = "formatted_exception"
+    EXCEPTION_TYPE = "exc_type"
+    EXCEPTION_ARGS = "exc_args"
+    # common fields
     REQUEST = "request"
     USER = "user"
+    ORG_ID = "org_id"
+    ORG_SLUG = "org_slug"
     PROJECT_ID = "project_id"
     TASK_ID = "task_id"
     JOB_ID = "job_id"
-    LAMBDA = "lambda"
-    ORG_ID = "org_id"
-    ORG_SLUG = "org_slug"
     STATUS = "status"
     PROGRESS = "progress"
-    TASK_PROGRESS = "task_progress"
-    # export specific fields
-    RESULT_URL = "result_url"
-    RESULT = "result"
-    FUNCTION_ID = "function_id"
-    EXCEPTION_TYPE = "exc_type"
-    EXCEPTION_ARGS = "exc_args"
+    # import fields
     TMP_FILE = "tmp_file"
+    TASK_PROGRESS = "task_progress"
+    # export fields
+    RESULT = "result"
+    # lambda fields
+    LAMBDA = "lambda"
+    FUNCTION_ID = "function_id"
 
 
 class WithMeta(Protocol):
@@ -258,10 +265,23 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         }
 
 
+class ExportResultMeta:
+    url: str | None = ImmutableRQMetaAttribute(RQJobMetaField.ExportResultField.URL, optional=True)
+    filename: str = ImmutableRQMetaAttribute(RQJobMetaField.ExportResultField.FILENAME)
+    ext: str | None = ImmutableRQMetaAttribute(RQJobMetaField.ExportResultField.EXT, optional=True)
+
+    def __init__(self, meta: dict[str, Any]) -> None:
+        self._meta = meta
+
+    @property
+    def meta(self) -> dict[str, Any]:
+        return self._meta
+
+
 class ExportRQMeta(BaseRQMeta):
-    result_url: str | None = ImmutableRQMetaAttribute(
-        RQJobMetaField.RESULT_URL, optional=True
-    )  # will be changed to ExportResultInfo in the next PR
+    @property
+    def result(self):
+        return ExportResultMeta(self.meta[RQJobMetaField.RESULT])
 
     @staticmethod
     def _get_resettable_fields() -> list[str]:
@@ -273,12 +293,21 @@ class ExportRQMeta(BaseRQMeta):
         cls,
         *,
         request: ExtendedRequest,
-        db_obj: Model | None,
+        db_obj: Model,
         result_url: str | None,
+        result_filename: str,
+        result_ext: str | None = None,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
-        return {**base_meta, RQJobMetaField.RESULT_URL: result_url}
+        return {
+            **base_meta,
+            RQJobMetaField.RESULT: {
+                RQJobMetaField.ExportResultField.URL: result_url,
+                RQJobMetaField.ExportResultField.FILENAME: result_filename,
+                RQJobMetaField.ExportResultField.EXT: result_ext,
+            },
+        }
 
 
 class ImportRQMeta(BaseRQMeta):
