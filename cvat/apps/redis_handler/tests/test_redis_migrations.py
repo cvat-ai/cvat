@@ -97,7 +97,6 @@ class TestRedisMigrations(TestCase):
         self.addCleanup(self.test_migration.cleanup)
 
         with patch.object(self.test_migration.test_class, "run") as mock_run:
-            mock_run.side_effect = self.test_migration.test_class.run
             with self.assertRaises(LoaderError):
                 call_command("migrateredis")
             mock_run.assert_not_called()
