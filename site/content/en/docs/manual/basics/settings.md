@@ -43,6 +43,8 @@ In tab `Workspace` you can:
   - `Label` - object label.
   - `Source`- source of creating of objects `MANUAL`, `AUTO` or `SEMI-AUTO`.
   - `Descriptions` - description of attributes.
+  - `Dimensions` - width, height and rotation for rectangles and ellipses.
+
 
 - `Position of a text` - text positioning mode selection:
   - `Auto` - the object details will be automatically placed where free space is.
