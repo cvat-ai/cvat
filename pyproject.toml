@@ -60,6 +60,5 @@ extend-exclude = """
         |views.py
     )
 )
-| ^/cvat/settings/
 | ^/serverless/
 """
