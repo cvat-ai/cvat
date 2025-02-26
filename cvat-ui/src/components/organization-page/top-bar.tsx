@@ -279,7 +279,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     </div>
                 </Col>
             </Row>
-            <Row justify='space-between'>
+            <Row className='cvat-organization-control-bar' justify='space-between'>
                 <Col>
                     <Input.Search
                         enterButton
