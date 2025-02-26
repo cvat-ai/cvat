@@ -67,9 +67,7 @@ for logger in LOGGING["loggers"].values():
 
 LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
 
-PASSWORD_HASHERS = (
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-)
+PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher',)
 
 # When you run ./manage.py test, Django looks at the TEST_RUNNER setting to
 # determine what to do. By default, TEST_RUNNER points to
@@ -85,16 +83,19 @@ class PatchedDiscoverRunner(DiscoverRunner):
         # Used fakeredis for testing (don't affect production redis)
         import django_rq.queues
         from fakeredis import FakeRedis, FakeStrictRedis
+
         simple_redis = FakeRedis()
         strict_redis = FakeStrictRedis()
-        django_rq.queues.get_redis_connection = lambda _, strict: strict_redis \
-            if strict else simple_redis
+        django_rq.queues.get_redis_connection = lambda _, strict: (
+            strict_redis if strict else simple_redis
+        )
 
         # Run all RQ requests syncroniously
         for config in RQ_QUEUES.values():
             config["ASYNC"] = False
 
         super().__init__(*args, **kwargs)
+
 
 # No need to profile unit tests
 INSTALLED_APPS.remove('silk')

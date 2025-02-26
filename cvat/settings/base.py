@@ -42,6 +42,7 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 INTERNAL_IPS = ['127.0.0.1']
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
+
 def generate_secret_key():
     """
     Creates secret_key.py in such a way that multiple processes calling
@@ -50,15 +51,14 @@ def generate_secret_key():
     """
 
     from django.utils.crypto import get_random_string
+
     keys_dir = os.path.join(BASE_DIR, 'keys')
     if not os.path.isdir(keys_dir):
         os.mkdir(keys_dir)
 
-    secret_key_fname = 'secret_key.py' # nosec
+    secret_key_fname = 'secret_key.py'  # nosec
 
-    with tempfile.NamedTemporaryFile(
-        mode='wt', dir=keys_dir, prefix=secret_key_fname + ".",
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode='wt', dir=keys_dir, prefix=secret_key_fname + ".") as f:
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
 
@@ -72,6 +72,7 @@ def generate_secret_key():
             # Somebody else created the secret key first.
             # Discard ours and use theirs.
             pass
+
 
 if not SECRET_KEY:
     try:
@@ -141,15 +142,13 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication'
+        'rest_framework.authentication.BasicAuthentication',
     ],
-    'DEFAULT_VERSIONING_CLASS':
-        'rest_framework.versioning.AcceptHeaderVersioning',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
     'ALLOWED_VERSIONS': ('2.0'),
     'DEFAULT_VERSION': '2.0',
     'VERSION_PARAM': 'version',
-    'DEFAULT_PAGINATION_CLASS':
-        'cvat.apps.engine.pagination.CustomPagination',
+    'DEFAULT_PAGINATION_CLASS': 'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
         'cvat.apps.engine.filters.SimpleFilter',
@@ -158,7 +157,6 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.filters.JsonLogicFilter',
         'cvat.apps.iam.filters.OrganizationFilterBackend',
     ),
-
     'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
@@ -227,7 +225,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-
             ],
         },
     },
@@ -235,7 +232,7 @@ TEMPLATES = [
 
 # IAM settings
 IAM_TYPE = 'BASIC'
-IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
+IAM_BASE_EXCEPTION = None  # a class which will be used by IAM to report errors
 IAM_DEFAULT_ROLE = 'user'
 
 IAM_ADMIN_ROLE = 'admin'
@@ -263,13 +260,14 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 
 # set UI url to redirect after a successful e-mail confirmation
-#changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
+# changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
 ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL = '/auth/email-verification-sent'
 INCORRECT_EMAIL_CONFIRMATION_URL = '/auth/incorrect-email-confirmation'
 
 # Django-RQ
 # https://github.com/rq/django-rq
+
 
 class CVAT_QUEUES(Enum):
     IMPORT_DATA = 'import'
@@ -282,6 +280,7 @@ class CVAT_QUEUES(Enum):
     CLEANING = 'cleaning'
     CHUNKS = 'chunks'
     CONSENSUS = 'consensus'
+
 
 redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
@@ -343,8 +342,10 @@ NUCLIO = {
     'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
     'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)),
     'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'nuclio'),
-    'INVOKE_METHOD': os.getenv('CVAT_NUCLIO_INVOKE_METHOD',
-        default='dashboard' if 'KUBERNETES_SERVICE_HOST' in os.environ else 'direct'),
+    'INVOKE_METHOD': os.getenv(
+        'CVAT_NUCLIO_INVOKE_METHOD',
+        default='dashboard' if 'KUBERNETES_SERVICE_HOST' in os.environ else 'direct',
+    ),
 }
 
 assert NUCLIO['INVOKE_METHOD'] in {'dashboard', 'direct'}
@@ -375,7 +376,7 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.dataset_manager.cron.cleanup_tmp_directory',
         # Run once a day
         'cron_string': '0 18 * * *',
-    }
+    },
 ]
 
 # JavaScript and CSS compression
@@ -383,7 +384,7 @@ PERIODIC_RQ_JOBS = [
 
 COMPRESS_CSS_FILTERS = [
     'compressor.filters.css_default.CssAbsoluteFilter',
-    'compressor.filters.cssmin.rCSSMinFilter'
+    'compressor.filters.cssmin.rCSSMinFilter',
 ]
 COMPRESS_JS_FILTERS = []  # No compression for js files (template literals were compressed bad)
 
@@ -486,12 +487,8 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'vector': {
-            'format': '%(message)s',
-        },
-        'standard': {
-            'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
-        }
+        'vector': {'format': '%(message)s'},
+        'standard': {'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'},
     },
     'handlers': {
         'console': {
@@ -504,7 +501,7 @@ LOGGING = {
             'level': 'DEBUG',
             'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server.log'),
             'formatter': 'standard',
-            'maxBytes': 1024*1024*50, # 50 MB
+            'maxBytes': 1024 * 1024 * 50,  # 50 MB
             'backupCount': 5,
         },
         'dataset_handler': {
@@ -512,7 +509,7 @@ LOGGING = {
             'level': 'DEBUG',
             'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server_dataset.log'),
             'formatter': 'standard',
-            'maxBytes': 1024*1024*50, # 50 MB
+            'maxBytes': 1024 * 1024 * 50,  # 50 MB
             'backupCount': 3,
         },
         'vector': {
@@ -527,7 +524,7 @@ LOGGING = {
             'version': 1,
             'message_type': 'django',
             'database_path': EVENTS_LOCAL_DB_FILE,
-        }
+        },
     },
     'root': {
         'handlers': ['console', 'server_file'],
@@ -536,21 +533,18 @@ LOGGING = {
         'cvat': {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
-
         'dataset_logger': {
-            'handlers': ['dataset_handler']
+            'handlers': ['dataset_handler'],
         },
-
         'django': {
             'level': 'INFO',
         },
-
         'vector': {
             'handlers': [],
             'level': 'INFO',
             # set True for debug
-            'propagate': False
-        }
+            'propagate': False,
+        },
     },
 }
 
@@ -560,7 +554,7 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
-DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None  # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
 
 redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
@@ -581,10 +575,10 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
     'media': {
-        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         "LOCATION": f'redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}',
-        'TIMEOUT' : CVAT_CHUNK_CACHE_TTL,
-    }
+        'TIMEOUT': CVAT_CHUNK_CACHE_TTL,
+    },
 }
 
 USE_CACHE = True
@@ -595,7 +589,6 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'upload-length',
     'tus-version',
     'tus-resumable',
-
     # extended upload protocol headers
     'upload-start',
     'upload-finish',
@@ -603,7 +596,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-organization',
 ]
 
-TUS_MAX_FILE_SIZE = 26843545600 # 25gb
+TUS_MAX_FILE_SIZE = 26843545600  # 25gb
 TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 
 # This setting makes request secure if X-Forwarded-Proto: 'https' header is specified by our proxy
@@ -639,10 +632,8 @@ SPECTACULAR_SETTINGS = {
         'name': 'MIT License',
         'url': 'https://en.wikipedia.org/wiki/MIT_License',
     },
-
     'SERVE_PUBLIC': True,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
-
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
@@ -658,16 +649,14 @@ SPECTACULAR_SETTINGS = {
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
-
+    #
     # TODO: Our current implementation does not suppose this.
     # Need to reconsider this later. It happens, for example,
     # in TaskSerializer for data-originated fields - they can be empty.
     # https://github.com/tfranzel/drf-spectacular/issues/54
     'COMPONENT_NO_READ_ONLY_REQUIRED': True,
-
     # Required for correct file upload type (bytes)
     'COMPONENT_SPLIT_REQUEST': True,
-
     'ENUM_NAME_OVERRIDES': {
         'LabelType': 'cvat.apps.engine.models.LabelType',
         'ShapeType': 'cvat.apps.engine.models.ShapeType',
@@ -686,7 +675,6 @@ SPECTACULAR_SETTINGS = {
         'ValidationMode': 'cvat.apps.engine.models.ValidationMode',
         'FrameSelectionMethod': 'cvat.apps.engine.models.JobFrameSelectionMethod',
     },
-
     # Coercion of {pk} to {id} is controlled by SCHEMA_COERCE_PATH_PK. Additionally,
     # some libraries (e.g. drf-nested-routers) use "_pk" suffixed path variables.
     # This setting globally coerces path variables like "{user_pk}" to "{user_id}".
@@ -743,14 +731,14 @@ DATABASES = {
     }
 }
 
-BUCKET_CONTENT_MAX_PAGE_SIZE =  500
+BUCKET_CONTENT_MAX_PAGE_SIZE = 500
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
 ASSET_MAX_SIZE_MB = 10
-ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', )
+ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf')
 ASSET_MAX_IMAGE_SIZE = 1920
 ASSET_MAX_COUNT_PER_GUIDE = 30
 

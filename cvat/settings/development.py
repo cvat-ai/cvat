@@ -40,9 +40,7 @@ CORS_REPLACE_HTTPS_REFERER = True
 IAM_OPA_HOST = 'http://localhost:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 
-INSTALLED_APPS += [
-    'silk'
-]
+INSTALLED_APPS += ['silk']
 
 MIDDLEWARE += [
     'silk.middleware.SilkyMiddleware',
