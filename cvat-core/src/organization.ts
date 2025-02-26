@@ -426,7 +426,7 @@ Object.defineProperties(Organization.prototype.leave, {
         value: async function implementation(user: User) {
             checkObjectType('user', user, null, User);
             if (typeof this.id === 'number') {
-                const result = await serverProxy.organizations.members({
+                const result = await serverProxy.organizations.members(this.slug, {
                     page: 1,
                     pageSize: 10,
                     org: this.slug,
