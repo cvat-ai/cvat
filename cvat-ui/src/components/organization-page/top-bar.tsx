@@ -37,6 +37,7 @@ export interface Props {
     organizationInstance: any;
     userInstance: any;
     fetchMembers: () => void;
+    onSearch: (query: string) => void;
 }
 
 export enum MenuActions {
@@ -45,7 +46,9 @@ export enum MenuActions {
 }
 
 function OrganizationTopBar(props: Props): JSX.Element {
-    const { organizationInstance, userInstance, fetchMembers } = props;
+    const {
+        organizationInstance, userInstance, fetchMembers, onSearch,
+    } = props;
     const {
         owner, createdDate, description, updatedDate, slug, name, contact,
     } = organizationInstance;
@@ -275,7 +278,17 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         <Text type='secondary'>{`Updated ${moment(updatedDate).fromNow()}`}</Text>
                     </div>
                 </Col>
-                <Col span={12} className='cvat-organization-top-bar-buttons-block'>
+            </Row>
+            <Row justify='space-between'>
+                <Col>
+                    <Input.Search
+                        enterButton
+                        onSearch={onSearch}
+                        className='cvat-organization-search-bar'
+                        placeholder='Search ...'
+                    />
+                </Col>
+                <Col className='cvat-organization-top-bar-buttons-block'>
                     <Space align='end'>
                         {!(owner && userID === owner.id) ? (
                             <Button

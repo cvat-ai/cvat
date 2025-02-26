@@ -6,6 +6,8 @@
 @import 'base';
 
 .cvat-organization-page {
+    display: flex;
+    flex-direction: column;
     height: 100%;
     padding-top: $grid-unit-size * 2;
     width: $grid-unit-size * 120;
@@ -82,23 +84,10 @@
         }
     }
 
-    > div:nth-child(2) {
+    .cvat-organization-members-list {
+        flex-grow: 1;
         overflow: auto;
-        height: auto;
-        max-height: 60%;
         margin-top: $grid-unit-size;
-    }
-
-    @media screen and (height >= 900px) {
-        > div:nth-child(2) {
-            max-height: 65%;
-        }
-    }
-
-    @media screen and (height >= 1080px) {
-        > div:nth-child(2) {
-            max-height: 70%;
-        }
     }
 }
 

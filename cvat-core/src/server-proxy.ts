@@ -1915,17 +1915,15 @@ async function deleteOrganization(id: number): Promise<void> {
     }
 }
 
-async function getOrganizationMembers(orgSlug, page, pageSize, filters = {}) {
+async function getOrganizationMembers(orgSlug, params = {}) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/memberships`, {
             params: {
-                ...filters,
+                ...params,
                 org: orgSlug,
-                page,
-                page_size: pageSize,
             },
         });
     } catch (errorData) {

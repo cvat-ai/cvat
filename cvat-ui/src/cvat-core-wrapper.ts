@@ -15,6 +15,7 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
+    OrganizationMembersFilter,
 } from 'cvat-core/src/server-response-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
@@ -130,4 +131,5 @@ export type {
     ProjectOrTaskOrJob,
     RequestOperation,
     UpdateStatusData,
+    OrganizationMembersFilter,
 };
