@@ -32,6 +32,7 @@ import {
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
+    composeShapeDimensions,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -3120,6 +3121,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 `${withSource ? `(${source})` : ''}`).style({
                     'text-transform': 'uppercase',
                 });
+
                 if (withDimensions && ['rectangle', 'ellipse'].includes(state.shapeType)) {
                     let width = state.points[2] - state.points[0];
                     let height = state.points[3] - state.points[1];
@@ -3129,34 +3131,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         height *= -2;
                     }
 
-                    const normWidth = width.toFixed(1);
-                    const normHeight = height.toFixed(1);
-                    const normRot = state.rotation === 0 ? '' : `${state.rotation.toFixed(1)}\u00B0`;
-
                     block
-                        .tspan(`${normWidth}x${normHeight}px ${normRot}`)
+                        .tspan(composeShapeDimensions(width, height, state.rotation))
                         .attr({
-                            dy: '1em',
+                            dy: '1.25em',
                             x: 0,
                         })
                         .addClass('cvat_canvas_text_dimensions');
                 }
                 if (withDescriptions) {
-                    for (const desc of descriptions) {
+                    descriptions.forEach((desc: string, idx: number) => {
                         block
                             .tspan(`${desc}`)
                             .attr({
-                                dy: '1em',
+                                dy: idx === 0 ? '1.25em' : '1em',
                                 x: 0,
                             })
                             .addClass('cvat_canvas_text_description');
-                    }
+                    });
                 }
                 if (withAttr) {
-                    for (const attrID of Object.keys(attributes)) {
-                        const values = `${attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID]}`.split('\n');
+                    Object.keys(attributes).forEach((attrID: string, idx: number) => {
+                        const values = `${attributes[attrID] === undefinedAttrValue ?
+                            '' : attributes[attrID]}`.split('\n');
                         const parent = block.tspan(`${attrNames[attrID]}: `)
-                            .attr({ attrID, dy: '1em', x: 0 }).addClass('cvat_canvas_text_attribute');
+                            .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
+                            .addClass('cvat_canvas_text_attribute');
                         values.forEach((attrLine: string, index: number) => {
                             parent
                                 .tspan(attrLine)
@@ -3164,7 +3164,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     dy: index === 0 ? 0 : '1em',
                                 });
                         });
-                    }
+                    });
                 }
             })
             .move(0, 0)
