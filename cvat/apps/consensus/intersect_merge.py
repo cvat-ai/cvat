@@ -49,17 +49,24 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
-    _cluster_count: int = attrs.field(init=False)
+    _clusters: dict[int, list[dm.Annotation]] | None = attrs.field(init=False)
 
     @property
     def cluster_count(self) -> int:
-        if self._cluster_count is None:
+        if self._clusters is None:
             raise AttributeError
 
-        return self._cluster_count
+        return len(self._clusters)
+
+    @property
+    def clusters(self) -> Sequence[Sequence[dm.Annotation]]:
+        if self._clusters is None:
+            raise AttributeError
+
+        return self._clusters.values()
 
     def __call__(self, *datasets):
-        self._cluster_count = 0
+        self._clusters = {}
         return dm.Dataset(super().__call__(*datasets))
 
     def _find_cluster_attrs(self, cluster, ann):
@@ -68,7 +75,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         return merged_attributes
 
     def _merge_clusters(self, t, clusters):
-        self._cluster_count += len(clusters)
+        self._clusters.update((id(c), c) for c in clusters)
         return super()._merge_clusters(t, clusters)
 
     def _check_annotation_distance(self, t, merged_clusters):
@@ -616,29 +623,32 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
                 v: len(g) for v, g in points_by_visibility.items()
             }
 
-            is_absent_score = visibility_scores.pop(dm.Points.Visibility.absent, 0)
-            keypoint_scores.append(
-                max(is_absent_score, len(keypoint_cluster) - is_absent_score)
-                / len(keypoint_cluster)
-            )  # TODO: maybe consider point distances as well
+            visibility_score = visibility_scores.pop(dm.Points.Visibility.absent, 0)
+            if visibility_score > len(keypoint_cluster) // 2:
+                merged_coords = [0, 0]
+                merged_visibility = dm.Points.Visibility.absent
+            else:
+                visibility_score = len(keypoint_cluster) - visibility_score
+                cluster_visible_points = points_by_visibility.get(
+                    dm.Points.Visibility.hidden, []
+                ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
 
-            merged_is_absent = is_absent_score > len(keypoint_cluster) // 2
-            if merged_is_absent:
-                continue
+                point_coords = np.array([p.points for p in cluster_visible_points])
+                mean_point_coords = np.average(point_coords, axis=0)
+                mean_distances = np.linalg.norm(point_coords - mean_point_coords, axis=1)
 
-            merged_visibility, _ = max(visibility_scores.items(), key=lambda e: e[1])
+                mean_nearest_point_idx = np.argmin(mean_distances)
+                merged_coords = point_coords[mean_nearest_point_idx].tolist()
+                merged_visibility = cluster_visible_points[mean_nearest_point_idx].visibility[0]
 
-            cluster_visible_points = points_by_visibility.get(
-                dm.Points.Visibility.hidden, []
-            ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
-
-            point_coords = np.array([p.points for p in cluster_visible_points])
-            mean_point_coords = np.average(point_coords, axis=0)
-            mean_distances = np.linalg.norm(point_coords - mean_point_coords, axis=1)
-            mean_nearest_coords = point_coords[np.argmin(mean_distances)].tolist()
+            visibility_score /= len(keypoint_cluster)
+            keypoint_scores.append(visibility_score)  # TODO: maybe consider spatial distances too
 
             merged_skeleton_points[keypoint_label_id] = dm.Points(
-                mean_nearest_coords, visibility=[merged_visibility], label=keypoint_label_id
+                merged_coords,
+                visibility=[merged_visibility],
+                label=keypoint_label_id,
+                attributes={"score": visibility_score},
             )
 
         import scipy.stats

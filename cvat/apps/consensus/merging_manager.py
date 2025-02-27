@@ -125,19 +125,68 @@ class _TaskMerger:
         )
         merged_dataset = merger(*consensus_datasets)
 
-        dataset_consensus_agreed_annotations = sum(
-            a.attributes.get("score", 1) for item in merged_dataset for a in item.annotations
-        )
-        dataset_consensus_total_annotations = merger.cluster_count
-        agreement_score = dataset_consensus_agreed_annotations / (
-            dataset_consensus_total_annotations or 1
-        )
+        def compute_agreement(merged_dataset: dm.Dataset) -> tuple[int, int]:
+            agreed_annotations = sum(
+                a.attributes.get("score", 1) for item in merged_dataset for a in item.annotations
+            )
+            total_annotations = merger.cluster_count
+            return agreed_annotations, total_annotations
+
+        def compute_agreement_per_label(
+            merged_dataset: dm.Dataset,
+        ) -> dict[tuple[str, str], tuple[int, int]]:
+            merged_cat = merged_dataset.categories()
+            merged_label_cat: dm.LabelCategories = merged_cat[dm.AnnotationType.label]
+
+            counts_per_label = {}  # merged_label_id -> (agreed, total)
+
+            for cluster in merger.clusters:
+                label_id = cluster[0].label
+                label_counts = counts_per_label.setdefault(label_id, [0, 0])
+                label_counts[1] += 1
+
+                cluster_label = merged_label_cat[label_id]
+                for sublabel_id, sublabel in enumerate(merged_label_cat.items):
+                    if sublabel.parent == cluster_label.name:
+                        label_counts = counts_per_label.setdefault(sublabel_id, [0, 0])
+                        label_counts[1] += 1
+
+            for item in merged_dataset:
+                for a in item.annotations:
+                    ann_score = a.attributes.get("score", 1)
+                    label_counts = counts_per_label.setdefault(a.label, [0, 0])
+                    label_counts[0] += ann_score
+
+                    for element in getattr(a, "elements", []):
+                        label_counts = counts_per_label.setdefault(element.label, [0, 0])
+                        label_counts[0] += element.attributes.get("score", 1)
+
+            return {
+                (merged_label_cat[label_id].parent, merged_label_cat[label_id].name): v
+                for label_id, v in counts_per_label.items()
+            }
+
+        def compute_agreement_per_source(merged_dataset: dm.Dataset) -> dict[int, tuple[int, int]]:
+            # compute quality report for merged and each source
+            # we don't output exactly the source annotations in some algorithms
+            raise NotImplementedError
+
+        agreement = compute_agreement(merged_dataset)
+        agreement_per_label = compute_agreement_per_label(merged_dataset)
+
+        agreement_per_source = {}  # { source job id -> float [0; 1] }
+        agreement_per_source_per_label = {}  # { source job id -> { label name -> float [0; 1] } }
 
         slogger.task[self._task.id].info(
             f"Consensus scores for task {self._task.id} job {parent_job_id}: "
-            f"Agreement: {agreement_score * 100:.2f}, "
-            f"matched {dataset_consensus_agreed_annotations}, "
-            f"total {dataset_consensus_total_annotations}",
+            f"Agreement overall: {agreement[0] / agreement[1] * 100:.2f}, "
+        )
+        slogger.task[self._task.id].info(f"Agreement per label: ")
+        slogger.task[self._task.id].info(
+            "\n  ".join(
+                f"{label}: {matched / total * 100:.2f}"
+                for label, (matched, total) in agreement_per_label.items()
+            )
         )
 
         # Delete the existing annotations in the job.
