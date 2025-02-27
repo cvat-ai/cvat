@@ -475,7 +475,7 @@ context('Ground truth jobs', () => {
                 });
             });
         });
-        describe.only('GT jobs from videos', () => {
+        describe('GT jobs from videos', () => {
             const serverFilesVideo = ['videos/video_without_valid_keyframes.mp4'];
             before(() => {
                 createAndOpenTask(
