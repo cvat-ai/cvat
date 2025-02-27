@@ -1527,7 +1527,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 {"format", "filename", "action", "location", "cloud_storage_id"}
                 & request.query_params.keys()
             ):
-                return HttpResponseGone(f"API endpoint no longer handles exporting process")
+                return HttpResponseGone("API endpoint no longer handles exporting process")
 
             data = dm.task.get_task_data(self._object.pk)
             return Response(data)
@@ -2060,7 +2060,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 {"format", "filename", "location", "action", "cloud_storage_id"}
                 & request.query_params.keys()
             ):
-                return HttpResponseGone(f"API endpoint no longer handles dataset exporting process")
+                return HttpResponseGone("API endpoint no longer handles dataset exporting process")
 
             annotations = dm.task.get_job_data(self._object.pk)
             return Response(annotations)
