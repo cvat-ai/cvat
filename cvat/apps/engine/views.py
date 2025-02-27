@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from types import SimpleNamespace
-from typing import Any, Callable, Optional, Type, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 import django_rq
 from attr.converters import to_bool
@@ -54,7 +54,6 @@ from rest_framework.exceptions import APIException, NotFound, PermissionDenied, 
 from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
@@ -487,10 +486,57 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if request.method == "GET":
             if request.query_params.get("action") == "import_status":
-                if rq_id := request.query_params.get("rq_id"):
-                    return reverse('requests', request=request, args=[rq_id])
-                return HttpResponseBadRequest("Missing rq_id")
-            # we don't redirect to the new API here since this endpoint used not only to check the status
+                # We cannot redirect to the requests API here because
+                # it wouldn't be compatible with the outdated API:
+                # the current API endpoint returns a different status codes
+                # depends on rq job status (like 201 - finished),
+                # while GET /api/requests/rq_id returns a 200 status code
+                # if such a request exists regardless of job status.
+
+                deprecation_timestamp = int(datetime(2025, 2, 27, tzinfo=timezone.utc).timestamp())
+                response_headers  = {
+                    "Deprecation": f"@{deprecation_timestamp}"
+                }
+
+                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                rq_id = request.query_params.get('rq_id')
+                if not rq_id:
+                    return Response(
+                        'The rq_id param should be specified in the query parameters',
+                        status=status.HTTP_400_BAD_REQUEST,
+                        headers=response_headers,
+                    )
+
+                rq_job = queue.fetch_job(rq_id)
+
+                if rq_job is None:
+                    return Response(status=status.HTTP_404_NOT_FOUND, headers=response_headers)
+                # check that the user has access to the current rq_job
+                elif not is_rq_job_owner(rq_job, request.user.id):
+                    return Response(status=status.HTTP_403_FORBIDDEN, headers=response_headers)
+
+                if rq_job.is_finished:
+                    rq_job.delete()
+                    return Response(status=status.HTTP_201_CREATED, headers=response_headers)
+                elif rq_job.is_failed:
+                    exc_info = process_failed_job(rq_job)
+
+                    return Response(
+                        data=str(exc_info),
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        headers=response_headers
+                    )
+                else:
+                    return Response(
+                        data=self._get_rq_response(
+                            settings.CVAT_QUEUES.IMPORT_DATA.value,
+                            rq_id,
+                        ),
+                        status=status.HTTP_202_ACCEPTED,
+                        headers=response_headers
+                    )
+
+            # we cannot redirect to the new API here since this endpoint used not only to check the status
             # of exporting process|download a result file, but also to initiate export process
             return HttpResponseGone("API endpoint is no longer handles exporting process")
 
