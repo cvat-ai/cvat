@@ -288,5 +288,5 @@ allow if {
 
 allow if {
     input.scope == utils.DOWNLOAD_EXPORTED_FILE
-    input.auth.user.id == resource.rq_job.owner.id
+    input.auth.user.id == input.resource.rq_job.owner.id
 }
