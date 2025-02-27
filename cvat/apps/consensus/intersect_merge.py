@@ -49,13 +49,27 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
+    _cluster_count: int = attrs.field(init=False)
+
+    @property
+    def cluster_count(self) -> int:
+        if self._cluster_count is None:
+            raise AttributeError
+
+        return self._cluster_count
+
     def __call__(self, *datasets):
+        self._cluster_count = 0
         return dm.Dataset(super().__call__(*datasets))
 
     def _find_cluster_attrs(self, cluster, ann):
         merged_attributes = super()._find_cluster_attrs(cluster, ann)
         merged_attributes["source"] = "consensus"
         return merged_attributes
+
+    def _merge_clusters(self, t, clusters):
+        self._cluster_count += len(clusters)
+        return super()._merge_clusters(t, clusters)
 
     def _check_annotation_distance(self, t, merged_clusters):
         return  # disabled, need to clarify how to compare merged instances correctly
@@ -450,7 +464,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
 
     def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
         shape = self.merge_cluster_shape_mean_nearest(cluster)
-        shape_score = 1  # sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
+        shape_score = sum(max(0, self.distance(shape, s)) for s in cluster) / len(cluster)
         return shape, shape_score
 
     def merge_cluster(self, cluster):
@@ -495,18 +509,23 @@ class LineMerger(ShapeMerger, LineMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class SkeletonMerger(ShapeMerger, SkeletonMatcher):
-    def merge_cluster_shape_mean_nearest(self, cluster):
+    def merge_cluster_shape(self, cluster: Sequence[dm.Annotation]) -> tuple[dm.Annotation, float]:
         return self.merge_cluster_shape_structural_nearest(cluster)
-        # dist = {}
-        # for idx, a in enumerate(cluster):
-        #     a_cluster_distance = 0
-        #     for b in cluster:
-        #         # (1 - x) because it's actually a similarity function
-        #         a_cluster_distance += 1 - self.distance(a, b)
 
-        #     dist[idx] = a_cluster_distance / len(cluster)
+    def merge_cluster_shape_mean_nearest(self, cluster):
+        dist = {}
+        for idx, a in enumerate(cluster):
+            a_cluster_distance = 0
+            for b in cluster:
+                # (1 - x) because it's actually a similarity function
+                a_cluster_distance += 1 - self.distance(a, b)
 
-        # return cluster[min(dist, key=dist.get)]
+            dist[idx] = a_cluster_distance / len(cluster)
+
+        cluster_shape = cluster[min(dist, key=dist.get)]
+        cluster_score = sum(max(0, self.distance(cluster_shape, s)) for s in cluster) / len(cluster)
+
+        return cluster_shape, cluster_score
 
     def merge_cluster_shape_structural_average(self, cluster: list[dm.Skeleton]):
         merged_cat: dm.CategoriesInfo = self._context._categories
@@ -529,29 +548,43 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
                 keypoint_label_id = merged_label_cat.find(*point_label_key)[0]
                 keypoint_clusters.setdefault(keypoint_label_id, []).append(src_point)
 
+        keypoint_scores = []
+
         for keypoint_label_id, keypoint_cluster in keypoint_clusters.items():
             points_by_visibility = grouped(keypoint_cluster, key=lambda p: p.visibility[0])
 
             visibility_scores: dict[dm.Points.Visibility, float] = {
-                v: len(g) / len(keypoint_cluster) for v, g in points_by_visibility.items()
+                v: len(g) for v, g in points_by_visibility.items()
             }
 
-            merged_visibility, visibility_score = max(visibility_scores.items(), key=lambda e: e[1])
-            if merged_visibility == dm.Points.Visibility.absent or visibility_score < self.quorum:
+            is_absent_score = visibility_scores.pop(dm.Points.Visibility.absent, 0)
+            keypoint_scores.append(
+                max(is_absent_score, len(keypoint_cluster) - is_absent_score)
+                / len(keypoint_cluster)
+            )  # TODO: maybe consider point distances as well
+
+            merged_is_absent = is_absent_score > len(keypoint_cluster) // 2
+            if merged_is_absent:
                 continue
 
-            merged_visibility_group = points_by_visibility.get(
+            merged_visibility, _ = max(visibility_scores.items(), key=lambda e: e[1])
+
+            cluster_visible_points = points_by_visibility.get(
                 dm.Points.Visibility.hidden, []
             ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
 
-            point_positions = np.array([p.points for p in merged_visibility_group])
-            merged_pos = np.average(point_positions, axis=0)
+            point_coords = np.array([p.points for p in cluster_visible_points])
+            mean_point_coords = np.average(point_coords, axis=0).tolist()
 
             merged_skeleton_points[keypoint_label_id] = dm.Points(
-                merged_pos, visibility=[merged_visibility], label=keypoint_label_id
+                mean_point_coords, visibility=[merged_visibility], label=keypoint_label_id
             )
 
-        return dm.Skeleton(list(merged_skeleton_points.values()))
+        import scipy.stats
+
+        cluster_score = scipy.stats.gmean(keypoint_scores)
+
+        return dm.Skeleton(list(merged_skeleton_points.values())), cluster_score
 
     def merge_cluster_shape_structural_nearest(self, cluster: list[dm.Skeleton]):
         merged_cat: dm.CategoriesInfo = self._context._categories
@@ -574,6 +607,8 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
                 keypoint_label_id = merged_label_cat.find(*point_label_key)[0]
                 keypoint_clusters.setdefault(keypoint_label_id, []).append(src_point)
 
+        keypoint_scores = []
+
         for keypoint_label_id, keypoint_cluster in keypoint_clusters.items():
             points_by_visibility = grouped(keypoint_cluster, key=lambda p: p.visibility[0])
 
@@ -581,9 +616,13 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
                 v: len(g) for v, g in points_by_visibility.items()
             }
 
-            merged_is_absent = (
-                visibility_scores.pop(dm.Points.Visibility.absent, 0) > len(keypoint_cluster) // 2
-            )
+            is_absent_score = visibility_scores.pop(dm.Points.Visibility.absent, 0)
+            keypoint_scores.append(
+                max(is_absent_score, len(keypoint_cluster) - is_absent_score)
+                / len(keypoint_cluster)
+            )  # TODO: maybe consider point distances as well
+
+            merged_is_absent = is_absent_score > len(keypoint_cluster) // 2
             if merged_is_absent:
                 continue
 
@@ -602,4 +641,8 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
                 mean_nearest_coords, visibility=[merged_visibility], label=keypoint_label_id
             )
 
-        return dm.Skeleton(list(merged_skeleton_points.values()))
+        import scipy.stats
+
+        cluster_score = scipy.stats.gmean(keypoint_scores)
+
+        return dm.Skeleton(list(merged_skeleton_points.values())), cluster_score

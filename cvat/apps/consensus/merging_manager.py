@@ -17,6 +17,7 @@ from cvat.apps.consensus.intersect_merge import IntersectMerge
 from cvat.apps.consensus.models import ConsensusSettings
 from cvat.apps.dataset_manager.bindings import import_dm_annotations
 from cvat.apps.dataset_manager.task import PatchAction, patch_job_data
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     DimensionType,
     Job,
@@ -31,6 +32,8 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.quality_reports import ComparisonParameters, JobDataProvider
+
+slogger = ServerLogManager(__name__)
 
 
 class _TaskMerger:
@@ -121,6 +124,21 @@ class _TaskMerger:
             )
         )
         merged_dataset = merger(*consensus_datasets)
+
+        dataset_consensus_agreed_annotations = sum(
+            a.attributes.get("score", 1) for item in merged_dataset for a in item.annotations
+        )
+        dataset_consensus_total_annotations = merger.cluster_count
+        agreement_score = dataset_consensus_agreed_annotations / (
+            dataset_consensus_total_annotations or 1
+        )
+
+        slogger.task[self._task.id].info(
+            f"Consensus scores for task {self._task.id} job {parent_job_id}: "
+            f"Agreement: {agreement_score * 100:.2f}, "
+            f"matched {dataset_consensus_agreed_annotations}, "
+            f"total {dataset_consensus_total_annotations}",
+        )
 
         # Delete the existing annotations in the job.
         # If we don't delete existing annotations, the imported annotations
