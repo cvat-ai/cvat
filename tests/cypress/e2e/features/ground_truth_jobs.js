@@ -480,8 +480,7 @@ context('Ground truth jobs', () => {
             before(() => {
                 createAndOpenTask(
                     serverFilesVideo,
-                    { ...defaultValidationParams, frameCount: 3, randomSeed: 42 },
-                    // The crash appears in the end frames
+                    { ...defaultValidationParams, randomSeed: 42 },
                 );
                 cy.get('.cvat-task-job-list').within(() => {
                     cy.contains('a', `Job #${groundTruthJobID}`).click();
