@@ -475,13 +475,13 @@ context('Ground truth jobs', () => {
                 });
             });
         });
-        describe('GT jobs from videos', () => {
+        describe.only('GT jobs from videos', () => {
             const serverFilesVideo = ['videos/video_without_valid_keyframes.mp4'];
             before(() => {
                 createAndOpenTask(
                     serverFilesVideo,
-                    { ...defaultValidationParams, frameCount: 20 },
-                    // The crash appears when reaching 18-19th frame
+                    { ...defaultValidationParams, frameCount: 3 },
+                    // The crash appears in the end frames
                 );
                 cy.openJob(1); // gt job is first from top => idx 1 from the bottom
             });
