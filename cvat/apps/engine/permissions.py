@@ -227,6 +227,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 
 class ProjectPermission(OpenPolicyAgentPermission):
     obj: Optional[Project]
+    rq_job_id: RQId | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -251,25 +252,18 @@ class ProjectPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'project':
             assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+
             for scope in cls.get_scopes(request, view, obj):
+                scope_params = {}
+                if cls.Scopes.DOWNLOAD_EXPORTED_FILE == scope:
+                    rq_id = request.query_params.get("rq_id")
+                    if not rq_id:
+                        raise ValidationError("Missing request id in query parameters")
+                    scope_params["rq_job_id"] = RQId.parse(rq_id)
+
                 self = cls.create_base_perm(request, view, scope, iam_context, obj,
-                    assignee_id=assignee_id)
+                    assignee_id=assignee_id, **scope_params)
                 permissions.append(self)
-
-
-                if scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    # check that a user still has rights to export project dataset|backup
-                    rq_id = request.query_params.get('rq_id')
-                    assert rq_id
-                    parsed_rq_id = RQId.parse(rq_id)
-                    if (
-                        # TODO: move these checks to view class
-                        parsed_rq_id.action != RequestAction.EXPORT
-                        or parsed_rq_id.target != RequestTarget.PROJECT
-                        or parsed_rq_id.identifier != obj.id
-                        or parsed_rq_id.user_id != iam_context.get('user_id', request.user.id)
-                    ):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
 
             if view.action == 'tasks':
                 perm = TaskPermission.create_scope_list(request, iam_context)
@@ -404,10 +398,19 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 } if self.org_id else None,
             }
 
+        if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+            # extend data with rq job owner
+            data["rq_job"] = {
+                "owner": {
+                    "id": self.rq_job_id.user_id if self.rq_job_id else None
+                }
+            }
+
         return data
 
 class TaskPermission(OpenPolicyAgentPermission):
     obj: Optional[Task]
+    rq_job_id: RQId | None
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -460,18 +463,10 @@ class TaskPermission(OpenPolicyAgentPermission):
                     params['owner_id'] = owner
 
                 elif scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    # check that a user still has rights to export task dataset|backup
-                    rq_id = request.query_params.get('rq_id')
-                    assert rq_id
-                    parsed_rq_id = RQId.parse(rq_id)
-                    if (
-                        # TODO: move these checks to view class
-                        parsed_rq_id.action != RequestAction.EXPORT
-                        or parsed_rq_id.target != RequestTarget.TASK
-                        or parsed_rq_id.identifier != obj.id
-                        or parsed_rq_id.user_id != iam_context.get('user_id', request.user.id)
-                    ):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
+                    rq_id = request.query_params.get("rq_id")
+                    if not rq_id:
+                        raise ValidationError("Missing request id in query parameters")
+                    params["rq_job_id"] = RQId.parse(rq_id)
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
                 permissions.append(self)
@@ -658,11 +653,20 @@ class TaskPermission(OpenPolicyAgentPermission):
                 } if project is not None else None,
             }
 
+        if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+            # extend data with rq job owner
+            data["rq_job"] = {
+                "owner": {
+                    "id": self.rq_job_id.user_id if self.rq_job_id else None
+                }
+            }
+
         return data
 
 class JobPermission(OpenPolicyAgentPermission):
     task_id: Optional[int]
     obj: Optional[Job]
+    rq_job_id: RQId | None
 
     class Scopes(StrEnum):
         CREATE = 'create'
@@ -709,18 +713,10 @@ class JobPermission(OpenPolicyAgentPermission):
                         ))
 
                 elif scope == cls.Scopes.DOWNLOAD_EXPORTED_FILE:
-                    # check that a user still has rights to export task dataset|backup
-                    rq_id = request.query_params.get('rq_id')
-                    assert rq_id
-                    parsed_rq_id = RQId.parse(rq_id)
-                    if (
-                        # TODO: move these checks to view class
-                        parsed_rq_id.action != RequestAction.EXPORT
-                        or parsed_rq_id.target != RequestTarget.JOB
-                        or parsed_rq_id.identifier != obj.id
-                        or parsed_rq_id.user_id != iam_context.get('user_id', request.user.id)
-                    ):
-                        raise PermissionDenied('You don\'t have permission to perform this action')
+                    rq_id = request.query_params.get("rq_id")
+                    if not rq_id:
+                        raise ValidationError("Missing request id in query parameters")
+                    scope_params["rq_job_id"] = RQId.parse(rq_id)
 
                 self = cls.create_base_perm(request, view, scope, iam_context, obj, **scope_params)
                 permissions.append(self)
@@ -863,6 +859,14 @@ class JobPermission(OpenPolicyAgentPermission):
                     "owner": { "id": task.project.owner_id },
                     "assignee": { "id": task.project.assignee_id }
                 } if task.project else None
+            }
+
+        if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+            # extend data with rq job owner
+            data["rq_job"] = {
+                "owner": {
+                    "id": self.rq_job_id.user_id if self.rq_job_id else None
+                }
             }
 
         return data
