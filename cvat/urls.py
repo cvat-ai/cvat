@@ -20,7 +20,7 @@ Including another URLconf
 
 from django.apps import apps
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -51,3 +51,6 @@ if apps.is_installed("health_check"):
 
 if apps.is_installed("cvat.apps.analytics_report"):
     urlpatterns.append(path("api/", include("cvat.apps.analytics_report.urls")))
+
+if apps.is_installed("cvat.apps.consensus"):
+    urlpatterns.append(path("api/", include("cvat.apps.consensus.urls")))

@@ -470,288 +470,6 @@
   }
 },
 {
-  "model": "sessions.session",
-  "pk": "3p7i7jibc6g827i39r8e0ce5i9f1orzp",
-  "fields": {
-    "session_data": ".eJxVjDEOAiEQAP9CbQiwgGBp7xsIC6ycGkiOu8r4d0NyhbYzk3mzEPethn2UNSyZXZhkp1-GMT1LmyI_Yrt3nnrb1gX5TPhhB7_1XF7Xo_0b1Djq3AoglJTJACKS9zGB0eAdopNkz6TIWq2LLQ611gkEgjFJCTIChFPs8wX0UDee:1p26BE:nXJF4Fl6fGAvhi1ZZfLr4WJSgvc53poHLXXAM5V6NdU",
-    "expire_date": "2022-12-19T07:46:24.799Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "5x9v6r58e4l9if78anupog0ittsq2w3j",
-  "fields": {
-    "session_data": ".eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI",
-    "expire_date": "2022-03-07T10:37:08.963Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "8r8hzr05yskg13ugvyysz5mq67yu0q09",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2pCh1AIu3fcMZIYZbNVAUtqV8e7apAvd_vfef6mI2zrFrckSZ1YXZdTpdyNMDyk74DuWW9WplnWZSe-KPmjTY2V5Xg_372DCNn3rkIZEASSjiAUx3RkkEHXOsA_kDLAAos0eemvYosvBu5xC1_NAnEC9P_-NOIo:1odoSn:hXr9ZRCpPPwIFiVyFia14QHX4dwZigtH7yGUNgU2Gfg",
-    "expire_date": "2022-10-13T08:00:09.738Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "9432vwcpkukpdrme8vipuk9rmt4jv6c8",
-  "fields": {
-    "session_data": ".eJxVjDsOwyAQBe9CHSFgxS9l-pwBAbsEJxFIxq6s3D225CJp38y8jYW4LjWsg-YwIbsyyS6_W4r5Re0A-Izt0XnubZmnxA-Fn3Twe0d6307376DGUfdagfWIgEaBQVUKkSAsoIs2lFPOSiRJdrcgOSlcsd6CspS1dsrLpNnnC_apN98:1oVTwm:l7XK3LDGUWfyscT3hQeh8nOj0iu1-oh4NcdaMIoEEYg",
-    "expire_date": "2022-09-20T08:28:40.843Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "9rh2r15lb3xra3kdqjtll5n4zw7ebw95",
-  "fields": {
-    "session_data": ".eJxVjDsOwjAQBe_iGln-xJ9Q0ucM1q69xgFkS3FSIe5OIqWA9s3Me7MA21rC1mkJc2JXptjld0OIT6oHSA-o98Zjq-syIz8UftLOp5bodTvdv4MCvey1tOiNIpGNATlq55IZvaABd4Ao1RCzARLWJ5dRA2kJGqxU1kfjPRL7fAHVPjfN:1nKDkD:rZM4YHHS9MckfKB5KrsvNBVMegYSRdlMqL3uDJRE0Cg",
-    "expire_date": "2022-03-02T06:24:53.914Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "ceh8i7822nedm91xl70vi5ve4cpdmxc0",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2pABWgZduu8ZyDBDpWpoUtqV8e7apAvd_vfef6lI21ri1vISJ1EXZdTpd0vEj1x3IHeqt1nzXNdlSnpX9EGbHmbJz-vh_h0UauVbZwSXMbF1vVjrAU3gwJBghHRGYeLQgWcvRNb7HrPHEIxBgM4hjU69P9b4NzY:1rrxGq:0se0EMwmZG4vJDquTqcFR7Tp-qDa-SzKJoV5OZ82UvM",
-    "expire_date": "2024-04-17T09:51:04.787Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "d3rhbsiax4etv2gtdkl6j883hvlz21rc",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAQRf-FtSEMDAIu3fcbyPBQqgaS0q6M_y5NutDtOefeN_O0rcVvPS9-TuzCgJ1-WaD4zHUX6UH13nhsdV3mwPeEH7bzqaX8uh7t30GhXsYaQYNDpYMULqECS9IY0uIGxmYUQdoYMCpIeRgYiXVaDXoWgkImZJ8vqTk2zg:1okTc4:kq0YGX6_uyDwCa3VLl1bcp38oBfM6XfHIk0oE4XzpPw",
-    "expire_date": "2022-10-31T17:09:16.915Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "d5hzap008bh0kj64738vfcnlddz3rq3q",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAQRf-FtSHQ4VFcuvcbyMAwUjU0Ke3K-O_apAvd3nPOfYmI21rj1ssSJxJnoZU4_Y4J86O0ndAd222WeW7rMiW5K_KgXV5nKs_L4f4dVOz1WzvjmIjAQWaTBstgNIzsXAnkgUJSQVmA4tFzZgDLxHoEp82AWEIQ7w8KLDgb:1ptSj6:O-nWOvTicB2nf5bWCA0_-_IWElDl02tyQY-O2obZc4Q",
-    "expire_date": "2023-05-15T12:33:56.878Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "dpaw6pntyqwr5l6qjv6zq3yoajp301be",
-  "fields": {
-    "session_data": ".eJxVjEsOwjAMBe-SNYrq_BxYsucMlWO7tIAaqWlXiLujSl3A9s3Me5uetnXst6ZLP4m5GABz-h0L8VPnnciD5nu1XOd1mYrdFXvQZm9V9HU93L-Dkdq41550gJRLCCmJyoBdJmKMmaEEjpwDqmh0wuhc8Q68cmJA7M4OMJjPFyYSODI:1nUkTH:BLJ2UbMcN1AmDEbuOLS5T_O-vbrAzEW_K8oRkQZYt4M",
-    "expire_date": "2022-03-31T07:22:55.934Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "g5dq9vpt965l4v12hq2e2mtx3cyoofwi",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hAZ6BRcuvcMZGagtmogKe3KeHfbpAvd_vfef6tI6zLGteU5TkldlFGn341JnrnsID2o3KuWWpZ5Yr0r-qBN32rKr-vh_h2M1MatZtfjAJ6DdIQZhsw-gO2tSCc-9WiyBxc4kMdBMLnOIhMyuPMmWTDq8wXrITeF:1nyr78:_kk9OqBNFufSHoqDmlrR801u639WewL9v6cDAf-qtsY",
-    "expire_date": "2022-06-22T08:32:30.157Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "g7a60a11wtv3gyf63z38yo9dynrriy2o",
-  "fields": {
-    "session_data": ".eJxVjMEOwiAQRP-FsyG7oSB49O43kF22SNVAUtqT8d9tkx70Mod5b-atIq1LiWsf5ziJuihUp9-OKT3HugN5UL03nVpd5on1ruiDdn1rMr6uh_t3UKiXbZ1BbEggBBCyMwSC6PEsgBzYoM0pgHUAnvwQjOFsrDM-DVsIA7H6fAHNgTcq:1obN4y:bkeYqNAs8mjLT_JEXhoEQ5K5wMW1KiEr72ahxoqc1SA",
-    "expire_date": "2022-10-06T14:21:28.474Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "gcz795933839j3g0t3rjgmikzkzlwse3",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNKyv:kkKNWtjON5Uk-FR_FbwNa3oJ8t5PEd-rZ1y8BsRyays",
-    "expire_date": "2022-03-10T20:44:57.190Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "hyu4u2ybvftmposiq86y4fo6ghvwrvaf",
-  "fields": {
-    "session_data": ".eJxVjLEOwjAMRP8lM4qaOjI1IzvfEDmxSwoolZp2Qvw7qdQBxrv37t4m8LbmsFVdwiTmYpw5_XaR01PLDuTB5T7bNJd1maLdFXvQam-z6Ot6uH8HmWtuaz8QU484IqMAATgl9UgRvQp3vsGIQN51NAAKwdlpwj6OitISmc8Xw5g3Ow:1pXOTL:02xWS64tG_ABlbp8msu52jMSMNbgsXq9-SpQLR8bURc",
-    "expire_date": "2023-03-15T15:34:27.895Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "ic4rcr36vkoymwaw6p322bjqlryvq2jd",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAQRf-FtSEDFRhcuu83kBkeUjU0Ke3K-O_apAvd3nPOfYlA21rD1vMSpiQuQonT78YUH7ntIN2p3WYZ57YuE8tdkQftcpxTfl4P9--gUq_fWns0mX22NsLZDlE7INLWAzkyODjFyKwzAnExUQNQUamgRnIOkzLi_QHSyzeb:1mxPj7:Bl2FnM4tKrtDftiy20PMjYuIfpHYUK6FG6IYdZjPS6o",
-    "expire_date": "2021-12-29T08:33:29.459Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "jvnj82i5nnzb7e3exzprqthd6eau2x7n",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2pABWgZduu8ZyDBDpWpoUtqV8e7apAvd_vfef6lI21ri1vISJ1EXZdTpd0vEj1x3IHeqt1nzXNdlSnpX9EGbHmbJz-vh_h0UauVbZwSXMbF1vVjrAU3gwJBghHRGYeLQgWcvRNb7HrPHEIxBgM4hjU69P9b4NzY:1rrxGr:hYhi32L5iE_moUG9QBqw-qwJn6NLgVp9fObw1KlaPu8",
-    "expire_date": "2024-04-17T09:51:05.193Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "khn67dfajnzkr0tlusuyyub011gt0aqb",
-  "fields": {
-    "session_data": ".eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM5q9:nf3N_nhzYu-XfEC1O2ICYP2Zt9XXPPVziSLrP5uHSVw",
-    "expire_date": "2022-03-07T10:22:45.432Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "kxl8ptkbmarqynt3suxkv33cj4ydkvmc",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hBKGTq4dO8ZyDCAVA0kpV0Z765NutDtf-_9l_C0rcVvPS1-juIsBnH63QLxI9UdxDvVW5Pc6rrMQe6KPGiX1xbT83K4fweFevnWFLJzkCwlUlqRNiNbNxp0aA1rBMRggBLrSBBwAguKg4sTjNlmPbB4fwDf0jez:1pgsAz:RTj9nJ-XuKRexyoIAYjnSSeB_IjwXNoqh49bdhH9wMc",
-    "expire_date": "2023-04-10T19:06:41.555Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "lqzut02cip3i7xxinmal28z3mo302vey",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNLbm:bXtVicsOrZtQ_p4Qr9bOTAmHWYJMHD8_GCUbncB6nzQ",
-    "expire_date": "2022-03-10T21:25:06.476Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "mnb97kue40xo05g2rwwkw6d34sxrnesw",
-  "fields": {
-    "session_data": ".eJxVjDsOwjAQBe_iGllO8E-U9JzB2l3v4gBypDipEHfHkVJAOzPvvVWCbS1pa7ykKauLGtTplyHQk-su8gPqfdY013WZUO-JPmzTtznz63q0fwcFWunrgELAEtGgEzcCGTp7I4ZCdA5iN9KRFaA8YARvDXoL7GNgO5Jn9fkCIRs5Sw:1mxQKq:6A9lz-3mKMJukzqDk-DXfGIbDNeLeGul_TgZ7A6Xlf8",
-    "expire_date": "2021-12-29T09:12:28.010Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "mowah8yfroat6jhey5djwlbhn2y98v7l",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAURP-FtSE8ysul-34DgctFqgaS0q6M_y5NutBkVmfOzJv4sG_F7x1XvyRyJZxcflkM8MR6FOkR6r1RaHVbl0gPhZ5tp3NL-Lqd7t9BCb2MtTXWKeXyJJWZRAaeXMw2guNKg8IRI5GBGRSZBm1RoAnKMmlBC9Dk8wXZOzfQ:1oDoCM:omYDtljIF2gwQQ5gATz0c8n2Y4QYoBpS0m4RckO8Mn4",
-    "expire_date": "2022-08-02T14:27:42.020Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "o8j1a2nv54lfpfrrg44h5h93jj7xxh60",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAQRf-FtSG8EZfu_QYyzIBUDSSlXRn_3TbpQrf3nHPfLMK61LiOPMeJ2IVJdvrdEuAztx3QA9q9c-xtmafEd4UfdPBbp_y6Hu7fQYVRt1pk8rKQdLZQAJc8WqdRepJnkMU5j8qJ4AMFoxUqXaxRIDaEypqiEvt8AeKHN58:1odW3U:8KSfPTBjmZAKj1CGyu6KNB7dVP-lx1qvWe3yAiI0lio",
-    "expire_date": "2022-10-12T12:20:48.638Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "oy4oy702g9qr34fjne8jnxoxvqaiaq26",
-  "fields": {
-    "session_data": ".eJxVjDEOwjAMRe-SGUUtwW3MyM4ZIjt2SAElUtNOiLtDpQ6w_vfef5lA65LD2nQOk5iz6Ttz-B2Z4kPLRuRO5VZtrGWZJ7abYnfa7LWKPi-7-3eQqeVvfRR16k8sw5DGiI6J0CH46NmxCgGAAqlg6gGpS270wJCiS4pJGcz7AzCgOXQ:1nQRhU:CENLo_Qbw2AV-CZEYqplcFq3P2SRLzudId1jiN9gyuQ",
-    "expire_date": "2022-03-19T10:31:48.862Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "po0rbd1yhywmc0i2jfam69r419a66aj8",
-  "fields": {
-    "session_data": ".eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0oVu7znnvkWI-1bC3nkNC4mL0OL0u2FMT64D0CPWe5Op1W1dUA5FHrTLWyN-XQ_376DEXkY9QeKzIpWVn9gYhEhkI3lyYFg7jTMDg7WkAdF5mCFh9mRZZUhOi88X-eU4dg:1mzwj8:CWx3-u6eXmWLpwiFMK5_yWnoPY3yUSf1QCZY-UdJcF8",
-    "expire_date": "2022-01-05T08:11:58.507Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "qje4thj4oqumlmj2fe27gae72jg4j6u8",
-  "fields": {
-    "session_data": ".eJxVjDsOwjAQBe_iGll2Ev8o6TmDtetd4wCypTipEHeHSCmgfTPzXiLCtpa4dV7iTOIstBKn3xEhPbjuhO5Qb02mVtdlRrkr8qBdXhvx83K4fwcFevnWjDT6KfmRlSEHTmGyOfigKA8aR9TZgiXO3jKlwRAr61JGA2YKgZ0S7w8qsjkD:1mxDjE:ktIwpvhQwj3_BtA8Avyq5WmmpmIJD88pF_vSxFzeetA",
-    "expire_date": "2021-12-28T19:44:48.529Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "rmk4xete2em5m8rbllkk7d2nbd4q4rzg",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2pDSDjC4dO8ZCMOAVA0kpV0Z765NutDtf-_9l_BhW4vfelr8zOIslDj9bhTiI9Ud8D3UW5Ox1XWZSe6KPGiX18bpeTncv4MSevnWzo0RtZ0MgAEmVg4HS2jdoAxqpAh5cmizNkwBIRlFEJzmEdhkVCTeH7LvNxA:1pabKo:-Qpngoe5m2XSdO9BYT01S3o_V8dldaxml3hDBR9GcNc",
-    "expire_date": "2023-03-24T11:54:54.631Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "v28l0efbrv9x06z97ilwcf7lwtuf4ctc",
-  "fields": {
-    "session_data": ".eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o",
-    "expire_date": "2022-02-02T13:52:59.489Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "vph7z81qem6c9705bnj7xxvzmzod24ck",
-  "fields": {
-    "session_data": ".eJxVjEEOgjAQRe_StWlmahlal-45A5npFEFNSSisjHdXEha6_e-9_zI9b-vYbzUv_aTmYhDM6XcUTo9cdqJ3LrfZprmsyyR2V-xBq-1mzc_r4f4djFzHbx2G5oxKA4foXCRS9QlEghKDpwBNExWyEw-Z2owOJSTH2IK24smjeX8A-A43ag:1oVRr1:YjNerWaOn53u4nuATnD-oXeI5uqdL6lAyKX4jCG0b94",
-    "expire_date": "2022-09-20T06:14:35.567Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "wf6d6vzf4u74l08o0qgbqehei21hibea",
-  "fields": {
-    "session_data": ".eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q",
-    "expire_date": "2022-02-25T14:54:28.092Z"
-  }
-},
-{
-  "model": "sessions.session",
-  "pk": "y0gqgy87qj5rzdymhcrm5cilkbzmmmdi",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hCmdCi4dN8zkIEBqZqSlHZlvLtt0oVu_3vvv4WnbS1-a2nxE4urACUuv2Og-EzzQfhB873KWOd1mYI8FHnSJsfK6XU73b-DQq3sdbbUJaNz4MToIvfEoBBwQDDKoYXOaZNcwH4nGYGGAGQtdho4Rg3i8wUMbDfM:1ptP7Q:QohmTMRYLohe_xym4-jZdnDdhEcDBLoWmnf-6tnNuAY",
-    "expire_date": "2023-05-15T08:42:48.134Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "0df6f76f61b1fcacb0536c357e10032048f1a4f5",
-  "fields": {
-    "user": [
-      "user1"
-    ],
-    "created": "2023-09-15T07:52:46.956Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "2dcf8d2ff5032c3cf7d276549af3a50edb4f11c8",
-  "fields": {
-    "user": [
-      "admin1"
-    ],
-    "created": "2022-12-05T07:46:24.792Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "53da3ff9e514d84b56b5170059ff0f595c34157b",
-  "fields": {
-    "user": [
-      "user8"
-    ],
-    "created": "2022-03-17T07:22:55.921Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "7245b803f045dc12002d72473e3479ce6146801c",
-  "fields": {
-    "user": [
-      "lonely_user"
-    ],
-    "created": "2023-03-30T09:37:31.700Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "c051fe19df24a0ac4c6bec5e635034271c9549dc",
-  "fields": {
-    "user": [
-      "user7"
-    ],
-    "created": "2023-05-01T08:42:48.127Z"
-  }
-},
-{
   "model": "sites.site",
   "pk": 1,
   "fields": {
@@ -1214,6 +932,17 @@
   }
 },
 {
+  "model": "engine.validationlayout",
+  "pk": 4,
+  "fields": {
+    "task_data": 29,
+    "mode": "gt_pool",
+    "frames_per_job_count": 2,
+    "frames": "8,9",
+    "disabled_frames": "[]"
+  }
+},
+{
   "model": "engine.data",
   "pk": 2,
   "fields": {
@@ -1640,6 +1369,44 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 28,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 29,
+  "fields": {
+    "chunk_size": 72,
+    "size": 10,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 9,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "random",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 30,
+  "fields": {
+    "chunk_size": 72,
+    "size": 3,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 2,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -3881,6 +3648,175 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 523,
+  "fields": {
+    "data": 29,
+    "path": "32.png",
+    "frame": 0,
+    "width": 936,
+    "height": 182,
+    "is_placeholder": true,
+    "real_frame": 8
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 524,
+  "fields": {
+    "data": 29,
+    "path": "30.png",
+    "frame": 1,
+    "width": 810,
+    "height": 399,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 525,
+  "fields": {
+    "data": 29,
+    "path": "31.png",
+    "frame": 2,
+    "width": 916,
+    "height": 158,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 526,
+  "fields": {
+    "data": 29,
+    "path": "35.png",
+    "frame": 3,
+    "width": 721,
+    "height": 705,
+    "is_placeholder": true,
+    "real_frame": 9
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 527,
+  "fields": {
+    "data": 29,
+    "path": "34.png",
+    "frame": 4,
+    "width": 231,
+    "height": 121,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 528,
+  "fields": {
+    "data": 29,
+    "path": "35.png",
+    "frame": 5,
+    "width": 721,
+    "height": 705,
+    "is_placeholder": true,
+    "real_frame": 9
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 529,
+  "fields": {
+    "data": 29,
+    "path": "32.png",
+    "frame": 6,
+    "width": 936,
+    "height": 182,
+    "is_placeholder": true,
+    "real_frame": 8
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 530,
+  "fields": {
+    "data": 29,
+    "path": "33.png",
+    "frame": 7,
+    "width": 783,
+    "height": 433,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 531,
+  "fields": {
+    "data": 29,
+    "path": "32.png",
+    "frame": 8,
+    "width": 936,
+    "height": 182,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 532,
+  "fields": {
+    "data": 29,
+    "path": "35.png",
+    "frame": 9,
+    "width": 721,
+    "height": 705,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 533,
+  "fields": {
+    "data": 30,
+    "path": "30.png",
+    "frame": 0,
+    "width": 810,
+    "height": 399,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 534,
+  "fields": {
+    "data": 30,
+    "path": "31.png",
+    "frame": 1,
+    "width": 916,
+    "height": 158,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 535,
+  "fields": {
+    "data": 30,
+    "path": "32.png",
+    "frame": 2,
+    "width": 936,
+    "height": 182,
+    "is_placeholder": false,
+    "real_frame": 0
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -4206,7 +4142,8 @@
     "subset": "",
     "organization": 1,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4234,7 +4171,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4260,7 +4198,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4288,7 +4227,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4316,7 +4256,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4344,7 +4285,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4372,7 +4314,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": 4,
-    "target_storage": 2
+    "target_storage": 2,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4398,7 +4341,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4426,7 +4370,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4452,7 +4397,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 7,
-    "target_storage": 8
+    "target_storage": 8,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4478,7 +4424,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 15,
-    "target_storage": 16
+    "target_storage": 16,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4506,7 +4453,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4532,7 +4480,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 23,
-    "target_storage": 24
+    "target_storage": 24,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4558,7 +4507,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 25,
-    "target_storage": 26
+    "target_storage": 26,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4584,7 +4534,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 29,
-    "target_storage": 30
+    "target_storage": 30,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4610,7 +4561,8 @@
     "subset": "",
     "organization": null,
     "source_storage": 33,
-    "target_storage": 34
+    "target_storage": 34,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4636,7 +4588,8 @@
     "subset": "Train",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4662,7 +4615,8 @@
     "subset": "",
     "organization": null,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4688,7 +4642,8 @@
     "subset": "Train",
     "organization": null,
     "source_storage": 37,
-    "target_storage": 38
+    "target_storage": 38,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4714,7 +4669,8 @@
     "subset": "Validation",
     "organization": null,
     "source_storage": 39,
-    "target_storage": 40
+    "target_storage": 40,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4742,7 +4698,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 45,
-    "target_storage": 46
+    "target_storage": 46,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4770,7 +4727,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 47,
-    "target_storage": 48
+    "target_storage": 48,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4796,7 +4754,8 @@
     "subset": "",
     "organization": 2,
     "source_storage": 49,
-    "target_storage": 50
+    "target_storage": 50,
+    "consensus_replicas": 0
   }
 },
 {
@@ -4822,7 +4781,62 @@
     "subset": "",
     "organization": 2,
     "source_storage": null,
-    "target_storage": null
+    "target_storage": null,
+    "consensus_replicas": 0
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 30,
+  "fields": {
+    "created_date": "2025-01-14T17:19:03.665Z",
+    "updated_date": "2025-01-14T17:26:01.139Z",
+    "project": null,
+    "name": "task with consensus and honeypots",
+    "mode": "annotation",
+    "owner": [
+      "user2"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 0,
+    "status": "annotation",
+    "data": 29,
+    "dimension": "2d",
+    "subset": "",
+    "organization": 2,
+    "source_storage": 51,
+    "target_storage": 52,
+    "consensus_replicas": 3
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 31,
+  "fields": {
+    "created_date": "2025-01-27T16:42:31.302Z",
+    "updated_date": "2025-01-27T16:43:36.188Z",
+    "project": null,
+    "name": "sandbox task with consensus",
+    "mode": "annotation",
+    "owner": [
+      "user1"
+    ],
+    "assignee": null,
+    "assignee_updated_date": null,
+    "bug_tracker": "",
+    "overlap": 0,
+    "segment_size": 3,
+    "status": "annotation",
+    "data": 30,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null,
+    "source_storage": 53,
+    "target_storage": 54,
+    "consensus_replicas": 2
   }
 },
 {
@@ -5754,6 +5768,78 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 464,
+  "fields": {
+    "data": 29,
+    "file": "/home/django/data/data/29/raw/30.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 465,
+  "fields": {
+    "data": 29,
+    "file": "/home/django/data/data/29/raw/31.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 466,
+  "fields": {
+    "data": 29,
+    "file": "/home/django/data/data/29/raw/32.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 467,
+  "fields": {
+    "data": 29,
+    "file": "/home/django/data/data/29/raw/33.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 468,
+  "fields": {
+    "data": 29,
+    "file": "/home/django/data/data/29/raw/34.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 469,
+  "fields": {
+    "data": 29,
+    "file": "/home/django/data/data/29/raw/35.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 470,
+  "fields": {
+    "data": 30,
+    "file": "/home/django/data/data/30/raw/30.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 471,
+  "fields": {
+    "data": 30,
+    "file": "/home/django/data/data/30/raw/31.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 472,
+  "fields": {
+    "data": 30,
+    "file": "/home/django/data/data/30/raw/32.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
@@ -6173,6 +6259,54 @@
   }
 },
 {
+  "model": "engine.segment",
+  "pk": 42,
+  "fields": {
+    "task": 30,
+    "start_frame": 0,
+    "stop_frame": 4,
+    "chunks_updated_date": "2025-01-14T17:19:04.053Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 43,
+  "fields": {
+    "task": 30,
+    "start_frame": 5,
+    "stop_frame": 7,
+    "chunks_updated_date": "2025-01-14T17:19:04.090Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 44,
+  "fields": {
+    "task": 30,
+    "start_frame": 8,
+    "stop_frame": 9,
+    "chunks_updated_date": "2025-01-14T17:19:04.161Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 45,
+  "fields": {
+    "task": 31,
+    "start_frame": 0,
+    "stop_frame": 2,
+    "chunks_updated_date": "2025-01-27T16:42:31.655Z",
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
   "model": "engine.job",
   "pk": 2,
   "fields": {
@@ -6186,7 +6320,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6203,7 +6338,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6218,7 +6354,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6233,7 +6370,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6250,7 +6388,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6267,7 +6406,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6282,7 +6422,8 @@
     "status": "validation",
     "stage": "validation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6297,7 +6438,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6312,7 +6454,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6329,7 +6472,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6344,7 +6488,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6359,7 +6504,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6374,7 +6520,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6389,7 +6536,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6404,7 +6552,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6419,7 +6568,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6434,7 +6584,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6449,7 +6600,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6464,7 +6616,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6479,7 +6632,8 @@
     "status": "validation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6494,7 +6648,8 @@
     "status": "validation",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -6509,7 +6664,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6524,7 +6680,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6539,7 +6696,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6554,7 +6712,8 @@
     "status": "completed",
     "stage": "acceptance",
     "state": "completed",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
   }
 },
 {
@@ -6569,7 +6728,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6584,7 +6744,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6599,7 +6760,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6614,7 +6776,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6629,7 +6792,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6644,7 +6808,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6659,7 +6824,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6674,7 +6840,8 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "new",
-    "type": "annotation"
+    "type": "annotation",
+    "parent_job": null
   }
 },
 {
@@ -6689,7 +6856,200 @@
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress",
-    "type": "ground_truth"
+    "type": "ground_truth",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 42,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.062Z",
+    "updated_date": "2025-02-03T15:25:42.655Z",
+    "segment": 42,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "completed",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 43,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.077Z",
+    "updated_date": "2025-02-03T15:25:32.413Z",
+    "segment": 42,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "consensus_replica",
+    "parent_job": 42
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 44,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.082Z",
+    "updated_date": "2025-01-14T17:19:51.388Z",
+    "segment": 42,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "consensus_replica",
+    "parent_job": 42
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 45,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.086Z",
+    "updated_date": "2025-02-03T15:22:52.241Z",
+    "segment": 42,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "consensus_replica",
+    "parent_job": 42
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 46,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.091Z",
+    "updated_date": "2025-01-14T17:24:20.174Z",
+    "segment": 43,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 47,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.095Z",
+    "updated_date": "2025-01-14T17:23:55.551Z",
+    "segment": 43,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "consensus_replica",
+    "parent_job": 46
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 48,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.099Z",
+    "updated_date": "2025-01-14T17:19:51.388Z",
+    "segment": 43,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "consensus_replica",
+    "parent_job": 46
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 49,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.103Z",
+    "updated_date": "2025-01-14T17:24:51.333Z",
+    "segment": 43,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "consensus_replica",
+    "parent_job": 46
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 50,
+  "fields": {
+    "created_date": "2025-01-14T17:19:04.163Z",
+    "updated_date": "2025-01-14T17:21:56.768Z",
+    "segment": 44,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "ground_truth",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 51,
+  "fields": {
+    "created_date": "2025-01-27T16:42:31.660Z",
+    "updated_date": "2025-01-27T16:42:31.660Z",
+    "segment": 45,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation",
+    "parent_job": null
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 52,
+  "fields": {
+    "created_date": "2025-01-27T16:42:31.672Z",
+    "updated_date": "2025-01-27T16:43:07.696Z",
+    "segment": 45,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress",
+    "type": "consensus_replica",
+    "parent_job": 51
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 53,
+  "fields": {
+    "created_date": "2025-01-27T16:42:31.676Z",
+    "updated_date": "2025-01-27T16:43:47.462Z",
+    "segment": 45,
+    "assignee": null,
+    "assignee_updated_date": null,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "completed",
+    "type": "consensus_replica",
+    "parent_job": 51
   }
 },
 {
@@ -7533,6 +7893,42 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 78,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 79,
+  "fields": {
+    "task": 30,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 80,
+  "fields": {
+    "task": 31,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -7757,6 +8153,42 @@
   }
 },
 {
+  "model": "engine.attributespec",
+  "pk": 16,
+  "fields": {
+    "label": 78,
+    "name": "src",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "",
+    "values": ""
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 17,
+  "fields": {
+    "label": 79,
+    "name": "src",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "",
+    "values": ""
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 18,
+  "fields": {
+    "label": 80,
+    "name": "src",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "",
+    "values": ""
+  }
+},
+{
   "model": "engine.labeledimage",
   "pk": 1,
   "fields": {
@@ -7823,6 +8255,50 @@
   }
 },
 {
+  "model": "engine.labeledimage",
+  "pk": 9,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 10,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 11,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 13,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
   "model": "engine.labeledimageattributeval",
   "pk": 1,
   "fields": {
@@ -7856,6 +8332,42 @@
     "spec": 14,
     "value": "1",
     "image": 8
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 5,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "image": 9
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 6,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "image": 10
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 7,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "image": 11
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 9,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "image": 13
   }
 },
 {
@@ -10829,6 +11341,834 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 191,
+  "fields": {
+    "job": 50,
+    "label": 78,
+    "frame": 8,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "160.71132684643453,59.61108186333331,254.8470583598446,111.65360009838878",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 192,
+  "fields": {
+    "job": 50,
+    "label": 78,
+    "frame": 8,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "434.6998787309949,78.74436062622226,502.0490199763608,127.72555425921564",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 193,
+  "fields": {
+    "job": 50,
+    "label": 78,
+    "frame": 9,
+    "group": 0,
+    "source": "Ground truth",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "245.67336843180783,162.98163621791718,334.90269485918907,215.98915686784676",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 194,
+  "fields": {
+    "job": 46,
+    "label": 78,
+    "frame": 6,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "472.58377068151276,63.05507204065361,535.3409250237855,110.50560337261595",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 195,
+  "fields": {
+    "job": 47,
+    "label": 78,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "183.389531668141,181.09253910664302,247.88201512555497,226.14893165908325",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 196,
+  "fields": {
+    "job": 47,
+    "label": 78,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "344.1790109729245,311.8444233764694,391.8857795578606,376.3369068338834",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 197,
+  "fields": {
+    "job": 49,
+    "label": 78,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "169.25419282815892,210.24667546410456,239.0474283505664,239.4008118215661",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 198,
+  "fields": {
+    "job": 49,
+    "label": 78,
+    "frame": 5,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "336.22788287543517,361.3181093164021,398.9534489778507,424.9271340963169",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 201,
+  "fields": {
+    "job": 52,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "295.39537490125076,129.95137884321593,379.50821517094846,194.85735007494986",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 202,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "339.7698654372325,132.6006021587964,397.3904725511202,175.6504810369879",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 203,
+  "fields": {
+    "job": 53,
+    "label": 80,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "529.1893325012752,65.70771344037712,597.4068328774865,119.35448558089229",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 204,
+  "fields": {
+    "job": 45,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "96.42351020313072,99.40830169014043,145.4047038361241,134.61353461385443",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 205,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "189.7939453125,99.408203125,224.23381233922373,98.64297053962582,208.16185817839687,130.0215477107613",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 206,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "263.265625,116.2451171875,291.58295358458963,103.23495744271895,310.7162323474786,128.49088540973025,339.7988160670684,107.06161319529565",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 207,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "277.0419921875,68.029296875,290.817622434075,38.94714079941332,307.6549077454165,68.02972451900314,322.1961996052123,40.47780310044436",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 208,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "399.884765625,117.7861328125,420.931640625,97.1220703125",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 209,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "cuboid",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "502.049255907923,93.39047190463862,502.049255907923,137.6748346606255,545.6731314873086,93.29541089258055,545.6731314873086,137.6748346606455,571.4791182468543,81.07113365704572,571.4791182468543,124.59332935967359,528.6418953937628,81.1900421050359,528.6418953937628,124.62080992126721",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 210,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 211,
+  "fields": {
+    "job": 44,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "96.42351020313072,99.40830169014043,145.4047038361241,134.61353461385443",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 212,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "189.7939453125,99.408203125,219.60000000000036,108.60000000000036,208.16185817839687,130.0215477107613",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 213,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "267.90000000000146,123.90000000000146,291.58295358458963,103.23495744271895,310.7162323474786,128.49088540973025,323,103.20000000000073",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 214,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "277.0419921875,68.029296875,290.817622434075,38.94714079941332,322.1961996052123,40.47780310044436",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 215,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "412.1189453125007,126.21103515624964,445.40000000000146,96.72207031249854",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 216,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "cuboid",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "502.049255907923,93.39047190463316,502.049255907923,152.18125991462875,559.4494986748086,93.26539073985441,559.4494986748086,152.22223330696215,585.0063249908471,81.0335845571608,585.0063249908471,138.85086779521043,528.6418953937846,81.19004210502862,528.6418953937846,138.84761929236265",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 217,
+  "fields": {
+    "job": 44,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 218,
+  "fields": {
+    "job": 43,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "96.423828125,78.70000000000073,145.40502175799338,134.6134376525879",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 219,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "189,113.20000000000073,224.23381233922373,98.64297053962582,208.16185817839687,130.0215477107613",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 220,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "271.7000000000007,119.30000000000109,304.60000000000036,104,310.7162323474786,128.49088540973025,339.7988160670684,107.06161319529565",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 221,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "277.0419921875,68.029296875,290.817622434075,38.94714079941332,307.6549077454165,68.02972451900314",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 222,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "399.884765625,108.27509765625109,420.931640625,78.45000000000073",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 223,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "cuboid",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "502.049255907923,101.79330723501334,502.049255907923,137.6748346606273,537.2541861748086,101.73114849558442,537.2541861748086,137.6748346606455,563.2122646078951,89.3489492958688,563.2122646078951,124.59863263951047,528.6418953937591,89.43091015684695,528.6418953937591,124.6208099212563",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 224,
+  "fields": {
+    "job": 43,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 225,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "179.44667968750036,160.21328125000036,229.94667968750036,141.9132812500011,212.37865505339687,167.1504539607613",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 226,
+  "fields": {
+    "job": 45,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "288.52924264708963,139.59823869271895,307.6625214099786,164.85416665973025,336.7451051295684,143.42489444529565",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 227,
+  "fields": {
+    "job": 45,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "216.205078125,45.8447265625,246.8179936829165,45.84515420650314,261.3592855427123,18.293232787944362",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 228,
+  "fields": {
+    "job": 45,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "127,3,151,10,143,18,136,25,129,32,122,39,115,47,109,52,108,53,107,54,107,54,107,54,107,54,107,54,38,1,68,54,36,3,68,54,33,5,69,54,31,6,71,53,28,9,71,54,25,10,72,54,23,11,73,54,20,14,35,2,36,54,18,15,34,5,35,54,15,17,34,7,34,54,13,19,32,10,33,54,10,21,32,11,33,54,8,22,31,14,32,54,5,25,29,17,31,54,3,26,29,19,31,53,1,27,28,22,30,81,26,25,29,49,2,29,26,26,29,47,4,29,24,29,28,45,5,29,24,31,27,42,8,28,24,33,26,40,9,29,23,35,25,38,10,29,23,37,24,35,13,28,23,38,24,33,14,29,22,38,25,31,16,28,23,36,28,27,18,28,25,34,29,25,19,29,24,33,31,23,21,28,25,31,33,20,23,28,25,31,34,18,25,28,25,29,36,16,26,28,25,28,38,13,28,28,26,27,39,11,30,28,25,26,41,9,31,28,26,25,42,6,34,27,26,24,45,3,35,28,26,22,84,28,26,22,85,28,26,20,141,19,141,18,143,16,144,16,145,14,146,13,148,12,148,11,150,10,150,9,152,7,153,7,154,5,155,5,156,3,157,2,87,616,13,775,81",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 240,
+  "fields": {
+    "job": 42,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "96.42,78.7,145.41,134.61",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 241,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "189.79,99.41,224.23,98.64,208.16,130.02",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 242,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "179.45,160.21,229.95,141.91,212.38,167.15",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 243,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "271.7,119.3,304.6,104.0,310.72,128.49,339.8,107.06",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 244,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "288.53,139.6,307.66,164.85,336.75,143.42",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 245,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "277.04,68.03,290.82,38.95,307.65,68.03,322.2,40.48",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 246,
+  "fields": {
+    "job": 42,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "216.21,45.84,246.82,45.85,261.36,18.29",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 247,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "17,9,32,13,28,17,25,19,23,22,19,25,17,27,16,27,15,29,13,31,12,31,11,33,9,35,8,35,7,37,6,37,5,39,4,39,4,39,3,41,2,41,2,41,2,41,2,41,1,559,1,41,2,41,2,41,2,41,3,39,4,39,4,39,4,39,5,37,6,37,7,35,8,35,9,33,11,31,12,31,13,29,15,27,16,27,17,25,20,22,22,19,25,17,28,13,32,9,17,379,78,421,138",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 248,
+  "fields": {
+    "job": 42,
+    "label": 78,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "127,2,151,9,143,17,136,24,129,31,122,38,115,46,56,4,49,51,53,7,48,52,51,10,47,52,48,14,46,52,46,17,45,52,43,21,44,52,41,24,43,52,38,27,43,52,36,30,42,52,33,34,42,51,31,37,41,51,28,41,40,52,25,43,40,52,23,46,39,52,20,50,38,52,18,53,37,52,15,57,36,52,13,60,35,52,10,63,35,52,8,66,34,52,5,70,34,51,3,73,33,51,1,76,32,48,2,79,31,46,4,79,31,44,5,81,30,41,8,82,29,39,9,84,28,37,10,86,27,34,13,87,26,32,14,88,26,30,16,51,1,34,29,26,18,50,3,33,30,24,19,49,4,32,32,22,21,47,6,30,34,19,23,46,7,30,35,17,25,44,9,28,37,15,26,43,10,27,39,12,28,42,12,26,40,10,30,41,12,25,42,8,31,40,14,24,43,5,34,38,15,23,46,2,35,37,17,21,84,36,18,21,85,34,20,19,141,18,141,17,143,15,144,15,145,13,146,12,148,11,148,10,150,9,150,8,152,6,153,6,154,4,155,4,156,2,157,1,87,375,13,533,80",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 249,
+  "fields": {
+    "job": 42,
+    "label": 79,
+    "frame": 0,
+    "group": 0,
+    "source": "consensus",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "127,3,151,10,143,18,136,25,129,32,122,39,115,47,109,52,108,53,107,54,107,54,107,54,107,54,107,54,38,1,68,54,36,3,68,54,33,5,69,54,31,6,71,53,28,9,71,54,25,10,72,54,23,11,73,54,20,14,35,2,36,54,18,15,34,5,35,54,15,17,34,7,34,54,13,19,32,10,33,54,10,21,32,11,33,54,8,22,31,14,32,54,5,25,29,17,31,54,3,26,29,19,31,53,1,27,28,22,30,81,26,25,29,49,2,29,26,26,29,47,4,29,24,29,28,45,5,29,24,31,27,42,8,28,24,33,26,40,9,29,23,35,25,38,10,29,23,37,24,35,13,28,23,38,24,33,14,29,22,38,25,31,16,28,23,36,28,27,18,28,25,34,29,25,19,29,24,33,31,23,21,28,25,31,33,20,23,28,25,31,34,18,25,28,25,29,36,16,26,28,25,28,38,13,28,28,26,27,39,11,30,28,25,26,41,9,31,28,26,25,42,6,34,27,26,24,45,3,35,28,26,22,84,28,26,22,85,28,26,20,141,19,141,18,143,16,144,16,145,14,146,13,148,12,148,11,150,10,150,9,152,7,153,7,154,5,155,5,156,3,157,2,87,616,13,775,81",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -12167,6 +13507,420 @@
     "spec": 15,
     "value": "gt frame2 n1",
     "shape": 187
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 151,
+  "fields": {
+    "spec": 16,
+    "value": "gt job frame 1 (32) ann 1",
+    "shape": 191
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 152,
+  "fields": {
+    "spec": 16,
+    "value": "gt job frame 1 (32) ann 2",
+    "shape": 192
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 153,
+  "fields": {
+    "spec": 16,
+    "value": "gt job frame 2 (35) ann 1",
+    "shape": 193
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 155,
+  "fields": {
+    "spec": 16,
+    "value": "j2 r1 frame 1 (35) ann 1",
+    "shape": 195
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 156,
+  "fields": {
+    "spec": 16,
+    "value": "j2 r1 frame 1 (35) ann 2",
+    "shape": 196
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 157,
+  "fields": {
+    "spec": 16,
+    "value": "j2 frame 2 (32) ann 1",
+    "shape": 194
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 158,
+  "fields": {
+    "spec": 16,
+    "value": "j2 r3 frame 1 (35) ann 1",
+    "shape": 197
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 159,
+  "fields": {
+    "spec": 16,
+    "value": "j2 r3 frame 1 (35) ann 2",
+    "shape": 198
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 162,
+  "fields": {
+    "spec": 18,
+    "value": "j2 f1 (30) a1",
+    "shape": 201
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 163,
+  "fields": {
+    "spec": 18,
+    "value": "j1 f1 (30) a1",
+    "shape": 202
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 164,
+  "fields": {
+    "spec": 18,
+    "value": "j2 f1 (30) a2",
+    "shape": 203
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 165,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 204
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 166,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 205
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 167,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 206
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 168,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 207
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 169,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 208
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 170,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 209
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 171,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 210
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 172,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 211
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 178,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 217
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 185,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 224
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 186,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 212
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 187,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 213
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 188,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 214
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 189,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 215
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 190,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 216
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 191,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 218
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 192,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 219
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 193,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 220
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 194,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 221
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 195,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 222
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 196,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 223
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 197,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 225
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 198,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 226
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 199,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 227
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 200,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 228
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 212,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 240
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 213,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 241
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 214,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 242
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 215,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 243
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 216,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 244
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 217,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 245
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 218,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 246
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 219,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 247
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 220,
+  "fields": {
+    "spec": 16,
+    "value": "",
+    "shape": 248
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 221,
+  "fields": {
+    "spec": 17,
+    "value": "",
+    "shape": 249
   }
 },
 {
@@ -13514,6 +15268,38 @@
 {
   "model": "engine.storage",
   "pk": 50,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 51,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 52,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 53,
+  "fields": {
+    "location": "local",
+    "cloud_storage": null
+  }
+},
+{
+  "model": "engine.storage",
+  "pk": 54,
   "fields": {
     "location": "local",
     "cloud_storage": null
@@ -18173,7 +19959,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18197,7 +19983,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18221,7 +20007,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18245,7 +20031,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18269,7 +20055,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18293,7 +20079,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18317,7 +20103,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18341,7 +20127,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18365,7 +20151,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18389,7 +20175,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18413,7 +20199,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18437,7 +20223,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18461,7 +20247,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18485,7 +20271,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18509,7 +20295,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18533,7 +20319,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18557,7 +20343,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18581,7 +20367,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18605,7 +20391,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18629,7 +20415,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18653,7 +20439,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18677,7 +20463,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18701,7 +20487,7 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
@@ -18725,820 +20511,76 @@
     "object_visibility_threshold": 0.05,
     "panoptic_comparison": true,
     "compare_attributes": true,
-    "match_empty_frames": false,
+    "empty_is_annotated": false,
     "target_metric": "accuracy",
     "target_metric_threshold": 0.7,
     "max_validations_per_job": 0
   }
 },
 {
-  "model": "admin.logentry",
-  "pk": 1,
-  "fields": {
-    "action_time": "2021-12-14T18:20:01.999Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "1",
-    "object_repr": "admin",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 2,
-  "fields": {
-    "action_time": "2021-12-14T18:21:09.151Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "2",
-    "object_repr": "user1",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 3,
-  "fields": {
-    "action_time": "2021-12-14T18:23:58.718Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "2",
-    "object_repr": "user1",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 4,
-  "fields": {
-    "action_time": "2021-12-14T18:24:12.553Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "3",
-    "object_repr": "user2",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 5,
-  "fields": {
-    "action_time": "2021-12-14T18:24:24.326Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "3",
-    "object_repr": "user2",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 6,
-  "fields": {
-    "action_time": "2021-12-14T18:24:39.624Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "4",
-    "object_repr": "user3",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 7,
-  "fields": {
-    "action_time": "2021-12-14T18:24:53.704Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "4",
-    "object_repr": "user3",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 8,
-  "fields": {
-    "action_time": "2021-12-14T18:25:10.952Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "5",
-    "object_repr": "user4",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 9,
-  "fields": {
-    "action_time": "2021-12-14T18:25:31.451Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "5",
-    "object_repr": "user4",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 10,
-  "fields": {
-    "action_time": "2021-12-14T18:30:00.390Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "6",
-    "object_repr": "worker1",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 11,
-  "fields": {
-    "action_time": "2021-12-14T18:30:20.019Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "6",
-    "object_repr": "worker1",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 12,
-  "fields": {
-    "action_time": "2021-12-14T18:30:43.380Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "7",
-    "object_repr": "worker2",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 13,
-  "fields": {
-    "action_time": "2021-12-14T18:31:05.739Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "7",
-    "object_repr": "worker2",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 14,
-  "fields": {
-    "action_time": "2021-12-14T18:31:25.912Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "8",
-    "object_repr": "worker3",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 15,
-  "fields": {
-    "action_time": "2021-12-14T18:31:46.096Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "8",
-    "object_repr": "worker3",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 16,
-  "fields": {
-    "action_time": "2021-12-14T18:32:01.519Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "9",
-    "object_repr": "worker4",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 17,
-  "fields": {
-    "action_time": "2021-12-14T18:32:21.067Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "9",
-    "object_repr": "worker4",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 18,
-  "fields": {
-    "action_time": "2021-12-14T18:33:06.933Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "10",
-    "object_repr": "user7",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 19,
-  "fields": {
-    "action_time": "2021-12-14T18:33:12.541Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "10",
-    "object_repr": "user7",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 20,
-  "fields": {
-    "action_time": "2021-12-14T18:33:28.422Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "10",
-    "object_repr": "user7",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 21,
-  "fields": {
-    "action_time": "2021-12-14T18:34:02.007Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "11",
-    "object_repr": "user8",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 22,
-  "fields": {
-    "action_time": "2021-12-14T18:34:18.560Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "11",
-    "object_repr": "user8",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 23,
-  "fields": {
-    "action_time": "2021-12-14T18:34:34.313Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "12",
-    "object_repr": "user9",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 24,
-  "fields": {
-    "action_time": "2021-12-14T18:34:54.186Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "12",
-    "object_repr": "user9",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
+  "model": "quality_control.qualitysettings",
   "pk": 25,
   "fields": {
-    "action_time": "2021-12-14T18:35:15.352Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "13",
-    "object_repr": "user10",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
+    "task": 30,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "empty_is_annotated": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
   }
 },
 {
-  "model": "admin.logentry",
+  "model": "quality_control.qualitysettings",
   "pk": 26,
   "fields": {
-    "action_time": "2021-12-14T18:35:31.459Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "13",
-    "object_repr": "user10",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
+    "task": 31,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "point_size_base": "group_bbox_size",
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true,
+    "empty_is_annotated": false,
+    "target_metric": "accuracy",
+    "target_metric_threshold": 0.7,
+    "max_validations_per_job": 0
   }
 },
 {
-  "model": "admin.logentry",
-  "pk": 27,
+  "model": "consensus.consensussettings",
+  "pk": 1,
   "fields": {
-    "action_time": "2021-12-14T18:36:00.882Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "14",
-    "object_repr": "dummy1",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
+    "task": 30,
+    "quorum": 0.5,
+    "iou_threshold": 0.4
   }
 },
 {
-  "model": "admin.logentry",
-  "pk": 28,
+  "model": "consensus.consensussettings",
+  "pk": 2,
   "fields": {
-    "action_time": "2021-12-14T18:36:16.686Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "14",
-    "object_repr": "dummy1",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 29,
-  "fields": {
-    "action_time": "2021-12-14T18:36:31.775Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "15",
-    "object_repr": "dummy2",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 30,
-  "fields": {
-    "action_time": "2021-12-14T18:36:47.117Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "15",
-    "object_repr": "dummy2",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 31,
-  "fields": {
-    "action_time": "2021-12-14T18:37:09.321Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "16",
-    "object_repr": "dummy3",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 32,
-  "fields": {
-    "action_time": "2021-12-14T18:37:25.887Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "16",
-    "object_repr": "dummy3",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 33,
-  "fields": {
-    "action_time": "2021-12-14T18:37:41.262Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "17",
-    "object_repr": "dummy4",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 34,
-  "fields": {
-    "action_time": "2021-12-14T18:38:00.903Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "17",
-    "object_repr": "dummy4",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 35,
-  "fields": {
-    "action_time": "2021-12-14T18:38:21.968Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "1",
-    "object_repr": "admin1",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"Username\", \"First name\", \"Last name\", \"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 36,
-  "fields": {
-    "action_time": "2021-12-14T18:38:27.813Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "1",
-    "object_repr": "admin1",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"Last name\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 37,
-  "fields": {
-    "action_time": "2021-12-14T18:38:46.549Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "18",
-    "object_repr": "admin2",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 38,
-  "fields": {
-    "action_time": "2021-12-14T18:39:13.940Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "18",
-    "object_repr": "admin2",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\", \"Groups\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 39,
-  "fields": {
-    "action_time": "2021-12-14T18:41:27.383Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "18",
-    "object_repr": "admin2",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"Staff status\", \"Superuser status\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 40,
-  "fields": {
-    "action_time": "2021-12-14T18:41:37.492Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "18",
-    "object_repr": "admin2",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"password\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 41,
-  "fields": {
-    "action_time": "2021-12-14T18:41:50.468Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "1",
-    "object_repr": "admin1",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"password\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 42,
-  "fields": {
-    "action_time": "2022-02-24T20:45:07.810Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "19",
-    "object_repr": "user5",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 43,
-  "fields": {
-    "action_time": "2022-02-24T20:45:13.620Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "19",
-    "object_repr": "user5",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\"]}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 44,
-  "fields": {
-    "action_time": "2022-02-24T20:45:19.301Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "20",
-    "object_repr": "user6",
-    "action_flag": 1,
-    "change_message": "[{\"added\": {}}]"
-  }
-},
-{
-  "model": "admin.logentry",
-  "pk": 45,
-  "fields": {
-    "action_time": "2022-02-24T20:45:25.772Z",
-    "user": [
-      "admin1"
-    ],
-    "content_type": [
-      "auth",
-      "user"
-    ],
-    "object_id": "20",
-    "object_repr": "user6",
-    "action_flag": 2,
-    "change_message": "[{\"changed\": {\"fields\": [\"First name\", \"Last name\", \"Email address\"]}}]"
+    "task": 31,
+    "quorum": 0.5,
+    "iou_threshold": 0.4
   }
 }
 ]

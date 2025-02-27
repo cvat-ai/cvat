@@ -5,11 +5,6 @@
 At the moment only the latest release is supported. When you report a security issue,
 be sure it can be reproduced in the supported version.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 2.0.0   | :white_check_mark: |
-| <2.0.0  | :x:                |
-
 ## Reporting a Vulnerability
 
 If you have information about a security issue or vulnerability in the product, please

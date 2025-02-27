@@ -8,5 +8,3 @@
 -r development.txt
 -r production.txt
 -r testing.txt
-
-# The following packages are considered to be unsafe in a requirements file:

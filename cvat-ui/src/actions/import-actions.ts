@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +10,10 @@ import {
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
-    getInstanceType, listen, RequestInstanceType,
+    listen, RequestInstanceType,
     RequestsActions, updateRequestProgress,
 } from './requests-actions';
+import { getInstanceType } from './common';
 
 const core = getCore();
 

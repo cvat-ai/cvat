@@ -1,10 +1,10 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction } from 'utils/redux';
 import { CombinedState, RequestsQuery } from 'reducers';
-import { Request, ProjectOrTaskOrJob, getCore } from 'cvat-core-wrapper';
+import { Request, getCore } from 'cvat-core-wrapper';
 import { Store } from 'redux';
 import { getCVATStore } from 'cvat-store';
 
@@ -62,22 +62,6 @@ export type RequestsActions = ActionUnion<typeof requestsActions>;
 export interface RequestInstanceType {
     id: number;
     type: 'project' | 'task' | 'job';
-}
-
-export function getInstanceType(instance: ProjectOrTaskOrJob | RequestInstanceType): 'project' | 'task' | 'job' {
-    if (instance instanceof core.classes.Project) {
-        return 'project';
-    }
-
-    if (instance instanceof core.classes.Task) {
-        return 'task';
-    }
-
-    if (instance instanceof core.classes.Job) {
-        return 'job';
-    }
-
-    return instance.type;
 }
 
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {

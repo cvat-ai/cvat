@@ -1,10 +1,11 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Iterator
 from functools import wraps
 from itertools import islice
-from typing import Any, Callable, Iterator, TypeVar, overload
+from typing import Any, Callable, TypeVar, overload
 
 import attrs
 from attr import field

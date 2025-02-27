@@ -1,21 +1,21 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from copy import copy, deepcopy
-
 import math
 from collections.abc import Container, Sequence
-from typing import Optional
-import numpy as np
+from copy import copy, deepcopy
 from itertools import chain
+from typing import Optional
+
+import numpy as np
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from cvat.apps.engine.models import ShapeType, DimensionType
-from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.dataset_manager.util import faster_deepcopy
+from cvat.apps.engine.models import DimensionType, ShapeType
+from cvat.apps.engine.serializers import LabeledDataSerializer
 
 
 class AnnotationIR:
@@ -202,9 +202,10 @@ class AnnotationManager:
     def to_shapes(self,
         end_frame: int,
         *,
-        included_frames: Optional[Sequence[int]] = None,
+        deleted_frames: Sequence[int] | None = None,
+        included_frames: Sequence[int] | None = None,
         include_outside: bool = False,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
     ) -> list:
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension=self.dimension)
@@ -212,9 +213,15 @@ class AnnotationManager:
         if included_frames is not None:
             shapes = [s for s in shapes if s["frame"] in included_frames]
 
-        return shapes + tracks.to_shapes(end_frame,
-            included_frames=included_frames, include_outside=include_outside,
-            use_server_track_ids=use_server_track_ids
+        if deleted_frames is not None:
+            shapes = [s for s in shapes if s["frame"] not in deleted_frames]
+
+        return shapes + tracks.to_shapes(
+            end_frame,
+            included_frames=included_frames,
+            deleted_frames=deleted_frames,
+            include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids,
         )
 
     def to_tracks(self):
@@ -460,11 +467,16 @@ class ShapeManager(ObjectManager):
     def _modify_unmatched_object(self, obj, end_frame):
         pass
 
+
 class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame: int, *,
-        included_frames: Optional[Sequence[int]] = None,
+    def to_shapes(
+        self,
+        end_frame: int,
+        *,
+        included_frames: Sequence[int] | None = None,
+        deleted_frames: Sequence[int] | None = None,
         include_outside: bool = False,
-        use_server_track_ids: bool = False
+        use_server_track_ids: bool = False,
     ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
@@ -478,6 +490,7 @@ class TrackManager(ObjectManager):
                 self.dimension,
                 include_outside=include_outside,
                 included_frames=included_frames,
+                deleted_frames=deleted_frames,
             ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
@@ -497,10 +510,12 @@ class TrackManager(ObjectManager):
                 element_included_frames = set(track_shapes.keys())
                 if included_frames is not None:
                     element_included_frames = element_included_frames.intersection(included_frames)
-                element_shapes = track_elements.to_shapes(end_frame,
+                element_shapes = track_elements.to_shapes(
+                    end_frame,
                     included_frames=element_included_frames,
+                    deleted_frames=deleted_frames,
                     include_outside=True, # elements are controlled by the parent shape
-                    use_server_track_ids=use_server_track_ids
+                    use_server_track_ids=use_server_track_ids,
                 )
 
                 for shape in element_shapes:
@@ -587,10 +602,24 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(
-        track, start_frame, end_frame, dimension, *,
+        track: dict,
+        start_frame: int,
+        end_frame: int,
+        dimension: DimensionType | str,
+        *,
         included_frames: Optional[Sequence[int]] = None,
+        deleted_frames: Optional[Sequence[int]] = None,
         include_outside: bool = False,
     ):
+        # If a task or job contains deleted frames that contain track keyframes,
+        # these keyframes should be excluded from the interpolation.
+        # In jobs having specific frames included (e.g. GT jobs),
+        # deleted frames should not be confused with included frames during track interpolation.
+        # Deleted frames affect existing shapes in tracks.
+        # Included frames filter the resulting annotations after interpolation
+        # to produce the requested track frames.
+        deleted_frames = deleted_frames or []
+
         def copy_shape(source, frame, points=None, rotation=None):
             copied = source.copy()
             copied["attributes"] = faster_deepcopy(source["attributes"])
@@ -929,6 +958,8 @@ class TrackManager(ObjectManager):
         prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
+            if curr_frame in deleted_frames:
+                continue
             if prev_shape and end_frame <= curr_frame:
                 # If we exceed the end_frame and there was a previous shape,
                 # we still need to interpolate up to the next keyframe,
@@ -978,6 +1009,8 @@ class TrackManager(ObjectManager):
 
         shapes = [
             shape for shape in shapes
+
+            if shape["frame"] not in deleted_frames
 
             # After interpolation there can be a finishing frame
             # outside of the task boundaries. Filter it out to avoid errors.

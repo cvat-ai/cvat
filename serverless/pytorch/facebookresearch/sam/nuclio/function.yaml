@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -54,7 +54,7 @@ spec:
           value: ln -s /usr/bin/pip3 /usr/local/bin/pip && ln -s /usr/bin/python3 /usr/bin/python
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

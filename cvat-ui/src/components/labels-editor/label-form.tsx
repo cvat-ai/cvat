@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -425,7 +425,7 @@ export default class LabelForm extends React.Component<Props> {
                                     className: 'cvat-modal-delete-label-attribute',
                                     icon: <ExclamationCircleOutlined />,
                                     title: `Do you want to remove the "${attr.name}" attribute?`,
-                                    content: 'This action is undone. All annotations associated to the attribute will be removed',
+                                    content: 'This action cannot be undone. All annotations associated to the attribute will be removed',
                                     type: 'warning',
                                     okButtonProps: { type: 'primary', danger: true },
                                     onOk: () => {

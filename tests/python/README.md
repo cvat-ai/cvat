@@ -20,13 +20,15 @@ the server calling REST API directly (as it done by users).
 ## How to run?
 **Initial steps**
 
+1. On Debian/Ubuntu, make sure that your `$USER` is in `docker` group:
+   ```shell
+   sudo usermod -aG docker $USER
+   ```
 1. Follow [this guide](../../site/content/en/docs/api_sdk/sdk/developer-guide.md) to prepare
    `cvat-sdk` and `cvat-cli` source code
 1. Install all necessary requirements before running REST API tests:
-   ```
+   ```shell
    pip install -r ./tests/python/requirements.txt
-   pip install -e ./cvat-sdk
-   pip install -e ./cvat-cli
    ```
 1. Stop any other CVAT containers which you run previously. They keep ports
 which are used by containers for the testing system.
@@ -85,8 +87,11 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign --exclude=auth.permission --exclude=contenttypes --exclude=django_rq > shared/assets/cvat_db/data.json
-docker exec test_cvat_server_1 tar -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
+docker exec test_cvat_server_1 python manage.py dumpdata --indent 2 --natural-foreign \
+    --exclude=admin --exclude=auth.permission --exclude=authtoken --exclude=contenttypes \
+    --exclude=django_rq --exclude=sessions \
+    > shared/assets/cvat_db/data.json
+docker exec test_cvat_server_1 tar --exclude "/home/django/data/cache" -cjv /home/django/data > shared/assets/cvat_db/cvat_data.tar.bz2
 ```
 
 > Note: if you won't be use --indent options or will be use with other value

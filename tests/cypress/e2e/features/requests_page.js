@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,14 +14,16 @@ context('Requests page', () => {
         manifest: 'manifest.jsonl',
         endpointUrl: Cypress.config('minioUrl'),
     };
+
     const rectanglePayload = {
-        frame: 0,
         objectType: 'shape',
-        shapeType: 'rectangle',
+        labelName: mainLabelName,
+        frame: 0,
+        type: 'rectangle',
         points: [250, 64, 491, 228],
         occluded: false,
-        labelName: mainLabelName,
     };
+
     const attrName = 'requests_attr';
     const imagesCount = 3;
     const imageFileName = `image_${mainLabelName}`;
@@ -322,9 +324,11 @@ context('Requests page', () => {
 
             cy.getJobIDFromIdx(0).then((jobID) => {
                 const closeExportNotification = () => {
-                    cy.contains('Export is finished').should('be.visible');
-                    cy.contains('Export is finished').parents('.ant-notification-notice')
-                        .find('span[aria-label="close"]').click();
+                    cy.get('.ant-notification-notice').first().within((notification) => {
+                        cy.contains('Export is finished').should('be.visible');
+                        cy.get('span[aria-label="close"]').click();
+                        cy.wrap(notification).should('not.exist');
+                    });
                 };
 
                 const exportParams = {

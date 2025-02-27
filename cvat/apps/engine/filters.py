@@ -1,31 +1,33 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Dict, Tuple, List, Iterator, Optional, Iterable
-from functools import reduce
-import operator
 import json
+import operator
+from collections.abc import Iterable, Iterator
+from functools import reduce
+from textwrap import dedent
+from typing import Any, Optional
 
+from django.db.models import Q
+from django.db.models.query import QuerySet
+from django.utils.encoding import force_str
+from django.utils.translation import gettext_lazy as _
 from django_filters import FilterSet
 from django_filters import filters as djf
 from django_filters.filterset import BaseFilterSet
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
-from django.db.models.query import QuerySet
-from django.utils.translation import gettext_lazy as _
-from django.utils.encoding import force_str
-from rest_framework.request import Request
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
-from textwrap import dedent
+
+from cvat.apps.engine.types import ExtendedRequest
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
 
-def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> Dict[str, str]:
+def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> dict[str, str]:
     if fields is None:
         fields = getattr(view, DEFAULT_FILTER_FIELDS_ATTR, None) or []
 
@@ -38,7 +40,7 @@ def get_lookup_fields(view, fields: Optional[Iterator[str]] = None) -> Dict[str,
 
 
 class SearchFilter(filters.SearchFilter):
-    def get_search_fields(self, view, request):
+    def get_search_fields(self, view, request: ExtendedRequest):
         search_fields = getattr(view, 'search_fields') or []
         return get_lookup_fields(view, search_fields).values()
 
@@ -81,7 +83,7 @@ class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
     reverse_flag = "-"
 
-    def get_ordering(self, request, queryset, view):
+    def get_ordering(self, request: ExtendedRequest, queryset, view):
         ordering = []
         lookup_fields = self._get_lookup_fields(request, queryset, view)
         for term in super().get_ordering(request, queryset, view):
@@ -93,7 +95,7 @@ class OrderingFilter(filters.OrderingFilter):
 
         return ordering
 
-    def _get_lookup_fields(self, request, queryset, view):
+    def _get_lookup_fields(self, request: ExtendedRequest, queryset: QuerySet, view):
         ordering_fields = self.get_valid_fields(queryset, view, {'request': request})
         ordering_fields = [v[0] for v in ordering_fields]
         return get_lookup_fields(view, ordering_fields)
@@ -134,7 +136,7 @@ class OrderingFilter(filters.OrderingFilter):
         }] if ordering_fields else []
 
 class JsonLogicFilter(filters.BaseFilterBackend):
-    Rules = Dict[str, Any]
+    Rules = dict[str, Any]
     filter_param = 'filter'
     filter_title = _('Filter')
     filter_description = _(dedent("""
@@ -191,7 +193,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         return rules
 
     def apply_filter(self,
-        queryset: QuerySet, parsed_rules: Rules, *, lookup_fields: Dict[str, Any]
+        queryset: QuerySet, parsed_rules: Rules, *, lookup_fields: dict[str, Any]
     ) -> QuerySet:
         try:
             q_object = self._build_Q(parsed_rules, lookup_fields)
@@ -200,7 +202,7 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
         return queryset.filter(q_object)
 
-    def filter_queryset(self, request, queryset, view):
+    def filter_queryset(self, request: ExtendedRequest, queryset: QuerySet, view):
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
             parsed_rules = self._parse_query(json_rules)
@@ -362,7 +364,7 @@ class _NestedAttributeHandler:
         __setattr__ = dict.__setitem__
         __delattr__ = dict.__delitem__
 
-        def __init__(self, dct: Dict):
+        def __init__(self, dct: dict):
             for key, value in dct.items():
                 if isinstance(value, dict):
                     value = self.__class__(value)
@@ -412,7 +414,7 @@ class NonModelSimpleFilter(SimpleFilter, _NestedAttributeHandler):
                 parameters.append(parameter)
         return parameters
 
-    def filter_queryset(self, request: Request, queryset: Iterable, view):
+    def filter_queryset(self, request: ExtendedRequest, queryset: Iterable, view):
         filtered_queryset = queryset
 
         query_params = request.query_params
@@ -454,7 +456,7 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
     ?sort=-field1,-field2
     """
 
-    def get_ordering(self, request, queryset, view) -> Tuple[List[str], bool]:
+    def get_ordering(self, request: ExtendedRequest, queryset: Iterable, view) -> tuple[list[str], bool]:
         ordering = super().get_ordering(request, queryset, view)
         result, reverse = [], False
         for field in ordering:
@@ -465,7 +467,7 @@ class NonModelOrderingFilter(OrderingFilter, _NestedAttributeHandler):
 
         return result, reverse
 
-    def filter_queryset(self, request: Request, queryset: Iterable, view) -> Iterable:
+    def filter_queryset(self, request: ExtendedRequest, queryset: Iterable, view) -> Iterable:
         ordering, reverse = self.get_ordering(request, queryset, view)
 
         if ordering:
@@ -520,7 +522,7 @@ class NonModelJsonLogicFilter(JsonLogicFilter, _NestedAttributeHandler):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
-    def filter_queryset(self, request: Request, queryset: Iterable, view) -> Iterable:
+    def filter_queryset(self, request: ExtendedRequest, queryset: Iterable, view) -> Iterable:
         filtered_queryset = queryset
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:

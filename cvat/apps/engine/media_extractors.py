@@ -1,27 +1,26 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
-import os
-import sysconfig
-import tempfile
-import shutil
-import zipfile
 import io
 import itertools
+import os
+import shutil
 import struct
+import sysconfig
+import tempfile
+import zipfile
 from abc import ABC, abstractmethod
 from bisect import bisect
-from contextlib import ExitStack, closing, contextmanager
+from collections.abc import Generator, Iterable, Iterator, Sequence
+from contextlib import AbstractContextManager, ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import (
-    Any, Callable, ContextManager, Generator, Iterable, Iterator, Optional, Protocol,
-    Sequence, Tuple, TypeVar, Union
-)
+from random import shuffle
+from typing import Any, Callable, Optional, Protocol, TypeVar, Union
 
 import av
 import av.codec
@@ -29,19 +28,19 @@ import av.container
 import av.video.stream
 import numpy as np
 from natsort import os_sorted
-from pyunpack import Archive
 from PIL import Image, ImageFile, ImageOps
-from random import shuffle
-from cvat.apps.engine.utils import rotate_image
-from cvat.apps.engine.models import DimensionType, SortingMethod
+from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
+
+from cvat.apps.engine.models import DimensionType, SortingMethod
+from cvat.apps.engine.utils import rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
-from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 
@@ -177,6 +176,12 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
 
         return obj.get_size()
 
+    def _can_put_item_in_cache(self, value_size: int) -> bool:
+        return (
+            len(self._cache) + 1 <= self.max_cache_entries and
+            self.used_cache_memory + value_size <= self.max_cache_memory
+        )
+
     def __getitem__(self, idx: int):
         cache_item = self._cache.get(idx)
         if cache_item:
@@ -185,14 +190,11 @@ class CachingMediaIterator(RandomAccessIterator[_MediaT]):
         value = super().__getitem__(idx)
         value_size = self._get_object_size(value)
 
-        while (
-            len(self._cache) + 1 > self.max_cache_entries or
-            self.used_cache_memory + value_size > self.max_cache_memory
-        ):
+        while len(self._cache) > 0 and not self._can_put_item_in_cache(value_size):
             min_key = min(self._cache.keys())
             self._cache.pop(min_key)
 
-        if self.used_cache_memory + value_size <= self.max_cache_memory:
+        if self._can_put_item_in_cache(value_size):
             self._cache[idx] = self._CacheItem(value, value_size)
 
         return value
@@ -612,7 +614,7 @@ class VideoReader(IMediaReader):
         *,
         frame_filter: Union[bool, Iterable[int]] = True,
         video_stream: Optional[av.video.stream.VideoStream] = None,
-    ) -> Iterator[Tuple[av.VideoFrame, str, int]]:
+    ) -> Iterator[tuple[av.VideoFrame, str, int]]:
         """
         If provided, frame_filter must be an ordered sequence in the ascending order.
         'True' means using the frames configured in the reader object.
@@ -673,14 +675,14 @@ class VideoReader(IMediaReader):
                     if next_frame_filter_frame is None:
                         return
 
-    def __iter__(self) -> Iterator[Tuple[av.VideoFrame, str, int]]:
+    def __iter__(self) -> Iterator[tuple[av.VideoFrame, str, int]]:
         return self.iterate_frames()
 
     def get_progress(self, pos):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
         return _AvVideoReading().read_av_container(self._source_path[0])
 
     def _decode_stream(
@@ -771,7 +773,7 @@ class VideoReaderWithManifest:
 
         self.allow_threading = allow_threading
 
-    def _read_av_container(self) -> ContextManager[av.container.InputContainer]:
+    def _read_av_container(self) -> AbstractContextManager[av.container.InputContainer]:
         return _AvVideoReading().read_av_container(self.source_path)
 
     def _decode_stream(
@@ -1032,11 +1034,11 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
         return video_stream
 
-    FrameDescriptor = Tuple[av.VideoFrame, Any, Any]
+    FrameDescriptor = tuple[av.VideoFrame, Any, Any]
 
     def _peek_first_frame(
         self, frame_iter: Iterator[FrameDescriptor]
-    ) -> Tuple[Optional[FrameDescriptor], Iterator[FrameDescriptor]]:
+    ) -> tuple[Optional[FrameDescriptor], Iterator[FrameDescriptor]]:
         "Gets the first frame and returns the same full iterator"
 
         if not hasattr(frame_iter, '__next__'):
@@ -1047,7 +1049,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
     def save_as_chunk(
         self, images: Iterator[FrameDescriptor], chunk_path: str
-    ) -> Sequence[Tuple[int, int]]:
+    ) -> Sequence[tuple[int, int]]:
         first_frame, images = self._peek_first_frame(images)
         if not first_frame:
             raise Exception('no images to save')

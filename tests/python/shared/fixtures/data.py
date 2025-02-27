@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -230,6 +230,12 @@ def quality_conflicts():
 @pytest.fixture(scope="session")
 def quality_settings():
     with open(ASSETS_DIR / "quality_settings.json") as f:
+        return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
+def consensus_settings():
+    with open(ASSETS_DIR / "consensus_settings.json") as f:
         return Container(json.load(f)["results"])
 
 

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -19,9 +19,9 @@ import mimetypes
 import os
 import sys
 import tempfile
+import urllib
 from datetime import timedelta
 from enum import Enum
-import urllib
 
 from attr.converters import to_bool
 from corsheaders.defaults import default_headers
@@ -40,6 +40,7 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 def generate_secret_key():
     """
@@ -72,12 +73,13 @@ def generate_secret_key():
             # Discard ours and use theirs.
             pass
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ModuleNotFoundError:
-    generate_secret_key()
-    from keys.secret_key import SECRET_KEY
+if not SECRET_KEY:
+    try:
+        sys.path.append(BASE_DIR)
+        from keys.secret_key import SECRET_KEY  # pylint: disable=unused-import
+    except ModuleNotFoundError:
+        generate_secret_key()
+        from keys.secret_key import SECRET_KEY
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
@@ -117,6 +119,8 @@ INSTALLED_APPS = [
     'cvat.apps.events',
     'cvat.apps.quality_control',
     'cvat.apps.analytics_report',
+    'cvat.apps.redis_handler',
+    'cvat.apps.consensus',
 ]
 
 SITE_ID = 1
@@ -277,12 +281,13 @@ class CVAT_QUEUES(Enum):
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
     CHUNKS = 'chunks'
+    CONSENSUS = 'consensus'
 
 redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
 redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
 redis_inmem_password = os.getenv('CVAT_REDIS_INMEM_PASSWORD', '')
 
-shared_queue_settings = {
+REDIS_INMEM_SETTINGS = {
     'HOST': redis_inmem_host,
     'PORT': redis_inmem_port,
     'DB': 0,
@@ -291,40 +296,44 @@ shared_queue_settings = {
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '4h',
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '4h',
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '24h',
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.CLEANING.value: {
-        **shared_queue_settings,
-        'DEFAULT_TIMEOUT': '1h',
+        **REDIS_INMEM_SETTINGS,
+        'DEFAULT_TIMEOUT': '2h',
     },
     CVAT_QUEUES.CHUNKS.value: {
-        **shared_queue_settings,
+        **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '5m',
+    },
+    CVAT_QUEUES.CONSENSUS.value: {
+        **REDIS_INMEM_SETTINGS,
+        'DEFAULT_TIMEOUT': '1h',
     },
 }
 
@@ -353,6 +362,20 @@ PERIODIC_RQ_JOBS = [
         'func': 'cvat.apps.iam.utils.clean_up_sessions',
         'cron_string': '0 0 * * *',
     },
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'cron_export_cache_directory_cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cleanup_export_cache_directory',
+        # Run twice a day (at midnight and at noon)
+        'cron_string': '0 0,12 * * *',
+    },
+    {
+        'queue': CVAT_QUEUES.CLEANING.value,
+        'id': 'cron_tmp_directory_cleanup',
+        'func': 'cvat.apps.dataset_manager.cron.cleanup_tmp_directory',
+        # Run once a day
+        'cron_string': '0 18 * * *',
+    }
 ]
 
 # JavaScript and CSS compression
@@ -413,7 +436,10 @@ os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
 
-EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
+EXPORT_CACHE_ROOT = os.path.join(CACHE_ROOT, 'export')
+os.makedirs(EXPORT_CACHE_ROOT, exist_ok=True)
+
+EVENTS_LOCAL_DB_ROOT = os.path.join(BASE_DIR, 'events')
 os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
 EVENTS_LOCAL_DB_FILE = os.path.join(
     EVENTS_LOCAL_DB_ROOT,
@@ -643,6 +669,7 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 
     'ENUM_NAME_OVERRIDES': {
+        'LabelType': 'cvat.apps.engine.models.LabelType',
         'ShapeType': 'cvat.apps.engine.models.ShapeType',
         'OperationStatus': 'cvat.apps.engine.models.StateChoice',
         'ChunkType': 'cvat.apps.engine.models.DataChoice',
@@ -740,7 +767,16 @@ ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))
 
 from cvat.rq_patching import update_started_job_registry_cleanup
+
 update_started_job_registry_cleanup()
 
 CLOUD_DATA_DOWNLOADING_MAX_THREADS_NUMBER = 4
 CLOUD_DATA_DOWNLOADING_NUMBER_OF_FILES_PER_THREAD = 1000
+
+# Indicates the maximum number of days a file or directory is retained in the temporary directory
+TMP_FILE_OR_DIR_RETENTION_DAYS = 3
+
+LOGO_FILENAME = 'logo.svg'
+ABOUT_INFO = {
+    "subtitle": "Open Data Annotation Platform",
+}

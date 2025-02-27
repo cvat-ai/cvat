@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { MenuProps } from 'antd/lib/menu';
-import Icon, {
+import {
     SettingOutlined,
     InfoCircleOutlined,
     EditOutlined,
@@ -34,9 +34,9 @@ import notification from 'antd/lib/notification';
 import config from 'config';
 
 import { Organization, getCore } from 'cvat-core-wrapper';
-import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import CVATLogo from 'components/common/cvat-logo';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { shortcutsActions, registerComponentShortcuts } from 'actions/shortcuts-actions';
@@ -260,14 +260,6 @@ function HeaderComponent(props: Props): JSX.Element {
                         <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
-                        <Text strong>Core version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.core}`}</Text>
-                    </p>
-                    <p>
-                        <Text strong>Canvas version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.canvas}`}</Text>
-                    </p>
-                    <p>
                         <Text strong>UI version:</Text>
                         <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
@@ -438,7 +430,7 @@ function HeaderComponent(props: Props): JSX.Element {
         <Layout.Header className='cvat-header'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
             <div className='cvat-left-header'>
-                <Icon className='cvat-logo-icon' component={CVATLogo} />
+                <CVATLogo />
                 <Button
                     className={getButtonClassName('projects')}
                     type='link'

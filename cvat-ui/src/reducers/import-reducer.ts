@@ -1,11 +1,12 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-import { getInstanceType, RequestInstanceType } from 'actions/requests-actions';
+import { RequestInstanceType } from 'actions/requests-actions';
 import { ProjectOrTaskOrJob } from 'cvat-core-wrapper';
+import { getInstanceType } from 'actions/common';
 import { ImportState } from '.';
 
 const defaultProgress = 0.0;

@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,8 +10,8 @@ import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography';
 import { PlusCircleOutlined } from '@ant-design/icons';
 
-import { CombinedState, ShapeType } from 'reducers';
-import MLModel from 'cvat-core/src/ml-model';
+import { CombinedState } from 'reducers';
+import { LabelType, MLModel } from 'cvat-core-wrapper';
 import { LabelOptColor } from './common';
 
 interface Props {
@@ -83,7 +83,7 @@ function PickFromModelComponent(props: Props): JSX.Element {
                             if (!labelNames.includes(label.name)) {
                                 const generatedLabel: LabelOptColor = {
                                     name: label.name,
-                                    type: label.type === 'unknown' ? 'any' : label.type as ShapeType,
+                                    type: label.type,
                                     attributes: label.attributes.map((attr) => ({
                                         ...attr,
                                         mutable: false,
@@ -91,10 +91,10 @@ function PickFromModelComponent(props: Props): JSX.Element {
                                     })),
                                 };
 
-                                if (generatedLabel.type === ShapeType.SKELETON && label.sublabels && label.svg) {
+                                if (generatedLabel.type === LabelType.SKELETON && label.sublabels && label.svg) {
                                     generatedLabel.sublabels = label.sublabels.map((sublabel) => ({
                                         name: sublabel.name,
-                                        type: sublabel.type === 'unknown' ? 'any' : sublabel.type as ShapeType,
+                                        type: sublabel.type,
                                         attributes: sublabel.attributes.map((attr) => ({
                                             ...attr,
                                             mutable: false,

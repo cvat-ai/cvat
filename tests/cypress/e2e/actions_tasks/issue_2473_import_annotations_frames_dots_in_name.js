@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,7 +33,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         secondY: 450,
     };
 
-    const dumpType = 'YOLO';
+    const dumpType = 'YOLO 1.1';
     let annotationArchiveName = '';
 
     function confirmUpdate(modalWindowClassName) {
@@ -61,7 +61,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     }
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -114,7 +114,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             uploadAnnotation(
-                dumpType.split(' ')[0],
+                dumpType,
                 annotationArchiveName,
                 '.cvat-modal-content-load-job-annotation',
             );

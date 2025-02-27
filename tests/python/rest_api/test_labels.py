@@ -1,4 +1,4 @@
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -644,16 +644,16 @@ class TestPatchLabels(_TestLabelsPermissionsBase):
                     "color": ["#2000c0"],
                     "name": ["modified"],
                     "type": [
-                        "bbox",
+                        "any",
+                        "cuboid",
                         "ellipse",
+                        "mask",
+                        "points",
                         "polygon",
                         "polyline",
-                        "points",
-                        "cuboid",
-                        "cuboid_3d",
+                        "rectangle",
                         "skeleton",
                         "tag",
-                        "any",
                     ],
                 }.items()
             )

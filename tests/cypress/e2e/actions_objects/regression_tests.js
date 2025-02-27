@@ -1,4 +1,4 @@
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,27 +29,35 @@ context('Regression tests', () => {
     };
 
     const rectanglePayload = {
-        shapeType: 'rectangle',
+        type: 'rectangle',
         occluded: false,
         labelName: taskPayload.labels[0].name,
     };
 
     before(() => {
-        cy.visit('auth/login');
+        cy.visit('/auth/login');
         cy.login();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
             taskID = response.taskID;
             [jobID] = response.jobIDs;
 
-            cy.headlessCreateObjects([
-                {
-                    ...rectanglePayload, frame: 99, points: [250, 64, 491, 228], objectType: 'shape',
-                },
-                {
-                    ...rectanglePayload, frame: 0, points: [10, 10, 30, 30], objectType: 'track',
-                },
-            ], jobID);
+            cy.headlessCreateObjects([{
+                ...rectanglePayload,
+                frame: 99,
+                points: [250, 64, 491, 228],
+                objectType: 'shape',
+            }, {
+                labelName: rectanglePayload.labelName,
+                objectType: 'track',
+                frame: 0,
+                shapes: [{
+                    type: rectanglePayload.type,
+                    frame: 0,
+                    occluded: rectanglePayload.occluded,
+                    points: [10, 10, 30, 30],
+                }],
+            }], jobID);
         });
     });
 

@@ -2,13 +2,12 @@
 from django.conf import settings
 from django.db import migrations
 
-
 BUSINESS_GROUP_NAME = "business"
 USER_GROUP_NAME = "user"
 
 
 def delete_business_group(apps, schema_editor):
-    Group = apps.get_model('auth', 'Group')
+    Group = apps.get_model("auth", "Group")
     User = apps.get_model(settings.AUTH_USER_MODEL)
 
     if user_group := Group.objects.filter(name=USER_GROUP_NAME).first():

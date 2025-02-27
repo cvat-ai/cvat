@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,6 +27,10 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     }, [history]);
     const onViewQualityControl = (): void => {
         history.push(`/tasks/${taskInstance.id}/quality-control`);
+    };
+
+    const onViewConsensusManagement = (): void => {
+        history.push(`/tasks/${taskInstance.id}/consensus`);
     };
 
     return (
@@ -63,6 +67,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                             taskInstance={taskInstance}
                             onViewAnalytics={onViewAnalytics}
                             onViewQualityControl={onViewQualityControl}
+                            onViewConsensusManagement={onViewConsensusManagement}
                         />
                     )}
                 >

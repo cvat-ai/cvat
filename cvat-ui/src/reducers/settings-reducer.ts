@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +35,7 @@ const defaultState: SettingsState = {
         textFontSize: 14,
         controlPointsSize: 5,
         textPosition: 'auto',
-        textContent: 'id,source,label,attributes,descriptions',
+        textContent: 'id,source,label,attributes,descriptions,dimensions',
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,

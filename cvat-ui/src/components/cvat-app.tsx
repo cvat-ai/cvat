@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -81,6 +81,7 @@ import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect
 import CreateJobPage from './create-job-page/create-job-page';
 import AnalyticsPage from './analytics-page/analytics-page';
 import QualityControlPage from './quality-control/quality-control-page';
+import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
@@ -325,6 +326,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadServerAPISchema();
         }
 
+        if (!aboutInitialized && !aboutFetching) {
+            loadAbout();
+            return;
+        }
+
         if (user == null || !user.isVerified || !user.id) {
             return;
         }
@@ -335,10 +341,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!formatsInitialized && !formatsFetching) {
             loadFormats();
-        }
-
-        if (!aboutInitialized && !aboutFetching) {
-            loadAbout();
         }
 
         if (organizationInitialized && !requestsInitialized && !requestsFetching) {
@@ -509,6 +511,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/:id' component={TaskPageComponent} />
                                         <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
                                         <Route exact path='/tasks/:tid/quality-control' component={QualityControlPage} />
+                                        <Route exact path='/tasks/:tid/consensus' component={ConsensusManagementPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
                                         <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />

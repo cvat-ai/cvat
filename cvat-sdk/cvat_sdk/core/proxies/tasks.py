@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import json
 import mimetypes
+import os
 import shutil
 from collections.abc import Sequence
 from enum import Enum
@@ -24,6 +25,7 @@ from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.model_proxy import (
     DownloadBackupMixin,
     ExportDatasetMixin,
+    ModelBatchDeleteMixin,
     ModelCreateMixin,
     ModelDeleteMixin,
     ModelListMixin,
@@ -108,14 +110,13 @@ class Task(
             data["frame_filter"] = f"step={params.get('frame_step')}"
 
         if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
-            for resource in resources:
-                if not isinstance(resource, str):
-                    raise TypeError(f"resources: expected instances of str, got {type(resource)}")
+
+            str_resources = list(map(os.fspath, resources))
 
             if resource_type is ResourceType.REMOTE:
-                data["remote_files"] = resources
+                data["remote_files"] = str_resources
             elif resource_type is ResourceType.SHARE:
-                data["server_files"] = resources
+                data["server_files"] = str_resources
 
             result, _ = self.api.create_data(
                 self.id,
@@ -168,7 +169,7 @@ class Task(
         pbar: Optional[ProgressReporter] = None,
     ):
         """
-        Upload annotations for a task in the specified format (e.g. 'YOLO ZIP 1.0').
+        Upload annotations for a task in the specified format (e.g. 'YOLO 1.1').
         """
 
         filename = Path(filename)
@@ -286,6 +287,7 @@ class TasksRepo(
     ModelCreateMixin[Task, models.ITaskWriteRequest],
     ModelRetrieveMixin[Task],
     ModelListMixin[Task],
+    ModelBatchDeleteMixin,
 ):
     _entity_type = Task
 
@@ -333,23 +335,16 @@ class TasksRepo(
 
         return task
 
+    # This is a backwards compatibility wrapper to support calls which pass
+    # the task_ids parameter by keyword (the base class implementation is generic,
+    # so it doesn't support this).
+    # pylint: disable-next=arguments-differ
     def remove_by_ids(self, task_ids: Sequence[int]) -> None:
         """
         Delete a list of tasks, ignoring those which don't exist.
         """
 
-        for task_id in task_ids:
-            (_, response) = self.api.destroy(task_id, _check_status=False)
-
-            if 200 <= response.status <= 299:
-                self._client.logger.info(f"Task ID {task_id} deleted")
-            elif response.status == 404:
-                self._client.logger.info(f"Task ID {task_id} not found")
-            else:
-                self._client.logger.warning(
-                    f"Failed to delete task ID {task_id}: "
-                    f"{response.msg} (status {response.status})"
-                )
+        super().remove_by_ids(task_ids)
 
     def create_from_backup(
         self,

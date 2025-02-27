@@ -385,7 +385,7 @@ Annotation quality settings have the following parameters:
 | - | - |
 | Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
 | Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects _Low overlap_ warnings. It's supposed that _Min similarity threshold_ <= _Low overlap threshold_. |
-| Match empty frames | Consider frames matched if there are no annotations both on GT and regular job frames |
+| Empty frames are annotated | Consider frames annotated as "empty" if there are no annotations on a frame. If a frame is empty in both GT and job annotations, it will be considered a matching annotation. |
 
 | _Point and Skeleton matching_ | |
 | - | - |
@@ -493,9 +493,11 @@ Once the quality estimation is [enabled in a task](#configuring-quality-estimati
 and the Ground Truth job is configured, quality analytics becomes available
 for the task and its jobs.
 
-By default, CVAT computes quality metrics automatically at regular intervals.
+When you open the Quality Analytics page, it displays quality metrics from the most recent quality estimation.
+If it's your first time accessing the page, no quality report will be available yet.
+The date of the last computation is shown next to the report download button.
 
-If you want to refresh quality metrics (e.g. after the settings were changed),
+If you want to request updating of quality metrics in a task (e.g. after the settings were changed),
 you can do this by pressing the **Refresh** button on the
 task **Quality Management** > **Analytics** page.
 
@@ -513,7 +515,7 @@ be included in quality computation.
 
 The Analytics page has the following elements:
 
-![Quality Analytics page](/images/honeypot05.jpg)
+![Quality Analytics page](/images/honeypot05.png)
 
 <!--lint disable maximum-line-length-->
 

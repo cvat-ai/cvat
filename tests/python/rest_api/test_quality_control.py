@@ -1,4 +1,4 @@
-# Copyright (C) 2023-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -1213,7 +1213,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
             "compare_line_orientation",
             "panoptic_comparison",
             "point_size_base",
-            "match_empty_frames",
+            "empty_is_annotated",
         ],
     )
     def test_settings_affect_metrics(
@@ -1246,8 +1246,11 @@ class TestQualityReportMetrics(_PermissionTestBase):
             )
 
         new_report = self.create_quality_report(admin_user, task_id)
-        if parameter == "match_empty_frames":
+        if parameter == "empty_is_annotated":
             assert new_report["summary"]["valid_count"] != old_report["summary"]["valid_count"]
+            assert new_report["summary"]["total_count"] != old_report["summary"]["total_count"]
+            assert new_report["summary"]["ds_count"] != old_report["summary"]["ds_count"]
+            assert new_report["summary"]["gt_count"] != old_report["summary"]["gt_count"]
         else:
             assert (
                 new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
@@ -1426,3 +1429,112 @@ class TestQualityReportMetrics(_PermissionTestBase):
             assert [f for f in gt_frames if f != excluded_gt_frame] == json.loads(response.data)[
                 "comparison_summary"
             ]["frames"]
+
+    def test_quality_metrics_in_task_with_gt_and_tracks(
+        self,
+        admin_user,
+        tasks,
+        labels,
+    ):
+        task_id = next(
+            t["id"]
+            for t in tasks
+            if not t["validation_mode"] and t["size"] >= 5 and not t["project_id"]
+        )
+        label_id = next(l["id"] for l in labels if l.get("task_id") == task_id)
+
+        with make_api_client(admin_user) as api_client:
+            gt_frames = [1, 3]
+            gt_job = api_client.jobs_api.create(
+                job_write_request=models.JobWriteRequest(
+                    type="ground_truth",
+                    task_id=task_id,
+                    frame_selection_method="manual",
+                    frames=gt_frames,
+                )
+            )[0]
+
+            gt_annotations = {
+                "shapes": [
+                    {
+                        "frame": 1,
+                        "label_id": label_id,
+                        "points": [0.5, 1.5, 2.5, 3.5],
+                        "rotation": 0,
+                        "type": "rectangle",
+                        "occluded": False,
+                        "outside": False,
+                        "attributes": [],
+                    },
+                    {
+                        "frame": 3,
+                        "label_id": label_id,
+                        "points": [3.0, 4.0, 5.0, 6.0],
+                        "rotation": 0,
+                        "type": "rectangle",
+                        "occluded": False,
+                        "outside": False,
+                        "attributes": [],
+                    },
+                ]
+            }
+
+            normal_annotations = {
+                "tracks": [
+                    {
+                        "type": "rectangle",
+                        "frame": 0,
+                        "label_id": label_id,
+                        "shapes": [
+                            {
+                                "frame": 0,
+                                "points": [1.0, 2.0, 3.0, 4.0],
+                                "rotation": 0,
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": False,
+                                "attributes": [],
+                            },
+                            {
+                                "frame": 2,  # not included, but must affect interpolation
+                                "points": [0.0, 1.0, 2.0, 3.0],
+                                "rotation": 0,
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": False,
+                                "attributes": [],
+                            },
+                            {
+                                "frame": 4,
+                                "points": [6.0, 7.0, 8.0, 9.0],
+                                "rotation": 0,
+                                "type": "rectangle",
+                                "occluded": False,
+                                "outside": False,
+                                "attributes": [],
+                            },
+                        ],
+                    }
+                ]
+            }
+
+            api_client.jobs_api.update_annotations(
+                gt_job.id, job_annotations_update_request=gt_annotations
+            )
+
+            api_client.tasks_api.update_annotations(
+                task_id, task_annotations_update_request=normal_annotations
+            )
+
+            api_client.jobs_api.partial_update(
+                gt_job.id,
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    stage="acceptance", state="completed"
+                ),
+            )
+
+            report = self.create_quality_report(admin_user, task_id)
+
+            assert report["summary"]["conflict_count"] == 0
+            assert report["summary"]["valid_count"] == 2
+            assert report["summary"]["total_count"] == 2

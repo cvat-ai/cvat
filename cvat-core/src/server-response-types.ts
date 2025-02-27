@@ -1,4 +1,4 @@
-// Copyright (C) 2023-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -121,6 +121,7 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
+    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {
@@ -147,6 +148,8 @@ export interface SerializedJob {
     url: string;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
+    parent_job_id: number | null;
+    consensus_replicas: number;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
@@ -174,6 +177,8 @@ export interface SerializedAbout {
     description: string;
     name: string;
     version: string;
+    logo_url: string;
+    subtitle: string;
 }
 
 export interface SerializedRemoteFile {
@@ -237,7 +242,14 @@ export interface SerializedOrganization {
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
 }
+
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
+
+export interface APIConsensusSettingsFilter extends APICommonFilterParams {
+    task_id?: number;
+}
+
+export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
@@ -258,7 +270,7 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
-    match_empty_frames?: boolean;
+    empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
 }
 
@@ -325,6 +337,14 @@ export interface SerializedQualityReportData {
             covered_annotation: number;
         }
     };
+}
+
+export interface SerializedConsensusSettingsData {
+    id?: number;
+    task?: number;
+    quorum?: number;
+    iou_threshold?: number;
+    descriptions?: Record<string, string>;
 }
 
 export interface SerializedDataEntry {

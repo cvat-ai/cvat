@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,9 +8,10 @@ import {
     Storage, ProjectOrTaskOrJob, Job, getCore, StorageLocation,
 } from 'cvat-core-wrapper';
 import {
-    getInstanceType, RequestInstanceType, listen,
+    RequestInstanceType, listen,
     RequestsActions, updateRequestProgress,
 } from './requests-actions';
+import { getInstanceType } from './common';
 
 export enum ExportActionTypes {
     OPEN_EXPORT_DATASET_MODAL = 'OPEN_EXPORT_DATASET_MODAL',

@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -262,18 +262,23 @@ ThunkAction {
         if (data.cloudStorageId) {
             description.cloud_storage_id = data.cloudStorageId;
         }
+        if (data.advanced.consensusReplicas) {
+            description.consensus_replicas = +data.advanced.consensusReplicas;
+        }
 
-        let extras = {};
+        const extras: Record<string, any> = {};
 
         if (data.quality.validationMode !== ValidationMode.NONE) {
-            extras = {
-                validation_params: {
-                    mode: data.quality.validationMode,
-                    frame_selection_method: data.quality.frameSelectionMethod,
-                    frame_share: data.quality.validationFramesPercent,
-                    frames_per_job_share: data.quality.validationFramesPerJobPercent,
-                },
+            extras.validation_params = {
+                mode: data.quality.validationMode,
+                frame_selection_method: data.quality.frameSelectionMethod,
+                frame_share: data.quality.validationFramesPercent,
+                frames_per_job_share: data.quality.validationFramesPerJobPercent,
             };
+        }
+
+        if (data.advanced.consensusReplicas) {
+            extras.consensus_replicas = description.consensus_replicas;
         }
 
         const taskInstance = new cvat.classes.Task(description);

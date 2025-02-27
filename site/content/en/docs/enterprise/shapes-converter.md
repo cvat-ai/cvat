@@ -50,7 +50,7 @@ With the following fields:
   If unsaved changes are detected, a prompt will advise to save these changes
   to avoid any potential loss of data.
 
-- **Disabу auto-save:** Prior to running the annotation action, disabling the auto-save feature
+- **Disable auto-save:** Prior to running the annotation action, disabling the auto-save feature
   is advisable. A notification will suggest this action if auto-save is currently active.
 
 - **Committing changes:** Changes applied during the annotation session

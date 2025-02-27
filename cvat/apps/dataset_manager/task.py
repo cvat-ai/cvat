@@ -1,35 +1,38 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
+import io
 import itertools
-import os
 from collections import OrderedDict
+from contextlib import nullcontext
 from copy import deepcopy
 from enum import Enum
-from tempfile import TemporaryDirectory
-from typing import Optional, Union
-from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
+from typing import Callable, Optional, Union
 
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
+from django.conf import settings
 from django.db import transaction
 from django.db.models.query import Prefetch, QuerySet
-from django.conf import settings
 from rest_framework.exceptions import ValidationError
 
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
+from cvat.apps.dataset_manager.bindings import (
+    CvatDatasetNotFoundError,
+    CvatImportError,
+    JobData,
+    TaskData,
+)
+from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
+from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
 from cvat.apps.engine import models, serializers
-from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.log import DatasetLogManager
-from cvat.apps.engine.utils import chunked_list
+from cvat.apps.engine.model_utils import add_prefetch_fields, bulk_create, get_cached
+from cvat.apps.engine.plugins import plugin_decorator
+from cvat.apps.engine.utils import take_by
 from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
-
-from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
-from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError, CvatDatasetNotFoundError
-from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import (
-    add_prefetch_fields, bulk_create, get_cached, faster_deepcopy
-)
 
 dlogger = DatasetLogManager()
 
@@ -84,7 +87,7 @@ def merge_table_rows(rows, keys_for_merge, field_id):
 
 class JobAnnotation:
     @classmethod
-    def add_prefetch_info(cls, queryset: QuerySet, prefetch_images: bool = True):
+    def add_prefetch_info(cls, queryset: QuerySet[models.Job], prefetch_images: bool = True) -> QuerySet[models.Job]:
         assert issubclass(queryset.model, models.Job)
 
         label_qs = add_prefetch_fields(models.Label.objects.all(), [
@@ -276,38 +279,22 @@ class JobAnnotation:
                 if elements or parent_track is None:
                     track["elements"] = elements
 
-            db_tracks = bulk_create(
-                db_model=models.LabeledTrack,
-                objects=db_tracks,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_tracks = bulk_create(models.LabeledTrack, db_tracks)
 
             for db_attr_val in db_track_attr_vals:
                 db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
 
-            bulk_create(
-                db_model=models.LabeledTrackAttributeVal,
-                objects=db_track_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.LabeledTrackAttributeVal, db_track_attr_vals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_tracks[db_shape.track_id].id
 
-            db_shapes = bulk_create(
-                db_model=models.TrackedShape,
-                objects=db_shapes,
-                flt_param={"track__job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.TrackedShape, db_shapes)
 
             for db_attr_val in db_shape_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.TrackedShapeAttributeVal,
-                objects=db_shape_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals,)
 
             shape_idx = 0
             for track, db_track in zip(tracks, db_tracks):
@@ -347,20 +334,12 @@ class JobAnnotation:
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
 
-            db_shapes = bulk_create(
-                db_model=models.LabeledShape,
-                objects=db_shapes,
-                flt_param={"job_id": self.db_job.id}
-            )
+            db_shapes = bulk_create(models.LabeledShape, db_shapes)
 
             for db_attr_val in db_attr_vals:
                 db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
-            bulk_create(
-                db_model=models.LabeledShapeAttributeVal,
-                objects=db_attr_vals,
-                flt_param={}
-            )
+            bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
@@ -391,20 +370,12 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(
-            db_model=models.LabeledImage,
-            objects=db_tags,
-            flt_param={"job_id": self.db_job.id}
-        )
+        db_tags = bulk_create(models.LabeledImage, db_tags)
 
         for db_attr_val in db_attr_vals:
             db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
-        bulk_create(
-            db_model=models.LabeledImageAttributeVal,
-            objects=db_attr_vals,
-            flt_param={}
-        )
+        bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
@@ -530,13 +501,13 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            for labeledimage_ids_chunk in chunked_list(labeledimage_ids, chunk_size=1000):
+            for labeledimage_ids_chunk in take_by(labeledimage_ids, chunk_size=1000):
                 self._delete_job_labeledimages(labeledimage_ids_chunk)
 
-            for labeledshape_ids_chunk in chunked_list(labeledshape_ids, chunk_size=1000):
+            for labeledshape_ids_chunk in take_by(labeledshape_ids, chunk_size=1000):
                 self._delete_job_labeledshapes(labeledshape_ids_chunk)
 
-            for labeledtrack_ids_chunk in chunked_list(labeledtrack_ids, chunk_size=1000):
+            for labeledtrack_ids_chunk in take_by(labeledtrack_ids, chunk_size=1000):
                 self._delete_job_labeledtracks(labeledtrack_ids_chunk)
 
             deleted_data = {
@@ -761,16 +732,26 @@ class JobAnnotation:
     def data(self):
         return self.ir_data.data
 
-    def export(self, dst_file, exporter, host='', **options):
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         job_data = JobData(
             annotation_ir=self.ir_data,
             db_job=self.db_job,
             host=host,
         )
 
-        temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_directory_for_export(
+                instance_type=self.db_job.__class__.__name__,
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, job_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
@@ -781,9 +762,7 @@ class JobAnnotation:
         )
         self.delete()
 
-        temp_dir_base = self.db_job.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, job_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -807,6 +786,7 @@ class TaskAnnotation:
             Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
         ).get(id=pk)
 
+        # TODO: maybe include consensus jobs except for task export
         requested_job_types = [models.JobType.ANNOTATION]
         if self.db_task.data.validation_mode == models.ValidationMode.GT_POOL:
             requested_job_types.append(models.JobType.GROUND_TRUTH)
@@ -968,16 +948,26 @@ class TaskAnnotation:
 
             self._merge_data(gt_annotation.ir_data, start_frame=db_job.segment.start_frame)
 
-    def export(self, dst_file, exporter, host='', **options):
+    def export(
+        self,
+        dst_file: io.BufferedWriter,
+        exporter: Callable[..., None],
+        *,
+        host: str = '',
+        temp_dir: str | None = None,
+        **options
+    ):
         task_data = TaskData(
             annotation_ir=self.ir_data,
             db_task=self.db_task,
             host=host,
         )
 
-        temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with (
+            TmpDirManager.get_tmp_directory_for_export(
+                instance_type=self.db_task.__class__.__name__,
+            ) if not temp_dir else nullcontext(temp_dir)
+        ) as temp_dir:
             exporter(dst_file, temp_dir, task_data, **options)
 
     def import_annotations(self, src_file, importer, **options):
@@ -988,9 +978,7 @@ class TaskAnnotation:
         )
         self.delete()
 
-        temp_dir_base = self.db_task.get_tmp_dirname()
-        os.makedirs(temp_dir_base, exist_ok=True)
-        with TemporaryDirectory(dir=temp_dir_base) as temp_dir:
+        with TmpDirManager.get_tmp_directory() as temp_dir:
             try:
                 importer(src_file, temp_dir, task_data, **options)
             except (DatasetNotFoundError, CvatDatasetNotFoundError) as not_found:
@@ -1052,7 +1040,15 @@ def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation.delete()
 
 
-def export_job(job_id, dst_file, format_name, server_url=None, save_images=False):
+def export_job(
+    job_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images=False,
+    temp_dir: str | None = None,
+):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -1064,7 +1060,7 @@ def export_job(job_id, dst_file, format_name, server_url=None, save_images=False
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        job.export(f, exporter, host=server_url, save_images=save_images)
+        job.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
 
 
 @silk_profile(name="GET task data")
@@ -1106,7 +1102,15 @@ def delete_task_data(pk):
     annotation.delete()
 
 
-def export_task(task_id, dst_file, format_name, server_url=None, save_images=False):
+def export_task(
+    task_id: int,
+    dst_file: str,
+    *,
+    format_name: str,
+    server_url: str | None = None,
+    save_images: bool = False,
+    temp_dir: str | None = None,
+    ):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after the task has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or
@@ -1118,7 +1122,7 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
 
     exporter = make_exporter(format_name)
     with open(dst_file, 'wb') as f:
-        task.export(f, exporter, host=server_url, save_images=save_images)
+        task.export(f, exporter, host=server_url, save_images=save_images, temp_dir=temp_dir)
 
 
 @transaction.atomic

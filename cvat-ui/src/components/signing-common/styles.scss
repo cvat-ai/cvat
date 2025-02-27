@@ -1,4 +1,4 @@
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,6 +34,10 @@ $social-google-background: #4286f5;
     }
 }
 
+.cvat-signing-header-logo-wrapper {
+    height: 100%;
+}
+
 .cvat-signing-header {
     background: transparent;
     position: fixed;
@@ -41,7 +45,7 @@ $social-google-background: #4286f5;
     width: 100%;
 
     .cvat-logo-icon {
-        fill: white;
+        filter: brightness(0) invert(1);
     }
 }
 

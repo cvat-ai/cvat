@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+
 def forwards_func(apps, schema_editor):
     Issue = apps.get_model("engine", "Issue")
 
@@ -9,7 +10,8 @@ def forwards_func(apps, schema_editor):
     for issue in issues:
         issue.updated_date = issue.created_date
 
-    Issue.objects.bulk_update(issues, fields=['updated_date'], batch_size=500)
+    Issue.objects.bulk_update(issues, fields=["updated_date"], batch_size=500)
+
 
 class Migration(migrations.Migration):
     dependencies = [

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -242,6 +242,10 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             history.push(`/tasks/${taskInstance.id}/quality-control`);
         };
 
+        const onViewConsensusManagement = (): void => {
+            history.push(`/tasks/${taskInstance.id}/consensus`);
+        };
+
         return (
             <Col span={3}>
                 <Row justify='end'>
@@ -271,6 +275,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                                 taskInstance={taskInstance}
                                 onViewAnalytics={onViewAnalytics}
                                 onViewQualityControl={onViewQualityControl}
+                                onViewConsensusManagement={onViewConsensusManagement}
                             />
                         )}
                     >

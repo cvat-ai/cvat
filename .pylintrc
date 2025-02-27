@@ -287,7 +287,6 @@ disable=raw-checker-failed,
         raise-missing-from,
         raising-format-tuple,
         wrong-exception-operation,
-        wildcard-import,
         deprecated-module,
         import-self,
         preferred-module,
@@ -516,7 +515,8 @@ enable=singleton-comparison,
        logging-unsupported-format,
        logging-format-truncated,
        logging-too-many-args,
-       logging-too-few-args
+       logging-too-few-args,
+       wildcard-import
 
 
 [BASIC]

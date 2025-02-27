@@ -1,4 +1,4 @@
-# Copyright (C) 2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,22 +7,22 @@ import os.path as osp
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
 from django.http.response import HttpResponseBadRequest
 from django.utils import timezone
-from django_rq.queues import DjangoRQ
+from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import serializers, status
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.util import extend_export_file_lifetime
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
@@ -37,13 +37,12 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq import ExportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import RqIdSerializer
+from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
-    define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     get_rq_lock_for_job,
     sendfile,
@@ -51,6 +50,11 @@ from cvat.apps.engine.utils import (
 from cvat.apps.events.handlers import handle_dataset_export
 
 slogger = ServerLogManager(__name__)
+
+REQUEST_TIMEOUT = 60
+# it's better to return LockNotAvailableError instead of response with 504 status
+LOCK_TTL = REQUEST_TIMEOUT - 5
+LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
 class _ResourceExportManager(ABC):
@@ -89,7 +93,7 @@ class _ResourceExportManager(ABC):
     def _handle_rq_job_v1(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
         pass
 
-    def _handle_rq_job_v2(self, rq_job: Optional[RQJob], *args, **kwargs) -> Optional[Response]:
+    def _handle_rq_job_v2(self, rq_job: Optional[RQJob], queue: DjangoRQ) -> Optional[Response]:
         if not rq_job:
             return None
 
@@ -101,17 +105,23 @@ class _ResourceExportManager(ABC):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        if rq_job_status in (RQJobStatus.SCHEDULED, RQJobStatus.DEFERRED):
+        if rq_job_status == RQJobStatus.DEFERRED:
+            rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
+
+        if rq_job_status == RQJobStatus.SCHEDULED:
+            scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
+            # remove the job id from the set with scheduled keys
+            scheduler.cancel(rq_job)
             rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         rq_job.delete()
         return None
 
-    def handle_rq_job(self, *args, **kwargs) -> Optional[Response]:
+    def handle_rq_job(self, rq_job: RQJob | None, queue: DjangoRQ) -> Optional[Response]:
         if self.version == 1:
-            return self._handle_rq_job_v1(*args, **kwargs)
+            return self._handle_rq_job_v1(rq_job, queue)
         elif self.version == 2:
-            return self._handle_rq_job_v2(*args, **kwargs)
+            return self._handle_rq_job_v2(rq_job, queue)
 
         raise ValueError("Unsupported version")
 
@@ -159,7 +169,7 @@ class DatasetExportManager(_ResourceExportManager):
         format: str
         filename: str
         save_images: bool
-        location_config: Dict[str, Any]
+        location_config: dict[str, Any]
 
         @property
         def location(self) -> Location:
@@ -168,7 +178,7 @@ class DatasetExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task, models.Job],
-        request: Request,
+        request: ExtendedRequest,
         export_callback: Callable,
         save_images: Optional[bool] = None,
         *,
@@ -217,10 +227,12 @@ class DatasetExportManager(_ResourceExportManager):
     ) -> Optional[Response]:
 
         def is_result_outdated() -> bool:
-            return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < instance_update_time
+            return ExportRQMeta.for_job(rq_job).request.timestamp < instance_update_time
 
         def handle_local_download() -> Response:
-            with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+            with dm.util.get_export_cache_lock(
+                file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+            ):
                 if not osp.exists(file_path):
                     return Response(
                         "The exported file has expired, please retry exporting",
@@ -295,8 +307,6 @@ class DatasetExportManager(_ResourceExportManager):
         instance_update_time = self.get_instance_update_time()
         instance_timestamp = self.get_timestamp(instance_update_time)
 
-        REQUEST_TIMEOUT = 60
-
         if rq_job_status == RQJobStatus.FINISHED:
             if self.export_args.location == Location.CLOUD_STORAGE:
                 rq_job.delete()
@@ -313,11 +323,13 @@ class DatasetExportManager(_ResourceExportManager):
                 if action == "download":
                     return handle_local_download()
                 else:
-                    with dm.util.get_export_cache_lock(file_path, ttl=REQUEST_TIMEOUT):
+                    with dm.util.get_export_cache_lock(
+                        file_path,
+                        ttl=LOCK_TTL,
+                        acquire_timeout=LOCK_ACQUIRE_TIMEOUT,
+                    ):
                         if osp.exists(file_path) and not is_result_outdated():
-                            # Update last update time to prolong the export lifetime
-                            # as the last access time is not available on every filesystem
-                            os.utime(file_path, None)
+                            extend_export_file_lifetime(file_path)
 
                             return Response(status=status.HTTP_201_CREATED)
 
@@ -328,7 +340,7 @@ class DatasetExportManager(_ResourceExportManager):
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
         elif rq_job_status == RQJobStatus.FAILED:
-            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            exc_info = ExportRQMeta.for_job(rq_job).formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
@@ -422,7 +434,7 @@ class DatasetExportManager(_ResourceExportManager):
         user_id = self.request.user.id
 
         func = self.export_callback
-        func_args = (self.db_instance.id, self.export_args.format, server_address)
+        func_args = (self.db_instance.id, self.export_args.format)
         result_url = None
 
         if self.export_args.location == Location.CLOUD_STORAGE:
@@ -464,13 +476,19 @@ class DatasetExportManager(_ResourceExportManager):
             result_url = self.make_result_url()
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ExportRQMeta.build_for(
+                request=self.request,
+                db_obj=self.db_instance,
+                result_url=result_url,
+            )
             queue.enqueue_call(
                 func=func,
                 args=func_args,
+                kwargs={
+                    "server_url": server_address,
+                },
                 job_id=rq_id,
-                meta=get_rq_job_meta(
-                    request=self.request, db_obj=self.db_instance, result_url=result_url
-                ),
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),
@@ -499,7 +517,7 @@ class BackupExportManager(_ResourceExportManager):
     @dataclass
     class ExportArgs:
         filename: str
-        location_config: Dict[str, Any]
+        location_config: dict[str, Any]
 
         @property
         def location(self) -> Location:
@@ -508,7 +526,7 @@ class BackupExportManager(_ResourceExportManager):
     def __init__(
         self,
         db_instance: Union[models.Project, models.Task],
-        request: Request,
+        request: ExtendedRequest,
         *,
         version: int = 2,
     ) -> None:
@@ -529,6 +547,10 @@ class BackupExportManager(_ResourceExportManager):
         rq_job: Optional[RQJob],
         queue: DjangoRQ,
     ) -> Optional[Response]:
+
+        def is_result_outdated() -> bool:
+            return ExportRQMeta.for_job(rq_job).request.timestamp < last_instance_update_time
+
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
 
@@ -588,31 +610,42 @@ class BackupExportManager(_ResourceExportManager):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
 
-                elif not os.path.exists(file_path):
-                    return Response(
-                        "The export result is not found",
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
                 if action == "download":
-                    filename = self.export_args.filename or build_backup_file_name(
-                        class_name=self.resource,
-                        identifier=self.db_instance.name,
-                        timestamp=timestamp,
-                        extension=os.path.splitext(file_path)[1],
-                    )
+                    with dm.util.get_export_cache_lock(
+                        file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                    ):
+                        if not os.path.exists(file_path):
+                            return Response(
+                                "The backup file has been expired, please retry backing up",
+                                status=status.HTTP_404_NOT_FOUND,
+                            )
 
-                    rq_job.delete()
-                    return sendfile(
-                        self.request, file_path, attachment=True, attachment_filename=filename
-                    )
+                        filename = self.export_args.filename or build_backup_file_name(
+                            class_name=self.resource,
+                            identifier=self.db_instance.name,
+                            timestamp=timestamp,
+                            extension=os.path.splitext(file_path)[1],
+                        )
 
-                return Response(status=status.HTTP_201_CREATED)
+                        rq_job.delete()
+                        return sendfile(
+                            self.request, file_path, attachment=True, attachment_filename=filename
+                        )
+                with dm.util.get_export_cache_lock(
+                    file_path, ttl=LOCK_TTL, acquire_timeout=LOCK_ACQUIRE_TIMEOUT
+                ):
+                    if osp.exists(file_path) and not is_result_outdated():
+                        extend_export_file_lifetime(file_path)
+                        return Response(status=status.HTTP_201_CREATED)
+
+                cancel_and_delete(rq_job)
+                return None
             else:
                 raise NotImplementedError(
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
         elif rq_job_status == RQJobStatus.FAILED:
-            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            exc_info = ExportRQMeta.for_job(rq_job).formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
@@ -681,9 +714,8 @@ class BackupExportManager(_ResourceExportManager):
 
         func = self.export_callback
         func_args = (
-            self.db_instance,
+            self.db_instance.id,
             Exporter,
-            "{}_backup.zip".format(self.resource),
             logger,
             cache_ttl,
         )
@@ -725,13 +757,16 @@ class BackupExportManager(_ResourceExportManager):
         user_id = self.request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ExportRQMeta.build_for(
+                request=self.request,
+                db_obj=self.db_instance,
+                result_url=result_url,
+            )
             queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                meta=get_rq_job_meta(
-                    request=self.request, db_obj=self.db_instance, result_url=result_url
-                ),
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),

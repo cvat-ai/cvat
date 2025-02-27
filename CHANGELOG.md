@@ -16,6 +16,299 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.30.0'></a>
+## \[2.30.0\] - 2025-02-14
+
+### Added
+
+- Gamma filter settings are now automatically saved and restored upon reload
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+- Ability to customize `api/sever/about` endpoint via settings including logo and sign-in page subtitle
+  (<https://github.com/cvat-ai/cvat/pull/9052>)
+
+### Changed
+
+- Client settings are now saved automatically
+  (<https://github.com/cvat-ai/cvat/pull/9032>)
+
+### Fixed
+
+- \[SDK\] `skeleton_label_spec` now correctly forwards `kwargs` to
+  `PatchedLabelRequest`
+  (<https://github.com/cvat-ai/cvat/pull/9087>)
+
+- Error: Cannot read properties of undefined (reading 'width') that occurs when changing frames in a video-based GT job
+  (<https://github.com/cvat-ai/cvat/pull/9095>)
+
+<a id='changelog-2.29.0'></a>
+## \[2.29.0\] - 2025-02-10
+
+### Added
+
+- Tasks created from cloud storage can be backed up now
+  (<https://github.com/cvat-ai/cvat/pull/8972>)
+
+- \[CLI\] `function create-native` now sends the function's declared label types
+  to the server
+  (<https://github.com/cvat-ai/cvat/pull/9035>)
+
+### Changed
+
+- When invoking Nuclio functions, labels of type `any` can now be mapped to
+  labels of all types except `skeleton`
+  (<https://github.com/cvat-ai/cvat/pull/9050>)
+
+### Fixed
+
+- Fixed invalid server-side track interpolation in tasks with deleted frames
+  (<https://github.com/cvat-ai/cvat/pull/9059>)
+
+<a id='changelog-2.28.0'></a>
+## \[2.28.0\] - 2025-02-06
+
+### Added
+
+- Support for managing Redis migrations
+  (<https://github.com/cvat-ai/cvat/pull/8898>)
+
+### Changed
+
+- Updated limitation for minimal object size from 9px area to 1px in dimensions
+  (<https://github.com/cvat-ai/cvat/pull/9055>)
+
+### Fixed
+
+- Invalid chunks and backups after honeypot updates in tasks with cloud storage data
+  (<https://github.com/cvat-ai/cvat/pull/9010>)
+
+- In some cases effect of drag/resize may be reset implicitly for a user
+  (<https://github.com/cvat-ai/cvat/pull/9053>)
+
+<a id='changelog-2.27.0'></a>
+## \[2.27.0\] - 2025-02-04
+
+### Added
+
+- Saving drawn shape on submit in `single shape` mode
+  (<https://github.com/cvat-ai/cvat/pull/8807>)
+
+- An option to create tasks with consensus jobs
+  (<https://github.com/cvat-ai/cvat/pull/8939>)
+
+- \[SDK\] The shapes output by auto-annotation functions are now checked
+  for compatibility with the function's and the task's label specs
+  (<https://github.com/cvat-ai/cvat/pull/9005>)
+
+- A `threshold` parameter to UI detector runner
+  (<https://github.com/cvat-ai/cvat/pull/9011>)
+
+### Changed
+
+- `DetectorFunctionSpec` will now raise `BadFunctionError` if it detects
+  any violations of the documented constraints on the labels
+  (<https://github.com/cvat-ai/cvat/pull/9020>)
+
+### Fixed
+
+- Improved performance and memory utilization for quality reports in tasks with ellipses and masks
+  (<https://github.com/cvat-ai/cvat/pull/8990>)
+
+- \[Compose\] An outdated version of Traefik is no longer used in
+  deployments with HTTPS enabled
+  (<https://github.com/cvat-ai/cvat/pull/9028>)
+
+<a id='changelog-2.26.1'></a>
+## \[2.26.1\] - 2025-01-29
+
+### Added
+
+- A button to copy a filename of the image into the clipboard
+  (<https://github.com/cvat-ai/cvat/pull/8989>)
+
+### Changed
+
+- Changed location of events cache dir
+  (<https://github.com/cvat-ai/cvat/pull/9015>)
+
+### Removed
+
+- \[Helm\] Removed `disableDistinctCachePerService` settings
+  (<https://github.com/cvat-ai/cvat/pull/9008>)
+
+### Fixed
+
+- The backend now rejects invalid label types
+  (<https://github.com/cvat-ai/cvat/pull/8980>)
+
+- \[Helm\] Impossible to download exported annotations
+  (<https://github.com/cvat-ai/cvat/pull/9008>)
+
+<a id='changelog-2.26.0'></a>
+## \[2.26.0\] - 2025-01-27
+
+### Added
+
+- Setting `TMP_FILE_OR_DIR_RETENTION_DAYS`, which defines maximum retention period
+  of a file or dir in temporary directory
+  (<https://github.com/cvat-ai/cvat/pull/8804>)
+- Cron job to remove outdated files and directories from CVAT tmp directory
+  (<https://github.com/cvat-ai/cvat/pull/8804>)
+
+- Ability to set Django's secret key using an environment variable
+  (<https://github.com/cvat-ai/cvat/pull/8566>)
+
+### Changed
+
+- Export cache cleaning moved to a separate cron job
+  (<https://github.com/cvat-ai/cvat/pull/8804>)
+
+- Improved UX of quality management page: better table layout, file name search, ability to download table as `.csv`
+  (<https://github.com/cvat-ai/cvat/pull/8865>)
+
+- Enhanced MIL tracker. Optimized memory usage. Now it is runnable on many frames, and applicable to drawn rectangles.
+  (<https://github.com/cvat-ai/cvat/pull/8942>)
+
+- The UI only displays one version for the whole client component,
+  which is now aligned with the server version
+  (<https://github.com/cvat-ai/cvat/pull/8948>)
+
+### Fixed
+
+- Fixed webhook worker not restarting after losing Redis connection
+  (<https://github.com/cvat-ai/cvat/pull/8921>)
+
+- Fixed incorrect results being returned from lambda functions when all
+  detected shapes have labels that aren't mapped
+  (<https://github.com/cvat-ai/cvat/pull/8931>)
+
+- Optimized importing from cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/8930>)
+
+- A job cannot be opened if to remove an image with the latest keyframe of a track
+  (<https://github.com/cvat-ai/cvat/pull/8952>)
+
+- A track will be interpolated incorrectly if to delete an image containing the object keyframe
+  (<https://github.com/cvat-ai/cvat/pull/8951>)
+
+- Error: Cannot read properties of undefined (reading 'startPoints') when dragging an object
+  (<https://github.com/cvat-ai/cvat/pull/8966>)
+
+- Extra shortcuts enabled from brush tools on views where not necessary
+  (<https://github.com/cvat-ai/cvat/pull/8971>)
+
+- \[Helm\] Fixed Nuclio dashboard crashes when running in a cluster
+  that doesn't use Docker
+  (<https://github.com/cvat-ai/cvat/pull/8825>)
+
+- \[SDK\] `cvat_sdk.auto_annotation.functions.torchvision_detection` and
+  `torchvision_instance_segmentation` no longer declare meaningless "N/A" labels
+  (<https://github.com/cvat-ai/cvat/pull/8997>)
+
+### Security
+
+- Protected tracker functions against deserializing untrusted input
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-wq36-mxf8-hv62>)
+
+<a id='changelog-2.25.0'></a>
+## \[2.25.0\] - 2025-01-09
+
+### Added
+
+- \[CLI\] Added commands for working with native functions
+  (<https://github.com/cvat-ai/cvat/pull/8821>)
+
+- Ultralytics YOLO formats now support tracks
+  (<https://github.com/cvat-ai/cvat/pull/8883>)
+
+### Changed
+
+- YOLOv8 formats renamed to Ultralytics YOLO formats
+  (<https://github.com/cvat-ai/cvat/pull/8863>)
+
+- The `match_empty_frames` quality setting is changed to `empty_is_annotated`.
+  The updated option includes any empty frames in the final metrics instead of only
+  matching empty frames. This makes metrics such as Precision much more representative and useful.
+  (<https://github.com/cvat-ai/cvat/pull/8888>)
+
+### Fixed
+
+- Changing rotation after export/import in Ultralytics YOLO Oriented Boxes format
+  (<https://github.com/cvat-ai/cvat/pull/8891>)
+
+- Export to yolo formats if both Train and default dataset are present
+  (<https://github.com/cvat-ai/cvat/pull/8884>)
+
+- Issue with deleting frames
+  (<https://github.com/cvat-ai/cvat/pull/8872>)
+
+<a id='changelog-2.24.0'></a>
+## \[2.24.0\] - 2024-12-20
+
+### Added
+
+- \[CLI\] Added new commands: `project create`, `project delete`, `project ls`
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+- \[SDK\] You can now use `client.projects.remove_by_ids` to remove multiple
+  projects
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+- Support for boolean parameters in annotations actions
+  (<https://github.com/cvat-ai/cvat/pull/8798>)
+
+### Changed
+
+- Improved uniformity of validation frames distribution in honeypot tasks and
+  random honeypot rerolls
+  (<https://github.com/cvat-ai/cvat/pull/8776>)
+
+- \[CLI\] Switched to a new subcommand hierarchy; now CLI subcommands
+  have the form `cvat-cli <resource> <action>`
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+- \[CLI\] The output of the `task create`, `task create-from-backup` and
+  `project create` commands is now just the created resource ID,
+  making it machine-readable
+  (<https://github.com/cvat-ai/cvat/pull/8833>)
+
+- /api/events can now be used to receive events from several sources
+  (<https://github.com/cvat-ai/cvat/pull/8799>)
+
+### Deprecated
+
+- \[CLI\] All existing CLI commands of the form `cvat-cli <action>`
+  are now deprecated. Use `cvat-cli task <action>` instead
+  (<https://github.com/cvat-ai/cvat/pull/8787>)
+
+### Removed
+
+- Automatic calculation of quality reports in tasks
+  (<https://github.com/cvat-ai/cvat/pull/8790>)
+
+### Fixed
+
+- Uploading a skeleton template in configurator does not work
+  (<https://github.com/cvat-ai/cvat/pull/8822>)
+
+- Installation of YOLOv7 on GPU
+  (<https://github.com/cvat-ai/cvat/pull/8824>)
+
+- \[Server API\] Significantly improved preformance of honeypot changes in tasks
+  (<https://github.com/cvat-ai/cvat/pull/8789>)
+- \[Server API\] `PATCH tasks/id/validation_layout` responses now include correct
+  `disabled_frames` and handle simultaneous updates of
+  `disabled_frames` and honeypot frames correctly
+  (<https://github.com/cvat-ai/cvat/pull/8789>)
+
+- Fixed handling of tracks keyframes from deleted frames on export
+  (<https://github.com/cvat-ai/cvat/pull/8834>)
+
+- Exporting datasets could start significantly later than expected, both for 1
+  and several users in the same project/task/job (<https://github.com/cvat-ai/cvat/pull/8721>)
+- Scheduled RQ jobs could not be restarted due to incorrect RQ job status
+  updating and handling (<https://github.com/cvat-ai/cvat/pull/8721>)
+
 <a id='changelog-2.23.1'></a>
 ## \[2.23.1\] - 2024-12-09
 

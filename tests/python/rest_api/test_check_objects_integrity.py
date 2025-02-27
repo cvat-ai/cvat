@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -18,7 +18,12 @@ class TestGetResources:
     def test_check_objects_integrity(self, path: Path):
         with open(path) as f:
             endpoint = path.stem
-            if endpoint in ["quality_settings", "quality_reports", "quality_conflicts"]:
+            if endpoint in [
+                "quality_settings",
+                "quality_reports",
+                "quality_conflicts",
+                "consensus_settings",
+            ]:
                 endpoint = "/".join(endpoint.split("_"))
 
             if endpoint == "annotations":

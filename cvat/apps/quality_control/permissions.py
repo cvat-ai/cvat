@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,7 +17,7 @@ from .models import AnnotationConflict, QualityReport, QualitySettings
 
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]
-    job_owner_id: Optional[int]
+    rq_job_owner_id: Optional[int]
     task_id: Optional[int]
 
     class Scopes(StrEnum):
@@ -27,10 +27,10 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         VIEW_STATUS = "view:status"
 
     @classmethod
-    def create_scope_check_status(cls, request, job_owner_id: int, iam_context=None):
+    def create_scope_check_status(cls, request, rq_job_owner_id: int, iam_context=None):
         if not iam_context and request:
             iam_context = get_iam_context(request, None)
-        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, job_owner_id=job_owner_id)
+        return cls(**iam_context, scope=cls.Scopes.VIEW_STATUS, rq_job_owner_id=rq_job_owner_id)
 
     @classmethod
     def create_scope_view(cls, request, report: Union[int, QualityReport], iam_context=None):
@@ -102,8 +102,8 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         return permissions
 
     def __init__(self, **kwargs):
-        if "job_owner_id" in kwargs:
-            self.job_owner_id = int(kwargs.pop("job_owner_id"))
+        if "rq_job_owner_id" in kwargs:
+            self.rq_job_owner_id = int(kwargs.pop("rq_job_owner_id"))
 
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/quality_reports/allow"
@@ -139,32 +139,32 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
             if task and task.project:
                 project = task.project
-                organization = project.organization
+                organization_id = project.organization_id
             else:
-                organization = getattr(task, "organization", None)
+                organization_id = task.organization_id
 
             data = {
                 "id": obj_id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(project.owner, "id", None)},
-                        "assignee": {"id": getattr(project.assignee, "id", None)},
+                        "owner": {"id": project.owner_id},
+                        "assignee": {"id": project.assignee_id},
                     }
                     if project
                     else None
                 ),
             }
         elif self.scope == self.Scopes.VIEW_STATUS:
-            data = {"owner": {"id": self.job_owner_id}}
+            data = {"owner": {"id": self.rq_job_owner_id}}
 
         return data
 
@@ -279,25 +279,25 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         if self.obj:
             task = self.obj.task
             if task.project:
-                organization = task.project.organization
+                organization_id = task.project.organization_id
             else:
-                organization = task.organization
+                organization_id = task.organization_id
 
             data = {
                 "id": self.obj.id,
-                "organization": {"id": getattr(organization, "id", None)},
+                "organization": {"id": organization_id},
                 "task": (
                     {
-                        "owner": {"id": getattr(task.owner, "id", None)},
-                        "assignee": {"id": getattr(task.assignee, "id", None)},
+                        "owner": {"id": task.owner_id},
+                        "assignee": {"id": task.assignee_id},
                     }
                     if task
                     else None
                 ),
                 "project": (
                     {
-                        "owner": {"id": getattr(task.project.owner, "id", None)},
-                        "assignee": {"id": getattr(task.project.assignee, "id", None)},
+                        "owner": {"id": task.project.owner_id},
+                        "assignee": {"id": task.project.assignee_id},
                     }
                     if task.project
                     else None

@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2024 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -90,6 +90,21 @@ export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
+export function composeShapeDimensions(width: number, height: number, rotation: number | null): string {
+    const text = `${width.toFixed(1)}x${height.toFixed(1)}px`;
+    let adjustableRotation = rotation;
+    if (adjustableRotation) {
+        // make sure, that rotation is in range [0; 360]
+        while (adjustableRotation < 0) {
+            adjustableRotation += 360;
+        }
+        adjustableRotation %= 360;
+        return `${text} ${adjustableRotation.toFixed(1)}\u00B0`;
+    }
+
+    return text;
+}
+
 export function displayShapeSize(shapesContainer: SVG.Container, textContainer: SVG.Container): ShapeSizeElement {
     const shapeSize: ShapeSizeElement = {
         sizeElement: textContainer
@@ -100,16 +115,9 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .fill('white')
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
-            let text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
-            if (shape.type === 'rect' || shape.type === 'ellipse') {
-                let rotation = shape.transform().rotation || 0;
-                // be sure, that rotation in range [0; 360]
-                while (rotation < 0) rotation += 360;
-                rotation %= 360;
-                if (rotation) {
-                    text = `${text} ${rotation.toFixed(1)}\u00B0`;
-                }
-            }
+            const rotation = shape.type === 'rect' || shape.type === 'ellipse' ?
+                shape.transform().rotation ?? 0 : null;
+            const text = composeShapeDimensions(shape.width(), shape.height(), rotation);
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
                 translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [

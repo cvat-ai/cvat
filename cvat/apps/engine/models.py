@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022-2024 CVAT.ai Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,9 +10,11 @@ import os
 import re
 import shutil
 import uuid
+from abc import ABCMeta, abstractmethod
+from collections.abc import Collection, Iterable, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import Any, ClassVar, Collection, Dict, Optional
+from typing import Any, ClassVar, Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -20,6 +22,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
 from django.db.models import Q, TextChoices
+from django.db.models.base import ModelBase
 from django.db.models.fields import FloatField
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
@@ -27,7 +30,7 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.model_utils import MaybeUndefined
-from cvat.apps.engine.utils import chunked_list, parse_specific_attributes
+from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
 
 
@@ -69,16 +72,16 @@ class StatusChoice(str, Enum):
         return self.value
 
 class LabelType(str, Enum):
-    BBOX = 'bbox'
+    ANY = 'any'
+    CUBOID = 'cuboid'
     ELLIPSE = 'ellipse'
+    MASK = 'mask'
+    POINTS = 'points'
     POLYGON = 'polygon'
     POLYLINE = 'polyline'
-    POINTS = 'points'
-    CUBOID = 'cuboid'
-    CUBOID_3D = 'cuboid_3d'
+    RECTANGLE = 'rectangle'
     SKELETON = 'skeleton'
     TAG = 'tag'
-    ANY = 'any'
 
     @classmethod
     def choices(cls):
@@ -167,6 +170,7 @@ class SortingMethod(str, Enum):
 class JobType(str, Enum):
     ANNOTATION = 'annotation'
     GROUND_TRUTH = 'ground_truth'
+    CONSENSUS_REPLICA = 'consensus_replica'
 
     @classmethod
     def choices(cls):
@@ -275,6 +279,11 @@ class ValidationLayout(models.Model):
 
     disabled_frames = IntArrayField(store_sorted=True, unique_values=True)
     "Stores task frame numbers of the disabled (deleted) validation frames"
+
+    @property
+    def active_frames(self) -> Sequence[int]:
+        "An ordered sequence of active (non-disabled) validation frames"
+        return set(self.frames).difference(self.disabled_frames)
 
 class Data(models.Model):
     MANIFEST_FILENAME: ClassVar[str] = 'manifest.jsonl'
@@ -424,9 +433,28 @@ class TimestampedModel(models.Model):
     def touch(self) -> None:
         self.save(update_fields=["updated_date"])
 
+class ABCModelMeta(ABCMeta, ModelBase):
+    pass
+
+class FileSystemRelatedModel(metaclass=ABCModelMeta):
+    @abstractmethod
+    def get_dirname(self) -> str:
+        ...
+
+    def get_tmp_dirname(self) -> str:
+        """
+        The method returns a directory that is only used
+        to store temporary files or folders related to the object
+        """
+        dir_path = os.path.join(self.get_dirname(), "tmp")
+        os.makedirs(dir_path, exist_ok=True)
+
+        return dir_path
+
+
 @transaction.atomic(savepoint=False)
-def clear_annotations_in_jobs(job_ids):
-    for job_ids_chunk in chunked_list(job_ids, chunk_size=1000):
+def clear_annotations_in_jobs(job_ids: Iterable[int]):
+    for job_ids_chunk in take_by(job_ids, chunk_size=1000):
         TrackedShapeAttributeVal.objects.filter(shape__track__job_id__in=job_ids_chunk).delete()
         TrackedShape.objects.filter(track__job_id__in=job_ids_chunk).delete()
         LabeledTrackAttributeVal.objects.filter(track__job_id__in=job_ids_chunk).delete()
@@ -436,7 +464,32 @@ def clear_annotations_in_jobs(job_ids):
         LabeledImageAttributeVal.objects.filter(image__job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
 
-class Project(TimestampedModel):
+
+@transaction.atomic(savepoint=False)
+def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
+    if db_task.data.validation_mode != ValidationMode.GT_POOL:
+        # Tracks are prohibited in honeypot tasks
+        raise AssertionError
+
+    for frames_batch in take_by(frames, chunk_size=1000):
+        LabeledShapeAttributeVal.objects.filter(
+            shape__job_id__segment__task_id=db_task.id,
+            shape__frame__in=frames_batch,
+        ).delete()
+        LabeledShape.objects.filter(
+            job_id__segment__task_id=db_task.id,
+            frame__in=frames_batch,
+        ).delete()
+        LabeledImageAttributeVal.objects.filter(
+            image__job_id__segment__task_id=db_task.id,
+            image__frame__in=frames_batch,
+        ).delete()
+        LabeledImage.objects.filter(
+            job_id__segment__task_id=db_task.id,
+            frame__in=frames_batch,
+        ).delete()
+
+class Project(TimestampedModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
@@ -460,11 +513,8 @@ class Project(TimestampedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), "tmp")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -501,6 +551,7 @@ class TaskQuerySet(models.QuerySet):
         return self.prefetch_related(
             'segment_set__job_set',
         ).annotate(
+            total_jobs_count=models.Count('segment__job', distinct=True),
             completed_jobs_count=models.Count(
                 'segment__job',
                 filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
@@ -514,7 +565,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(TimestampedModel):
+class Task(TimestampedModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -543,6 +594,8 @@ class Task(TimestampedModel):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
+    consensus_replicas = models.IntegerField(default=0)
+    "Per job consensus replica count"
 
     segment_set: models.manager.RelatedManager[Segment]
 
@@ -560,11 +613,8 @@ class Task(TimestampedModel):
             'attributespec_set', 'sublabels__attributespec_set',
         ) if prefetch else queryset
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.TASKS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), "tmp")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -795,7 +845,7 @@ class JobQuerySet(models.QuerySet):
 
         return super().update_or_create(*args, **kwargs)
 
-    def _validate_constraints(self, obj: Dict[str, Any]):
+    def _validate_constraints(self, obj: dict[str, Any]):
         if 'type' not in obj:
             return
 
@@ -808,7 +858,7 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(TimestampedModel):
+class Job(TimestampedModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -826,9 +876,12 @@ class Job(TimestampedModel):
         default=StageChoice.ANNOTATION)
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
-
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+    parent_job = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='child_jobs', related_query_name="child_job"
+    )
 
     def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
@@ -836,11 +889,8 @@ class Job(TimestampedModel):
     def get_source_storage(self) -> Optional[Storage]:
         return self.segment.task.source_storage
 
-    def get_dirname(self):
+    def get_dirname(self) -> str:
         return os.path.join(settings.JOBS_ROOT, str(self.id))
-
-    def get_tmp_dirname(self):
-        return os.path.join(self.get_dirname(), 'tmp')
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_project_id(self):
@@ -904,7 +954,7 @@ class Label(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
-    type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=LabelType.ANY)
+    type = models.CharField(max_length=32, choices=LabelType.choices(), default=LabelType.ANY)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sublabels')
 
     def __str__(self):
@@ -1273,8 +1323,10 @@ class AnnotationGuide(TimestampedModel):
     is_public = models.BooleanField(default=False)
 
     @property
-    def target(self):
-        return self.project or self.task
+    def target(self) -> Task | Project:
+        target = self.project or self.task
+        assert target # one of the fields must be set
+        return target
 
     @property
     def organization_id(self):

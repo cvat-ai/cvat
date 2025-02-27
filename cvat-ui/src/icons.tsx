@@ -1,11 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 
-import SVGCVATLogo from './assets/cvat-logo.svg';
 import SVGCVATIcon from './assets/cvat-icon.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
@@ -72,7 +71,6 @@ import SVGShowGroundTruthIcon from './assets/show-gt-icon.svg';
 import SVGJoinIcon from './assets/join-icon.svg';
 import SVGSliceIcon from './assets/slice-icon.svg';
 
-export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
