@@ -483,7 +483,9 @@ context('Ground truth jobs', () => {
                     { ...defaultValidationParams, frameCount: 3 },
                     // The crash appears in the end frames
                 );
-                cy.openJob(1); // gt job is first from top => idx 1 from the bottom
+                cy.get('.cvat-task-job-list').within(() => {
+                    cy.contains('a', `Job #${groundTruthJobID}`).click();
+                });
             });
             it('Check crashing while navigating through GT job frames (#9095) ', () => {
                 cy.get('.cvat-player-play-button').click();
