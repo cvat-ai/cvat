@@ -9,7 +9,7 @@ attrs==21.4.0
 av==9.2.0
 
 azure-storage-blob==12.13.0
-boto3==1.17.61
+boto3==1.37.2
 clickhouse-connect==0.6.8
 coreapi==2.3.3
 datumaro @ git+https://github.com/cvat-ai/datumaro.git@e61ebe4c5cfee8a741fbf89f966535996be6dcff
