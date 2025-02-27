@@ -12,7 +12,6 @@ import django_rq
 from attrs.converters import to_bool
 from django.conf import settings
 from django.http.response import HttpResponseBadRequest
-from django.utils import timezone
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -30,7 +29,6 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import (
     Location,
-    Project,
     RequestAction,
     RequestSubresource,
     RequestTarget,

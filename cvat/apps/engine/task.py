@@ -13,7 +13,6 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timezone
-from functools import partial
 from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional, Union
 from urllib import parse as urlparse

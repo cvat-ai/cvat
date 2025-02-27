@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 import pytest

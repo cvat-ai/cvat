@@ -33,8 +33,6 @@ from .models import (
     Job,
     Label,
     Project,
-    RequestAction,
-    RequestTarget,
     Task,
     User,
 )

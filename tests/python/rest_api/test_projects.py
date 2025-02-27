@@ -16,7 +16,7 @@ from io import BytesIO
 from itertools import product
 from operator import itemgetter
 from time import sleep
-from typing import Optional, Union
+from typing import Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models

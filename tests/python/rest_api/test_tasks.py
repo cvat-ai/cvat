@@ -70,7 +70,6 @@ from .utils import (
     compare_annotations,
     create_task,
     export_dataset,
-    export_task_backup,
     export_task_dataset,
     parse_frame_step,
     unique,
