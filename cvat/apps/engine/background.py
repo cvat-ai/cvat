@@ -80,7 +80,7 @@ class ResourceExportManager(ABC):
 
     ### Initialization logic ###
 
-    def initialize_export_args(self, *, export_callback: Callable[..., str]) -> None:
+    def initialize_export_args(self, *, export_callback: Callable) -> None:
         self.export_callback = export_callback
 
     @abstractmethod
@@ -256,7 +256,7 @@ class DatasetExportManager(ResourceExportManager):
     def initialize_export_args(
         self,
         *,
-        export_callback: Callable | None = None,
+        export_callback: Callable,
         save_images: bool | None = None,
     ) -> None:
         super().initialize_export_args(export_callback=export_callback)
@@ -463,7 +463,6 @@ class BackupExportManager(ResourceExportManager):
             user_id=self.request.user.id,
         ).render()
 
-    # TODO: make a common func
     def setup_background_job(
         self,
         queue: DjangoRQ,
@@ -536,4 +535,5 @@ class BackupExportManager(ResourceExportManager):
         return f"{self.resource}-download-backup"
 
     def send_events(self):
+        # FUTURE-TODO: send events to event store
         pass
