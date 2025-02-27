@@ -47,17 +47,19 @@ def record_server_event(
     *,
     scope: str,
     request_id: Optional[str],
+    user_agent: Optional[str] = None,
     payload: Optional[dict] = None,
     on_commit: bool = False,
     **kwargs,
 ) -> None:
     payload = payload or {}
 
-    payload_with_request_id = {
+    payload_with_request_info = {
         **payload,
         "request": {
             **payload.get("request", {}),
             "id": request_id,
+            "user-agent": user_agent,
         },
     }
 
@@ -65,7 +67,7 @@ def record_server_event(
         "scope": scope,
         "timestamp": str(datetime.now(timezone.utc).timestamp()),
         "source": "server",
-        "payload": JSONRenderer().render(payload_with_request_id).decode("UTF-8"),
+        "payload": JSONRenderer().render(payload_with_request_info).decode("UTF-8"),
         **kwargs,
     }
 

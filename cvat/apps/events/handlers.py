@@ -187,6 +187,12 @@ def organization_slug(instance):
     except Exception:
         return None
 
+def user_agent(instance=None):
+    request_headers = _get_value(get_request(instance), "headers")
+    if request_headers is not None:
+        return request_headers.get("User-Agent")
+
+    return None
 
 def get_instance_diff(old_data, data):
     ignore_related_fields = ("labels",)
@@ -314,6 +320,7 @@ def handle_create(scope, instance, **kwargs):
     record_server_event(
         scope=scope,
         request_id=request_id(),
+        user_agent=user_agent(),
         on_commit=True,
         obj_id=getattr(instance, "id", None),
         obj_name=_get_object_name(instance),
@@ -348,6 +355,7 @@ def handle_update(scope, instance, old_instance, **kwargs):
         record_server_event(
             scope=scope,
             request_id=request_id(),
+            user_agent=user_agent(),
             on_commit=True,
             obj_name=prop,
             obj_id=getattr(instance, f"{prop}_id", None),
@@ -402,6 +410,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     record_server_event(
         scope=scope,
         request_id=request_id(),
+        user_agent=user_agent(),
         on_commit=True,
         obj_id=instance_id,
         obj_name=_get_object_name(instance),
@@ -443,6 +452,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         record_server_event(
             scope=event_scope(action, "tags"),
             request_id=request_id(),
+            user_agent=user_agent(),
             on_commit=True,
             count=len(tags),
             org_id=oid,
@@ -466,6 +476,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             record_server_event(
                 scope=scope,
                 request_id=request_id(),
+                user_agent=user_agent(),
                 on_commit=True,
                 obj_name=shape_type,
                 count=len(shapes),
@@ -491,6 +502,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             record_server_event(
                 scope=scope,
                 request_id=request_id(),
+                user_agent=user_agent(),
                 on_commit=True,
                 obj_name=track_type,
                 count=len(tracks),
@@ -522,6 +534,7 @@ def handle_dataset_io(
     record_server_event(
         scope=event_scope(action, "dataset"),
         request_id=request_id(),
+        user_agent=user_agent(),
         org_id=organization_id(instance),
         org_slug=organization_slug(instance),
         project_id=project_id(instance),
@@ -569,6 +582,7 @@ def handle_function_call(
     record_server_event(
         scope=event_scope("call", "function"),
         request_id=request_id(),
+        user_agent=user_agent(),
         project_id=project_id(target),
         task_id=task_id(target),
         job_id=job_id(target),
@@ -650,6 +664,7 @@ def handle_viewset_exception(exc, context):
     record_server_event(
         scope="send:exception",
         request_id=request_id(),
+        user_agent=user_agent(),
         count=1,
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
