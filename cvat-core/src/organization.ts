@@ -330,6 +330,8 @@ Object.defineProperties(Organization.prototype.members, {
                 page: isInteger,
                 pageSize: isInteger,
                 search: isString,
+                filter: isString,
+                sort: isString,
             });
 
             const params = fieldsToSnakeCase(filter);

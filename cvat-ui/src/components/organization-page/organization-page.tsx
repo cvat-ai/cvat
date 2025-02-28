@@ -9,7 +9,7 @@ import { useSelector } from 'react-redux';
 import Empty from 'antd/lib/empty';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers';
+import { CombinedState, OrganizationMembersQuery } from 'reducers';
 import { Membership, Organization, OrganizationMembersFilter } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import TopBarComponent from './top-bar';
@@ -24,8 +24,7 @@ function fetchMembers(
     setFetching(true);
     organizationInstance
         .members(filter)
-        .then((_members: any[]) => {
-            console.log(_members);
+        .then((_members: Membership[]) => {
             setMembers(_members);
         })
         .catch(() => {})
@@ -41,24 +40,24 @@ function OrganizationPage(): JSX.Element | null {
     const user = useSelector((state: CombinedState) => state.auth.user);
     const [membersFetching, setMembersFetching] = useState<boolean>(true);
     const [members, setMembers] = useState<Membership[]>([]);
-    const [pageNumber, setPageNumber] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [query, setQuery] = useState<string | null>(null);
+    const [query, setQuery] = useState<OrganizationMembersQuery>({
+        search: null,
+        filter: null,
+        sort: null,
+        page: 1,
+        pageSize: 10,
+    });
 
     const fetchMembersCallback = useCallback(() => {
         if (organization) {
-            const filter: Partial<OrganizationMembersFilter> = filterNull({
-                search: query,
-                page: pageNumber,
-                pageSize,
-            });
+            const filter: Partial<OrganizationMembersFilter> = filterNull(query);
             fetchMembers(organization, filter, setMembers, setMembersFetching);
         }
-    }, [pageSize, pageNumber, query, organization]);
+    }, [query, organization]);
 
     useEffect(() => {
         fetchMembersCallback();
-    }, [pageSize, pageNumber, query, organization]);
+    }, [query, organization]);
 
     if (fetching || updating) {
         return <Spin className='cvat-spinner' />;
@@ -74,17 +73,48 @@ function OrganizationPage(): JSX.Element | null {
                         organizationInstance={organization}
                         userInstance={user}
                         fetchMembers={fetchMembersCallback}
-                        onSearch={setQuery}
+                        query={query}
+                        onApplySearch={(search: string | null) => {
+                            setQuery({
+                                ...query,
+                                search,
+                                page: 1,
+                            });
+                        }}
+                        onApplyFilter={(filter: string | null) => {
+                            setQuery({
+                                ...query,
+                                filter,
+                                page: 1,
+                            });
+                        }}
+                        onApplySorting={(sort: string | null) => {
+                            setQuery({
+                                ...query,
+                                sort,
+                                page: 1,
+                            });
+                        }}
                     />
                     <MembersList
                         fetching={membersFetching}
                         members={members}
                         organizationInstance={organization}
                         userInstance={user}
-                        pageSize={pageSize}
-                        pageNumber={pageNumber}
-                        setPageNumber={setPageNumber}
-                        setPageSize={setPageSize}
+                        pageSize={query.pageSize}
+                        pageNumber={query.page}
+                        setPageNumber={(page: number) => {
+                            setQuery({
+                                ...query,
+                                page,
+                            });
+                        }}
+                        setPageSize={(pageSize: number) => {
+                            setQuery({
+                                ...query,
+                                pageSize,
+                            });
+                        }}
                         fetchMembers={fetchMembersCallback}
                     />
                 </>
