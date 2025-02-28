@@ -1,3 +1,3 @@
 ### Added
 
-- Search bar on the organization page (<https://github.com/cvat-ai/cvat/pull/9151>)
+- Search bar and filtering components on the organization page (<https://github.com/cvat-ai/cvat/pull/9151>)
