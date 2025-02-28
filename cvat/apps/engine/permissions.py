@@ -25,17 +25,7 @@ from cvat.apps.iam.permissions import (
 )
 from cvat.apps.organizations.models import Organization
 
-from .models import (
-    AnnotationGuide,
-    CloudStorage,
-    Comment,
-    Issue,
-    Job,
-    Label,
-    Project,
-    Task,
-    User,
-)
+from .models import AnnotationGuide, CloudStorage, Comment, Issue, Job, Label, Project, Task, User
 
 if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet

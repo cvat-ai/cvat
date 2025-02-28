@@ -14,7 +14,6 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path
 from typing import Any, BinaryIO, Callable, Optional, TypeVar
-from rq import get_current_job
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -30,11 +29,12 @@ from google.cloud.exceptions import Forbidden as GoogleCloudForbidden
 from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rq import get_current_job
 
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
-from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.apps.engine.rq import ExportRQMeta
+from cvat.apps.engine.utils import get_cpu_number, take_by
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS
 
 
@@ -1032,9 +1032,6 @@ def import_resource_from_cloud_storage(
 
 def export_resource_to_cloud_storage(
     db_storage: Any,
-    # TODO: write Redis migration
-    # key: str,
-    # key_pattern: str,
     func: Callable[[int, str | None, str | None], str],
     *args,
     **kwargs,

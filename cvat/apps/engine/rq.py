@@ -35,11 +35,6 @@ class RQJobMetaField:
         UUID = "uuid"
         TIMESTAMP = "timestamp"
 
-    class ExportResultField:
-        URL = "url"
-        FILENAME = "filename"
-        EXT = "ext"
-
     # failure info fields
     FORMATTED_EXCEPTION = "formatted_exception"
     EXCEPTION_TYPE = "exc_type"
@@ -58,7 +53,8 @@ class RQJobMetaField:
     TMP_FILE = "tmp_file"
     TASK_PROGRESS = "task_progress"
     # export fields
-    RESULT = "result"
+    RESULT_URL = "result_url"
+    RESULT_FILENAME = "result_filename"
     # lambda fields
     LAMBDA = "lambda"
     FUNCTION_ID = "function_id"
@@ -265,28 +261,17 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         }
 
 
-class ExportResultMeta:
-    url: str | None = ImmutableRQMetaAttribute(RQJobMetaField.ExportResultField.URL, optional=True)
-    filename: str = ImmutableRQMetaAttribute(RQJobMetaField.ExportResultField.FILENAME)
-    ext: str | None = ImmutableRQMetaAttribute(RQJobMetaField.ExportResultField.EXT, optional=True)
-
-    def __init__(self, meta: dict[str, Any]) -> None:
-        self._meta = meta
-
-    @property
-    def meta(self) -> dict[str, Any]:
-        return self._meta
-
-
 class ExportRQMeta(BaseRQMeta):
-    @property
-    def result(self):
-        return ExportResultMeta(self.meta[RQJobMetaField.RESULT])
+    result_url: str | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.RESULT_URL,
+        optional=True,
+    )
+    result_filename: str = ImmutableRQMetaAttribute(RQJobMetaField.RESULT_FILENAME)
 
     @staticmethod
     def _get_resettable_fields() -> list[str]:
         base_fields = BaseRQMeta._get_resettable_fields()
-        return base_fields + [RQJobMetaField.RESULT]
+        return base_fields + [RQJobMetaField.RESULT_URL, RQJobMetaField.RESULT_FILENAME]
 
     @classmethod
     def build_for(
@@ -296,17 +281,13 @@ class ExportRQMeta(BaseRQMeta):
         db_obj: Model,
         result_url: str | None,
         result_filename: str,
-        result_ext: str | None = None,
     ):
         base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
 
         return {
             **base_meta,
-            RQJobMetaField.RESULT: {
-                RQJobMetaField.ExportResultField.URL: result_url,
-                RQJobMetaField.ExportResultField.FILENAME: result_filename,
-                RQJobMetaField.ExportResultField.EXT: result_ext,
-            },
+            RQJobMetaField.RESULT_URL: result_url,
+            RQJobMetaField.RESULT_FILENAME: result_filename,
         }
 
 

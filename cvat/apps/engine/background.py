@@ -20,6 +20,7 @@ from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
 from cvat.apps.dataset_manager.util import get_export_cache_lock
 from cvat.apps.dataset_manager.views import get_export_cache_ttl
 from cvat.apps.engine import models
@@ -27,13 +28,7 @@ from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import (
-    Location,
-    RequestAction,
-    RequestSubresource,
-    RequestTarget,
-    Task,
-)
+from cvat.apps.engine.models import Location, RequestAction, RequestSubresource, RequestTarget, Task
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
 from cvat.apps.engine.rq import ExportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import RqIdSerializer
@@ -127,7 +122,7 @@ class ResourceExportManager(ABC):
         return datetime.strftime(self.db_instance.updated_date, "%Y_%m_%d_%H_%M_%S")
 
     @abstractmethod
-    def get_result_filename(self) -> tuple[str, str | None]: ...
+    def get_result_filename(self) -> str: ...
 
     @abstractmethod
     def send_events(self) -> None: ...
@@ -203,7 +198,7 @@ class ResourceExportManager(ABC):
                         "A result for exporting job was not found for finished RQ job",
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     )
-                    if rq_job_meta.result.url
+                    if rq_job_meta.result_url
                     else Response(status=status.HTTP_204_NO_CONTENT)
                 )
 
@@ -216,16 +211,11 @@ class ResourceExportManager(ABC):
                         status=status.HTTP_404_NOT_FOUND,
                     )
 
-                # TODO: write redis migration
-                filename = rq_job_meta.result.filename + (
-                    rq_job_meta.result.ext or osp.splitext(file_path)[1]
-                )
-
                 return sendfile(
                     self.request,
                     file_path,
                     attachment=True,
-                    attachment_filename=filename,
+                    attachment_filename=rq_job_meta.result_filename,
                 )
 
 
@@ -367,13 +357,12 @@ class DatasetExportManager(ResourceExportManager):
             result_url = self.make_result_url(rq_id=rq_id)
 
         with get_rq_lock_by_user(queue, user_id):
-            result_filename, result_ext = self.get_result_filename()
+            result_filename = self.get_result_filename()
             meta = ExportRQMeta.build_for(
                 request=self.request,
                 db_obj=self.db_instance,
                 result_url=result_url,
                 result_filename=result_filename,
-                result_ext=result_ext,
             )
             queue.enqueue_call(
                 func=func,
@@ -388,22 +377,21 @@ class DatasetExportManager(ResourceExportManager):
                 failure_ttl=cache_ttl.total_seconds(),
             )
 
-    def get_result_filename(self) -> tuple[str, str | None]:
+    def get_result_filename(self) -> str:
         filename = self.export_args.filename
 
-        if filename:
-            return osp.splitext(filename)
+        if not filename:
+            instance_timestamp = self.get_updated_date_timestamp()
+            filename = build_annotations_file_name(
+                class_name=self.resource,
+                identifier=self.db_instance.id,
+                timestamp=instance_timestamp,
+                format_name=self.export_args.format,
+                is_annotation_file=not self.export_args.save_images,
+                extension=(EXPORT_FORMATS[self.export_args.format].EXT).lower(),
+            )
 
-        instance_timestamp = self.get_updated_date_timestamp()
-        filename = build_annotations_file_name(
-            class_name=self.resource,
-            identifier=self.db_instance.id,
-            timestamp=instance_timestamp,
-            format_name=self.export_args.format,
-            is_annotation_file=not self.export_args.save_images,
-        )
-
-        return filename, None
+        return filename
 
     def get_download_api_endpoint_view_name(self) -> str:
         return f"{self.resource}-download-dataset"
@@ -436,21 +424,19 @@ class BackupExportManager(ResourceExportManager):
     def validate_export_args(self):
         return
 
-    def get_result_filename(self) -> tuple[str, str | None]:
+    def get_result_filename(self) -> str:
         filename = self.export_args.filename
 
-        if filename:
-            return osp.splitext(filename)
+        if not filename:
+            instance_timestamp = self.get_updated_date_timestamp()
 
-        instance_timestamp = self.get_updated_date_timestamp()
+            filename = build_backup_file_name(
+                class_name=self.resource,
+                identifier=self.db_instance.name,
+                timestamp=instance_timestamp,
+            )
 
-        filename = build_backup_file_name(
-            class_name=self.resource,
-            identifier=self.db_instance.name,
-            timestamp=instance_timestamp,
-        )
-
-        return filename, None
+        return filename
 
     def build_rq_id(self):
         return RQId(
@@ -510,13 +496,12 @@ class BackupExportManager(ResourceExportManager):
             result_url = self.make_result_url(rq_id=rq_id)
 
         with get_rq_lock_by_user(queue, user_id):
-            result_filename, result_ext = self.get_result_filename()
+            result_filename = self.get_result_filename()
             meta = ExportRQMeta.build_for(
                 request=self.request,
                 db_obj=self.db_instance,
                 result_url=result_url,
                 result_filename=result_filename,
-                result_ext=result_ext,
             )
 
             queue.enqueue_call(
