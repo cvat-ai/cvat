@@ -1414,7 +1414,7 @@ Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
     cy.get('.cvat-requests-card').first().within(() => {
         cy.get('.cvat-requests-page-actions-button').click();
     });
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', '**/download?rq_id=*').as('download');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
