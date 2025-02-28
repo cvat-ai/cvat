@@ -476,19 +476,19 @@ context('Ground truth jobs', () => {
             });
         });
         describe('GT jobs from videos', () => {
-            const serverFilesVideo = ['videos/video_without_valid_keyframes.mp4'];
+            const serverFilesVideo = ['videos/video_1.mp4'];
             before(() => {
                 createAndOpenTask(
                     serverFilesVideo,
-                    { ...defaultValidationParams, randomSeed: 42 },
+                    { ...defaultValidationParams, randomSeed: 634, frameCount: 1 },
+                    // this seed yields frame index 2 > frameCount for this job
+                    // which is the condition for reproducing the bug
                 );
                 cy.get('.cvat-task-job-list').within(() => {
                     cy.contains('a', `Job #${groundTruthJobID}`).click();
                 });
             });
             it('Check crashing while navigating through GT job frames (#9095) ', () => {
-                cy.get('.cvat-player-play-button').click();
-                cy.get('.cvat-player-play-button').should('be.visible');
                 cy.get('.ant-notification-notice-error').should('not.exist');
             });
             after(() => {
