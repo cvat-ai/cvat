@@ -33,7 +33,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatImportError
@@ -1190,7 +1189,7 @@ def _import(
     location_conf: dict,
     filename: str | None = None,
 ):
-    rq_job: RQJob = queue.fetch_job(rq_id)
+    rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
