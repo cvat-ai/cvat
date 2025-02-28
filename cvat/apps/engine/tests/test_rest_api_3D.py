@@ -5,7 +5,6 @@
 
 
 import copy
-import io
 import itertools
 import os
 import os.path as osp

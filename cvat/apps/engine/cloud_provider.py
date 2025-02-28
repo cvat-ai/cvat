@@ -1041,9 +1041,8 @@ def export_resource_to_cloud_storage(
 
     file_path = func(*args, **kwargs)
     rq_job_meta = ExportRQMeta.for_job(rq_job)
-    key = rq_job_meta.result.filename + (rq_job_meta.result.ext or os.path.splitext(file_path)[1].lower())
 
     storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(file_path, key)
+    storage.upload_file(file_path, rq_job_meta.result_filename)
 
     return file_path

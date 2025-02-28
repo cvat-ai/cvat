@@ -176,6 +176,7 @@ from cvat.apps.engine.utils import (
     get_rq_lock_by_user,
     get_rq_lock_for_job,
     import_resource_with_clean_up_after,
+    parse_exception_message,
     process_failed_job,
     sendfile,
 )

@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -68,7 +67,7 @@ class Migration(BaseMigration):
             # export was initiated to cloud storage
             if "export_resource_to_cloud_storage" == func_name:
                 filename = job.args[1] or job.args[2].format(".zip")
-                update_meta(filename=filename, save_meta=False)
+                update_meta(result_filename=filename, save_meta=False)
                 # exclude filename and filename_template from args
                 job.args = job.args[:1] + job.args[3:]
                 job.save(include_meta=True)
@@ -94,15 +93,15 @@ class Migration(BaseMigration):
 
             # check whether a filename was provided by a user
             if filename := parse_qs(parsed_result_url.query).get("filename"):
-                update_meta(filename=filename, url=actual_result_url)
+                update_meta(result_filename=filename, result_url=actual_result_url)
                 return
 
             # filename was not specified by a user
             update_meta(
                 # we cannot provide the same filename structure
                 # since there is no instance timestamp in Redis HASH
-                filename="-".join([target, pk, subresource]) + ".zip",
-                url=actual_result_url,
+                result_filename="-".join([target, pk, subresource]) + ".zip",
+                result_url=actual_result_url,
             )
             return
 
