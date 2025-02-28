@@ -2237,68 +2237,24 @@ paths:
     get:
       operationId: jobs_retrieve_annotations
       description: |
-        If format is specified, a ZIP archive will be returned. Otherwise,
-        the annotations will be returned as a JSON document.
-
         Deprecation warning:
 
-        Utilizing this endpoint to export annotations as a dataset in
-        a specific format will be deprecated in one of the next releases.
+        Utilizing this endpoint to export job dataset in a specific format is deprecated.
 
         Consider using new API:
-        - POST /api/jobs/<job_id>/dataset/export?save_images=False to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Get job annotations or export job annotations as a dataset in a specific
-        format
+        - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
+      summary: Get job annotations
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this job.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded annotation
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export annotation
-        deprecated: true
       tags:
       - jobs
       security:
@@ -2312,14 +2268,10 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+                $ref: '#/components/schemas/LabeledData'
+          description: ''
+        '410':
+          description: API endpoint no longer handles dataset exporting process
     post:
       operationId: jobs_create_annotations
       description: |2
@@ -2645,12 +2597,15 @@ paths:
     get:
       operationId: jobs_retrieve_dataset
       description: |
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/jobs/<job_id>/dataset/export?save_images=True to initiate export process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request
+        Utilizing this endpoint to export job dataset in
+        a specific format is deprecated.
+
+        Consider using new API:
+        - `POST /api/jobs/<job_id>/dataset/export?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
       summary: Export job as a dataset in a specific format
       parameters:
       - in: query
@@ -2709,20 +2664,10 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+        '410':
+          description: API endpoint no longer handles dataset exporting process
   /api/jobs/{id}/dataset/export:
     post:
       operationId: jobs_create_dataset_export
@@ -3844,63 +3789,20 @@ paths:
     get:
       operationId: projects_retrieve_annotations
       description: |
-        Deprecation warning:
-
         Using this endpoint to initiate export of annotations as a dataset or to check export status is deprecated.
         Consider using new API:
-        - POST /api/projects/<project_id>/dataset/export?save_images=False to initiate exporting process
-        - GET /api/requests/<rq_id> to check export status,
-            where rq_id is request id returned on initializing request'
-      summary: Export project annotations as a dataset
+        - `POST /api/projects/<project_id>/dataset/export?save_images=False` to initiate exporting process
+        - `GET /api/requests/<rq_id>` to check export status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file with annotations,
+            where `result_url` can be found in the response on checking status request
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this project.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to export annotation
-        deprecated: true
       tags:
       - projects
       security:
@@ -3909,73 +3811,28 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Annotations file is ready to download
-        '202':
-          description: Dump of annotations has been started
-        '401':
-          description: Format is not specified
-        '405':
-          description: Format is not available
+        '410':
+          description: API endpoint is no longer handles exporting process
   /api/projects/{id}/backup:
     get:
       operationId: projects_retrieve_backup
       description: |
-        Deprecation warning:
-
-        This endpoint will be deprecated in one of the next releases.
         Consider using new API:
-        - POST /api/projects/<project_id>/backup/export to initiate backup process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
+        - `POST /api/projects/<project_id>/backup/export` to initiate backup process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` can be found in the response on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
       summary: Back up a project
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process after backup file had been
-          created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this project.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded backup
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to export backup
-        deprecated: true
       tags:
       - projects
       security:
@@ -3984,13 +3841,10 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
-        '200':
-          description: Download of file started
-        '201':
-          description: Output backup file is ready for downloading
-        '202':
-          description: Creating a backup file has been started
+        '410':
+          description: Deprecated API endpoint
   /api/projects/{id}/backup/export:
     post:
       operationId: projects_create_backup_export
@@ -4049,20 +3903,19 @@ paths:
       operationId: projects_retrieve_dataset
       description: |2
 
-        To check the status of the process of importing a project dataset from a file:
+        Utilizing this endpoint:
+        - to export project dataset in a specific format
+        - to check the status of the process of importing a project dataset from a file
+        is deprecated.
 
-        After initiating the dataset upload, you will receive an rq_id parameter.
-        Make sure to include this parameter as a query parameter in your subsequent
-        GET /api/projects/id/dataset requests to track the status of the dataset import.
-        Also you should specify action parameter: action=import_status.
-
-        Deprecation warning:
-        Utilizing this endpoint to export project dataset in
-        a specific format will be deprecated in one of the next releases.
         Consider using new API:
-        - POST /api/projects/<project_id>/dataset/export/?save_images=True to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
+        - `POST /api/projects/<project_id>/dataset/export/?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status
+        - `GET result_url` to download a prepared file
+
+        Where:
+        - `rq_id` can be found in the response on initializing request
+        - `result_url` can be found in the response on checking status request
       summary: Export a project as a dataset / Check dataset import status
       parameters:
       - in: query
@@ -4074,16 +3927,19 @@ paths:
           - import_status
         description: Used to start downloading process locally after annotation file
           has been created
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
         description: Storage id
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
         description: Desired output file name
+        deprecated: true
       - in: query
         name: format
         schema:
@@ -4092,6 +3948,7 @@ paths:
           Desired output format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -4106,18 +3963,13 @@ paths:
           - cloud_storage
           - local
         description: Where need to save downloaded dataset
+        deprecated: true
       - in: query
         name: rq_id
         schema:
           type: string
-        description: rq id
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in project to import dataset
-        deprecated: true
+        description: Request ID
+        required: true
       tags:
       - projects
       security:
@@ -4126,20 +3978,12 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '405':
-          description: Format is not available
+        '301':
+          description: Redirects to the new API to check status of import process
+        '410':
+          description: API endpoint no longer supports exporting datasets
     post:
       operationId: projects_create_dataset
       description: |2
@@ -5488,14 +5332,16 @@ paths:
       description: |
         Deprecation warning:
 
-        Utilizing this endpoint ot export annotations as a dataset in
-        a specific format will be deprecated in one of the next releases.
+        Utilizing this endpoint to export annotations as a dataset in
+        a specific format is deprecated.
 
         Consider using new API:
-        - POST /api/tasks/<task_id>/dataset/export?save_images=False to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
-      summary: Get task annotations or export them as a dataset in a specific format
+        - `POST /api/tasks/<task_id>/dataset/export?save_images=False` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
+      summary: Get task annotations
       parameters:
       - in: query
         name: action
@@ -5505,16 +5351,19 @@ paths:
           - download
         description: Used to start downloading process locally after annotation file
           has been created
+        deprecated: true
       - in: query
         name: cloud_storage_id
         schema:
           type: integer
         description: Storage id
+        deprecated: true
       - in: query
         name: filename
         schema:
           type: string
         description: Desired output file name
+        deprecated: true
       - in: query
         name: format
         schema:
@@ -5523,6 +5372,7 @@ paths:
           Desired output format name
           You can get the list of supported formats at:
           /server/annotation/formats
+        deprecated: true
       - in: path
         name: id
         schema:
@@ -5537,12 +5387,6 @@ paths:
           - cloud_storage
           - local
         description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export annotation
         deprecated: true
       tags:
       - tasks
@@ -5557,16 +5401,12 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnnotationsRead'
-          description: Download of file started
-        '201':
-          description: Annotations file is ready to download
-        '202':
-          description: Dump of annotations has been started
+                $ref: '#/components/schemas/LabeledData'
+          description: ''
         '400':
           description: Exporting without data is not allowed
-        '405':
-          description: Format is not available
+        '410':
+          description: API endpoint is no longer handles exporting process
     post:
       operationId: tasks_create_annotations
       description: |2
@@ -5764,53 +5604,20 @@ paths:
     get:
       operationId: tasks_retrieve_backup
       description: |
-        Deprecation warning:
-            This endpoint will be deprecated in one of the next releases.
-            Consider using new API:
-            - POST /api/tasks/<task_id>/backup/export to initiate backup process
-            - GET /api/requests/<rq_id> to check process status,
-                where rq_id is request id returned on initializing request'
+        Consider using new API:
+        - `POST /api/tasks/<task_id>/backup/export` to initiate backup process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where rq_id can be found in the response on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
       summary: Back up a task
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process after backup file had been
-          created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Backup file name
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded backup
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in the task to export backup
-        deprecated: true
       tags:
       - tasks
       security:
@@ -5819,15 +5626,10 @@ paths:
         tokenAuth: []
       - signatureAuth: []
       - basicAuth: []
+      deprecated: true
       responses:
-        '200':
-          description: Download of file started
-        '201':
-          description: Output backup file is ready for downloading
-        '202':
-          description: Creating a backup file has been started
-        '400':
-          description: Backup of a task without data is not allowed
+        '410':
+          description: Deprecated API endpoint
   /api/tasks/{id}/backup/export:
     post:
       operationId: tasks_create_backup_export
@@ -6098,65 +5900,23 @@ paths:
     get:
       operationId: tasks_retrieve_dataset
       description: |
-        Deprecation warning:
-
         Utilizing this endpoint to export task dataset in
-        a specific format will be deprecated in one of the next releases.
+        a specific format is deprecated.
 
         Consider using new API:
-        - POST /api/tasks/<task_id>/dataset/export?save_images=True to initiate export process
-        - GET /api/requests/<rq_id> to check process status,
-            where rq_id is request id returned on initializing request
+        - `POST /api/tasks/<task_id>/dataset/export?save_images=True` to initiate export process
+        - `GET /api/requests/<rq_id>` to check process status,
+            where `rq_id` is request id returned on initializing request
+        - `GET result_url` to download a prepared file,
+            where `result_url` can be found in the response on checking status request
       summary: Export task as a dataset in a specific format
       parameters:
-      - in: query
-        name: action
-        schema:
-          type: string
-          enum:
-          - download
-        description: Used to start downloading process locally after annotation file
-          has been created
-      - in: query
-        name: cloud_storage_id
-        schema:
-          type: integer
-        description: Storage id
-      - in: query
-        name: filename
-        schema:
-          type: string
-        description: Desired output file name
-      - in: query
-        name: format
-        schema:
-          type: string
-        description: |-
-          Desired output format name
-          You can get the list of supported formats at:
-          /server/annotation/formats
-        required: true
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this task.
         required: true
-      - in: query
-        name: location
-        schema:
-          type: string
-          enum:
-          - cloud_storage
-          - local
-        description: Where need to save downloaded dataset
-      - in: query
-        name: use_default_location
-        schema:
-          type: boolean
-          default: true
-        description: Use the location that was configured in task to export annotations
-        deprecated: true
       tags:
       - tasks
       security:
@@ -6166,21 +5926,8 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: string
-                format: binary
-          description: Download of file started
-        '201':
-          description: Output file is ready for downloading
-        '202':
-          description: Exporting has been started
-        '400':
-          description: Exporting without data is not allowed
-        '405':
-          description: Format is not available
+        '410':
+          description: Deprecated API endpoint
   /api/tasks/{id}/dataset/export:
     post:
       operationId: tasks_create_dataset_export
@@ -7252,11 +6999,6 @@ components:
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
-    AnnotationsRead:
-      oneOf:
-      - $ref: '#/components/schemas/LabeledData'
-      - type: string
-        format: binary
     AssetRead:
       type: object
       properties:
