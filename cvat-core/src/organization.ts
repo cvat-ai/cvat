@@ -335,7 +335,7 @@ Object.defineProperties(Organization.prototype.members, {
             });
 
             const params = fieldsToSnakeCase(filter);
-            const result = await serverProxy.organizations.members(filter.org, params);
+            const result = await serverProxy.organizations.members(params);
 
             const memberships = await Promise.all(result.results.map(async (rawMembership) => {
                 const { invitation } = rawMembership;
@@ -428,7 +428,7 @@ Object.defineProperties(Organization.prototype.leave, {
         value: async function implementation(user: User) {
             checkObjectType('user', user, null, User);
             if (typeof this.id === 'number') {
-                const result = await serverProxy.organizations.members(this.slug, {
+                const result = await serverProxy.organizations.members({
                     page: 1,
                     pageSize: 10,
                     org: this.slug,

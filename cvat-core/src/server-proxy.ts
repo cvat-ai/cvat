@@ -1915,7 +1915,7 @@ async function deleteOrganization(id: number): Promise<void> {
     }
 }
 
-async function getOrganizationMembers(orgSlug, params = {}) {
+async function getOrganizationMembers(params = {}) {
     const { backendAPI } = config;
 
     let response = null;
@@ -1923,7 +1923,6 @@ async function getOrganizationMembers(orgSlug, params = {}) {
         response = await Axios.get(`${backendAPI}/memberships`, {
             params: {
                 ...params,
-                org: orgSlug,
             },
         });
     } catch (errorData) {
