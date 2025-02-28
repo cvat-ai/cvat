@@ -489,8 +489,8 @@ context('Ground truth jobs', () => {
                 });
             });
             it('Check crashing while navigating through GT job frames (#9095) ', () => {
-                cy.get('.ant-notification-notice-error').should('not.exist');
                 cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+                cy.get('.ant-notification-notice-error').should('not.exist');
             });
             after(() => {
                 cy.headlessDeleteTask(taskID);
