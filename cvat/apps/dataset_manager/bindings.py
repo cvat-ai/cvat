@@ -1681,7 +1681,10 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
 
         dm_items: list[dm.DatasetItem] = []
         for frame_data in instance_data.group_by_frame(include_empty=True):
-            dm_media_args = { 'ext': ext or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1] }
+            dm_media_args = {
+                'path': frame_data.name + ext,
+                'ext': ext or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
+            }
             if dimension == DimensionType.DIM_3D:
                 dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     0, frame_data.id, **dm_media_args
@@ -1785,6 +1788,7 @@ class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
         dm_items: list[dm.DatasetItem] = []
         for frame_data in project_data.group_by_frame(include_empty=True):
             dm_media_args = {
+                'path': frame_data.name + ext_per_task[frame_data.task_id],
                 'ext':  ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
             }
             if self._dimension == DimensionType.DIM_3D:
