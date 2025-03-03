@@ -41,7 +41,6 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.rq import RQId
 from cvat.apps.engine.serializers import DataSerializer, RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.engine.utils import is_dataset_export
 
 slogger = ServerLogManager(__name__)
 
