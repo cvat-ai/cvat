@@ -736,7 +736,9 @@ export async function getContextImage(jobID: number, frame: number): Promise<Rec
     const meta = await frameData.getMeta();
     const requestId = frame;
     const { jobStartFrame } = frameData;
-    const { related_files: relatedFiles } = meta.frames[frame - jobStartFrame];
+    const dataFrameNumber = meta.getDataFrameNumber(frame - jobStartFrame);
+    const frameIndex = meta.getFrameIndex(dataFrameNumber);
+    const { related_files: relatedFiles } = meta.frames[frameIndex];
     return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
         if (!(jobID in frameDataCache)) {
             reject(new Error(
