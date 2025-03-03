@@ -216,23 +216,7 @@ export class FramesMetaData {
             // That is, we can use frames with indices corresponding to frame numbers
             framesInfo = initialData.frames.filter((frame, idx) => framesNumbers.has(idx));
         } else {
-            framesInfo = (() => {
-                if (initialData.frames.length > 1 &&
-                    initialData.included_frames &&
-                    initialData.included_frames.length &&
-                    initialData.included_frames.length < initialData.frames.length
-                ) {
-                    // Drop placeholder frames for simple GT jobs.
-                    // This should be supported on the server side at some point.
-                    // So far, just pretend it's already implemented there.
-                    //
-                    // It's a heuristic that can accidentally drop normal frames called
-                    // "placeholder.jpg", we minimize such cases by the extra checks above.
-                    return initialData.frames.filter((f) => f.name !== 'placeholder.jpg');
-                }
-
-                return initialData.frames;
-            })();
+            framesInfo = initialData.frames;
         }
 
         Object.defineProperties(
