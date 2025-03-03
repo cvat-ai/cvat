@@ -220,7 +220,7 @@ class _DbTestBase(ApiTestBase):
             assert result_url, "The result_url param was not found in the server response"
 
             response: FileResponse = self._get_request(result_url, user)
-            assert response.status_code == status.HTTP_200_OK
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
 
             content = BytesIO(b"".join(response.streaming_content))
             with open(file_name, "wb") as f:

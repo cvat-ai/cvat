@@ -23,6 +23,7 @@ from glob import glob
 from io import BytesIO, IOBase
 from itertools import product
 from time import sleep
+from typing import Any
 from unittest import mock
 
 import av
@@ -37,6 +38,7 @@ from PIL import Image
 from pycocotools import coco as coco_loader
 from pyunpack import Archive
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 from rq.job import Job as RQJob
 from rq.queue import Queue as RQQueue
@@ -3150,10 +3152,82 @@ class TaskImportExportAPITestCase(ApiTestBase):
                 for media in self.media_data:
                     _create_task(data, media)
 
-    def _run_api_v2_tasks_id_export(self, tid, user, query_params=""):
-        with ForceLogin(user, self.client):
-            response = self.client.get('/api/tasks/{}/backup?{}'.format(tid, query_params), format="json")
+    def _get_task_export_api(self, task_id: int, *, query_params: dict[str, Any] | None = None) -> str:
+        api_path = f"/api/tasks/{task_id}/backup/export"
+        if query_params:
+            api_path += ("?" + "&".join([f"{k}={v}"for k, v in query_params.items()]))
+        return api_path
 
+    def _get_request(self, path: str, user: str) -> Response:
+        with ForceLogin(user, self.client):
+            response = self.client.get(path)
+        return response
+
+    def _post_request(self, path: str, user: str):
+        with ForceLogin(user, self.client):
+            response = self.client.post(path)
+        return response
+
+    def _wait_request_to_be_finished(
+        self,
+        user: str,
+        rq_id: str,
+        *,
+        attempts_count: int = 300,
+        sleep_interval: float = 0.1,
+        expected_401_or_403_status_code: int | None = None,
+    ):
+        request_status = None
+
+        for _ in range(attempts_count):
+            response = self._get_request(f"/api/requests/{rq_id}", user)
+            self.assertEqual(response.status_code, expected_401_or_403_status_code or status.HTTP_200_OK)
+            if expected_401_or_403_status_code is not None:
+                return
+            request_status = response.json()["status"]
+            if request_status in ("finished", "failed"):
+                break
+
+            sleep(sleep_interval)
+        assert request_status == "finished", f"The last request status was {request_status}"
+        return response
+
+    def _export_task(
+        self,
+        user: str,
+        task_id: int,
+        *,
+        query_params: dict | None = None,
+        download_locally: bool = True,
+        expected_401_or_403_status_code: int | None = None,
+    ):
+        path = self._get_task_export_api(task_id, query_params=query_params)
+        response = self._post_request(path, user)
+        self.assertEqual(response.status_code, expected_401_or_403_status_code or status.HTTP_202_ACCEPTED)
+
+        rq_id = response.json().get("rq_id")
+        if expected_401_or_403_status_code:
+            # export task by admin to get real rq_id
+            response = self._post_request(path, self.admin)
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.json().get("rq_id")
+
+        assert rq_id, "The rq_id param was not found in the server response"
+
+        response = self._wait_request_to_be_finished(user, rq_id, expected_401_or_403_status_code=expected_401_or_403_status_code)
+
+        if not download_locally:
+            return
+
+        # get actual result URL to check that server returns 401/403 when a user tries to download prepared file
+        if expected_401_or_403_status_code:
+            response = self._wait_request_to_be_finished(self.admin, rq_id)
+
+        result_url = response.json().get("result_url")
+        assert result_url, "The result_url param was not found in the server response"
+
+        response = self._get_request(result_url, user)
+        self.assertEqual(response.status_code, expected_401_or_403_status_code or status.HTTP_200_OK)
         return response
 
     def _run_api_v2_tasks_id_import(self, user, data):
@@ -3170,30 +3244,17 @@ class TaskImportExportAPITestCase(ApiTestBase):
 
     def _run_api_v2_tasks_id_export_import(self, user):
         if user:
-            if user == self.owner or user.is_superuser:
-                HTTP_200_OK = status.HTTP_200_OK
-                HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
-                HTTP_201_CREATED = status.HTTP_201_CREATED
-            else:
-                HTTP_200_OK = status.HTTP_403_FORBIDDEN
-                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+            expected_401_or_403_status_code = None if (user == self.owner or user.is_superuser) else status.HTTP_403_FORBIDDEN
         else:
-            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
-            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
-            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+            expected_401_or_403_status_code = status.HTTP_401_UNAUTHORIZED
 
         self._create_tasks()
         for task in self.tasks:
             tid = task["id"]
-            response = self._run_api_v2_tasks_id_export(tid, user)
-            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
-
-            response = self._run_api_v2_tasks_id_export(tid, user)
-            self.assertEqual(response.status_code, HTTP_201_CREATED)
-
-            response = self._run_api_v2_tasks_id_export(tid, user, "action=download")
-            self.assertEqual(response.status_code, HTTP_200_OK)
+            response = self._export_task(
+                user, tid,
+                expected_401_or_403_status_code=expected_401_or_403_status_code
+            )
 
             if user and user is not self.somebody and user is not self.user and user is not self.annotator:
                 self.assertTrue(response.streaming)
@@ -3204,11 +3265,11 @@ class TaskImportExportAPITestCase(ApiTestBase):
                     "task_file": content,
                 }
                 response = self._run_api_v2_tasks_id_import(user, uploaded_data)
-                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                self.assertEqual(response.status_code, expected_401_or_403_status_code or status.HTTP_202_ACCEPTED)
                 if user is not self.somebody and user is not self.user and user is not self.annotator:
                     rq_id = response.data["rq_id"]
                     response = self._run_api_v2_tasks_id_import(user, {"rq_id": rq_id})
-                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+                    self.assertEqual(response.status_code, expected_401_or_403_status_code or status.HTTP_201_CREATED)
                     original_task = self._run_api_v2_tasks_id(tid, user)
                     imported_task = self._run_api_v2_tasks_id(response.data["id"], user)
                     compare_objects(
@@ -3267,11 +3328,7 @@ class TaskImportExportAPITestCase(ApiTestBase):
             cleanup_export_cache_directory()
             mock_clear_export_cache.assert_not_called()
 
-            response = self._run_api_v2_tasks_id_export(task_id, user)
-            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-            response = self._run_api_v2_tasks_id_export(task_id, user)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            self._export_task(user, task_id, download_locally=False)
 
             queue: RQQueue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
             rq_job_ids = queue.finished_job_registry.get_job_ids()
