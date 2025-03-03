@@ -14,7 +14,7 @@ import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from contextlib import suppress
 from copy import copy
 from datetime import datetime

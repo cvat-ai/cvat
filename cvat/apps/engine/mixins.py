@@ -8,7 +8,6 @@ import json
 import os
 import os.path
 import uuid
-from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -23,10 +22,8 @@ from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import mixins, status
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from cvat.apps.engine.background import BackupExportManager, DatasetExportManager
 from cvat.apps.engine.handlers import clear_import_cache
