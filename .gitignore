@@ -64,3 +64,6 @@ cvat-ui/dist
 
 # produced by cvat/apps/iam/rules/tests/generate_tests.py
 /cvat/apps/*/rules/*_test.gen.rego
+
+# exception for intellij run configurations
+!.idea/runConfigurations/
