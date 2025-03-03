@@ -312,12 +312,6 @@ class ServerViewSet(viewsets.ViewSet):
         }
         return Response(PluginsSerializer(data).data)
 
-def csrf_workaround_is_needed_for_backup(query_params: Mapping[str, str]) -> bool:
-    return query_params.get('action') != 'download'
-
-def csrf_workaround_is_needed_for_export(query_params: Mapping[str, str]) -> bool:
-    return 'format' in query_params and query_params.get('action') != 'download'
-
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
@@ -1562,8 +1556,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES,
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
@@ -2096,8 +2089,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES,
-        csrf_workaround_is_needed=csrf_workaround_is_needed_for_export)
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
