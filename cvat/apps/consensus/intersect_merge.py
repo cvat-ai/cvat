@@ -65,6 +65,30 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
         return self._clusters.values()
 
+    def merge_items(self, items):
+        ann_map = getattr(self, "_ann_map", {})
+        result = super().merge_items(items)
+
+        if ann_map:
+            self._ann_map.update(ann_map)  # accumulate infos
+
+        return result
+
+    def get_clusters_for_frames(
+        self, frame_ids: Collection[tuple[str, str]]
+    ) -> Sequence[Sequence[dm.Annotation]]:
+        clusters = self.clusters
+
+        clusters_for_frames = []
+        for cluster in clusters:
+            cluster_ann = cluster[0]
+            cluster_ann_item = self.get_ann_source_item(id(cluster_ann))
+            cluster_item_id = (cluster_ann_item.id, cluster_ann_item.subset)
+            if cluster_item_id in frame_ids:
+                clusters_for_frames.append(cluster)
+
+        return clusters_for_frames
+
     def __call__(self, *datasets):
         self._clusters = {}
         return dm.Dataset(super().__call__(*datasets))

@@ -129,8 +129,10 @@ class _TaskMerger:
             agreed_annotations = sum(
                 a.attributes.get("score", 1) for item in merged_dataset for a in item.annotations
             )
-            total_annotations = merger.cluster_count
-            return agreed_annotations, total_annotations
+            clusters_for_frames = merger.get_clusters_for_frames(
+                set((item.id, item.subset) for item in merged_dataset)
+            )
+            return agreed_annotations, len(clusters_for_frames)
 
         def compute_agreement_per_label(
             merged_dataset: dm.Dataset,
@@ -140,7 +142,8 @@ class _TaskMerger:
 
             counts_per_label = {}  # merged_label_id -> (agreed, total)
 
-            for cluster in merger.clusters:
+            dataset_frames = set((item.id, item.subset) for item in merged_dataset)
+            for cluster in merger.get_clusters_for_frames(dataset_frames):
                 label_id = cluster[0].label
                 label_counts = counts_per_label.setdefault(label_id, [0, 0])
                 label_counts[1] += 1
@@ -166,6 +169,35 @@ class _TaskMerger:
                 for label_id, v in counts_per_label.items()
             }
 
+        def compute_agreement_per_frame(
+            merged_dataset: dm.Dataset,
+        ) -> dict[tuple[str, str], tuple[int, int]]:
+            agreement_per_frame = {}
+            for item in merged_dataset:
+                frame_id = (item.id, item.subset)
+                frame_dataset = dm.Dataset.from_iterable(
+                    [item], categories=merged_dataset.categories()
+                )
+                frame_agreement = compute_agreement(frame_dataset)
+                agreement_per_frame[frame_id] = frame_agreement
+
+            return agreement_per_frame
+
+        def compute_agreement_per_frame_per_label(merged_dataset: dm.Dataset) -> dict[
+            tuple[str, str],
+            dict[tuple[str, str], tuple[int, int]],
+        ]:
+            agreement_per_frame = {}
+            for item in merged_dataset:
+                frame_id = (item.id, item.subset)
+                frame_dataset = dm.Dataset.from_iterable(
+                    [item], categories=merged_dataset.categories()
+                )
+                frame_agreement = compute_agreement_per_label(frame_dataset)
+                agreement_per_frame[frame_id] = frame_agreement
+
+            return agreement_per_frame
+
         def compute_agreement_per_source(merged_dataset: dm.Dataset) -> dict[int, tuple[int, int]]:
             # compute quality report for merged and each source
             # we don't output exactly the source annotations in some algorithms
@@ -174,18 +206,47 @@ class _TaskMerger:
         agreement = compute_agreement(merged_dataset)
         agreement_per_label = compute_agreement_per_label(merged_dataset)
 
+        agreement_per_frame = compute_agreement_per_frame(merged_dataset)
+        agreement_per_frame_per_label = compute_agreement_per_frame_per_label(merged_dataset)
+
         agreement_per_source = {}  # { source job id -> float [0; 1] }
         agreement_per_source_per_label = {}  # { source job id -> { label name -> float [0; 1] } }
 
         slogger.task[self._task.id].info(
             f"Consensus scores for task {self._task.id} job {parent_job_id}: "
-            f"Agreement overall: {agreement[0] / agreement[1] * 100:.2f}, "
         )
-        slogger.task[self._task.id].info(f"Agreement per label: ")
+
         slogger.task[self._task.id].info(
+            f"Agreement overall: {agreement[0] / agreement[1] * 100:.2f}"
+        )
+
+        slogger.task[self._task.id].info(
+            f"Agreement per label: \n  " +
             "\n  ".join(
                 f"{label}: {matched / total * 100:.2f}"
                 for label, (matched, total) in agreement_per_label.items()
+            )
+        )
+
+        slogger.task[self._task.id].info(
+            f"Agreement per frame: \n  " +
+            "\n  ".join(
+                f"{frame} (#{frame_idx}): {matched / total * 100:.2f}"
+                for frame_idx, (frame, (matched, total)) in enumerate(agreement_per_frame.items())
+            )
+        )
+
+        slogger.task[self._task.id].info(
+            f"\n  Agreement per frame per label: \n" +
+            "\n".join(
+                f"  frame {frame_id} (#{frame_idx}):\n    "
+                + "\n    ".join(
+                    f"{label}: {matched / total * 100:.2f}"
+                    for label, (matched, total) in frame_agreement_per_label.items()
+                )
+                for frame_idx, (frame_id, frame_agreement_per_label) in enumerate(
+                    agreement_per_frame_per_label.items()
+                )
             )
         )
 
