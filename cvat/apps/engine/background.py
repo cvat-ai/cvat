@@ -410,7 +410,7 @@ class BackupExportManager(ResourceExportManager):
         def location(self) -> Location:
             return self.location_config["location"]
 
-    def initialize_export_args(self) -> None:
+    def initialize_export_args(self) -> None:  # pylint: disable=arguments-differ
         super().initialize_export_args(export_callback=create_backup)
         filename = self.request.query_params.get("filename", "")
 
