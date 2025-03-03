@@ -41,7 +41,7 @@ from cvat.apps.engine.frame_provider import FrameQuality, TaskFrameProvider
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.permissions import TaskPermission
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq import BaseRQMeta, ExportRQMeta, ImportRQMeta, RequestAction, RQId
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -54,6 +54,7 @@ from cvat.apps.engine.utils import (
     reverse,
     take_by,
 )
+from cvat.apps.lambda_manager.rq import LambdaRQMeta
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -3508,7 +3509,8 @@ class RequestDataOperationSerializer(serializers.Serializer):
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
         parsed_rq_id: RQId = rq_job.parsed_rq_id
 
-        return {
+        base_rq_job_meta = BaseRQMeta.for_job(rq_job)
+        representation = {
             "type": ":".join(
                 [
                     parsed_rq_id.action,
@@ -3516,12 +3518,16 @@ class RequestDataOperationSerializer(serializers.Serializer):
                 ]
             ),
             "target": parsed_rq_id.target,
-            "project_id": rq_job.meta[RQJobMetaField.PROJECT_ID],
-            "task_id": rq_job.meta[RQJobMetaField.TASK_ID],
-            "job_id": rq_job.meta[RQJobMetaField.JOB_ID],
-            "format": parsed_rq_id.format,
-            "function_id": rq_job.meta.get(RQJobMetaField.FUNCTION_ID),
+            "project_id": base_rq_job_meta.project_id,
+            "task_id": base_rq_job_meta.task_id,
+            "job_id": base_rq_job_meta.job_id,
         }
+        if parsed_rq_id.action == RequestAction.AUTOANNOTATE:
+            representation["function_id"] = LambdaRQMeta.for_job(rq_job).function_id
+        elif parsed_rq_id.action in (RequestAction.IMPORT, RequestAction.EXPORT):
+            representation["format"] = parsed_rq_id.format
+
+        return representation
 
 class RequestSerializer(serializers.Serializer):
     # SerializerMethodField is not used here to mark "status" field as required and fix schema generation.
@@ -3545,17 +3551,23 @@ class RequestSerializer(serializers.Serializer):
     result_url = serializers.URLField(required=False, allow_null=True)
     result_id = serializers.IntegerField(required=False, allow_null=True)
 
+    def __init__(self, *args, **kwargs):
+        self._base_rq_job_meta: BaseRQMeta | None = None
+        super().__init__(*args, **kwargs)
+
     @extend_schema_field(UserIdentifiersSerializer())
     def get_owner(self, rq_job: RQJob) -> dict[str, Any]:
-        return UserIdentifiersSerializer(rq_job.meta[RQJobMetaField.USER]).data
+        assert self._base_rq_job_meta
+        return UserIdentifiersSerializer(self._base_rq_job_meta.user).data
 
     @extend_schema_field(
         serializers.FloatField(min_value=0, max_value=1, required=False, allow_null=True)
     )
     def get_progress(self, rq_job: RQJob) -> Decimal:
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
         # progress of task creation is stored in "task_progress" field
         # progress of project import is stored in "progress" field
-        return Decimal(rq_job.meta.get(RQJobMetaField.PROGRESS) or rq_job.meta.get(RQJobMetaField.TASK_PROGRESS) or 0.)
+        return Decimal(rq_job_meta.progress or rq_job_meta.task_progress or 0.)
 
     @extend_schema_field(serializers.DateTimeField(required=False, allow_null=True))
     def get_expiry_date(self, rq_job: RQJob) -> Optional[str]:
@@ -3573,20 +3585,19 @@ class RequestSerializer(serializers.Serializer):
 
     @extend_schema_field(serializers.CharField(allow_blank=True))
     def get_message(self, rq_job: RQJob) -> str:
+        assert self._base_rq_job_meta
         rq_job_status = rq_job.get_status()
         message = ''
 
         if RQJobStatus.STARTED == rq_job_status:
-            message = rq_job.meta.get(RQJobMetaField.STATUS, '')
+            message = self._base_rq_job_meta.status or message
         elif RQJobStatus.FAILED == rq_job_status:
-            message = rq_job.meta.get(
-                RQJobMetaField.FORMATTED_EXCEPTION,
-                parse_exception_message(str(rq_job.exc_info or "Unknown error")),
-            )
+            message = self._base_rq_job_meta.formatted_exception or parse_exception_message(str(rq_job.exc_info or "Unknown error"))
 
         return message
 
     def to_representation(self, rq_job: RQJob) -> dict[str, Any]:
+        self._base_rq_job_meta = BaseRQMeta.for_job(rq_job)
         representation = super().to_representation(rq_job)
 
         # FUTURE-TODO: support such statuses on UI
@@ -3594,8 +3605,8 @@ class RequestSerializer(serializers.Serializer):
             representation["status"] = RQJobStatus.QUEUED
 
         if representation["status"] == RQJobStatus.FINISHED:
-            if result_url := rq_job.meta.get(RQJobMetaField.RESULT_URL):
-                representation["result_url"] = result_url
+            if rq_job.parsed_rq_id.action == models.RequestAction.EXPORT:
+                representation["result_url"] = ExportRQMeta.for_job(rq_job).result_url
 
             if (
                 rq_job.parsed_rq_id.action == models.RequestAction.IMPORT

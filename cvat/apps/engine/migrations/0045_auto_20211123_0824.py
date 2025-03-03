@@ -4,21 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-    replaces = [('engine', '0044_auto_20211123_0824')]
+    replaces = [("engine", "0044_auto_20211123_0824")]
 
     dependencies = [
-        ('engine', '0044_auto_20211115_0858'),
+        ("engine", "0044_auto_20211115_0858"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='cloudstorage',
-            name='resource',
+            model_name="cloudstorage",
+            name="resource",
             field=models.CharField(max_length=222),
         ),
         migrations.AlterField(
-            model_name='cloudstorage',
-            name='specific_attributes',
+            model_name="cloudstorage",
+            name="specific_attributes",
             field=models.CharField(blank=True, max_length=128),
         ),
     ]

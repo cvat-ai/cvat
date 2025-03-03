@@ -25,7 +25,6 @@ from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
 from django_rq.queues import DjangoRQ as RqQueue
-from rest_framework.request import Request
 from rq.job import Job as RqJob
 from scipy.optimize import linear_sum_assignment
 
@@ -53,7 +52,9 @@ from cvat.apps.engine.models import (
     User,
     ValidationMode,
 )
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
+from cvat.apps.engine.rq import BaseRQMeta, define_dependent_job
+from cvat.apps.engine.types import ExtendedRequest
+from cvat.apps.engine.utils import get_rq_lock_by_user, get_rq_lock_for_job
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.models import (
@@ -765,7 +766,9 @@ def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
 
     dists = np.linalg.norm(p1 - p2, axis=1)
     return np.sum(
-        visibility_a * visibility_b * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))
+        visibility_a
+        * visibility_b
+        * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
     ) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
@@ -988,6 +991,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         compare_line_orientation: bool = False,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
+        allow_groups: bool = True,
     ):
         super().__init__(iou_threshold=iou_threshold)
         self.categories = categories
@@ -1010,6 +1014,12 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         self.panoptic_comparison = panoptic_comparison
         "Compare only the visible parts of polygons and masks"
+
+        self.allow_groups = allow_groups
+        """
+        When comparing grouped annotations, consider all the group elements with the same label
+        as the same annotation, if applicable. Affects polygons, masks, and points
+        """
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -1144,12 +1154,18 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         img_h, img_w = item_a.media_as(dm.Image).size
 
         def _find_instances(annotations):
-            # Group instance annotations by label.
-            # Annotations with the same label and group will be merged,
-            # and considered a single object in comparison
             instances = []
             instance_map = {}  # ann id -> instance id
-            for ann_group in datumaro.util.annotation_util.find_instances(annotations):
+
+            if self.allow_groups:
+                # Group instance annotations by label.
+                # Annotations with the same label and group will be merged,
+                # and considered a single object in comparison
+                groups = datumaro.util.annotation_util.find_instances(annotations)
+            else:
+                groups = [[a] for a in annotations]  # ignore groups
+
+            for ann_group in groups:
                 ann_group = sorted(ann_group, key=lambda a: a.label)
                 for _, label_group in itertools.groupby(ann_group, key=lambda a: a.label):
                     label_group = list(label_group)
@@ -1309,9 +1325,24 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
+        if not a_points and not b_points:
+            results = [[], [], [], []]
+
+            if self.return_distances:
+                results.append({})
+
+            return tuple(results)
+
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
-            source_instances = datumaro.util.annotation_util.find_instances(source_anns)
+            if self.allow_groups:
+                # Group instance annotations by label.
+                # Annotations with the same label and group will be merged,
+                # and considered a single object in comparison
+                source_instances = datumaro.util.annotation_util.find_instances(source_anns)
+            else:
+                source_instances = [[a] for a in source_anns]  # ignore groups
+
             for instance_group in source_instances:
                 instance_bbox = self.instance_bbox(instance_group)
 
@@ -1411,7 +1442,12 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_a)
         b_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_b)
         if not a_skeletons and not b_skeletons:
-            return [], [], [], []
+            results = [[], [], [], []]
+
+            if self.return_distances:
+                results.append({})
+
+            return tuple(results)
 
         # Convert skeletons to point lists for comparison
         # This is required to compute correct per-instance distance
@@ -2265,7 +2301,7 @@ class QualityReportUpdateManager:
             return "Quality computation job for this task already enqueued"
 
     def schedule_custom_quality_check_job(
-        self, request: Request, task: Task, *, user_id: int
+        self, request: ExtendedRequest, task: Task, *, user_id: int
     ) -> str:
         """
         Schedules a quality report computation job, supposed for updates by a request.
@@ -2274,11 +2310,11 @@ class QualityReportUpdateManager:
         self._check_quality_reporting_available(task)
 
         queue = self._get_queue()
+        rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
 
-        with get_rq_lock_by_user(queue, user_id=user_id):
-            rq_id = self._make_custom_quality_check_job_id(task_id=task.id, user_id=user_id)
-            rq_job = queue.fetch_job(rq_id)
-            if rq_job:
+        # ensure that there is no race condition when processing parallel requests
+        with get_rq_lock_for_job(queue, rq_id):
+            if rq_job := queue.fetch_job(rq_id):
                 if rq_job.get_status(refresh=False) in (
                     rq.job.JobStatus.QUEUED,
                     rq.job.JobStatus.STARTED,
@@ -2289,19 +2325,20 @@ class QualityReportUpdateManager:
 
                 rq_job.delete()
 
-            dependency = define_dependent_job(
-                queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
-            )
+            with get_rq_lock_by_user(queue, user_id=user_id):
+                dependency = define_dependent_job(
+                    queue, user_id=user_id, rq_id=rq_id, should_be_dependent=True
+                )
 
-            queue.enqueue(
-                self._check_task_quality,
-                task_id=task.id,
-                job_id=rq_id,
-                meta=get_rq_job_meta(request=request, db_obj=task),
-                result_ttl=self._JOB_RESULT_TTL,
-                failure_ttl=self._JOB_RESULT_TTL,
-                depends_on=dependency,
-            )
+                queue.enqueue(
+                    self._check_task_quality,
+                    task_id=task.id,
+                    job_id=rq_id,
+                    meta=BaseRQMeta.build(request=request, db_obj=task),
+                    result_ttl=self._JOB_RESULT_TTL,
+                    failure_ttl=self._JOB_RESULT_TTL,
+                    depends_on=dependency,
+                )
 
         return rq_id
 
