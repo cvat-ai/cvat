@@ -32,6 +32,7 @@ import {
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
+    composeShapeDimensions,
 } from './shared';
 import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
@@ -2444,10 +2445,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 shape.untransform();
             }
 
-            if (
-                state.points.length !== drawnState.points.length ||
-                state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
-            ) {
+            const pointsUpdated = state.points.length !== drawnState.points.length ||
+                state.points.some((p: number, id: number): boolean => p !== drawnState.points[id]);
+
+            if (pointsUpdated) {
                 if (state.shapeType === 'mask') {
                     // if masks points were updated, draw from scratch
                     this.deleteObjects([this.drawnStates[+clientID]]);
@@ -2493,9 +2494,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             const stateDescriptions = state.descriptions;
             const drawnStateDescriptions = drawnState.descriptions;
+            const rotationUpdated = drawnState.rotation !== state.rotation;
 
             if (
                 drawnState.label.id !== state.label.id ||
+                pointsUpdated ||
+                rotationUpdated ||
                 drawnStateDescriptions.length !== stateDescriptions.length ||
                 drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
             ) {
@@ -3090,6 +3094,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const withLabel = content.includes('label');
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
+        const withDimensions = content.includes('dimensions');
         const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions,
@@ -3116,22 +3121,42 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 `${withSource ? `(${source})` : ''}`).style({
                     'text-transform': 'uppercase',
                 });
+
+                if (withDimensions && ['rectangle', 'ellipse'].includes(state.shapeType)) {
+                    let width = state.points[2] - state.points[0];
+                    let height = state.points[3] - state.points[1];
+
+                    if (state.shapeType === 'ellipse') {
+                        width *= 2;
+                        height *= -2;
+                    }
+
+                    block
+                        .tspan(composeShapeDimensions(width, height, state.rotation))
+                        .attr({
+                            dy: '1.25em',
+                            x: 0,
+                        })
+                        .addClass('cvat_canvas_text_dimensions');
+                }
                 if (withDescriptions) {
-                    for (const desc of descriptions) {
+                    descriptions.forEach((desc: string, idx: number) => {
                         block
                             .tspan(`${desc}`)
                             .attr({
-                                dy: '1em',
+                                dy: idx === 0 ? '1.25em' : '1em',
                                 x: 0,
                             })
                             .addClass('cvat_canvas_text_description');
-                    }
+                    });
                 }
                 if (withAttr) {
-                    for (const attrID of Object.keys(attributes)) {
-                        const values = `${attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID]}`.split('\n');
+                    Object.keys(attributes).forEach((attrID: string, idx: number) => {
+                        const values = `${attributes[attrID] === undefinedAttrValue ?
+                            '' : attributes[attrID]}`.split('\n');
                         const parent = block.tspan(`${attrNames[attrID]}: `)
-                            .attr({ attrID, dy: '1em', x: 0 }).addClass('cvat_canvas_text_attribute');
+                            .attr({ attrID, dy: idx === 0 ? '1.25em' : '1em', x: 0 })
+                            .addClass('cvat_canvas_text_attribute');
                         values.forEach((attrLine: string, index: number) => {
                             parent
                                 .tspan(attrLine)
@@ -3139,7 +3164,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     dy: index === 0 ? 0 : '1em',
                                 });
                         });
-                    }
+                    });
                 }
             })
             .move(0, 0)
