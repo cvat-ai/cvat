@@ -82,13 +82,7 @@ from cvat.apps.engine.frame_provider import (
 )
 from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.media_extractors import get_mime
-from cvat.apps.engine.mixins import (
-    BackupMixin,
-    CsrfWorkaroundMixin,
-    DatasetMixin,
-    PartialUpdateModelMixin,
-    UploadMixin,
-)
+from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
 from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import AnnotationGuide, Asset, ClientFile, CloudProviderChoice
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
@@ -345,7 +339,7 @@ class ServerViewSet(viewsets.ViewSet):
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -930,7 +924,7 @@ class _JobDataGetter(_DataGetter):
 
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
-    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin, CsrfWorkaroundMixin
+    PartialUpdateModelMixin, UploadMixin, DatasetMixin, BackupMixin
 ):
     queryset = Task.objects.select_related(
         'data',
@@ -1884,7 +1878,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 )
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
-    UploadMixin, DatasetMixin, CsrfWorkaroundMixin
+    UploadMixin, DatasetMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
