@@ -1573,9 +1573,6 @@ class ExportBehaviorTest(_DbTestBase):
         task_id = task["id"]
 
         download_url: str | None = None
-        download_params = {
-            "format": format_name,
-        }
 
         def _download(*_, task_id: int, export_path: str):
             from os.path import exists as original_exists
@@ -1593,10 +1590,10 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch(
-                    "cvat.apps.engine.views.dm.util.get_export_cache_lock",
+                    "cvat.apps.engine.background.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.dataset_manager.views.osp.exists") as mock_osp_exists,
+                patch("cvat.apps.engine.background.osp.exists") as mock_osp_exists,
                 TemporaryDirectory() as temp_dir,
             ):
                 mock_osp_exists.side_effect = patched_osp_exists
@@ -1636,7 +1633,7 @@ class ExportBehaviorTest(_DbTestBase):
                     # should come from waiting for get_export_cache_lock
                     exited_by_timeout = True
 
-                assert exited_by_timeout
+                assert exited_by_timeout, "LockNotAvailableError should have been raised"
 
         # The problem checked is TOCTOU / race condition for file existence check and
         # further file reading / removal. There are several possible variants of the problem.
@@ -1665,11 +1662,11 @@ class ExportBehaviorTest(_DbTestBase):
 
         with patch("cvat.apps.dataset_manager.views.export", new=patched_export):
             response = self._export_task_annotations(
-                self.admin, task_id, query_params=download_params,
+                self.admin, task_id, query_params={"format": format_name},
                 download_locally=False
             )
             download_url = response.json().get("result_url")
-            assert download_url
+            assert download_url, "The result_url param was not found in the server response"
 
         processes_finished_correctly = False
         with ExitStack() as es:
