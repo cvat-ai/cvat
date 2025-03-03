@@ -6829,11 +6829,6 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
                 os.makedirs(os.path.dirname(img_path))
             image.save(img_path)
 
-    def _get_request(self, path):
-        with ForceLogin(self.user, self.client):
-            response = self.client.get(path)
-        return response
-
     def _run_api_v2_server_share(self, directory):
         with ForceLogin(self.user, self.client):
             response = self.client.get(
@@ -6892,7 +6887,7 @@ class ServerShareDifferentTypesAPITestCase(ApiTestBase):
         image_data.update(remote_files)
         # create task with server
         task = self._create_task(task, image_data)
-        response = self._get_request("/api/tasks/%s/data/meta" % task["id"])
+        response = self._get_request("/api/tasks/%s/data/meta" % task["id"], self.user)
         self.assertEqual(len(response.data["frames"]), images_count)
 
 
@@ -6912,16 +6907,6 @@ class TaskAnnotation2DContext(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
         create_db_users(cls)
-
-    def _get_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path, data)
-        return response
-
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-        return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
@@ -6987,5 +6972,5 @@ class TaskAnnotation2DContext(ApiTestBase):
                 "type": "context_image",
                 "number": 0
             }
-            response = self._get_request_with_data("/api/tasks/%s/data" % task_id, data, self.admin)
+            response = self._get_request("/api/tasks/%s/data" % task_id, self.admin, data=data)
             self.assertEqual(response.status_code, status.HTTP_200_OK)

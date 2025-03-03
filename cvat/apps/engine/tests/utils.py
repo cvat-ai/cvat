@@ -128,14 +128,24 @@ class ApiTestBase(APITestCase):
         super().setUp()
         self.client = self.client_class()
 
-    def _get_request(self, path: str, user: str) -> Response:
+    def _get_request(self, path: str, user: str, *, data: dict[str, Any] | None = None) -> Response:
         with ForceLogin(user, self.client):
-            response = self.client.get(path)
+            response = self.client.get(path, data=data)
         return response
 
-    def _post_request(self, path: str, user: str):
+    def _delete_request(self, path: str, user: str):
         with ForceLogin(user, self.client):
-            response = self.client.post(path)
+            response = self.client.delete(path)
+        return response
+
+    def _post_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
+        with ForceLogin(user, self.client):
+            response = self.client.post(path, data=data)
+        return response
+
+    def _put_request(self, url: str, user: str, *, data: dict[str, Any] | None = None):
+        with ForceLogin(user, self.client):
+            response = self.client.put(url, data=data)
         return response
 
     def _wait_request_to_be_finished(

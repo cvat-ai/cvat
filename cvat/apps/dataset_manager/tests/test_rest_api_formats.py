@@ -233,28 +233,12 @@ class _DbTestBase(ExportApiTestBase):
             )
         return values
 
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-        return response
-
     def _get_data_from_task(self, task_id, include_images):
         task_ann = TaskAnnotation(task_id)
         task_ann.init_from_db()
         task_data = TaskData(task_ann.ir_data, Task.objects.get(pk=task_id))
         extractor = CvatTaskOrJobDataExtractor(task_data, include_images=include_images)
         return Dataset.from_extractors(extractor)
-
-
-    def _put_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.put(path, data)
-        return response
-
-    def _post_request_with_data(self, path, data, user):
-        with ForceLogin(user, self.client):
-            response = self.client.post(path, data)
-        return response
 
     def _delete_request(self, path, user):
         with ForceLogin(user, self.client):
@@ -322,9 +306,9 @@ class _DbTestBase(ExportApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, msg=response.json())
 
     def _upload_file(self, url, data, user):
-        response = self._put_request_with_data(url, {"annotation_file": data}, user)
+        response = self._put_request(url, user, data={"annotation_file": data})
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-        response = self._put_request_with_data(url, {}, user)
+        response = self._put_request(url, user)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def _check_downloaded_file(self, file_name):
@@ -457,9 +441,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
                             with open(file_zip_name, 'rb') as binary_file:
-                                response = self._put_request_with_data(url, {"annotation_file": binary_file}, user)
+                                response = self._put_request(url, user, data={"annotation_file": binary_file})
                                 self.assertEqual(response.status_code, edata['accept code'])
-                                response = self._put_request_with_data(url, {}, user)
+                                response = self._put_request(url, user)
                                 self.assertEqual(response.status_code, edata['create code'])
 
     def test_api_v2_dump_annotations_with_objects_type_is_track(self):
@@ -549,9 +533,9 @@ class TaskDumpUploadTest(_DbTestBase):
                             url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
                             with open(file_zip_name, 'rb') as binary_file:
-                                response = self._put_request_with_data(url, {"annotation_file": binary_file}, user)
+                                response = self._put_request(url, user, data={"annotation_file": binary_file})
                                 self.assertEqual(response.status_code, edata['accept code'])
-                                response = self._put_request_with_data(url, {}, user)
+                                response = self._put_request(url, user)
                                 self.assertEqual(response.status_code, edata['create code'])
 
     def test_api_v2_dump_tag_annotations(self):
@@ -867,9 +851,9 @@ class TaskDumpUploadTest(_DbTestBase):
                     url = self._generate_url_upload_tasks_annotations(task_id, upload_format_name)
 
                     with open(file_zip_name, 'rb') as binary_file:
-                        response = self._put_request_with_data(url, {"annotation_file": binary_file}, self.admin)
+                        response = self._put_request(url, self.admin, data={"annotation_file": binary_file})
                         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-                        response = self._put_request_with_data(url, {}, self.admin)
+                        response = self._put_request(url, self.admin)
                         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
                         self.assertIsNone(response.data)
 
@@ -2124,7 +2108,7 @@ class ProjectDumpUpload(_DbTestBase):
 
                     if osp.exists(file_zip_name):
                         with open(file_zip_name, 'rb') as binary_file:
-                            response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                            response = self._post_request(url, user, data={"dataset_file": binary_file})
                             self.assertEqual(response.status_code, edata['accept code'])
 
     def test_api_v2_export_annotations(self):
@@ -2213,7 +2197,7 @@ class ProjectDumpUpload(_DbTestBase):
             url = self._generate_url_upload_project_dataset(project["id"], upload_format_name)
 
             with open(file_zip_name, 'rb') as binary_file:
-                response = self._post_request_with_data(url, {"dataset_file": binary_file}, user)
+                response = self._post_request(url, user, data={"dataset_file": binary_file})
                 self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
             # equals annotations
