@@ -99,7 +99,12 @@ class _CloudStorageResourceTest(ABC):
         number_of_checks = 100
 
         # initialize the export process
-        response = post_method(user, f"{obj}/{obj_id}/{resource if resource != 'annotations' else 'dataset'}/export", data=None, **kwargs)
+        response = post_method(
+            user,
+            f"{obj}/{obj_id}/{resource if resource != 'annotations' else 'dataset'}/export",
+            data=None,
+            **kwargs,
+        )
         assert response.status_code == _expect_status
 
         if _expect_status == HTTPStatus.FORBIDDEN:
