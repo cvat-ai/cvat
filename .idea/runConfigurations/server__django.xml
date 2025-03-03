@@ -1,33 +1,32 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="server: django" type="Python.DjangoServer" factoryName="Django server">
-    <module name="cvat" />
+  <configuration default="false" name="server: django" type="PythonConfigurationType" factoryName="Python">
+    <module name="cvat-upstream" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
-      <env name="PYTHONUNBUFFERED" value="1" />
-      <env name="CVAT_SERVERLESS" value="1" />
       <env name="ALLOWED_HOSTS" value="*" />
-      <env name="IAM_OPA_BUNDLE" value="1" />
+      <env name="CVAT_SERVERLESS" value="1" />
       <env name="DJANGO_LOG_SERVER_HOST" value="localhost" />
       <env name="DJANGO_LOG_SERVER_PORT" value="8282" />
       <env name="DJANGO_SETTINGS_MODULE" value="cvat.settings.development" />
+      <env name="IAM_OPA_BUNDLE" value="1" />
+      <env name="PYTHONUNBUFFERED" value="1" />
     </envs>
     <option name="SDK_HOME" value="" />
-    <option name="SDK_NAME" value="Python 3.10 (cvat)" />
+    <option name="SDK_NAME" value="Python 3.12" />
     <option name="WORKING_DIRECTORY" value="" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
-    <option name="launchJavascriptDebuger" value="false" />
-    <option name="port" value="7000" />
-    <option name="host" value="127.0.0.1" />
-    <option name="additionalOptions" value="--noreload --insecure" />
-    <option name="browserUrl" value="" />
-    <option name="runTestServer" value="false" />
-    <option name="runNoReload" value="false" />
-    <option name="useCustomRunCommand" value="false" />
-    <option name="customRunCommand" value="" />
+    <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+    <option name="SCRIPT_NAME" value="manage.py" />
+    <option name="PARAMETERS" value="runserver --noreload --insecure 127.0.0.1:7000" />
+    <option name="SHOW_COMMAND_LINE" value="false" />
+    <option name="EMULATE_TERMINAL" value="false" />
+    <option name="MODULE_MODE" value="false" />
+    <option name="REDIRECT_INPUT" value="false" />
+    <option name="INPUT_FILE" value="" />
     <method v="2" />
   </configuration>
 </component>
