@@ -124,6 +124,7 @@ class _TaskMerger:
             )
         )
         merged_dataset = merger(*consensus_datasets)
+        merged_dataset.init_cache()
 
         def compute_agreement(merged_dataset: dm.Dataset) -> tuple[int, int]:
             agreed_annotations = sum(
@@ -221,24 +222,24 @@ class _TaskMerger:
         )
 
         slogger.task[self._task.id].info(
-            f"Agreement per label: \n  " +
-            "\n  ".join(
+            f"Agreement per label: \n  "
+            + "\n  ".join(
                 f"{label}: {matched / total * 100:.2f}"
                 for label, (matched, total) in agreement_per_label.items()
             )
         )
 
         slogger.task[self._task.id].info(
-            f"Agreement per frame: \n  " +
-            "\n  ".join(
+            f"Agreement per frame: \n  "
+            + "\n  ".join(
                 f"{frame} (#{frame_idx}): {matched / total * 100:.2f}"
                 for frame_idx, (frame, (matched, total)) in enumerate(agreement_per_frame.items())
             )
         )
 
         slogger.task[self._task.id].info(
-            f"\n  Agreement per frame per label: \n" +
-            "\n".join(
+            f"\n  Agreement per frame per label: \n"
+            + "\n".join(
                 f"  frame {frame_id} (#{frame_idx}):\n    "
                 + "\n    ".join(
                     f"{label}: {matched / total * 100:.2f}"
@@ -249,6 +250,22 @@ class _TaskMerger:
                 )
             )
         )
+
+        def _format_scores(ann: dm.Annotation):
+            score = ann.attributes.get("score")
+            if score:
+                score = f"{round(float(score), 2)}"
+            ann.attributes["score"] = score
+
+            return score
+
+        for item in merged_dataset:
+            for ann in item.annotations[:]:
+                _format_scores(ann)
+
+                if isinstance(ann, dm.Skeleton):
+                    for point in ann.elements:
+                        _format_scores(point)
 
         # Delete the existing annotations in the job.
         # If we don't delete existing annotations, the imported annotations

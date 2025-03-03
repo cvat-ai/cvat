@@ -14,6 +14,7 @@ import datumaro as dm
 import datumaro.components.merge.intersect_merge
 import numpy as np
 from datumaro.components.errors import FailedLabelVotingError
+from datumaro.util import cast
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -459,7 +460,7 @@ class ShapeMerger(AnnotationMerger, ShapeMatcher):
         for s in cluster:
             label = self._context.get_src_label_name(s, s.label)
             state = votes.setdefault(label, [0, 0])
-            state[0] += s.attributes.get("score", 1.0)
+            state[0] += cast(s.attributes.get("score", 1.0), float, 1)
             state[1] += 1
 
         label, (score, count) = max(votes.items(), key=lambda e: e[1][0])
@@ -647,22 +648,25 @@ class SkeletonMerger(ShapeMerger, SkeletonMatcher):
                 v: len(g) for v, g in points_by_visibility.items()
             }
 
-            visibility_score = visibility_scores.pop(dm.Points.Visibility.absent, 0)
-            if visibility_score > len(keypoint_cluster) // 2:
-                merged_coords = [0, 0]
-                merged_visibility = dm.Points.Visibility.absent
-            else:
-                visibility_score = len(keypoint_cluster) - visibility_score
-                cluster_visible_points = points_by_visibility.get(
-                    dm.Points.Visibility.hidden, []
-                ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
+            cluster_visible_points = points_by_visibility.get(
+                dm.Points.Visibility.hidden, []
+            ) + points_by_visibility.get(dm.Points.Visibility.visible, [])
 
+            if cluster_visible_points:
                 point_coords = np.array([p.points for p in cluster_visible_points])
                 mean_point_coords = np.average(point_coords, axis=0)
                 mean_distances = np.linalg.norm(point_coords - mean_point_coords, axis=1)
 
                 mean_nearest_point_idx = np.argmin(mean_distances)
                 merged_coords = point_coords[mean_nearest_point_idx].tolist()
+            else:
+                merged_coords = [0, 0]
+
+            visibility_score = visibility_scores.pop(dm.Points.Visibility.absent, 0)
+            if visibility_score > len(keypoint_cluster) // 2:
+                merged_visibility = dm.Points.Visibility.absent
+            else:
+                visibility_score = len(keypoint_cluster) - visibility_score
                 merged_visibility = cluster_visible_points[mean_nearest_point_idx].visibility[0]
 
             visibility_score /= len(keypoint_cluster)
