@@ -1,4 +1,4 @@
 ### Fixed
 
-- Incorrect display of related images in simple GT jobs
+-  Related images in a simple GT jobs are displayed incorrectly
   (<https://github.com/cvat-ai/cvat/pull/9162>)
