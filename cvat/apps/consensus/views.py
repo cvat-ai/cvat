@@ -25,7 +25,7 @@ from cvat.apps.consensus.serializers import (
 )
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 from cvat.apps.engine.models import Job, Task
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import process_failed_job
@@ -107,7 +107,7 @@ class ConsensusMergesViewSet(viewsets.GenericViewSet):
             if (
                 not rq_job
                 or not ConsensusMergePermission.create_scope_check_status(
-                    request, rq_job_owner_id=rq_job.meta[RQJobMetaField.USER]["id"]
+                    request, rq_job_owner_id=BaseRQMeta.for_job(rq_job).user.id
                 )
                 .check_access()
                 .allow

@@ -207,6 +207,14 @@ export class FramesMetaData {
         if (initialData.frames.length === 1) {
             // it may be a videofile or one image
             framesInfo = frameNumbers.map(() => initialData.frames[0]);
+        } else if (this.includedFrames?.length) {
+            // Only simple GT jobs have includedFrames, so this condition works only for them
+            const framesNumbers = new Set(this.includedFrames.map((dataFrameNumber: number) => (
+                Math.floor((dataFrameNumber - this.startFrame) / this.frameStep)
+            )));
+            // Frames must contain placeholders on positions out of includedFrames.
+            // That is, we can use frames with indices corresponding to frame numbers
+            framesInfo = initialData.frames.filter((frame, idx) => framesNumbers.has(idx));
         } else {
             framesInfo = initialData.frames;
         }

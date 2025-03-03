@@ -17,7 +17,6 @@ import {
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { sorter, tablePaginationPageSize } from 'utils/quality';
-import { ValidationMode } from 'components/create-task-page/quality-configuration-form';
 import QualityTableHeader from './quality-table-header';
 
 interface Props {
@@ -55,11 +54,8 @@ function AllocationTable(props: Readonly<Props>): JSX.Element | null {
     const data = validationLayout.validationFrames.map((frame: number, index: number) => ({
         key: frame,
         frame,
-        name: gtJobMeta.frames[
-            // - gt job meta starts from the 0 task frame;
-            // - honeypot gt job meta starts from the job start frame;
-            (validationLayout.mode === ValidationMode.GT) ? frame : index
-        ]?.name ?? gtJobMeta.frames[0].name,
+        // videos have only 1 frame in meta
+        name: gtJobMeta.frames[index]?.name ?? gtJobMeta.frames[0].name,
         active: !disabledFrames.includes(frame),
     }));
 

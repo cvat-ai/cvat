@@ -28,22 +28,17 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from django.utils.http import urlencode
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
 from PIL import Image
 from redis.lock import Lock
 from rest_framework.reverse import reverse as _reverse
-from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
-from rq.registry import BaseRegistry as RQBaseRegistry
 
 from cvat.apps.engine.types import ExtendedRequest
 
 Import = namedtuple("Import", ["module", "name", "alias"])
-
-KEY_TO_EXCLUDE_FROM_DEPENDENCY = 'exclude_from_dependency'
 
 def parse_imports(source_code: str):
     root = ast.parse(source_code)
@@ -161,57 +156,6 @@ def process_failed_job(rq_job: RQJob) -> str:
     return msg
 
 
-def define_dependent_job(
-    queue: DjangoRQ,
-    user_id: int,
-    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
-    *,
-    rq_id: str | None = None,
-) -> RQDependency | None:
-    if not should_be_dependent:
-        return None
-
-    queues: list[RQBaseRegistry | DjangoRQ] = [queue.deferred_job_registry, queue, queue.started_job_registry]
-    # Since there is no cleanup implementation in DeferredJobRegistry,
-    # this registry can contain "outdated" jobs that weren't deleted from it
-    # but were added to another registry. Probably such situations can occur
-    # if there are active or deferred jobs when restarting the worker container.
-    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
-    all_user_jobs: list[RQJob] = []
-    for q, f in zip(queues, filters):
-        job_ids = q.get_job_ids()
-        jobs = q.job_class.fetch_many(job_ids, q.connection)
-        jobs = filter(lambda job: job and job.meta.get("user", {}).get("id") == user_id and f(job), jobs)
-        all_user_jobs.extend(jobs)
-
-    if rq_id:
-        # Prevent cases where an RQ job depends on itself.
-        # It isn't possible to have multiple RQ jobs with the same ID in Redis.
-        # However, a race condition in request processing can lead to self-dependencies
-        # when 2 parallel requests attempt to enqueue RQ jobs with the same ID.
-        # This happens if an rq_job is fetched without a lock,
-        # but a lock is used when defining the dependent job and enqueuing a new one.
-        if any(rq_id == job.id for job in all_user_jobs):
-            return None
-
-        # prevent possible cyclic dependencies
-        all_job_dependency_ids = {
-            dep_id.decode()
-            for job in all_user_jobs
-            for dep_id in job.dependency_ids or ()
-        }
-
-        if RQJob.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
-            return None
-
-    user_jobs = [
-        job for job in all_user_jobs
-        if not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY)
-    ]
-
-    return RQDependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
-
-
 def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, *, timeout: Optional[int] = 30, blocking_timeout: Optional[int] = None) -> Union[Lock, nullcontext]:
     if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
         return queue.connection.lock(
@@ -231,45 +175,6 @@ def get_rq_lock_for_job(queue: DjangoRQ, rq_id: str, *, timeout: int = 60, block
         timeout=timeout,
         blocking_timeout=blocking_timeout,
     )
-
-def get_rq_job_meta(
-    request: ExtendedRequest,
-    db_obj: Any,
-    *,
-    result_url: Optional[str] = None,
-):
-    # to prevent circular import
-    from cvat.apps.events.handlers import job_id, organization_slug, task_id
-    from cvat.apps.webhooks.signals import organization_id, project_id
-
-    oid = organization_id(db_obj)
-    oslug = organization_slug(db_obj)
-    pid = project_id(db_obj)
-    tid = task_id(db_obj)
-    jid = job_id(db_obj)
-
-    meta = {
-        'user': {
-            'id': getattr(request.user, "id", None),
-            'username': getattr(request.user, "username", None),
-            'email': getattr(request.user, "email", None),
-        },
-        'request': {
-            "uuid": request.uuid,
-            "timestamp": timezone.localtime(),
-        },
-        'org_id': oid,
-        'org_slug': oslug,
-        'project_id': pid,
-        'task_id': tid,
-        'job_id': jid,
-    }
-
-
-    if result_url:
-        meta['result_url'] = result_url
-
-    return meta
 
 def reverse(viewname, *, args=None, kwargs=None,
     query_params: Optional[dict[str, str]] = None,
