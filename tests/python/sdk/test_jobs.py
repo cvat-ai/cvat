@@ -187,6 +187,29 @@ class TestJobUsecases(TestDatasetExport):
         assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_convert_annotations_polygons_to_masks_param(
+        self, fxt_new_task: Task, fxt_camvid_dataset: Path, convert: bool
+    ):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        fxt_new_task.get_jobs()[0].import_annotations(
+            format_name="CamVid 1.0",
+            filename=fxt_camvid_dataset,
+            pbar=pbar,
+            conv_mask_to_poly=convert,
+        )
+
+        assert "uploaded" in self.logger_stream.getvalue()
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
+
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
