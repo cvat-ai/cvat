@@ -392,9 +392,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_project_as_dataset if save_images else dm.views.export_project_annotations
-
     @extend_schema(methods=['GET'], summary='Export a project as a dataset / Check dataset import status',
         description=textwrap.dedent("""
             Utilizing this endpoint:
@@ -1432,9 +1429,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
 
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_task_as_dataset if save_images else dm.views.export_task_annotations
-
     @extend_schema(methods=['GET'], summary='Get task annotations',
         description=textwrap.dedent("""\
             Deprecation warning:
@@ -2198,9 +2192,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     @action(detail=True, methods=['GET'], serializer_class=None, url_path='dataset')
     def dataset_export(self, request: ExtendedRequest, pk: int):
         return HttpResponseGone("API endpoint no longer handles dataset exporting process")
-
-    def get_export_callback(self, save_images: bool) -> Callable:
-        return dm.views.export_job_as_dataset if save_images else dm.views.export_job_annotations
 
     @extend_schema(summary='Get data of a job',
         parameters=[

@@ -324,12 +324,6 @@ class _DbTestBase(ExportApiTestBase):
     def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
         return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
 
-    def _generate_url_dump_project_annotations(self, project_id, format_name):
-        return f"/api/projects/{project_id}/annotations?format={format_name}"
-
-    def _generate_url_dump_project_dataset(self, project_id, format_name):
-        return f"/api/projects/{project_id}/dataset?format={format_name}"
-
     def _generate_url_upload_project_dataset(self, project_id, format_name):
         return f"/api/projects/{project_id}/dataset?format={format_name}"
 
@@ -600,7 +594,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._create_annotations_in_job(task, job_id, "CVAT for images 1.1 different types", "random")
 
                     file_zip_name = osp.join(test_dir, f'{test_name}_{upload_type}.zip')
-                    response = self._export_task_annotations(self.admin, task_id, query_params=export_params, file_path=file_zip_name)
+                    self._export_task_annotations(self.admin, task_id, query_params=export_params, file_path=file_zip_name)
                     self.assertEqual(osp.exists(file_zip_name), True)
 
                     url = self._generate_url_remove_tasks_annotations(task_id)
@@ -2079,7 +2073,7 @@ class ProjectDumpUpload(_DbTestBase):
                     user_name = edata['name']
                     file_zip_name = osp.join(test_dir, f'{test_name}_{user_name}_{dump_format_name}.zip')
                     expected_4xx_status_code = None if user else status.HTTP_401_UNAUTHORIZED
-                    response = self._export_project_dataset(
+                    self._export_project_dataset(
                         user, project['id'], query_params=export_params,
                         file_path=file_zip_name, expected_4xx_status_code=expected_4xx_status_code
                     )
@@ -2177,8 +2171,6 @@ class ProjectDumpUpload(_DbTestBase):
             task_id = task["id"]
             self._create_annotations(task, "skeleton track", "default")
             # dump annotations
-            url = self._generate_url_dump_project_dataset(project['id'], dump_format_name)
-
             self._clear_rq_jobs()  # clean up from previous tests and iterations
 
             file_zip_name = osp.join(test_dir, f'{test_name}_{dump_format_name}.zip')

@@ -6,10 +6,9 @@ import os.path as osp
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable, ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
 import django_rq
-from attrs.converters import to_bool
 from django.conf import settings
 from django.http.response import HttpResponseBadRequest
 from django_rq.queues import DjangoRQ, DjangoScheduler
@@ -22,7 +21,7 @@ from rq.job import JobStatus as RQJobStatus
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.formats.registry import EXPORT_FORMATS
 from cvat.apps.dataset_manager.util import get_export_cache_lock
-from cvat.apps.dataset_manager.views import get_export_cache_ttl
+from cvat.apps.dataset_manager.views import get_export_cache_ttl, get_export_callback
 from cvat.apps.engine import models
 from cvat.apps.engine.backup import ProjectExporter, TaskExporter, create_backup
 from cvat.apps.engine.cloud_provider import export_resource_to_cloud_storage
@@ -38,6 +37,7 @@ from cvat.apps.engine.utils import (
     build_backup_file_name,
     get_rq_lock_by_user,
     get_rq_lock_for_job,
+    is_dataset_export,
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export
@@ -73,12 +73,11 @@ class ResourceExportManager(ABC):
 
     ### Initialization logic ###
 
-    def initialize_export_args(self, *, export_callback: Callable) -> None:
-        self.export_callback = export_callback
+    @abstractmethod
+    def initialize_export_args(self) -> None: ...
 
     @abstractmethod
-    def validate_export_args(self) -> Response | None:
-        pass
+    def validate_export_args(self) -> Response | None: ...
 
     @abstractmethod
     def build_rq_id(self) -> str: ...
@@ -128,8 +127,7 @@ class ResourceExportManager(ABC):
     def send_events(self) -> None: ...
 
     @abstractmethod
-    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None:
-        pass
+    def setup_background_job(self, queue: DjangoRQ, rq_id: str) -> None: ...
 
     def export(self) -> Response:
         assert hasattr(self, "export_callback")
@@ -241,22 +239,12 @@ class DatasetExportManager(ResourceExportManager):
         def location(self) -> Location:
             return self.location_config["location"]
 
-    def initialize_export_args(
-        self,
-        *,
-        export_callback: Callable,
-        save_images: bool | None = None,
-    ) -> None:
-        super().initialize_export_args(export_callback=export_callback)
+    def initialize_export_args(self) -> None:
+        save_images = is_dataset_export(self.request)
+        self.export_callback = get_export_callback(self.db_instance, save_images=save_images)
+
         format_name = self.request.query_params.get("format", "")
         filename = self.request.query_params.get("filename", "")
-
-        # can be passed directly when it is initialized based on API request, not query param
-        save_images = (
-            save_images
-            if save_images is not None
-            else to_bool(self.request.query_params.get("save_images", False))
-        )
 
         try:
             location_config = get_location_configuration(
@@ -410,8 +398,8 @@ class BackupExportManager(ResourceExportManager):
         def location(self) -> Location:
             return self.location_config["location"]
 
-    def initialize_export_args(self) -> None:  # pylint: disable=arguments-differ
-        super().initialize_export_args(export_callback=create_backup)
+    def initialize_export_args(self) -> None:
+        self.export_callback = create_backup
         filename = self.request.query_params.get("filename", "")
 
         location_config = get_location_configuration(

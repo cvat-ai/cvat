@@ -6512,7 +6512,7 @@ class TaskAnnotationAPITestCase(ExportApiTestBase, JobAnnotationAPITestCase):
 
                 # 3. download annotation
                 if not export_formats[export_format]['enabled']:
-                    response = self._export_task_annotations(
+                    self._export_task_annotations(
                         owner, task["id"], query_params={"format": export_format},
                         download_locally=False,
                         expected_4xx_status_code=status.HTTP_405_METHOD_NOT_ALLOWED

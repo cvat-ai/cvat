@@ -454,11 +454,8 @@ class DatasetMixin:
     def initiate_dataset_export(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object() # force call of check_object_permissions()
 
-        save_images = is_dataset_export(request)
-        callback = self.get_export_callback(save_images)
-
         export_manager = DatasetExportManager(self._object, request)
-        export_manager.initialize_export_args(export_callback=callback, save_images=save_images)
+        export_manager.initialize_export_args()
 
         return export_manager.export()
 

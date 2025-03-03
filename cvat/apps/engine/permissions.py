@@ -374,6 +374,13 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 "assignee": { "id": self.obj.assignee_id },
                 'organization': { "id": self.obj.organization_id },
             }
+            if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+                # extend data with rq job owner
+                data["rq_job"] = {
+                    "owner": {
+                        "id": self.rq_job_id.user_id if self.rq_job_id else None
+                    }
+                }
         elif self.scope in [__class__.Scopes.CREATE, __class__.Scopes.IMPORT_BACKUP]:
             data = {
                 "id": None,
@@ -384,14 +391,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 'organization': {
                     "id": self.org_id,
                 } if self.org_id else None,
-            }
-
-        if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
-            # extend data with rq job owner
-            data["rq_job"] = {
-                "owner": {
-                    "id": self.rq_job_id.user_id if self.rq_job_id else None
-                }
             }
 
         return data
@@ -611,6 +610,13 @@ class TaskPermission(OpenPolicyAgentPermission):
                     'organization': { "id": self.obj.project.organization_id },
                 } if self.obj.project else None
             }
+            if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+                # extend data with rq job owner
+                data["rq_job"] = {
+                    "owner": {
+                        "id": self.rq_job_id.user_id if self.rq_job_id else None
+                    }
+                }
         elif self.scope in [
             __class__.Scopes.CREATE,
             __class__.Scopes.CREATE_IN_PROJECT,
@@ -639,14 +645,6 @@ class TaskPermission(OpenPolicyAgentPermission):
                         "id": project.organization_id,
                     } if project.organization_id else None,
                 } if project is not None else None,
-            }
-
-        if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
-            # extend data with rq job owner
-            data["rq_job"] = {
-                "owner": {
-                    "id": self.rq_job_id.user_id if self.rq_job_id else None
-                }
             }
 
         return data
@@ -827,6 +825,13 @@ class JobPermission(OpenPolicyAgentPermission):
                     "assignee": { "id": self.obj.segment.task.project.assignee_id }
                 } if self.obj.segment.task.project else None
             }
+            if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
+                # extend data with rq job owner
+                data["rq_job"] = {
+                    "owner": {
+                        "id": self.rq_job_id.user_id if self.rq_job_id else None
+                    }
+                }
         elif self.scope == __class__.Scopes.CREATE:
             if self.task_id is None:
                 raise ValidationError("task_id is not specified")
@@ -847,14 +852,6 @@ class JobPermission(OpenPolicyAgentPermission):
                     "owner": { "id": task.project.owner_id },
                     "assignee": { "id": task.project.assignee_id }
                 } if task.project else None
-            }
-
-        if __class__.Scopes.DOWNLOAD_EXPORTED_FILE == self.scope:
-            # extend data with rq job owner
-            data["rq_job"] = {
-                "owner": {
-                    "id": self.rq_job_id.user_id if self.rq_job_id else None
-                }
             }
 
         return data
