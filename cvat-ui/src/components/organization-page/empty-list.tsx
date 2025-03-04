@@ -4,7 +4,6 @@
 
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
-
 import Empty from 'antd/lib/empty';
 
 function EmptyListComponent(): JSX.Element {

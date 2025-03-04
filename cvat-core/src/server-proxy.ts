@@ -1921,9 +1921,7 @@ async function getOrganizationMembers(params = {}) {
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/memberships`, {
-            params: {
-                ...params,
-            },
+            params,
         });
     } catch (errorData) {
         throw generateError(errorData);

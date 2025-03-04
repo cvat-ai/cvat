@@ -387,11 +387,15 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <InvitationModal
-                onInvite={onInvite}
-                onCancelInvite={onCancelInvite}
-                visibleInviteModal={visibleInviteModal}
-            />
+            {
+                visibleInviteModal && (
+                    <InvitationModal
+                        onInvite={onInvite}
+                        onCancelInvite={onCancelInvite}
+                    />
+                )
+            }
+
         </>
     );
 }

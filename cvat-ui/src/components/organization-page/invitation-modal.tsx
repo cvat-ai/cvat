@@ -18,20 +18,19 @@ import Input from 'antd/lib/input';
 interface Props {
     onInvite: (values: Store) => void;
     onCancelInvite: () => void;
-    visibleInviteModal: boolean;
 }
 
 function InvitationModal(props: Props): JSX.Element {
-    const { onInvite, onCancelInvite, visibleInviteModal } = props;
+    const { onInvite, onCancelInvite } = props;
     const [form] = useForm();
 
     return (
         <Modal
             className='cvat-organization-invitation-modal'
-            open={visibleInviteModal}
+            open
             onCancel={() => {
-                onCancelInvite();
                 form.resetFields(['users']);
+                onCancelInvite();
             }}
             destroyOnClose
             onOk={() => {
@@ -43,8 +42,8 @@ function InvitationModal(props: Props): JSX.Element {
                     users: [{ email: '', role: 'worker' }],
                 }}
                 onFinish={(values: Store) => {
-                    onInvite(values);
                     form.resetFields(['users']);
+                    onInvite(values);
                 }}
                 layout='vertical'
                 form={form}
