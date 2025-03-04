@@ -1,8 +1,20 @@
 /// <reference types="cypress" />
-
 import { taskName, labelName } from '../../support/const';
 
 describe('Z-order button actions', () => {
+  // Helper function to perform z-order action and verify result
+  const performZOrderAction = (actionSelector, expectedZOrder) => {
+    cy.wait(500); // Wait for UI to stabilize
+    cy.get('#cvat-objects-sidebar-state-item-1', { timeout: 3000 })
+      .find('.cvat-object-item-menu-button')
+      .click();
+
+    cy.get(actionSelector, { timeout: 3000 }).click();
+
+    cy.get('#cvat_canvas_shape_1', { timeout: 3000 })
+      .should('have.attr', 'data-z-order', expectedZOrder);
+  };
+
   before(() => {
     // Open task and create the polygon shape
     cy.openTaskJob(taskName);
@@ -23,38 +35,18 @@ describe('Z-order button actions', () => {
   });
 
   it('Send shape to background', () => {
-    cy.wait(500); // Wait for UI to stabilize
-    cy.get('#cvat-objects-sidebar-state-item-1', { timeout: 3000 })
-      .find('.cvat-object-item-menu-button')
-      .click();
-
-    cy.get('.cvat-object-item-menu-to-background', { timeout: 3000 }).click();
-
-    cy.get('#cvat_canvas_shape_1', { timeout: 3000 })
-      .should('have.attr', 'data-z-order', '-1');
+    performZOrderAction('.cvat-object-item-menu-to-background', '-1');
   });
 
   it('Move shape to next layer', () => {
-    cy.wait(500); // Wait for UI to stabilize
-    cy.get('#cvat-objects-sidebar-state-item-1', { timeout: 3000 })
-      .find('.cvat-object-item-menu-button')
-      .click();
-
-    cy.get('.cvat-object-item-menu-move-to-next-layer', { timeout: 3000 }).click();
-
-    cy.get('#cvat_canvas_shape_1', { timeout: 3000 })
-      .should('have.attr', 'data-z-order', '0');
+    performZOrderAction('.cvat-object-item-menu-move-to-next-layer', '0');
   });
 
   it('Move shape to previous layer', () => {
-    cy.wait(500); // Wait for UI to stabilize
-    cy.get('#cvat-objects-sidebar-state-item-1', { timeout: 3000 })
-      .find('.cvat-object-item-menu-button')
-      .click();
+    performZOrderAction('.cvat-object-item-menu-move-to-previous-layer', '-1');
+  });
 
-    cy.get('.cvat-object-item-menu-move-to-previous-layer', { timeout: 3000 }).click();
-
-    cy.get('#cvat_canvas_shape_1', { timeout: 3000 })
-      .should('have.attr', 'data-z-order', '-1');
+  it('Send shape to foreground', () => {
+    performZOrderAction('.cvat-object-item-menu-to-foreground', '1');
   });
 });
