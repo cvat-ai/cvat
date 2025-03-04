@@ -191,9 +191,7 @@ function AnalyticsPage(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        if (window.location.hash.slice(1) !== activeTab) {
-            window.location.replace(`#${activeTab}`);
-        }
+        window.history.replaceState(null, '', `#${activeTab}`);
     }, [activeTab]);
 
     const onCreateReport = useCallback(() => {
