@@ -44,11 +44,3 @@
 .cvat-consensus-management-overview-tab {
     min-height: 50vh;
 }
-
-.cvat-task-control-tabs {
-    .ant-tabs-tabpane {
-        @extend .cvat-scrollbar;
-
-        height: calc(100vh - $grid-unit-size * 33);
-    }
-}
