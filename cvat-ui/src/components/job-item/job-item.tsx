@@ -13,7 +13,6 @@ import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
-import Dropdown from 'antd/lib/dropdown';
 import Icon from '@ant-design/icons';
 import {
     BorderOutlined,
@@ -29,7 +28,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import Collapse from 'antd/lib/collapse';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
-import JobActionsMenu from './job-actions-menu';
+import JobActionsComponent from 'components/jobs-page/actions-menu';
 
 function formatDate(value: moment.Moment): string {
     return value.format('MMM Do YYYY HH:mm');
@@ -293,19 +292,13 @@ function JobItem(props: Props): JSX.Element {
                         </Row>
                     </Col>
                 </Row>
-                <Dropdown
-                    trigger={['click']}
-                    destroyPopupOnHide
-                    className='job-actions-menu'
-                    overlay={(
-                        <JobActionsMenu
-                            job={job}
-                            consensusJobsPresent={childJobs.length > 0}
-                        />
-                    )}
-                >
-                    <MoreOutlined className='cvat-job-item-more-button' />
-                </Dropdown>
+                <JobActionsComponent
+                    jobInstance={job}
+                    consensusJobsPresent={(childJobs as Job[]).length > 0}
+                    triggerElement={
+                        <MoreOutlined className='cvat-job-item-more-button' />
+                    }
+                />
                 {childJobViews.length > 0 && (
                     <Collapse
                         className='cvat-consensus-job-collapse'

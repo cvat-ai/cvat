@@ -118,7 +118,6 @@ INSTALLED_APPS = [
     'cvat.apps.health',
     'cvat.apps.events',
     'cvat.apps.quality_control',
-    'cvat.apps.analytics_report',
     'cvat.apps.redis_handler',
     'cvat.apps.consensus',
 ]

@@ -1,3 +1,4 @@
+// Copyright (C) 2020-2022 Intel Corporation
 // Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -7,6 +8,8 @@ import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
+import { MoreOutlined } from '@ant-design/icons';
 
 import { Project } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
@@ -14,15 +17,14 @@ import { CombinedState } from 'reducers';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
-import ProjectActionsItems from './actions-menu-items';
+import ProjectActionsItems from '../jobs-page/actions-menu-items';
 
 interface Props {
     projectInstance: Project;
-    triggerElement: JSX.Element;
 }
 
 function ProjectActionsComponent(props: Props): JSX.Element {
-    const { projectInstance, triggerElement } = props;
+    const { projectInstance } = props;
     const dispatch = useDispatch();
     const history = useHistory();
 
@@ -76,7 +78,12 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                 }, props),
             }}
         >
-            {triggerElement}
+            <Button
+                className='cvat-project-details-button'
+                type='link'
+                size='large'
+                icon={<MoreOutlined />}
+            />
         </Dropdown>
     );
 }

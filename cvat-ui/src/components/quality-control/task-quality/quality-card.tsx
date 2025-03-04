@@ -6,8 +6,9 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons';
+
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     title: string;
@@ -23,24 +24,24 @@ interface Props {
     entryName?: string;
 }
 
-function AnalyticsCard(props: Props): JSX.Element {
+function QualityCard(props: Props): JSX.Element {
     const {
         title, size, className, value, tooltip, bottomElement, rightElement, entryName,
     } = props;
 
     return (
-        <Col span={size?.cardSize ?? 24} className={className ?? 'cvat-analytics-card'} data-entry-name={entryName}>
-            <Card className='cvat-analytics-card-holder'>
+        <Col span={size?.cardSize ?? 24} className={className ?? 'cvat-quality-card'} data-entry-name={entryName}>
+            <Card className='cvat-quality-card-holder'>
                 <Row justify='space-between' align='middle'>
                     <Col span={size?.leftElementSize}>
                         <Row>
                             <Col>
-                                <Text className='cvat-analytics-card-title'>
+                                <Text className='cvat-quality-card-title'>
                                     {title}
                                 </Text>
                                 {
                                     tooltip && (
-                                        <CVATTooltip title={tooltip} className='cvat-analytics-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                                        <CVATTooltip title={tooltip} className='cvat-quality-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                                             <QuestionCircleOutlined
                                                 style={{ opacity: 0.5 }}
                                             />
@@ -50,7 +51,7 @@ function AnalyticsCard(props: Props): JSX.Element {
                             </Col>
                         </Row>
                         <Row>
-                            <Text className='cvat-analytics-card-value'>{value}</Text>
+                            <Text className='cvat-quality-card-value'>{value}</Text>
                         </Row>
                         {bottomElement}
                     </Col>
@@ -63,4 +64,4 @@ function AnalyticsCard(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(AnalyticsCard);
+export default React.memo(QualityCard);

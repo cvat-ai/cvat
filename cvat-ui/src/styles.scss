@@ -64,6 +64,12 @@ html, body {
     padding-top: 5px;
 }
 
+.cvat-menu-icon {
+    font-size: 16px;
+    margin-left: $grid-unit-size;
+    align-self: center;
+}
+
 .ant-slider {
     > .ant-slider-track {
         background-color: $slider-color;
