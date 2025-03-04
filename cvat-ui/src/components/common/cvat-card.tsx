@@ -24,24 +24,24 @@ interface Props {
     entryName?: string;
 }
 
-function QualityCard(props: Props): JSX.Element {
+function CardComponent(props: Props): JSX.Element {
     const {
         title, size, className, value, tooltip, bottomElement, rightElement, entryName,
     } = props;
 
     return (
-        <Col span={size?.cardSize ?? 24} className={className ?? 'cvat-quality-card'} data-entry-name={entryName}>
-            <Card className='cvat-quality-card-holder'>
+        <Col span={size?.cardSize ?? 24} className={className ?? 'cvat-card'} data-entry-name={entryName}>
+            <Card className='cvat-card-holder'>
                 <Row justify='space-between' align='middle'>
                     <Col span={size?.leftElementSize}>
                         <Row>
                             <Col>
-                                <Text className='cvat-quality-card-title'>
+                                <Text className='cvat-card-title'>
                                     {title}
                                 </Text>
                                 {
                                     tooltip && (
-                                        <CVATTooltip title={tooltip} className='cvat-quality-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                                        <CVATTooltip title={tooltip} className='cvat-card-tooltip' overlayStyle={{ maxWidth: '500px' }}>
                                             <QuestionCircleOutlined
                                                 style={{ opacity: 0.5 }}
                                             />
@@ -51,7 +51,7 @@ function QualityCard(props: Props): JSX.Element {
                             </Col>
                         </Row>
                         <Row>
-                            <Text className='cvat-quality-card-value'>{value}</Text>
+                            <Text className='cvat-card-value'>{value}</Text>
                         </Row>
                         {bottomElement}
                     </Col>
@@ -64,4 +64,4 @@ function QualityCard(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(QualityCard);
+export default React.memo(CardComponent);

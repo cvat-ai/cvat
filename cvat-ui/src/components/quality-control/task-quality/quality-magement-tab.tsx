@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import {
     FramesMetaData, QualitySettings, Task, TaskValidationLayout,
 } from 'cvat-core-wrapper';
-import QualityCard from './quality-card';
+import Card from 'components/common/cvat-card';
 import AllocationTable from './allocation-table';
 
 interface Props {
@@ -61,19 +61,19 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
     return (
         <div className='cvat-quality-control-management-tab' ref={tableRef}>
             <Row className='cvat-quality-control-management-tab-summary'>
-                <QualityCard
+                <Card
                     title='Total validation frames'
                     className='cvat-allocation-summary-total'
                     value={totalCount}
                     size={{ cardSize: 8 }}
                 />
-                <QualityCard
+                <Card
                     title='Excluded validation frames'
                     className='cvat-allocation-summary-excluded'
                     value={excludedCount}
                     size={{ cardSize: 8 }}
                 />
-                <QualityCard
+                <Card
                     title='Active validation frames'
                     className='cvat-allocation-summary-active'
                     value={activeCount}
