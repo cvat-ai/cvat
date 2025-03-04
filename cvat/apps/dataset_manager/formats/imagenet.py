@@ -39,6 +39,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         dataset = Dataset.import_from(temp_dir, "imagenet_txt", env=dm_env)
     else:
         dataset = Dataset.import_from(temp_dir, "imagenet", env=dm_env)
+        # Rename dataset items from "label:name" to "label/name" for frame matching to work
         dataset = dataset.transform(Rename, regex="|([^:]+):(.*)|\\1/\\2|")
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)

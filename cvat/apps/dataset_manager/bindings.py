@@ -46,7 +46,7 @@ from cvat.apps.engine.models import (
     ShapeType,
     Task,
 )
-from cvat.apps.engine.rq_job_handler import RQJobMetaField
+from cvat.apps.engine.rq import ImportRQMeta
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
@@ -1693,7 +1693,10 @@ class CvatDataExtractorBase(dm.SubsetBase, CVATDataExtractorMixin):
 
     def __iter__(self):
         for frame_data in self._iterate_frame_data():
-            dm_media_args = { 'path': frame_data.name + self._ext_per_task[frame_data.task_id] }
+            dm_media_args = {
+                'path': frame_data.name + self._ext_per_task[frame_data.task_id],
+                'ext': self._ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
+            }
             if self._dimension == DimensionType.DIM_3D:
                 dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     frame_data.task_id, frame_data.id, **dm_media_args
@@ -2412,9 +2415,10 @@ def load_dataset_data(project_annotation, dataset: dm.Dataset, project_data):
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
-        job.meta[RQJobMetaField.STATUS] = 'Task from dataset is being created...'
-        job.meta[RQJobMetaField.PROGRESS] = (subset_id + job.meta.get(RQJobMetaField.TASK_PROGRESS, 0.)) / len(dataset.subsets().keys())
-        job.save_meta()
+        job_meta = ImportRQMeta.for_job(job)
+        job_meta.status = 'Task from dataset is being created...'
+        job_meta.progress = (subset_id + (job_meta.task_progress or 0.)) / len(dataset.subsets().keys())
+        job_meta.save()
 
         task_fields = {
             'project': project_annotation.db_project,
