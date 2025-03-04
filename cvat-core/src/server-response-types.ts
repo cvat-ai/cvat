@@ -480,7 +480,7 @@ export interface SerializedCloudStorage {
 export interface SerializedFramesMetaData {
     chunk_size: number;
     deleted_frames: number[];
-    included_frames: number[];
+    included_frames: number[] | null;
     frame_filter: string;
     chunks_updated_date: string;
     frames: {
