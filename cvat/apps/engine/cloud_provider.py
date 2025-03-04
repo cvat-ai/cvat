@@ -490,7 +490,7 @@ class AWS_S3(_CloudStorage):
     def _head(self):
         return self._client.head_bucket(Bucket=self.name)
 
-    def _head_file(self, key):
+    def _head_file(self, key: str, /):
         return self._client.head_object(Bucket=self.name, Key=key)
 
     def get_status(self):
