@@ -139,6 +139,16 @@ class TestDetectionFunctionSpec:
             ],
         )
 
+    def test_sublabel_wrong_type(self):
+        self._test_bad_spec(
+            "should be 'points'",
+            labels=[
+                cvataa.skeleton_label_spec(
+                    "cat", 123, [models.SublabelRequest(name="head", id=1, type="any")]
+                )
+            ],
+        )
+
 
 class TestTaskAutoAnnotation:
     @pytest.fixture(autouse=True)
