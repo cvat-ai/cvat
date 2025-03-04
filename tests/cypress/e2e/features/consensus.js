@@ -63,13 +63,13 @@ context('Basic manipulations with consensus job replicas', () => {
                 cy.wrap($el).click();
             });
 
-            // Check order of jobs, atm it's inverse
-            // cy.get('.ant-card-body a').then((jobLinks) => {
-            // const sourceId = +(jobLinks[0].text.split('#')[1]);
-            // for (let i = sourceId + replicas; i <= sourceId; i--) {
-            //     expect(+(jobLinks[i].text.split('#')[1])).equals(i);
-            // }
-            // });
+            // Check desc order of jobs
+            cy.get('.ant-card-body a').then((jobLinks) => {
+                const sourceId = +(jobLinks[0].text.split('#')[1]);
+                for (let i = 1; i <= replicas; i++) {
+                    expect(+(jobLinks[i].text.split('#')[1])).equals(sourceId + i);
+                }
+            });
         });
     });
 });
