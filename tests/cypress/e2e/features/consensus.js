@@ -12,6 +12,7 @@ context('Basic manipulations with consensus job replicas', () => {
         const taskName = 'Test consensus';
         const labelName = 'test';
         const serverFiles = ['archive.zip'];
+        const replicas = 3;
         before(() => {
             cy.visit('auth/login');
             cy.login();
@@ -44,8 +45,31 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.ant-notification-notice-error');
             cy.get('#consensusReplicas').clear();
         });
-        it('This is your test case two title', () => {
-        // Write your test case two here
+        it('Check new consensus task has correct tags and drop-down with replicas', () => {
+            // Create task with consensus
+            cy.get('#consensusReplicas').type(replicas);
+            cy.contains('button', 'Submit & Open').click();
+            // TODO: add headlessCreateConsensusTask / consensus jobs to headlessCreateJob
+            cy.get('.ant-notification-notice-error').should('not.exist');
+
+            cy.get('.cvat-tag-consensus').then((tags) => {
+                expect(tags.length).to.equal(2);
+                cy.wrap(tags).each(($el) => {
+                    cy.wrap($el).should('have.text', 'Consensus');
+                });
+            });
+            cy.get('.ant-collapse-header').within(($el) => {
+                expect($el.text()).to.equal(`${replicas} Replicas`);
+                cy.wrap($el).click();
+            });
+
+            // Check order of jobs, atm it's inverse
+            // cy.get('.ant-card-body a').then((jobLinks) => {
+            // const sourceId = +(jobLinks[0].text.split('#')[1]);
+            // for (let i = sourceId + replicas; i <= sourceId; i--) {
+            //     expect(+(jobLinks[i].text.split('#')[1])).equals(i);
+            // }
+            // });
         });
     });
 });
