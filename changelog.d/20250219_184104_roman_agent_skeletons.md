@@ -1,6 +1,6 @@
 ### Added
 
-- \[SDK\] Auto-auuotation functions that output skeletons can now be used
+- \[SDK\] Auto-annotation functions that output skeletons can now be used
   via agents
   (<https://github.com/cvat-ai/cvat/pull/9122>)
 
