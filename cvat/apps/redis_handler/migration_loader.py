@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import importlib
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar
@@ -13,6 +12,7 @@ from django.utils import timezone
 from redis import Redis
 
 from cvat.apps.redis_handler.redis_migrations import BaseMigration
+from cvat.apps.redis_handler.utils import get_class_from_module
 
 
 def to_datetime(value: float | str | datetime) -> datetime:
@@ -74,12 +74,13 @@ class MigrationLoader:
         self._init_applied_migrations()
         self._init_unapplied_migrations()
 
-    def _find_app_configs(self) -> list[AppConfig]:
+    @classmethod
+    def _find_app_configs(cls) -> list[AppConfig]:
         return [
             app_config
             for app_config in apps.get_app_configs()
             if app_config.name.startswith("cvat")
-            and (Path(app_config.path) / self.REDIS_MIGRATIONS_DIR_NAME).exists()
+            and (Path(app_config.path) / cls.REDIS_MIGRATIONS_DIR_NAME).exists()
         ]
 
     def _load_from_disk(self):
@@ -111,8 +112,9 @@ class MigrationLoader:
 
     def get_migration_class(self, app_name: str, migration_name: str) -> BaseMigration:
         migration_module_path = ".".join([app_name, self.REDIS_MIGRATIONS_DIR_NAME, migration_name])
-        module = importlib.import_module(migration_module_path)
-        MigrationClass = getattr(module, self.REDIS_MIGRATION_CLASS_NAME, None)
+        MigrationClass = get_class_from_module(
+            migration_module_path, self.REDIS_MIGRATION_CLASS_NAME
+        )
 
         if not MigrationClass or not issubclass(MigrationClass, BaseMigration):
             raise LoaderError(f"Invalid migration: {migration_module_path}")

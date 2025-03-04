@@ -67,7 +67,7 @@ from cvat.apps.engine.models import (
     StorageMethodChoice,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq import ImportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -89,8 +89,6 @@ from cvat.apps.engine.task import JobFileMapping, _create_thread
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     import_resource_with_clean_up_after,
     process_failed_job,
@@ -1180,6 +1178,7 @@ def create_backup(
         log_exception(logger)
         raise
 
+
 def _import(
     importer: TaskImporter | ProjectImporter,
     request: ExtendedRequest,
@@ -1191,9 +1190,6 @@ def _import(
     filename: str | None = None,
 ):
     rq_job = queue.fetch_job(rq_id)
-
-    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get(RQJobMetaField.USER, {}).get('id')) and user_id_from_meta != request.user.id:
-        return Response(status=status.HTTP_403_FORBIDDEN)
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
@@ -1239,19 +1235,25 @@ def _import(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ImportRQMeta.build_for(
+                request=request,
+                db_obj=None,
+                tmp_file=filename,
+            )
             rq_job = queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=None)
-                },
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
     else:
+        rq_job_meta = ImportRQMeta.for_job(rq_job)
+        if rq_job_meta.user.id != request.user.id:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
         if rq_job.is_finished:
             project_id = rq_job.return_value()
             rq_job.delete()

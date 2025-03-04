@@ -35,7 +35,7 @@ const defaultState: SettingsState = {
         textFontSize: 14,
         controlPointsSize: 5,
         textPosition: 'auto',
-        textContent: 'id,source,label,attributes,descriptions',
+        textContent: 'id,source,label,attributes,descriptions,dimensions',
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,

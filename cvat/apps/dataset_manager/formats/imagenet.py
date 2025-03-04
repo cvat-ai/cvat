@@ -8,6 +8,7 @@ import zipfile
 from glob import glob
 
 from datumaro.components.dataset import Dataset
+from datumaro.plugins.transforms import Rename
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
@@ -20,9 +21,9 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         if save_images:
-            dataset.export(temp_dir, "imagenet", save_images=save_images)
+            dataset.export(temp_dir, "imagenet", save_media=save_images)
         else:
-            dataset.export(temp_dir, "imagenet_txt", save_images=save_images)
+            dataset.export(temp_dir, "imagenet_txt", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -38,6 +39,8 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         dataset = Dataset.import_from(temp_dir, "imagenet_txt", env=dm_env)
     else:
         dataset = Dataset.import_from(temp_dir, "imagenet", env=dm_env)
+        # Rename dataset items from "label:name" to "label/name" for frame matching to work
+        dataset = dataset.transform(Rename, regex="|([^:]+):(.*)|\\1/\\2|")
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)
