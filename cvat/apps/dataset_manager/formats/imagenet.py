@@ -8,6 +8,7 @@ import zipfile
 from glob import glob
 
 from datumaro.components.dataset import Dataset
+from datumaro.plugins.transforms import Rename
 
 from cvat.apps.dataset_manager.bindings import GetCVATDataExtractor, import_dm_annotations
 from cvat.apps.dataset_manager.util import make_zip_archive
@@ -38,6 +39,10 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         dataset = Dataset.import_from(temp_dir, "imagenet_txt", env=dm_env)
     else:
         dataset = Dataset.import_from(temp_dir, "imagenet", env=dm_env)
+        # Due to changed naming on import in imagenet in datumaro
+        # need to rename items from "label:name" to "label/name"
+        # to keep item matching working
+        dataset = dataset.transform(Rename, regex="|([^:]+):(.*)|\\1/\\2|")
         if load_data_callback is not None:
             load_data_callback(dataset, instance_data)
     import_dm_annotations(dataset, instance_data)
