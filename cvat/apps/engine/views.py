@@ -122,7 +122,13 @@ from cvat.apps.engine.permissions import (
     get_cloud_storage_for_import_or_export,
     get_iam_context,
 )
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField, is_rq_job_owner
+from cvat.apps.engine.rq import (
+    ImportRQMeta,
+    RQId,
+    RQMetaWithFailureInfo,
+    define_dependent_job,
+    is_rq_job_owner,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -167,8 +173,6 @@ from cvat.apps.engine.serializers import (
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     av_scan_paths,
-    define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     get_rq_lock_for_job,
     import_resource_with_clean_up_after,
@@ -731,6 +735,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
+        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -740,8 +745,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = { "state": "Failed", "message": job.exc_info }
         else:
             response = { "state": "Started" }
-            response['message'] = job.meta.get('status', '')
-            response['progress'] = job.meta.get('progress', 0.)
+            response['message'] = rq_job_meta.status or ""
+            response['progress'] = rq_job_meta.progress or 0.
 
         return response
 
@@ -1695,6 +1700,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
+        rq_job_meta = ImportRQMeta.for_job(job)
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
@@ -1708,9 +1714,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = { "state": "Failed", "message": parse_exception_message(job.exc_info or "Unknown error") }
         else:
             response = { "state": "Started" }
-            if job.meta.get('status'):
-                response['message'] = job.meta['status']
-            response['progress'] = job.meta.get('task_progress', 0.)
+            if rq_job_meta.status:
+                response['message'] = rq_job_meta.status
+            response['progress'] = rq_job_meta.progress or 0.
 
         return response
 
@@ -3374,13 +3380,14 @@ class AnnotationGuidesViewSet(
         super().perform_destroy(instance)
         target.touch()
 
-def rq_exception_handler(rq_job, exc_type, exc_value, tb):
-    rq_job.meta[RQJobMetaField.FORMATTED_EXCEPTION] = "".join(
+def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
+    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
+    rq_job_meta.formatted_exception = "".join(
         traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
-        rq_job.meta[RQJobMetaField.EXCEPTION_TYPE] = exc_type
-        rq_job.meta[RQJobMetaField.EXCEPTION_ARGS] = exc_value.args
-    rq_job.save_meta()
+        rq_job_meta.exc_type = exc_type
+        rq_job_meta.exc_args = exc_value.args
+    rq_job_meta.save()
 
     return True
 
@@ -3475,15 +3482,13 @@ def _import_annotations(
             user_id = request.user.id
 
             with get_rq_lock_by_user(queue, user_id):
+                meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
                 queue.enqueue_call(
                     func=func,
                     args=func_args,
                     job_id=rq_id,
                     depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
-                    meta={
-                        'tmp_file': filename,
-                        **get_rq_job_meta(request=request, db_obj=db_obj),
-                    },
+                    meta=meta,
                     result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                     failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
                 )
@@ -3602,14 +3607,12 @@ def _import_project_dataset(
         user_id = request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ImportRQMeta.build_for(request=request, db_obj=db_obj, tmp_file=filename)
             queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    **get_rq_job_meta(request=request, db_obj=db_obj),
-                },
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
