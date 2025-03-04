@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
-/// <reference types="../../support" />
 
 context('Basic manipulations with consensus job replicas', () => {
     describe('Consensus job creation', () => {
@@ -46,22 +45,21 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.get('#consensusReplicas').clear();
         });
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
-            // Create task with consensus
+            // Create task with consensus, check tags
             cy.get('#consensusReplicas').type(replicas);
             cy.contains('button', 'Submit & Open').click();
-            // TODO: add headlessCreateConsensusTask / consensus jobs to headlessCreateJob
             cy.get('.ant-notification-notice-error').should('not.exist');
-
             cy.get('.cvat-tag-consensus').then((tags) => {
                 expect(tags.length).to.equal(2);
                 cy.wrap(tags).each(($el) => {
                     cy.wrap($el).should('have.text', 'Consensus');
                 });
             });
-            cy.get('.ant-collapse-header').within(($el) => {
-                expect($el.text()).to.equal(`${replicas} Replicas`);
-                cy.wrap($el).click();
-            });
+            cy.get('.ant-collapse-header').should('be.visible')
+                .within(($el) => {
+                    expect($el.text()).to.equal(`${replicas} Replicas`);
+                    cy.wrap($el).click();
+                });
 
             // Check desc order of jobs
             cy.get('.ant-card-body a').then((jobLinks) => {
