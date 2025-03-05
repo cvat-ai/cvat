@@ -277,7 +277,6 @@ class CVAT_QUEUES(Enum):
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
     QUALITY_REPORTS = 'quality_reports'
-    ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
     CHUNKS = 'chunks'
     CONSENSUS = 'consensus'
@@ -315,10 +314,6 @@ RQ_QUEUES = {
         'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        **REDIS_INMEM_SETTINGS,
-        'DEFAULT_TIMEOUT': '1h',
-    },
-    CVAT_QUEUES.ANALYTICS_REPORTS.value: {
         **REDIS_INMEM_SETTINGS,
         'DEFAULT_TIMEOUT': '1h',
     },
