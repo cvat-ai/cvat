@@ -406,12 +406,6 @@ export interface ToolsBlockerState {
     buttonVisible?: boolean;
 }
 
-export enum TaskStatus {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    COMPLETED = 'completed',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -670,23 +664,6 @@ export enum ActiveControl {
     OPENCV_TOOLS = 'opencv_tools',
 }
 
-export enum ShapeType {
-    RECTANGLE = 'rectangle',
-    POLYGON = 'polygon',
-    POLYLINE = 'polyline',
-    POINTS = 'points',
-    ELLIPSE = 'ellipse',
-    CUBOID = 'cuboid',
-    MASK = 'mask',
-    SKELETON = 'skeleton',
-}
-
-export enum ObjectType {
-    SHAPE = 'shape',
-    TRACK = 'track',
-    TAG = 'tag',
-}
-
 export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
@@ -925,11 +902,6 @@ export interface ShortcutsState {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     defaultState: Record<string, KeyMapItem>
-}
-
-export enum StorageLocation {
-    LOCAL = 'local',
-    CLOUD_STORAGE = 'cloud_storage',
 }
 
 export enum ReviewStatus {
