@@ -961,6 +961,14 @@ export interface ReviewState {
     };
 }
 
+export interface OrganizationMembersQuery {
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    page: number;
+    pageSize: number;
+}
+
 export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
