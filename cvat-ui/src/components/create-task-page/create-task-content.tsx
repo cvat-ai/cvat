@@ -14,8 +14,7 @@ import Text from 'antd/lib/typography/Text';
 import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
-import { StorageLocation } from 'reducers';
-import { getCore, Storage } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';

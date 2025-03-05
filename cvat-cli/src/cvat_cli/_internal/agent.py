@@ -147,39 +147,48 @@ class _Agent:
             label_desc = f"label {remote_label['name']!r}"
             label = labels_by_name.get(remote_label["name"])
 
-            if not label:
-                raise CriticalError(incompatible_msg + f"{label_desc} is not supported.")
+            self._validate_sublabel_compatibility(remote_label, label, incompatible_msg, label_desc)
 
-            if (
-                remote_label["type"] not in {"any", "unknown"}
-                and remote_label["type"] != label.type
-            ):
+            sublabels_by_name = {sl.name: sl for sl in getattr(label, "sublabels", [])}
+
+            for remote_sl in remote_label.get("sublabels", []):
+                sl_desc = f"sublabel {remote_sl['name']!r} of {label_desc}"
+                sl = sublabels_by_name.get(remote_sl["name"])
+
+                self._validate_sublabel_compatibility(remote_sl, sl, incompatible_msg, sl_desc)
+
+    def _validate_sublabel_compatibility(
+        self, remote_sl: dict, sl: Optional[models.Sublabel], incompatible_msg: str, sl_desc: str
+    ):
+        if not sl:
+            raise CriticalError(incompatible_msg + f"{sl_desc} is not supported.")
+
+        if remote_sl["type"] not in {"any", "unknown"} and remote_sl["type"] != sl.type:
+            raise CriticalError(
+                incompatible_msg + f"{sl_desc} has type {remote_sl['type']!r}, "
+                f"but the function object declares type {sl.type!r}."
+            )
+
+        attrs_by_name = {attr.name: attr for attr in getattr(sl, "attributes", [])}
+
+        for remote_attr in remote_sl["attributes"]:
+            attr_desc = f"attribute {remote_attr['name']!r} of {sl_desc}"
+            attr = attrs_by_name.get(remote_attr["name"])
+
+            if not attr:
+                raise CriticalError(incompatible_msg + f"{attr_desc} is not supported.")
+
+            if remote_attr["input_type"] != attr.input_type.value:
                 raise CriticalError(
-                    incompatible_msg + f"{label_desc} has type {remote_label['type']!r}, "
-                    f"but the function object declares type {label.type!r}."
+                    incompatible_msg + f"{attr_desc} has input type {remote_attr['input_type']!r},"
+                    f" but the function object declares input type {attr.input_type.value!r}."
                 )
 
-            attrs_by_name = {attr.name: attr for attr in getattr(label, "attributes", [])}
-
-            for remote_attr in remote_label["attributes"]:
-                attr_desc = f"attribute {remote_attr['name']!r} of {label_desc}"
-                attr = attrs_by_name.get(remote_attr["name"])
-
-                if not attr:
-                    raise CriticalError(incompatible_msg + f"{attr_desc} is not supported.")
-
-                if remote_attr["input_type"] != attr.input_type.value:
-                    raise CriticalError(
-                        incompatible_msg
-                        + f"{attr_desc} has input type {remote_attr['input_type']!r},"
-                        f" but the function object declares input type {attr.input_type.value!r}."
-                    )
-
-                if remote_attr["values"] != attr.values:
-                    raise CriticalError(
-                        incompatible_msg + f"{attr_desc} has values {remote_attr['values']!r},"
-                        f" but the function object declares values {attr.values!r}."
-                    )
+            if remote_attr["values"] != attr.values:
+                raise CriticalError(
+                    incompatible_msg + f"{attr_desc} has values {remote_attr['values']!r},"
+                    f" but the function object declares values {attr.values!r}."
+                )
 
     def _wait_between_polls(self):
         # offset the interval randomly to avoid synchronization between workers

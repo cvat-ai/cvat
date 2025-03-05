@@ -11,9 +11,11 @@ import Notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
-import { CombinedState, StorageLocation } from 'reducers';
+import { CombinedState } from 'reducers';
 import { exportActions, exportBackupAsync } from 'actions/export-actions';
-import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
+import {
+    getCore, Storage, StorageData, StorageLocation,
+} from 'cvat-core-wrapper';
 
 import CVATMarkdown from 'components/common/cvat-markdown';
 import TargetStorageField from 'components/storage/target-storage-field';
