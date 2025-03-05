@@ -116,7 +116,7 @@ def validate_bucket_status(func):
 
 def validate_file_status(func):
     @functools.wraps(func)
-    def wrapper(self, key: str, *args, **kwargs):
+    def wrapper(self, key: str, /, *args, **kwargs):
         try:
             res = func(self, key, *args, **kwargs)
         except Exception as ex:
