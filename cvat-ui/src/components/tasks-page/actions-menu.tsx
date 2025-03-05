@@ -55,7 +55,19 @@ function TaskActionsComponent(props: Props): JSX.Element {
 
     const onMergeConsensusJobs = useCallback(() => {
         if (taskInstance.consensusEnabled) {
-            dispatch(mergeConsensusJobsAsync(taskInstance));
+            Modal.confirm({
+                title: 'The consensus jobs will be merged',
+                content: 'Existing annotations in parent jobs will be updated. Continue?',
+                className: 'cvat-modal-confirm-consensus-merge-task',
+                onOk: () => {
+                    dispatch(mergeConsensusJobsAsync(taskInstance));
+                },
+                okButtonProps: {
+                    type: 'primary',
+                    danger: true,
+                },
+                okText: 'Merge',
+            });
         }
     }, [taskInstance.consensusEnabled, taskInstance]);
 
