@@ -1500,7 +1500,7 @@ class MediaProvider2D(MediaProvider):
         source = self._sources[source_id]
 
         if source.is_video:
-            def video_frame_loader(_):
+            def video_frame_loader():
                 self._load_source(source_id, source)
 
                 # optimization for videos: use numpy arrays instead of bytes
@@ -1510,9 +1510,9 @@ class MediaProvider2D(MediaProvider):
                     out_type=FrameOutputType.NUMPY_ARRAY
                 ).data
 
-            return dm.Image(data=video_frame_loader, **image_kwargs)
+            return dm.Image.from_numpy(data=video_frame_loader, **image_kwargs)
         else:
-            def image_loader(_):
+            def image_loader():
                 self._load_source(source_id, source)
 
                 # for images use encoded data to avoid recoding
@@ -1521,7 +1521,7 @@ class MediaProvider2D(MediaProvider):
                     out_type=FrameOutputType.BUFFER
                 ).data.getvalue()
 
-            return dm.ByteImage(data=image_loader, **image_kwargs)
+            return dm.Image.from_bytes(data=image_loader, **image_kwargs)
 
     def _load_source(self, source_id: int, source: MediaSource) -> None:
         if self._current_source_id == source_id:
@@ -1559,13 +1559,13 @@ class MediaProvider3D(MediaProvider):
         image = self._images_per_source[source_id][frame_id]
 
         related_images = [
-            dm.Image(path=path)
+            dm.Image.from_file(path=path)
             for rf in image.related_files.all()
             for path in [osp.realpath(str(rf.path))]
             if osp.isfile(path)
         ]
 
-        return dm.PointCloud(point_cloud_path, extra_images=related_images)
+        return dm.PointCloud.from_file(point_cloud_path, extra_images=related_images)
 
 MEDIA_PROVIDERS_BY_DIMENSION: dict[DimensionType, MediaProvider] = {
     DimensionType.DIM_3D: MediaProvider3D,
@@ -1681,7 +1681,10 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
 
         dm_items: list[dm.DatasetItem] = []
         for frame_data in instance_data.group_by_frame(include_empty=True):
-            dm_media_args = { 'path': frame_data.name + ext }
+            dm_media_args = {
+                'path': frame_data.name + ext,
+                'ext': ext or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
+            }
             if dimension == DimensionType.DIM_3D:
                 dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     0, frame_data.id, **dm_media_args
@@ -1689,10 +1692,10 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
 
                 if not include_images:
                     dm_media_args["extra_images"] = [
-                        dm.Image(path=osp.basename(image.path))
+                        dm.Image.from_file(path=osp.basename(image.path))
                         for image in dm_media.extra_images
                     ]
-                    dm_media = dm.PointCloud(**dm_media_args)
+                    dm_media = dm.PointCloud.from_file(**dm_media_args)
             else:
                 dm_media_args['size'] = (frame_data.height, frame_data.width)
                 if include_images:
@@ -1700,7 +1703,7 @@ class CvatTaskOrJobDataExtractor(dm.SubsetBase, CVATDataExtractorMixin):
                         0, frame_data.idx, **dm_media_args
                     )
                 else:
-                    dm_media = dm.Image(**dm_media_args)
+                    dm_media = dm.Image.from_file(**dm_media_args)
 
             dm_anno = self._read_cvat_anno(frame_data, instance_meta['labels'])
 
@@ -1784,7 +1787,10 @@ class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
 
         dm_items: list[dm.DatasetItem] = []
         for frame_data in project_data.group_by_frame(include_empty=True):
-            dm_media_args = { 'path': frame_data.name + ext_per_task[frame_data.task_id] }
+            dm_media_args = {
+                'path': frame_data.name + ext_per_task[frame_data.task_id],
+                'ext':  ext_per_task[frame_data.task_id] or frame_data.name.rsplit(osp.extsep, maxsplit=1)[1],
+            }
             if self._dimension == DimensionType.DIM_3D:
                 dm_media: dm.PointCloud = self._media_provider.get_media_for_frame(
                     frame_data.task_id, frame_data.id, **dm_media_args
@@ -1792,10 +1798,10 @@ class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
 
                 if not include_images:
                     dm_media_args["extra_images"] = [
-                        dm.Image(path=osp.basename(image.path))
+                        dm.Image.from_file(path=osp.basename(image.path))
                         for image in dm_media.extra_images
                     ]
-                    dm_media = dm.PointCloud(**dm_media_args)
+                    dm_media = dm.PointCloud.from_file(**dm_media_args)
             else:
                 dm_media_args['size'] = (frame_data.height, frame_data.width)
                 if include_images:
@@ -1803,7 +1809,7 @@ class CVATProjectDataExtractor(dm.DatasetBase, CVATDataExtractorMixin):
                         frame_data.task_id, frame_data.idx, **dm_media_args
                     )
                 else:
-                    dm_media = dm.Image(**dm_media_args)
+                    dm_media = dm.Image.from_file(**dm_media_args)
 
             dm_anno = self._read_cvat_anno(frame_data, project_data.meta[project_data.META_FIELD]['labels'])
 

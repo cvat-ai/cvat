@@ -825,7 +825,9 @@ class LambdaJob:
                 elif anno["type"] == "mask":
                     [xtl, ytl, xbr, ybr] = shape["points"][-4:]
                     cut_points = shape["points"][:-4]
-                    rle = mask_tools.mask_to_rle(np.array(cut_points))["counts"].tolist()
+                    rle = mask_tools.mask_to_rle(np.array(cut_points)[:, np.newaxis])[
+                        "counts"
+                    ].tolist()
                     rle.extend([xtl, ytl, xbr, ybr])
                     shape["points"] = rle
 
