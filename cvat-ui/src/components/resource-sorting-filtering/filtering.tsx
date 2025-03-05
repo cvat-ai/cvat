@@ -240,16 +240,18 @@ export default function ResourceFilterHOC(
                                 </div>
                             )}
                         >
-                            <Button
-                                className='cvat-quick-filters-button'
-                                type='default'
-                                onClick={() => onPredefinedVisibleChange(!predefinedVisible)}
-                            >
+                            {predefinedFilterValues ? (
+                                <Button
+                                    className='cvat-quick-filters-button'
+                                    type='default'
+                                    onClick={() => onPredefinedVisibleChange(!predefinedVisible)}
+                                >
                                 Quick filters
-                                { appliedFilter.predefined ?
-                                    <FilterFilled /> :
-                                    <FilterOutlined />}
-                            </Button>
+                                    { appliedFilter.predefined ?
+                                        <FilterFilled /> :
+                                        <FilterOutlined />}
+                                </Button>
+                            ) : null}
                         </Popover>
                     ) : null
                 }

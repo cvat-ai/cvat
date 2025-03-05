@@ -241,6 +241,7 @@ export interface SerializedOrganization {
 
 export interface APIQualitySettingsFilter extends APICommonFilterParams {
     task_id?: number;
+    project_id?: number;
 }
 export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
 
@@ -265,6 +266,8 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
     empty_is_annotated?: boolean;
     descriptions?: Record<string, string>;
+    inherit?: boolean;
+    job_selection_filter?: string;
 }
 
 export interface APIQualityConflictsFilter extends APICommonFilterParams {

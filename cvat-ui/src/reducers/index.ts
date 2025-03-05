@@ -271,21 +271,29 @@ export interface PluginsState {
             };
         };
         qualityControlPage: {
-            overviewTab: ((props: {
-                task: Task;
-                qualitySettings: QualitySettings;
-            }) => JSX.Element)[];
-
-            allocationTable: ((
-                props: {
-                    task: Task;
-                    gtJobId: number;
-                    gtJobMeta: FramesMetaData;
+            task: {
+                overviewTab: ((props: {
+                    instance: Task;
                     qualitySettings: QualitySettings;
-                    validationLayout: TaskValidationLayout;
-                    onDeleteFrames: (frames: number[]) => void;
-                    onRestoreFrames: (frames: number[]) => void;
                 }) => JSX.Element)[];
+
+                allocationTable: ((
+                    props: {
+                        task: Task;
+                        gtJobId: number;
+                        gtJobMeta: FramesMetaData;
+                        qualitySettings: QualitySettings;
+                        validationLayout: TaskValidationLayout;
+                        onDeleteFrames: (frames: number[]) => void;
+                        onRestoreFrames: (frames: number[]) => void;
+                    }) => JSX.Element)[];
+            }
+            project : {
+                overviewTab: ((props: {
+                    instance: Project;
+                    qualitySettings: QualitySettings;
+                }) => JSX.Element)[];
+            }
         };
     },
     components: {

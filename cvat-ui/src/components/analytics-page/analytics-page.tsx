@@ -5,7 +5,7 @@
 import './styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router';
+import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
@@ -18,6 +18,7 @@ import {
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
+import { readInstanceId, readInstanceType, InstanceType } from 'utils/instance-helper';
 import AnalyticsOverview, { DateIntervals } from './analytics-performance';
 
 const core = getCore();
@@ -52,28 +53,6 @@ function handleTimePeriod(interval: DateIntervals): [string, string] {
         }
     }
 }
-
-function readInstanceType(location: ReturnType<typeof useLocation>): InstanceType {
-    if (location.pathname.includes('projects')) {
-        return 'project';
-    }
-    if (location.pathname.includes('jobs')) {
-        return 'job';
-    }
-    return 'task';
-}
-
-function readInstanceId(type: InstanceType): number {
-    if (type === 'project') {
-        return +useParams<{ pid: string }>().pid;
-    }
-    if (type === 'job') {
-        return +useParams<{ jid: string }>().jid;
-    }
-    return +useParams<{ tid: string }>().tid;
-}
-
-type InstanceType = 'project' | 'task' | 'job';
 
 function AnalyticsPage(): JSX.Element {
     const location = useLocation();

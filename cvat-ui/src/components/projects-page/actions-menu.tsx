@@ -82,6 +82,23 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     ), 30]);
 
     menuItems.push([(
+        <Menu.Item key='view-quality-control'>
+            <a
+                href={`/projects/${projectInstance.id}/quality-control`}
+                onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    history.push({
+                        pathname: `/projects/${projectInstance.id}/quality-control`,
+                    });
+                    return false;
+                }}
+            >
+                Quality control
+            </a>
+        </Menu.Item>
+    ), 40]);
+
+    menuItems.push([(
         <Menu.Item key='set-webhooks'>
             <a
                 href={`/projects/${projectInstance.id}/webhooks`}
@@ -96,7 +113,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 Setup webhooks
             </a>
         </Menu.Item>
-    ), 40]);
+    ), 50]);
 
     menuItems.push([(
         <React.Fragment key='delete'>
@@ -105,7 +122,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 Delete
             </Menu.Item>
         </React.Fragment>
-    ), 50]);
+    ), 60]);
 
     menuItems.push(
         ...plugins.map(({ component: Component, weight }, index) => {

@@ -39,6 +39,8 @@ export default class QualitySettings {
     #panopticComparison: boolean;
     #compareAttributes: boolean;
     #emptyIsAnnotated: boolean;
+    #jobSelectionFilter: string;
+    #inherit: boolean;
     #descriptions: Record<string, string>;
 
     constructor(initialData: SerializedQualitySettingsData) {
@@ -61,6 +63,8 @@ export default class QualitySettings {
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
         this.#emptyIsAnnotated = initialData.empty_is_annotated;
+        this.#jobSelectionFilter = initialData.job_selection_filter || '';
+        this.#inherit = initialData.inherit;
         this.#descriptions = initialData.descriptions;
     }
 
@@ -208,6 +212,22 @@ export default class QualitySettings {
         this.#emptyIsAnnotated = newVal;
     }
 
+    get jobSelectionFilter(): string {
+        return this.#jobSelectionFilter;
+    }
+
+    set jobSelectionFilter(newVal: string) {
+        this.#jobSelectionFilter = newVal;
+    }
+
+    get inherit(): boolean {
+        return this.#inherit;
+    }
+
+    set inherit(newVal: boolean) {
+        this.#inherit = newVal;
+    }
+
     get descriptions(): Record<string, string> {
         const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
             const camelCaseKey = _.camelCase(key);
@@ -237,6 +257,8 @@ export default class QualitySettings {
             target_metric_threshold: this.#targetMetricThreshold,
             max_validations_per_job: this.#maxValidationsPerJob,
             empty_is_annotated: this.#emptyIsAnnotated,
+            job_selection_filter: this.#jobSelectionFilter,
+            inherit: this.#inherit,
         };
 
         return result;
