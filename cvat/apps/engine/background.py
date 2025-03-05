@@ -37,14 +37,12 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.permissions import get_cloud_storage_for_import_or_export
-from cvat.apps.engine.rq_job_handler import RQId, RQJobMetaField
+from cvat.apps.engine.rq import ExportRQMeta, RQId, define_dependent_job
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
-    define_dependent_job,
-    get_rq_job_meta,
     get_rq_lock_by_user,
     get_rq_lock_for_job,
     sendfile,
@@ -229,7 +227,7 @@ class DatasetExportManager(_ResourceExportManager):
     ) -> Optional[Response]:
 
         def is_result_outdated() -> bool:
-            return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < instance_update_time
+            return ExportRQMeta.for_job(rq_job).request.timestamp < instance_update_time
 
         def handle_local_download() -> Response:
             with dm.util.get_export_cache_lock(
@@ -342,7 +340,7 @@ class DatasetExportManager(_ResourceExportManager):
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
         elif rq_job_status == RQJobStatus.FAILED:
-            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            exc_info = ExportRQMeta.for_job(rq_job).formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
@@ -478,6 +476,11 @@ class DatasetExportManager(_ResourceExportManager):
             result_url = self.make_result_url()
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ExportRQMeta.build_for(
+                request=self.request,
+                db_obj=self.db_instance,
+                result_url=result_url,
+            )
             queue.enqueue_call(
                 func=func,
                 args=func_args,
@@ -485,9 +488,7 @@ class DatasetExportManager(_ResourceExportManager):
                     "server_url": server_address,
                 },
                 job_id=rq_id,
-                meta=get_rq_job_meta(
-                    request=self.request, db_obj=self.db_instance, result_url=result_url
-                ),
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),
@@ -548,7 +549,7 @@ class BackupExportManager(_ResourceExportManager):
     ) -> Optional[Response]:
 
         def is_result_outdated() -> bool:
-            return rq_job.meta[RQJobMetaField.REQUEST]["timestamp"] < last_instance_update_time
+            return ExportRQMeta.for_job(rq_job).request.timestamp < last_instance_update_time
 
         last_instance_update_time = timezone.localtime(self.db_instance.updated_date)
         timestamp = self.get_timestamp(last_instance_update_time)
@@ -644,7 +645,7 @@ class BackupExportManager(_ResourceExportManager):
                     f"Export to {self.export_args.location} location is not implemented yet"
                 )
         elif rq_job_status == RQJobStatus.FAILED:
-            exc_info = rq_job.meta.get(RQJobMetaField.FORMATTED_EXCEPTION, str(rq_job.exc_info))
+            exc_info = ExportRQMeta.for_job(rq_job).formatted_exception or str(rq_job.exc_info)
             rq_job.delete()
             return Response(exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         elif (
@@ -756,13 +757,16 @@ class BackupExportManager(_ResourceExportManager):
         user_id = self.request.user.id
 
         with get_rq_lock_by_user(queue, user_id):
+            meta = ExportRQMeta.build_for(
+                request=self.request,
+                db_obj=self.db_instance,
+                result_url=result_url,
+            )
             queue.enqueue_call(
                 func=func,
                 args=func_args,
                 job_id=rq_id,
-                meta=get_rq_job_meta(
-                    request=self.request, db_obj=self.db_instance, result_url=result_url
-                ),
+                meta=meta,
                 depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=cache_ttl.total_seconds(),
                 failure_ttl=cache_ttl.total_seconds(),

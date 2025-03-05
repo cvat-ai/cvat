@@ -6,18 +6,18 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0029_data_storage_method'),
+        ("engine", "0029_data_storage_method"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='pluginoption',
-            name='plugin',
+            model_name="pluginoption",
+            name="plugin",
         ),
         migrations.DeleteModel(
-            name='Plugin',
+            name="Plugin",
         ),
         migrations.DeleteModel(
-            name='PluginOption',
+            name="PluginOption",
         ),
     ]

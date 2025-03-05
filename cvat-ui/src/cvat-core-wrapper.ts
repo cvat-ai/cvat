@@ -15,6 +15,7 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
+    OrganizationMembersFilter,
 } from 'cvat-core/src/server-response-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
@@ -22,6 +23,7 @@ import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings, { TargetMetric } from 'cvat-core/src/quality-settings';
+import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
@@ -98,6 +100,7 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
+    ConsensusSettings,
     TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
@@ -128,4 +131,5 @@ export type {
     ProjectOrTaskOrJob,
     RequestOperation,
     UpdateStatusData,
+    OrganizationMembersFilter,
 };

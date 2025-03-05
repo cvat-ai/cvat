@@ -41,7 +41,6 @@ extend-exclude = """
         |log.py
         |media_extractors.py
         |middleware.py
-        |migrations/
         |mime_types.py
         |mixins.py
         |models.py
@@ -50,7 +49,6 @@ extend-exclude = """
         |permissions.py
         |plugins.py
         |renderers.py
-        |rq_job_handler.py
         |schema.py
         |serializers.py
         |signals.py

@@ -11,6 +11,7 @@ import PIL.Image
 
 import cvat_sdk.models as models
 
+from ..attributes import attribute_value_validator
 from .exceptions import BadFunctionError
 
 
@@ -35,7 +36,8 @@ class DetectionFunctionSpec:
     * The id attribute of any sublabels must be set to an integer, distinct between all
       sublabels of the same parent label.
 
-    * There must not be any attributes (attribute support may be added in a future version).
+    * The id attribute of any attributes must be set to an integer, distinct between all
+      attributes of the same label or sublabel.
 
     `BadFunctionError` will be raised if any constraint violations are detected.
 
@@ -44,32 +46,58 @@ class DetectionFunctionSpec:
     constructors and help to follow some of the constraints.
     """
 
-    @staticmethod
-    def _validate_label_spec(label: models.PatchedLabelRequest) -> None:
-        if getattr(label, "attributes", None):
-            raise BadFunctionError(f"label attributes are currently not supported")
+    @classmethod
+    def _validate_attributes(
+        cls, attributes: Sequence[models.AttributeRequest], label_desc: str
+    ) -> None:
+        seen_attr_ids = set()
+
+        for attr in attributes:
+            attr_desc = f"attribute {attr.name!r} of {label_desc}"
+
+            if not hasattr(attr, "id"):
+                raise BadFunctionError(f"{attr_desc} has no ID")
+
+            if attr.id in seen_attr_ids:
+                raise BadFunctionError(f"{attr_desc} has same ID as another attribute ({attr.id})")
+
+            seen_attr_ids.add(attr.id)
+
+            try:
+                attribute_value_validator(attr)
+            except ValueError as ex:
+                raise BadFunctionError(f"{attr_desc} has invalid values: {ex}") from ex
+
+    @classmethod
+    def _validate_label_spec(cls, label: models.PatchedLabelRequest) -> None:
+        label_desc = f"label {label.name!r}"
+
+        cls._validate_attributes(getattr(label, "attributes", []), label_desc)
 
         if getattr(label, "sublabels", []):
             label_type = getattr(label, "type", "any")
             if label_type != "skeleton":
                 raise BadFunctionError(
-                    f"label {label.name!r} with sublabels has type {label_type!r} (should be 'skeleton')"
+                    f"{label_desc} with sublabels has type {label_type!r} (should be 'skeleton')"
                 )
 
             seen_sl_ids = set()
 
             for sl in label.sublabels:
+                sl_desc = f"sublabel {sl.name!r} of {label_desc}"
+
                 if not hasattr(sl, "id"):
-                    raise BadFunctionError(
-                        f"sublabel {sl.name!r} of label {label.name!r} has no ID"
-                    )
+                    raise BadFunctionError(f"{sl_desc} has no ID")
 
                 if sl.id in seen_sl_ids:
-                    raise BadFunctionError(
-                        f"sublabel {sl.name!r} of label {label.name!r} has same ID as another sublabel ({sl.id})"
-                    )
+                    raise BadFunctionError(f"{sl_desc} has same ID as another sublabel ({sl.id})")
 
                 seen_sl_ids.add(sl.id)
+
+                if sl.type != "points":
+                    raise BadFunctionError(f"{sl_desc} has type {sl.type!r} (should be 'points')")
+
+                cls._validate_attributes(getattr(sl, "attributes", []), sl_desc)
 
     @labels.validator
     def _validate_labels(self, attribute, value: Sequence[models.PatchedLabelRequest]) -> None:
@@ -211,8 +239,72 @@ def skeleton_label_spec(
 
 # pylint: disable-next=redefined-builtin
 def keypoint_spec(name: str, id: int, **kwargs) -> models.SublabelRequest:
-    """Helper factory function for SublabelRequest."""
-    return models.SublabelRequest(name=name, id=id, **kwargs)
+    """Helper factory function for SublabelRequest with type="points"."""
+    return models.SublabelRequest(name=name, id=id, type="points", **kwargs)
+
+
+def attribute_spec(
+    name: str,
+    # pylint: disable-next=redefined-builtin
+    id: int,
+    input_type: str,
+    values: list[str],
+    **kwargs,
+) -> models.AttributeRequest:
+    """Helper factory function for AttributeRequest with mutable=False."""
+    return models.AttributeRequest(
+        name=name, id=id, input_type=input_type, values=values, mutable=False, **kwargs
+    )
+
+
+def number_attribute_spec(
+    name: str,
+    # pylint: disable-next=redefined-builtin
+    id: int,
+    values: list[str],
+    **kwargs,
+) -> models.AttributeRequest:
+    """
+    Helper factory function for AttributeRequest with input_type="number".
+
+    It's recommended to use the `cvat_sdk.attributes.number_attribute_values` function
+    to create the `values` argument.
+    """
+    return attribute_spec(name, id, "number", values, **kwargs)
+
+
+# pylint: disable-next=redefined-builtin
+def checkbox_attribute_spec(name: str, id: int, **kwargs) -> models.AttributeRequest:
+    """Helper factory function for AttributeRequest with input_type="checkbox"."""
+    return attribute_spec(name, id, "checkbox", [], **kwargs)
+
+
+def radio_attribute_spec(
+    name: str,
+    # pylint: disable-next=redefined-builtin
+    id: int,
+    values: list[str],
+    **kwargs,
+) -> models.AttributeRequest:
+    """Helper factory function for AttributeRequest with input_type="radio"."""
+    return attribute_spec(name, id, "radio", values, **kwargs)
+
+
+def select_attribute_spec(
+    name: str,
+    # pylint: disable-next=redefined-builtin
+    id: int,
+    values: list[str],
+    **kwargs,
+) -> models.AttributeRequest:
+    """Helper factory function for AttributeRequest with input_type="select"."""
+    return attribute_spec(name, id, "select", values, **kwargs)
+
+
+# pylint: disable-next=redefined-builtin
+def text_attribute_spec(name: str, id: int, **kwargs) -> models.AttributeRequest:
+    """Helper factory function for AttributeRequest with input_type="text"."""
+    return attribute_spec(name, id, "text", [], **kwargs)
 
 
 # annotation factories

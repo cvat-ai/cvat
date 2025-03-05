@@ -9,7 +9,7 @@ import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
-    AboutData,
+    ConsensusSettings, AboutData,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
@@ -169,6 +169,18 @@ export interface ImportState {
         };
     };
     instanceType: 'project' | 'task' | 'job' | null;
+}
+
+export interface ConsensusState {
+    fetching: boolean;
+    consensusSettings: ConsensusSettings | null;
+    taskInstance: Task | null;
+    jobInstance: Job | null;
+    actions: {
+        merging: {
+            [instanceKey: string]: boolean;
+        };
+    }
 }
 
 export interface FormatsState {
@@ -471,6 +483,7 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             importing: null | ErrorState;
             moving: null | ErrorState;
+            mergingConsensus: null | ErrorState;
         };
         jobs: {
             updating: null | ErrorState;
@@ -594,6 +607,7 @@ export interface NotificationsState {
             loadingDone: null | NotificationState;
             importingDone: null | NotificationState;
             movingDone: null | NotificationState;
+            mergingConsensusDone: null | NotificationState;
         };
         models: {
             inferenceDone: null | NotificationState;
@@ -919,6 +933,14 @@ export interface ReviewState {
     };
 }
 
+export interface OrganizationMembersQuery {
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    page: number;
+    pageSize: number;
+}
+
 export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
@@ -991,6 +1013,7 @@ export interface CombinedState {
     review: ReviewState;
     export: ExportState;
     import: ImportState;
+    consensus: ConsensusState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     invitations: InvitationsState;

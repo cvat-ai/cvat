@@ -6,9 +6,10 @@ import argparse
 import json
 import textwrap
 from collections.abc import Sequence
+from typing import Union
 
 import cvat_sdk.auto_annotation as cvataa
-from cvat_sdk import Client
+from cvat_sdk import Client, models
 
 from .agent import FUNCTION_KIND_DETECTOR, FUNCTION_PROVIDER_NATIVE, run_agent
 from .command_base import CommandGroup
@@ -33,6 +34,29 @@ class FunctionCreateNative:
 
         configure_function_implementation_arguments(parser)
 
+    @staticmethod
+    def _dump_sublabel_spec(
+        sl_spec: Union[models.SublabelRequest, models.PatchedLabelRequest],
+    ) -> dict:
+        result = {
+            "name": sl_spec.name,
+            "attributes": [
+                {
+                    "name": attribute_spec.name,
+                    "input_type": attribute_spec.input_type,
+                    "values": attribute_spec.values,
+                }
+                for attribute_spec in getattr(sl_spec, "attributes", [])
+            ],
+        }
+
+        if getattr(sl_spec, "type", "any") != "any":
+            # Add the type conditionally, to stay compatible with older
+            # CVAT versions when the function doesn't define label types.
+            result["type"] = sl_spec.type
+
+        return result
+
     def execute(
         self,
         client: Client,
@@ -52,21 +76,12 @@ class FunctionCreateNative:
             remote_function["labels_v2"] = []
 
             for label_spec in function.spec.labels:
-                if getattr(label_spec, "sublabels", None):
-                    raise cvataa.BadFunctionError(
-                        f"Function label {label_spec.name!r} has sublabels. This is currently not supported."
-                    )
+                remote_function["labels_v2"].append(self._dump_sublabel_spec(label_spec))
 
-                remote_function["labels_v2"].append(
-                    {
-                        "name": label_spec.name,
-                    }
-                )
-
-                if getattr(label_spec, "type", "any") != "any":
-                    # Add the type conditionally, to stay compatible with older
-                    # CVAT versions when the function doesn't define label types.
-                    remote_function["labels_v2"][-1]["type"] = label_spec.type
+                if sublabels := getattr(label_spec, "sublabels", None):
+                    remote_function["labels_v2"][-1]["sublabels"] = [
+                        self._dump_sublabel_spec(sublabel) for sublabel in sublabels
+                    ]
         else:
             raise cvataa.BadFunctionError(
                 f"Unsupported function spec type: {type(function.spec).__name__}"
