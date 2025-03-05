@@ -16,6 +16,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.31.0'></a>
+## \[2.31.0\] - 2025-03-03
+
+### Added
+
+- \[SDK\] Auto-annotation detection functions can now output shape/keypoint attributes
+  (<https://github.com/cvat-ai/cvat/pull/9090>)
+
+- \[SDK\] Added a utility module for working with label attributes,
+  `cvat_sdk.attributes`
+  (<https://github.com/cvat-ai/cvat/pull/9090>)
+
+- Simple merging for consensus-enabled tasks
+  (<https://github.com/cvat-ai/cvat/pull/8953>)
+
+- A setting to display rectangles and ellipses dimensions and rotation
+  (<https://github.com/cvat-ai/cvat/pull/9142>)
+
+### Changed
+
+- Hidden points in skeletons now also contribute to the skeleton similarity
+  in quality computations and in consensus merging
+  (<https://github.com/cvat-ai/cvat/pull/8953>)
+
+- SDK `task.upload_data()` can accept resources of the `Path` type
+  when `resource_type` is `REMOTE` or `SHARE`
+  (<https://github.com/cvat-ai/cvat/pull/9114>)
+
+### Deprecated
+
+- Utilizing `PUT /api/tasks|jobs/id/annotations?rq_id=rq_id` API endpoint
+  to check the status of the import process
+  (<https://github.com/cvat-ai/cvat/pull/9102>)
+
+### Fixed
+
+- 500 status code returned by API endpoints that support TUS OPTIONS requests
+  (<https://github.com/cvat-ai/cvat/pull/9077>)
+
+- Possible race condition that could occur when importing annotations
+  (<https://github.com/cvat-ai/cvat/pull/9102>)
+
+- Issue label scaling on image filter application
+  (<https://github.com/cvat-ai/cvat/pull/9126>)
+
+- Invalid display of images in simple GT jobs
+  (<https://github.com/cvat-ai/cvat/pull/9155>)
+
+- Related images in a simple GT jobs are displayed incorrectly
+  (<https://github.com/cvat-ai/cvat/pull/9162>)
+
 <a id='changelog-2.30.0'></a>
 ## \[2.30.0\] - 2025-02-14
 

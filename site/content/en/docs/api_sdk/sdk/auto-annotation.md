@@ -176,7 +176,7 @@ The following helpers are available for building specifications:
 |---------------------------|-----------------------|-------------------------------------------------------|
 | `label_spec`              | `PatchedLabelRequest` | -                                                     |
 | `skeleton_label_spec`     | `PatchedLabelRequest` | `type="skeleton"`                                     |
-| `keypoint_spec`           | `SublabelRequest`     | -                                                     |
+| `keypoint_spec`           | `SublabelRequest`     | `type="points"`                                       |
 | `attribute_spec`          | `AttributeRequest`    | `mutable=False`                                       |
 | `checkbox_attribute_spec` | `AttributeRequest`    | `mutable=False`, `input_type="checkbox"`, `values=[]` |
 | `number_attribute_spec`   | `AttributeRequest`    | `mutable=False`, `input_type="number"`                |
