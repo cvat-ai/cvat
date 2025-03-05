@@ -78,7 +78,7 @@ def _export_recognition(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.transform(LabelToCaption)
-        dataset.export(temp_dir, "icdar_word_recognition", save_images=save_images)
+        dataset.export(temp_dir, "icdar_word_recognition", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -101,7 +101,7 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 def _export_localization(dst_file, temp_dir, instance_data, save_images=False):
     with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
-        dataset.export(temp_dir, "icdar_text_localization", save_images=save_images)
+        dataset.export(temp_dir, "icdar_text_localization", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -128,7 +128,7 @@ def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False):
         dataset.transform("polygons_to_masks")
         dataset.transform("boxes_to_masks")
         dataset.transform("merge_instance_segments")
-        dataset.export(temp_dir, "icdar_text_segmentation", save_images=save_images)
+        dataset.export(temp_dir, "icdar_text_segmentation", save_media=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
