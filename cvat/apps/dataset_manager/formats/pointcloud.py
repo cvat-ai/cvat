@@ -28,7 +28,7 @@ def _export_images(dst_file, temp_dir, task_data, save_images=False):
     ) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.export(
-            temp_dir, "sly_pointcloud", save_images=save_images, allow_undeclared_attrs=True
+            temp_dir, "sly_pointcloud", save_media=save_images, allow_undeclared_attrs=True
         )
 
     make_zip_archive(temp_dir, dst_file)

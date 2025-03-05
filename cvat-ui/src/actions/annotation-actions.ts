@@ -12,7 +12,7 @@ import {
 } from 'cvat-canvas-wrapper';
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
-    ObjectState, JobState, JobValidationLayout,
+    ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -23,10 +23,8 @@ import {
     ContextMenuType,
     FrameSpeed,
     NavigationType,
-    ObjectType,
     OpenCVTool,
     Rotation,
-    ShapeType,
     Workspace,
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';

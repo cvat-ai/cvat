@@ -4,7 +4,11 @@
 
 import { Indexable } from 'reducers';
 
-export function filterNull<Type>(obj: Type): Type {
+type NonNullableProperties<T> = {
+    [K in keyof T]: NonNullable<T[K]>;
+};
+
+export function filterNull<Type>(obj: Type): NonNullableProperties<Type> {
     const filteredObject = { ...obj };
     if (filteredObject) {
         for (const key of Object.keys(filteredObject)) {
@@ -13,5 +17,5 @@ export function filterNull<Type>(obj: Type): Type {
             }
         }
     }
-    return filteredObject;
+    return filteredObject as NonNullableProperties<Type>;
 }
