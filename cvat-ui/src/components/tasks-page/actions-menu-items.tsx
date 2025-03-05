@@ -19,7 +19,7 @@ interface MenuItemsData {
     onExportDataset: () => void;
     onBackupTask: () => void;
     onRunAutoAnnotation: (() => void) | null;
-    onMoveTaskToProject: () => void;
+    onMoveTaskToProject: (() => void) | null;
     onDeleteTask: () => void;
 }
 
