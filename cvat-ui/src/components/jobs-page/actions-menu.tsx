@@ -37,53 +37,61 @@ function JobActionsComponent(props: Props): JSX.Element {
         history.push(`/tasks/${jobInstance.taskId}`);
     }, [jobInstance.taskId]);
 
-    const onOpenProjectPage = jobInstance.projectId ? useCallback(() => {
-        history.push(`/projects/${jobInstance.projectId}`);
-    }, []) : null;
+    const onOpenProjectPage = useCallback(() => {
+        if (jobInstance.projectId) {
+            history.push(`/projects/${jobInstance.projectId}`);
+        }
+    }, [jobInstance.projectId]);
 
-    const onOpenBugTracker = jobInstance.bugTracker ? useCallback(() => {
-        window.open(jobInstance.bugTracker as string, '_blank', 'noopener noreferrer');
-    }, []) : null;
+    const onOpenBugTracker = useCallback(() => {
+        if (jobInstance.bugTracker) {
+            window.open(jobInstance.bugTracker as string, '_blank', 'noopener noreferrer');
+        }
+    }, [jobInstance.bugTracker]);
 
     const onImportAnnotations = useCallback(() => {
         dispatch(importActions.openImportDatasetModal(jobInstance));
-    }, []);
+    }, [jobInstance]);
 
     const onExportAnnotations = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(jobInstance));
-    }, []);
+    }, [jobInstance]);
 
-    const onMergeConsensusJob = consensusJobsPresent && jobInstance.parentJobId === null ? useCallback(() => {
-        Modal.confirm({
-            title: 'The consensus job will be merged',
-            content: 'Existing annotations in the parent job will be updated. Continue?',
-            className: 'cvat-modal-confirm-consensus-merge-job',
-            onOk: () => {
-                dispatch(mergeConsensusJobsAsync(jobInstance));
-            },
-            okButtonProps: {
-                type: 'primary',
-                danger: true,
-            },
-            okText: 'Merge',
-        });
-    }, []) : null;
+    const onMergeConsensusJob = useCallback(() => {
+        if (consensusJobsPresent && jobInstance.parentJobId === null) {
+            Modal.confirm({
+                title: 'The consensus job will be merged',
+                content: 'Existing annotations in the parent job will be updated. Continue?',
+                className: 'cvat-modal-confirm-consensus-merge-job',
+                onOk: () => {
+                    dispatch(mergeConsensusJobsAsync(jobInstance));
+                },
+                okButtonProps: {
+                    type: 'primary',
+                    danger: true,
+                },
+                okText: 'Merge',
+            });
+        }
+    }, [consensusJobsPresent, jobInstance]);
 
-    const onDeleteJob = jobInstance.type === JobType.GROUND_TRUTH ? useCallback(() => {
-        Modal.confirm({
-            title: `The job ${jobInstance.id} will be deleted`,
-            content: 'All related data (annotations) will be lost. Continue?',
-            className: 'cvat-modal-confirm-delete-job',
-            onOk: () => {
-                dispatch(deleteJobAsync(jobInstance));
-            },
-            okButtonProps: {
-                type: 'primary',
-                danger: true,
-            },
-            okText: 'Delete',
-        });
-    }, []) : null;
+    const onDeleteJob = useCallback(() => {
+        if (jobInstance.type === JobType.GROUND_TRUTH) {
+            Modal.confirm({
+                title: `The job ${jobInstance.id} will be deleted`,
+                content: 'All related data (annotations) will be lost. Continue?',
+                className: 'cvat-modal-confirm-delete-job',
+                onOk: () => {
+                    dispatch(deleteJobAsync(jobInstance));
+                },
+                okButtonProps: {
+                    type: 'primary',
+                    danger: true,
+                },
+                okText: 'Delete',
+            });
+        }
+    }, [jobInstance]);
 
     return (
         <Dropdown
@@ -97,12 +105,13 @@ function JobActionsComponent(props: Props): JSX.Element {
                     isMergingConsensusEnabled: mergingConsensus[makeKey(jobInstance)],
                     pluginActions,
                     onOpenTaskPage,
-                    onOpenProjectPage,
-                    onOpenBugTracker,
+                    onOpenProjectPage: jobInstance.projectId ? onOpenProjectPage : null,
+                    onOpenBugTracker: jobInstance.bugTracker ? onOpenBugTracker : null,
                     onImportAnnotations,
                     onExportAnnotations,
-                    onMergeConsensusJob,
-                    onDeleteJob,
+                    onMergeConsensusJob: consensusJobsPresent && jobInstance.parentJobId === null ?
+                        onMergeConsensusJob : null,
+                    onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
                 }, { ...props, history }),
             }}
         >

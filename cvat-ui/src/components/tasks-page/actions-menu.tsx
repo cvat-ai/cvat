@@ -37,21 +37,27 @@ function TaskActionsComponent(props: Props): JSX.Element {
         mergingConsensus: state.consensus.actions.merging,
     }), shallowEqual);
 
-    const onOpenBugTracker = taskInstance.bugTracker ? useCallback(() => {
-        window.open(taskInstance.bugTracker as string, '_blank', 'noopener noreferrer');
-    }, [taskInstance.bugTracker]) : null;
+    const onOpenBugTracker = useCallback(() => {
+        if (taskInstance.bugTracker) {
+            window.open(taskInstance.bugTracker as string, '_blank', 'noopener noreferrer');
+        }
+    }, [taskInstance.bugTracker]);
 
     const onOpenQualityControl = useCallback(() => {
         history.push(`/tasks/${taskInstance.id}/quality-control`);
     }, [taskInstance.id]);
 
-    const onOpenConsensusManagement = taskInstance.consensusEnabled ? useCallback(() => {
-        history.push(`/tasks/${taskInstance.id}/consensus`);
-    }, [taskInstance.id]) : null;
+    const onOpenConsensusManagement = useCallback(() => {
+        if (taskInstance.consensusEnabled) {
+            history.push(`/tasks/${taskInstance.id}/consensus`);
+        }
+    }, [taskInstance.consensusEnabled, taskInstance.id]);
 
-    const onMergeConsensusJobs = taskInstance.consensusEnabled ? useCallback(() => {
-        dispatch(mergeConsensusJobsAsync(taskInstance));
-    }, [taskInstance]) : null;
+    const onMergeConsensusJobs = useCallback(() => {
+        if (taskInstance.consensusEnabled) {
+            dispatch(mergeConsensusJobsAsync(taskInstance));
+        }
+    }, [taskInstance.consensusEnabled, taskInstance]);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(taskInstance));
@@ -104,9 +110,9 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
                     pluginActions,
                     onOpenQualityControl,
-                    onOpenConsensusManagement,
-                    onMergeConsensusJobs,
-                    onOpenBugTracker,
+                    onOpenConsensusManagement: taskInstance.consensusEnabled ? onOpenConsensusManagement : null,
+                    onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
+                    onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
                     onUploadAnnotations,
                     onExportDataset,
                     onBackupTask,
