@@ -5,6 +5,12 @@
 /// <reference types="cypress" />
 
 context('Basic manipulations with consensus job replicas', () => {
+    before(() => {
+        cy.visit('auth/login');
+        cy.login();
+        cy.get('.cvat-create-task-dropdown').click();
+        cy.get('.cvat-create-task-button').should('be.visible').click();
+    });
     describe('Consensus job creation', () => {
         // const jobType = 'consensus_replica';
         const maxReplicas = 10;
@@ -12,12 +18,6 @@ context('Basic manipulations with consensus job replicas', () => {
         const labelName = 'test';
         const serverFiles = ['archive.zip'];
         const replicas = 3;
-        before(() => {
-            cy.visit('auth/login');
-            cy.login();
-            cy.get('.cvat-create-task-dropdown').click();
-            cy.get('.cvat-create-task-button').should('be.visible').click();
-        });
         it('Check allowed number of replicas', () => {
             // Fill the fields to create the task
             cy.get('#name').type(taskName);
@@ -68,6 +68,21 @@ context('Basic manipulations with consensus job replicas', () => {
                     expect(+(jobLinks[i].text.split('#')[1])).equals(sourceId + i);
                 }
             });
+        });
+    });
+    describe('Cosensus jobs merging', () => {
+        it('Check new merge buttons exist and are visible', () => {
+            cy.contains('button', 'Actions').click();
+            cy.contains('Merge consensus jobs').should('be.visible');
+            cy.get('.ant-card-body').first().within(() => {
+                cy.get('.anticon-more').first().click();
+            });
+            cy.get('.ant-dropdown-menu')
+                .should('be.visible')
+                .contains('li', 'Merge consensus job').should('be.visible');
+        });
+        it('Check consensus management page', () => {
+            // Write your test case two here
         });
     });
 });
