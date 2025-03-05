@@ -103,7 +103,7 @@ function JobActionsComponent(props: Props): JSX.Element {
                     onExportAnnotations,
                     onMergeConsensusJob,
                     onDeleteJob,
-                }, props),
+                }, { ...props, history }),
             }}
         >
             {triggerElement}

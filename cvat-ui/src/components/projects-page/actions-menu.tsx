@@ -73,7 +73,7 @@ function ProjectActionsComponent(props: Props): JSX.Element {
                     onBackupProject,
                     onSetupWebhooks,
                     onDeleteProject,
-                }, props),
+                }, { ...props, history }),
             }}
         >
             {triggerElement}

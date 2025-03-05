@@ -113,7 +113,7 @@ function TaskActionsComponent(props: Props): JSX.Element {
                     onRunAutoAnnotation,
                     onMoveTaskToProject,
                     onDeleteTask,
-                }, props),
+                }, { ...props, history }),
             }}
         >
             {triggerElement}
