@@ -15,6 +15,7 @@ import {
 import { resendInvitationAsync } from 'actions/invitations-actions';
 import { Membership } from 'cvat-core-wrapper';
 import MemberItem from './member-item';
+import EmptyListComponent from './empty-list';
 
 export interface Props {
     organizationInstance: any;
@@ -37,11 +38,13 @@ function MembersList(props: Props): JSX.Element {
     const updatingMember = useSelector((state: CombinedState) => state.organizations.updatingMember);
     const removingMember = useSelector((state: CombinedState) => state.organizations.removingMember);
 
-    return fetching || inviting || updatingMember || removingMember ? (
-        <Spin className='cvat-spinner' />
-    ) : (
+    if (fetching || inviting || updatingMember || removingMember) {
+        return <Spin className='cvat-spinner' />;
+    }
+
+    const content = members.length ? (
         <>
-            <div>
+            <div className='cvat-organization-members-list'>
                 {members.map(
                     (member: Membership): JSX.Element => (
                         <MemberItem
@@ -94,7 +97,11 @@ function MembersList(props: Props): JSX.Element {
                 />
             </div>
         </>
+    ) : (
+        <EmptyListComponent />
     );
+
+    return content;
 }
 
 export default React.memo(MembersList);

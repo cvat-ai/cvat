@@ -44,28 +44,37 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.closeNotification('.ant-notification-notice-error');
             cy.get('#consensusReplicas').clear();
         });
+
         it('Check new consensus task has correct tags and drop-down with replicas', () => {
-            // Create task with consensus, check tags
+            // Create task with consensus
             cy.get('#consensusReplicas').type(replicas);
             cy.contains('button', 'Submit & Open').click();
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
             cy.get('.ant-notification-notice-error').should('not.exist');
+            // Check tags
             cy.get('.cvat-tag-consensus').then((tags) => {
                 expect(tags.length).to.equal(2);
                 cy.wrap(tags).each(($el) => {
                     cy.wrap($el).should('have.text', 'Consensus');
                 });
             });
-            cy.get('.ant-collapse-header').should('be.visible')
+            cy.get('.cvat-consensus-job-collapse').should('be.visible')
                 .within(($el) => {
                     expect($el.text()).to.equal(`${replicas} Replicas`);
                     cy.wrap($el).click();
                 });
 
-            // Check desc order of jobs
-            cy.get('.ant-card-body a').then((jobLinks) => {
-                const sourceId = +(jobLinks[0].text.split('#')[1]);
+            // Check asc order of jobs
+            function parseJobId(jobItem) {
+                const jobItemText = jobItem.innerText;
+                const [start, stop] = [0, jobItemText.indexOf('\n')];
+                return +(jobItemText.substring(start, stop).split('#')[1]);
+            }
+            cy.get('.cvat-job-item').then((jobItems) => {
+                const sourceJobId = parseJobId(jobItems[0]);
                 for (let i = 1; i <= replicas; i++) {
-                    expect(+(jobLinks[i].text.split('#')[1])).equals(sourceId + i);
+                    const jobId = parseJobId(jobItems[i]);
+                    expect(jobId).equals(sourceJobId + i);
                 }
             });
         });
