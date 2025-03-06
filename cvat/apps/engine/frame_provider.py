@@ -21,6 +21,7 @@ import av
 import cv2
 import numpy as np
 from django.conf import settings
+from django.db.models import prefetch_related_objects
 from PIL import Image
 from rest_framework.exceptions import ValidationError
 
@@ -409,6 +410,11 @@ class TaskFrameProvider(IFrameProvider):
             raise ValidationError("Task has no data")
 
         abs_frame_number = self.get_abs_frame_number(validated_frame_number)
+
+        # For some reason, task's prefetch cache doesn't get populated after the following
+        # call to task.segment_set.all() and the result traversal, resulting in extra requests.
+        # Prefetch segments explicitly to fix this
+        prefetch_related_objects([self._db_task], "segment_set")
 
         segment = next(
             (
