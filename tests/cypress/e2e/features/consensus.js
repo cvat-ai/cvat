@@ -82,7 +82,33 @@ context('Basic manipulations with consensus job replicas', () => {
                 .contains('li', 'Merge consensus job').should('be.visible');
         });
         it('Check consensus management page', () => {
-            // Write your test case two here
+            const defaultQuorum = 50;
+            const defaultOverlap = 40;
+            cy.contains('button', 'Actions').click();
+            cy.contains('Consensus management').should('be.visible').click();
+            cy.get('.cvat-consensus-management-inner').should('be.visible');
+            // Save settings, confirm request is sent
+            let requestCount = 0;
+            cy.intercept('PATCH', 'api/consensus/settings/**', () => {
+                requestCount++;
+            }).as('settingsMeta');
+            cy.contains('button', 'Save').click();
+            cy.wait('@settingsMeta');
+
+            // Forms and invalid saving
+            cy.get('#quorum').clear();
+            cy.contains('button', 'Save').click();
+
+            cy.get('.ant-form-item-explain-error').should('be.visible');
+            // cy.get('#iouThreshold').then(([$el]) => {
+            //     expect($el.attr('aria-valuenow')).equals(defaultOverlap);
+            // }).clear();
+            // cy.get('.ant-form-item-explain-error').should('have.length', 2);
+            // cy.contains('button', 'Save').click();
+
+            // cy.then(() => {
+            //     expect(requestCount).to.equal(1);
+            // });
         });
     });
 });
